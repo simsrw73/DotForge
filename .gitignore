@@ -1,0 +1,20 @@
+# PowerShell build artifacts
+*.psm1.bak
+*.psd1.bak
+
+# Test results
+TestResults/
+*.xml
+
+# Build output
+out/
+build/
+
+# VS Code
+.vscode/
+
+# Pester coverage
+coverage/
+
+# Local scratch
+scratch/
