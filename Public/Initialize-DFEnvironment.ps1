@@ -18,7 +18,7 @@ function Initialize-DFEnvironment {
     @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME) |
         ForEach-Object { Ensure-DFDir $_ }
 
-    $pms = Resolve-DFPackageManager -Force
+    $pms = @(Resolve-DFPackageManager -Force | Where-Object { $_ })
 
     if ($pms.Count -eq 0) {
         Write-Warning 'DotForge: No supported package managers found (scoop, winget, choco). Install one to use Install-DFTool.'
