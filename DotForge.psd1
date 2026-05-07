@@ -16,7 +16,8 @@
         'Find-DFTool',
         'Register-DFTool',
         'Initialize-DFEnvironment',
-        'Install-DFTool'
+        'Install-DFTool',
+        'Update-DFCompletions'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
