@@ -7,7 +7,12 @@
     Description       = 'Framework for registering and configuring CLI tools in a PowerShell profile — XDG paths, PATH management, fzf pickers, and completion caching.'
     PowerShellVersion = '7.0'
     RootModule        = 'DotForge.psm1'
-    FunctionsToExport = @()
+    FunctionsToExport = @(
+        'Add-DFToPath',
+        'Ensure-DFDir',
+        'Invoke-DFPicker',
+        'Get-DFCachedCompletion'
+    )
     CmdletsToExport   = @()
     VariablesToExport = @()
     AliasesToExport   = @()
