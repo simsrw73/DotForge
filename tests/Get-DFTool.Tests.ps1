@@ -14,7 +14,7 @@ BeforeAll {
 '@ | Set-Content (Join-Path $script:TmpTools 'alpha.json')
 
     @'
-{ "name": "beta", "executable": "beta.exe", "description": "Second viewer",
+{ "name": "beta", "executable": "beta.exe", "description": "Renders markdown output",
   "tags": ["viewer"] }
 '@ | Set-Content (Join-Path $script:TmpTools 'beta.json')
 
@@ -65,7 +65,7 @@ Describe 'Find-DFTool' {
     }
 
     It 'finds tools by description pattern' {
-        $results = Find-DFTool -Pattern 'viewer' -ToolsPath $script:TmpTools
+        $results = Find-DFTool -Pattern 'markdown' -ToolsPath $script:TmpTools
         @($results).Count | Should -Be 1
         @($results)[0].name | Should -Be 'beta'
     }

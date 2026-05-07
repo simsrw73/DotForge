@@ -22,6 +22,7 @@ function Find-DFTool {
 
     $db.Values | Where-Object {
         $_.name -like "*$Pattern*" -or
-        ($_.PSObject.Properties['description']?.Value -like "*$Pattern*")
+        ($_.PSObject.Properties['description']?.Value -like "*$Pattern*") -or
+        (@($_.PSObject.Properties['tags']?.Value) | Where-Object { $_ -like "*$Pattern*" })
     }
 }
