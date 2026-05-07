@@ -1,5 +1,6 @@
-# Companion for posh-git — git fzf pickers (fco, flog, fga, fstash)
+# Companion for posh-git — import module and git fzf pickers (fco, flog, fga, fstash)
 # Dot-sourced by Register-DFTool when posh-git module is available.
+Import-Module posh-git -ErrorAction SilentlyContinue
 
 function global:Select-GitBranch {
     [CmdletBinding()]

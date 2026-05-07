@@ -20,9 +20,7 @@
     "type": "static",
     "flags": ["query", "add", "remove", "edit", "import", "init"]
   },
-  "aliases": {
-    "cd": { "command": "z", "args": [] }
-  },
+  "aliases": {},
   "picker": {
     "alias": "fcd",
     "function": "Select-Directory",
