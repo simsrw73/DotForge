@@ -77,6 +77,7 @@ function Register-DFTool {
             { $_ -in 'config', 'wrapper' } {
                 Write-Verbose "DotForge: $($tool.name) xdg.method '$xdgMethod' deferred to Phase 3"
             }
+            'default' { } # tool already follows XDG natively — no env config needed
         }
 
         # ── Argument completions ────────────────────────────────────────────

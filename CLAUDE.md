@@ -55,6 +55,7 @@ Each `Tools/*.json` must have at minimum:
 - `xdg.method`: one of `default | env | config | wrapper | manual`
 - `completions.type`: one of `static | dynamic`
 - dynamic completions require `completions.command`
+- `xdg.vars`: env vars to set when applying XDG config — values may be XDG path templates (expanded via `Expand-DFXdgPath`) OR plain strings (e.g., `LESS` flag strings). Phase 3 tooling must not assume all `vars` values are filesystem paths.
 
 ## Key Design Decisions
 

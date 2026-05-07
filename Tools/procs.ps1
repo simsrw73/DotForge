@@ -12,9 +12,9 @@ function global:Select-Process {
         -Header        'Select process  [Enter to Stop-Process]' `
         -Parse         { ($_ -split '\s+')[1] } `
         -Action        {
-            param($pid)
-            if ($pid -match '^\d+$') {
-                Stop-Process -Id $pid -Confirm
+            param($procId)
+            if ($procId -match '^\d+$') {
+                Stop-Process -Id $procId -Confirm
             }
         }
 }

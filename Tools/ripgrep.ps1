@@ -10,7 +10,7 @@ function global:Select-RipgrepResult {
 
     if (-not $Pattern) { $Pattern = Read-Host 'Search pattern' }
 
-    $result = Invoke-DFPicker `
+    Invoke-DFPicker `
         -List          { rg --line-number --no-heading --color=always $Pattern $Path 2>$null } `
         -Preview       'bat --color=always --highlight-line {2} {1}' `
         -PreviewWindow 'right:60%' `
