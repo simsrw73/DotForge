@@ -54,7 +54,8 @@ function Register-DFTool {
         }
 
         # ── XDG configuration ──────────────────────────────────────────────
-        $xdgMethod = $tool.PSObject.Properties['xdg']?.Value?.PSObject.Properties['method']?.Value
+        $xdgProp   = $tool.PSObject.Properties['xdg']
+        $xdgMethod = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['method']?.Value } else { $null }
         switch ($xdgMethod) {
             'env' {
                 $xdg  = $tool.xdg
@@ -75,17 +76,31 @@ function Register-DFTool {
                 }
             }
             'manual' {
-                $instr = $tool.PSObject.Properties['xdg']?.Value?.PSObject.Properties['instructions']?.Value
+                $instr = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['instructions']?.Value } else { $null }
                 Write-Warning "DotForge: $($tool.name) requires manual XDG configuration.$(if ($instr) { " $instr" })"
             }
-            { $_ -in 'config', 'wrapper' } {
-                Write-Verbose "DotForge: $($tool.name) xdg.method '$xdgMethod' deferred to Phase 3"
+            'config' {
+                $xdg = $tool.xdg
+                $rawConfigPath    = $xdg.PSObject.Properties['config_path']?.Value
+                $rawConfigContent = $xdg.PSObject.Properties['config_content']?.Value
+                if ($rawConfigPath) {
+                    $expandedPath = Expand-DFXdgPath $rawConfigPath
+                    Ensure-DFDir (Split-Path $expandedPath)
+                    if (-not (Test-Path $expandedPath) -and $rawConfigContent) {
+                        Set-Content -Path $expandedPath -Value $rawConfigContent -Encoding UTF8
+                        Write-Verbose "DotForge: Created default config at $expandedPath"
+                    }
+                }
+            }
+            'wrapper' {
+                Write-Verbose "DotForge: $($tool.name) xdg.method 'wrapper' — handled by companion .ps1"
             }
             'default' { } # tool already follows XDG natively — no env config needed
         }
 
         # ── Argument completions ────────────────────────────────────────────
-        $completionsType = $tool.PSObject.Properties['completions']?.Value?.PSObject.Properties['type']?.Value
+        $completionsProp = $tool.PSObject.Properties['completions']
+        $completionsType = if ($completionsProp) { $completionsProp.Value.PSObject.Properties['type']?.Value } else { $null }
         $exeBase = [IO.Path]::GetFileNameWithoutExtension($tool.executable)
 
         if ($completionsType -eq 'static') {
@@ -163,11 +178,12 @@ function Register-DFTool {
                 } else { $null }
 
                 $fn = if ($pAccPath) {
+                    $capturedParts = @($capturedList -split '\s+')
                     {
                         [CmdletBinding()]
                         param([string]$Path = '.')
                         Invoke-DFPicker `
-                            -List          ([scriptblock]::Create("$capturedList '$Path'")) `
+                            -List          { & $capturedParts[0] @($capturedParts[1..($capturedParts.Count - 1)]) $Path } `
                             -Preview       $capturedPreview `
                             -PreviewWindow $capturedWindow `
                             -Ansi:$capturedAnsi `

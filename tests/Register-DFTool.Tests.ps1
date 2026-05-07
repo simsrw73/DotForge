@@ -163,4 +163,82 @@ Describe 'Register-DFTool' {
         Mock Register-ArgumentCompleter { }
         { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
+
+    It 'list_accepts_path: creates picker function without error (path safety)' {
+        @'
+{
+  "name": "pathtool",
+  "executable": "pathtool.exe",
+  "picker": {
+    "alias": "fpt",
+    "function": "Select-PathTool",
+    "list": "eza --icons -1",
+    "list_accepts_path": true,
+    "preview_window": "right:60%",
+    "header": "Select"
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'pathtool.json')
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\pathtool.exe' } }
+        Mock Register-ArgumentCompleter { }
+        { Register-DFTool -Name 'pathtool' -ToolsPath $script:TmpTools } | Should -Not -Throw
+        Test-Path 'function:global:Select-PathTool' | Should -BeTrue
+
+        Remove-Item 'function:global:Select-PathTool' -ErrorAction Ignore
+        Remove-Alias fpt -Scope Global -Force -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'pathtool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'xdg method config: creates config file if it does not exist' {
+        $configPath = Join-Path $TestDrive 'cfgtool' 'config.conf'
+        $escapedPath = $configPath -replace '\\', '/'
+        @"
+{
+  "name": "cfgtool",
+  "executable": "cfgtool.exe",
+  "xdg": {
+    "compliance": "partial",
+    "method": "config",
+    "config_path": "$escapedPath",
+    "config_content": "# default config"
+  }
+}
+"@ | Set-Content (Join-Path $script:TmpTools 'cfgtool.json')
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\cfgtool.exe' } }
+        Register-DFTool -Name 'cfgtool' -ToolsPath $script:TmpTools
+        Test-Path $configPath | Should -BeTrue
+        Get-Content $configPath | Should -Be '# default config'
+
+        Remove-Item (Join-Path $script:TmpTools 'cfgtool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'xdg method config: does not overwrite existing config file' {
+        $configPath = Join-Path $TestDrive 'cfgtool2' 'config.conf'
+        New-Item -ItemType Directory -Force -Path (Split-Path $configPath) | Out-Null
+        'user content' | Set-Content $configPath
+        $escapedPath = $configPath -replace '\\', '/'
+        @"
+{
+  "name": "cfgtool2",
+  "executable": "cfgtool2.exe",
+  "xdg": {
+    "compliance": "partial",
+    "method": "config",
+    "config_path": "$escapedPath",
+    "config_content": "# default config"
+  }
+}
+"@ | Set-Content (Join-Path $script:TmpTools 'cfgtool2.json')
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\cfgtool2.exe' } }
+        Register-DFTool -Name 'cfgtool2' -ToolsPath $script:TmpTools
+        Get-Content $configPath | Should -Be 'user content'
+
+        Remove-Item (Join-Path $script:TmpTools 'cfgtool2.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
 }
