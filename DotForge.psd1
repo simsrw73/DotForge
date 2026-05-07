@@ -11,7 +11,10 @@
         'Add-DFToPath',
         'Ensure-DFDir',
         'Invoke-DFPicker',
-        'Get-DFCachedCompletion'
+        'Get-DFCachedCompletion',
+        'Get-DFTool',
+        'Find-DFTool',
+        'Register-DFTool'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
