@@ -1,0 +1,11 @@
+{
+  "name": "procs",
+  "description": "Modern replacement for ps",
+  "tags": ["system", "process", "monitor"],
+  "executable": "procs.exe",
+  "packages": { "scoop": "procs", "choco": "procs" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "dynamic", "command": "procs --gen-completion-out powershell", "cache": true },
+  "aliases": {},
+  "picker": "custom"
+}

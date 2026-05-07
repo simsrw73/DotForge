@@ -1,0 +1,11 @@
+{
+  "name": "bitwarden",
+  "description": "Bitwarden CLI — open-source password manager",
+  "tags": ["security", "secrets", "password"],
+  "executable": "bw.exe",
+  "packages": { "scoop": "bitwarden-cli", "winget": "Bitwarden.CLI" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "static", "flags": ["login", "logout", "lock", "unlock", "sync", "list", "get", "create", "edit", "delete", "restore", "move", "confirm", "import", "export", "generate", "encode", "config", "update", "completion", "status", "serve", "receive"] },
+  "aliases": {},
+  "picker": "custom"
+}

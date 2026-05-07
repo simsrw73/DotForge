@@ -1,0 +1,11 @@
+{
+  "name": "wget",
+  "description": "Non-interactive network downloader",
+  "tags": ["network", "download"],
+  "executable": "wget.exe",
+  "packages": { "scoop": "wget", "choco": "wget" },
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "WGETRC": "${XDG_CONFIG_HOME}/wget/wgetrc" }, "dirs": ["${XDG_CONFIG_HOME}/wget"] },
+  "completions": { "type": "static", "flags": ["--quiet", "--verbose", "--output-document", "--recursive", "--no-parent", "--level", "--accept", "--reject", "--user", "--password", "--no-check-certificate"] },
+  "aliases": {},
+  "picker": null
+}

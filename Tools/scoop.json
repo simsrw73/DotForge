@@ -1,0 +1,11 @@
+{
+  "name": "scoop",
+  "description": "Windows command-line installer",
+  "tags": ["package-manager", "windows"],
+  "executable": "scoop.cmd",
+  "packages": {},
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "static", "flags": ["install", "uninstall", "update", "status", "list", "search", "info", "home", "depends", "export", "import", "cleanup", "cache", "bucket", "checkver", "cat", "virustotal"] },
+  "aliases": {},
+  "picker": "custom"
+}

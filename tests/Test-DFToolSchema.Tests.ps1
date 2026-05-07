@@ -93,7 +93,13 @@ Describe 'Seed tool JSON files' {
         . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     }
 
-    $seedFiles = @('bat', 'eza', 'fzf', 'ripgrep', 'zoxide') | ForEach-Object {
+    $seedFiles = @(
+        'bat', 'eza', 'fzf', 'ripgrep', 'zoxide',
+        'fd', 'broot', 'jq', 'glow', 'procs', 'winfetch',
+        'curl', 'wget', 'docker', 'less', 'gh', 'delta',
+        'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
+        'bitwarden', 'npm', 'scoop'
+    ) | ForEach-Object {
         @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
     }
 

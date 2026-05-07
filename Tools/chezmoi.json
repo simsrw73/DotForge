@@ -1,0 +1,11 @@
+{
+  "name": "chezmoi",
+  "description": "Manage your dotfiles across multiple diverse machines",
+  "tags": ["dotfiles", "config", "dev"],
+  "executable": "chezmoi.exe",
+  "packages": { "scoop": "chezmoi", "winget": "twpayne.chezmoi", "choco": "chezmoi" },
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "CHEZMOI_CONFIG_DIR": "${XDG_CONFIG_HOME}/chezmoi" }, "dirs": ["${XDG_CONFIG_HOME}/chezmoi"] },
+  "completions": { "type": "dynamic", "command": "chezmoi completion powershell", "cache": true },
+  "aliases": { "cz": { "command": "chezmoi", "args": [] } },
+  "picker": "custom"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "winfetch",
+  "description": "Neofetch-like system information tool for Windows",
+  "tags": ["system", "info"],
+  "executable": "winfetch.ps1",
+  "packages": { "scoop": "winfetch" },
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "WINFETCH_CONFIG_PATH": "${XDG_CONFIG_HOME}/winfetch/config.ps1" }, "dirs": ["${XDG_CONFIG_HOME}/winfetch"] },
+  "completions": { "type": "static", "flags": ["--image", "--genconf", "--noimage", "--legacylogo", "--blink", "--help", "--version", "--all"] },
+  "aliases": {},
+  "picker": null
+}

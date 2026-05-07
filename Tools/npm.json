@@ -1,0 +1,11 @@
+{
+  "name": "npm",
+  "description": "Node.js package manager",
+  "tags": ["node", "javascript", "dev", "package-manager"],
+  "executable": "npm.cmd",
+  "packages": {},
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "NPM_CONFIG_USERCONFIG": "${XDG_CONFIG_HOME}/npm/npmrc", "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history" }, "dirs": ["${XDG_CONFIG_HOME}/npm"] },
+  "completions": { "type": "static", "flags": ["install", "uninstall", "update", "run", "start", "stop", "test", "list", "link", "unlink", "publish", "pack", "version", "view", "search", "audit", "fund", "init", "exec", "prefix", "config", "cache", "rebuild", "prune", "outdated", "ci", "dedupe", "diff"] },
+  "aliases": { "nls": { "command": "npm", "args": ["list", "-g", "--depth=0"] } },
+  "picker": "custom"
+}

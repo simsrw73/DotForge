@@ -1,0 +1,11 @@
+{
+  "name": "gh",
+  "description": "GitHub CLI",
+  "tags": ["git", "github", "dev"],
+  "executable": "gh.exe",
+  "packages": { "scoop": "gh", "winget": "GitHub.cli", "choco": "gh" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "dynamic", "command": "gh completion -s powershell", "cache": true },
+  "aliases": {},
+  "picker": "custom"
+}

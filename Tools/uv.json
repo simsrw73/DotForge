@@ -1,0 +1,11 @@
+{
+  "name": "uv",
+  "description": "Extremely fast Python package and project manager",
+  "tags": ["python", "dev", "package-manager"],
+  "executable": "uv.exe",
+  "packages": { "scoop": "uv", "winget": "astral-sh.uv" },
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv", "UV_DATA_DIR": "${XDG_DATA_HOME}/uv" }, "dirs": ["${XDG_CACHE_HOME}/uv", "${XDG_DATA_HOME}/uv"] },
+  "completions": { "type": "static", "flags": ["pip", "venv", "run", "sync", "lock", "add", "remove", "tool", "python", "init", "build", "publish", "cache", "version", "help"] },
+  "aliases": {},
+  "picker": "custom"
+}
