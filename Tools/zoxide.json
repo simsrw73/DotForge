@@ -1,0 +1,36 @@
+{
+  "name": "zoxide",
+  "description": "Smarter cd that learns your most-used directories",
+  "tags": ["navigation", "cd", "directory"],
+  "executable": "zoxide.exe",
+  "packages": {
+    "scoop": "zoxide",
+    "winget": "ajeetdsouza.zoxide",
+    "choco": "zoxide"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "_ZO_DATA_DIR": "${XDG_DATA_HOME}/zoxide"
+    },
+    "dirs": []
+  },
+  "completions": {
+    "type": "static",
+    "flags": ["query", "add", "remove", "edit", "import", "init"]
+  },
+  "aliases": {
+    "cd": { "command": "z", "args": [] }
+  },
+  "picker": {
+    "alias": "fcd",
+    "function": "Select-Directory",
+    "list": "zoxide query --list",
+    "preview": "eza --icons --color=always {}",
+    "preview_window": "right:60%",
+    "ansi": false,
+    "header": "Select directory  [Enter to cd]",
+    "action": "Set-Location {}"
+  }
+}

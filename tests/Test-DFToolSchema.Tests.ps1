@@ -87,3 +87,21 @@ Describe 'Test-DFToolSchema' {
         }
     }
 }
+
+Describe 'Seed tool JSON files' {
+    BeforeAll {
+        . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    }
+
+    $seedFiles = @('bat', 'eza', 'fzf', 'ripgrep', 'zoxide') | ForEach-Object {
+        @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
+    }
+
+    It 'seed file <Name>.json exists and passes schema validation' -ForEach $seedFiles {
+        Test-Path $Path | Should -BeTrue -Because "$Name.json must exist in Tools/"
+        $tool = Get-Content $Path -Raw | ConvertFrom-Json
+        $errors = @()
+        Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) |
+            Should -BeTrue -Because ($errors -join '; ')
+    }
+}

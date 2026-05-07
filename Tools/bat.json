@@ -1,0 +1,33 @@
+{
+  "name": "bat",
+  "description": "Modern cat replacement with syntax highlighting and Git integration",
+  "tags": ["viewer", "pager", "file"],
+  "executable": "bat.exe",
+  "packages": {
+    "scoop": "bat",
+    "winget": "sharkdp.bat",
+    "choco": "bat"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "BAT_CONFIG_PATH": "${XDG_CONFIG_HOME}/bat/bat.conf"
+    },
+    "dirs": []
+  },
+  "completions": {
+    "type": "static",
+    "flags": [
+      "--language", "--theme", "--style", "--paging", "--color",
+      "--line-range", "--highlight-line", "--diff", "--show-all",
+      "--plain", "--number", "--decorations", "--italic-text",
+      "--tabs", "--wrap", "--terminal-width", "--map-syntax",
+      "--list-languages", "--list-themes"
+    ]
+  },
+  "aliases": {
+    "cat": { "command": "bat", "args": ["-pp"] }
+  },
+  "picker": null
+}

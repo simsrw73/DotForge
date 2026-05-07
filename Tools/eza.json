@@ -1,0 +1,42 @@
+{
+  "name": "eza",
+  "description": "Modern ls replacement with icons, Git integration, and color",
+  "tags": ["file", "directory", "ls"],
+  "executable": "eza.exe",
+  "packages": {
+    "scoop": "eza",
+    "winget": "eza-community.eza",
+    "choco": "eza"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
+  "completions": {
+    "type": "static",
+    "flags": [
+      "--long", "--all", "--tree", "--icons", "--git", "--color",
+      "--group-directories-first", "--sort", "--reverse", "--header",
+      "--group", "--oneline", "--classify", "--level", "--ignore-glob",
+      "--time-style", "--hyperlink", "--no-permissions", "--no-filesize",
+      "--no-user", "--no-time", "--stdin", "--list-dirs", "--dereference"
+    ]
+  },
+  "aliases": {
+    "ls": { "command": "eza", "args": ["--color=auto", "--icons", "--group-directories-first"] },
+    "ll": { "command": "eza", "args": ["--all", "--long", "--header"] },
+    "la": { "command": "eza", "args": ["--all", "--group"] },
+    "tree": { "command": "eza", "args": ["--tree"] }
+  },
+  "picker": {
+    "alias": "ff",
+    "function": "Select-File",
+    "list": "eza --icons -1 --color=always",
+    "list_accepts_path": true,
+    "preview": "bat --color=always --line-range=:200 {}",
+    "preview_window": "right:60%",
+    "ansi": true,
+    "header": "Select file  [Enter to open]",
+    "action": "output"
+  }
+}
