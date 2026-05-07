@@ -22,7 +22,8 @@ function Update-DFCompletions {
     $cacheDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions'
 
     $tools = $db.Values | Where-Object {
-        $_.PSObject.Properties['completions']?.Value?.PSObject.Properties['type']?.Value -eq 'dynamic'
+        $cp = $_.PSObject.Properties['completions']
+        $cp -and $cp.Value -and $cp.Value.PSObject.Properties['type']?.Value -eq 'dynamic'
     }
 
     if ($Name) {

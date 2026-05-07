@@ -8,7 +8,7 @@ function Install-DFTool {
     .PARAMETER Name
         One or more tool names to install (must exist in the tool registry).
     .PARAMETER PackageManager
-        Override the package manager for this call (scoop | winget | choco).
+        Override the package manager for this call (scoop | winget | choco | psresource).
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
     #>

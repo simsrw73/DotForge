@@ -10,7 +10,7 @@ function global:Select-GitBranch {
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Header        'Select branch  [Enter to checkout]' `
-        -Parse         { $_ -replace '^\*\s+', '' -replace '^\s+remotes/origin/', '' -replace '^\s+', '' } `
+        -Parse         { $_ -replace '^\*\s+', '' -replace '^\s+remotes/[^/]+/', '' -replace '^\s+', '' } `
         -Action        { param($b) git checkout $b }
 }
 Set-Alias -Name fco -Value Select-GitBranch -Scope Global -Force
@@ -54,7 +54,7 @@ function global:Select-GitStash {
     param()
     Invoke-DFPicker `
         -List          { git stash list } `
-        -Preview       'git stash show -p {1}' `
+        -Preview       'git stash show -p {}' `
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Header        'Select stash  [Enter to apply]' `
