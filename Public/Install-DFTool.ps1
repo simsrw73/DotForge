@@ -43,26 +43,39 @@ function Install-DFTool {
         $installedVia = $null
 
         foreach ($pm in $pmOrder) {
-            if (-not (Get-Command $pm -ErrorAction Ignore)) { continue }
+            $pmAvailable = if ($pm -eq 'psresource') {
+                Get-Command Install-PSResource -ErrorAction Ignore
+            } else {
+                Get-Command $pm -ErrorAction Ignore
+            }
+            if (-not $pmAvailable) { continue }
 
             $pkgProp = if ($null -ne $packages) { $packages.PSObject.Properties[$pm] } else { $null }
             $pkgId   = if ($null -ne $pkgProp) { $pkgProp.Value } else { $null }
             if (-not $pkgId) { continue }
 
             if ($PSCmdlet.ShouldProcess("$toolName via $pm ($pkgId)", 'Install')) {
-                Write-Host "  Installing $toolName via $pm ($pkgId)..." `
+                Write-Host "  Installing $toolName via $pm ($pkgId)…" `
                     -ForegroundColor DarkGray -NoNewline
 
                 $null = switch ($pm) {
-                    'scoop'  { scoop  install $pkgId 2>&1 }
-                    'winget' { winget install --id $pkgId --silent `
-                                   --accept-source-agreements `
-                                   --accept-package-agreements 2>&1 }
-                    'choco'  { choco  install $pkgId -y 2>&1 }
+                    'scoop'      { scoop  install $pkgId 2>&1 }
+                    'winget'     { winget install --id $pkgId --silent `
+                                       --accept-source-agreements `
+                                       --accept-package-agreements 2>&1 }
+                    'choco'      { choco  install $pkgId -y 2>&1 }
+                    'psresource' {
+                        try {
+                            Install-PSResource -Name $pkgId -Scope CurrentUser -ErrorAction Stop | Out-Null
+                            $global:LASTEXITCODE = 0
+                        } catch {
+                            $global:LASTEXITCODE = 1
+                        }
+                    }
                 }
 
                 if ($LASTEXITCODE -eq 0) {
-                    Write-Host ' done' -ForegroundColor Green
+                    Write-Host ' ✓' -ForegroundColor Green
                     $installedVia = $pm
                     break
                 } else {

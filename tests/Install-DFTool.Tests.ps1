@@ -74,4 +74,26 @@ Describe 'Install-DFTool' {
             -WarningVariable warns 3>$null
         @($warns).Count | Should -Be 3
     }
+
+    It 'installs via Install-PSResource when psresource package is specified' {
+        @'
+{ "name": "psmod", "type": "module", "executable": "PsMod",
+  "packages": { "psresource": "PsMod" } }
+'@ | Set-Content (Join-Path $script:TmpTools 'psmod.json')
+        $script:DFToolDb = $null
+
+        $script:PSResourceCalled = $false
+        function script:Install-PSResource {
+            param($Name, $Scope, $ErrorAction)
+            $script:PSResourceCalled = $true
+        }
+        Mock Get-Command { [PSCustomObject]@{ Name = 'Install-PSResource' } } `
+            -ParameterFilter { $Name -eq 'Install-PSResource' }
+
+        Install-DFTool -Name 'psmod' -PackageManager 'psresource' -ToolsPath $script:TmpTools
+        $script:PSResourceCalled | Should -BeTrue
+
+        Remove-Item (Join-Path $script:TmpTools 'psmod.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
 }

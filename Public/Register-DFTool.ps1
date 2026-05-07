@@ -47,9 +47,15 @@ function Register-DFTool {
     }
 
     foreach ($tool in $tools) {
-        # ── Guard: skip if not on PATH ─────────────────────────────────────
-        if (-not (Get-Command $tool.executable -ErrorAction Ignore)) {
-            Write-Verbose "DotForge: '$($tool.executable)' not on PATH — skipping $($tool.name)"
+        # ── Guard: skip if not available ──────────────────────────────────
+        $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
+        $isAvailable = if ($toolType -eq 'module') {
+            Get-Module -Name $tool.executable -ListAvailable -ErrorAction Ignore
+        } else {
+            Get-Command $tool.executable -ErrorAction Ignore
+        }
+        if (-not $isAvailable) {
+            Write-Verbose "DotForge: '$($tool.executable)' not available — skipping $($tool.name)"
             continue
         }
 

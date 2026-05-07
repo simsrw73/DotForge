@@ -36,6 +36,13 @@ function Test-DFToolSchema {
     if (-not (PSProp $Tool 'name'))       { $errs.Add("Missing required field: name") }
     if (-not (PSProp $Tool 'executable')) { $errs.Add("Missing required field: executable") }
 
+    # type valid values
+    $validToolTypes = @('exe', 'module')
+    $toolType = PSProp $Tool 'type'
+    if ($toolType -and $toolType -notin $validToolTypes) {
+        $errs.Add("Invalid type '$toolType'. Valid: $($validToolTypes -join ', ')")
+    }
+
     # xdg.method valid values
     $validMethods = @('default', 'env', 'config', 'wrapper', 'manual')
     $xdgMethod = PSProp (PSProp $Tool 'xdg') 'method'

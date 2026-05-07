@@ -216,6 +216,21 @@ Describe 'Register-DFTool' {
         $script:DFToolDb = $null
     }
 
+    It 'uses Get-Module -ListAvailable for type=module tools' {
+        @'
+{ "name": "mymod", "type": "module", "executable": "MyModule" }
+'@ | Set-Content (Join-Path $script:TmpTools 'mymod.json')
+        $script:DFToolDb = $null
+
+        Mock Get-Module { $null }
+        { Register-DFTool -Name 'mymod' -ToolsPath $script:TmpTools } | Should -Not -Throw
+        Mock Get-Module { [PSCustomObject]@{ Name = 'MyModule' } }
+        { Register-DFTool -Name 'mymod' -ToolsPath $script:TmpTools } | Should -Not -Throw
+
+        Remove-Item (Join-Path $script:TmpTools 'mymod.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
     It 'xdg method config: does not overwrite existing config file' {
         $configPath = Join-Path $TestDrive 'cfgtool2' 'config.conf'
         New-Item -ItemType Directory -Force -Path (Split-Path $configPath) | Out-Null

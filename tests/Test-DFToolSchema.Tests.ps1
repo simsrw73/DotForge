@@ -14,6 +14,16 @@ Describe 'Test-DFToolSchema' {
             $errors | Should -BeNullOrEmpty
         }
 
+        It 'passes a tool with type = "exe"' {
+            $tool = [PSCustomObject]@{ name = 't'; executable = 't.exe'; type = 'exe' }
+            Test-DFToolSchema -Tool $tool -Errors ([ref]$null) | Should -BeTrue
+        }
+
+        It 'passes a tool with type = "module"' {
+            $tool = [PSCustomObject]@{ name = 't'; executable = 't'; type = 'module' }
+            Test-DFToolSchema -Tool $tool -Errors ([ref]$null) | Should -BeTrue
+        }
+
         It 'passes a fully populated valid record' {
             $tool = [PSCustomObject]@{
                 name        = 'bat'
@@ -73,6 +83,13 @@ Describe 'Test-DFToolSchema' {
             $errors = @()
             Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
             $errors | Where-Object { $_ -match 'completions.type' } | Should -Not -BeNullOrEmpty
+        }
+
+        It 'fails when type is not a valid value' {
+            $tool = [PSCustomObject]@{ name = 't'; executable = 't.exe'; type = 'binary' }
+            $errors = @()
+            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
+            $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
         It 'fails when completions.type is dynamic but command is missing' {
