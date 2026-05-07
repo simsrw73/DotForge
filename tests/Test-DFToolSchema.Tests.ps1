@@ -98,7 +98,7 @@ Describe 'Seed tool JSON files' {
         'fd', 'broot', 'jq', 'glow', 'procs', 'winfetch',
         'curl', 'wget', 'docker', 'less', 'gh', 'delta',
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
-        'bitwarden', 'npm', 'scoop'
+        'bitwarden', 'npm', 'scoop', 'winget'
     ) | ForEach-Object {
         @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
     }
