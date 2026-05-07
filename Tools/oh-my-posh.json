@@ -1,0 +1,20 @@
+{
+  "name": "oh-my-posh",
+  "description": "Cross-shell prompt theme engine with hundreds of built-in themes",
+  "tags": ["prompt", "theme", "display"],
+  "executable": "oh-my-posh.exe",
+  "packages": { "scoop": "oh-my-posh", "winget": "JanDeDobbeleer.OhMyPosh" },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": { "POSH_THEMES_PATH": "${XDG_DATA_HOME}/oh-my-posh/themes" },
+    "dirs": ["${XDG_DATA_HOME}/oh-my-posh/themes", "${XDG_CONFIG_HOME}/oh-my-posh"]
+  },
+  "completions": {
+    "type": "dynamic",
+    "command": "oh-my-posh completion powershell",
+    "cache": true
+  },
+  "aliases": {},
+  "picker": "custom"
+}

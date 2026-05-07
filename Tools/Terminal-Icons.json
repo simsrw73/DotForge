@@ -1,0 +1,12 @@
+{
+  "name": "Terminal-Icons",
+  "type": "module",
+  "description": "Adds Nerd Font file and folder icons to terminal output (ls, eza, etc.)",
+  "tags": ["icons", "display", "module"],
+  "executable": "Terminal-Icons",
+  "packages": { "psresource": "Terminal-Icons" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "static", "flags": [] },
+  "aliases": {},
+  "picker": null
+}

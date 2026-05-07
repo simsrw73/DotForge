@@ -1,0 +1,12 @@
+{
+  "name": "posh-git",
+  "type": "module",
+  "description": "Git status summary in the PowerShell prompt with tab completion for git commands",
+  "tags": ["git", "prompt", "module"],
+  "executable": "posh-git",
+  "packages": { "psresource": "posh-git", "scoop": "posh-git" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "completions": { "type": "static", "flags": [] },
+  "aliases": {},
+  "picker": "custom"
+}
