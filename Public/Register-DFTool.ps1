@@ -31,8 +31,12 @@ function Register-DFTool {
     $resolvedToolsPath = if ($ToolsPath) { $ToolsPath }
                          else            { Join-Path $PSScriptRoot '../Tools' }
 
+    $skipTools = @(if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+        $Global:DFConfig['SkipTools']
+    })
+
     $tools = if ($All) {
-        $db.Values
+        $db.Values | Where-Object { $_.name -notin $skipTools }
     } else {
         $resolved = [System.Collections.Generic.List[object]]::new()
         foreach ($n in $Name) {

@@ -138,4 +138,29 @@ Describe 'Register-DFTool' {
         Mock Register-ArgumentCompleter { }
         { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
+
+    It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
+        @'
+{ "name": "skiptool", "executable": "skiptool.exe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'skiptool.json')
+        $script:DFToolDb = $null
+
+        $Global:DFConfig = @{ SkipTools = @('skiptool') }
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Register-ArgumentCompleter { }
+
+        Register-DFTool -All -ToolsPath $script:TmpTools
+        Should -Invoke Get-Command -ParameterFilter { $Name -eq 'skiptool.exe' } -Times 0
+
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'skiptool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'does not skip tools when $Global:DFConfig is not set' {
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Register-ArgumentCompleter { }
+        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+    }
 }
