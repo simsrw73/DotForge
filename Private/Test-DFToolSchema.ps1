@@ -25,25 +25,33 @@ function Test-DFToolSchema {
 
     $errs = [System.Collections.Generic.List[string]]::new()
 
+    # Helper: safely read a property from a PSCustomObject without throwing under StrictMode
+    function PSProp ([PSCustomObject]$obj, [string]$key) {
+        if ($null -eq $obj) { return $null }
+        $p = $obj.PSObject.Properties[$key]
+        if ($p) { return $p.Value } else { return $null }
+    }
+
     # Required fields
-    if (-not $Tool.name)       { $errs.Add("Missing required field: name") }
-    if (-not $Tool.executable) { $errs.Add("Missing required field: executable") }
+    if (-not (PSProp $Tool 'name'))       { $errs.Add("Missing required field: name") }
+    if (-not (PSProp $Tool 'executable')) { $errs.Add("Missing required field: executable") }
 
     # xdg.method valid values
     $validMethods = @('default', 'env', 'config', 'wrapper', 'manual')
-    if ($Tool.xdg -and $Tool.xdg.method -and $Tool.xdg.method -notin $validMethods) {
-        $errs.Add("Invalid xdg.method '$($Tool.xdg.method)'. Valid: $($validMethods -join ', ')")
+    $xdgMethod = PSProp (PSProp $Tool 'xdg') 'method'
+    if ($xdgMethod -and $xdgMethod -notin $validMethods) {
+        $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
     }
 
-    # completions.type valid values
     $validTypes = @('static', 'dynamic')
-    if ($Tool.completions -and $Tool.completions.type -and
-        $Tool.completions.type -notin $validTypes) {
-        $errs.Add("Invalid completions.type '$($Tool.completions.type)'. Valid: $($validTypes -join ', ')")
+    $completionsObj  = PSProp $Tool 'completions'
+    $completionsType = PSProp $completionsObj 'type'
+    if ($completionsType -and $completionsType -notin $validTypes) {
+        $errs.Add("Invalid completions.type '$completionsType'. Valid: $($validTypes -join ', ')")
     }
 
-    # dynamic completions require command
-    if ($Tool.completions.type -eq 'dynamic' -and -not $Tool.completions.command) {
+    $completionsCommand = PSProp $completionsObj 'command'
+    if ($completionsType -eq 'dynamic' -and -not $completionsCommand) {
         $errs.Add("completions.type 'dynamic' requires completions.command")
     }
 

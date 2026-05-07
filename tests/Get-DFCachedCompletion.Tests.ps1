@@ -13,7 +13,7 @@ Describe 'Get-DFCachedCompletion' {
     }
 
     It 'calls Generate and writes cache file on first run' {
-        $fakeExe = Join-Path $TestDrive 'tool.exe'
+        $fakeExe = Join-Path $TestDrive 'tool1.exe'
         New-Item -ItemType File -Path $fakeExe | Out-Null
 
         $called = $false
@@ -29,7 +29,7 @@ Describe 'Get-DFCachedCompletion' {
     }
 
     It 'skips Generate when cache file is newer than the exe' {
-        $fakeExe = Join-Path $TestDrive 'tool.exe'
+        $fakeExe = Join-Path $TestDrive 'tool2.exe'
         New-Item -ItemType File -Path $fakeExe | Out-Null
 
         $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions'
@@ -44,7 +44,7 @@ Describe 'Get-DFCachedCompletion' {
     }
 
     It 'regenerates when exe is newer than cache' {
-        $fakeExe = Join-Path $TestDrive 'tool.exe'
+        $fakeExe = Join-Path $TestDrive 'tool3.exe'
         New-Item -ItemType File -Path $fakeExe | Out-Null
 
         $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions'
@@ -68,7 +68,7 @@ Describe 'Get-DFCachedCompletion' {
     }
 
     It 'creates the cache directory if it does not exist' {
-        $fakeExe = Join-Path $TestDrive 'tool.exe'
+        $fakeExe = Join-Path $TestDrive 'tool5.exe'
         New-Item -ItemType File -Path $fakeExe | Out-Null
         $cacheDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions'
         Test-Path $cacheDir | Should -BeFalse

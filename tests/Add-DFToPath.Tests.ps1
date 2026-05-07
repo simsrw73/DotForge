@@ -15,7 +15,7 @@ Describe 'Add-DFToPath' {
     It 'does not add a path already present (case-insensitive)' {
         $Env:Path = 'C:\tools\bin'
         Add-DFToPath 'c:\tools\bin'
-        ($Env:Path -split [IO.Path]::PathSeparator |
+        @($Env:Path -split [IO.Path]::PathSeparator |
             Where-Object { $_ -ieq 'C:\tools\bin' }).Count | Should -Be 1
     }
 
@@ -41,7 +41,7 @@ Describe 'Add-DFToPath' {
     It 'normalizes .. segments before dedup comparison' {
         $Env:Path = 'C:\tools\bin'
         Add-DFToPath 'C:\tools\other\..\bin'
-        ($Env:Path -split [IO.Path]::PathSeparator |
+        @($Env:Path -split [IO.Path]::PathSeparator |
             Where-Object { $_ -ieq 'C:\tools\bin' }).Count | Should -Be 1
     }
 
