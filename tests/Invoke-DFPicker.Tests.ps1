@@ -63,4 +63,10 @@ Describe 'Invoke-DFPicker' {
         $calls | Should -Contain 'item1'
         $calls | Should -Contain 'item2'
     }
+
+    It 'passes --multi to fzf when -Multi is specified' {
+        Mock Invoke-DFFzf { }
+        Invoke-DFPicker -List { 'x' } -Multi
+        Should -Invoke Invoke-DFFzf -ParameterFilter { $FzfArgs -contains '--multi' }
+    }
 }

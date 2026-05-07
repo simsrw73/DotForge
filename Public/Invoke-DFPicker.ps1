@@ -41,13 +41,13 @@ function Invoke-DFPicker {
         [scriptblock]$Action
     )
 
-    $fzfArgs = @('--preview-window', $PreviewWindow)
-    if ($Preview)   { $fzfArgs += '--preview',   $Preview }
-    if ($Header)    { $fzfArgs += '--header',     $Header }
-    if ($Ansi)      { $fzfArgs += '--ansi' }
-    if ($Multi)     { $fzfArgs += '--multi' }
-    if ($Delimiter) { $fzfArgs += '--delimiter',  $Delimiter }
-    if ($WithNth)   { $fzfArgs += '--with-nth',   $WithNth }
+    $fzfArgs = [System.Collections.Generic.List[string]]@('--preview-window', $PreviewWindow)
+    if ($Preview)   { $fzfArgs.AddRange([string[]]@('--preview',   $Preview)) }
+    if ($Header)    { $fzfArgs.AddRange([string[]]@('--header',    $Header)) }
+    if ($Ansi)      { $fzfArgs.Add('--ansi') }
+    if ($Multi)     { $fzfArgs.Add('--multi') }
+    if ($Delimiter) { $fzfArgs.AddRange([string[]]@('--delimiter', $Delimiter)) }
+    if ($WithNth)   { $fzfArgs.AddRange([string[]]@('--with-nth',  $WithNth)) }
 
     $items = @(& $List)
     $selected = Invoke-DFFzf -InputItems $items -FzfArgs $fzfArgs

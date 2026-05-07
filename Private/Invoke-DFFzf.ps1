@@ -16,5 +16,8 @@ function Invoke-DFFzf {
         [string[]]$FzfArgs
     )
 
+    if (-not (Get-Command fzf -ErrorAction Ignore)) {
+        Write-Error 'fzf is not installed or not on PATH. Install it (e.g. scoop install fzf).' -ErrorAction Stop
+    }
     $InputItems | fzf @FzfArgs
 }
