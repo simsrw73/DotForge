@@ -33,7 +33,7 @@ function Invoke-DFWithPager {
             if ($lines.Count -gt 0) {
                 Write-Warning 'Invoke-DFWithPager: both pipeline input and -Command were provided; pipeline input is ignored.'
             }
-            $lines = & $Command | ForEach-Object { "$_" }
+            $lines = @(& $Command | ForEach-Object { "$_" })
         }
         if ($Env:Pager -and $lines.Count -gt 0) {
             Invoke-DFPagerExe -Lines $lines -Pager $Env:Pager
