@@ -68,9 +68,9 @@ function Select-DFVerb {
     [CmdletBinding()]
     param()
     Invoke-DFPicker `
-        -List { Get-Verb | ForEach-Object { '{0,-20} {1}' -f $_.Group, $_.Verb } } `
+        -List { Get-Verb | ForEach-Object { '{0,-20} {1}' -f $_.Verb, $_.Group } } `
         -Header 'Select verb  [Enter to output]' `
-        -Parse { ($_ -split '\s+')[1] }
+        -Parse { ($_ -split '\s+')[0] }
 }
 Set-Alias -Name fverb -Value Select-DFVerb -Scope Global -Force
 
@@ -125,7 +125,7 @@ function Select-DFHelpTopic {
         -Delimiter "`t" `
         -WithNth   '1' `
         -Header    'Browse help topics  [Enter to view full help]' `
-        -Preview   'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue" 2>nul' `
+        -Preview   'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
         -Parse     { ($_ -split "`t", 2)[0] } `
         -Action    { param($topic) Invoke-DFHelp $topic }
 }

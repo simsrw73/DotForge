@@ -16,7 +16,7 @@ function Initialize-DFEnvironment {
     if (-not $Env:XDG_CACHE_HOME)  { $Env:XDG_CACHE_HOME  = Join-Path $home '.cache' }
 
     @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME) |
-        ForEach-Object { Ensure-DFDir $_ }
+        ForEach-Object { New-DFDirectory $_ }
 
     $pms = @(Resolve-DFPackageManager -Force | Where-Object { $_ })
 

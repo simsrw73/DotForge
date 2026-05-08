@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function Ensure-DFDir {
+function New-DFDirectory {
     <#
     .SYNOPSIS
         Creates a directory if it does not exist. Idempotent and silent.

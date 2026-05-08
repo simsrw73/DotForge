@@ -17,8 +17,8 @@ $DFConfig = @{
 Import-Module DotForge
 
 # ── First-run bootstrap ────────────────────────────────────────────────────────
-# Install core tools if any are missing. Runs fast because Install-DFTool
-# is a no-op for tools that are already on PATH.
+# Install core tools if any are missing. Only passes absent tools to
+# Install-DFTool — tools already on PATH are filtered out by $missing.
 $coreTools = @('eza', 'bat', 'fzf', 'ripgrep', 'zoxide', 'fd', 'delta', 'gh')
 $missing = $coreTools | Where-Object { -not (Get-Command "$_.exe" -ErrorAction Ignore) }
 if ($missing) {

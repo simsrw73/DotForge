@@ -18,11 +18,11 @@
   },
   "completions": {
     "type": "static",
-    "flags": ["query", "add", "remove", "edit", "import", "init"]
+    "flags": ["--help", "--version", "query", "add", "remove", "edit", "import", "init"]
   },
   "aliases": {},
   "picker": {
-    "alias": "fcd",
+    "alias": "fzo",
     "function": "Select-Directory",
     "list": "zoxide query --list",
     "preview": "eza --icons --color=always {}",

@@ -1,5 +1,5 @@
 BeforeAll {
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Public/DFHelpers.Navigation.ps1"

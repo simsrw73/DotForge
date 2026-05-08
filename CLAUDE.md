@@ -23,7 +23,7 @@ DotForge/
 - **Tool JSON files** are named `<toolname>.json` (lowercase, no spaces).
 - **Optional `.ps1` companions** share the same basename as the JSON file.
 - **No `$ErrorActionPreference = 'Stop'`** in any module file — inherited from caller.
-- **All directory creation** goes through `Ensure-DFDir`, never raw `New-Item`.
+- **All directory creation** goes through `New-DFDirectory`, never raw `New-Item`.
 - **All PATH additions** go through `Add-DFToPath`, never raw `$Env:Path +=`.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
 - **`$XDG_CACHE_HOME` must be set** for General Helpers cache (help topics, completions) to work. Set it in your profile: `$Env:XDG_CACHE_HOME = "$Env:USERPROFILE\.cache"`.
@@ -32,30 +32,33 @@ DotForge/
 ## Architecture (3 layers)
 
 Layer 1 — Core Primitives (Phase 1)
-  Add-DFToPath, Ensure-DFDir, Invoke-DFPicker, Get-DFCachedCompletion, Invoke-DFWithPager
+Add-DFToPath, New-DFDirectory, Invoke-DFPicker, Get-DFCachedCompletion, Invoke-DFWithPager
 
 Layer 2 — Tool Registry (Phase 2)
-  Import-DFToolDb, Get-DFTool, Find-DFTool, Register-DFTool
+Import-DFToolDb, Get-DFTool, Find-DFTool, Register-DFTool
 
 Layer 3 — Tool Operations (Phase 3)
-  Install-DFTool, Initialize-DFEnvironment, Update-DFCompletions
+Install-DFTool, Initialize-DFEnvironment, Update-DFCompletions
 
 General Helpers (Phase 5+)
-  DFHelpers.*.ps1 — pager, help/discovery, navigation, filesystem, process, environment, clipboard
+DFHelpers.\*.ps1 — pager, help/discovery, navigation, filesystem, process, environment, clipboard
 
 ## Testing
 
 Load module for development:
+
 ```powershell
 Import-Module ./DotForge.psd1 -Force
 ```
 
 Pester 5. Run all tests:
+
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference
 ```
 
 Run a single file:
+
 ```powershell
 Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 ```
@@ -63,6 +66,7 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 ## Tool JSON Schema
 
 Each `Tools/*.json` must have at minimum:
+
 - `name` (string, required)
 - `executable` (string, required)
 - `xdg.method`: one of `default | env | config | wrapper | manual`

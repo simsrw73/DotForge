@@ -1,5 +1,5 @@
 BeforeAll {
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Public/Get-DFCachedCompletion.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
@@ -78,5 +78,22 @@ Describe 'Update-DFCompletions' {
         $emptyTools = Join-Path $TestDrive 'empty'
         New-Item -ItemType Directory -Force -Path $emptyTools | Out-Null
         { Update-DFCompletions -ToolsPath $emptyTools } | Should -Not -Throw
+    }
+
+    It 'calls Generate and writes a new cache file when tool is on PATH' {
+        @'
+{ "name": "gentool", "executable": "gentool.exe",
+  "completions": { "type": "dynamic", "command": "Write-Output '# test completions'" } }
+'@ | Set-Content (Join-Path $script:TmpTools 'gentool.json')
+
+        Mock Get-Command {
+            [PSCustomObject]@{ Path = 'C:\fake\gentool.exe'; Name = 'gentool.exe' }
+        } -ParameterFilter { $Name -eq 'gentool.exe' }
+
+        Update-DFCompletions -Name 'gentool' -ToolsPath $script:TmpTools
+
+        $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions' 'gentool.ps1'
+        Test-Path $cacheFile | Should -BeTrue
+        Get-Content $cacheFile -Raw | Should -Match 'test completions'
     }
 }

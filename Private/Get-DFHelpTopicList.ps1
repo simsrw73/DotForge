@@ -13,6 +13,11 @@ function Get-DFHelpTopicList {
         [switch]$Force
     )
 
+    if (-not $Env:XDG_CACHE_HOME) {
+        Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Call Initialize-DFEnvironment first.'
+        return
+    }
+
     $cacheDir    = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
     $cacheFile   = Join-Path $cacheDir 'help-topics.txt'
     $keyFile     = Join-Path $cacheDir 'help-topics.key'
@@ -36,7 +41,7 @@ function Get-DFHelpTopicList {
               Sort-Object Name |
               ForEach-Object { "$($_.Name)`t$($_.Category)" }
 
-    Ensure-DFDir $cacheDir
+    New-DFDirectory $cacheDir
     Set-Content -Path $keyFile   -Value $fingerprint -Encoding UTF8
     Set-Content -Path $cacheFile -Value $topics      -Encoding UTF8
 

@@ -1,5 +1,5 @@
 BeforeAll {
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Public/Get-DFCachedCompletion.ps1"
 }
 

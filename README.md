@@ -1,10 +1,39 @@
 # DotForge
 
-**PowerShell module for registering and configuring CLI tools — XDG paths, completion
-caching, fzf pickers, and one-command installation.**
+**A PowerShell module that turns CLI tool configuration into a one-time-write,
+zero-copy-paste operation — across every machine you set up.**
 
-DotForge encodes CLI tool configuration knowledge into a JSON database and applies it
-on demand. Stop copy-pasting the same env vars and completers between dotfiles repos.
+Every time you install a new tool like `bat`, `delta`, or `ripgrep`, there is a
+ritual: locate where it stores its config, set the right environment variables, wire
+up tab-completion, maybe define a couple of aliases. Do this for thirty tools and you
+have a profile that works — on one machine. DotForge encodes that knowledge into a
+JSON database so `Register-DFTool -All` handles all of it in one shot, on every
+machine.
+
+## What it does
+
+**XDG path compliance.** Most CLI tools support the [XDG Base Directory
+Specification](https://specifications.freedesktop.org/basedir-spec/latest/) — a
+standard that routes config to `~/.config`, data to `~/.local/share`, and cache to
+`~/.cache` rather than scattering dotfiles across your home directory. DotForge sets
+the right environment variable for each tool to opt it in. This is the feature that
+inspired the whole module: I use [chezmoi](https://www.chezmoi.io/) to manage my
+dotfiles, and keeping everything under `~/.config` means my tool configurations sync
+to every new machine automatically — no hunting, no manual re-setup.
+
+**Argument completers.** DotForge registers PowerShell tab-completion for CLI tools
+that don't ship with native PS completers. Completions are generated once and cached
+to `$XDG_CACHE_HOME` — they are only regenerated when the tool binary is newer than
+the cached file, so your profile stays fast no matter how many tools you register.
+
+**fzf pickers.** Interactive fuzzy-find workflows are built in for common operations:
+fuzzy `cd`, process management, help browsing, ripgrep result navigation, and more.
+Any tool with a picker entry in its JSON record gets a full `Invoke-DFPicker`-backed
+function and alias registered automatically. Set `$Env:Picker = 'skim'` to use an
+alternative fuzzy finder.
+
+**One-command install.** `Install-DFTool -Name <tool>` installs via whichever of
+scoop, winget, or choco you have available — no need to remember package IDs.
 
 ## Requirements
 
@@ -59,18 +88,96 @@ Register-DFTool -All
 
 ## Exported Cmdlets
 
-| Cmdlet | Purpose |
-|--------|---------|
-| `Initialize-DFEnvironment` | Bootstrap XDG dirs; detect package managers |
-| `Register-DFTool [-Name] [-All]` | Configure tools in the current session |
-| `Install-DFTool -Name <tool>` | Install via scoop / winget / choco / psresource |
-| `Update-DFCompletions [-Name]` | Refresh dynamic completion caches |
-| `Get-DFTool [-Name] [-Tag]` | Query the tool registry |
-| `Find-DFTool -Pattern <str>` | Wildcard search across name / description / tags |
-| `Add-DFToPath <dir> [-Prepend]` | Normalized, dedup PATH addition |
-| `Ensure-DFDir <path>` | Idempotent directory creation |
-| `Invoke-DFPicker` | Generalized fzf picker skeleton |
-| `Get-DFCachedCompletion` | Mtime-based completion script caching |
+**Core (Layer 1–3)**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Initialize-DFEnvironment` | | Bootstrap XDG dirs; detect package managers |
+| `Register-DFTool [-Name\|-All]` | | Configure tools in the current session |
+| `Install-DFTool -Name <tool>` | | Install via scoop / winget / choco / psresource |
+| `Update-DFCompletions [-Name]` | | Refresh dynamic completion caches |
+| `Get-DFTool [-Name] [-Tag]` | | Query the tool registry |
+| `Find-DFTool -Pattern <str>` | | Wildcard search across name / description / tags |
+| `Add-DFToPath <dir> [-Prepend]` | | Normalized, dedup PATH addition |
+| `New-DFDirectory <path>` | | Idempotent directory creation |
+| `Invoke-DFPicker` | | Generalized fzf picker skeleton |
+| `Get-DFCachedCompletion` | | Mtime-based completion script caching |
+| `Invoke-DFWithPager` | `pg` | Pipe output through `$Env:Pager` |
+
+**Help & Discovery**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Invoke-DFHelp <name>` | `hm` | Get-Help with ANSI header colorization |
+| `Select-DFHelpTopic` | `fh` | Fuzzy-browse all help topics |
+| `Select-DFCommand` | `fcmd` | Fuzzy-browse all commands |
+| `Select-DFVerb` | `fverb` | Fuzzy-browse approved PS verbs |
+| `Select-DFModule` | `fmod` | Fuzzy-browse installed modules |
+
+**Navigation**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Set-DFLocationUp [-Levels]` | `up` | Navigate up N directory levels |
+| `New-DFDirectoryAndSet <path>` | `mkcd` | Create directory and cd into it |
+| `Select-DFLocation` | `fcd` | Fuzzy-browse subdirectories and cd |
+
+**File System**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `New-DFFile <path>` | `touch` | Create file or update its timestamp |
+| `Get-DFWhich <name>` | `which` | Find executable path |
+| `Open-DFItem <path>` | `open` | Open file/folder with default handler |
+
+**Process**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Select-DFProcess` | `fps` | Fuzzy-browse running processes |
+| `Get-DFTopProcess` | `top` | Show top N processes by CPU or memory |
+
+**Environment & Profile**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Get-DFEnv [-Pattern]` | `env` | List all env vars as KEY=VALUE |
+| `Get-DFPath` | `path` | List PATH entries one per line |
+| `Select-DFEnvVar` | `fenv` | Fuzzy-browse environment variables |
+| `Edit-DFProfile` | `ep` | Open `$PROFILE` in `$Env:EDITOR` |
+| `Invoke-DFProfileReload` | `reload` | Dot-source `$PROFILE` in the current session |
+
+**Clipboard**
+
+| Cmdlet | Alias | Purpose |
+|--------|-------|---------|
+| `Copy-DFToClipboard` | `copy` | Copy string or pipeline input to clipboard |
+| `Get-DFFromClipboard` | `paste` | Get clipboard contents |
+
+## Recommended Setup
+
+### Environment variables
+
+DotForge uses these env vars when present. Add them to your PowerShell profile:
+
+```powershell
+$Env:EDITOR = 'code'              # editor for ep (Edit-DFProfile) and frg (ripgrep picker)
+$Env:VISUAL  = 'code'             # GUI editor fallback (conventional POSIX variable)
+$Env:PAGER   = 'less'             # pager for pg (Invoke-DFWithPager); try 'bat --paging=always'
+$Env:Picker  = 'fzf'              # fuzzy picker used by all DotForge pickers; 'skim' also works
+```
+
+### Scoop
+
+- **git** is required for scoop bucket operations (`scoop bucket add`, `scoop update`):
+  ```powershell
+  scoop install git
+  ```
+
+- **[scoop-search](https://github.com/shilangyu/scoop-search)** makes `scoop search` dramatically faster. DotForge hooks it automatically once installed:
+  ```powershell
+  scoop install scoop-search
+  ```
 
 ## Tool Records
 
@@ -99,7 +206,7 @@ Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration
 | Fuzzy/nav | fzf, zoxide |
 | Pagers | less |
 | Package managers | scoop, winget, npm |
-| Dev | gh, delta, lazygit, rustup, uv, chezmoi |
+| Dev | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
 | PS modules | posh-git, PSFzf, Terminal-Icons, oh-my-posh |
 
 ## License

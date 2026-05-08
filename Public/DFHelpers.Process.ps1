@@ -52,7 +52,6 @@ function Get-DFTopProcess {
         Sort-Object $sortProp -Descending |
         Select-Object -First $Count -Property Name, Id,
             @{N = 'CPU(s)';  E = { [math]::Round($_.CPU, 2) }},
-            @{N = 'Mem(MB)'; E = { [math]::Round($_.WorkingSet / 1MB) }} |
-        Format-Table -AutoSize
+            @{N = 'Mem(MB)'; E = { [math]::Round($_.WorkingSet / 1MB) }}
 }
 Set-Alias -Name top -Value Get-DFTopProcess -Scope Global -Force

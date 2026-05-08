@@ -11,6 +11,7 @@ function Add-DFToPath {
     #>
     [CmdletBinding()]
     param(
+        [Parameter(Position = 0)]
         [string]$Dir,
         [switch]$Prepend
     )

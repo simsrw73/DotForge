@@ -8,7 +8,7 @@ BeforeAll {
         process { $InputObject }
         end { if ($Command) { & $Command } }
     }
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Private/Get-DFHelpTopicList.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
@@ -49,7 +49,7 @@ Describe 'Invoke-DFHelp' {
 
 Describe 'Select-DFVerb' {
     It 'outputs the verb name from the selected line' {
-        Mock Invoke-DFFzf { 'Lifecycle            Start' }
+        Mock Invoke-DFFzf { 'Start                Lifecycle' }
         $result = Select-DFVerb
         $result | Should -Be 'Start'
     }
@@ -90,49 +90,34 @@ Describe 'Invoke-DFHelp regex' {
     BeforeEach {
         $script:SavedNoColor = $Env:NO_COLOR
         $Env:NO_COLOR = $null
-    }
-    AfterEach { $Env:NO_COLOR = $script:SavedNoColor }
-
-    It 'colorizes any all-caps header, not just hardcoded ones' {
-        Mock Get-Help { "CUSTOMHEADER`nsome content" | Out-String }
         Mock Invoke-DFWithPager { process { $InputObject } }
         if (-not $Host.UI.SupportsVirtualTerminal) {
             Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
             return
         }
+    }
+    AfterEach { $Env:NO_COLOR = $script:SavedNoColor }
+
+    It 'colorizes any all-caps header, not just hardcoded ones' {
+        Mock Get-Help { "CUSTOMHEADER`nsome content" | Out-String }
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Match "`e\[.*CUSTOMHEADER"
     }
 
     It 'does not colorize indented content lines' {
         Mock Get-Help { "SYNOPSIS`n    indented content line" | Out-String }
-        Mock Invoke-DFWithPager { process { $InputObject } }
-        if (-not $Host.UI.SupportsVirtualTerminal) {
-            Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
-            return
-        }
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Not -Match "`e\[.*indented"
     }
 
     It 'colorizes SYNOPSIS header in CRLF input (Windows line endings)' {
         Mock Get-Help { "SYNOPSIS`r`nsome content" | Out-String }
-        Mock Invoke-DFWithPager { process { $InputObject } }
-        if (-not $Host.UI.SupportsVirtualTerminal) {
-            Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
-            return
-        }
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Match "`e\[.*SYNOPSIS"
     }
 
     It 'does not colorize title-case standalone lines' {
         Mock Get-Help { "Short description`nsome content" | Out-String }
-        Mock Invoke-DFWithPager { process { $InputObject } }
-        if (-not $Host.UI.SupportsVirtualTerminal) {
-            Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
-            return
-        }
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Not -Match "`e\[.*Short"
     }
@@ -149,7 +134,7 @@ Describe 'Select-DFHelpTopic' {
         Mock Get-DFHelpTopicList { @("Get-Process`tCmdlet", "about_Parsing`tHelpFile") }
         Mock Invoke-DFFzf { "Get-Process`tCmdlet" }
         Mock Invoke-DFHelp { }
-        fh
+        Select-DFHelpTopic
         Should -Invoke Invoke-DFHelp -ParameterFilter { $Name -eq 'Get-Process' }
     }
 
@@ -157,7 +142,7 @@ Describe 'Select-DFHelpTopic' {
         Mock Get-DFHelpTopicList { @("Get-Process`tCmdlet") }
         Mock Invoke-DFFzf { $null }
         Mock Invoke-DFHelp { }
-        fh
+        Select-DFHelpTopic
         Should -Invoke Invoke-DFHelp -Times 0
     }
 
@@ -166,7 +151,7 @@ Describe 'Select-DFHelpTopic' {
             @("Get-Process`tCmdlet", "about_Parsing`tHelpFile", "Get-Item`tCmdlet")
         }
         Mock Invoke-DFFzf { $null }
-        fh -Category HelpFile
+        Select-DFHelpTopic -Category HelpFile
         Should -Invoke Invoke-DFFzf -ParameterFilter {
             $InputItems.Count -eq 1 -and $InputItems[0] -like 'about_Parsing*'
         }
@@ -175,7 +160,7 @@ Describe 'Select-DFHelpTopic' {
     It '-Force is passed through to Get-DFHelpTopicList' {
         Mock Get-DFHelpTopicList { @() }
         Mock Invoke-DFFzf { $null }
-        fh -Force
+        Select-DFHelpTopic -Force
         Should -Invoke Get-DFHelpTopicList -ParameterFilter { $Force }
     }
 }

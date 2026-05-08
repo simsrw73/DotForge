@@ -4,6 +4,28 @@ BeforeAll {
     . "$PSScriptRoot/../Public/DFHelpers.Environment.ps1"
 }
 
+Describe 'Get-DFEnv' {
+    It 'outputs KEY=VALUE lines for all env vars' {
+        $Env:DF_TEST_ENV = 'testval'
+        $result = Get-DFEnv
+        Remove-Item Env:DF_TEST_ENV -ErrorAction Ignore
+        $result | Should -Contain 'DF_TEST_ENV=testval'
+    }
+
+    It 'filters by -Pattern' {
+        $Env:DF_AAA_VAR = 'aaa'
+        $Env:DF_BBB_VAR = 'bbb'
+        $result = Get-DFEnv 'DF_AAA*'
+        Remove-Item Env:DF_AAA_VAR, Env:DF_BBB_VAR -ErrorAction Ignore
+        $result | Should -Contain 'DF_AAA_VAR=aaa'
+        $result | Should -Not -Contain 'DF_BBB_VAR=bbb'
+    }
+
+    It 'is aliased to env' {
+        Get-Alias env | Should -Not -BeNullOrEmpty
+    }
+}
+
 Describe 'Get-DFPath' {
     It 'returns one entry per PATH segment' {
         $saved = $Env:PATH

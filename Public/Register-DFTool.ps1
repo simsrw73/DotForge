@@ -13,9 +13,11 @@ function Register-DFTool {
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ByName')]
     param(
+        [Parameter(ParameterSetName = 'ByName')]
         [string[]]$Name,
+        [Parameter(ParameterSetName = 'All')]
         [switch]$All,
         [string]$ToolsPath
     )
@@ -78,7 +80,7 @@ function Register-DFTool {
                 $dirs = $xdg.PSObject.Properties['dirs']?.Value
                 if ($dirs) {
                     @($dirs) | Where-Object { $_ } |
-                        ForEach-Object { Ensure-DFDir (Expand-DFXdgPath $_) }
+                        ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
                 }
             }
             'manual' {
@@ -91,7 +93,7 @@ function Register-DFTool {
                 $rawConfigContent = $xdg.PSObject.Properties['config_content']?.Value
                 if ($rawConfigPath) {
                     $expandedPath = Expand-DFXdgPath $rawConfigPath
-                    Ensure-DFDir (Split-Path $expandedPath)
+                    New-DFDirectory (Split-Path $expandedPath)
                     if (-not (Test-Path $expandedPath) -and $rawConfigContent) {
                         Set-Content -Path $expandedPath -Value $rawConfigContent -Encoding UTF8
                         Write-Verbose "DotForge: Created default config at $expandedPath"

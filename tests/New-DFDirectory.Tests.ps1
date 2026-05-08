@@ -1,32 +1,32 @@
 BeforeAll {
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
 }
 
-Describe 'Ensure-DFDir' {
+Describe 'New-DFDirectory' {
     It 'creates a directory that does not exist' {
         $dir = Join-Path $TestDrive 'newdir'
-        Ensure-DFDir $dir
+        New-DFDirectory $dir
         Test-Path $dir -PathType Container | Should -BeTrue
     }
 
     It 'is idempotent — no error when directory already exists' {
         $dir = Join-Path $TestDrive 'existing'
         New-Item -ItemType Directory -Path $dir | Out-Null
-        { Ensure-DFDir $dir } | Should -Not -Throw
+        { New-DFDirectory $dir } | Should -Not -Throw
         Test-Path $dir -PathType Container | Should -BeTrue
     }
 
     It 'creates nested directories' {
         $dir = Join-Path $TestDrive 'a' 'b' 'c'
-        Ensure-DFDir $dir
+        New-DFDirectory $dir
         Test-Path $dir -PathType Container | Should -BeTrue
     }
 
     It 'silently skips empty string' {
-        { Ensure-DFDir '' } | Should -Not -Throw
+        { New-DFDirectory '' } | Should -Not -Throw
     }
 
     It 'silently skips null' {
-        { Ensure-DFDir $null } | Should -Not -Throw
+        { New-DFDirectory $null } | Should -Not -Throw
     }
 }

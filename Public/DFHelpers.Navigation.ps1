@@ -38,7 +38,7 @@ function New-DFDirectoryAndSet {
         [Parameter(Mandatory, Position = 0)]
         [string]$Path
     )
-    Ensure-DFDir $Path
+    New-DFDirectory $Path
     Set-Location $Path
 }
 Set-Alias -Name mkcd -Value New-DFDirectoryAndSet -Scope Global -Force

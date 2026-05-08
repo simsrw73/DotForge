@@ -1,5 +1,5 @@
 BeforeAll {
-    . "$PSScriptRoot/../Public/Ensure-DFDir.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
     . "$PSScriptRoot/../Public/Initialize-DFEnvironment.ps1"
 }

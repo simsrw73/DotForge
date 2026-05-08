@@ -20,6 +20,11 @@ function Get-DFCachedCompletion {
         [Parameter(Mandatory)][scriptblock]$Generate
     )
 
+    if (-not $Env:XDG_CACHE_HOME) {
+        Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Call Initialize-DFEnvironment first.'
+        return
+    }
+
     $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'completions'
     $cacheFile = Join-Path $cacheDir "$CacheKey.ps1"
     $cacheItem = Get-Item $cacheFile -ErrorAction Ignore
@@ -29,7 +34,7 @@ function Get-DFCachedCompletion {
                 ($cacheItem.LastWriteTime -gt $exeItem.LastWriteTime)
 
     if (-not $upToDate) {
-        Ensure-DFDir $cacheDir
+        New-DFDirectory $cacheDir
         $content = & $Generate
         if ($content) {
             Set-Content -Path $cacheFile -Value $content -Encoding UTF8

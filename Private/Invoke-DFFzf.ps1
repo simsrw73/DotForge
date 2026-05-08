@@ -3,12 +3,13 @@
 function Invoke-DFFzf {
     <#
     .SYNOPSIS
-        Thin wrapper around the fzf external command.
+        Thin wrapper around fzf (or the picker named in $Env:Picker).
         Exists as a separate function so tests can mock it without spawning fzf.
+        Set $Env:Picker = 'skim' (or any fzf-compatible picker) to override the default.
     .PARAMETER InputItems
-        Items to pipe into fzf.
+        Items to pipe into the picker.
     .PARAMETER FzfArgs
-        Arguments array forwarded to fzf.
+        Arguments array forwarded to the picker.
     #>
     [CmdletBinding()]
     param(
@@ -16,8 +17,9 @@ function Invoke-DFFzf {
         [string[]]$FzfArgs
     )
 
-    if (-not (Get-Command fzf -ErrorAction Ignore)) {
-        Write-Error 'fzf is not installed or not on PATH. Install it (e.g. scoop install fzf).' -ErrorAction Stop
+    [string] $picker = if ($Env:Picker) { $Env:Picker } else { 'fzf' }
+    if (-not (Get-Command $picker -ErrorAction Ignore)) {
+        Write-Error "DotForge: '$picker' is not on PATH. Install fzf or set `$Env:Picker to your picker's executable name." -ErrorAction Stop
     }
-    $InputItems | fzf @FzfArgs
+    $InputItems | & $picker @FzfArgs
 }

@@ -9,14 +9,18 @@ function Invoke-DFPagerExe {
         Lines of text to pipe into the pager.
     .PARAMETER Pager
         The pager command string (e.g. 'less', 'less -R', 'bat --paging=always').
+        Arguments with spaces (e.g. --theme "Dracula") are not supported; use
+        --key=value form instead (e.g. --theme=Dracula).
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string[]]$Lines,
         [Parameter(Mandatory)][string]$Pager
     )
-    # NOTE: quoted args in $Pager (e.g. bat --theme="Dark") are not supported
-    $parts     = $Pager -split '\s+', 2
-    $pagerArgs = if ($parts.Count -gt 1) { $parts[1] -split '\s+' } else { @() }
+    if ($Pager -match '["\x27]') {
+        Write-Warning "DotForge: Quoted arguments in `$Env:Pager are not supported. Use --key=value form (e.g. bat --theme=Dracula)."
+    }
+    $parts                  = $Pager -split '\s+', 2
+    [string[]] $pagerArgs  = if ($parts.Count -gt 1) { $parts[1] -split '\s+' } else { }
     $Lines | & $parts[0] @pagerArgs
 }

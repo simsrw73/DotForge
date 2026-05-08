@@ -54,6 +54,31 @@ function Edit-DFProfile {
 }
 Set-Alias -Name ep -Value Edit-DFProfile -Scope Global -Force
 
+function Get-DFEnv {
+    <#
+    .SYNOPSIS
+        Lists environment variables in KEY=VALUE format.
+    .PARAMETER Pattern
+        Wildcard filter on variable name. Defaults to * (all).
+    .EXAMPLE
+        Get-DFEnv
+    .EXAMPLE
+        env
+    .EXAMPLE
+        Get-DFEnv PATH*
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0)]
+        [string]$Pattern = '*'
+    )
+    Get-ChildItem Env: |
+        Where-Object Name -like $Pattern |
+        Sort-Object Name |
+        ForEach-Object { "$($_.Name)=$($_.Value)" }
+}
+Set-Alias -Name env -Value Get-DFEnv -Scope Global -Force
+
 function Invoke-DFProfileReload {
     <#
     .SYNOPSIS

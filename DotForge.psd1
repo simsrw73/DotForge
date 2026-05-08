@@ -10,7 +10,7 @@
     FunctionsToExport = @(
         # Layer 1 — Core Primitives
         'Add-DFToPath',
-        'Ensure-DFDir',
+        'New-DFDirectory',
         'Invoke-DFPicker',
         'Get-DFCachedCompletion',
         'Invoke-DFWithPager',
@@ -40,6 +40,7 @@
         'Select-DFProcess',
         'Get-DFTopProcess',
         # General Helpers — Environment & Profile
+        'Get-DFEnv',
         'Get-DFPath',
         'Select-DFEnvVar',
         'Edit-DFProfile',
@@ -56,7 +57,7 @@
         'up', 'mkcd', 'fcd',
         'touch', 'which', 'open',
         'fps', 'top',
-        'path', 'fenv', 'ep', 'reload',
+        'env', 'path', 'fenv', 'ep', 'reload',
         'copy', 'paste'
     )
     PrivateData       = @{
