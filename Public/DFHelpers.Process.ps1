@@ -1,6 +1,16 @@
 #Requires -Version 7.0
 
 function Select-DFProcess {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches running processes and returns the selected process object(s).
+    .PARAMETER Multi
+        Allow selecting multiple processes at once.
+    .EXAMPLE
+        Select-DFProcess
+    .EXAMPLE
+        fps -Multi
+    #>
     [CmdletBinding()]
     param(
         [switch]$Multi
@@ -19,6 +29,18 @@ function Select-DFProcess {
 Set-Alias -Name fps -Value Select-DFProcess -Scope Global -Force
 
 function Get-DFTopProcess {
+    <#
+    .SYNOPSIS
+        Lists the top processes sorted by CPU or memory usage.
+    .PARAMETER By
+        Sort processes by CPU (default) or Memory.
+    .PARAMETER Count
+        Number of processes to display. Defaults to 20.
+    .EXAMPLE
+        Get-DFTopProcess
+    .EXAMPLE
+        top -By Memory -Count 10
+    #>
     [CmdletBinding()]
     param(
         [ValidateSet('CPU', 'Memory')]

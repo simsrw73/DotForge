@@ -7,7 +7,8 @@ BeforeAll {
 Describe 'Get-DFPath' {
     It 'returns one entry per PATH segment' {
         $saved = $Env:PATH
-        $Env:PATH = 'C:\foo;C:\bar;C:\baz'
+        $sep = [IO.Path]::PathSeparator
+        $Env:PATH = "C:\foo${sep}C:\bar${sep}C:\baz"
         $result = path
         $Env:PATH = $saved
         $result | Should -Be @('C:\foo', 'C:\bar', 'C:\baz')

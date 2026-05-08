@@ -63,7 +63,7 @@
             Tags         = @('CLI', 'Tools', 'Profile', 'XDG', 'fzf', 'Configuration', 'Windows')
             LicenseUri   = 'https://github.com/simsrw73/DotForge/blob/main/LICENSE'
             ProjectUri   = 'https://github.com/simsrw73/DotForge'
-            ReleaseNotes = 'Initial release: tool registry, Register-DFTool, Install-DFTool, Initialize-DFEnvironment, Update-DFCompletions, 30 tool records.'
+            ReleaseNotes = 'Phase 5: 19 general-purpose helper functions — pager primitive, help/discovery, navigation, filesystem, process, environment, and clipboard utilities.'
         }
     }
 }

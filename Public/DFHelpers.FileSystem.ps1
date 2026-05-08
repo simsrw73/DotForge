@@ -1,6 +1,16 @@
 #Requires -Version 7.0
 
 function New-DFFile {
+    <#
+    .SYNOPSIS
+        Creates a file or updates its timestamp if it already exists (touch equivalent).
+    .PARAMETER Path
+        One or more file paths to create or touch.
+    .EXAMPLE
+        New-DFFile readme.md
+    .EXAMPLE
+        touch foo.txt bar.txt
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromRemainingArguments)]
@@ -19,6 +29,18 @@ function New-DFFile {
 Set-Alias -Name touch -Value New-DFFile -Scope Global -Force
 
 function Get-DFWhich {
+    <#
+    .SYNOPSIS
+        Returns the full path of an executable on the PATH (which equivalent).
+    .PARAMETER Name
+        Name of the executable to locate.
+    .PARAMETER All
+        Return all matching executables instead of just the first.
+    .EXAMPLE
+        Get-DFWhich git
+    .EXAMPLE
+        which python -All
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
@@ -34,6 +56,16 @@ function Get-DFWhich {
 Set-Alias -Name which -Value Get-DFWhich -Scope Global -Force
 
 function Open-DFItem {
+    <#
+    .SYNOPSIS
+        Opens a file or URL using the system default application (open equivalent).
+    .PARAMETER Path
+        One or more file paths or URLs to open.
+    .EXAMPLE
+        Open-DFItem report.pdf
+    .EXAMPLE
+        open https://example.com
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromRemainingArguments)]

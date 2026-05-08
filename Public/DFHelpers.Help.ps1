@@ -1,6 +1,16 @@
 #Requires -Version 7.0
 
 function Invoke-DFHelp {
+    <#
+    .SYNOPSIS
+        Displays colorized full help for a command, piped through the configured pager.
+    .PARAMETER Name
+        The name of the command, function, or alias to look up.
+    .EXAMPLE
+        Invoke-DFHelp Get-ChildItem
+    .EXAMPLE
+        hm git
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0)]
@@ -12,7 +22,7 @@ function Invoke-DFHelp {
     if ($useColor) {
         $yellow = "`e[1;33m"
         $reset  = "`e[0m"
-        foreach ($h in 'SYNOPSIS','DESCRIPTION','PARAMETERS','EXAMPLES','NOTES','RELATED LINKS') {
+        foreach ($h in 'SYNOPSIS','DESCRIPTION','PARAMETERS','EXAMPLES','NOTES','RELATED LINKS','INPUTS','OUTPUTS','ALIASES','REMARKS') {
             $helpText = $helpText -replace "(?m)^($h)", "$yellow`$1$reset"
         }
     }
@@ -22,6 +32,16 @@ function Invoke-DFHelp {
 Set-Alias -Name hm -Value Invoke-DFHelp -Scope Global -Force
 
 function Select-DFCommand {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches all available commands and returns the selected command name.
+    .PARAMETER Module
+        Optional module name to restrict the command list.
+    .EXAMPLE
+        Select-DFCommand
+    .EXAMPLE
+        fcmd -Module DotForge
+    #>
     [CmdletBinding()]
     param(
         [string]$Module = ''
@@ -39,6 +59,14 @@ function Select-DFCommand {
 Set-Alias -Name fcmd -Value Select-DFCommand -Scope Global -Force
 
 function Select-DFVerb {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches approved PowerShell verbs and returns the selected verb.
+    .EXAMPLE
+        Select-DFVerb
+    .EXAMPLE
+        fverb
+    #>
     [CmdletBinding()]
     param()
     Invoke-DFPicker `
@@ -49,6 +77,14 @@ function Select-DFVerb {
 Set-Alias -Name fverb -Value Select-DFVerb -Scope Global -Force
 
 function Select-DFModule {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches all available modules and returns the selected module name.
+    .EXAMPLE
+        Select-DFModule
+    .EXAMPLE
+        fmod
+    #>
     [CmdletBinding()]
     param()
     Invoke-DFPicker `

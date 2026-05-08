@@ -1,6 +1,14 @@
 #Requires -Version 7.0
 
 function Get-DFPath {
+    <#
+    .SYNOPSIS
+        Lists each directory in the PATH environment variable as a separate string.
+    .EXAMPLE
+        Get-DFPath
+    .EXAMPLE
+        path
+    #>
     [CmdletBinding()]
     param()
     $Env:PATH -split [IO.Path]::PathSeparator
@@ -8,6 +16,14 @@ function Get-DFPath {
 Set-Alias -Name path -Value Get-DFPath -Scope Global -Force
 
 function Select-DFEnvVar {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches environment variables and returns the value of the selected one.
+    .EXAMPLE
+        Select-DFEnvVar
+    .EXAMPLE
+        fenv
+    #>
     [CmdletBinding()]
     param()
     Invoke-DFPicker `
@@ -20,6 +36,14 @@ function Select-DFEnvVar {
 Set-Alias -Name fenv -Value Select-DFEnvVar -Scope Global -Force
 
 function Edit-DFProfile {
+    <#
+    .SYNOPSIS
+        Opens the current PowerShell profile in the editor defined by $Env:EDITOR.
+    .EXAMPLE
+        Edit-DFProfile
+    .EXAMPLE
+        ep
+    #>
     [CmdletBinding()]
     param()
     if (-not $Env:EDITOR) {
@@ -31,6 +55,14 @@ function Edit-DFProfile {
 Set-Alias -Name ep -Value Edit-DFProfile -Scope Global -Force
 
 function Invoke-DFProfileReload {
+    <#
+    .SYNOPSIS
+        Re-dot-sources the current PowerShell profile to apply changes without restarting.
+    .EXAMPLE
+        Invoke-DFProfileReload
+    .EXAMPLE
+        reload
+    #>
     [CmdletBinding()]
     param()
     if (Test-Path $PROFILE) {
