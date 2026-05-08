@@ -27,6 +27,7 @@
         'Select-DFCommand',
         'Select-DFVerb',
         'Select-DFModule',
+        'Select-DFHelpTopic',
         # General Helpers — Navigation
         'Set-DFLocationUp',
         'New-DFDirectoryAndSet',
@@ -51,7 +52,7 @@
     VariablesToExport = @()
     AliasesToExport   = @(
         'pg',
-        'hm', 'fcmd', 'fverb', 'fmod',
+        'hm', 'fcmd', 'fverb', 'fmod', 'fh',
         'up', 'mkcd', 'fcd',
         'touch', 'which', 'open',
         'fps', 'top',
