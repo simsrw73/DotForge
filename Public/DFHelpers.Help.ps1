@@ -21,10 +21,8 @@ function Invoke-DFHelp {
     $useColor = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
     if ($useColor) {
         $yellow = "`e[1;33m"
-        $reset  = "`e[0m"
-        foreach ($h in 'SYNOPSIS','DESCRIPTION','PARAMETERS','EXAMPLES','NOTES','RELATED LINKS','INPUTS','OUTPUTS','ALIASES','REMARKS') {
-            $helpText = $helpText -replace "(?m)^($h)", "$yellow`$1$reset"
-        }
+        $reset = "`e[0m"
+        $helpText = $helpText -replace '(?m)^([A-Z]{2,}(?: [A-Z]+)*)$', "$yellow`$1$reset"
     }
 
     $helpText | Invoke-DFWithPager
@@ -50,11 +48,11 @@ function Select-DFCommand {
     if ($Module) { $gcParams.Module = $Module }
 
     Invoke-DFPicker `
-        -List    { Get-Command @gcParams |
-                   ForEach-Object { '{0,-50} {1,-15} {2}' -f $_.Name, $_.CommandType, $_.Source } } `
-        -Header  'Select command  [Enter to output name]' `
+        -List { Get-Command @gcParams |
+            ForEach-Object { '{0,-50} {1,-15} {2}' -f $_.Name, $_.CommandType, $_.Source } } `
+        -Header 'Select command  [Enter to output name]' `
         -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
-        -Parse   { ($_ -split '\s+')[0] }
+        -Parse { ($_ -split '\s+')[0] }
 }
 Set-Alias -Name fcmd -Value Select-DFCommand -Scope Global -Force
 
@@ -70,9 +68,9 @@ function Select-DFVerb {
     [CmdletBinding()]
     param()
     Invoke-DFPicker `
-        -List   { Get-Verb | ForEach-Object { '{0,-20} {1}' -f $_.Group, $_.Verb } } `
+        -List { Get-Verb | ForEach-Object { '{0,-20} {1}' -f $_.Group, $_.Verb } } `
         -Header 'Select verb  [Enter to output]' `
-        -Parse  { ($_ -split '\s+')[1] }
+        -Parse { ($_ -split '\s+')[1] }
 }
 Set-Alias -Name fverb -Value Select-DFVerb -Scope Global -Force
 
@@ -88,9 +86,47 @@ function Select-DFModule {
     [CmdletBinding()]
     param()
     Invoke-DFPicker `
-        -List   { Get-Module -ListAvailable |
-                  ForEach-Object { '{0,-40} {1,-10} {2}' -f $_.Name, $_.Version, $_.Description } } `
+        -List { Get-Module -ListAvailable |
+            ForEach-Object { '{0,-40} {1,-10} {2}' -f $_.Name, $_.Version, $_.Description } } `
         -Header 'Select module  [Enter to output name]' `
-        -Parse  { ($_ -split '\s+')[0] }
+        -Parse { ($_ -split '\s+')[0] }
 }
 Set-Alias -Name fmod -Value Select-DFModule -Scope Global -Force
+
+function Select-DFHelpTopic {
+    <#
+    .SYNOPSIS
+        Fuzzy-searches all available PS help topics and opens the selected topic in Invoke-DFHelp.
+    .PARAMETER Category
+        Optional. Filters topics by Get-Help category (Cmdlet, Function, HelpFile, Module, etc.).
+        No ValidateSet — accepts any string so future PS categories work without a code change.
+    .PARAMETER Force
+        Bypass the topic list cache and regenerate from Get-Help *.
+    .EXAMPLE
+        Select-DFHelpTopic
+    .EXAMPLE
+        fh -Category HelpFile
+    .EXAMPLE
+        fh -Force
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Category = '',
+        [switch]$Force
+    )
+
+    $topics = Get-DFHelpTopicList -Force:$Force
+    if ($Category) {
+        $topics = @($topics | Where-Object { ($_ -split "`t", 2)[1] -eq $Category })
+    }
+
+    Invoke-DFPicker `
+        -List      { $topics }.GetNewClosure() `
+        -Delimiter "`t" `
+        -WithNth   '1' `
+        -Header    'Browse help topics  [Enter to view full help]' `
+        -Preview   'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue" 2>nul' `
+        -Parse     { ($_ -split "`t", 2)[0] } `
+        -Action    { param($topic) Invoke-DFHelp $topic }
+}
+Set-Alias -Name fh -Value Select-DFHelpTopic -Scope Global -Force
