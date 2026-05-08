@@ -17,12 +17,14 @@ Describe 'Invoke-DFWithPager' {
         }
 
         It 'runs scriptblock and outputs result' {
-            $result = Invoke-DFWithPager { 'from-block' }
+            # Use -WarningAction SilentlyContinue: Pester pipes the scriptblock literal
+            # as pipeline input, which legitimately triggers the dual-input warning.
+            $result = Invoke-DFWithPager { 'from-block' } -WarningAction SilentlyContinue
             $result | Should -Be 'from-block'
         }
 
         It 'returns nothing for empty scriptblock' {
-            $result = Invoke-DFWithPager { }
+            $result = Invoke-DFWithPager { } -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
     }
@@ -42,10 +44,17 @@ Describe 'Invoke-DFWithPager' {
             Should -Invoke Invoke-DFPagerExe -ParameterFilter { $Pager -eq 'less -R' }
         }
 
+        It 'forwards collected lines to Invoke-DFPagerExe' {
+            $Env:Pager = 'less'
+            Mock Invoke-DFPagerExe { }
+            'hello', 'world' | Invoke-DFWithPager
+            Should -Invoke Invoke-DFPagerExe -ParameterFilter { $Lines -contains 'hello' }
+        }
+
         It 'does not invoke pager for empty input' {
             $Env:Pager = 'less'
             Mock Invoke-DFPagerExe { }
-            Invoke-DFWithPager { }
+            Invoke-DFWithPager { } -WarningAction SilentlyContinue
             Should -Invoke Invoke-DFPagerExe -Times 0
         }
     }

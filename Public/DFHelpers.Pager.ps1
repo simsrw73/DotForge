@@ -29,7 +29,12 @@ function Invoke-DFWithPager {
     begin   { $lines = [System.Collections.Generic.List[string]]@() }
     process { if ($null -ne $InputObject) { $lines.Add($InputObject) } }
     end {
-        if ($Command) { $lines = & $Command | ForEach-Object { "$_" } }
+        if ($Command) {
+            if ($lines.Count -gt 0) {
+                Write-Warning 'Invoke-DFWithPager: both pipeline input and -Command were provided; pipeline input is ignored.'
+            }
+            $lines = & $Command | ForEach-Object { "$_" }
+        }
         if ($Env:Pager -and $lines.Count -gt 0) {
             Invoke-DFPagerExe -Lines $lines -Pager $Env:Pager
         } else {

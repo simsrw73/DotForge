@@ -10,10 +10,12 @@ function Invoke-DFPagerExe {
     .PARAMETER Pager
         The pager command string (e.g. 'less', 'less -R', 'bat --paging=always').
     #>
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string[]]$Lines,
         [Parameter(Mandatory)][string]$Pager
     )
+    # NOTE: quoted args in $Pager (e.g. bat --theme="Dark") are not supported
     $parts     = $Pager -split '\s+', 2
     $pagerArgs = if ($parts.Count -gt 1) { $parts[1] -split '\s+' } else { @() }
     $Lines | & $parts[0] @pagerArgs
