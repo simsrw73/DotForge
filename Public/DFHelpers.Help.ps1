@@ -22,7 +22,7 @@ function Invoke-DFHelp {
     if ($useColor) {
         $yellow = "`e[1;33m"
         $reset = "`e[0m"
-        $helpText = $helpText -replace '(?m)^([A-Z]{2,}(?: [A-Z]+)*)$', "$yellow`$1$reset"
+        $helpText = $helpText -creplace '(?m)^([A-Z]{2,}(?: [A-Z]+)*)\r?$', "$yellow`$1$reset"
     }
 
     $helpText | Invoke-DFWithPager

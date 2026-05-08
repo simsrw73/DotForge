@@ -114,6 +114,28 @@ Describe 'Invoke-DFHelp regex' {
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Not -Match "`e\[.*indented"
     }
+
+    It 'colorizes SYNOPSIS header in CRLF input (Windows line endings)' {
+        Mock Get-Help { "SYNOPSIS`r`nsome content" | Out-String }
+        Mock Invoke-DFWithPager { process { $InputObject } }
+        if (-not $Host.UI.SupportsVirtualTerminal) {
+            Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
+            return
+        }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Match "`e\[.*SYNOPSIS"
+    }
+
+    It 'does not colorize title-case standalone lines' {
+        Mock Get-Help { "Short description`nsome content" | Out-String }
+        Mock Invoke-DFWithPager { process { $InputObject } }
+        if (-not $Host.UI.SupportsVirtualTerminal) {
+            Set-ItResult -Skipped -Because 'terminal does not support VT sequences'
+            return
+        }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Not -Match "`e\[.*Short"
+    }
 }
 
 Describe 'Select-DFHelpTopic' {
