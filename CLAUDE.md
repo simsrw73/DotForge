@@ -11,6 +11,8 @@ DotForge/
 ├── Public/          # Exported cmdlets and helpers
 ├── Private/         # Internal functions
 ├── Tools/           # Per-tool JSON + optional .ps1
+├── docs/            # Specs and implementation plans
+├── examples/        # Profile usage examples
 └── tests/           # Pester 5 tests
 ```
 
@@ -24,6 +26,8 @@ DotForge/
 - **All directory creation** goes through `Ensure-DFDir`, never raw `New-Item`.
 - **All PATH additions** go through `Add-DFToPath`, never raw `$Env:Path +=`.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
+- **`$XDG_CACHE_HOME` must be set** for General Helpers cache (help topics, completions) to work. Set it in your profile: `$Env:XDG_CACHE_HOME = "$Env:USERPROFILE\.cache"`.
+- **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.
 
 ## Architecture (3 layers)
 
@@ -40,6 +44,11 @@ General Helpers (Phase 5+)
   DFHelpers.*.ps1 — pager, help/discovery, navigation, filesystem, process, environment, clipboard
 
 ## Testing
+
+Load module for development:
+```powershell
+Import-Module ./DotForge.psd1 -Force
+```
 
 Pester 5. Run all tests:
 ```powershell
