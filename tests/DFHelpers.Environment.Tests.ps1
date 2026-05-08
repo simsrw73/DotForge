@@ -40,7 +40,7 @@ Describe 'Edit-DFProfile' {
     }
 
     It 'does not emit a warning when $Env:EDITOR is set' {
-        $Env:EDITOR = 'pwsh'
+        $Env:EDITOR = 'nonexistent-editor-xyz'
         try { ep -WarningVariable warns 3>$null } catch { }
         $warns | Should -BeNullOrEmpty
     }
