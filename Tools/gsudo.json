@@ -21,10 +21,6 @@
     "sudo": {
       "command": "gsudo",
       "args": []
-    },
-    "eshl": {
-      "command": "gsudo",
-      "args": ["pwsh"]
     }
   },
   "picker": "custom"
