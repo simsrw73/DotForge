@@ -27,9 +27,9 @@ if ($missing) {
 }
 
 # ── Configure all installed tools ─────────────────────────────────────────────
+# oh-my-posh and zoxide inits are handled by their companions inside Register-DFTool.
+# Set $Env:POSH_THEME before this line to pin a specific config file; otherwise the
+# companion auto-discovers *.omp.* from $XDG_CONFIG_HOME/oh-my-posh/ (warns if ambiguous).
+# Use fpot in-session to preview and switch themes (note: theme switch breaks zoxide
+# directory tracking for the rest of that session — known limitation).
 Register-DFTool -All
-
-# ── Prompt ────────────────────────────────────────────────────────────────────
-# oh-my-posh is registered above (if installed); fpot lets you preview themes
-# oh-my-posh init pwsh --config "$Env:XDG_CONFIG_HOME\oh-my-posh\catpow.omp.yaml" |
-#     Invoke-Expression

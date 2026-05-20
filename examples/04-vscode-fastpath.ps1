@@ -21,15 +21,7 @@ if ($Env:TERM_PROGRAM -eq 'vscode') {
 # ── Full init (standard terminals) ────────────────────────────────────────────
 
 Initialize-DFEnvironment
-Register-DFTool -All
-
-# Prompt theme (skipped in VS Code terminal above)
-if (Get-Command oh-my-posh -ErrorAction Ignore) {
-    $ompConfig = Join-Path $Env:XDG_CONFIG_HOME 'oh-my-posh' 'theme.omp.yaml'
-    if (Test-Path $ompConfig) {
-        oh-my-posh init pwsh --config $ompConfig | Invoke-Expression
-    }
-}
+Register-DFTool -All   # oh-my-posh and zoxide inits handled by companions
 
 # Session transcript
 $transcriptDir = Join-Path $HOME 'Documents' 'PowerShell.Transcripts' (Get-Date -Format 'yyyy-MM-dd')
