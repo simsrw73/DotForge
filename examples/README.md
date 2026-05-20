@@ -26,12 +26,6 @@ if ($missing) { Install-DFTool -Name $missing }
 $DFConfig = @{ SkipTools = @('lsd') }  # lsd conflicts with eza
 ```
 
-### Weekly completion refresh
-
-```powershell
-if ((Get-Date).DayOfWeek -eq 'Friday') { Update-DFCompletions }
-```
-
 ### Query the registry
 
 ```powershell

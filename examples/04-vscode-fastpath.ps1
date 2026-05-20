@@ -28,7 +28,3 @@ $transcriptDir = Join-Path $HOME 'Documents' 'PowerShell.Transcripts' (Get-Date 
 New-Item -ItemType Directory -Force -Path $transcriptDir | Out-Null
 Start-Transcript -Path (Join-Path $transcriptDir "$PID.txt") -Append | Out-Null
 
-# Weekly completion refresh (Fridays)
-if ((Get-Date).DayOfWeek -eq 'Friday') {
-    Update-DFCompletions
-}

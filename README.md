@@ -21,11 +21,6 @@ inspired the whole module: I use [chezmoi](https://www.chezmoi.io/) to manage my
 dotfiles, and keeping everything under `~/.config` means my tool configurations sync
 to every new machine automatically — no hunting, no manual re-setup.
 
-**Argument completers.** DotForge registers PowerShell tab-completion for CLI tools
-that don't ship with native PS completers. Completions are generated once and cached
-to `$XDG_CACHE_HOME` — they are only regenerated when the tool binary is newer than
-the cached file, so your profile stays fast no matter how many tools you register.
-
 **fzf pickers.** Interactive fuzzy-find workflows are built in for common operations:
 fuzzy `cd`, process management, help browsing, ripgrep result navigation, and more.
 Any tool with a picker entry in its JSON record gets a full `Invoke-DFPicker`-backed
@@ -68,9 +63,6 @@ Register-DFTool -All
 
 # 3. Install a tool you don't have yet
 Install-DFTool -Name ripgrep
-
-# 4. Refresh completions after upgrading tools
-Update-DFCompletions
 ```
 
 ## User Configuration (`$DFConfig`)
@@ -90,69 +82,67 @@ Register-DFTool -All
 
 **Core (Layer 1–3)**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Initialize-DFEnvironment` | | Bootstrap XDG dirs; detect package managers |
-| `Register-DFTool [-Name\|-All]` | | Configure tools in the current session |
-| `Install-DFTool -Name <tool>` | | Install via scoop / winget / choco / psresource |
-| `Update-DFCompletions [-Name]` | | Refresh dynamic completion caches |
-| `Get-DFTool [-Name] [-Tag]` | | Query the tool registry |
-| `Find-DFTool -Pattern <str>` | | Wildcard search across name / description / tags |
-| `Add-DFToPath <dir> [-Prepend]` | | Normalized, dedup PATH addition |
-| `New-DFDirectory <path>` | | Idempotent directory creation |
-| `Invoke-DFPicker` | | Generalized fzf picker skeleton |
-| `Get-DFCachedCompletion` | | Mtime-based completion script caching |
-| `Invoke-DFWithPager` | `pg` | Pipe output through `$Env:Pager` |
+| Cmdlet                          | Alias | Purpose                                          |
+| ------------------------------- | ----- | ------------------------------------------------ |
+| `Initialize-DFEnvironment`      |       | Bootstrap XDG dirs; detect package managers      |
+| `Register-DFTool [-Name\|-All]` |       | Configure tools in the current session           |
+| `Install-DFTool -Name <tool>`   |       | Install via scoop / winget / choco / psresource  |
+| `Get-DFTool [-Name] [-Tag]`     |       | Query the tool registry                          |
+| `Find-DFTool -Pattern <str>`    |       | Wildcard search across name / description / tags |
+| `Add-DFToPath <dir> [-Prepend]` |       | Normalized, dedup PATH addition                  |
+| `New-DFDirectory <path>`        |       | Idempotent directory creation                    |
+| `Invoke-DFPicker`               |       | Generalized fzf picker skeleton                  |
+| `Invoke-DFWithPager`            | `pg`  | Pipe output through `$Env:Pager`                 |
 
 **Help & Discovery**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Invoke-DFHelp <name>` | `hm` | Get-Help with ANSI header colorization |
-| `Select-DFHelpTopic` | `fh` | Fuzzy-browse all help topics |
-| `Select-DFCommand` | `fcmd` | Fuzzy-browse all commands |
-| `Select-DFVerb` | `fverb` | Fuzzy-browse approved PS verbs |
-| `Select-DFModule` | `fmod` | Fuzzy-browse installed modules |
+| Cmdlet                 | Alias   | Purpose                                |
+| ---------------------- | ------- | -------------------------------------- |
+| `Invoke-DFHelp <name>` | `hm`    | Get-Help with ANSI header colorization |
+| `Select-DFHelpTopic`   | `fh`    | Fuzzy-browse all help topics           |
+| `Select-DFCommand`     | `fcmd`  | Fuzzy-browse all commands              |
+| `Select-DFVerb`        | `fverb` | Fuzzy-browse approved PS verbs         |
+| `Select-DFModule`      | `fmod`  | Fuzzy-browse installed modules         |
 
 **Navigation**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Set-DFLocationUp [-Levels]` | `up` | Navigate up N directory levels |
-| `New-DFDirectoryAndSet <path>` | `mkcd` | Create directory and cd into it |
-| `Select-DFLocation` | `fcd` | Fuzzy-browse subdirectories and cd |
+| Cmdlet                         | Alias  | Purpose                            |
+| ------------------------------ | ------ | ---------------------------------- |
+| `Set-DFLocationUp [-Levels]`   | `up`   | Navigate up N directory levels     |
+| `New-DFDirectoryAndSet <path>` | `mkcd` | Create directory and cd into it    |
+| `Select-DFLocation`            | `fcd`  | Fuzzy-browse subdirectories and cd |
 
 **File System**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `New-DFFile <path>` | `touch` | Create file or update its timestamp |
-| `Get-DFWhich <name>` | `which` | Find executable path |
-| `Open-DFItem <path>` | `open` | Open file/folder with default handler |
+| Cmdlet               | Alias   | Purpose                               |
+| -------------------- | ------- | ------------------------------------- |
+| `New-DFFile <path>`  | `touch` | Create file or update its timestamp   |
+| `Get-DFWhich <name>` | `which` | Find executable path                  |
+| `Open-DFItem <path>` | `open`  | Open file/folder with default handler |
 
 **Process**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Select-DFProcess` | `fps` | Fuzzy-browse running processes |
+| Cmdlet             | Alias | Purpose                               |
+| ------------------ | ----- | ------------------------------------- |
+| `Select-DFProcess` | `fps` | Fuzzy-browse running processes        |
 | `Get-DFTopProcess` | `top` | Show top N processes by CPU or memory |
 
 **Environment & Profile**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Get-DFEnv [-Pattern]` | `env` | List all env vars as KEY=VALUE |
-| `Get-DFPath` | `path` | List PATH entries one per line |
-| `Select-DFEnvVar` | `fenv` | Fuzzy-browse environment variables |
-| `Edit-DFProfile` | `ep` | Open `$PROFILE` in `$Env:EDITOR` |
+| Cmdlet                   | Alias    | Purpose                                      |
+| ------------------------ | -------- | -------------------------------------------- |
+| `Get-DFEnv [-Pattern]`   | `env`    | List all env vars as KEY=VALUE               |
+| `Get-DFPath`             | `path`   | List PATH entries one per line               |
+| `Select-DFEnvVar`        | `fenv`   | Fuzzy-browse environment variables           |
+| `Edit-DFProfile`         | `ep`     | Open `$PROFILE` in `$Env:EDITOR`             |
 | `Invoke-DFProfileReload` | `reload` | Dot-source `$PROFILE` in the current session |
 
 **Clipboard**
 
-| Cmdlet | Alias | Purpose |
-|--------|-------|---------|
-| `Copy-DFToClipboard` | `copy` | Copy string or pipeline input to clipboard |
-| `Get-DFFromClipboard` | `paste` | Get clipboard contents |
+| Cmdlet                | Alias   | Purpose                                    |
+| --------------------- | ------- | ------------------------------------------ |
+| `Copy-DFToClipboard`  | `copy`  | Copy string or pipeline input to clipboard |
+| `Get-DFFromClipboard` | `paste` | Get clipboard contents                     |
 
 ## Recommended Setup
 
@@ -170,6 +160,7 @@ $Env:Picker  = 'fzf'              # fuzzy picker used by all DotForge pickers; '
 ### Scoop
 
 - **git** is required for scoop bucket operations (`scoop bucket add`, `scoop update`):
+
   ```powershell
   scoop install git
   ```
@@ -184,6 +175,7 @@ $Env:Picker  = 'fzf'              # fuzzy picker used by all DotForge pickers; '
 Each tool is a `Tools/<name>.json` file. Required: `name`, `executable`.
 
 Optional:
+
 - `type` — `"exe"` (default) or `"module"` (PS module; checked via `Get-Module -ListAvailable`)
 - `packages` — PM IDs: `scoop`, `winget`, `choco`, `psresource`
 - `xdg` — `method` (`default`/`env`/`config`/`wrapper`/`manual`), `vars`, `dirs`
@@ -193,21 +185,21 @@ Optional:
 
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 
-## Included Tools (30)
+## Included Tools (31)
 
-| Group | Tools |
-|-------|-------|
-| File/dir | bat, eza, fd, ripgrep, broot |
-| Text/data | jq, glow |
-| System | procs, winfetch |
-| Network | curl, wget |
-| Container | docker |
-| Editors | micro |
-| Fuzzy/nav | fzf, zoxide |
-| Pagers | less |
-| Package managers | scoop, winget, npm |
-| Dev | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
-| PS modules | posh-git, PSFzf, Terminal-Icons, oh-my-posh |
+| Group            | Tools                                              |
+| ---------------- | -------------------------------------------------- |
+| File/dir         | bat, eza, fd, ripgrep, broot                       |
+| Text/data        | jq, glow                                           |
+| System           | procs, winfetch, gsudo                             |
+| Network          | curl, wget                                         |
+| Container        | docker                                             |
+| Editors          | micro                                              |
+| Fuzzy/nav        | fzf, zoxide                                        |
+| Pagers           | less                                               |
+| Package managers | scoop, winget, npm                                 |
+| Dev              | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
+| PS modules       | posh-git, PSFzf, Terminal-Icons, oh-my-posh        |
 
 ## License
 
