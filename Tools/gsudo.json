@@ -1,0 +1,31 @@
+{
+  "name": "gsudo",
+  "description": "Windows sudo — run commands with elevated privileges without a UAC prompt per command",
+  "tags": [
+    "admin",
+    "elevation",
+    "sudo",
+    "windows"
+  ],
+  "executable": "gsudo.exe",
+  "packages": {
+    "scoop": "gsudo",
+    "winget": "gerardog.gsudo",
+    "choco": "gsudo"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
+  "aliases": {
+    "sudo": {
+      "command": "gsudo",
+      "args": []
+    },
+    "eshl": {
+      "command": "gsudo",
+      "args": ["pwsh"]
+    }
+  },
+  "picker": "custom"
+}

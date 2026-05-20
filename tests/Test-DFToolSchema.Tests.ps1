@@ -37,10 +37,6 @@ Describe 'Test-DFToolSchema' {
                     vars       = [PSCustomObject]@{ BAT_CONFIG_PATH = '${XDG_CONFIG_HOME}/bat/bat.conf' }
                     dirs       = @()
                 }
-                completions = [PSCustomObject]@{
-                    type  = 'static'
-                    flags = @('--theme', '--language')
-                }
                 aliases = [PSCustomObject]@{}
                 picker  = $null
             }
@@ -74,17 +70,6 @@ Describe 'Test-DFToolSchema' {
             $errors | Where-Object { $_ -match 'xdg.method' } | Should -Not -BeNullOrEmpty
         }
 
-        It 'fails when completions.type is not a valid value' {
-            $tool = [PSCustomObject]@{
-                name        = 'mytool'
-                executable  = 'mytool.exe'
-                completions = [PSCustomObject]@{ type = 'magic' }
-            }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'completions.type' } | Should -Not -BeNullOrEmpty
-        }
-
         It 'fails when type is not a valid value' {
             $tool = [PSCustomObject]@{ name = 't'; executable = 't.exe'; type = 'binary' }
             $errors = @()
@@ -92,16 +77,6 @@ Describe 'Test-DFToolSchema' {
             $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
-        It 'fails when completions.type is dynamic but command is missing' {
-            $tool = [PSCustomObject]@{
-                name        = 'mytool'
-                executable  = 'mytool.exe'
-                completions = [PSCustomObject]@{ type = 'dynamic' }
-            }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'command' } | Should -Not -BeNullOrEmpty
-        }
     }
 }
 
@@ -116,7 +91,8 @@ Describe 'Seed tool JSON files' {
         'curl', 'wget', 'docker', 'less', 'gh', 'delta',
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
         'bitwarden', 'npm', 'scoop', 'winget',
-        'posh-git', 'PSFzf', 'Terminal-Icons', 'oh-my-posh'
+        'posh-git', 'PSFzf', 'Terminal-Icons', 'oh-my-posh',
+        'gsudo'
     ) | ForEach-Object {
         @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
     }
