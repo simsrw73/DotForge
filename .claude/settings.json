@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "shell": "powershell",
+            "command": "Write-Output '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"PRE-COMMIT REMINDER: Before committing, verify: (1) examples/ still accurate — no stale function names, removed commands, or wrong ordering? (2) README Exported Cmdlets and Included Tools match current module state? (3) CHANGELOG [Unreleased] covers this change?\"}}'",
+            "statusMessage": "Checking docs reminder..."
+          }
+        ]
+      }
+    ]
+  }
+}
