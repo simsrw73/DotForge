@@ -37,12 +37,23 @@
 
 ## Priority 6 — Features
 
-- [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `scoop` (completions), `choco`, `winget` (search picker)
+- [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `scoop` (completions), `choco`, `winget` (search picker), dotnet
       — document (or automate via companion `.ps1`) `scoop config use_sqlite_cache true` for PS7+, and suggest `scoop-search` / `fastscoop` as drop-in replacements
 - [ ] **Maintenance interval feature** — `Invoke-DFMaintenance` that runs tasks (purge completion cache, update help topics, `scoop cleanup *`) on a configurable schedule; use a last-run timestamp file similar to the existing help-topics cache key pattern
 - [ ] **Dynamic fzf preview sizing** — instead of hardcoded `60%`, explore sizing based on content length or terminal width
 
 ## Priority 7 — Future Consideration
 
+- [ ] **Tool dependency / interrelation schema** — explore adding `requires` or `enhances` fields to tool JSON so DotForge can enforce init ordering (e.g., oh-my-posh before zoxide) and conditionally activate extended functionality when a companion tool is present (e.g., posh-git enabling `POSH_GIT_ENABLED` for OMP). Current workaround: alphabetical processing guarantees oh-my-posh < zoxide; posh-git check lives in the OMP companion. Only tackle when a third case emerges.
+
+
+
 - [ ] **User tool extension guide** — document how users add their own tool JSON records, argument completers, and pickers without forking the module
 - [ ] **Scripting language tool paths** — evaluate whether managing `python`, `node`, `ruby`, `lua` bin/module paths belongs in DotForge or is out of scope
+
+## Problems
+
+- [ ] Help Docs Headers. ABOUT_ALIAS_PROVIDER doesn't get colored because of the underscores.
+- [ ] 'Out-String" 2>nul' is not recognized as an internal or external....
+- [ ] In some Help files there is a red question mark on a line by itself, same indention as surrounding lines.
+- [ ] Error: unknown command "completion" for "oh-my-posh"
