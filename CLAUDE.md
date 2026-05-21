@@ -73,6 +73,7 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 
 - Update README.md with any changes.
 - Update .\examples with any changes.
+- **Every public function must have complete comment-based help**: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each param, at least one `.EXAMPLE`, and `.OUTPUTS`. When adding or modifying a public function, verify its help block is complete before committing. Run `Get-Help <FunctionName> -Full` to confirm `Get-Help` renders all sections correctly.
 
 ## Tool JSON Schema
 
