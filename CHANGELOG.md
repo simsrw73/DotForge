@@ -19,6 +19,11 @@ All notable changes to DotForge are documented here.
   semicolons, and compound expressions
 - **psreadline tool record with bundled themes:** Default settings record plus 3 bundled PSReadLine
   themes (dark, light, catppuccin-mocha) for syntax highlighting configuration
+- **psreadline companion (`psreadline.ps1`):** Applies settings from tool JSON, registers
+  `Invoke-DFApplyPSReadLineTheme` (XDG user dir → bundled theme lookup with VT true-color output),
+  `Select-PSReadLineTheme` (`fprl`) fuzzy theme picker, and sets initial theme from
+  `$DFConfig['PSReadLineTheme']` (defaults to `dark`). Theme colors stored in
+  `$global:DFPSReadLineColors` for testability in non-VT environments.
 - **oh-my-posh companion: OMP init moved into `oh-my-posh.ps1`** — conditionally imports posh-git
   and sets `POSH_GIT_ENABLED` before OMP starts; resolves theme config via `$Env:POSH_THEME` then
   XDG auto-discovery of `*.omp.*` in `$XDG_CONFIG_HOME/oh-my-posh/` (warns when multiple found,

@@ -14,8 +14,10 @@ Initialize-DFEnvironment
 
 # ── Prompt (must register before zoxide) ──────────────────────────────────────
 # oh-my-posh wraps function:prompt; zoxide must wrap it afterwards.
-# Register PSFzf and Terminal-Icons here too — no ordering constraint.
-Register-DFTool -Name PSFzf, Terminal-Icons, oh-my-posh
+# psreadline must come before PSFzf (PSFzf depends on it for key-binding setup).
+# Terminal-Icons has no ordering constraint.
+Register-DFTool -Name psreadline, Terminal-Icons, oh-my-posh
+Register-DFTool -Name PSFzf
 
 # ── Group 1: Core file tools ───────────────────────────────────────────────────
 # Registers: ls/ll/la/tree aliases (eza), cat alias (bat), ff picker (eza+bat),
