@@ -240,8 +240,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
     }
 
     It 'registers psreadline before PSFzf when PSFzf has dependsOn = ["psreadline"]' {
-        $order = [System.Collections.Generic.List[string]]::new()
-
         @'
 { "name": "psreadline", "type": "module", "executable": "PSReadLine", "dependsOn": [] }
 '@ | Set-Content (Join-Path $script:TmpTools 'psreadline.json')
