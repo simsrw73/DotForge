@@ -1,7 +1,11 @@
 {
   "name": "eza",
   "description": "Modern ls replacement with icons, Git integration, and color",
-  "tags": ["file", "directory", "ls"],
+  "tags": [
+    "file",
+    "directory",
+    "ls"
+  ],
   "executable": "eza.exe",
   "packages": {
     "scoop": "eza",
@@ -12,21 +16,36 @@
     "compliance": "none",
     "method": "default"
   },
-  "completions": {
-    "type": "static",
-    "flags": [
-      "--long", "--all", "--tree", "--icons", "--git", "--color",
-      "--group-directories-first", "--sort", "--reverse", "--header",
-      "--group", "--oneline", "--classify", "--level", "--ignore-glob",
-      "--time-style", "--hyperlink", "--no-permissions", "--no-filesize",
-      "--no-user", "--no-time", "--stdin", "--list-dirs", "--dereference"
-    ]
-  },
   "aliases": {
-    "ls": { "command": "eza", "args": ["--color=auto", "--icons", "--group-directories-first"] },
-    "ll": { "command": "eza", "args": ["--all", "--long", "--header"] },
-    "la": { "command": "eza", "args": ["--all", "--group"] },
-    "tree": { "command": "eza", "args": ["--tree"] }
+    "ls": {
+      "command": "eza",
+      "args": [
+        "--color=auto",
+        "--icons",
+        "--group-directories-first"
+      ]
+    },
+    "ll": {
+      "command": "eza",
+      "args": [
+        "--all",
+        "--long",
+        "--header"
+      ]
+    },
+    "la": {
+      "command": "eza",
+      "args": [
+        "--all",
+        "--group"
+      ]
+    },
+    "tree": {
+      "command": "eza",
+      "args": [
+        "--tree"
+      ]
+    }
   },
   "picker": {
     "alias": "ff",

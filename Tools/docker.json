@@ -1,11 +1,24 @@
 {
   "name": "docker",
   "description": "Container runtime and management",
-  "tags": ["container", "dev"],
+  "tags": [
+    "container",
+    "dev"
+  ],
   "executable": "docker.exe",
-  "packages": { "winget": "Docker.DockerDesktop" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "DOCKER_CONFIG": "${XDG_CONFIG_HOME}/docker" }, "dirs": ["${XDG_CONFIG_HOME}/docker"] },
-  "completions": { "type": "static", "flags": ["run", "build", "pull", "push", "ps", "images", "exec", "logs", "stop", "start", "rm", "rmi", "inspect", "network", "volume", "compose", "system"] },
+  "packages": {
+    "winget": "Docker.DockerDesktop"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "DOCKER_CONFIG": "${XDG_CONFIG_HOME}/docker"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/docker"
+    ]
+  },
   "aliases": {},
   "picker": "custom"
 }

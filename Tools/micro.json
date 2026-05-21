@@ -1,11 +1,25 @@
 {
   "name": "micro",
   "description": "Modern and intuitive terminal-based text editor",
-  "tags": ["editor", "text"],
+  "tags": [
+    "editor",
+    "text"
+  ],
   "executable": "micro.exe",
-  "packages": { "scoop": "micro", "choco": "micro" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "MICRO_CONF_DIR": "${XDG_CONFIG_HOME}/micro" }, "dirs": ["${XDG_CONFIG_HOME}/micro"] },
-  "completions": { "type": "static", "flags": ["--config-dir", "--version", "--help", "--options", "--startpos", "--parsecursor"] },
+  "packages": {
+    "scoop": "micro",
+    "choco": "micro"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "MICRO_CONF_DIR": "${XDG_CONFIG_HOME}/micro"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/micro"
+    ]
+  },
   "aliases": {},
   "picker": null
 }

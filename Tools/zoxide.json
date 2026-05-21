@@ -1,7 +1,11 @@
 {
   "name": "zoxide",
   "description": "Smarter cd that learns your most-used directories",
-  "tags": ["navigation", "cd", "directory"],
+  "tags": [
+    "navigation",
+    "cd",
+    "directory"
+  ],
   "executable": "zoxide.exe",
   "packages": {
     "scoop": "zoxide",
@@ -15,10 +19,6 @@
       "_ZO_DATA_DIR": "${XDG_DATA_HOME}/zoxide"
     },
     "dirs": []
-  },
-  "completions": {
-    "type": "static",
-    "flags": ["--help", "--version", "query", "add", "remove", "edit", "import", "init"]
   },
   "aliases": {},
   "picker": {

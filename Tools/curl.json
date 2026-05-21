@@ -1,11 +1,27 @@
 {
   "name": "curl",
   "description": "Transfer data with URLs",
-  "tags": ["network", "http", "download"],
+  "tags": [
+    "network",
+    "http",
+    "download"
+  ],
   "executable": "curl.exe",
-  "packages": { "scoop": "curl", "winget": "cURL.cURL", "choco": "curl" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "CURL_HOME": "${XDG_CONFIG_HOME}/curl" }, "dirs": ["${XDG_CONFIG_HOME}/curl"] },
-  "completions": { "type": "static", "flags": ["--silent", "--verbose", "--output", "--header", "--request", "--data", "--form", "--user", "--location", "--compressed", "--max-time", "--retry", "--cookie", "--cookie-jar", "--insecure"] },
+  "packages": {
+    "scoop": "curl",
+    "winget": "cURL.cURL",
+    "choco": "curl"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "CURL_HOME": "${XDG_CONFIG_HOME}/curl"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/curl"
+    ]
+  },
   "aliases": {},
   "picker": null
 }

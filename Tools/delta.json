@@ -1,11 +1,21 @@
 {
   "name": "delta",
   "description": "Syntax-highlighting pager for git diff output",
-  "tags": ["git", "diff", "pager"],
+  "tags": [
+    "git",
+    "diff",
+    "pager"
+  ],
   "executable": "delta.exe",
-  "packages": { "scoop": "delta", "winget": "dandavison.delta", "choco": "delta" },
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": { "type": "static", "flags": ["--navigate", "--side-by-side", "--line-numbers", "--syntax-theme", "--diff-so-fancy", "--features", "--color-only"] },
+  "packages": {
+    "scoop": "delta",
+    "winget": "dandavison.delta",
+    "choco": "delta"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
   "aliases": {},
   "picker": null
 }

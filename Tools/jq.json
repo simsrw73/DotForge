@@ -1,11 +1,21 @@
 {
   "name": "jq",
   "description": "Command-line JSON processor",
-  "tags": ["json", "data", "text"],
+  "tags": [
+    "json",
+    "data",
+    "text"
+  ],
   "executable": "jq.exe",
-  "packages": { "scoop": "jq", "winget": "jqlang.jq", "choco": "jq" },
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": { "type": "static", "flags": ["--compact-output", "--raw-output", "--raw-input", "--null-input", "--sort-keys", "--tab", "--indent", "--join-output", "--arg", "--argjson", "--slurpfile", "--rawfile", "--args", "--jsonargs"] },
+  "packages": {
+    "scoop": "jq",
+    "winget": "jqlang.jq",
+    "choco": "jq"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
   "aliases": {},
   "picker": "custom"
 }

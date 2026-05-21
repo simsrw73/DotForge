@@ -1,11 +1,26 @@
 {
   "name": "glow",
   "description": "Render Markdown on the CLI",
-  "tags": ["markdown", "viewer", "text"],
+  "tags": [
+    "markdown",
+    "viewer",
+    "text"
+  ],
   "executable": "glow.exe",
-  "packages": { "scoop": "glow", "choco": "glow" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "GLOW_CONFIG_DIR": "${XDG_CONFIG_HOME}/glow" }, "dirs": ["${XDG_CONFIG_HOME}/glow"] },
-  "completions": { "type": "dynamic", "command": "glow completion powershell", "cache": true },
+  "packages": {
+    "scoop": "glow",
+    "choco": "glow"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "GLOW_CONFIG_DIR": "${XDG_CONFIG_HOME}/glow"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/glow"
+    ]
+  },
   "aliases": {},
   "picker": "custom"
 }

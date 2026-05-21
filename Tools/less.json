@@ -1,11 +1,28 @@
 {
   "name": "less",
   "description": "Opposite of more — terminal pager",
-  "tags": ["pager", "viewer"],
+  "tags": [
+    "pager",
+    "viewer"
+  ],
   "executable": "less.exe",
-  "packages": { "scoop": "less", "choco": "less" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "LESSHISTFILE": "${XDG_STATE_HOME}/less/history", "LESSKEY": "${XDG_CONFIG_HOME}/less/lesskey", "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init" }, "dirs": ["${XDG_STATE_HOME}/less", "${XDG_CONFIG_HOME}/less"] },
-  "completions": { "type": "static", "flags": ["--RAW-CONTROL-CHARS", "--quit-if-one-screen", "--no-init", "--chop-long-lines", "--ignore-case", "--IGNORE-CASE", "--line-numbers", "--squeeze-blank-lines", "--tabs"] },
+  "packages": {
+    "scoop": "less",
+    "choco": "less"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "LESSHISTFILE": "${XDG_STATE_HOME}/less/history",
+      "LESSKEY": "${XDG_CONFIG_HOME}/less/lesskey",
+      "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
+    },
+    "dirs": [
+      "${XDG_STATE_HOME}/less",
+      "${XDG_CONFIG_HOME}/less"
+    ]
+  },
   "aliases": {},
   "picker": null
 }

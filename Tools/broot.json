@@ -1,11 +1,24 @@
 {
   "name": "broot",
   "description": "Interactive file browser with fuzzy search",
-  "tags": ["file", "browser", "navigation"],
+  "tags": [
+    "file",
+    "browser",
+    "navigation"
+  ],
   "executable": "broot.exe",
-  "packages": { "scoop": "broot", "choco": "broot" },
-  "xdg": { "compliance": "full", "method": "env", "vars": {}, "dirs": ["${XDG_CONFIG_HOME}/broot"] },
-  "completions": { "type": "static", "flags": ["--sizes", "--dates", "--permissions", "--hidden", "--git-ignored", "--no-sizes", "--no-dates", "--no-permissions", "--color", "--sort-by-count", "--sort-by-date", "--sort-by-size", "--only-folders", "--show-root-fs", "--install", "--help"] },
+  "packages": {
+    "scoop": "broot",
+    "choco": "broot"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": {},
+    "dirs": [
+      "${XDG_CONFIG_HOME}/broot"
+    ]
+  },
   "aliases": {},
   "picker": null
 }

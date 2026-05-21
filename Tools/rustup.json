@@ -1,11 +1,20 @@
 {
   "name": "rustup",
   "description": "Rust toolchain installer and version manager",
-  "tags": ["rust", "dev", "toolchain"],
+  "tags": [
+    "rust",
+    "dev",
+    "toolchain"
+  ],
   "executable": "rustup.exe",
-  "packages": { "scoop": "rustup", "winget": "Rustlang.Rustup" },
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": { "type": "dynamic", "command": "rustup completions powershell", "cache": true },
+  "packages": {
+    "scoop": "rustup",
+    "winget": "Rustlang.Rustup"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
   "aliases": {},
   "picker": "custom"
 }

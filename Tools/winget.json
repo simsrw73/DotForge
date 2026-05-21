@@ -1,17 +1,15 @@
 {
   "name": "winget",
   "description": "Windows Package Manager — install, upgrade, and configure applications",
-  "tags": ["package-manager", "windows"],
+  "tags": [
+    "package-manager",
+    "windows"
+  ],
   "executable": "winget.exe",
   "packages": {},
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": {
-    "type": "static",
-    "flags": [
-      "install", "uninstall", "upgrade", "list", "show", "search",
-      "export", "import", "settings", "features", "source", "hash",
-      "validate", "complete", "download", "repair", "pin"
-    ]
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
   },
   "aliases": {},
   "picker": "custom"

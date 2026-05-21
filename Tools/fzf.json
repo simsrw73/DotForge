@@ -1,7 +1,11 @@
 {
   "name": "fzf",
   "description": "General-purpose command-line fuzzy finder",
-  "tags": ["fuzzy", "picker", "search"],
+  "tags": [
+    "fuzzy",
+    "picker",
+    "search"
+  ],
   "executable": "fzf.exe",
   "packages": {
     "scoop": "fzf",
@@ -11,16 +15,6 @@
   "xdg": {
     "compliance": "none",
     "method": "default"
-  },
-  "completions": {
-    "type": "static",
-    "flags": [
-      "--query", "--filter", "--select-1", "--exit-0", "--multi",
-      "--no-sort", "--reverse", "--exact", "--ansi", "--preview",
-      "--preview-window", "--height", "--border", "--header",
-      "--delimiter", "--with-nth", "--nth", "--cycle", "--layout",
-      "--bind", "--color"
-    ]
   },
   "aliases": {},
   "picker": null

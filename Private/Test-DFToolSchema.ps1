@@ -50,18 +50,6 @@ function Test-DFToolSchema {
         $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
     }
 
-    $validTypes = @('static', 'dynamic')
-    $completionsObj  = PSProp $Tool 'completions'
-    $completionsType = PSProp $completionsObj 'type'
-    if ($completionsType -and $completionsType -notin $validTypes) {
-        $errs.Add("Invalid completions.type '$completionsType'. Valid: $($validTypes -join ', ')")
-    }
-
-    $completionsCommand = PSProp $completionsObj 'command'
-    if ($completionsType -eq 'dynamic' -and -not $completionsCommand) {
-        $errs.Add("completions.type 'dynamic' requires completions.command")
-    }
-
     if ($Errors) { $Errors.Value = $errs.ToArray() }
     return $errs.Count -eq 0
 }

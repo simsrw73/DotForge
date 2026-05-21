@@ -1,11 +1,30 @@
 {
   "name": "fd",
   "description": "Fast and user-friendly alternative to find",
-  "tags": ["file", "search", "find"],
+  "tags": [
+    "file",
+    "search",
+    "find"
+  ],
   "executable": "fd.exe",
-  "packages": { "scoop": "fd", "winget": "sharkdp.fd", "choco": "fd" },
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": { "type": "dynamic", "command": "fd --gen-completions powershell", "cache": true },
+  "packages": {
+    "scoop": "fd",
+    "winget": "sharkdp.fd",
+    "choco": "fd"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
   "aliases": {},
-  "picker": { "alias": "ffd", "function": "Select-FdResult", "list": "fd --color=always", "preview": "bat --color=always --line-range=:100 {}", "preview_window": "right:60%", "ansi": true, "header": "Select file  [Enter to open]", "action": "output" }
+  "picker": {
+    "alias": "ffd",
+    "function": "Select-FdResult",
+    "list": "fd --color=always",
+    "preview": "bat --color=always --line-range=:100 {}",
+    "preview_window": "right:60%",
+    "ansi": true,
+    "header": "Select file  [Enter to open]",
+    "action": "output"
+  }
 }

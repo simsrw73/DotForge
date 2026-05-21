@@ -1,11 +1,32 @@
 {
   "name": "lazygit",
   "description": "Simple terminal UI for git commands",
-  "tags": ["git", "tui", "dev"],
+  "tags": [
+    "git",
+    "tui",
+    "dev"
+  ],
   "executable": "lazygit.exe",
-  "packages": { "scoop": "lazygit", "winget": "JesseDuffield.lazygit", "choco": "lazygit" },
-  "xdg": { "compliance": "partial", "method": "env", "vars": { "LG_CONFIG_FILE": "${XDG_CONFIG_HOME}/lazygit/config.yml" }, "dirs": ["${XDG_CONFIG_HOME}/lazygit"] },
-  "completions": { "type": "static", "flags": ["--path", "--git-dir", "--work-tree", "--use-config-dir", "--debug", "--logs", "--version", "--help"] },
-  "aliases": { "lg": { "command": "lazygit", "args": [] } },
+  "packages": {
+    "scoop": "lazygit",
+    "winget": "JesseDuffield.lazygit",
+    "choco": "lazygit"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "LG_CONFIG_FILE": "${XDG_CONFIG_HOME}/lazygit/config.yml"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/lazygit"
+    ]
+  },
+  "aliases": {
+    "lg": {
+      "command": "lazygit",
+      "args": []
+    }
+  },
   "picker": null
 }

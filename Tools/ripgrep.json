@@ -1,7 +1,11 @@
 {
   "name": "ripgrep",
   "description": "Recursively search directories for a regex pattern, respecting gitignore",
-  "tags": ["search", "grep", "text"],
+  "tags": [
+    "search",
+    "grep",
+    "text"
+  ],
   "executable": "rg.exe",
   "packages": {
     "scoop": "ripgrep",
@@ -14,12 +18,9 @@
     "vars": {
       "RIPGREP_CONFIG_PATH": "${XDG_CONFIG_HOME}/ripgrep/ripgreprc"
     },
-    "dirs": ["${XDG_CONFIG_HOME}/ripgrep"]
-  },
-  "completions": {
-    "type": "dynamic",
-    "command": "rg --generate complete-powershell",
-    "cache": true
+    "dirs": [
+      "${XDG_CONFIG_HOME}/ripgrep"
+    ]
   },
   "aliases": {},
   "picker": "custom"
