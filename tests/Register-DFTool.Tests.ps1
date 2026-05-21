@@ -238,6 +238,51 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Item (Join-Path $script:TmpTools 'cfgtool2.json') -ErrorAction Ignore
         $script:DFToolDb = $null
     }
+
+    It 'registers psreadline before PSFzf when PSFzf has dependsOn = ["psreadline"]' {
+        $order = [System.Collections.Generic.List[string]]::new()
+
+        @'
+{ "name": "psreadline", "type": "module", "executable": "PSReadLine", "dependsOn": [] }
+'@ | Set-Content (Join-Path $script:TmpTools 'psreadline.json')
+
+        @'
+{ "name": "PSFzf", "type": "module", "executable": "PSFzf", "dependsOn": ["psreadline"] }
+'@ | Set-Content (Join-Path $script:TmpTools 'PSFzf.json')
+
+        # Record registration order via sentinels
+        "`$global:RegOrder.Add('psreadline')" |
+            Set-Content (Join-Path $script:TmpTools 'psreadline.ps1')
+        "`$global:RegOrder.Add('PSFzf')" |
+            Set-Content (Join-Path $script:TmpTools 'PSFzf.ps1')
+
+        $Global:RegOrder = [System.Collections.Generic.List[string]]::new()
+        Mock Get-Module { [PSCustomObject]@{ Name = $Name } }
+        Register-DFTool -All -ToolsPath $script:TmpTools
+
+        $Global:RegOrder[0] | Should -Be 'psreadline'
+        $Global:RegOrder[1] | Should -Be 'PSFzf'
+
+        Remove-Variable RegOrder -Scope Global -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'psreadline.json') -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'PSFzf.json')      -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'psreadline.ps1')  -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'PSFzf.ps1')       -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'injects $DFCurrentTool before dot-sourcing companion' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
+        '$global:CapturedTool = $DFCurrentTool' |
+            Set-Content (Join-Path $script:TmpTools 'testtool.ps1')
+
+        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+        $Global:CapturedTool | Should -Not -BeNullOrEmpty
+        $Global:CapturedTool.name | Should -Be 'testtool'
+
+        Remove-Variable CapturedTool -Scope Global -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'testtool.ps1') -ErrorAction Ignore
+    }
 }
 
 Describe 'Invoke-DFTopoSort' {

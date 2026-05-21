@@ -48,6 +48,9 @@ function Register-DFTool {
         $resolved
     }
 
+    # Topological sort respects dependsOn declarations
+    $tools = Invoke-DFTopoSort -Tools @($tools)
+
     foreach ($tool in $tools) {
         # ── Guard: skip if not available ──────────────────────────────────
         $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
@@ -104,35 +107,6 @@ function Register-DFTool {
                 Write-Verbose "DotForge: $($tool.name) xdg.method 'wrapper' — handled by companion .ps1"
             }
             'default' { } # tool already follows XDG natively — no env config needed
-        }
-
-        # ── Argument completions ────────────────────────────────────────────
-        $completionsProp = $tool.PSObject.Properties['completions']
-        $completionsType = if ($completionsProp) { $completionsProp.Value.PSObject.Properties['type']?.Value } else { $null }
-        $exeBase = [IO.Path]::GetFileNameWithoutExtension($tool.executable)
-
-        if ($completionsType -eq 'static') {
-            $flags = $tool.completions.PSObject.Properties['flags']?.Value
-            if ($flags) {
-                $capturedFlags = @($flags)
-                Register-ArgumentCompleter -Native -CommandName $exeBase -ScriptBlock {
-                    param($wordToComplete, $commandAst, $cursorPosition)
-                    $capturedFlags | Where-Object { $_ -like "$wordToComplete*" } |
-                        ForEach-Object {
-                            [System.Management.Automation.CompletionResult]::new(
-                                $_, $_, 'ParameterValue', $_)
-                        }
-                }.GetNewClosure()
-            }
-        } elseif ($completionsType -eq 'dynamic') {
-            $genCmd = $tool.completions.PSObject.Properties['command']?.Value
-            if ($genCmd) {
-                $exePath     = (Get-Command $tool.executable -ErrorAction Ignore).Path
-                $capturedCmd = $genCmd
-                Get-DFCachedCompletion -CacheKey $tool.name -ExePath $exePath -Generate {
-                    & ([scriptblock]::Create($capturedCmd))
-                }.GetNewClosure()
-            }
         }
 
         # ── Aliases ─────────────────────────────────────────────────────────
@@ -224,7 +198,9 @@ function Register-DFTool {
         # ── Companion .ps1 ──────────────────────────────────────────────────
         $companion = Join-Path $resolvedToolsPath "$($tool.name).ps1"
         if (Test-Path $companion -PathType Leaf) {
+            $DFCurrentTool = $tool
             . ($companion)
+            Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
         }
 
         Write-Verbose "DotForge: $($tool.name) registered"
