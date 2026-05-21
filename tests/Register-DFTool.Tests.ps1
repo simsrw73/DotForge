@@ -1,11 +1,11 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Public/Get-DFCachedCompletion.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
+    . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
     . "$PSScriptRoot/../Public/Get-DFTool.ps1"
     . "$PSScriptRoot/../Public/Find-DFTool.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
@@ -33,7 +33,6 @@ Describe 'Register-DFTool' {
     "vars": { "TESTTOOL_CONFIG": "${XDG_CONFIG_HOME}/testtool/config.conf" },
     "dirs": ["${XDG_CONFIG_HOME}/testtool"]
   },
-  "completions": { "type": "static", "flags": ["--verbose", "--output"] },
   "aliases": {
     "tt": { "command": "testtool", "args": [] },
     "tt-v": { "command": "testtool", "args": ["--verbose"] }
@@ -68,58 +67,44 @@ Describe 'Register-DFTool' {
 
     It 'sets XDG env vars when method is env' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $Env:TESTTOOL_CONFIG | Should -Be "$($Env:XDG_CONFIG_HOME)/testtool/config.conf"
     }
 
     It 'creates XDG dirs when method is env' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'testtool') -PathType Container |
             Should -BeTrue
     }
 
-    It 'registers static completions via Register-ArgumentCompleter' {
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { } -Verifiable
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
-        Should -Invoke Register-ArgumentCompleter -Times 1
-    }
-
     It 'creates a Set-Alias for zero-arg aliases' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Get-Alias tt -ErrorAction Ignore | Should -Not -BeNullOrEmpty
     }
 
     It 'creates a wrapper function for arg-bearing aliases' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Test-Path 'function:global:tt-v' | Should -BeTrue
     }
 
     It 'creates a global picker function from declarative picker JSON' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Test-Path 'function:global:Select-TestTool' | Should -BeTrue
     }
 
     It 'creates a picker alias when picker.alias is set' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Get-Alias ftt -ErrorAction Ignore | Should -Not -BeNullOrEmpty
     }
 
     It 'dot-sources a companion .ps1 when it exists' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        # Create a companion that sets a sentinel variable
+# Create a companion that sets a sentinel variable
         '$global:CompanionLoaded = $true' |
             Set-Content (Join-Path $script:TmpTools 'testtool.ps1')
         Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
@@ -135,8 +120,7 @@ Describe 'Register-DFTool' {
 
     It 'registers all installed tools when -All is specified' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+{ Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
 
     It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
@@ -160,8 +144,7 @@ Describe 'Register-DFTool' {
     It 'does not skip tools when $Global:DFConfig is not set' {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+{ Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
 
     It 'list_accepts_path: creates picker function without error (path safety)' {
@@ -181,8 +164,7 @@ Describe 'Register-DFTool' {
 '@ | Set-Content (Join-Path $script:TmpTools 'pathtool.json')
 
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\pathtool.exe' } }
-        Mock Register-ArgumentCompleter { }
-        { Register-DFTool -Name 'pathtool' -ToolsPath $script:TmpTools } | Should -Not -Throw
+{ Register-DFTool -Name 'pathtool' -ToolsPath $script:TmpTools } | Should -Not -Throw
         Test-Path 'function:global:Select-PathTool' | Should -BeTrue
 
         Remove-Item 'function:global:Select-PathTool' -ErrorAction Ignore
@@ -255,5 +237,65 @@ Describe 'Register-DFTool' {
 
         Remove-Item (Join-Path $script:TmpTools 'cfgtool2.json') -ErrorAction Ignore
         $script:DFToolDb = $null
+    }
+}
+
+Describe 'Invoke-DFTopoSort' {
+    It 'returns tools unchanged when no dependsOn fields present' {
+        $tools = @(
+            [PSCustomObject]@{ name = 'zzz' },
+            [PSCustomObject]@{ name = 'aaa' }
+        )
+        $result = Invoke-DFTopoSort -Tools $tools
+        $result[0].name | Should -Be 'zzz'
+        $result[1].name | Should -Be 'aaa'
+    }
+
+    It 'places dependency before dependent tool' {
+        $tools = @(
+            [PSCustomObject]@{ name = 'PSFzf';    dependsOn = @('psreadline') },
+            [PSCustomObject]@{ name = 'psreadline'; dependsOn = @() }
+        )
+        $result = Invoke-DFTopoSort -Tools $tools
+        $result[0].name | Should -Be 'psreadline'
+        $result[1].name | Should -Be 'PSFzf'
+    }
+
+    It 'handles three-tool chain: a -> b -> c' {
+        $tools = @(
+            [PSCustomObject]@{ name = 'c'; dependsOn = @('b') },
+            [PSCustomObject]@{ name = 'a'; dependsOn = @() },
+            [PSCustomObject]@{ name = 'b'; dependsOn = @('a') }
+        )
+        $result = Invoke-DFTopoSort -Tools $tools
+        $result[0].name | Should -Be 'a'
+        $result[1].name | Should -Be 'b'
+        $result[2].name | Should -Be 'c'
+    }
+
+    It 'ignores dep not present in the tool set (no error, tool still registered)' {
+        $tools = @(
+            [PSCustomObject]@{ name = 'PSFzf'; dependsOn = @('psreadline') }
+        )
+        { $result = Invoke-DFTopoSort -Tools $tools } | Should -Not -Throw
+        $result = Invoke-DFTopoSort -Tools $tools
+        $result | Should -HaveCount 1
+        $result[0].name | Should -Be 'PSFzf'
+    }
+
+    It 'emits a warning and returns original order on cycle' {
+        $tools = @(
+            [PSCustomObject]@{ name = 'a'; dependsOn = @('b') },
+            [PSCustomObject]@{ name = 'b'; dependsOn = @('a') }
+        )
+        $warns = $null
+        $result = Invoke-DFTopoSort -Tools $tools -WarningVariable warns 3>$null
+        $warns | Should -Not -BeNullOrEmpty
+        $result | Should -HaveCount 2
+    }
+
+    It 'returns empty array for empty input' {
+        $result = Invoke-DFTopoSort -Tools @()
+        $result | Should -HaveCount 0
     }
 }
