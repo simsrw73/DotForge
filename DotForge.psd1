@@ -4,7 +4,7 @@
     Author            = 'Randy W. Sims'
     CompanyName       = ''
     Copyright         = '(c) Randy W. Sims. All rights reserved.'
-    Description       = 'Framework for registering and configuring CLI tools in a PowerShell profile — XDG paths, PATH management, fzf pickers, and completion caching.'
+    Description       = 'Framework for registering and configuring CLI tools in a PowerShell profile — XDG paths, PATH management, fzf pickers, and aliases.'
     PowerShellVersion = '7.0'
     RootModule        = 'DotForge.psm1'
     FunctionsToExport = @(
@@ -12,7 +12,6 @@
         'Add-DFToPath',
         'New-DFDirectory',
         'Invoke-DFPicker',
-        'Get-DFCachedCompletion',
         'Invoke-DFWithPager',
         # Layer 2 — Tool Registry
         'Get-DFTool',
@@ -21,7 +20,7 @@
         # Layer 3 — Tool Operations
         'Initialize-DFEnvironment',
         'Install-DFTool',
-        'Update-DFCompletions',
+        'New-DFShim',
         # General Helpers — Help & Discovery
         'Invoke-DFHelp',
         'Select-DFCommand',

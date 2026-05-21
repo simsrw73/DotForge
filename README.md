@@ -74,6 +74,7 @@ $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
+    ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
 }
 Import-Module DotForge
 Register-DFTool -All
@@ -88,6 +89,7 @@ Register-DFTool -All
 | `Initialize-DFEnvironment`      |       | Bootstrap XDG dirs; detect package managers      |
 | `Register-DFTool [-Name\|-All]` |       | Configure tools in the current session           |
 | `Install-DFTool -Name <tool>`   |       | Install via scoop / winget / choco / psresource  |
+| `New-DFShim [-Name] [-Target] [-Force]` |       | Create a `.cmd` shim forwarding invocations to an off-PATH executable |
 | `Get-DFTool [-Name] [-Tag]`     |       | Query the tool registry                          |
 | `Find-DFTool -Pattern <str>`    |       | Wildcard search across name / description / tags |
 | `Add-DFToPath <dir> [-Prepend]` |       | Normalized, dedup PATH addition                  |

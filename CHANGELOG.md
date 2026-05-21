@@ -6,6 +6,7 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- `New-DFShim [-Name] [-Target] [-ShimsPath] [-Force]` — creates a `.cmd` shim in `$HOME\.local\bin` (or `$DFConfig['ShimsPath']`) that forwards invocations to a target executable, first `cd`-ing to the executable's own directory. Accepts a DotForge tool name (DB lookup) or explicit `-Target` path. Warns if the shims directory is not on `$PATH`.
 - **General Helpers layer (Phase 5):** 19 functions across 7 helper files
   - **Pager:** `Invoke-DFWithPager` (`pg`) — pipes output through `$Env:Pager`
   - **Help & Discovery:** `Invoke-DFHelp` (`hm`), `Select-DFCommand` (`fcmd`), `Select-DFVerb` (`fverb`), `Select-DFModule` (`fmod`), `Select-DFHelpTopic` (`fh`) — fzf-powered help browsing with ANSI header colorization
