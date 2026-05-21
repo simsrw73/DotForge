@@ -1,6 +1,7 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Public/New-DFShim.ps1"
 }
@@ -16,8 +17,9 @@ Describe 'New-DFShim' {
         New-Item -ItemType Directory -Force -Path $script:AppDir  | Out-Null
         New-Item -ItemType File      -Force -Path $script:FakeExe | Out-Null
 
-        # Dedicated shims dir for most tests
+        # Dedicated shims dir for most tests — remove and recreate for isolation
         $script:ShimsDir = Join-Path $TestDrive 'shims'
+        Remove-Item $script:ShimsDir -Recurse -Force -ErrorAction Ignore
 
         # Save PATH so we can restore it
         $script:SavedPath = $Env:PATH
