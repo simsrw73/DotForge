@@ -47,10 +47,10 @@ function New-DFShim {
     New-DFDirectory $shimsDir
 
     # 3. PATH check
-    $normalizedShims = [IO.Path]::GetFullPath($shimsDir)
+    $normalizedShims = [IO.Path]::GetFullPath($shimsDir).TrimEnd('\', '/')
     $onPath = $Env:PATH -split [IO.Path]::PathSeparator |
         Where-Object { $_ } |
-        Where-Object { [IO.Path]::GetFullPath($_) -eq $normalizedShims }
+        Where-Object { [IO.Path]::GetFullPath($_).TrimEnd('\', '/') -eq $normalizedShims }
     if (-not $onPath) {
         Write-Warning "DotForge: '$shimsDir' is not on PATH — shims won't be invocable until it is added"
     }
