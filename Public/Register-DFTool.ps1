@@ -1,6 +1,10 @@
 #Requires -Version 7.0
 
 function Register-DFTool {
+    # $DFCurrentTool is set before dot-sourcing companions so sidecars can read it.
+    # PSScriptAnalyzer can't see the companion scope, so suppress the false positive.
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFCurrentTool')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFToolDb')]
     <#
     .SYNOPSIS
         Configures one or more known CLI tools in the current session.

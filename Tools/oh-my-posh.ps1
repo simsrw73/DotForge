@@ -1,5 +1,8 @@
 # Companion for oh-my-posh — prompt engine init + theme picker (fpot)
 # Dot-sourced by Register-DFTool when oh-my-posh is registered.
+# Invoke-Expression is required by oh-my-posh's init pattern — no alternative exists.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+param()
 
 # 1. posh-git integration — must run before oh-my-posh init so OMP sees POSH_GIT_ENABLED
 if (Get-Module -ListAvailable posh-git -ErrorAction Ignore) {

@@ -1,4 +1,7 @@
 # Companion for scoop — dot-sourced by Register-DFTool when scoop is registered.
+# Invoke-Expression is required by scoop-search's hook registration pattern.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+param()
 
 # Scoop requires git for bucket operations (scoop bucket add, scoop update, etc.)
 if (-not (Get-Command git -ErrorAction Ignore)) {
