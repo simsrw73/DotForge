@@ -55,11 +55,12 @@ Describe 'New-DFShim' {
 
     It 'falls back to $HOME\.local\bin when no $DFConfig ShimsPath is set' {
         $defaultDir = Join-Path $HOME '.local' 'bin'
+        $shimPath   = Join-Path $defaultDir 'dfshimtest.cmd'
         try {
             New-DFShim -Name 'dfshimtest' -Target $script:FakeExe 3>$null
-            Test-Path (Join-Path $defaultDir 'dfshimtest.cmd') | Should -BeTrue
+            Test-Path $shimPath | Should -BeTrue
         } finally {
-            Remove-Item (Join-Path $defaultDir 'dfshimtest.cmd') -ErrorAction Ignore
+            Remove-Item $shimPath -ErrorAction Ignore
         }
     }
 
