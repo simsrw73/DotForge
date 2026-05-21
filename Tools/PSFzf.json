@@ -2,11 +2,21 @@
   "name": "PSFzf",
   "type": "module",
   "description": "PowerShell wrapper around fzf with PSReadLine key handler integration",
-  "tags": ["fuzzy", "picker", "module"],
+  "tags": [
+    "fuzzy",
+    "picker",
+    "module"
+  ],
   "executable": "PSFzf",
-  "packages": { "psresource": "PSFzf", "scoop": "psfzf" },
-  "xdg": { "compliance": "none", "method": "default" },
-  "completions": { "type": "static", "flags": [] },
+  "dependsOn": ["psreadline"],
+  "packages": {
+    "psresource": "PSFzf",
+    "scoop": "psfzf"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
   "aliases": {},
   "picker": null
 }
