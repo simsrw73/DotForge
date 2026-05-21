@@ -1,0 +1,15 @@
+{
+  "name": "light",
+  "colors": {
+    "Command":          "#0000ff",
+    "Parameter":        "#001080",
+    "String":           "#a31515",
+    "Operator":         "#000000",
+    "Variable":         "#001080",
+    "Comment":          "#008000",
+    "Keyword":          "#0000ff",
+    "Error":            "#cd3131",
+    "InlinePrediction": "#aaaaaa",
+    "ListPrediction":   "#0066bf"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dark",
+  "colors": {
+    "Command":          "#569cd6",
+    "Parameter":        "#9cdcfe",
+    "String":           "#ce9178",
+    "Operator":         "#d4d4d4",
+    "Variable":         "#9cdcfe",
+    "Comment":          "#6a9955",
+    "Keyword":          "#c586c0",
+    "Error":            "#f44747",
+    "InlinePrediction": "#4a4a4a",
+    "ListPrediction":   "#3794ff"
+  }
+}

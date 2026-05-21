@@ -1,0 +1,19 @@
+{
+  "name": "psreadline",
+  "type": "module",
+  "description": "Enhanced command-line editing and syntax highlighting for PowerShell",
+  "tags": ["readline", "completion", "theme", "module"],
+  "executable": "PSReadLine",
+  "dependsOn": [],
+  "xdg": { "compliance": "none", "method": "default" },
+  "settings": {
+    "editMode":            "Windows",
+    "predictionSource":    "HistoryAndPlugin",
+    "predictionViewStyle": "InlineView",
+    "bellStyle":           "None",
+    "historyNoDuplicates": true,
+    "historySaveStyle":    "SaveIncrementally"
+  },
+  "aliases": {},
+  "picker": null
+}
