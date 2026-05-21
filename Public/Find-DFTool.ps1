@@ -9,6 +9,17 @@ function Find-DFTool {
         Wildcard pattern to match (e.g. 'rip', 'grep*', '*viewer*').
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
+    .DESCRIPTION
+        Performs a wildcard search across each tool's name, description, and tags.
+        Useful for discovering tools in the registry by keyword.
+    .EXAMPLE
+        Find-DFTool 'grep'
+        Returns all tools whose name, description, or tags contain 'grep'.
+    .EXAMPLE
+        Find-DFTool '*pager*' | Select-Object name
+        Lists tool names that relate to paging.
+    .OUTPUTS
+        PSCustomObject — matching tool registry records.
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]

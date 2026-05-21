@@ -6,10 +6,19 @@ function Invoke-DFHelp {
         Displays colorized full help for a command, piped through the configured pager.
     .PARAMETER Name
         The name of the command, function, or alias to look up.
+    .DESCRIPTION
+        Fetches full help via Get-Help, optionally applies ANSI yellow highlighting
+        to section headings (when the terminal supports VT sequences and NO_COLOR is
+        not set), then sends the result through Invoke-DFWithPager for scrollable
+        output.
     .EXAMPLE
         Invoke-DFHelp Get-ChildItem
+        Shows full colorized help for Get-ChildItem in the configured pager.
     .EXAMPLE
         hm git
+        Shows help for the git command using the hm alias.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding()]
     param(
@@ -35,10 +44,18 @@ function Select-DFCommand {
         Fuzzy-searches all available commands and returns the selected command name.
     .PARAMETER Module
         Optional module name to restrict the command list.
+    .DESCRIPTION
+        Lists all commands (or those from a specific module) in fzf with a preview
+        pane showing Get-Help output. Returns the selected command name so it can
+        be used in further expressions or passed to Invoke-DFHelp.
     .EXAMPLE
         Select-DFCommand
+        Opens fzf over all available commands; returns the selected command name.
     .EXAMPLE
         fcmd -Module DotForge
+        Restricts the command list to DotForge functions using the fcmd alias.
+    .OUTPUTS
+        System.String — the name of the selected command.
     #>
     [CmdletBinding()]
     param(
@@ -60,10 +77,18 @@ function Select-DFVerb {
     <#
     .SYNOPSIS
         Fuzzy-searches approved PowerShell verbs and returns the selected verb.
+    .DESCRIPTION
+        Presents all approved PowerShell verbs with their group (Lifecycle, Data,
+        etc.) in fzf for quick lookup when naming new functions. Returns the verb
+        string so it can be used directly in a function name.
     .EXAMPLE
         Select-DFVerb
+        Opens fzf over approved verbs; outputs the selected verb name.
     .EXAMPLE
         fverb
+        Same as above using the fverb alias.
+    .OUTPUTS
+        System.String — the selected PowerShell verb.
     #>
     [CmdletBinding()]
     param()
@@ -78,10 +103,18 @@ function Select-DFModule {
     <#
     .SYNOPSIS
         Fuzzy-searches all available modules and returns the selected module name.
+    .DESCRIPTION
+        Lists all modules available via Get-Module -ListAvailable in fzf, displaying
+        name, version, and description. Returns the selected module name so it can
+        be passed to Import-Module or inspected further.
     .EXAMPLE
         Select-DFModule
+        Opens fzf over all available modules; outputs the selected module name.
     .EXAMPLE
         fmod
+        Same as above using the fmod alias.
+    .OUTPUTS
+        System.String — the name of the selected module.
     #>
     [CmdletBinding()]
     param()
@@ -102,12 +135,22 @@ function Select-DFHelpTopic {
         No ValidateSet — accepts any string so future PS categories work without a code change.
     .PARAMETER Force
         Bypass the topic list cache and regenerate from Get-Help *.
+    .DESCRIPTION
+        Builds (and caches) the full list of Get-Help topics, presents them in fzf
+        with a live preview pane, and opens the selected topic through Invoke-DFHelp.
+        Requires $Env:XDG_CACHE_HOME to be set for the topic list cache to persist
+        between sessions.
     .EXAMPLE
         Select-DFHelpTopic
+        Opens fzf over all help topics; selecting one displays it in the pager.
     .EXAMPLE
         fh -Category HelpFile
+        Filters to conceptual about_* help files before opening fzf.
     .EXAMPLE
         fh -Force
+        Rebuilds the topic cache from Get-Help * before showing fzf.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding()]
     param(

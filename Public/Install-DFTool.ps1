@@ -11,6 +11,25 @@ function Install-DFTool {
         Override the package manager for this call (scoop | winget | choco | psresource).
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
+    .DESCRIPTION
+        Looks up each tool in the JSON registry, determines which package managers
+        are available, and installs via the first compatible one. Package manager
+        preference order uses -PackageManager override, then $DFConfig['PackageManagerOrder'],
+        then auto-detected order. Supports -WhatIf.
+    .EXAMPLE
+        Install-DFTool -Name ripgrep
+        Installs ripgrep via scoop, winget, or choco — whichever is available first.
+    .EXAMPLE
+        Install-DFTool -Name ripgrep, bat, eza
+        Installs multiple tools in one call.
+    .EXAMPLE
+        Install-DFTool -Name ripgrep -PackageManager winget
+        Forces installation via winget regardless of preference order.
+    .EXAMPLE
+        Install-DFTool -Name ripgrep -WhatIf
+        Shows what would be installed without executing.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]

@@ -6,10 +6,18 @@ function Copy-DFToClipboard {
         Copies pipeline input to the system clipboard (copy equivalent).
     .PARAMETER InputObject
         String values piped in from the pipeline.
+    .DESCRIPTION
+        Collects all pipeline strings and joins them with newlines before writing
+        to the clipboard, so multi-line pipeline output is preserved as a single
+        clipboard entry rather than overwriting line by line.
     .EXAMPLE
         Get-Content file.txt | Copy-DFToClipboard
+        Copies the entire file contents to the clipboard.
     .EXAMPLE
         git log --oneline | copy
+        Copies the git log output to the clipboard using the copy alias.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding()]
     param(
@@ -26,10 +34,17 @@ function Get-DFFromClipboard {
     <#
     .SYNOPSIS
         Retrieves the current contents of the system clipboard (paste equivalent).
+    .DESCRIPTION
+        Thin wrapper around Get-Clipboard that provides a memorable alias (paste)
+        consistent with the copy/paste convention established by Copy-DFToClipboard.
     .EXAMPLE
         Get-DFFromClipboard
+        Outputs the current clipboard contents to the terminal.
     .EXAMPLE
-        paste
+        paste | Set-Content output.txt
+        Writes clipboard contents to a file using the paste alias.
+    .OUTPUTS
+        System.String — the current clipboard text.
     #>
     [CmdletBinding()]
     param()

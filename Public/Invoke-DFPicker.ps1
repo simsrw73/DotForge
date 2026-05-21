@@ -26,6 +26,20 @@ function Invoke-DFPicker {
     .PARAMETER Action
         Scriptblock invoked with the parsed value as param($v).
         If omitted, the parsed value is written to the output stream.
+    .DESCRIPTION
+        Invokes fzf with the provided list, optional preview, header, and flags.
+        The selected item is optionally transformed by -Parse, then passed to
+        -Action or returned on the output stream. Uses the private Invoke-DFFzf
+        wrapper so callers can mock fzf in tests without spawning a real process.
+    .EXAMPLE
+        Invoke-DFPicker -List { git branch } -Header 'Select branch' -Action { param($b) git checkout $b }
+        Fuzzy-selects a git branch and checks it out.
+    .EXAMPLE
+        $file = Invoke-DFPicker -List { Get-ChildItem -Name } -Preview 'cat {}'
+        Fuzzy-selects a file from the current directory; returns the selected name.
+    .OUTPUTS
+        System.String — selected (and optionally parsed) item when -Action is omitted.
+        None — when -Action is provided (side-effect only).
     #>
     [CmdletBinding()]
     param(

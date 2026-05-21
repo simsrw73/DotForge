@@ -6,10 +6,18 @@ function Select-DFProcess {
         Fuzzy-searches running processes and returns the selected process object(s).
     .PARAMETER Multi
         Allow selecting multiple processes at once.
+    .DESCRIPTION
+        Lists all running processes sorted by CPU descending in fzf with a preview
+        pane showing Format-List details. Returns the full process object(s) so
+        results can be piped to Stop-Process, Get-Process, or other cmdlets.
     .EXAMPLE
         Select-DFProcess
+        Opens fzf over running processes; returns the selected process object.
     .EXAMPLE
-        fps -Multi
+        fps -Multi | Stop-Process
+        Selects multiple processes in fzf and stops them all using the fps alias.
+    .OUTPUTS
+        System.Diagnostics.Process — the selected process object(s).
     #>
     [CmdletBinding()]
     param(
@@ -36,10 +44,18 @@ function Get-DFTopProcess {
         Sort processes by CPU (default) or Memory.
     .PARAMETER Count
         Number of processes to display. Defaults to 20.
+    .DESCRIPTION
+        Provides a quick snapshot of resource-consuming processes similar to the
+        Unix top command. Outputs a table with name, PID, CPU seconds, and memory
+        in MB for easy scanning without opening Task Manager.
     .EXAMPLE
         Get-DFTopProcess
+        Lists the top 20 processes by CPU usage.
     .EXAMPLE
         top -By Memory -Count 10
+        Lists the top 10 processes by memory consumption using the top alias.
+    .OUTPUTS
+        PSCustomObject — process records with Name, Id, CPU(s), and Mem(MB) columns.
     #>
     [CmdletBinding()]
     param(

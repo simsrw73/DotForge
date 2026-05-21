@@ -8,6 +8,18 @@ function Add-DFToPath {
         Absolute path to add. Relative paths are rejected with a warning.
     .PARAMETER Prepend
         Add to the front of PATH instead of the end.
+    .DESCRIPTION
+        Normalizes the path, deduplicates against all existing PATH entries, and
+        appends (or prepends) if not already present. Relative paths are rejected
+        with a warning. All DotForge PATH additions use this function.
+    .EXAMPLE
+        Add-DFToPath 'C:\tools\bin'
+        Appends C:\tools\bin to the current session PATH if not already present.
+    .EXAMPLE
+        Add-DFToPath 'C:\tools\bin' -Prepend
+        Inserts C:\tools\bin at the front of PATH so it takes priority.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding()]
     param(

@@ -6,6 +6,16 @@ function Initialize-DFEnvironment {
         Bootstraps the DotForge environment: sets XDG base directory env vars
         if absent, creates the directories, and reports available package managers.
         Safe to call multiple times (idempotent).
+    .DESCRIPTION
+        Sets XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_STATE_HOME, and XDG_CACHE_HOME
+        if not already in the environment, creates all four directories, then
+        detects available package managers (scoop, winget, choco). Designed to
+        run once at the top of a profile before any Register-DFTool call.
+    .EXAMPLE
+        Initialize-DFEnvironment
+        Bootstraps XDG dirs and reports which package managers are available.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding()]
     param()

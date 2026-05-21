@@ -5,6 +5,12 @@ function New-DFShim {
     .SYNOPSIS
         Creates a .cmd shim that forwards invocations to a target executable,
         first changing the working directory to the executable's own directory.
+    .DESCRIPTION
+        Generates a Windows .cmd batch file in the shims directory that, when
+        invoked, changes to the executable's own directory then runs it with all
+        forwarded arguments and correctly propagates the exit code. Put the shims
+        directory on $PATH once and create shims as needed.
+        Accepts a DotForge tool name (DB lookup) or an explicit -Target path.
     .PARAMETER Name
         Shim filename (without .cmd extension). When -Target is omitted, also
         used as the DotForge tool name to look up the executable path in the registry.
@@ -17,6 +23,21 @@ function New-DFShim {
         Overwrite an existing shim without error.
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
+    .EXAMPLE
+        New-DFShim -Name ripgrep
+        Creates $HOME\.local\bin\ripgrep.cmd pointing at the ripgrep executable
+        found via the DotForge tool registry. Warns if $HOME\.local\bin is not on PATH.
+    .EXAMPLE
+        New-DFShim -Name myapp -Target 'C:\tools\myapp\myapp.exe'
+        Creates a shim for an executable not in the DotForge registry.
+    .EXAMPLE
+        New-DFShim -Name myapp -Target 'C:\tools\myapp\myapp.exe' -Force
+        Overwrites an existing shim.
+    .EXAMPLE
+        New-DFShim -Name ripgrep -WhatIf
+        Shows what would be created without writing any file.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]

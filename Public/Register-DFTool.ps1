@@ -12,6 +12,24 @@ function Register-DFTool {
         Configure every known tool that is installed on PATH.
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
+    .DESCRIPTION
+        For each named tool that is present on the system, Register-DFTool:
+        applies XDG env vars, creates required directories, sets aliases and
+        wrapper functions, builds declarative fzf pickers, and dot-sources the
+        companion Tools/<name>.ps1 if one exists. Tools are registered in
+        dependency order (honoring dependsOn declarations). Skips tools in
+        $DFConfig['SkipTools'] when -All is used.
+    .EXAMPLE
+        Register-DFTool -All
+        Configures every installed tool in one call. Typical profile usage.
+    .EXAMPLE
+        Register-DFTool -Name psreadline, PSFzf
+        Configures only psreadline and PSFzf (in dependency order).
+    .EXAMPLE
+        Register-DFTool -All -Verbose
+        Configures all tools and prints which ones were registered.
+    .OUTPUTS
+        None
     #>
     [CmdletBinding(DefaultParameterSetName = 'ByName')]
     param(
