@@ -24,27 +24,28 @@ param(
     [switch]$DryRun
 )
 
-$moduleRoot = $PSScriptRoot
-$stageDir   = Join-Path $env:TEMP "DotForge-stage-$(Get-Date -Format 'yyyyMMddHHmmss')"
+$moduleRoot     = $PSScriptRoot
+$stageRoot      = Join-Path $env:TEMP "DotForge-stage-$(Get-Date -Format 'yyyyMMddHHmmss')"
+$moduleStageDir = Join-Path $stageRoot 'DotForge'
 
 try {
-    New-Item -ItemType Directory -Path $stageDir | Out-Null
+    New-Item -ItemType Directory -Path $moduleStageDir | Out-Null
 
     foreach ($item in @('DotForge.psd1','DotForge.psm1','Public','Private','Tools','LICENSE','README.md','CHANGELOG.md')) {
-        Copy-Item (Join-Path $moduleRoot $item) -Destination $stageDir -Recurse
+        Copy-Item (Join-Path $moduleRoot $item) -Destination $moduleStageDir -Recurse
     }
 
     if ($DryRun) {
-        Write-Host "Stage dir: $stageDir" -ForegroundColor Cyan
+        Write-Host "Stage dir: $moduleStageDir" -ForegroundColor Cyan
         Write-Host 'Files that would be published:' -ForegroundColor Yellow
-        Get-ChildItem $stageDir -Recurse -File | ForEach-Object {
-            $_.FullName.Replace($stageDir + '\', '')
+        Get-ChildItem $moduleStageDir -Recurse -File | ForEach-Object {
+            $_.FullName.Replace($moduleStageDir + '\', '')
         }
         return
     }
 
-    Publish-Module -Path $stageDir -NuGetApiKey $ApiKey
+    Publish-Module -Path $moduleStageDir -NuGetApiKey $ApiKey
     Write-Host 'Published to PSGallery.' -ForegroundColor Green
 } finally {
-    Remove-Item $stageDir -Recurse -Force -ErrorAction Ignore
+    Remove-Item $stageRoot -Recurse -Force -ErrorAction Ignore
 }
