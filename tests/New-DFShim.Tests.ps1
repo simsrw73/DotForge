@@ -31,6 +31,21 @@ Describe 'New-DFShim' {
         $script:DFToolDb = $null
     }
 
+    It 'derives shim name from target basename when -Name is omitted' {
+        New-DFShim $script:FakeExe -ShimsPath $script:ShimsDir
+        Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue
+    }
+
+    It 'accepts -Target positionally and uses explicit -Name when provided' {
+        New-DFShim $script:FakeExe -Name 'alias' -ShimsPath $script:ShimsDir
+        Test-Path (Join-Path $script:ShimsDir 'alias.cmd') | Should -BeTrue
+    }
+
+    It 'errors when neither -Target nor -Name is given' {
+        { New-DFShim -ShimsPath $script:ShimsDir -ErrorAction Stop } |
+            Should -Throw
+    }
+
     It 'creates a .cmd file in the specified shims dir' {
         New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir
         Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue

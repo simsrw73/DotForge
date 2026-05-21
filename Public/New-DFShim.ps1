@@ -11,11 +11,14 @@ function New-DFShim {
         forwarded arguments and correctly propagates the exit code. Put the shims
         directory on $PATH once and create shims as needed.
         Accepts a DotForge tool name (DB lookup) or an explicit -Target path.
+    .PARAMETER Target
+        Path to the target executable. Positional — can be passed without the
+        parameter name. Bypasses tool DB lookup. When -Name is omitted, the shim
+        name is derived from the target's basename (without extension).
     .PARAMETER Name
         Shim filename (without .cmd extension). When -Target is omitted, also
         used as the DotForge tool name to look up the executable path in the registry.
-    .PARAMETER Target
-        Explicit path to the target executable. Bypasses tool DB lookup.
+        Optional when -Target is given; derived from the target's basename if omitted.
     .PARAMETER ShimsPath
         Directory where the shim is written. Defaults to $DFConfig['ShimsPath'],
         then $HOME\.local\bin.
@@ -24,14 +27,17 @@ function New-DFShim {
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
     .EXAMPLE
+        New-DFShim 'C:\tools\grep\grep.exe'
+        Creates $HOME\.local\bin\grep.cmd; name derived from the executable basename.
+    .EXAMPLE
         New-DFShim -Name ripgrep
         Creates $HOME\.local\bin\ripgrep.cmd pointing at the ripgrep executable
         found via the DotForge tool registry. Warns if $HOME\.local\bin is not on PATH.
     .EXAMPLE
-        New-DFShim -Name myapp -Target 'C:\tools\myapp\myapp.exe'
-        Creates a shim for an executable not in the DotForge registry.
+        New-DFShim 'C:\tools\myapp\myapp.exe' -Name myapp
+        Creates a shim with an explicit name, bypassing name derivation.
     .EXAMPLE
-        New-DFShim -Name myapp -Target 'C:\tools\myapp\myapp.exe' -Force
+        New-DFShim 'C:\tools\myapp\myapp.exe' -Force
         Overwrites an existing shim.
     .EXAMPLE
         New-DFShim -Name ripgrep -WhatIf
@@ -42,10 +48,10 @@ function New-DFShim {
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]
     param(
-        [Parameter(Mandatory, Position = 0)]
-        [string]$Name,
-
+        [Parameter(Position = 0)]
         [string]$Target,
+
+        [string]$Name,
 
         [string]$ShimsPath,
 
@@ -53,6 +59,14 @@ function New-DFShim {
 
         [string]$ToolsPath
     )
+
+    # 0. Derive Name from Target basename if not provided; error if neither given
+    if ($Target -and -not $Name) {
+        $Name = [IO.Path]::GetFileNameWithoutExtension($Target)
+    } elseif (-not $Target -and -not $Name) {
+        Write-Error 'DotForge: Provide -Target (path to executable) or -Name (tool registry lookup).'
+        return
+    }
 
     # 1. Resolve shims directory
     $shimsDir = if ($ShimsPath) {
