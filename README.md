@@ -179,7 +179,6 @@ Optional:
 - `type` — `"exe"` (default) or `"module"` (PS module; checked via `Get-Module -ListAvailable`)
 - `packages` — PM IDs: `scoop`, `winget`, `choco`, `psresource`
 - `xdg` — `method` (`default`/`env`/`config`/`wrapper`/`manual`), `vars`, `dirs`
-- `completions` — `type` (`static`/`dynamic`), `flags` or `command`
 - `aliases` — `{ "alias": { "command": "...", "args": [...] } }`
 - `picker` — declarative fzf spec or `"custom"` (companion `.ps1`)
 - `dependsOn` — array of tool names that must be registered first (e.g. `["psreadline"]` for PSFzf)
@@ -202,6 +201,32 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | Package managers | scoop, winget, npm                                 |
 | Dev              | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
 | PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
+
+## Tool-Specific Helpers
+
+Companion `.ps1` files register globals (not module exports) when their tool is registered.
+
+**oh-my-posh** (`Tools/oh-my-posh.ps1`)
+
+| Function / Alias               | Purpose                                    |
+| ------------------------------ | ------------------------------------------ |
+| `Select-PoshTheme` / `fpot`    | Live fzf theme picker for oh-my-posh       |
+
+**posh-git** (`Tools/posh-git.ps1`)
+
+| Function / Alias               | Purpose                                    |
+| ------------------------------ | ------------------------------------------ |
+| `Select-GitBranch` / `fco`     | Fuzzy checkout — switch branch             |
+| `Select-GitLog` / `flog`       | Fuzzy browse commit log                    |
+| `Select-GitAdd` / `fga`        | Fuzzy stage files                          |
+| `Select-GitStash` / `fstash`   | Fuzzy apply stash entry                    |
+
+**psreadline** (`Tools/psreadline.ps1`)
+
+| Function / Alias                              | Purpose                                          |
+| --------------------------------------------- | ------------------------------------------------ |
+| `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
+| `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
 ## License
 
