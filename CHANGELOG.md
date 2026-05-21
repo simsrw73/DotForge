@@ -32,6 +32,11 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- `Register-DFTool`: respects `dependsOn` in tool JSON — tools are topologically sorted before
+  registration so declared dependencies are always configured first (e.g. psreadline before PSFzf)
+- `Register-DFTool`: sets `$DFCurrentTool` to the tool's parsed JSON object in the local scope
+  before dot-sourcing its companion `.ps1`; cleared with `Remove-Variable` immediately after.
+  Companions can read `$DFCurrentTool` directly to access their tool's metadata.
 - `Ensure-DFDir` renamed to `New-DFDirectory` — approved PowerShell verb (`Ensure` is not in `Get-Verb`)
 - `zoxide` picker alias renamed from `fcd` to `fzo` — `fcd` now cleanly belongs to `Select-DFLocation`
 - `Register-DFTool`: `-Name` and `-All` are now mutually exclusive parameter sets

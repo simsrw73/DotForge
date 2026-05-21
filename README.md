@@ -4,8 +4,8 @@
 zero-copy-paste operation — across every machine you set up.**
 
 Every time you install a new tool like `bat`, `delta`, or `ripgrep`, there is a
-ritual: locate where it stores its config, set the right environment variables, wire
-up tab-completion, maybe define a couple of aliases. Do this for thirty tools and you
+ritual: locate where it stores its config, set the right environment variables,
+maybe define a couple of aliases. Do this for thirty tools and you
 have a profile that works — on one machine. DotForge encodes that knowledge into a
 JSON database so `Register-DFTool -All` handles all of it in one shot, on every
 machine.
@@ -182,8 +182,10 @@ Optional:
 - `completions` — `type` (`static`/`dynamic`), `flags` or `command`
 - `aliases` — `{ "alias": { "command": "...", "args": [...] } }`
 - `picker` — declarative fzf spec or `"custom"` (companion `.ps1`)
+- `dependsOn` — array of tool names that must be registered first (e.g. `["psreadline"]` for PSFzf)
 
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
+Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
 ## Included Tools (31)
 
