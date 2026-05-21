@@ -17,6 +17,8 @@ All notable changes to DotForge are documented here.
 - **gsudo tool record:** `sudo` alias (direct gsudo alias) and `please` function — re-runs the last
   history entry in an elevated context via `gsudo ([scriptblock]::Create(...))`, preserving pipes,
   semicolons, and compound expressions
+- **psreadline tool record with bundled themes:** Default settings record plus 3 bundled PSReadLine
+  themes (dark, light, catppuccin-mocha) for syntax highlighting configuration
 - **oh-my-posh companion: OMP init moved into `oh-my-posh.ps1`** — conditionally imports posh-git
   and sets `POSH_GIT_ENABLED` before OMP starts; resolves theme config via `$Env:POSH_THEME` then
   XDG auto-discovery of `*.omp.*` in `$XDG_CONFIG_HOME/oh-my-posh/` (warns when multiple found,

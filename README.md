@@ -187,7 +187,7 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (31)
+## Included Tools (32)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -201,7 +201,7 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | Pagers           | less                                               |
 | Package managers | scoop, winget, npm                                 |
 | Dev              | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
-| PS modules       | posh-git, PSFzf, Terminal-Icons, oh-my-posh        |
+| PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
 
 ## License
 
