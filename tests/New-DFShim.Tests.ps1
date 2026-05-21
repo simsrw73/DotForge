@@ -48,6 +48,12 @@ Describe 'New-DFShim' {
         $content | Should -Match ([regex]::Escape("cd /d `"$($script:AppDir)`""))
     }
 
+    It 'generated .cmd uses endlocal & exit on one line to preserve exit code' {
+        New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir
+        $content = Get-Content (Join-Path $script:ShimsDir 'myapp.cmd') -Raw
+        $content | Should -Match ([regex]::Escape('endlocal & exit /b %_exit%'))
+    }
+
     It 'uses ShimsPath from $DFConfig when -ShimsPath is not specified' {
         $configDir = Join-Path $TestDrive 'config-shims'
         $Global:DFConfig = @{ ShimsPath = $configDir }

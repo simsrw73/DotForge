@@ -97,8 +97,7 @@ function New-DFShim {
             "cd /d `"$appDir`""
             "`"$resolvedTarget`" %*"
             'set "_exit=%ERRORLEVEL%"'
-            'endlocal'
-            'exit /b %_exit%'
+            'endlocal & exit /b %_exit%'
         )
         Set-Content -Path $shimPath -Value ($lines -join "`r`n") -Encoding ASCII -NoNewline
         Write-Verbose "DotForge: shim created → $shimPath"
