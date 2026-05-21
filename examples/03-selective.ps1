@@ -29,5 +29,5 @@ Register-DFTool -Name eza, bat, fd, ripgrep, fzf, zoxide
 Register-DFTool -Name delta, lazygit, posh-git
 
 # ── Group 3: Dev tools ────────────────────────────────────────────────────────
-# Registers: gh/fpr/fgi (GitHub CLI), nvm/fnv, npm/nls/fns, uv/fvenv
-Register-DFTool -Name gh, nvm, npm, uv, chezmoi
+# Registers: gh/fpr/fgi (GitHub CLI), npm/nls/fns, uv/fvenv
+Register-DFTool -Name gh, npm, uv, chezmoi

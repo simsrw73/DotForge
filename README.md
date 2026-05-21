@@ -73,6 +73,7 @@ Set `$DFConfig` in your profile **before** importing DotForge:
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
+    PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
 }
 Import-Module DotForge
 Register-DFTool -All
@@ -218,7 +219,7 @@ Companion `.ps1` files register globals (not module exports) when their tool is 
 | ------------------------------ | ------------------------------------------ |
 | `Select-GitBranch` / `fco`     | Fuzzy checkout — switch branch             |
 | `Select-GitLog` / `flog`       | Fuzzy browse commit log                    |
-| `Select-GitAdd` / `fga`        | Fuzzy stage files                          |
+| `Select-GitFile` / `fga`       | Fuzzy stage files                          |
 | `Select-GitStash` / `fstash`   | Fuzzy apply stash entry                    |
 
 **psreadline** (`Tools/psreadline.ps1`)
