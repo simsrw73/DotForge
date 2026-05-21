@@ -116,14 +116,25 @@ Describe 'psreadline tool sidecar' {
 }
 '@ | Set-Content (Join-Path $userDir 'badcolors.json')
 
-        { Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools `
-            -WarningVariable w 3>$null } | Should -Not -Throw
+        $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+        $warnings | Where-Object { $_ -match 'invalid color' } | Should -Not -BeNullOrEmpty
     }
 
     It 'warns when named theme is not found' {
         $Global:DFConfig = @{ PSReadLineTheme = 'nonexistent-theme' }
-        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools `
-            -WarningVariable w 3>$null
-        $w | Should -Not -BeNullOrEmpty
+        $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+        $warnings | Where-Object { $_ -match 'not found' } | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Invoke-DFApplyPSReadLineTheme accepts an absolute path directly' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $themePath = Join-Path $script:RealTools 'psreadline' 'light.json'
+        { Invoke-DFApplyPSReadLineTheme -Name $themePath } | Should -Not -Throw
+        $colors = if ((Get-PSReadLineOption).Colors.Command) {
+            (Get-PSReadLineOption).Colors.Command
+        } else { $global:DFPSReadLineColors['Command'] }
+        $colors | Should -Match '0;0;255'
     }
 }
