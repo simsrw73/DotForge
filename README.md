@@ -89,7 +89,7 @@ Register-DFTool -All
 | `Initialize-DFEnvironment`      |       | Bootstrap XDG dirs; detect package managers      |
 | `Register-DFTool [-Name\|-All]` |       | Configure tools in the current session           |
 | `Install-DFTool -Name <tool>`   |       | Install via scoop / winget / choco / psresource  |
-| `New-DFShim [-Name] [-Target] [-Force]` |       | Create a `.cmd` shim forwarding invocations to an off-PATH executable |
+| `New-DFShim [[-Target] <path>] [-Name] [-Force]` |       | Create a `.cmd` shim forwarding invocations to an off-PATH executable |
 | `Get-DFTool [-Name] [-Tag]`     |       | Query the tool registry                          |
 | `Find-DFTool -Pattern <str>`    |       | Wildcard search across name / description / tags |
 | `Add-DFToPath <dir> [-Prepend]` |       | Normalized, dedup PATH addition                  |
