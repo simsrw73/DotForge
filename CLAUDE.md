@@ -69,6 +69,11 @@ Run a single file:
 Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 ```
 
+## Before Commiting
+
+- Update README.md with any changes.
+- Update .\examples with any changes.
+
 ## Tool JSON Schema
 
 Each `Tools/*.json` must have at minimum:
@@ -90,9 +95,12 @@ Each `Tools/*.json` must have at minimum:
 - **oh-my-posh + zoxide prompt hook ordering**: zoxide's `--hook pwd` wraps
   `function:prompt` (not `LocationChangedAction` — both hook modes use prompt wrapping;
   `pwd` mode just skips `zoxide add` when the directory hasn't changed). oh-my-posh must
-  initialize *before* zoxide so zoxide correctly wraps OMP's prompt. `Register-DFTool -All`
+  initialize _before_ zoxide so zoxide correctly wraps OMP's prompt. `Register-DFTool -All`
   handles this automatically via alphabetical processing (`oh-my-posh` < `zoxide`). Selective
   registration must explicitly register oh-my-posh before zoxide. After a theme switch via
   `fpot`/`Select-PoshTheme`, OMP re-inits and replaces `function:prompt`; zoxide's
   `$global:__zoxide_hooked = 1` guard prevents re-hooking, so directory tracking stops
   until the next shell session. This is a known limitation with no clean workaround.
+- **`dependsOn` ordering**: Any tool JSON may declare `"dependsOn": ["othertool"]`. `Register-DFTool` calls `Invoke-DFTopoSort` (private, `Private/Invoke-DFTopoSort.ps1`) to sort the registration list using Kahn's algorithm before iterating. Dependencies outside the current registration set are skipped silently. Cycles emit `Write-Warning` and fall back to original order.
+- **`$DFCurrentTool` sidecar contract**: `Register-DFTool` sets `$DFCurrentTool = $tool` immediately before dot-sourcing a companion `.ps1` and clears it after. Sidecars may read `$DFCurrentTool.settings` and other fields. Existing sidecars that do not reference `$DFCurrentTool` are unaffected. Sidecars needing their own subdirectory use `$PSScriptRoot`, which resolves to `Tools/` at dot-source time.
+- **PSReadLine + PSFzf ordering**: PSFzf declares `"dependsOn": ["psreadline"]`. `psreadline.ps1` runs first and applies `Set-PSReadLineOption` settings + theme via `$DFCurrentTool.settings`. PSFzf then overlays its key bindings via `Set-PsFzfOption`. Each tool owns only what it touches. The global `$DFPSReadLineColors` hashtable is set by `Invoke-DFApplyPSReadLineTheme` as a test-observable side channel (PSReadLine suppresses `Colors` in non-VT terminals).
