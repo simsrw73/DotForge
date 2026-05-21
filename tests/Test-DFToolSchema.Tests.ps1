@@ -91,7 +91,7 @@ Describe 'Seed tool JSON files' {
         'curl', 'wget', 'docker', 'less', 'gh', 'delta',
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
         'bitwarden', 'npm', 'scoop', 'winget',
-        'posh-git', 'PSFzf', 'Terminal-Icons', 'oh-my-posh',
+        'posh-git', 'psreadline', 'PSFzf', 'Terminal-Icons', 'oh-my-posh',
         'gsudo'
     ) | ForEach-Object {
         @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
