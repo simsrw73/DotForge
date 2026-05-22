@@ -1,5 +1,5 @@
 @{
-    ModuleVersion     = '0.1.0'
+    ModuleVersion     = '0.1.1'
     GUID              = '160e0d4a-5e2d-4c49-9ec2-562fbdb72b71'
     Author            = 'Randy W. Sims'
     CompanyName       = ''
