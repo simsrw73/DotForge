@@ -1,6 +1,6 @@
 # DotForge
 
-<p align="center">
+<p align="right">
   <img src="assets/dotforge1.png" width="180" alt="DotForge logo">
 </p>
 
