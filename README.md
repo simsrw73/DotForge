@@ -1,5 +1,9 @@
 # DotForge
 
+<p align="center">
+  <img src="assets/dotforge1.png" width="180" alt="DotForge logo">
+</p>
+
 **A PowerShell module that turns CLI tool configuration into a one-time-write,
 zero-copy-paste operation — across every machine you set up.**
 

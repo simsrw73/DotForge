@@ -65,6 +65,7 @@
             Tags         = @('CLI', 'Tools', 'Profile', 'XDG', 'fzf', 'Configuration', 'Windows', 'Shim', 'PSReadLine')
             LicenseUri   = 'https://github.com/simsrw73/DotForge/blob/main/LICENSE'
             ProjectUri   = 'https://github.com/simsrw73/DotForge'
+            IconUri      = 'https://raw.githubusercontent.com/simsrw73/DotForge/main/assets/dotforge1.png'
             Prerelease   = 'preview'
             ReleaseNotes = 'Preview release. Registers and configures 32+ CLI tools from a JSON database — XDG path compliance, fzf pickers, aliases, and per-tool companion scripts. Includes: PSReadLine integration with color theme system (dark/light/catppuccin-mocha + live fprl picker), .cmd shim generation (New-DFShim) for off-PATH executables, dependency-ordered tool registration via dependsOn, and 26 exported cmdlets plus general-purpose profile helpers (navigation, process, clipboard, environment).'
         }
