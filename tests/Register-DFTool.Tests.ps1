@@ -90,6 +90,23 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Test-Path 'function:global:tt-v' | Should -BeTrue
     }
 
+    It 'wrapper function overrides a pre-existing alias of the same name' {
+        # Regression: a built-in alias (e.g. ls -> Get-ChildItem) outranks a
+        # function in command resolution, so an arg-bearing alias must remove
+        # the colliding alias before defining its wrapper function.
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
+        Set-Alias -Name 'tt-v' -Value Get-ChildItem -Scope Global -Force
+        try {
+            Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+            # Alias > Function in resolution, so the colliding alias must be
+            # gone and the wrapper function present for the wrapper to win.
+            Test-Path 'Alias:\tt-v'          | Should -BeFalse
+            Test-Path 'function:global:tt-v' | Should -BeTrue
+        } finally {
+            Remove-Alias 'tt-v' -Force -Scope Global -ErrorAction Ignore
+        }
+    }
+
     It 'creates a global picker function from declarative picker JSON' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
 Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools

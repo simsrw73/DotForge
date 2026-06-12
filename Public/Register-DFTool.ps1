@@ -145,6 +145,14 @@ function Register-DFTool {
                 if ($aliasArgs.Count -eq 0) {
                     Set-Alias -Name $aliasName -Value $aliasCmd -Scope Global -Force
                 } else {
+                    # A built-in alias (e.g. ls -> Get-ChildItem) outranks a
+                    # function of the same name in command resolution
+                    # (Alias > Function), so it would shadow the wrapper
+                    # function below. Remove the colliding global alias first.
+                    # -Force clears ReadOnly built-ins (cd, cp, rm, ...).
+                    if (Test-Path "Alias:\$aliasName") {
+                        Remove-Item "Alias:\$aliasName" -Force -ErrorAction SilentlyContinue
+                    }
                     $capturedCmd  = $aliasCmd
                     $capturedArgs = $aliasArgs
                     Set-Item -Path "function:global:$aliasName" -Value {

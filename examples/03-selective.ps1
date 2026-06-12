@@ -21,7 +21,7 @@ Register-DFTool -Name PSFzf
 
 # ── Group 1: Core file tools ───────────────────────────────────────────────────
 # Registers: ls/ll/la/tree aliases (eza), cat alias (bat), ff picker (eza+bat),
-#            ffd picker (fd), frg picker (ripgrep), fzo directory picker + z/zi (zoxide)
+#            ffd picker (fd), frg picker (ripgrep), fzo directory picker + cd/cdi (zoxide)
 Register-DFTool -Name eza, bat, fd, ripgrep, fzf, zoxide
 
 # ── Group 2: Git stack ────────────────────────────────────────────────────────

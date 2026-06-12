@@ -34,9 +34,15 @@ All notable changes to DotForge are documented here.
 ### Fixed
 
 - **zoxide companion:** removed duplicate `zoxide init` call that defaulted to `--hook prompt` and
-  conflicted with oh-my-posh's prompt wrapper; changed `--cmd cd` to `--cmd z` (restores `cd` to
-  `Set-Location`, avoids alias conflicts); uses `--hook pwd` (calls `zoxide add` only on actual
-  directory changes, not every prompt render)
+  conflicted with oh-my-posh's prompt wrapper (the actual conflict source); uses `--hook pwd`
+  (calls `zoxide add` only on actual directory changes, not every prompt render). Keeps `--cmd cd`,
+  so `cd`/`cdi` route through zoxide — zoxide emits `Set-Alias -Name cd -Option AllScope -Force`,
+  replacing the built-in `cd` alias in place (alias-replaces-alias; no function-shadowing). The
+  underlying `Set-Location` is untouched, so scripts calling it directly are unaffected.
+- **arg-bearing aliases shadowed by built-in aliases:** `Register-DFTool` now removes any colliding
+  global alias before defining a wrapper function (e.g. `ls` -> `eza --icons ...`). PowerShell
+  resolves `Alias > Function`, so the built-in `ls`/`cd`/`cp`/... aliases previously shadowed the
+  generated wrapper. `Remove-Item Alias:\<name> -Force` clears ReadOnly built-ins too.
 
 ### Changed
 
