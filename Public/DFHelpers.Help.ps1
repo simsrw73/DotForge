@@ -173,3 +173,109 @@ function Select-DFHelpTopic {
         -Action    { param($topic) Invoke-DFHelp $topic }
 }
 Set-Alias -Name fh -Value Select-DFHelpTopic -Scope Global -Force
+
+function Show-DFCliHelp {
+    <#
+    .SYNOPSIS
+        Displays colorized help for an external CLI tool, auto-detecting the help flag.
+    .DESCRIPTION
+        Runs an external command with a help flag and colorizes the output: bold-yellow
+        section headers and a faint tint on option flags. When -Flag is omitted the help
+        flag is auto-detected (and cached) via Resolve-DFCliHelpFlag. Colorization is
+        suppressed when $Env:NO_COLOR is set or the terminal lacks VT support. With -Paged
+        the result is sent through Invoke-DFWithPager.
+    .PARAMETER Name
+        The external command to show help for (e.g. git, eza, docker).
+    .PARAMETER Flag
+        Explicit help flag to use. Skips auto-detection and caching.
+    .PARAMETER Paged
+        Send the colorized output through the configured pager.
+    .PARAMETER Force
+        Re-detect the help flag, ignoring and overwriting any cached value.
+    .EXAMPLE
+        Show-DFCliHelp eza
+        Detects eza's help flag, colorizes the help, prints it to the terminal.
+    .EXAMPLE
+        clh git -Flag --tree
+        Uses the clh alias with an explicit flag instead of auto-detection.
+    .EXAMPLE
+        clhp docker
+        Shows colorized docker help through the pager.
+    .OUTPUTS
+        System.String — the colorized help text (unless -Paged, which writes to the pager).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Name,
+
+        [Parameter(Position = 1)]
+        [string]$Flag,
+
+        [switch]$Paged,
+
+        [switch]$Force
+    )
+
+    if (-not (Get-Command -Name $Name -ErrorAction SilentlyContinue)) {
+        Write-Warning "Show-DFCliHelp: '$Name' was not found on PATH."
+        return
+    }
+
+    if ($PSBoundParameters.ContainsKey('Flag')) {
+        $useFlag = $Flag
+    } else {
+        $useFlag = Resolve-DFCliHelpFlag -Name $Name -Force:$Force
+    }
+
+    if ($null -eq $useFlag) {
+        Write-Warning "Show-DFCliHelp: could not determine a help flag for '$Name'."
+        return
+    }
+
+    $raw = (Invoke-DFCommandCapture -Name $Name -Arguments @($useFlag)).Text
+    $color = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
+    $out = Format-DFCliHelpText -Text $raw -Color $color
+
+    if ($Paged) { $out | Invoke-DFWithPager } else { $out }
+}
+Set-Alias -Name clh -Value Show-DFCliHelp -Scope Global -Force
+
+function Show-DFCliHelpPaged {
+    <#
+    .SYNOPSIS
+        Paged variant of Show-DFCliHelp — colorized CLI help through the pager.
+    .DESCRIPTION
+        Thin wrapper that calls Show-DFCliHelp with -Paged. Exists as a function (not an
+        alias) because a PowerShell alias cannot inject the -Paged argument.
+    .PARAMETER Name
+        The external command to show help for.
+    .PARAMETER Flag
+        Explicit help flag to use. Skips auto-detection.
+    .PARAMETER Force
+        Re-detect the help flag, ignoring any cached value.
+    .EXAMPLE
+        Show-DFCliHelpPaged eza
+        Shows colorized eza help through the configured pager.
+    .EXAMPLE
+        clhp git
+        Same as above using the clhp alias.
+    .OUTPUTS
+        None. Output is written to the pager.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Name,
+
+        [Parameter(Position = 1)]
+        [string]$Flag,
+
+        [switch]$Force
+    )
+    $params = @{ Name = $Name; Paged = $true }
+    if ($PSBoundParameters.ContainsKey('Flag')) { $params.Flag = $Flag }
+    if ($Force) { $params.Force = $true }
+    Show-DFCliHelp @params
+}
+Set-Alias -Name clhp -Value Show-DFCliHelpPaged -Scope Global -Force
