@@ -7,7 +7,8 @@ function Invoke-DFCommandCapture {
     .DESCRIPTION
         Exists so tests can mock command execution without spawning a real process
         (mirrors the Invoke-DFFzf wrapper). Runs `& $Name @Arguments 2>&1`, joins the
-        result into one string, and returns it alongside $LASTEXITCODE.
+        captured lines with the platform newline (preserving the command's original line breaks),
+        and returns the text alongside $LASTEXITCODE.
     .PARAMETER Name
         The executable or command to run.
     .PARAMETER Arguments
@@ -21,10 +22,11 @@ function Invoke-DFCommandCapture {
         [Parameter(Position = 1)]
         [string[]]$Arguments = @()
     )
-    $global:LASTEXITCODE = 0
-    $text = (& $Name @Arguments 2>&1 | Out-String)
+    $output = & $Name @Arguments 2>&1
+    $exitCode = $LASTEXITCODE
+    $text = ($output | ForEach-Object { "$_" }) -join [Environment]::NewLine
     [pscustomobject]@{
         Text     = $text
-        ExitCode = $LASTEXITCODE
+        ExitCode = $exitCode
     }
 }
