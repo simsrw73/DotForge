@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.2.0-preview] - 2026-06-12
+
 ### Added
 
 - **`Show-DFCliHelp` (`clh`) + `Show-DFCliHelpPaged` (`clhp`):** colorized help for external
