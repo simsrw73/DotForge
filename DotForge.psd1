@@ -24,6 +24,8 @@
         'New-DFShim',
         # General Helpers — Help & Discovery
         'Invoke-DFHelp',
+        'Show-DFCliHelp',
+        'Show-DFCliHelpPaged',
         'Select-DFCommand',
         'Select-DFVerb',
         'Select-DFModule',
@@ -53,7 +55,7 @@
     VariablesToExport = @()
     AliasesToExport   = @(
         'pg',
-        'hm', 'fcmd', 'fverb', 'fmod', 'fh',
+        'hm', 'clh', 'clhp', 'fcmd', 'fverb', 'fmod', 'fh',
         'up', 'mkcd', 'fcd',
         'touch', 'which', 'open',
         'fps', 'top',

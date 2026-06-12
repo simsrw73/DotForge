@@ -104,10 +104,23 @@ Register-DFTool -All
 | Cmdlet                 | Alias   | Purpose                                |
 | ---------------------- | ------- | -------------------------------------- |
 | `Invoke-DFHelp <name>` | `hm`    | Get-Help with ANSI header colorization |
+| `Show-DFCliHelp <cmd>` | `clh`   | Colorized external-CLI help (auto-detects the help flag) |
+| `Show-DFCliHelpPaged`  | `clhp`  | Same as `clh`, through the pager       |
 | `Select-DFHelpTopic`   | `fh`    | Fuzzy-browse all help topics           |
 | `Select-DFCommand`     | `fcmd`  | Fuzzy-browse all commands              |
 | `Select-DFVerb`        | `fverb` | Fuzzy-browse approved PS verbs         |
 | `Select-DFModule`      | `fmod`  | Fuzzy-browse installed modules         |
+
+```powershell
+clh eza            # colorized eza help (flag auto-detected + cached)
+clh git -Flag --help   # force a specific flag instead of auto-detecting
+clhp docker        # colorized docker help through the pager
+```
+
+`clh` runs an external tool's help and colorizes it (bold-yellow headers, faint
+flags). The help flag is auto-detected (`--help`, `-help`, `-?`, `help`, `-h`)
+and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pass
+`-Force` to re-detect.
 
 **Navigation**
 
