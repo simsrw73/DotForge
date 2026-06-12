@@ -6,6 +6,15 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Show-DFCliHelp` (`clh`) + `Show-DFCliHelpPaged` (`clhp`):** colorized help for external
+  CLI tools (git, eza, docker, ...). Auto-detects the help flag — tries `--help`, `-help`,
+  `-?`, `help`, `-h` (in that order; `-h` last because it collides with real flags), accepts
+  the first whose output looks like help and is not an unknown-option error, and caches the
+  winner per command in `$XDG_CACHE_HOME/dotforge/cli-help-flags.json` (`-Force` re-detects).
+  Colorizes like `hm` — bold-yellow section headers, faint tint on option flags — gated on
+  `$Env:NO_COLOR` / VT support. `clhp` routes the result through `Invoke-DFWithPager`. Backed
+  by private `Format-DFCliHelpText` (pure colorizer), `Resolve-DFCliHelpFlag` (detection +
+  cache), and `Invoke-DFCommandCapture` (mockable command-execution seam).
 - `New-DFShim [[-Target] <path>] [-Name] [-ShimsPath] [-Force]` — creates a `.cmd` shim in `$HOME\.local\bin` (or `$DFConfig['ShimsPath']`) that forwards invocations to a target executable, first `cd`-ing to the executable's own directory. `-Target` is positional (`New-DFShim C:\tools\grep\grep.exe`); shim name derived from target basename when `-Name` is omitted. Accepts a DotForge tool name via `-Name` for DB lookup when `-Target` is not given. Warns if the shims directory is not on `$PATH`.
 - **General Helpers layer (Phase 5):** 19 functions across 7 helper files
   - **Pager:** `Invoke-DFWithPager` (`pg`) — pipes output through `$Env:Pager`

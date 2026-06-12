@@ -33,3 +33,10 @@ if ($missing) {
 # Use fpot in-session to preview and switch themes (note: theme switch breaks zoxide
 # directory tracking for the rest of that session — known limitation).
 Register-DFTool -All
+
+# ── General helpers now available ─────────────────────────────────────────────
+# Importing DotForge also exposes helper aliases, e.g.:
+#   hm <name>   colorized PowerShell Get-Help
+#   clh <cmd>   colorized help for an external CLI tool (eza, git, docker, ...)
+#   clhp <cmd>  same as clh, through the pager
+# clh auto-detects each tool's help flag and caches it under $XDG_CACHE_HOME/dotforge.
