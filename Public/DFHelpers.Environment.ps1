@@ -87,7 +87,16 @@ function Get-DFEnv {
     .DESCRIPTION
         Emits all (or filtered) environment variables as KEY=VALUE strings sorted
         by name, mirroring the Unix env command output format for easy grepping
-        and human scanning.
+        and human scanning. When output is bound for an interactive terminal that
+        supports VT sequences (and NO_COLOR is not set), it is colorized: the
+        variable name in bold cyan, the '=' divider in bold yellow, and the value
+        in faint so it recedes behind the name while adapting to any theme (faint
+        dims the terminal's own foreground rather than forcing a fixed color).
+
+        Color is suppressed automatically when the output is piped or redirected
+        (e.g. `env | Where-Object`, `env > out.txt`) so downstream string matching
+        and captured files never see ANSI escape sequences. NO_COLOR or a non-VT
+        host likewise yields plain KEY=VALUE strings.
     .EXAMPLE
         Get-DFEnv
         Lists all environment variables in KEY=VALUE format, sorted by name.
@@ -102,10 +111,26 @@ function Get-DFEnv {
         [Parameter(Position = 0)]
         [string]$Pattern = '*'
     )
+
+    $useColor = (-not (Test-DFOutputPiped -Invocation $MyInvocation)) -and
+                (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
+    if ($useColor) {
+        $name  = "`e[1;36m"   # bold cyan   — the variable name stands out
+        $eq    = "`e[1;33m"   # bold yellow — the '=' divider is unmistakable
+        $value = "`e[2m"      # faint       — recedes behind the name, theme-adaptive
+        $reset = "`e[0m"
+    }
+
     Get-ChildItem Env: |
         Where-Object Name -like $Pattern |
         Sort-Object Name |
-        ForEach-Object { "$($_.Name)=$($_.Value)" }
+        ForEach-Object {
+            if ($useColor) {
+                "$name$($_.Name)$reset$eq=$reset$value$($_.Value)$reset"
+            } else {
+                "$($_.Name)=$($_.Value)"
+            }
+        }
 }
 Set-Alias -Name env -Value Get-DFEnv -Scope Global -Force
 

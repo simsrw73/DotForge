@@ -1,10 +1,16 @@
 BeforeAll {
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Public/DFHelpers.Environment.ps1"
 }
 
 Describe 'Get-DFEnv' {
+    # NO_COLOR forces the plain KEY=VALUE branch so these assertions hold
+    # regardless of whether the test host reports VT support.
+    BeforeEach { $script:SavedNoColor = $Env:NO_COLOR; $Env:NO_COLOR = '1' }
+    AfterEach  { $Env:NO_COLOR = $script:SavedNoColor }
+
     It 'outputs KEY=VALUE lines for all env vars' {
         $Env:DF_TEST_ENV = 'testval'
         $result = Get-DFEnv
@@ -21,8 +27,77 @@ Describe 'Get-DFEnv' {
         $result | Should -Not -Contain 'DF_BBB_VAR=bbb'
     }
 
+    It 'emits no ANSI escapes when NO_COLOR is set' {
+        $Env:DF_TEST_ENV = 'testval'
+        $line = Get-DFEnv 'DF_TEST_ENV'
+        Remove-Item Env:DF_TEST_ENV -ErrorAction Ignore
+        $line | Should -Be 'DF_TEST_ENV=testval'
+        $line | Should -Not -Match "`e\["
+    }
+
     It 'is aliased to env' {
         Get-Alias env | Should -Not -BeNullOrEmpty
+    }
+}
+
+Describe 'Get-DFEnv colorization' {
+    # Force the interactive (non-piped) branch via the mockable seam so the color
+    # assertion does not depend on the test host's redirected stdout, and clear
+    # NO_COLOR so only VT support gates the color path.
+    BeforeEach {
+        $script:SavedNoColor = $Env:NO_COLOR; $Env:NO_COLOR = $null
+        Mock Test-DFOutputPiped { $false }
+    }
+    AfterEach  { $Env:NO_COLOR = $script:SavedNoColor }
+
+    It 'wraps name, divider, and value in distinct ANSI sequences on a VT host' -Skip:(-not $Host.UI.SupportsVirtualTerminal) {
+        $Env:DF_TEST_ENV = 'testval'
+        $line = Get-DFEnv 'DF_TEST_ENV'
+        Remove-Item Env:DF_TEST_ENV -ErrorAction Ignore
+        # bold cyan name, bold yellow '=', faint value (theme-adaptive dim)
+        $line | Should -Be "`e[1;36mDF_TEST_ENV`e[0m`e[1;33m=`e[0m`e[2mtestval`e[0m"
+    }
+
+    It 'emits plain output when piped, even with color available' {
+        Mock Test-DFOutputPiped { $true }
+        $Env:DF_TEST_ENV = 'testval'
+        $line = Get-DFEnv 'DF_TEST_ENV'
+        Remove-Item Env:DF_TEST_ENV -ErrorAction Ignore
+        $line | Should -Be 'DF_TEST_ENV=testval'
+        $line | Should -Not -Match "`e\["
+    }
+}
+
+Describe 'Get-DFEnv piping safety (no mock)' {
+    BeforeEach { $script:SavedNoColor = $Env:NO_COLOR; $Env:NO_COLOR = $null }
+    AfterEach  { $Env:NO_COLOR = $script:SavedNoColor }
+
+    It 'is suppressed by a real downstream pipeline element' {
+        $Env:DF_TEST_ENV = 'testval'
+        # A downstream cmdlet makes PipelinePosition < PipelineLength, so the real
+        # Test-DFOutputPiped reports piped and color is suppressed — regardless of
+        # NO_COLOR or VT support.
+        $line = Get-DFEnv 'DF_TEST_ENV' | ForEach-Object { $_ }
+        Remove-Item Env:DF_TEST_ENV -ErrorAction Ignore
+        $line | Should -Not -Match "`e\["
+    }
+}
+
+Describe 'Test-DFOutputPiped' {
+    It 'reports piped when not the last pipeline element' {
+        # Position 1 of 2 — there is a downstream ForEach-Object.
+        $r = & { Test-DFOutputPiped -Invocation $MyInvocation } | ForEach-Object { $_ }
+        $r | Should -BeTrue
+    }
+
+    It 'reports redirected when stdout is redirected' {
+        # Under the test harness stdout is captured, so IsOutputRedirected is true
+        # and the result is piped even as the sole pipeline element.
+        if ([Console]::IsOutputRedirected) {
+            (Test-DFOutputPiped -Invocation $MyInvocation) | Should -BeTrue
+        } else {
+            Set-ItResult -Skipped -Because 'stdout is not redirected in this host'
+        }
     }
 }
 

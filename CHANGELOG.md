@@ -4,6 +4,16 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`Get-DFEnv` (`env`) colorized output:** KEY=VALUE lines now render with a bold-cyan
+  variable name, a bold-yellow `=` divider, and a faint (theme-adaptive) value, gated on
+  `$Env:NO_COLOR` / VT support. Color is suppressed automatically when output is piped or
+  redirected (`env | Where-Object`, `env > out.txt`) so downstream string matching and
+  captured files stay free of ANSI escapes. Backed by new private `Test-DFOutputPiped`
+  (a mockable pipe/redirect detection seam using `PipelinePosition`/`PipelineLength` and
+  `[Console]::IsOutputRedirected`).
+
 ## [0.2.0-preview] - 2026-06-12
 
 ### Added

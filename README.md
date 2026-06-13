@@ -149,7 +149,7 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 
 | Cmdlet                   | Alias    | Purpose                                      |
 | ------------------------ | -------- | -------------------------------------------- |
-| `Get-DFEnv [-Pattern]`   | `env`    | List all env vars as KEY=VALUE               |
+| `Get-DFEnv [-Pattern]`   | `env`    | List env vars as colorized KEY=VALUE; plain when piped/redirected or `NO_COLOR` |
 | `Get-DFPath`             | `path`   | List PATH entries one per line               |
 | `Select-DFEnvVar`        | `fenv`   | Fuzzy-browse environment variables           |
 | `Edit-DFProfile`         | `ep`     | Open `$PROFILE` in `$Env:EDITOR`             |
