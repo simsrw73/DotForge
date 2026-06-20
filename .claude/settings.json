@@ -12,6 +12,17 @@
             "statusMessage": "Checking docs reminder..."
           }
         ]
+      },
+      {
+        "matcher": "PowerShell|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$j=[Console]::In.ReadToEnd()|ConvertFrom-Json; $c=\"$($j.tool_input.command)\"; if($c -match 'Publish-(PSResource|Module)' -and $c -notmatch '-WhatIf'){git describe --exact-match --tags HEAD *>$null; if($LASTEXITCODE -ne 0){Write-Output '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"PSGallery publish blocked: git HEAD is not at a tag. Tag the release first (git tag -a vX.Y.Z then git push origin vX.Y.Z) before publishing.\"}}'}}",
+            "statusMessage": "Verifying release is tagged..."
+          }
+        ]
       }
     ]
   }
