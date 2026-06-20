@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.3.0-preview] - 2026-06-20
+
 ### Added
 
 - **`New-DFUuid` (`uuidgen`):** generates a version-4 UUID. Default output is lowercase,

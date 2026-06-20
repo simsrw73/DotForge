@@ -1,5 +1,5 @@
 @{
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.3.0'
     GUID              = '160e0d4a-5e2d-4c49-9ec2-562fbdb72b71'
     Author            = 'Randy W. Sims'
     CompanyName       = ''
@@ -72,7 +72,7 @@
             ProjectUri   = 'https://github.com/simsrw73/DotForge'
             IconUri      = 'https://raw.githubusercontent.com/simsrw73/DotForge/main/assets/dotforge1.png'
             Prerelease   = 'preview'
-            ReleaseNotes = 'Preview release. Registers and configures 32+ CLI tools from a JSON database — XDG path compliance, fzf pickers, aliases, and per-tool companion scripts. New in 0.2.0: clh/clhp (Show-DFCliHelp) — colorized help for external CLI tools with auto-detected, cached help flags. Includes: PSReadLine integration with color theme system (dark/light/catppuccin-mocha + live fprl picker), .cmd shim generation (New-DFShim) for off-PATH executables, dependency-ordered tool registration via dependsOn, and 28 exported cmdlets plus general-purpose profile helpers (navigation, process, clipboard, environment).'
+            ReleaseNotes = 'Preview release. Registers and configures 32+ CLI tools from a JSON database — XDG path compliance, fzf pickers, aliases, and per-tool companion scripts. New in 0.3.0: New-DFUuid (uuidgen) — v4 UUID generator with composable -UpperCase/-NoHyphens/-Braces switches and an -Sdk preset; Get-DFEnv (env) now renders colorized, pipe-safe KEY=VALUE output. Carries forward: clh/clhp (Show-DFCliHelp) colorized external CLI help with cached flag detection, PSReadLine color theme system (dark/light/catppuccin-mocha + live fprl picker), .cmd shim generation (New-DFShim) for off-PATH executables, dependency-ordered tool registration via dependsOn, and 33 exported cmdlets plus general-purpose profile helpers (navigation, process, clipboard, environment).'
         }
     }
 }
