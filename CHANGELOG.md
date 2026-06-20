@@ -4,6 +4,17 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`New-DFUuid` (`uuidgen`):** generates a version-4 UUID. Default output is lowercase,
+  hyphenated, and unbraced (Unix-style, matching the Windows SDK `uuidgen` default). The
+  `-UpperCase`, `-NoHyphens`, and `-Braces` switches are independent and combine freely —
+  reaching all eight format variants, including the registry/COM form via `-UpperCase
+  -Braces` (`{F47AC10B-...}`). `-Sdk` is a named preset (in its own parameter set, so it
+  cannot be combined with the formatting switches) for the Windows SDK `uuidgen` default
+  format. The `uuidgen` alias is unconditional and deliberately shadows any native
+  `uuidgen` so output is identical on every platform.
+
 ### Changed
 
 - **`Get-DFEnv` (`env`) colorized output:** KEY=VALUE lines now render with a bold-cyan
