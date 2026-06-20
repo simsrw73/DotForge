@@ -49,7 +49,9 @@
         'Invoke-DFProfileReload',
         # General Helpers — Clipboard
         'Copy-DFToClipboard',
-        'Get-DFFromClipboard'
+        'Get-DFFromClipboard',
+        # General Helpers — Utility
+        'New-DFUuid'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
@@ -60,7 +62,8 @@
         'touch', 'which', 'open',
         'fps', 'top',
         'env', 'path', 'fenv', 'ep', 'reload',
-        'copy', 'paste'
+        'copy', 'paste',
+        'uuidgen'
     )
     PrivateData       = @{
         PSData = @{

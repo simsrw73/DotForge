@@ -162,6 +162,12 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 | `Copy-DFToClipboard`  | `copy`  | Copy string or pipeline input to clipboard |
 | `Get-DFFromClipboard` | `paste` | Get clipboard contents                     |
 
+**Utility**
+
+| Cmdlet                                            | Alias     | Purpose                                              |
+| ------------------------------------------------- | --------- | --------------------------------------------------- |
+| `New-DFUuid [-UpperCase] [-NoHyphens] [-Braces]` / `New-DFUuid -Sdk` | `uuidgen` | Generate a v4 UUID. Default is lowercase, hyphenated, no braces (Unix-style). The casing/hyphen/brace switches combine freely (e.g. `-UpperCase -Braces` → `{F47AC10B-…}` registry/COM form); `-Sdk` is a named preset for the Windows SDK `uuidgen` default. The `uuidgen` alias is unconditional and intentionally shadows any native `uuidgen` for consistent output everywhere. |
+
 ## Recommended Setup
 
 ### Environment variables
