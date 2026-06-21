@@ -18,6 +18,7 @@ coverage/
 
 # Local scratch
 scratch/
+potential-tools.txt
 
 # Local secrets (PSGallery API key, etc.)
 .env
