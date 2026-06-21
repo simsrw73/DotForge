@@ -1,11 +1,7 @@
 {
   "name": "eza",
   "description": "Modern ls replacement with icons, Git integration, and color",
-  "tags": [
-    "file",
-    "directory",
-    "ls"
-  ],
+  "tags": ["file", "directory", "ls"],
   "executable": "eza.exe",
   "packages": {
     "scoop": "eza",
@@ -22,29 +18,21 @@
       "args": [
         "--color=auto",
         "--icons",
-        "--group-directories-first"
+        "--group-directories-first",
+        "--hyperlink"
       ]
     },
     "ll": {
       "command": "eza",
-      "args": [
-        "--all",
-        "--long",
-        "--header"
-      ]
+      "args": ["--all", "--long", "--header", "--hyperlink"]
     },
     "la": {
       "command": "eza",
-      "args": [
-        "--all",
-        "--group"
-      ]
+      "args": ["--all", "--group", "--hyperlink"]
     },
     "tree": {
       "command": "eza",
-      "args": [
-        "--tree"
-      ]
+      "args": ["--tree"]
     }
   },
   "picker": {
