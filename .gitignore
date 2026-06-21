@@ -21,3 +21,6 @@ scratch/
 
 # Local secrets (PSGallery API key, etc.)
 .env
+
+# Per-user Claude Code overrides (permissions, output style); keep settings.json committed
+.claude/settings.local.json

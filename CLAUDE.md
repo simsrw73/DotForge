@@ -75,6 +75,20 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 - Update .\examples with any changes.
 - **Every public function must have complete comment-based help**: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each param, at least one `.EXAMPLE`, and `.OUTPUTS`. When adding or modifying a public function, verify its help block is complete before committing. Run `Get-Help <FunctionName> -Full` to confirm `Get-Help` renders all sections correctly.
 
+## Releasing
+
+Publishing to the PowerShell Gallery follows this exact sequence. **The release must be tagged before it is published** — a `PreToolUse` hook in `.claude/settings.json` blocks `Publish-PSResource`/`Publish-Module` (real publishes, not `-WhatIf`) whenever `git HEAD` is not sitting on an exact tag.
+
+1. **Bump the version** in `DotForge.psd1` (`ModuleVersion`; keep/adjust `PrivateData.PSData.Prerelease`) and refresh `ReleaseNotes`. We follow SemVer; preview releases carry `Prerelease = 'preview'` (published as e.g. `0.3.0-preview`).
+2. **Finalize `CHANGELOG.md`**: rename the `[Unreleased]` heading to `[<version>] - <YYYY-MM-DD>` and open a fresh empty `[Unreleased]` above it.
+3. **Commit** the version bump + changelog (scope the commit to release files; leave unrelated working-tree changes out).
+4. **Validate**: `Test-ModuleManifest ./DotForge.psd1` and a publish dry-run: `Publish-PSResource -Path . -Repository PSGallery -ApiKey DRYRUN -WhatIf`.
+5. **Tag** the release commit: `git tag -a v<version> -m "DotForge <version>"` (tag format is `v` + the full prerelease string, e.g. `v0.3.0-preview`).
+6. **Push** `main` and the tag: `git push origin main && git push origin v<version>`.
+7. **GitHub Release**: `gh release create v<version> --title v<version> --prerelease --notes "<CHANGELOG section>"` (drop `--prerelease` for stable releases).
+8. **Publish to PSGallery**: read the API key from the gitignored `.env` (`PSGALLERY_API_KEY=...`) — never hardcode or commit it — and run `Publish-PSResource -Path . -Repository PSGallery -ApiKey $key`.
+9. **Verify** via the Gallery API (the local `Find-PSResource` view normalizes away the prerelease suffix, so confirm against the source of truth): `Invoke-RestMethod "https://www.powershellgallery.com/api/v2/FindPackagesById()?id='DotForge'"` and check the new `Version` / `IsPrerelease`.
+
 ## Tool JSON Schema
 
 Each `Tools/*.json` must have at minimum:
