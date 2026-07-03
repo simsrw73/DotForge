@@ -173,6 +173,30 @@ Describe 'Find-DFPackage' {
         $r[0].Sources.Source | Should -Contain 'choco'
     }
 
+    It 'orders exact matches before keyword matches' {
+        # Provider emits the keyword hit FIRST — the exact match must still
+        # come out on top of the merged results.
+        $script:DFCatalogProviders['scoop'].Search = { param($Query, $Fresh)
+            if ($Query -eq 'zed') {
+                New-DFToolSourceInfo -Source 'scoop' -PackageId 'extras/zed-preview' -Name 'zed-preview' `
+                    -Description 'zed editor preview channel' -LatestVersion '0.190.0' -MatchKind 'keyword'
+                New-DFToolSourceInfo -Source 'scoop' -PackageId 'extras/zed' -Name 'zed' `
+                    -Description 'code editor' -LatestVersion '0.189.0' -MatchKind 'exact-name'
+            }
+        }
+        $r = @(Find-DFPackage zed)
+        $r.Count | Should -Be 2
+        $r[0].Name | Should -Be 'zed'
+        $r[1].Name | Should -Be 'zed-preview'
+    }
+
+    It 'reports progress while searching catalogs' {
+        Mock Write-Progress { }
+        $null = Find-DFPackage ripgrep
+        Should -Invoke Write-Progress -ParameterFilter { $Status -like '*scoop*' }
+        Should -Invoke Write-Progress -ParameterFilter { $Completed }
+    }
+
     It 'marks a PATH-only command as installed via PATH' {
         # No catalog reports it installed, but the executable is on PATH.
         Mock Get-DFCatalogInstalled { @{ Items = @(); IdentityMap = @{} } }

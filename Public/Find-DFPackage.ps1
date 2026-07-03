@@ -64,12 +64,29 @@ function Find-DFPackage {
 
     # Fan out across catalogs (canonical order), then overlay installed state
     # from the cached unified snapshot (15-min TTL — avoids re-enumerating slow
-    # sources like Get-Module -ListAvailable on every query).
-    $hits = @(foreach ($provider in $providers) {
-        & $provider.Search $queryText $Fresh.IsPresent
-    }) | Where-Object { $_ }
+    # sources like Get-Module -ListAvailable on every query). First runs can
+    # spend a while on index builds and live fetches, so keep the user informed
+    # via the progress stream (renders as a status line; never pollutes stdout).
+    $progressId = 47
+    try {
+        $hits = [System.Collections.Generic.List[object]]::new()
+        for ($i = 0; $i -lt $providers.Count; $i++) {
+            $provider = $providers[$i]
+            Write-Progress -Id $progressId -Activity 'trifle' `
+                -Status "Searching $($provider.Name) catalog… (first run may build local indexes)" `
+                -PercentComplete ([int](100 * $i / ($providers.Count + 1)))
+            foreach ($hit in @(& $provider.Search $queryText $Fresh.IsPresent)) {
+                if ($hit) { $hits.Add($hit) }
+            }
+        }
 
-    $installedInfo = Get-DFCatalogInstalled
+        Write-Progress -Id $progressId -Activity 'trifle' `
+            -Status 'Reading installed packages…' `
+            -PercentComplete ([int](100 * $providers.Count / ($providers.Count + 1)))
+        $installedInfo = Get-DFCatalogInstalled
+    } finally {
+        Write-Progress -Id $progressId -Activity 'trifle' -Completed
+    }
     $installedBySource = @{}
     foreach ($item in $installedInfo.Items) {
         if (-not $installedBySource.ContainsKey($item.Source)) { $installedBySource[$item.Source] = @{} }
@@ -150,6 +167,12 @@ function Find-DFPackage {
             -MatchKind $matchKind `
             -CacheAge (@($sources.CacheAgeMinutes | Measure-Object -Maximum).Maximum)
     })
+
+    # Best matches first: exact package-id, then exact name/moniker, then
+    # keyword hits; installed tools win ties, then alphabetical.
+    $matchRank = @{ 'exact-id' = 0; 'exact-name' = 1; 'keyword' = 2 }
+    $merged = @($merged | Sort-Object `
+        { $matchRank[$_.MatchKind] }, { -not $_.Installed }, Name)
 
     # PATH fallback: the command exists locally but no catalog claims it.
     if ($normalized -notmatch ' ') {

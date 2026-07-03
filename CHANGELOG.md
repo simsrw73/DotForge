@@ -15,7 +15,10 @@ All notable changes to DotForge are documented here.
   `DotForge.ToolInfo` objects with no ANSI. Cross-catalog identities unify via
   the `packages` blocks in `Tools/*.json` (e.g. scoop `ripgrep` and winget
   `BurntSushi.ripgrep.MSVC` render as one row), and commands found on PATH but
-  unclaimed by any catalog report `InstalledVia PATH`.
+  unclaimed by any catalog report `InstalledVia PATH`. Results order by match
+  quality (exact id → exact name/moniker → keyword; installed tools win ties),
+  and long first-run work (index builds, live fetches) reports status via the
+  progress stream — never polluting piped output.
 - **Speed architecture:** cache-first under `$XDG_CACHE_HOME/dotforge/catalogs/`.
   Scoop buckets are parsed directly from disk into a fingerprinted index (bucket
   git HEADs); the winget catalog is queried directly from the CLI's own SQLite
