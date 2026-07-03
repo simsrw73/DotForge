@@ -4,6 +4,40 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`Find-DFPackage` (`trifle`):** fast multi-catalog tool lookup. Given a command
+  name or keywords, searches scoop, winget, choco, npm, PyPI, crates.io, and
+  PSGallery and renders a merged info card (single confident match) or match
+  table (keyword search): description, installed status + owning catalog(s),
+  per-catalog availability and latest versions, homepage, license, last-updated,
+  and per-source cache age. Piped/redirected output (or `-AsObject`) emits raw
+  `DotForge.ToolInfo` objects with no ANSI. Cross-catalog identities unify via
+  the `packages` blocks in `Tools/*.json` (e.g. scoop `ripgrep` and winget
+  `BurntSushi.ripgrep.MSVC` render as one row), and commands found on PATH but
+  unclaimed by any catalog report `InstalledVia PATH`.
+- **Speed architecture:** cache-first under `$XDG_CACHE_HOME/dotforge/catalogs/`.
+  Scoop buckets are parsed directly from disk into a fingerprinted index (bucket
+  git HEADs); the winget catalog is queried directly from the CLI's own SQLite
+  `index.db` via a zero-dependency `winsqlite3.dll` P/Invoke (extracted from
+  `source.msix`, keyed on its mtime+size, with a cached `winget search` CLI-parse
+  fallback when the schema is unreadable); web catalogs use per-query TTL caches
+  (24h; 72h for choco). Stale entries are served instantly while a background
+  ThreadJob re-warms them. A warm query answers in ~200 ms across all seven
+  catalogs.
+- **`Update-DFPackageCache`:** refresh-only entry point designed for Task
+  Scheduler — rebuilds snapshot indexes, refreshes the unified installed-package
+  snapshot, and re-warms recently seen queries plus installed tool names.
+  All cache writes are atomic renames, so a scheduled refresh is safe alongside
+  an interactive session. Note: winget only refreshes its own `source.msix`
+  when winget runs, so the recommended scheduled action prepends
+  `winget source update` (documented in README, the example profile, and the
+  cmdlet help) — otherwise the winget index ages silently on machines that
+  rarely invoke winget.
+- **`Select-DFPackage` (`ftrifle`):** fzf browser over every locally cached
+  package (scoop + winget indexes, cached web queries, installed snapshot);
+  Enter renders the trifle info card.
+
 ## [0.3.0-preview] - 2026-06-20
 
 ### Added

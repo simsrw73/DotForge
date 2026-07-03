@@ -9,6 +9,7 @@ when integrating DotForge into an existing profile.
 | `02-standard.ps1` | Typical developer setup with $DFConfig and first-run bootstrap |
 | `03-selective.ps1` | Lean startup — register tools by group, not all at once |
 | `04-vscode-fastpath.ps1` | Full profile with VS Code terminal detection and early return |
+| `05-trifle-catalog.ps1` | Package catalog info (`trifle`) usage + scheduled cache refresh |
 
 ## Common patterns
 

@@ -168,6 +168,66 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 | ------------------------------------------------- | --------- | --------------------------------------------------- |
 | `New-DFUuid [-UpperCase] [-NoHyphens] [-Braces]` / `New-DFUuid -Sdk` | `uuidgen` | Generate a v4 UUID. Default is lowercase, hyphenated, no braces (Unix-style). The casing/hyphen/brace switches combine freely (e.g. `-UpperCase -Braces` → `{F47AC10B-…}` registry/COM form); `-Sdk` is a named preset for the Windows SDK `uuidgen` default. The `uuidgen` alias is unconditional and intentionally shadows any native `uuidgen` for consistent output everywhere. |
 
+**Package Catalog Info (trifle)**
+
+| Cmdlet                                              | Alias     | Purpose                                                        |
+| --------------------------------------------------- | --------- | -------------------------------------------------------------- |
+| `Find-DFPackage <name-or-keywords> [-Source] [-Fresh] [-AsObject]` | `trifle`  | Search every installer catalog at once and render a merged info card (or match table): description, installed status + source, per-catalog availability and versions, homepage, license, cache age |
+| `Update-DFPackageCache [-Source] [-Quiet]`           |           | Refresh-only entry point for Task Scheduler: rebuilds snapshot indexes and re-warms cached queries |
+| `Select-DFPackage [-Source]`                         | `ftrifle` | Fuzzy-browse every locally cached package; Enter shows its info card |
+
+```powershell
+trifle ripgrep          # info card: installed via scoop? what do winget/choco/npm/crates carry?
+trifle rg               # winget monikers work too — resolves to ripgrep
+trifle static site generator          # keyword search → match table
+trifle bat -Source scoop,winget       # restrict catalogs
+trifle rg -Fresh                      # block on live catalog data
+$x = trifle rg -AsObject              # raw DotForge.ToolInfo objects for scripting
+ftrifle                               # fzf-browse everything cached locally
+```
+
+Catalogs: **scoop** (bucket JSONs read straight from disk), **winget** (the CLI's
+own SQLite index queried directly via `winsqlite3.dll` — no multi-second
+`winget.exe` startup), **choco**, **npm**, **PyPI**, **crates.io**, and
+**PSGallery** (web APIs with per-query TTL caches). Answers are cache-first:
+stale entries are served instantly while a background thread re-warms them, so
+the *next* query is fresh; a typical warm query answers in ~200 ms across all
+seven catalogs. Cache ages are shown on the card; `-Fresh` forces live fetches.
+PyPI has no search API, so it only participates in exact-name lookups.
+
+### Scheduled cache refresh
+
+Schedule a nightly refresh so interactive queries always hit warm caches. Run
+this once in an interactive session (no elevation needed for a per-user task):
+
+```powershell
+$action  = New-ScheduledTaskAction -Execute 'pwsh' -Argument (
+    '-NoProfile -Command "winget source update; Import-Module DotForge; Update-DFPackageCache -Quiet"'
+)
+$trigger  = New-ScheduledTaskTrigger -Daily -At 6am
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable
+Register-ScheduledTask -TaskName 'DotForge catalog refresh' `
+    -Action $action -Trigger $trigger -Settings $settings
+```
+
+To inspect or remove it later:
+
+```powershell
+Get-ScheduledTask -TaskName 'DotForge catalog refresh' | Get-ScheduledTaskInfo
+Unregister-ScheduledTask -TaskName 'DotForge catalog refresh' -Confirm:$false
+```
+
+> **Why `winget source update` is part of the action:** the winget catalog is
+> read from the `source.msix` that winget itself downloads, and winget only
+> refreshes that file when winget runs. `Update-DFPackageCache` re-extracts
+> whatever msix is present — it cannot make winget download a newer one. On a
+> machine that rarely invokes winget the index silently ages (the card's
+> `Cache` line will show it, e.g. `winget 61d`). Running `winget source update`
+> (~5 s) first keeps the winget data as fresh as everything else. If the
+> scheduled task runs under a different account or `winget` isn't on the task's
+> PATH, the refresh still succeeds — the winget index just stays at whatever
+> age the msix has.
+
 ## Recommended Setup
 
 ### Environment variables

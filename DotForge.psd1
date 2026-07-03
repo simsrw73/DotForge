@@ -51,7 +51,11 @@
         'Copy-DFToClipboard',
         'Get-DFFromClipboard',
         # General Helpers — Utility
-        'New-DFUuid'
+        'New-DFUuid',
+        # Catalog Info (trifle)
+        'Find-DFPackage',
+        'Update-DFPackageCache',
+        'Select-DFPackage'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
@@ -63,7 +67,8 @@
         'fps', 'top',
         'env', 'path', 'fenv', 'ep', 'reload',
         'copy', 'paste',
-        'uuidgen'
+        'uuidgen',
+        'trifle', 'ftrifle'
     )
     PrivateData       = @{
         PSData = @{
