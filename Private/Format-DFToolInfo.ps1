@@ -108,7 +108,8 @@ function Format-DFToolDetailCount {
     )
 
     if ($Count -lt 1000) { return [string]$Count }
-    if ($Count -lt 1000000) { return "$([math]::Round($Count / 1000, 1))k" }
+    $k = [math]::Round($Count / 1000, 1)
+    if ($k -lt 1000) { return "${k}k" }
     "$([math]::Round($Count / 1000000, 1))M"
 }
 

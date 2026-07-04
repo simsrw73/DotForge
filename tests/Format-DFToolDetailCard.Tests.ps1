@@ -18,6 +18,13 @@ Describe 'Format-DFToolDetailCount' {
         Format-DFToolDetailCount -Count 12345    | Should -Be '12.3k'
         Format-DFToolDetailCount -Count 1234567  | Should -Be '1.2M'
     }
+
+    It 'handles k/M bucket boundaries correctly' {
+        Format-DFToolDetailCount -Count 999      | Should -Be '999'
+        Format-DFToolDetailCount -Count 1000     | Should -Be '1k'
+        Format-DFToolDetailCount -Count 999949   | Should -Be '999.9k'
+        Format-DFToolDetailCount -Count 999999   | Should -Be '1M'
+    }
 }
 
 Describe 'Format-DFToolDetailCard' {
