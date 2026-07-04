@@ -105,6 +105,65 @@ function Get-DFCatalogPypiInstalled {
     }
 }
 
+function Invoke-DFCatalogPypiDetailFetch {
+    <#
+    .SYNOPSIS
+        Live PyPI JSON-API detail lookup, mapped to DotForge.ToolSourceDetail.
+    .PARAMETER PackageId
+        The PyPI package name.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId
+    )
+
+    $doc = Invoke-RestMethod -Uri "https://pypi.org/pypi/$([uri]::EscapeDataString($PackageId))/json" -TimeoutSec 10
+    $info = $doc.info
+    if (-not $info.name) { return $null }
+
+    $urls = $info.project_urls
+    $repo = [string]($urls.Repository ? $urls.Repository : ($urls.Source ? $urls.Source : ((([string]$urls.Homepage) -match 'github\.com') ? $urls.Homepage : '')))
+    $docsUrl = [string]($urls.Documentation ? $urls.Documentation : $urls.Docs)
+
+    $extra = [ordered]@{}
+    if ($info.requires_python) { $extra['requires_python'] = [string]$info.requires_python }
+    if ($info.description) {
+        $extra['description'] = [string]$info.description
+        $extra['description_content_type'] = [string]$info.description_content_type
+    }
+
+    New-DFToolSourceDetail -Source 'pypi' `
+        -PackageId $info.name `
+        -Publisher ([string]($info.author ? $info.author : $info.maintainer)) `
+        -Tags @(([string]$info.keywords) -split '[,\s]+' -ne '') `
+        -RepositoryUrl $repo `
+        -DocsUrl $docsUrl `
+        -InstallHint "pipx install $($info.name)" `
+        -Extra $extra
+}
+
+function Get-DFCatalogPypiDetail {
+    <#
+    .SYNOPSIS
+        Cache-first PyPI detail lookup.
+    .PARAMETER PackageId
+        The PyPI package name.
+    .PARAMETER Fresh
+        Force a live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    Get-DFCatalogDetailCache -Provider 'pypi' -PackageId $PackageId -Fresh:$Fresh `
+        -Fetch { param($id) Invoke-DFCatalogPypiDetailFetch -PackageId $id }
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['pypi'] = @{
     Name         = 'pypi'
@@ -113,4 +172,5 @@ $script:DFCatalogProviders['pypi'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogPypi -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogPypiInstalled }
     Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogPypi -Query $Query -Fresh } }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogPypiDetail -PackageId $PackageId -Fresh:$Fresh }
 }

@@ -124,6 +124,67 @@ function Get-DFCatalogNpmInstalled {
     }
 }
 
+function Invoke-DFCatalogNpmDetailFetch {
+    <#
+    .SYNOPSIS
+        Live npm registry full-doc lookup, mapped to DotForge.ToolSourceDetail.
+    .PARAMETER PackageId
+        The npm package name.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId
+    )
+
+    $doc = Invoke-RestMethod -Uri "https://registry.npmjs.org/$([uri]::EscapeDataString($PackageId))" -TimeoutSec 10
+    if (-not $doc.name) { return $null }
+
+    $latest = [string]$doc.'dist-tags'.latest
+    $deps = @()
+    if ($latest -and $doc.versions.$latest.dependencies) {
+        $deps = @($doc.versions.$latest.dependencies.PSObject.Properties | ForEach-Object { "$($_.Name)@$($_.Value)" })
+    }
+    $distTags = @()
+    if ($doc.'dist-tags') {
+        $distTags = @($doc.'dist-tags'.PSObject.Properties | ForEach-Object { "$($_.Name): $($_.Value)" })
+    }
+
+    $extra = [ordered]@{}
+    if ($distTags) { $extra['dist-tags'] = $distTags }
+
+    New-DFToolSourceDetail -Source 'npm' `
+        -PackageId $doc.name `
+        -Maintainers @(@($doc.maintainers) | ForEach-Object { [string]$_.name }) `
+        -Dependencies $deps `
+        -Tags @(@($doc.keywords) | ForEach-Object { [string]$_ }) `
+        -RepositoryUrl ([string]$doc.repository.url) `
+        -InstallHint "npm install -g $($doc.name)" `
+        -Readme ([string]$doc.readme) `
+        -Extra $extra
+}
+
+function Get-DFCatalogNpmDetail {
+    <#
+    .SYNOPSIS
+        Cache-first npm detail lookup.
+    .PARAMETER PackageId
+        The npm package name.
+    .PARAMETER Fresh
+        Force a live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    Get-DFCatalogDetailCache -Provider 'npm' -PackageId $PackageId -Fresh:$Fresh `
+        -Fetch { param($id) Invoke-DFCatalogNpmDetailFetch -PackageId $id }
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['npm'] = @{
     Name         = 'npm'
@@ -132,4 +193,5 @@ $script:DFCatalogProviders['npm'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogNpm -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogNpmInstalled }
     Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogNpm -Query $Query -Fresh } }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogNpmDetail -PackageId $PackageId -Fresh:$Fresh }
 }
