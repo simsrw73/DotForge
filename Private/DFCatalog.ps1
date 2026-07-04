@@ -230,7 +230,9 @@ function New-DFToolInfo {
         [string]$License,
         [string]$DFTool,
         [string]$MatchKind,
-        [int]$CacheAge
+        [int]$CacheAge,
+        [System.Collections.Specialized.OrderedDictionary]$Details,
+        [object]$GitHub
     )
 
     [pscustomobject]@{
@@ -247,6 +249,155 @@ function New-DFToolInfo {
         DFTool           = $DFTool
         MatchKind        = $MatchKind
         CacheAge         = $CacheAge
+        Details          = $Details
+        GitHub           = $GitHub
+    }
+}
+
+function New-DFToolSourceDetail {
+    <#
+    .SYNOPSIS
+        Constructs a DotForge.ToolSourceDetail — one catalog's deep view of a
+        package (detail-endpoint data, beyond what search returns).
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter(Mandatory)][string]$Source,
+        [Parameter(Mandatory)][string]$PackageId,
+        [string]$Publisher,
+        [string[]]$Maintainers = @(),
+        [string[]]$Dependencies = @(),
+        [string[]]$Tags = @(),
+        [nullable[long]]$Downloads,
+        [string]$ReleaseNotes,
+        [string]$ReleaseNotesUrl,
+        [string]$RepositoryUrl,
+        [string]$DocsUrl,
+        [string]$InstallHint,
+        [string]$Notes,
+        [string]$Readme,
+        [System.Collections.Specialized.OrderedDictionary]$Extra
+    )
+
+    [pscustomobject]@{
+        PSTypeName      = 'DotForge.ToolSourceDetail'
+        Source          = $Source
+        PackageId       = $PackageId
+        Publisher       = $Publisher
+        Maintainers     = $Maintainers
+        Dependencies    = $Dependencies
+        Tags            = $Tags
+        Downloads       = $Downloads
+        ReleaseNotes    = $ReleaseNotes
+        ReleaseNotesUrl = $ReleaseNotesUrl
+        RepositoryUrl   = $RepositoryUrl
+        DocsUrl         = $DocsUrl
+        InstallHint     = $InstallHint
+        Notes           = $Notes
+        Readme          = $Readme
+        Extra           = $Extra
+    }
+}
+
+function Get-DFCatalogDetailCache {
+    <#
+    .SYNOPSIS
+        Cache-first engine for per-package detail lookups — the detail-side
+        mirror of Search-DFCatalogQueryCache.
+    .DESCRIPTION
+        Fresh hit → served instantly. Stale hit → served instantly while a
+        background job re-warms it. Miss or -Fresh → inline fetch, falling back
+        to any cached data when the fetch fails. A fetch that returns nothing
+        (package has no detail) is NOT cached, so transient failures don't
+        poison the cache. Cache-hit rehydration returns plain PSCustomObjects —
+        consumers must be duck-typed, not PSTypeName-typed.
+    .PARAMETER Provider
+        Provider name (cache subdirectory and TTL key). 'github' is valid here
+        too — the GitHub enrichment reuses this engine.
+    .PARAMETER PackageId
+        The raw package id (stored verbatim in the envelope's query field so
+        Update-DFPackageCache can re-warm with the exact id).
+    .PARAMETER Fetch
+        Scriptblock taking the raw PackageId, returning ONE object or $null.
+    .PARAMETER Fresh
+        Force an inline live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Provider,
+
+        [Parameter(Mandatory)]
+        [string]$PackageId,
+
+        [Parameter(Mandatory)]
+        [scriptblock]$Fetch,
+
+        [switch]$Fresh
+    )
+
+    $keyInfo = ConvertTo-DFCatalogQueryKey -Query $PackageId
+    $ttl = $script:DFCatalogTtl.ContainsKey($Provider) ? $script:DFCatalogTtl[$Provider] : $script:DFCatalogTtl.default
+
+    $cacheRoot = Get-DFCatalogCacheRoot
+    $file = $cacheRoot ? (Join-Path $cacheRoot "$Provider/details/$($keyInfo.Key).json") : $null
+    $cached = $file ? (Read-DFCatalogCacheFile -Path $file -Ttl $ttl) : $null
+
+    if (-not $Fresh -and $cached) {
+        if ($cached.Stale) {
+            Start-DFCatalogRefreshJob -Provider $Provider -Query $PackageId -Kind detail
+        }
+        return @($cached.Data) | Select-Object -First 1
+    }
+
+    try {
+        $result = & $Fetch $PackageId
+    } catch {
+        Write-Verbose "DotForge: live $Provider detail fetch for '$PackageId' failed: $_"
+        if ($cached) { return @($cached.Data) | Select-Object -First 1 }
+        return $null
+    }
+
+    if ($null -eq $result) { return $null }
+
+    if ($file) {
+        Write-DFCatalogCacheFile -Path $file -Query $PackageId -Results @($result)
+    }
+    $result
+}
+
+function Get-DFCatalogDetail {
+    <#
+    .SYNOPSIS
+        Dispatches a detail lookup to a provider's Detail hook. Returns $null
+        when the provider has no hook or the hook fails — detail failures
+        never block the caller.
+    .PARAMETER Source
+        Provider name.
+    .PARAMETER PackageId
+        Raw package id as reported by that provider's search.
+    .PARAMETER Fresh
+        Force a live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    $provider = $script:DFCatalogProviders[$Source]
+    if (-not $provider -or -not $provider.Detail) { return $null }
+    try {
+        & $provider.Detail $PackageId $Fresh.IsPresent
+    } catch {
+        Write-Verbose "DotForge: $Source detail hook for '$PackageId' failed: $_"
+        $null
     }
 }
 

@@ -16,6 +16,10 @@ function Start-DFCatalogRefreshJob {
         The catalog provider name.
     .PARAMETER Query
         The normalized query to re-warm.
+    .PARAMETER Kind
+        'query' (default) re-warms the search-query cache via the provider's
+        Search hook; 'detail' re-warms the per-package detail cache via the
+        provider's Detail hook.
     #>
     [CmdletBinding()]
     param(
@@ -23,11 +27,14 @@ function Start-DFCatalogRefreshJob {
         [string]$Provider,
 
         [Parameter(Mandatory)]
-        [string]$Query
+        [string]$Query,
+
+        [ValidateSet('query', 'detail')]
+        [string]$Kind = 'query'
     )
 
     $key = (ConvertTo-DFCatalogQueryKey -Query $Query).Key
-    $jobName = "DotForge.Catalog.$Provider.$key"
+    $jobName = "DotForge.Catalog.$Provider.$Kind.$key"
 
     # Sweep finished jobs (name-prefix-filtered so user jobs are never touched),
     # and dedupe an already-in-flight refresh of the same entry.
@@ -37,15 +44,20 @@ function Start-DFCatalogRefreshJob {
     if (Get-Job -Name $jobName -ErrorAction Ignore) { return }
 
     $manifest = Join-Path $PSScriptRoot '..' 'DotForge.psd1'
-    $null = Start-ThreadJob -Name $jobName -ThrottleLimit 4 -ArgumentList $manifest, $Provider, $Query -ScriptBlock {
-        param($Manifest, $Provider, $Query)
+    $null = Start-ThreadJob -Name $jobName -ThrottleLimit 4 -ArgumentList $manifest, $Provider, $Query, $Kind -ScriptBlock {
+        param($Manifest, $Provider, $Query, $Kind)
         try {
             Import-Module $Manifest -Force
             & (Get-Module DotForge) {
-                param($p, $q)
+                param($p, $q, $k)
                 $prov = $script:DFCatalogProviders[$p]
-                if ($prov) { $null = & $prov.Search $q $true }
-            } $Provider $Query
+                if (-not $prov) { return }
+                if ($k -eq 'detail') {
+                    if ($prov.Detail) { $null = & $prov.Detail $q $true }
+                } else {
+                    $null = & $prov.Search $q $true
+                }
+            } $Provider $Query $Kind
         } catch {
             # Background refresh is best-effort; the stale cache stays serveable.
         }
