@@ -6,6 +6,11 @@ BeforeAll {
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
+    . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
+    . "$PSScriptRoot/../Private/Get-DFGitHubRepoInfo.ps1"
+    . "$PSScriptRoot/../Private/Get-DFPackageReadme.ps1"
+    . "$PSScriptRoot/../Private/Invoke-DFPagerExe.ps1"
+    . "$PSScriptRoot/../Public/DFHelpers.Pager.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
 }
 
@@ -13,6 +18,8 @@ Describe 'Find-DFPackage' {
     BeforeEach {
         $script:SavedXdgCache = $Env:XDG_CACHE_HOME
         $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        $script:SavedPager = $Env:Pager
+        $Env:Pager = $null
         $script:SavedProviders = $script:DFCatalogProviders
 
         # Isolated fake providers — no disk, no network.
@@ -31,6 +38,9 @@ Describe 'Find-DFPackage' {
                     [pscustomobject]@{ Source = 'scoop'; Name = 'ripgrep'; PackageId = 'ripgrep'; InstalledVersion = '14.1.0' }
                 }
                 Refresh = { }
+                Detail = { param($Id, $Fresh)
+                    New-DFToolSourceDetail -Source 'scoop' -PackageId $Id `
+                        -InstallHint "scoop install $Id" -Notes 'test note' }
             }
             choco = @{
                 Name = 'choco'; Kind = 'query-cache'
@@ -50,6 +60,7 @@ Describe 'Find-DFPackage' {
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedXdgCache
+        $Env:Pager = $script:SavedPager
         $script:DFCatalogProviders = $script:SavedProviders
         $script:DFCatalogAvailability = @{}
     }
@@ -204,5 +215,80 @@ Describe 'Find-DFPackage' {
         $r = @(Find-DFPackage ripgrep)
         $r[0].Installed | Should -BeTrue
         $r[0].InstalledVia | Should -Be @('PATH')
+    }
+
+    It 'enriches the top exact match with Details' {
+        $r = @(Find-DFPackage ripgrep)
+        $r[0].Details | Should -Not -BeNullOrEmpty
+        $r[0].Details['scoop'].InstallHint | Should -Be 'scoop install main/ripgrep'
+    }
+
+    It 'renders the DETAIL card interactively on an exact match even with other keyword hits' {
+        Mock Test-DFOutputPiped { $false }
+        $script:DFCatalogProviders['scoop'].Search = { param($Query, $Fresh)
+            if ($Query -eq 'ripgrep') {
+                New-DFToolSourceInfo -Source 'scoop' -PackageId 'main/ripgrep' -Name 'ripgrep' `
+                    -Description 'search tool' -LatestVersion '14.1.1' -MatchKind 'exact-name'
+                New-DFToolSourceInfo -Source 'scoop' -PackageId 'main/ripgrep-all' -Name 'ripgrep-all' `
+                    -Description 'rga' -LatestVersion '1.0' -MatchKind 'keyword'
+            }
+        }
+        $saved = $Env:NO_COLOR; $Env:NO_COLOR = '1'
+        try {
+            $out = (Find-DFPackage ripgrep) -join "`n"
+            $out | Should -Match 'Install\s+scoop install main/ripgrep'
+            $out | Should -Match '\+ 1 more matches — trifle ripgrep -All'
+        } finally { $Env:NO_COLOR = $saved }
+    }
+
+    It '-All always renders the table, never the card' {
+        Mock Test-DFOutputPiped { $false }
+        $saved = $Env:NO_COLOR; $Env:NO_COLOR = '1'
+        try {
+            $out = (Find-DFPackage ripgrep -All) -join "`n"
+            $out | Should -Match 'Name\s+'
+            $out | Should -Not -Match 'Installed'
+        } finally { $Env:NO_COLOR = $saved }
+    }
+
+    It 'resolves a qualified source:packageId query' {
+        $r = @(Find-DFPackage scoop:main/ripgrep)
+        $r.Count | Should -Be 1
+        $r[0].Name | Should -Be 'ripgrep'
+        $r[0].Details['scoop'] | Should -Not -BeNullOrEmpty
+    }
+
+    It 'falls back to keyword search for an unknown qualified prefix' {
+        { Find-DFPackage foo:bar } | Should -Not -Throw
+    }
+
+    It 'warns and falls back when a qualified id does not exist' {
+        $w = $null
+        $null = Find-DFPackage scoop:main/nope -WarningVariable w -WarningAction SilentlyContinue
+        "$w" | Should -Match "No package 'main/nope' found in scoop"
+    }
+
+    It '-GitInfo attaches GitHub repo info' {
+        Mock Get-DFGitHubRepoInfo { [pscustomobject]@{ PSTypeName = 'DotForge.RepoInfo'; Stars = 5 } }
+        Mock Resolve-DFGitHubRepoUrl { [pscustomobject]@{ Owner = 'a'; Repo = 'b' } }
+        $r = @(Find-DFPackage ripgrep -GitInfo)
+        $r[0].GitHub.Stars | Should -Be 5
+    }
+
+    It '-Readme pages the readme after the card' {
+        Mock Test-DFOutputPiped { $false }
+        Mock Get-DFPackageReadme { @('# readme line') }
+        $saved = $Env:NO_COLOR; $Env:NO_COLOR = '1'
+        try {
+            $out = (Find-DFPackage ripgrep -Readme) -join "`n"
+            $out | Should -Match '# readme line'
+        } finally { $Env:NO_COLOR = $saved }
+    }
+
+    It 'marks a failed detail fetch as null in Details' {
+        $script:DFCatalogProviders['choco'].Detail = { param($Id, $Fresh) throw 'api down' }
+        $r = @(Find-DFPackage ripgrep)
+        $r[0].Details.Contains('choco') | Should -BeTrue
+        $r[0].Details['choco'] | Should -BeNullOrEmpty
     }
 }

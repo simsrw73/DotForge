@@ -401,6 +401,36 @@ function Get-DFCatalogDetail {
     }
 }
 
+function Get-DFToolInfoDetails {
+    <#
+    .SYNOPSIS
+        Fetches per-source details for every source of a merged ToolInfo.
+        Returns an ordered dict source → detail; a $null value marks a source
+        whose Detail hook exists but failed (renders as 'details unavailable').
+        Sources whose provider has no Detail hook are omitted entirely.
+    .PARAMETER Info
+        The merged DotForge.ToolInfo.
+    .PARAMETER Fresh
+        Force live fetches.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Info,
+
+        [switch]$Fresh
+    )
+
+    $details = [ordered]@{}
+    foreach ($source in @($Info.Sources)) {
+        $provider = $script:DFCatalogProviders[$source.Source]
+        if (-not $provider -or -not $provider.Detail) { continue }
+        if ($details.Contains($source.Source)) { continue }
+        $details[$source.Source] = Get-DFCatalogDetail -Source $source.Source -PackageId $source.PackageId -Fresh:$Fresh
+    }
+    $details
+}
+
 function Get-DFCatalogProvider {
     <#
     .SYNOPSIS
