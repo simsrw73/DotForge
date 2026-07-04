@@ -294,6 +294,100 @@ JOIN versions v ON m.version = v.rowid
     }
 }
 
+function Invoke-DFCatalogWingetShowCli {
+    <#
+    .SYNOPSIS
+        Runs `winget show` for an exact package id and returns the raw output
+        lines. Mockable seam.
+    .PARAMETER PackageId
+        The winget package id.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId
+    )
+
+    if (-not (Get-Command winget -ErrorAction Ignore)) {
+        throw 'winget.exe is not available'
+    }
+    winget show --id $PackageId --exact --source winget --disable-interactivity 2>$null
+}
+
+function ConvertFrom-DFCatalogWingetShow {
+    <#
+    .SYNOPSIS
+        Parses `winget show` Key: value output into a DotForge.ToolSourceDetail.
+        Indented lines continue the previous key; the Tags block becomes the
+        Tags array. Returns $null when no keys parse (package not found).
+        Limitation: key labels are localized — non-English systems degrade to
+        an empty parse (null), which the card renders as details-unavailable.
+    .PARAMETER Lines
+        Raw winget show output lines.
+    .PARAMETER PackageId
+        The id the lookup was for.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowEmptyCollection()]
+        [string[]]$Lines = @(),
+
+        [Parameter(Mandatory)]
+        [string]$PackageId
+    )
+
+    $map = [ordered]@{}
+    $currentKey = $null
+    foreach ($line in @($Lines)) {
+        if ($null -eq $line) { continue }
+        if ($line -cmatch '^([A-Z][A-Za-z ]*?):\s*(.*?)\r?$') {
+            $currentKey = $Matches[1].Trim()
+            $map[$currentKey] = @()
+            if ($Matches[2].Trim()) { $map[$currentKey] = @($Matches[2].Trim()) }
+        } elseif ($currentKey -and $line -match '^\s+(\S.*?)\r?$') {
+            $map[$currentKey] = @($map[$currentKey]) + $Matches[1].Trim()
+        }
+    }
+    if ($map.Count -eq 0) { return $null }
+
+    $joined = { param($k) (@($map[$k]) -join ' ') }
+
+    New-DFToolSourceDetail -Source 'winget' `
+        -PackageId $PackageId `
+        -Publisher (& $joined 'Publisher') `
+        -Maintainers @(@(& $joined 'Author') -ne '') `
+        -Tags @($map['Tags']) `
+        -ReleaseNotes (& $joined 'Release Notes') `
+        -ReleaseNotesUrl (& $joined 'Release Notes Url') `
+        -RepositoryUrl (((& $joined 'Homepage') -match 'github\.com') ? (& $joined 'Homepage') : '') `
+        -InstallHint "winget install --id $PackageId --exact" `
+        -Notes (& $joined 'Description')
+}
+
+function Get-DFCatalogWingetDetail {
+    <#
+    .SYNOPSIS
+        Cache-first winget detail: `winget show` is a slow process spawn, so
+        results go through the detail cache engine.
+    .PARAMETER PackageId
+        The winget package id.
+    .PARAMETER Fresh
+        Force a live winget show.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    Get-DFCatalogDetailCache -Provider 'winget' -PackageId $PackageId -Fresh:$Fresh -Fetch {
+        param($id)
+        ConvertFrom-DFCatalogWingetShow -Lines @(Invoke-DFCatalogWingetShowCli -PackageId $id) -PackageId $id
+    }
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['winget'] = @{
     Name         = 'winget'
@@ -302,4 +396,5 @@ $script:DFCatalogProviders['winget'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogWinget -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogWingetInstalled }
     Refresh      = { param($Query) Update-DFCatalogWingetIndex -Force }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogWingetDetail -PackageId $PackageId -Fresh:$Fresh }
 }

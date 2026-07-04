@@ -295,6 +295,81 @@ function Get-DFCatalogScoopInstalled {
     }
 }
 
+function Get-DFCatalogScoopDetail {
+    <#
+    .SYNOPSIS
+        Deep detail for a scoop package: the full bucket manifest (notes,
+        depends, suggest, bin) read straight from the local bucket clone.
+        Local disk is free — no detail cache involved.
+    .PARAMETER PackageId
+        'bucket/name' as reported by Search-DFCatalogScoop, or a bare name
+        (all buckets searched).
+    .PARAMETER ScoopRoot
+        The scoop root directory (defaults to Get-DFCatalogScoopRoot).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [string]$ScoopRoot = (Get-DFCatalogScoopRoot)
+    )
+
+    $bucket, $name = $PackageId -split '/', 2
+    if (-not $name) { $name = $bucket; $bucket = $null }
+
+    $manifestFile = $null
+    if ($bucket) {
+        $candidate = Join-Path $ScoopRoot "buckets/$bucket/bucket/$name.json"
+        if (Test-Path $candidate) { $manifestFile = $candidate }
+    } else {
+        $bucketsDir = Join-Path $ScoopRoot 'buckets'
+        if (Test-Path $bucketsDir) {
+            foreach ($dir in Get-ChildItem $bucketsDir -Directory) {
+                $candidate = Join-Path $dir.FullName "bucket/$name.json"
+                if (Test-Path $candidate) { $manifestFile = $candidate; $bucket = $dir.Name; break }
+            }
+        }
+    }
+    if (-not $manifestFile) { return $null }
+
+    try { $manifest = Get-Content $manifestFile -Raw | ConvertFrom-Json } catch {
+        Write-Verbose "DotForge: unreadable scoop manifest '$manifestFile': $_"
+        return $null
+    }
+
+    # scoop manifest fields are string-or-array; flatten uniformly.
+    $flat = { param($v) if ($null -eq $v) { @() } else { @($v | ForEach-Object { [string]$_ }) } }
+
+    # bin entries are string | [exe, alias, args...]; the shim name is the
+    # alias when present, else the exe's basename.
+    $shims = @(foreach ($entry in @($manifest.bin)) {
+        if ($null -eq $entry) { continue }
+        if ($entry -is [array]) {
+            $entry.Count -ge 2 ? [string]$entry[1] : [System.IO.Path]::GetFileNameWithoutExtension([string]$entry[0])
+        } else { [string]$entry }
+    })
+
+    $suggest = @()
+    if ($manifest.suggest) {
+        $suggest = @($manifest.suggest.PSObject.Properties | ForEach-Object { "$($_.Name): $(@($_.Value) -join ', ')" })
+    }
+
+    $extra = [ordered]@{}
+    if ($shims) { $extra['bin'] = $shims }
+    if ($suggest) { $extra['suggest'] = $suggest }
+
+    $license = if ($manifest.license -is [string]) { $manifest.license } else { [string]$manifest.license.identifier }
+
+    New-DFToolSourceDetail -Source 'scoop' `
+        -PackageId "$bucket/$name" `
+        -Dependencies (& $flat $manifest.depends) `
+        -RepositoryUrl ((([string]$manifest.homepage) -match 'github\.com') ? [string]$manifest.homepage : '') `
+        -InstallHint "scoop install $bucket/$name" `
+        -Notes ((& $flat $manifest.notes) -join ' ') `
+        -Extra $extra
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['scoop'] = @{
     Name         = 'scoop'
@@ -303,4 +378,5 @@ $script:DFCatalogProviders['scoop'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogScoop -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogScoopInstalled }
     Refresh      = { param($Query) Update-DFCatalogScoopIndex }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogScoopDetail -PackageId $PackageId }
 }
