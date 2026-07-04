@@ -72,6 +72,46 @@ function Get-DFCatalogPSGalleryInstalled {
     }
 }
 
+function Invoke-DFCatalogPSGalleryDetailFetch {
+    <#
+    .SYNOPSIS
+        Live PSGallery OData detail lookup (latest version of one id).
+    .PARAMETER PackageId
+        The module name.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId
+    )
+
+    $term = [uri]::EscapeDataString(($PackageId -replace "'", "''"))
+    $uri = "https://www.powershellgallery.com/api/v2/FindPackagesById()?id='$term'&`$filter=IsLatestVersion"
+    $entry = @(Invoke-RestMethod -Uri $uri -TimeoutSec 15) | Select-Object -First 1
+    ConvertFrom-DFCatalogODataDetailEntry -Source 'psgallery' -Entry $entry -InstallHint "Install-PSResource $PackageId"
+}
+
+function Get-DFCatalogPSGalleryDetail {
+    <#
+    .SYNOPSIS
+        Cache-first PSGallery detail lookup.
+    .PARAMETER PackageId
+        The module name.
+    .PARAMETER Fresh
+        Force a live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    Get-DFCatalogDetailCache -Provider 'psgallery' -PackageId $PackageId -Fresh:$Fresh `
+        -Fetch { param($id) Invoke-DFCatalogPSGalleryDetailFetch -PackageId $id }
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['psgallery'] = @{
     Name         = 'psgallery'
@@ -80,4 +120,5 @@ $script:DFCatalogProviders['psgallery'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogPSGallery -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogPSGalleryInstalled }
     Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogPSGallery -Query $Query -Fresh } }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogPSGalleryDetail -PackageId $PackageId -Fresh:$Fresh }
 }

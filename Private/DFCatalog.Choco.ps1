@@ -128,6 +128,99 @@ function Get-DFCatalogChocoInstalled {
     }
 }
 
+function ConvertFrom-DFCatalogODataDetailEntry {
+    <#
+    .SYNOPSIS
+        Maps one NuGet v2 OData entry (choco / PSGallery) to a
+        DotForge.ToolSourceDetail. Shared by both OData providers.
+    .PARAMETER Source
+        Provider name to stamp on the result.
+    .PARAMETER Entry
+        One feed entry as returned by Invoke-RestMethod.
+    .PARAMETER InstallHint
+        The catalog's install one-liner for this package.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [AllowNull()]
+        [object]$Entry,
+
+        [Parameter(Mandatory)]
+        [string]$InstallHint
+    )
+
+    if (-not $Entry) { return $null }
+    $props = $Entry.properties
+    $id = [string]$props.Id
+    if (-not $id) { return $null }
+
+    # m:typed OData elements surface as XmlElement with '#text'.
+    $text = { param($v) ($v -and $v -isnot [string]) ? [string]$v.'#text' : [string]$v }
+
+    $downloads = $null
+    $raw = & $text $props.DownloadCount
+    if ($raw) { try { $downloads = [long]$raw } catch {} }
+
+    $deps = @(foreach ($spec in ((& $text $props.Dependencies) -split '\|') -ne '') {
+        $parts = $spec -split ':'
+        $parts[1] ? "$($parts[0]) ($($parts[1]))" : $parts[0]
+    })
+
+    New-DFToolSourceDetail -Source $Source `
+        -PackageId $id `
+        -Publisher (& $text $props.Authors) `
+        -Dependencies $deps `
+        -Tags @(((& $text $props.Tags) -split '\s+') -ne '') `
+        -Downloads $downloads `
+        -ReleaseNotes (& $text $props.ReleaseNotes) `
+        -RepositoryUrl ((& $text $props.ProjectSourceUrl) ? (& $text $props.ProjectSourceUrl) : (& $text $props.ProjectUrl)) `
+        -DocsUrl (& $text $props.DocsUrl) `
+        -InstallHint $InstallHint
+}
+
+function Invoke-DFCatalogChocoDetailFetch {
+    <#
+    .SYNOPSIS
+        Live Chocolatey OData detail lookup (latest version of one id).
+    .PARAMETER PackageId
+        The choco package id.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId
+    )
+
+    $term = [uri]::EscapeDataString(($PackageId -replace "'", "''"))
+    $uri = "https://community.chocolatey.org/api/v2/FindPackagesById()?id='$term'&`$filter=IsLatestVersion"
+    $entry = @(Invoke-RestMethod -Uri $uri -TimeoutSec 15) | Select-Object -First 1
+    ConvertFrom-DFCatalogODataDetailEntry -Source 'choco' -Entry $entry -InstallHint "choco install $PackageId"
+}
+
+function Get-DFCatalogChocoDetail {
+    <#
+    .SYNOPSIS
+        Cache-first Chocolatey detail lookup (72h TTL — slow, rate-limited API).
+    .PARAMETER PackageId
+        The choco package id.
+    .PARAMETER Fresh
+        Force a live fetch.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$PackageId,
+
+        [switch]$Fresh
+    )
+
+    Get-DFCatalogDetailCache -Provider 'choco' -PackageId $PackageId -Fresh:$Fresh `
+        -Fetch { param($id) Invoke-DFCatalogChocoDetailFetch -PackageId $id }
+}
+
 if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['choco'] = @{
     Name         = 'choco'
@@ -136,4 +229,5 @@ $script:DFCatalogProviders['choco'] = @{
     Search       = { param($Query, $Fresh) Search-DFCatalogChoco -Query $Query -Fresh:$Fresh }
     GetInstalled = { Get-DFCatalogChocoInstalled }
     Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogChoco -Query $Query -Fresh } }
+    Detail       = { param($PackageId, $Fresh) Get-DFCatalogChocoDetail -PackageId $PackageId -Fresh:$Fresh }
 }
