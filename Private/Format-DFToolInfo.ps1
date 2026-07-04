@@ -93,6 +93,132 @@ function Format-DFToolInfoCard {
     $lines
 }
 
+function Format-DFToolDetailCount {
+    <#
+    .SYNOPSIS
+        Formats a count as a compact '998' / '12.3k' / '1.2M' string.
+    .PARAMETER Count
+        The raw count.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [long]$Count
+    )
+
+    if ($Count -lt 1000) { return [string]$Count }
+    if ($Count -lt 1000000) { return "$([math]::Round($Count / 1000, 1))k" }
+    "$([math]::Round($Count / 1000000, 1))M"
+}
+
+function Format-DFToolDetailCard {
+    <#
+    .SYNOPSIS
+        Renders a DotForge.ToolInfo WITH populated Details/GitHub as the full
+        detail card: the basic card followed by Publisher / Deps / Tags /
+        Downloads / Install / Notes / GitHub sections and an optional
+        more-matches footer. Sections without data are omitted.
+    .PARAMETER Info
+        The merged tool info (Details: ordered dict source → detail, values
+        may be $null for failed fetches; GitHub: DotForge.RepoInfo or $null).
+    .PARAMETER Color
+        When false, plain text.
+    .PARAMETER MoreMatches
+        Count of suppressed keyword matches (renders the -All footer when > 0).
+    .PARAMETER QueryText
+        The original query, for the footer's suggested command.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory)]
+        $Info,
+
+        [Parameter(Mandatory)]
+        [bool]$Color,
+
+        [int]$MoreMatches = 0,
+
+        [string]$QueryText = ''
+    )
+
+    $faint = $Color ? "`e[2m" : ''
+    $reset = $Color ? "`e[0m" : ''
+    $label = { param($text) ($Color ? "`e[2m" : '') + $text.PadRight(9) + ($Color ? "`e[0m" : '') + '  ' }
+    $indent = ' ' * 11
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    $lines.AddRange([string[]](Format-DFToolInfoCard -Info $Info -Color $Color))
+
+    $details = @()
+    $failed = @()
+    if ($Info.Details) {
+        foreach ($key in $Info.Details.Keys) {
+            if ($null -ne $Info.Details[$key]) { $details += $Info.Details[$key] }
+            else { $failed += $key }
+        }
+    }
+
+    $publisher = @($details | ForEach-Object { $_.Publisher } | Where-Object { $_ }) | Select-Object -First 1
+    if (-not $publisher) {
+        $publisher = @($details | ForEach-Object { @($_.Maintainers) -join ', ' } | Where-Object { $_ }) | Select-Object -First 1
+    }
+    if ($publisher) { $lines.Add((& $label 'Publisher') + $publisher) }
+
+    $first = $true
+    foreach ($d in $details) {
+        $deps = @($d.Dependencies) -ne '' -ne $null
+        if (-not $deps) { continue }
+        $shown = @($deps | Select-Object -First 8)
+        $suffix = $deps.Count -gt 8 ? " +$($deps.Count - 8) more" : ''
+        $prefix = $first ? (& $label 'Deps') : $indent
+        $lines.Add("$prefix$($d.Source): $($shown -join ', ')$suffix")
+        $first = $false
+    }
+
+    $tags = @($details | ForEach-Object { @($_.Tags) } | Where-Object { $_ } | Select-Object -Unique -First 10)
+    if ($tags) { $lines.Add((& $label 'Tags') + ($tags -join ' · ')) }
+
+    $downloads = @($details | Where-Object { $_.Downloads } | ForEach-Object {
+        "$($_.Source) $(Format-DFToolDetailCount -Count $_.Downloads)"
+    })
+    if ($downloads) { $lines.Add((& $label 'Downloads') + ($downloads -join ' · ')) }
+
+    $hints = @($details | ForEach-Object { $_.InstallHint } | Where-Object { $_ })
+    for ($i = 0; $i -lt $hints.Count; $i++) {
+        $lines.Add(($i -eq 0 ? (& $label 'Install') : $indent) + $hints[$i])
+    }
+
+    $notes = @($details | ForEach-Object { $_.Notes } | Where-Object { $_ }) | Select-Object -First 1
+    if ($notes) { $lines.Add((& $label 'Notes') + $notes) }
+
+    if ($Info.GitHub) {
+        $gh = $Info.GitHub
+        $parts = [System.Collections.Generic.List[string]]::new()
+        $parts.Add("★ $(Format-DFToolDetailCount -Count $gh.Stars)")
+        if ($gh.PushedAt) { $parts.Add("updated $($gh.PushedAt.ToString('yyyy-MM-dd'))") }
+        if ($gh.LatestRelease) {
+            $when = $gh.LatestReleaseAt ? " ($($gh.LatestReleaseAt.ToString('yyyy-MM-dd')))" : ''
+            $parts.Add("release $($gh.LatestRelease)$when")
+        }
+        $parts.Add("$(Format-DFToolDetailCount -Count $gh.OpenIssues) issues")
+        if ($gh.Archived) { $parts.Add('ARCHIVED') }
+        $lines.Add((& $label 'GitHub') + ($parts -join ' · '))
+        if ($gh.Description) { $lines.Add($indent + "$faint$($gh.Description)$reset") }
+    }
+
+    if ($failed) {
+        $lines.Add("$faint(details unavailable: $($failed -join ', '))$reset")
+    }
+
+    if ($MoreMatches -gt 0) {
+        $lines.Add("$faint+ $MoreMatches more matches — trifle $QueryText -All$reset")
+    }
+
+    $lines
+}
+
 function Format-DFToolInfoTable {
     <#
     .SYNOPSIS
@@ -123,12 +249,17 @@ function Format-DFToolInfoTable {
     $reset = $Color ? "`e[0m" : ''
 
     $nameW = [math]::Min(25, [math]::Max(4, (@($Infos.Name) + 'Name' | Measure-Object Length -Maximum).Maximum))
+    $idStrings = @($Infos | ForEach-Object {
+        $s = @($_.Sources) | Select-Object -First 1
+        $s ? "$($s.Source):$($s.PackageId)" : ''
+    })
+    $idW = [math]::Min(34, [math]::Max(2, (@($idStrings) + 'Id' | Measure-Object Length -Maximum).Maximum))
     $srcStrings = @($Infos | ForEach-Object { @($_.Sources.Source) -join ',' })
     $srcW = [math]::Min(30, [math]::Max(7, (@($srcStrings) + 'Sources' | Measure-Object Length -Maximum).Maximum))
     $verW = 12
 
     $rows = [System.Collections.Generic.List[string]]::new()
-    $rows.Add("$faint$('Name'.PadRight($nameW))  In  $('Sources'.PadRight($srcW))  $('Latest'.PadRight($verW))  Description$reset")
+    $rows.Add("$faint$('Name'.PadRight($nameW))  In  $('Sources'.PadRight($srcW))  $('Id'.PadRight($idW))  $('Latest'.PadRight($verW))  Description$reset")
 
     for ($i = 0; $i -lt $Infos.Count; $i++) {
         $info = $Infos[$i]
@@ -136,13 +267,15 @@ function Format-DFToolInfoTable {
         $inst = $info.Installed ? "$green✓$reset " : '  '
         $src = $srcStrings[$i]
         $src = $src.Length -gt $srcW ? $src.Substring(0, $srcW) : $src.PadRight($srcW)
+        $id = $idStrings[$i]
+        $id = $id.Length -gt $idW ? $id.Substring(0, $idW) : $id.PadRight($idW)
         $latest = ''
         if ($info.Latest -and $info.Latest.Count -gt 0) {
             $latest = [string]@($info.Latest.Values)[0]
         }
         $latest = $latest.Length -gt $verW ? $latest.Substring(0, $verW) : $latest.PadRight($verW)
 
-        $row = "$name  $inst  $src  $latest  $($info.Description)"
+        $row = "$name  $inst  $src  $id  $latest  $($info.Description)"
         if ($row.Length -gt $Width) { $row = $row.Substring(0, $Width) }
         $rows.Add($row)
     }
