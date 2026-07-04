@@ -48,4 +48,18 @@ Describe 'Get-DFPackageReadme' {
         $info = [pscustomobject]@{ Details = $null; Homepage = 'https://example.org' }
         Get-DFPackageReadme -Info $info | Should -BeNullOrEmpty
     }
+
+    It 'pypi fallback works on cache-rehydrated details (Extra is a PSCustomObject)' {
+        # Simulate a warm-cache detail: round-trip through JSON like the cache engine does.
+        $detail = [pscustomobject]@{
+            RepositoryUrl = ''
+            Readme        = $null
+            Extra         = [ordered]@{ description = '# cached desc'; description_content_type = 'text/markdown' }
+        } | ConvertTo-Json -Depth 4 | ConvertFrom-Json
+        $info = [pscustomobject]@{
+            Details  = [ordered]@{ pypi = $detail }
+            Homepage = 'https://example.org'
+        }
+        (Get-DFPackageReadme -Info $info) -join "`n" | Should -Be '# cached desc'
+    }
 }

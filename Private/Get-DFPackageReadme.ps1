@@ -38,9 +38,9 @@ function Get-DFPackageReadme {
 
     if ($Info.Details) {
         $pypi = $Info.Details['pypi']
-        if ($pypi -and $pypi.Extra -and $pypi.Extra['description'] -and
-            $pypi.Extra['description_content_type'] -match 'markdown|plain|^$') {
-            return [string[]]($pypi.Extra['description'] -split "\r?\n")
+        if ($pypi -and $pypi.Extra -and $pypi.Extra.description -and
+            $pypi.Extra.description_content_type -match 'markdown|plain|^$') {
+            return [string[]]($pypi.Extra.description -split "\r?\n")
         }
     }
 
