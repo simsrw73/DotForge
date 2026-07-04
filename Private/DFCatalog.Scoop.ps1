@@ -359,8 +359,6 @@ function Get-DFCatalogScoopDetail {
     if ($shims) { $extra['bin'] = $shims }
     if ($suggest) { $extra['suggest'] = $suggest }
 
-    $license = if ($manifest.license -is [string]) { $manifest.license } else { [string]$manifest.license.identifier }
-
     New-DFToolSourceDetail -Source 'scoop' `
         -PackageId "$bucket/$name" `
         -Dependencies (& $flat $manifest.depends) `
