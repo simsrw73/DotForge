@@ -40,6 +40,13 @@ All notable changes to DotForge are documented here.
 - **`Select-DFPackage` (`ftrifle`):** fzf browser over every locally cached
   package (scoop + winget indexes, cached web queries, installed snapshot);
   Enter renders the trifle info card.
+- **GitHub enrichment (`-GitInfo` backend):** trifle automatically enriches
+  packages with GitHub repo stats (stars, open issues, pushed_at, latest
+  release, archive status, default branch, description, license) when source
+  details include a GitHub URL. Uses `gh` CLI when authenticated (5000 req/hr)
+  or falls back to anonymous REST API (60 req/hr). Cached per-repo under
+  `$XDG_CACHE_HOME/dotforge/catalogs/github/details/`. Gracefully handles
+  missing releases and API failures.
 
 ## [0.3.0-preview] - 2026-06-20
 
