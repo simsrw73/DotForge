@@ -108,11 +108,11 @@ function Invoke-DFCatalogCratesDetailFetch {
     if (-not $crate.name) { return $null }
 
     $extra = [ordered]@{}
-    if ($crate.recent_downloads) { $extra['recent_downloads'] = [long]$crate.recent_downloads }
+    if ($null -ne $crate.recent_downloads) { $extra['recent_downloads'] = [long]$crate.recent_downloads }
 
     New-DFToolSourceDetail -Source 'crates' `
         -PackageId $crate.name `
-        -Tags (@(@($crate.keywords) + @($crate.categories)) | ForEach-Object { [string]$_ }) `
+        -Tags @(@(@($crate.keywords) + @($crate.categories)) | ForEach-Object { [string]$_ } | Where-Object { $_ }) `
         -Downloads ([nullable[long]]$crate.downloads) `
         -RepositoryUrl ([string]$crate.repository) `
         -DocsUrl ([string]$crate.documentation) `

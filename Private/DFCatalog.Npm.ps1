@@ -155,9 +155,9 @@ function Invoke-DFCatalogNpmDetailFetch {
 
     New-DFToolSourceDetail -Source 'npm' `
         -PackageId $doc.name `
-        -Maintainers @(@($doc.maintainers) | ForEach-Object { [string]$_.name }) `
+        -Maintainers @(@($doc.maintainers) | ForEach-Object { [string]$_.name } | Where-Object { $_ }) `
         -Dependencies $deps `
-        -Tags @(@($doc.keywords) | ForEach-Object { [string]$_ }) `
+        -Tags @(@($doc.keywords) | ForEach-Object { [string]$_ } | Where-Object { $_ }) `
         -RepositoryUrl ([string]$doc.repository.url) `
         -InstallHint "npm install -g $($doc.name)" `
         -Readme ([string]$doc.readme) `

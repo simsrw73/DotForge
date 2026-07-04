@@ -84,4 +84,28 @@ Describe 'web detail providers' {
             $script:DFCatalogProviders[$p].Detail | Should -Not -BeNullOrEmpty
         }
     }
+
+    It 'npm: omitted maintainers/keywords yield empty arrays, not blanks' {
+        Mock Invoke-RestMethod {
+            [pscustomobject]@{
+                name = 'bare-pkg'
+                'dist-tags' = [pscustomobject]@{ latest = '1.0.0' }
+                versions = [pscustomobject]@{ '1.0.0' = [pscustomobject]@{} }
+            }
+        }
+        $d = Get-DFCatalogNpmDetail -PackageId 'bare-pkg' -Fresh
+        @($d.Maintainers).Count | Should -Be 0
+        @($d.Tags).Count | Should -Be 0
+    }
+
+    It 'crates: recent_downloads of 0 is preserved, absent keywords yield empty tags' {
+        Mock Invoke-RestMethod {
+            [pscustomobject]@{
+                crate = [pscustomobject]@{ name = 'dusty'; downloads = 10; recent_downloads = 0 }
+            }
+        }
+        $d = Get-DFCatalogCratesDetail -PackageId 'dusty' -Fresh
+        $d.Extra['recent_downloads'] | Should -Be 0
+        @($d.Tags).Count | Should -Be 0
+    }
 }
