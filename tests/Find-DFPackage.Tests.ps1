@@ -13,6 +13,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Invoke-DFPagerExe.ps1"
     . "$PSScriptRoot/../Public/DFHelpers.Pager.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
+    . "$PSScriptRoot/../Private/Get-DFCategoryDb.ps1"
 }
 
 Describe 'Find-DFPackage' {
@@ -314,5 +315,111 @@ Describe 'Find-DFPackage' {
         $r = @(Find-DFPackage ripgrep)
         $r[0].Details.Contains('choco') | Should -BeTrue
         $r[0].Details['choco'] | Should -BeNullOrEmpty
+    }
+
+    Context '-Category / -WorksWith facet search' {
+        BeforeEach {
+            $script:FakeDb = [pscustomobject]@{
+                Raw = [pscustomobject]@{
+                    taxonomy = [pscustomobject]@{ function = @('search', 'editor'); worksWith = @('text', 'filesystem') }
+                    tools    = [pscustomobject]@{
+                        ripgrep = [pscustomobject]@{
+                            function = @('search'); worksWith = @('text', 'filesystem'); interface = 'cli'
+                            ids = [pscustomobject]@{ scoop = 'ripgrep' }
+                        }
+                        micro = [pscustomobject]@{
+                            function = @('editor'); worksWith = @('text'); interface = 'tui'
+                        }
+                    }
+                }
+                FacetIndex = @{
+                    'function:search'   = @('ripgrep')
+                    'function:editor'   = @('micro')
+                    'worksWith:text'    = @('ripgrep', 'micro')
+                    'worksWith:filesystem' = @('ripgrep')
+                }
+            }
+            Mock Get-DFCategoryDb { $script:FakeDb }
+
+            # 'micro' has no declared 'ids', so facet resolution falls back to
+            # searching its bare db key — the fake scoop provider must be able
+            # to answer that live, exactly as it already does for 'ripgrep'.
+            $script:DFCatalogProviders['scoop'].Search = { param($Query, $Fresh)
+                if ($Query -eq 'ripgrep') {
+                    New-DFToolSourceInfo -Source 'scoop' -PackageId 'main/ripgrep' -Name 'ripgrep' `
+                        -Description 'search tool' -LatestVersion '14.1.1' -Homepage 'https://rg.example' `
+                        -License 'MIT' -MatchKind 'exact-name'
+                } elseif ($Query -eq 'micro') {
+                    New-DFToolSourceInfo -Source 'scoop' -PackageId 'main/micro' -Name 'micro' `
+                        -Description 'terminal text editor' -LatestVersion '2.0.11' -MatchKind 'exact-name'
+                }
+            }
+        }
+
+        It 'resolves a -Category match through the real search-and-merge path' {
+            Mock Test-DFOutputPiped { $true }
+            $r = @(Find-DFPackage -Category search)
+            $r.Count | Should -Be 1
+            $r[0].Name | Should -Be 'ripgrep'
+            $r[0].Installed | Should -BeTrue   # proves it went through live scoop search + installed overlay, not a db snapshot
+        }
+
+        It 'ORs multiple -Category values' {
+            $r = @(Find-DFPackage -Category search,editor)
+            @($r.Name) | Sort-Object | Should -Be @('micro', 'ripgrep')
+        }
+
+        It 'ANDs -Category and -WorksWith together' {
+            $r = @(Find-DFPackage -Category search,editor -WorksWith filesystem)
+            $r.Count | Should -Be 1
+            $r[0].Name | Should -Be 'ripgrep'
+        }
+
+        It '-WorksWith alone ORs within the facet' {
+            $r = @(Find-DFPackage -WorksWith text)
+            @($r.Name) | Sort-Object | Should -Be @('micro', 'ripgrep')
+        }
+
+        It 'fails fast on an unknown facet value, naming it' {
+            { Find-DFPackage -Category bogus-value -ErrorAction Stop } | Should -Throw '*bogus-value*'
+        }
+
+        It 'rejects -All combined with -Category (parameter-set level)' {
+            { Find-DFPackage -Category search -All } | Should -Throw
+        }
+
+        It 'honors -Source, falling back to name search when the entry has no id in the allowed source' {
+            # ripgrep's only id is scoop; restricting to -Source choco means no
+            # id matches the allowed set, so it must fall back to a plain name
+            # search scoped to choco (which the fake choco provider answers).
+            $r = @(Find-DFPackage -Category search -Source choco)
+            $r.Count | Should -Be 1
+            $r[0].Sources[0].Source | Should -Be 'choco'
+        }
+
+        It 'skips a db entry whose ids resolve to nothing live (stale seed data)' {
+            $script:FakeDb.Raw.tools | Add-Member -MemberType NoteProperty -Name 'ghost-tool' -Value ([pscustomobject]@{
+                function = @('search'); interface = 'cli'; ids = [pscustomobject]@{ scoop = 'totally-nonexistent-package' }
+            })
+            $script:FakeDb.FacetIndex['function:search'] = @('ripgrep', 'ghost-tool')
+            $r = @(Find-DFPackage -Category search)
+            @($r.Name) | Should -Not -Contain 'ghost-tool'
+        }
+
+        It 'renders a table, never the detail card, even for a single exact-id facet match' {
+            Mock Test-DFOutputPiped { $false }
+            $saved = $Env:NO_COLOR; $Env:NO_COLOR = '1'
+            try {
+                $out = (Find-DFPackage -Category search) -join "`n"
+                $out | Should -Match 'Name\s+'
+                $out | Should -Not -Match 'Installed\s'
+            } finally { $Env:NO_COLOR = $saved }
+        }
+
+        It 'reports a friendly message when nothing matches the facet' {
+            Mock Test-DFOutputPiped { $false }
+            $out = Find-DFPackage -Category editor -WorksWith filesystem
+            ($out -join "`n") | Should -Match 'No packages found'
+        }
     }
 }
