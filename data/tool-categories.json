@@ -69,6 +69,32 @@
     ]
   },
   "tools": {
+    "atuin": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text",
+        "databases"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "mcfly"
+      ],
+      "popularity": 2
+    },
+    "bandwhich": {
+      "function": [
+        "network-transfer",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "network-ports",
+        "processes"
+      ],
+      "interface": "tui",
+      "popularity": 1
+    },
     "bat": {
       "function": [
         "file-viewing"
@@ -106,6 +132,27 @@
       },
       "popularity": 1
     },
+    "bottom": {
+      "function": [
+        "process-monitor",
+        "system-info"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "aliases": [
+        "btm"
+      ],
+      "alternativeTo": [
+        "top"
+      ],
+      "relatedTo": [
+        "procs",
+        "glances"
+      ],
+      "popularity": 2
+    },
     "broot": {
       "function": [
         "file-management",
@@ -141,6 +188,34 @@
       },
       "popularity": 2
     },
+    "choose": {
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text",
+        "csv"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "cut"
+      ],
+      "popularity": 1
+    },
+    "croc": {
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem",
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "scp"
+      ],
+      "popularity": 1
+    },
     "curl": {
       "function": [
         "network-transfer",
@@ -163,6 +238,22 @@
       ],
       "popularity": 3
     },
+    "dasel": {
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "json",
+        "yaml",
+        "csv"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "jq",
+        "yq"
+      ],
+      "popularity": 0
+    },
     "delta": {
       "function": [
         "diff-merge"
@@ -183,6 +274,31 @@
       ],
       "popularity": 2
     },
+    "difftastic": {
+      "function": [
+        "diff-merge"
+      ],
+      "worksWith": [
+        "code",
+        "text"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "delta"
+      ],
+      "popularity": 1
+    },
+    "direnv": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "environment-vars",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "popularity": 1
+    },
     "docker": {
       "function": [
         "container-tooling"
@@ -195,6 +311,81 @@
         "winget": "Docker.DockerDesktop"
       },
       "popularity": 3
+    },
+    "dog": {
+      "function": [
+        "dns-tool"
+      ],
+      "worksWith": [
+        "dns"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "dig"
+      ],
+      "popularity": 1
+    },
+    "dua": {
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "dust",
+        "ncdu",
+        "gdu"
+      ],
+      "popularity": 0
+    },
+    "duf": {
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "df"
+      ],
+      "relatedTo": [
+        "dust"
+      ],
+      "popularity": 1
+    },
+    "dust": {
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "du"
+      ],
+      "relatedTo": [
+        "duf",
+        "ncdu"
+      ],
+      "popularity": 1
+    },
+    "entr": {
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "filesystem",
+        "processes"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "watchexec"
+      ],
+      "popularity": 1
     },
     "eza": {
       "function": [
@@ -217,6 +408,22 @@
         "broot"
       ],
       "popularity": 3
+    },
+    "fastfetch": {
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "neofetch"
+      ],
+      "relatedTo": [
+        "winfetch"
+      ],
+      "popularity": 1
     },
     "fd": {
       "function": [
@@ -241,6 +448,19 @@
       ],
       "popularity": 3
     },
+    "fx": {
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "json"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "jq"
+      ],
+      "popularity": 1
+    },
     "fzf": {
       "function": [
         "fuzzy-finder"
@@ -262,6 +482,20 @@
       ],
       "popularity": 3
     },
+    "gdu": {
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "ncdu",
+        "dust"
+      ],
+      "popularity": 1
+    },
     "gh": {
       "function": [
         "vcs-client"
@@ -281,6 +515,21 @@
       ],
       "popularity": 3
     },
+    "glances": {
+      "function": [
+        "system-info",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "bottom",
+        "procs"
+      ],
+      "popularity": 1
+    },
     "glow": {
       "function": [
         "markdown-renderer"
@@ -295,6 +544,29 @@
         "choco": "glow"
       },
       "popularity": 1
+    },
+    "gping": {
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "ping"
+      ],
+      "popularity": 1
+    },
+    "grex": {
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "popularity": 0
     },
     "gsudo": {
       "function": [
@@ -315,6 +587,64 @@
       },
       "popularity": 1
     },
+    "httpie": {
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http",
+        "json"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl"
+      ],
+      "relatedTo": [
+        "xh",
+        "curl"
+      ],
+      "popularity": 2
+    },
+    "hyperfine": {
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "processes",
+        "binaries"
+      ],
+      "interface": "cli",
+      "popularity": 2
+    },
+    "jc": {
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "json",
+        "text"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "jq"
+      ],
+      "popularity": 0
+    },
+    "jless": {
+      "function": [
+        "json-processing",
+        "file-viewing"
+      ],
+      "worksWith": [
+        "json"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "jq",
+        "fx"
+      ],
+      "popularity": 0
+    },
     "jq": {
       "function": [
         "json-processing"
@@ -334,6 +664,17 @@
         "dasel"
       ],
       "popularity": 3
+    },
+    "just": {
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "popularity": 2
     },
     "lazygit": {
       "function": [
@@ -368,6 +709,35 @@
       },
       "popularity": 1
     },
+    "lsd": {
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "ls"
+      ],
+      "relatedTo": [
+        "eza"
+      ],
+      "popularity": 1
+    },
+    "mcfly": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "atuin"
+      ],
+      "popularity": 1
+    },
     "micro": {
       "function": [
         "editor"
@@ -380,6 +750,34 @@
       "ids": {
         "scoop": "micro"
       },
+      "popularity": 1
+    },
+    "navi": {
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "tealdeer"
+      ],
+      "popularity": 1
+    },
+    "ncdu": {
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "dust",
+        "duf",
+        "gdu"
+      ],
       "popularity": 1
     },
     "npm": {
@@ -410,6 +808,16 @@
         "starship"
       ],
       "popularity": 3
+    },
+    "pastel": {
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "popularity": 0
     },
     "posh-git": {
       "function": [
@@ -477,6 +885,38 @@
       "interface": "cli",
       "popularity": 2
     },
+    "rclone": {
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem",
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "rsync"
+      ],
+      "popularity": 1
+    },
+    "rga": {
+      "function": [
+        "search"
+      ],
+      "worksWith": [
+        "text",
+        "archives",
+        "pdf"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "grep"
+      ],
+      "relatedTo": [
+        "ripgrep"
+      ],
+      "popularity": 1
+    },
     "ripgrep": {
       "function": [
         "search"
@@ -529,6 +969,52 @@
       "interface": "cli",
       "popularity": 3
     },
+    "sd": {
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "sed"
+      ],
+      "popularity": 1
+    },
+    "starship": {
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "environment-vars",
+        "git"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "oh-my-posh"
+      ],
+      "popularity": 2
+    },
+    "tealdeer": {
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "aliases": [
+        "tldr"
+      ],
+      "alternativeTo": [
+        "man"
+      ],
+      "relatedTo": [
+        "navi"
+      ],
+      "popularity": 2
+    },
     "Terminal-Icons": {
       "function": [
         "shell-enhancement"
@@ -540,6 +1026,29 @@
       "ids": {
         "psgallery": "Terminal-Icons"
       },
+      "popularity": 1
+    },
+    "tmux": {
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "tui",
+      "relatedTo": [
+        "zellij"
+      ],
+      "popularity": 2
+    },
+    "tokei": {
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
       "popularity": 1
     },
     "uv": {
@@ -556,6 +1065,20 @@
         "winget": "astral-sh.uv"
       },
       "popularity": 2
+    },
+    "watchexec": {
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "filesystem",
+        "processes"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "entr"
+      ],
+      "popularity": 1
     },
     "wget": {
       "function": [
@@ -603,6 +1126,54 @@
       ],
       "interface": "cli",
       "popularity": 3
+    },
+    "xh": {
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http",
+        "json"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl"
+      ],
+      "relatedTo": [
+        "curl",
+        "httpie"
+      ],
+      "popularity": 1
+    },
+    "yq": {
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "yaml",
+        "json"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "jq"
+      ],
+      "popularity": 2
+    },
+    "zellij": {
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "tmux"
+      ],
+      "relatedTo": [
+        "tmux"
+      ],
+      "popularity": 2
     },
     "zoxide": {
       "function": [

@@ -83,3 +83,21 @@ Describe 'the shipped data/tool-categories.json' {
         }
     }
 }
+
+Describe 'the shipped data/tool-categories.json extras' {
+    It 'includes the extras fragment tools alongside the curated 32' {
+        $doc = Get-Content "$PSScriptRoot/../data/tool-categories.json" -Raw | ConvertFrom-Json
+        $doc.tools.PSObject.Properties.Name | Should -Contain 'starship'
+        $doc.tools.PSObject.Properties.Name | Should -Contain 'rga'
+        ($doc.tools.PSObject.Properties.Name).Count | Should -BeGreaterOrEqual 70
+    }
+
+    It 'no extras entry has an ids field' {
+        $doc = Get-Content "$PSScriptRoot/../data/tool-categories.json" -Raw | ConvertFrom-Json
+        $extrasNames = (Get-Content "$PSScriptRoot/../build/categories/extras.jsonc" -Raw |
+            ForEach-Object { $_ -replace '(?m)^(?<code>(?:[^"]|"[^"]*")*?)//', '$1' } | ConvertFrom-Json).PSObject.Properties.Name
+        foreach ($name in $extrasNames) {
+            $doc.tools.$name.PSObject.Properties.Name | Should -Not -Contain 'ids'
+        }
+    }
+}
