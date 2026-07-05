@@ -10,7 +10,7 @@ function Test-DFCategoryDbSchema {
         and per-tool required fields / closed-vocabulary membership. Does not
         check cross-references (relatedTo/alternativeTo pointing at real keys)
         — that is intentionally out of scope, same as Test-DFToolSchema.
-    .PARAMETER Db
+    .PARAMETER Database
         The parsed category-db document (schemaVersion, taxonomy, tools).
     .PARAMETER Errors
         Reference to an array populated with violation messages. Empty when
