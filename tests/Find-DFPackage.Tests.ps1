@@ -258,6 +258,29 @@ Describe 'Find-DFPackage' {
         $r[0].Details['scoop'] | Should -Not -BeNullOrEmpty
     }
 
+    It 'passes the full scoped id (not the bare trailing segment) to a non-scoop qualified query' {
+        $script:CapturedNpmQuery = $null
+        $script:DFCatalogProviders['npm'] = @{
+            Name = 'npm'; Kind = 'query-cache'
+            Test = { $true }
+            Search = { param($Query, $Fresh)
+                $script:CapturedNpmQuery = $Query
+                if ($Query -eq '@scope/tool') {
+                    New-DFToolSourceInfo -Source 'npm' -PackageId '@scope/tool' -Name '@scope/tool' `
+                        -LatestVersion '1.0.0' -MatchKind 'exact-id'
+                }
+            }
+            GetInstalled = { }
+            Refresh = { }
+        }
+        try {
+            $r = @(Find-DFPackage npm:@scope/tool)
+            $script:CapturedNpmQuery | Should -Be '@scope/tool'
+            $r.Count | Should -Be 1
+            $r[0].Sources[0].PackageId | Should -Be '@scope/tool'
+        } finally { Remove-Variable -Name CapturedNpmQuery -Scope Script -ErrorAction Ignore }
+    }
+
     It 'falls back to keyword search for an unknown qualified prefix' {
         { Find-DFPackage foo:bar } | Should -Not -Throw
     }

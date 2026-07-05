@@ -88,9 +88,12 @@ function Find-DFPackage {
     $qualified = $null
     if ($queryText -match '^(?<src>scoop|winget|choco|npm|pypi|crates|psgallery):(?<id>.+)$') {
         $qualified = @{ Source = $Matches.src.ToLowerInvariant(); Id = $Matches.id.Trim() }
-        # Cross-catalog searches use the bare trailing segment (scoop ids are
-        # bucket-qualified; other catalogs' ids ARE the name).
-        $queryText = $qualified.Id.Contains('/') ? ($qualified.Id -split '/')[-1] : $qualified.Id
+        # Cross-catalog searches use the bare trailing segment ONLY for scoop
+        # ids, which are bucket-qualified (bucket/name). Other catalogs' ids
+        # ARE the name — notably npm scoped packages (@scope/tool), where
+        # splitting on '/' would search for the bare tool name and lose the
+        # scope.
+        $queryText = ($qualified.Source -eq 'scoop' -and $qualified.Id.Contains('/')) ? ($qualified.Id -split '/')[-1] : $qualified.Id
     }
 
     $normalized = (ConvertTo-DFCatalogQueryKey -Query $queryText).Normalized
