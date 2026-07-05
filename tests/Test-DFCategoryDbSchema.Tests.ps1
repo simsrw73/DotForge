@@ -24,56 +24,56 @@ Describe 'Test-DFCategoryDbSchema' {
 
     It 'accepts a valid document' {
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeTrue
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeTrue
         $errs | Should -BeNullOrEmpty
     }
 
     It 'rejects a missing schemaVersion' {
         $script:ValidDb.PSObject.Properties.Remove('schemaVersion')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'schemaVersion'
     }
 
     It 'rejects an unknown function value' {
         $script:ValidDb.tools.ripgrep.function = @('not-a-real-function')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'not-a-real-function'
     }
 
     It 'rejects an unknown worksWith value' {
         $script:ValidDb.tools.ripgrep.worksWith = @('not-a-real-facet')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'not-a-real-facet'
     }
 
     It 'rejects a missing interface' {
         $script:ValidDb.tools.ripgrep.PSObject.Properties.Remove('interface')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'interface'
     }
 
     It 'rejects an invalid interface value' {
         $script:ValidDb.tools.ripgrep.interface = 'web'
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'interface'
     }
 
     It 'rejects an out-of-range popularity' {
         $script:ValidDb.tools.ripgrep.popularity = 7
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'popularity'
     }
 
     It 'rejects a tool with an empty function array' {
         $script:ValidDb.tools.ripgrep.function = @()
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'function'
     }
 
@@ -81,7 +81,7 @@ Describe 'Test-DFCategoryDbSchema' {
         $script:ValidDb.tools.ripgrep.function = @('bogus')
         $script:ValidDb.tools.ripgrep.PSObject.Properties.Remove('interface')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs.Count | Should -BeGreaterThan 1
     }
 }
