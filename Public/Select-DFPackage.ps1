@@ -74,14 +74,16 @@ function Select-DFPackage {
 
             $previewCmd = $IsWindows ? 'type {1}' : 'cat {1}'
 
-            Invoke-DFPicker -List { $lines }.GetNewClosure() `
+            $qualifiedId = Invoke-DFPicker -List { $lines }.GetNewClosure() `
                 -Header 'Select package [Enter: full details]' `
                 -Preview $previewCmd `
                 -Delimiter "`t" -WithNth '3..' `
-                -Parse { ($_ -split "`t")[1] } `
-                -Action { param($qid) Find-DFPackage -Query $qid -Readme:$Readme -GitInfo:$GitInfo }.GetNewClosure()
+                -Parse { ($_ -split "`t")[1] }
         } finally {
             Remove-Item $previewDir -Recurse -Force -ErrorAction Ignore
+        }
+        if ($qualifiedId) {
+            Find-DFPackage -Query $qualifiedId -Readme:$Readme -GitInfo:$GitInfo
         }
         return
     }

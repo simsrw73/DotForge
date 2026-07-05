@@ -109,6 +109,7 @@ Describe 'Select-DFPackage' {
             Mock Invoke-DFFzf {
                 $script:CapturedArgs = $FzfArgs
                 $script:CapturedItems = $InputItems
+                $script:PreviewFileExistedAtPickTime = Test-Path (($InputItems[0] -split "`t")[0])
                 $null
             }
             Select-DFPackage zed
@@ -117,6 +118,7 @@ Describe 'Select-DFPackage' {
             $fields[0] | Should -Match 'dotforge-preview.*\.txt$'  # pre-rendered card file path
             $fields[1] | Should -Be 'scoop:extras/zed' # qualified id
             $fields[2] | Should -Be 'zed'
+            $script:PreviewFileExistedAtPickTime | Should -BeTrue
         }
 
         It 'cleans the preview temp dir after the picker exits' {
