@@ -34,7 +34,7 @@
 - Test: `tests/Test-DFCategoryDbSchema.Tests.ps1`
 
 **Interfaces:**
-- Produces: `Test-DFCategoryDbSchema -Db <PSCustomObject> [-Errors <ref>]` → `[bool]`. Validates the *shape* of an already-merged category-db document: `schemaVersion` present (must currently equal `1`); `taxonomy.function` and `taxonomy.worksWith` are non-empty arrays of unique non-empty strings; `tools` is present; every tool entry has a non-empty `function` array whose values are all members of `taxonomy.function`, an `interface` in `cli`/`tui`/`gui`, and (if present) a `worksWith` array whose values are all members of `taxonomy.worksWith` and a `popularity` integer in `0..3`. Does **not** check cross-references (e.g. whether a `relatedTo` value points at a real key) — that is intentionally out of scope, mirroring the existing `Test-DFToolSchema`'s shallow scope.
+- Produces: `Test-DFCategoryDbSchema -Database <PSCustomObject> [-Errors <ref>]` → `[bool]`. Validates the *shape* of an already-merged category-db document: `schemaVersion` present (must currently equal `1`); `taxonomy.function` and `taxonomy.worksWith` are non-empty arrays of unique non-empty strings; `tools` is present; every tool entry has a non-empty `function` array whose values are all members of `taxonomy.function`, an `interface` in `cli`/`tui`/`gui`, and (if present) a `worksWith` array whose values are all members of `taxonomy.worksWith` and a `popularity` integer in `0..3`. Does **not** check cross-references (e.g. whether a `relatedTo` value points at a real key) — that is intentionally out of scope, mirroring the existing `Test-DFToolSchema`'s shallow scope.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -67,56 +67,56 @@ Describe 'Test-DFCategoryDbSchema' {
 
     It 'accepts a valid document' {
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeTrue
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeTrue
         $errs | Should -BeNullOrEmpty
     }
 
     It 'rejects a missing schemaVersion' {
         $script:ValidDb.PSObject.Properties.Remove('schemaVersion')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'schemaVersion'
     }
 
     It 'rejects an unknown function value' {
         $script:ValidDb.tools.ripgrep.function = @('not-a-real-function')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'not-a-real-function'
     }
 
     It 'rejects an unknown worksWith value' {
         $script:ValidDb.tools.ripgrep.worksWith = @('not-a-real-facet')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'not-a-real-facet'
     }
 
     It 'rejects a missing interface' {
         $script:ValidDb.tools.ripgrep.PSObject.Properties.Remove('interface')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'interface'
     }
 
     It 'rejects an invalid interface value' {
         $script:ValidDb.tools.ripgrep.interface = 'web'
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'interface'
     }
 
     It 'rejects an out-of-range popularity' {
         $script:ValidDb.tools.ripgrep.popularity = 7
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'popularity'
     }
 
     It 'rejects a tool with an empty function array' {
         $script:ValidDb.tools.ripgrep.function = @()
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs -join ' ' | Should -Match 'function'
     }
 
@@ -124,7 +124,7 @@ Describe 'Test-DFCategoryDbSchema' {
         $script:ValidDb.tools.ripgrep.function = @('bogus')
         $script:ValidDb.tools.ripgrep.PSObject.Properties.Remove('interface')
         $errs = $null
-        Test-DFCategoryDbSchema -Db $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
+        Test-DFCategoryDbSchema -Database $script:ValidDb -Errors ([ref]$errs) | Should -BeFalse
         $errs.Count | Should -BeGreaterThan 1
     }
 }
@@ -161,7 +161,7 @@ function Test-DFCategoryDbSchema {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory)][PSCustomObject]$Db,
+        [Parameter(Mandatory)][PSCustomObject]$Database,
         [ref]$Errors
     )
 
@@ -173,16 +173,16 @@ function Test-DFCategoryDbSchema {
         if ($p) { return $p.Value } else { return $null }
     }
 
-    if (-not (PSProp $Db 'schemaVersion')) { $errs.Add('Missing required field: schemaVersion') }
-    elseif ((PSProp $Db 'schemaVersion') -ne 1) { $errs.Add("Unsupported schemaVersion '$($Db.schemaVersion)' — expected 1") }
+    if (-not (PSProp $Database 'schemaVersion')) { $errs.Add('Missing required field: schemaVersion') }
+    elseif ((PSProp $Database 'schemaVersion') -ne 1) { $errs.Add("Unsupported schemaVersion '$($Database.schemaVersion)' — expected 1") }
 
-    $taxonomy = PSProp $Db 'taxonomy'
+    $taxonomy = PSProp $Database 'taxonomy'
     $functionVocab = @(PSProp $taxonomy 'function')
     $worksWithVocab = @(PSProp $taxonomy 'worksWith')
     if (-not $functionVocab -or $functionVocab.Count -eq 0) { $errs.Add('taxonomy.function must be a non-empty array') }
     if (-not $worksWithVocab -or $worksWithVocab.Count -eq 0) { $errs.Add('taxonomy.worksWith must be a non-empty array') }
 
-    $tools = PSProp $Db 'tools'
+    $tools = PSProp $Database 'tools'
     if (-not $tools) {
         $errs.Add('Missing required field: tools')
     } else {
@@ -245,8 +245,8 @@ git commit -m "feat(trifle): category-db schema validator"
 - Consumes: `Test-DFCategoryDbSchema` (Task 1).
 - Produces:
   - `Get-DFCategoryDb [-Path <string>] [-Force]` → `PSCustomObject` with `.Raw` (parsed doc), `.NameIndex` (hashtable, lowercased name/alias → tool key), `.IdIndex` (hashtable, lowercased `"source:packageId"` → tool key), `.FacetIndex` (hashtable, `"function:<value>"` / `"worksWith:<value>"` → `[string[]]` tool keys). `-Path` overrides only the **shipped-side** location (a test seam — lets fixtures stand in for the real shipped file) while the refreshed-vs-shipped precedence check still runs normally against `$Env:XDG_DATA_HOME` (also freely fixture-able in tests), so the full resolution algorithm is exercised without depending on the real `data/tool-categories.json`. `-Path` always forces a fresh, uncached read. Without `-Path`, lazy-singleton cached in `$script:DFCategoryDb`; `-Force` reloads. On any parse failure of the resolved (shipped or refreshed) file, returns an empty-but-valid object (`.Raw = $null`, all indexes empty hashtables) and warns once per session (`$script:DFCategoryDbWarned`) — never throws.
-  - `Get-DFCategoryDbEntry -Info <object> [-Db <object>]` → `$null` or `[pscustomobject]@{ Key = <string>; Entry = <PSCustomObject> }`. Resolution order: `$Info.DFTool` → NameIndex; each `"$($s.Source):$($s.PackageId)"` in `$Info.Sources` → IdIndex; `$Info.Name` → NameIndex. **Scoop ids are bucket-qualified live** (a live scoop source reports `PackageId = "main/ripgrep"`) **but the seed data stores bare names** (`ids.scoop = "ripgrep"`, copied verbatim from `Tools/*.json`, which uses the same bare convention — see Task 3) — so when the source is `scoop` and the lookup misses, retry with only the trailing segment after `/`. This mirrors the exact bucket-stripping already used in `Find-DFPackage`'s `resolveDFTool` scriptblock. `-Db` defaults to `Get-DFCategoryDb` (no `-Path`, no `-Force`).
-  - `Get-DFCategoryRelatedTools -Db <object> -Key <string>` → `[string[]]` of related tool *names* (not keys — the db's tool keys and display names are the same lowercase string in this schema, so no separate lookup is needed). Order: the entry's `relatedTo` array verbatim first, then — only if fewer than 6 collected — other tool keys sharing at least one `function` value, sorted by `popularity` descending then key ascending, excluding `$Key` itself and anything already listed, capped at 6 total, deduplicated.
+  - `Get-DFCategoryDbEntry -Info <object> [-Database <object>]` → `$null` or `[pscustomobject]@{ Key = <string>; Entry = <PSCustomObject> }`. Resolution order: `$Info.DFTool` → NameIndex; each `"$($s.Source):$($s.PackageId)"` in `$Info.Sources` → IdIndex; `$Info.Name` → NameIndex. **Scoop ids are bucket-qualified live** (a live scoop source reports `PackageId = "main/ripgrep"`) **but the seed data stores bare names** (`ids.scoop = "ripgrep"`, copied verbatim from `Tools/*.json`, which uses the same bare convention — see Task 3) — so when the source is `scoop` and the lookup misses, retry with only the trailing segment after `/`. This mirrors the exact bucket-stripping already used in `Find-DFPackage`'s `resolveDFTool` scriptblock. `-Database` defaults to `Get-DFCategoryDb` (no `-Path`, no `-Force`).
+  - `Get-DFCategoryRelatedTools -Database <object> -Key <string>` → `[string[]]` of related tool *names* (not keys — the db's tool keys and display names are the same lowercase string in this schema, so no separate lookup is needed). Order: the entry's `relatedTo` array verbatim first, then — only if fewer than 6 collected — other tool keys sharing at least one `function` value, sorted by `popularity` descending then key ascending, excluding `$Key` itself and anything already listed, capped at 6 total, deduplicated.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -414,13 +414,13 @@ Describe 'Get-DFCategoryDbEntry' {
 
     It 'resolves via DFTool name' {
         $info = [pscustomobject]@{ DFTool = 'ripgrep'; Name = 'irrelevant'; Sources = @() }
-        (Get-DFCategoryDbEntry -Info $info -Db $script:Db).Key | Should -Be 'ripgrep'
+        (Get-DFCategoryDbEntry -Info $info -Database $script:Db).Key | Should -Be 'ripgrep'
     }
 
     It 'resolves via a source:packageId' {
         $src = [pscustomobject]@{ Source = 'winget'; PackageId = 'BurntSushi.ripgrep.MSVC' }
         $info = [pscustomobject]@{ DFTool = $null; Name = 'irrelevant'; Sources = @($src) }
-        (Get-DFCategoryDbEntry -Info $info -Db $script:Db).Key | Should -Be 'ripgrep'
+        (Get-DFCategoryDbEntry -Info $info -Database $script:Db).Key | Should -Be 'ripgrep'
     }
 
     It 'resolves a bucket-qualified LIVE scoop id against a bare-name SEED id' {
@@ -430,17 +430,17 @@ Describe 'Get-DFCategoryDbEntry' {
         # trailing-segment fallback must still resolve it.
         $src = [pscustomobject]@{ Source = 'scoop'; PackageId = 'extras/fd' }
         $info = [pscustomobject]@{ DFTool = $null; Name = 'irrelevant'; Sources = @($src) }
-        (Get-DFCategoryDbEntry -Info $info -Db $script:Db).Key | Should -Be 'fd'
+        (Get-DFCategoryDbEntry -Info $info -Database $script:Db).Key | Should -Be 'fd'
     }
 
     It 'resolves via plain name as a last resort' {
         $info = [pscustomobject]@{ DFTool = $null; Name = 'bat'; Sources = @() }
-        (Get-DFCategoryDbEntry -Info $info -Db $script:Db).Key | Should -Be 'bat'
+        (Get-DFCategoryDbEntry -Info $info -Database $script:Db).Key | Should -Be 'bat'
     }
 
     It 'returns $null for an unmapped tool' {
         $info = [pscustomobject]@{ DFTool = $null; Name = 'totally-unknown-tool'; Sources = @() }
-        Get-DFCategoryDbEntry -Info $info -Db $script:Db | Should -BeNullOrEmpty
+        Get-DFCategoryDbEntry -Info $info -Database $script:Db | Should -BeNullOrEmpty
     }
 }
 
@@ -449,19 +449,19 @@ Describe 'Get-DFCategoryRelatedTools' {
     BeforeAll { New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture2.json') }
 
     It 'lists curated relatedTo first' {
-        (Get-DFCategoryRelatedTools -Db $script:Db -Key 'ripgrep') | Select-Object -First 1 | Should -Be 'fd'
+        (Get-DFCategoryRelatedTools -Database $script:Db -Key 'ripgrep') | Select-Object -First 1 | Should -Be 'fd'
     }
 
     It 'fills remaining slots with same-function tools by popularity, excluding self' {
         # 'fd' shares function 'search' with 'ripgrep'; ripgrep's own relatedTo already lists 'fd'
         # so the fill should not duplicate it, and must never include 'ripgrep' itself.
-        $related = Get-DFCategoryRelatedTools -Db $script:Db -Key 'ripgrep'
+        $related = Get-DFCategoryRelatedTools -Database $script:Db -Key 'ripgrep'
         $related | Should -Not -Contain 'ripgrep'
         @($related | Where-Object { $_ -eq 'fd' }).Count | Should -Be 1
     }
 
     It 'caps at 6 and returns fewer when fewer are available' {
-        $related = Get-DFCategoryRelatedTools -Db $script:Db -Key 'micro'
+        $related = Get-DFCategoryRelatedTools -Database $script:Db -Key 'micro'
         $related.Count | Should -BeLessOrEqual 6
     }
 }
@@ -543,7 +543,7 @@ function Get-DFCategoryDb {
         try {
             $doc = Get-Content $p -Raw | ConvertFrom-Json
             $errs = $null
-            if (Test-DFCategoryDbSchema -Db $doc -Errors ([ref]$errs)) { return $doc }
+            if (Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs)) { return $doc }
             Write-Verbose "DotForge: category db at '$p' failed schema validation: $($errs -join '; ')"
             return $null
         } catch {
@@ -630,27 +630,27 @@ function Get-DFCategoryDbEntry {
         [Parameter(Mandatory)]
         $Info,
 
-        $Db = (Get-DFCategoryDb)
+        $Database = (Get-DFCategoryDb)
     )
 
-    if (-not $Db.Raw) { return $null }
+    if (-not $Database.Raw) { return $null }
 
     $key = $null
-    if ($Info.DFTool) { $key = $Db.NameIndex[$Info.DFTool.ToLowerInvariant()] }
+    if ($Info.DFTool) { $key = $Database.NameIndex[$Info.DFTool.ToLowerInvariant()] }
     if (-not $key) {
         foreach ($s in @($Info.Sources)) {
             $lookup = "$($s.Source):$($s.PackageId)".ToLowerInvariant()
-            if ($Db.IdIndex.ContainsKey($lookup)) { $key = $Db.IdIndex[$lookup]; break }
+            if ($Database.IdIndex.ContainsKey($lookup)) { $key = $Database.IdIndex[$lookup]; break }
             if ($s.Source -eq 'scoop' -and $s.PackageId -match '/') {
                 $bareLookup = "scoop:$(($s.PackageId -split '/')[-1])".ToLowerInvariant()
-                if ($Db.IdIndex.ContainsKey($bareLookup)) { $key = $Db.IdIndex[$bareLookup]; break }
+                if ($Database.IdIndex.ContainsKey($bareLookup)) { $key = $Database.IdIndex[$bareLookup]; break }
             }
         }
     }
-    if (-not $key -and $Info.Name) { $key = $Db.NameIndex[$Info.Name.ToLowerInvariant()] }
+    if (-not $key -and $Info.Name) { $key = $Database.NameIndex[$Info.Name.ToLowerInvariant()] }
     if (-not $key) { return $null }
 
-    [pscustomobject]@{ Key = $key; Entry = $Db.Raw.tools.$key }
+    [pscustomobject]@{ Key = $key; Entry = $Database.Raw.tools.$key }
 }
 
 function Get-DFCategoryRelatedTools {
@@ -668,29 +668,29 @@ function Get-DFCategoryRelatedTools {
     [OutputType([string[]])]
     param(
         [Parameter(Mandatory)]
-        $Db,
+        $Database,
 
         [Parameter(Mandatory)]
         [string]$Key
     )
 
-    if (-not $Db.Raw -or -not $Db.Raw.tools.$Key) { return @() }
+    if (-not $Database.Raw -or -not $Database.Raw.tools.$Key) { return @() }
 
-    $entry = $Db.Raw.tools.$Key
+    $entry = $Database.Raw.tools.$Key
     $related = [System.Collections.Generic.List[string]]::new()
     foreach ($r in @($entry.relatedTo)) { if ($r -and $r -ne $Key -and $r -notin $related) { $related.Add($r) } }
 
     if ($related.Count -lt 6) {
         $candidates = [System.Collections.Generic.List[string]]::new()
         foreach ($f in @($entry.function)) {
-            foreach ($otherKey in @($Db.FacetIndex["function:$f"])) {
+            foreach ($otherKey in @($Database.FacetIndex["function:$f"])) {
                 if ($otherKey -ne $Key -and $otherKey -notin $related -and $otherKey -notin $candidates) {
                     $candidates.Add($otherKey)
                 }
             }
         }
         $fill = @($candidates | Sort-Object `
-            { -($Db.Raw.tools.$_.popularity ?? 0) }, { $_ } |
+            { -($Database.Raw.tools.$_.popularity ?? 0) }, { $_ } |
             Select-Object -First (6 - $related.Count))
         foreach ($f in $fill) { $related.Add($f) }
     }
@@ -954,7 +954,7 @@ Describe 'Build-DFCategoryDb' {
         $doc.tools.ripgrep.function | Should -Contain 'search'
         $doc.tools.micro.function | Should -Contain 'editor'
         $errs = $null
-        Test-DFCategoryDbSchema -Db $doc -Errors ([ref]$errs) | Should -BeTrue
+        Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs) | Should -BeTrue
     }
 
     It 'stamps updated to today (UTC, yyyy-MM-dd)' {
@@ -990,7 +990,7 @@ Describe 'the shipped data/tool-categories.json' {
     It 'validates against the schema' {
         $doc = Get-Content "$PSScriptRoot/../data/tool-categories.json" -Raw | ConvertFrom-Json
         $errs = $null
-        Test-DFCategoryDbSchema -Db $doc -Errors ([ref]$errs) | Should -BeTrue -Because ($errs -join '; ')
+        Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs) | Should -BeTrue -Because ($errs -join '; ')
     }
 
     It 'contains all 32 tools curated in Tools/*.json' {
@@ -1074,7 +1074,7 @@ $doc = [pscustomobject]@{
 }
 
 $errs = $null
-if (-not (Test-DFCategoryDbSchema -Db $doc -Errors ([ref]$errs))) {
+if (-not (Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs))) {
     throw "Build-DFCategoryDb: generated document failed validation:`n$($errs -join "`n")"
 }
 
@@ -1329,7 +1329,7 @@ git commit -m "feat(trifle): 40-tool extras fragment (v1 seed corpus complete, 7
 
 **Interfaces:**
 - Consumes: `Get-DFCategoryDb` (Task 2).
-- Produces: `Format-DFCategoryList -Db <object> -Facet <'function'|'worksWith'|$null> -Counts <bool> -Color <bool>` → `string[]` (pure renderer). `Get-DFCategoryList [-Facet function|worksWith] [-Counts]` (alias `tcats`) → rendered `string[]`, never typed objects.
+- Produces: `Format-DFCategoryList -Database <object> -Facet <'function'|'worksWith'|$null> -Counts <bool> -Color <bool>` → `string[]` (pure renderer). `Get-DFCategoryList [-Facet function|worksWith] [-Counts]` (alias `tcats`) → rendered `string[]`, never typed objects.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1353,7 +1353,7 @@ BeforeAll {
 
 Describe 'Format-DFCategoryList' {
     It 'lists both facets with counts by default' {
-        $out = (Format-DFCategoryList -Db $script:Db -Facet $null -Counts $true -Color $false) -join "`n"
+        $out = (Format-DFCategoryList -Database $script:Db -Facet $null -Counts $true -Color $false) -join "`n"
         $out | Should -Match 'Function'
         $out | Should -Match 'editor \(1\)'
         $out | Should -Match 'search \(2\)'
@@ -1362,25 +1362,25 @@ Describe 'Format-DFCategoryList' {
     }
 
     It 'narrows to one facet' {
-        $out = (Format-DFCategoryList -Db $script:Db -Facet 'function' -Counts $true -Color $false) -join "`n"
+        $out = (Format-DFCategoryList -Database $script:Db -Facet 'function' -Counts $true -Color $false) -join "`n"
         $out | Should -Match 'Function'
         $out | Should -Not -Match 'WorksWith'
     }
 
     It 'omits counts when -Counts is false' {
-        $out = (Format-DFCategoryList -Db $script:Db -Facet 'function' -Counts $false -Color $false) -join "`n"
+        $out = (Format-DFCategoryList -Database $script:Db -Facet 'function' -Counts $false -Color $false) -join "`n"
         $out | Should -Match 'editor'
         $out | Should -Not -Match '\('
     }
 
     It 'sorts values alphabetically' {
-        $lines = Format-DFCategoryList -Db $script:Db -Facet 'function' -Counts $false -Color $false
+        $lines = Format-DFCategoryList -Database $script:Db -Facet 'function' -Counts $false -Color $false
         ($lines | Where-Object { $_ -match 'editor|search' }) | Should -Be @('editor', 'search')
     }
 
     It 'renders a friendly message when the db is unavailable' {
         $emptyDb = [pscustomobject]@{ Raw = $null; FacetIndex = @{} }
-        $out = (Format-DFCategoryList -Db $emptyDb -Facet $null -Counts $true -Color $false) -join "`n"
+        $out = (Format-DFCategoryList -Database $emptyDb -Facet $null -Counts $true -Color $false) -join "`n"
         $out | Should -Match 'unavailable'
     }
 }
@@ -1461,7 +1461,7 @@ function Format-DFCategoryList {
     [OutputType([string[]])]
     param(
         [Parameter(Mandatory)]
-        $Db,
+        $Database,
 
         [AllowNull()]
         [string]$Facet,
@@ -1473,7 +1473,7 @@ function Format-DFCategoryList {
         [bool]$Color
     )
 
-    if (-not $Db.Raw) {
+    if (-not $Database.Raw) {
         return "Category database unavailable — run Update-DFCategoryDb or check the module install."
     }
 
@@ -1486,10 +1486,10 @@ function Format-DFCategoryList {
     foreach ($f in $facets) {
         $label = $f -eq 'function' ? 'Function' : 'WorksWith'
         $lines.Add("$bold$label$reset")
-        $values = @($Db.Raw.taxonomy.$f) | Sort-Object
+        $values = @($Database.Raw.taxonomy.$f) | Sort-Object
         foreach ($v in $values) {
             if ($Counts) {
-                $count = @($Db.FacetIndex["${f}:$v"]).Count
+                $count = @($Database.FacetIndex["${f}:$v"]).Count
                 $lines.Add("  $v ($count)")
             } else {
                 $lines.Add("  $v")
@@ -1541,7 +1541,7 @@ function Get-DFCategoryList {
     )
 
     $color = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
-    Format-DFCategoryList -Db (Get-DFCategoryDb) -Facet $Facet -Counts $Counts.IsPresent -Color $color
+    Format-DFCategoryList -Database (Get-DFCategoryDb) -Facet $Facet -Counts $Counts.IsPresent -Color $color
 }
 
 Set-Alias -Name tcats -Value Get-DFCategoryList -Scope Global -Force
@@ -2229,11 +2229,11 @@ In the existing detail-enrichment block (`if ($detailMode -and $merged.Count -gt
 
 ```powershell
         $catDb = Get-DFCategoryDb
-        $catEntry = Get-DFCategoryDbEntry -Info $top -Db $catDb
+        $catEntry = Get-DFCategoryDbEntry -Info $top -Database $catDb
         if ($catEntry) {
             $top.Category = [pscustomobject]@{
                 Entry   = $catEntry.Entry
-                Related = Get-DFCategoryRelatedTools -Db $catDb -Key $catEntry.Key
+                Related = Get-DFCategoryRelatedTools -Database $catDb -Key $catEntry.Key
             }
         }
 ```
@@ -2626,7 +2626,7 @@ function Update-DFCategoryDb {
     }
 
     $errs = $null
-    if (-not (Test-DFCategoryDbSchema -Db $doc -Errors ([ref]$errs))) {
+    if (-not (Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs))) {
         Write-Warning "DotForge: downloaded category database failed validation, keeping the existing copy: $($errs -join '; ')"
         return
     }
