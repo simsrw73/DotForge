@@ -77,6 +77,9 @@ Describe 'web detail providers' {
         $d.DocsUrl | Should -Be 'https://docs.rs/ripgrep'
         $d.InstallHint | Should -Be 'cargo install ripgrep'
         $d.Extra['recent_downloads'] | Should -Be 54321
+        Should -Invoke Invoke-RestMethod -ParameterFilter {
+            $Headers['User-Agent'] -eq 'DotForge PowerShell module (+https://github.com/simsrw73/DotForge)'
+        }
     }
 
     It 'registers Detail hooks on all three providers' {

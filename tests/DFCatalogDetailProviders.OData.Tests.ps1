@@ -50,6 +50,7 @@ Describe 'choco + psgallery detail hooks' {
     AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
 
     It 'choco: fetches FindPackagesById filtered to the latest version' {
+        Mock Invoke-RestMethod { throw "unexpected URI: $Uri" }
         Mock Invoke-RestMethod { @(New-FakeODataEntry -Id ripgrep -Downloads 5) } -ParameterFilter {
             $Uri -like '*community.chocolatey.org*FindPackagesById*IsLatestVersion*'
         }
@@ -59,6 +60,7 @@ Describe 'choco + psgallery detail hooks' {
     }
 
     It 'psgallery: same shape, PSResource install hint' {
+        Mock Invoke-RestMethod { throw "unexpected URI: $Uri" }
         Mock Invoke-RestMethod { @(New-FakeODataEntry -Id PSFzf -Downloads 7) } -ParameterFilter {
             $Uri -like '*powershellgallery.com*FindPackagesById*IsLatestVersion*'
         }
