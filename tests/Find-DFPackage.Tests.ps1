@@ -59,6 +59,12 @@ Describe 'Find-DFPackage' {
         }
         $script:DFCatalogAvailability = @{}
         Mock Test-DFOutputPiped { $true }   # default: object output
+
+        # Isolated, harmless default so the query-path detail-enrichment
+        # block's unconditional Get-DFCategoryDb call never touches the real
+        # shipped data/tool-categories.json. Tests that specifically exercise
+        # category behavior override this with their own richer fixture.
+        Mock Get-DFCategoryDb { [pscustomobject]@{ Raw = $null; FacetIndex = @{}; NameIndex = @{}; IdIndex = @{} } }
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedXdgCache
