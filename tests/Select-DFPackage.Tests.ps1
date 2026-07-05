@@ -5,6 +5,8 @@ BeforeAll {
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFSqliteQuery.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogLocalPackages.ps1"
+    . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
+    . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
     . "$PSScriptRoot/../Public/Select-DFPackage.ps1"
 
     function Initialize-LocalCaches {
@@ -53,7 +55,15 @@ Describe 'Select-DFPackage' {
         $script:SavedXdgCache = $Env:XDG_CACHE_HOME
         $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
         Initialize-LocalCaches
-        function Find-DFPackage { param([string[]]$Query) }   # stub for mocking
+        function Find-DFPackage {
+            param(
+                [string[]]$Query,
+                [string[]]$Source,
+                [switch]$AsObject,
+                [switch]$Readme,
+                [switch]$GitInfo
+            )
+        }   # stub for mocking
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedXdgCache
@@ -84,5 +94,63 @@ Describe 'Select-DFPackage' {
 
     It 'is aliased to ftrifle' {
         Get-Alias ftrifle -ErrorAction Ignore | Should -Not -BeNullOrEmpty
+    }
+
+    Context 'query mode' {
+        BeforeEach {
+            Mock Find-DFPackage {
+                $src = New-DFToolSourceInfo -Source scoop -PackageId 'extras/zed' -Name zed `
+                    -Description 'editor' -LatestVersion '1.0' -MatchKind exact-name
+                New-DFToolInfo -Name zed -Description 'editor' -Sources @($src) -MatchKind exact-name
+            } -ParameterFilter { $AsObject }
+        }
+
+        It 'searches, pre-renders preview files, and passes a preview command' {
+            Mock Invoke-DFFzf {
+                $script:CapturedArgs = $FzfArgs
+                $script:CapturedItems = $InputItems
+                $null
+            }
+            Select-DFPackage zed
+            $script:CapturedArgs -join ' ' | Should -Match '--preview'
+            $fields = $script:CapturedItems[0] -split "`t"
+            $fields[0] | Should -Match 'dotforge-preview.*\.txt$'  # pre-rendered card file path
+            $fields[1] | Should -Be 'scoop:extras/zed' # qualified id
+            $fields[2] | Should -Be 'zed'
+        }
+
+        It 'cleans the preview temp dir after the picker exits' {
+            $script:Dir = $null
+            Mock Invoke-DFFzf {
+                $script:Dir = Split-Path (($InputItems[0] -split "`t")[0]) -Parent
+                $null
+            }
+            Select-DFPackage zed
+            Test-Path $script:Dir | Should -BeFalse
+        }
+
+        It 'invokes Find-DFPackage with the qualified id and passthrough switches on selection' {
+            Mock Invoke-DFFzf { $InputItems[0] }   # simulate picking the first row
+            Mock Find-DFPackage {
+                if ($AsObject) {
+                    $src = New-DFToolSourceInfo -Source scoop -PackageId 'extras/zed' -Name zed `
+                        -Description 'editor' -LatestVersion '1.0' -MatchKind exact-name
+                    New-DFToolInfo -Name zed -Description 'editor' -Sources @($src) -MatchKind exact-name
+                } else {
+                    'card'
+                }
+            }
+            Select-DFPackage zed -Readme -GitInfo
+            Should -Invoke Find-DFPackage -ParameterFilter {
+                (-not $AsObject) -and ($Query -contains 'scoop:extras/zed') -and $Readme -and $GitInfo
+            }
+        }
+
+        It 'warns when the query has no matches' {
+            Mock Find-DFPackage { @() } -ParameterFilter { $AsObject }
+            $w = $null
+            Select-DFPackage zzz -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -Match 'no matches'
+        }
     }
 }
