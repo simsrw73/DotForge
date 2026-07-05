@@ -18,6 +18,8 @@ arrays, which are inconsistent in vocabulary and not searchable as a facet.
 - A curated, versioned taxonomy of CLI tool categories that ships with the
   module and works fully offline.
 - `trifle` can be queried by category/facet, not just by name or keyword.
+- A user can discover the valid category/facet vocabulary itself — the
+  terms are worthless if you have to already know them to find them.
 - The detail card surfaces related/alternative tools for the package being
   viewed — directly answering "recommend similar tools based on current
   search."
@@ -141,6 +143,26 @@ error.
 
 ## Command Surface
 
+### `Get-DFCategoryList [-Facet function|worksWith] [-Counts]` (new public function, alias `tcats`)
+
+Discoverability backstop for the two facet vocabularies — answers "what
+terms can I even search by" without needing fzf or already knowing a value.
+
+- No `-Facet`: prints both vocabularies as two labeled sections (`Function`
+  then `WorksWith`), one value per line, sorted alphabetically.
+- `-Facet function` / `-Facet worksWith`: prints only that section.
+- `-Counts` (default: on): appends the live count of seed-db tools carrying
+  that value, e.g. `search (14)` — computed from the same inverted facet
+  index the search path uses, so counts never drift from what a matching
+  `-Category`/`-WorksWith` call would actually return. `-Counts:$false` for
+  a bare term list (e.g. for shell completion or scripting).
+- Output is plain rendered `string[]` (pipeline-friendly, no ANSI unless
+  interactive+color, matching every other trifle renderer's convention) —
+  never emits typed objects, since there's nothing to act on beyond the term
+  itself.
+- Also the reference point named in the `-Category`/`-WorksWith` unknown-
+  value error and in `ftrifle -Category`'s empty state.
+
 ### `trifle -Category <c...> [-WorksWith <w...>]` / `trifle -WorksWith <w...>`
 
 New parameter set on `Find-DFPackage`, mutually exclusive with `Query`
@@ -150,8 +172,9 @@ New parameter set on `Find-DFPackage`, mutually exclusive with `Query`
   together; when both are given, the two facets AND together.
 - All supplied facet values are validated against the taxonomy before any
   search executes; if any value is unknown, the call fails fast with a
-  terminating error listing the valid vocabulary for that facet — no partial
-  results from the valid values in the same invocation.
+  terminating error naming the invalid value(s) and pointing at
+  `Get-DFCategoryList` to discover the valid vocabulary — no partial results
+  from the valid values in the same invocation.
 - Result rows: for each matching db tool key, resolve to a live `ToolInfo`
   via the existing search-and-merge path (search catalogs by the db entry's
   `ids`/name) so installed-state and versions stay accurate — the db is an
@@ -265,7 +288,12 @@ Development-time script, not part of the module's public surface:
 - **`Get-DFCategoryDbEntry`**: resolves via DFTool name, via `source:id`, via
   plain name, in that priority order; returns `$null` for an unmapped tool.
 - **Facet search**: OR-within-facet, AND-across-facets, unknown-value error
-  lists the vocabulary, `-Category`/`-WorksWith` + `-All` rejected.
+  names the bad value(s) and points at `Get-DFCategoryList`,
+  `-Category`/`-WorksWith` + `-All` rejected.
+- **`Get-DFCategoryList`**: no-`-Facet` prints both sections; `-Facet`
+  narrows to one; counts match the inverted facet index (cross-checked
+  against an actual `-Category` search for the same value); `-Counts:$false`
+  omits counts; output is plain strings.
 - **Card sections**: Category line present/absent, Related resolution order
   (curated first, popularity-sorted fill, self-exclusion, cap at 6, dedupe),
   Alt-to present/absent — all pure string assertions, `-Color $false`.
