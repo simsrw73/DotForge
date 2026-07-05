@@ -1,0 +1,157 @@
+{
+  "PSFzf": {
+    "function": ["fuzzy-finder"], "worksWith": ["text"], "interface": "cli",
+    "ids": { "psgallery": "PSFzf", "scoop": "psfzf" },
+    "relatedTo": ["fzf"], "popularity": 1
+  },
+  "Terminal-Icons": {
+    "function": ["shell-enhancement"], "worksWith": ["filesystem"], "interface": "cli",
+    "ids": { "psgallery": "Terminal-Icons" }, "popularity": 1
+  },
+  "bat": {
+    "function": ["file-viewing"], "worksWith": ["text", "code"], "interface": "cli",
+    "alternativeTo": ["cat"],
+    "ids": { "scoop": "bat", "winget": "sharkdp.bat", "choco": "bat" },
+    "relatedTo": ["delta", "less"], "popularity": 3
+  },
+  "bitwarden": {
+    "function": ["secrets"], "worksWith": ["credentials"], "interface": "cli",
+    "ids": { "scoop": "bitwarden-cli", "winget": "Bitwarden.CLI" }, "popularity": 1
+  },
+  "broot": {
+    "function": ["file-management", "navigation"], "worksWith": ["filesystem"], "interface": "tui",
+    "ids": { "scoop": "broot", "choco": "broot" },
+    "relatedTo": ["fzf", "fd"], "popularity": 1
+  },
+  "chezmoi": {
+    "function": ["dotfiles-management"], "worksWith": ["filesystem", "git"], "interface": "cli",
+    "ids": { "scoop": "chezmoi", "winget": "twpayne.chezmoi", "choco": "chezmoi" },
+    "popularity": 2
+  },
+  "curl": {
+    "function": ["network-transfer", "http-client"], "worksWith": ["http", "filesystem"], "interface": "cli",
+    "ids": { "scoop": "curl", "winget": "cURL.cURL", "choco": "curl" },
+    "relatedTo": ["wget", "httpie", "xh"], "popularity": 3
+  },
+  "delta": {
+    "function": ["diff-merge"], "worksWith": ["git", "code"], "interface": "cli",
+    "ids": { "scoop": "delta", "winget": "dandavison.delta", "choco": "delta" },
+    "relatedTo": ["bat", "lazygit"], "popularity": 2
+  },
+  "docker": {
+    "function": ["container-tooling"], "worksWith": ["containers"], "interface": "cli",
+    "ids": { "winget": "Docker.DockerDesktop" }, "popularity": 3
+  },
+  "eza": {
+    "function": ["file-management"], "worksWith": ["filesystem"], "interface": "cli",
+    "alternativeTo": ["ls"],
+    "ids": { "scoop": "eza", "winget": "eza-community.eza", "choco": "eza" },
+    "relatedTo": ["lsd", "broot"], "popularity": 3
+  },
+  "fd": {
+    "function": ["search", "file-management"], "worksWith": ["filesystem"], "interface": "cli",
+    "alternativeTo": ["find"],
+    "ids": { "scoop": "fd", "winget": "sharkdp.fd", "choco": "fd" },
+    "relatedTo": ["ripgrep", "fzf"], "popularity": 3
+  },
+  "fzf": {
+    "function": ["fuzzy-finder"], "worksWith": ["text", "filesystem"], "interface": "tui",
+    "ids": { "scoop": "fzf", "winget": "junegunn.fzf", "choco": "fzf" },
+    "relatedTo": ["fd", "ripgrep", "PSFzf"], "popularity": 3
+  },
+  "gh": {
+    "function": ["vcs-client"], "worksWith": ["git"], "interface": "cli",
+    "ids": { "scoop": "gh", "winget": "GitHub.cli", "choco": "gh" },
+    "relatedTo": ["lazygit", "delta"], "popularity": 3
+  },
+  "glow": {
+    "function": ["markdown-renderer"], "worksWith": ["markdown", "text"], "interface": "tui",
+    "ids": { "scoop": "glow", "choco": "glow" }, "popularity": 1
+  },
+  "gsudo": {
+    "function": ["shell-enhancement"], "worksWith": ["processes", "environment-vars"], "interface": "cli",
+    "alternativeTo": ["sudo"],
+    "ids": { "scoop": "gsudo", "winget": "gerardog.gsudo", "choco": "gsudo" },
+    "popularity": 1
+  },
+  "jq": {
+    "function": ["json-processing"], "worksWith": ["json"], "interface": "cli",
+    "ids": { "scoop": "jq", "winget": "jqlang.jq", "choco": "jq" },
+    "relatedTo": ["yq", "fx", "dasel"], "popularity": 3
+  },
+  "lazygit": {
+    "function": ["vcs-client"], "worksWith": ["git"], "interface": "tui",
+    "ids": { "scoop": "lazygit", "winget": "JesseDuffield.lazygit", "choco": "lazygit" },
+    "relatedTo": ["gh", "delta"], "popularity": 3
+  },
+  "less": {
+    "function": ["file-viewing"], "worksWith": ["text", "logs"], "interface": "tui",
+    "ids": { "scoop": "less" }, "popularity": 1
+  },
+  "micro": {
+    "function": ["editor"], "worksWith": ["text", "code"], "interface": "tui",
+    "ids": { "scoop": "micro" }, "popularity": 1
+  },
+  "npm": {
+    "function": ["package-manager"], "worksWith": ["filesystem"], "interface": "cli",
+    "popularity": 3
+  },
+  "oh-my-posh": {
+    "function": ["prompt"], "worksWith": ["environment-vars", "git"], "interface": "cli",
+    "ids": { "scoop": "oh-my-posh", "winget": "JanDeDobbeleer.OhMyPosh" },
+    "relatedTo": ["posh-git", "starship"], "popularity": 3
+  },
+  "posh-git": {
+    "function": ["prompt", "vcs-client"], "worksWith": ["git"], "interface": "cli",
+    "ids": { "psgallery": "posh-git", "scoop": "posh-git" },
+    "relatedTo": ["oh-my-posh"], "popularity": 1
+  },
+  "procs": {
+    "function": ["process-monitor"], "worksWith": ["processes"], "interface": "cli",
+    "alternativeTo": ["ps"],
+    "ids": { "scoop": "procs", "choco": "procs" },
+    "relatedTo": ["bottom", "glances"], "popularity": 1
+  },
+  "psreadline": {
+    "function": ["shell-enhancement"], "worksWith": ["text"], "interface": "cli", "popularity": 2
+  },
+  "ripgrep": {
+    "function": ["search"], "worksWith": ["text", "filesystem"], "interface": "cli",
+    "aliases": ["rg"], "alternativeTo": ["grep"],
+    "ids": { "scoop": "ripgrep", "winget": "BurntSushi.ripgrep.MSVC", "choco": "ripgrep" },
+    "relatedTo": ["fd", "fzf", "rga"], "popularity": 3
+  },
+  "rustup": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "ids": { "scoop": "rustup", "winget": "Rustlang.Rustup" }, "popularity": 2
+  },
+  "scoop": {
+    "function": ["package-manager"], "worksWith": ["binaries", "filesystem"], "interface": "cli",
+    "popularity": 3
+  },
+  "uv": {
+    "function": ["package-manager"], "worksWith": ["binaries", "filesystem"], "interface": "cli",
+    "ids": { "scoop": "uv", "winget": "astral-sh.uv" }, "popularity": 2
+  },
+  "wget": {
+    "function": ["network-transfer"], "worksWith": ["http", "filesystem"], "interface": "cli",
+    "ids": { "scoop": "wget" },
+    "relatedTo": ["curl", "rclone"], "popularity": 2
+  },
+  "winfetch": {
+    "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
+    "alternativeTo": ["neofetch"],
+    "ids": { "scoop": "winfetch" },
+    "relatedTo": ["fastfetch"], "popularity": 1
+  },
+  "winget": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "popularity": 3
+  },
+  "zoxide": {
+    "function": ["navigation"], "worksWith": ["filesystem"], "interface": "cli",
+    "alternativeTo": ["cd"],
+    "ids": { "scoop": "zoxide", "winget": "ajeetdsouza.zoxide", "choco": "zoxide" },
+    "popularity": 2
+  }
+}

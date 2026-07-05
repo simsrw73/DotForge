@@ -1,0 +1,21 @@
+{
+  // Closed vocabularies for trifle discovery (v1). Adding a new value here
+  // is a data change, not a code change — existing consumers keep working.
+  "function": [
+    "search", "file-viewing", "file-management", "vcs-client", "editor",
+    "network-transfer", "process-monitor", "system-info", "shell-enhancement",
+    "prompt", "archive", "diff-merge", "text-processing", "json-processing",
+    "container-tooling", "package-manager", "secrets", "clipboard",
+    "navigation", "benchmarking", "documentation", "terminal-multiplexer",
+    "disk-usage", "http-client", "dns-tool", "ssh-tool", "database-client",
+    "log-viewer", "markdown-renderer", "syntax-highlighter", "fuzzy-finder",
+    "task-runner", "linter", "formatter", "uuid-generator", "dotfiles-management"
+  ],
+  "worksWith": [
+    "text", "json", "yaml", "git", "http", "images", "pdf", "containers",
+    "processes", "filesystem", "clipboard", "environment-vars", "credentials",
+    "markdown", "csv", "logs", "archives", "databases", "dns",
+    "ssh-connections", "code", "binaries", "network-ports", "uuid",
+    "terminal-sessions"
+  ]
+}

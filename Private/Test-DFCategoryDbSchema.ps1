@@ -60,7 +60,11 @@ function Test-DFCategoryDbSchema {
                 }
             }
 
-            $worksWith = @(PSProp $entry 'worksWith')
+            # worksWith is optional; @() around a $null property value would
+            # otherwise produce a 1-element array containing $null rather than
+            # an empty array, so guard explicitly instead of wrapping $null.
+            $worksWithRaw = PSProp $entry 'worksWith'
+            $worksWith = if ($null -eq $worksWithRaw) { @() } else { @($worksWithRaw) }
             foreach ($w in $worksWith) {
                 if ($w -notin $worksWithVocab) { $errs.Add("$key`: unknown worksWith value '$w'") }
             }
