@@ -24,6 +24,8 @@
 - [ ] **Make `New-DFDirectory` failures visible** — it currently uses `-ErrorAction SilentlyContinue`, which can hide permissions/path issues and cause later failures elsewhere.
 - [ ] **Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation still enumerates all installed modules to compute the fingerprint. Consider a TTL or cheaper fingerprint strategy.
 - [ ] **Add review coverage gaps** — add tests for cache isolation across two `ToolsPath` values, custom package-manager priority after a default lookup, generated `list_accepts_path` functions with single-word and quoted commands, malformed PATH during `New-DFShim`, duplicate tool names, and schema rejection for malformed `aliases`, `picker`, `packages`, and `dependsOn`.
+- [ ] **trifle `-Readme`: gate the npm tier on repo match** — the npm registry readme currently wins whenever the merged group contains an npm source, so name collisions surface the wrong readme (e.g. `trifle ripgrep -Readme` shows the unrelated npm `ripgrep` wrapper's readme instead of BurntSushi's). Recommended fix from the branch review: use the npm readme only when no GitHub repo resolves, or when the npm detail's `RepositoryUrl` matches the resolved repo; collisions then fall through to the GitHub readme tier.
+- [ ] **trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches sibling catalogs with the full dotted id (only scoop ids split on `/`), so the card misses cross-catalog versions and the installed overlay. Recommended fix: use the matched winget index row's `Name` as the cross-catalog sibling query (trailing-segment-after-dot is wrong — it would yield `MSVC`). Current behavior degrades to a correct single-source card.
 
 ## Priority 3 — Features
 
