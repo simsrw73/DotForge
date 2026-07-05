@@ -197,12 +197,12 @@ PyPI has no search API, so it only participates in exact-name lookups.
 
 ### Detail view
 
-When a query resolves to one confident match (exact package id, exact
-name/moniker, or the only hit), `trifle` renders a **detail card** instead of
-the match table — the same info-card fields plus catalog-specific detail
-fetched from that one source (e.g. scoop manifest notes, npm dist-tags, a
-GitHub-resolved description). If other candidates also matched, the card ends
-with a "+N more matches" footer so you know the table is one flag away.
+When a query resolves to one confident match (exact package id or exact
+name/moniker), `trifle` renders a **detail card** instead of the match table —
+the same info-card fields plus catalog-specific detail fetched from that one
+source (e.g. scoop manifest notes, npm dist-tags, a GitHub-resolved description).
+If other candidates also matched, the card ends with a "+N more matches" footer
+so you know the table is one flag away.
 
 ```powershell
 trifle zed                            # single confident match → detail card
@@ -217,17 +217,18 @@ trifle npm:left-pad -Readme           # + paged package readme
   query: `trifle <source>:<id>` (e.g. `trifle winget:Zed.Zed`).
 - **Qualified `source:id` queries** (`trifle scoop:zed`, `trifle npm:left-pad`)
   bypass keyword ranking entirely and zero in on that one package in that one
-  catalog, always producing a detail card. Unknown prefixes are just treated
-  as ordinary keyword text.
+  catalog, always producing a detail card. A qualified query always shows the
+  detail card — `-All` has no effect on qualified queries. Unknown prefixes are
+  just treated as ordinary keyword text.
 - **`-Readme`** fetches and pages the package's readme (npm registry readme,
   GitHub readme, or PyPI long description) after the detail card. It needs the
   detail path (an exact match or a qualified id) — otherwise a warning is
   shown and the match table renders instead.
 - **`-GitInfo`** resolves the package's GitHub repository (from source detail
   or its homepage) and adds star count, latest release, and recent activity to
-  the card. It shells out to `gh` when available (faster, higher rate limits)
-  and falls back to the anonymous GitHub REST API otherwise. Same detail-path
-  requirement as `-Readme`.
+  the card. It shells out to `gh` when gh is installed and authenticated
+  (faster, higher rate limits) and falls back to the anonymous GitHub REST API
+  otherwise. Same detail-path requirement as `-Readme`.
 - **`ftrifle <query>`** live-searches every catalog and pre-renders each hit's
   info card to a temp file, so scrolling through fzf's preview pane is instant
   — no network calls while browsing. Enter re-runs the highlighted result as a

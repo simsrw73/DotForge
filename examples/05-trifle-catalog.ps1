@@ -16,7 +16,7 @@ trifle bat -Source scoop,winget   # restrict to specific catalogs
 trifle rg -Fresh                  # block on live catalog data instead of cache
 
 # ── Detail view ────────────────────────────────────────────────────────────
-# A single confident match (exact id, exact name/moniker, or sole hit) renders
+# A single confident match (exact id or exact name/moniker) renders
 # a detail card — the info card plus one catalog's extra detail (manifest
 # notes, dist-tags, GitHub description, …). "+N more matches" appears on the
 # card when other candidates also matched.
