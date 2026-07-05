@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a curated, offline category taxonomy for CLI tools and wire it into trifle: `-Category`/`-WorksWith` facet search, `Get-DFCategoryList` vocabulary discovery, `Related`/`Category`/`Alt to` lines on the detail card, `ftrifle -Category` browsing, and an opt-in `Update-DFCategoryDb` refresh.
+**Goal:** Ship a curated, offline category taxonomy for CLI tools and wire it into trifle: `-Category`/`-WorksWith` facet search, `Get-DFCategoryList` vocabulary discovery, `Related`/`Category`/`Alt to` lines on the detail card, `ftrifle -Categories` browsing, and an opt-in `Update-DFCategoryDb` refresh.
 
 **Architecture:** A single shipped `data/tool-categories.json` (closed `function`/`worksWith` vocabularies + a `tools` map) is loaded lazily into three in-memory indexes (name/alias, `source:packageId`, inverted facet). The db is an *index into real catalog data*, never a cached snapshot — every facet match still resolves through the existing catalog search-and-merge path, so installed state and versions stay accurate. `Find-DFPackage`'s existing 140-line search-and-merge core is extracted into a reusable private function first (behavior-preserving refactor), then both the original query path and the new facet-search path call it.
 
@@ -2276,7 +2276,9 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
 
 ---
 
-### Task 9: `ftrifle -Category` browse mode
+### Task 9: `ftrifle -Categories` browse mode
+
+**Design correction (found empirically during implementation, before any code landed — recorded here so the plan matches reality):** the ORIGINAL plan text below this line called for a bare `-Category` (no value) to trigger vocabulary-browse mode, reasoning that PowerShell binds an optional non-positional string parameter to `$null` when it's the last token with nothing following. **This is false.** Verified directly: `Test-BareParam -Category` on an optional `[string]$Category` (no `[Parameter(Mandatory)]`) throws a terminating `Missing an argument for parameter 'Category'` `ParameterBindingException` at the engine level, before the function body runs — confirmed identically on PowerShell 7.6 and Windows PowerShell 5.1, and confirmed that `[string[]]` (array-typed) doesn't help either (same error). There is no PowerShell parameter shape where "bare flag" and "flag+value" carry different meanings for a single non-switch parameter. **Fix: a separate switch, `-Categories` (plural), triggers browse mode; `-Category <value>` (singular, unchanged) always requires and takes a value.** This is the corrected design the rest of this task implements.
 
 **Files:**
 - Modify: `Public/Select-DFPackage.ps1`
@@ -2284,14 +2286,16 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
 
 **Interfaces:**
 - Consumes: `Get-DFCategoryDb` (Task 2), `Find-DFPackage -Category`/`-WorksWith` (Task 7).
-- Produces: `Select-DFPackage` gains `[string]$Category`. Bare `-Category` (PowerShell binds an optional, non-positional, non-mandatory string parameter to `$null` when it's the last token with nothing following — distinguished from "not supplied at all" via `$PSBoundParameters.ContainsKey('Category')`) lists the combined function+worksWith vocabulary (tool counts, a visual divider between the two sections) and recurses into the picked value. `-Category <value>` searches and previews exactly like query mode, reusing its existing preview/fzf/selection block unchanged.
+- Produces: `Select-DFPackage` gains `[switch]$Categories` and `[string]$Category`. `-Categories` (switch, no value) lists the combined function+worksWith vocabulary (tool counts, a visual divider between the two sections) and recurses into the picked value via `-Category <value>` or `-WorksWith <value>`. `-Category <value>` searches and previews exactly like query mode, reusing its existing preview/fzf/selection block unchanged.
 
 **Routing subtlety:** the combined list mixes `function` and `worksWith` values — a picked worksWith term must recurse as `-WorksWith`, not `-Category`, or `Find-DFPackage`'s facet validation would reject it (it's not a function value). Each list line carries a third tab-delimited field naming its own facet (`function` or `worksWith`) for exactly this routing decision — do **not** use `Invoke-DFPicker -Parse` here (which would discard that field); capture the raw selected line and split it after the picker returns.
+
+**Test-isolation note (lesson from the immediately preceding task):** `-Categories` calls `Get-DFCategoryDb` directly. Confirm none of the PRE-EXISTING (non-`-Categories`, non-`-Category`) tests in `tests/Select-DFPackage.Tests.ps1` reach that call path unmocked — if they do, add a safe default `Mock Get-DFCategoryDb` to the file's shared setup, mirroring the fix already applied to `tests/Find-DFPackage.Tests.ps1`.
 
 - [ ] **Step 1: Write the failing tests** (append to `tests/Select-DFPackage.Tests.ps1`; add `Private/Get-DFCategoryDb.ps1` to `BeforeAll`'s dot-sources if not already present from an earlier task's test file)
 
 ```powershell
-    Context '-Category browse mode' {
+    Context '-Categories browse mode' {
         BeforeEach {
             $script:FakeDb = [pscustomobject]@{
                 Raw = [pscustomobject]@{
@@ -2306,12 +2310,12 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
             Mock Get-DFCategoryDb { $script:FakeDb }
         }
 
-        It 'bare -Category lists function and worksWith values with counts, divided' {
+        It '-Categories lists function and worksWith values with counts, divided' {
             Mock Invoke-DFFzf {
                 $script:CapturedItems = $InputItems
                 $null   # simulate cancel — just inspect what was offered
             }
-            Select-DFPackage -Category
+            Select-DFPackage -Categories
             $joined = $script:CapturedItems -join "`n"
             $joined | Should -Match 'search'
             $joined | Should -Match 'editor'
@@ -2324,7 +2328,7 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
                 ($InputItems | Where-Object { $_ -like 'search*' }) | Select-Object -First 1
             }
             Mock Find-DFPackage { @() } -ParameterFilter { $Category -eq 'search' -and $AsObject }
-            Select-DFPackage -Category
+            Select-DFPackage -Categories
             Should -Invoke Find-DFPackage -ParameterFilter { $Category -eq 'search' }
         }
 
@@ -2333,14 +2337,14 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
                 ($InputItems | Where-Object { $_ -like 'text*' }) | Select-Object -First 1
             }
             Mock Find-DFPackage { @() } -ParameterFilter { $WorksWith -eq 'text' -and $AsObject }
-            Select-DFPackage -Category
+            Select-DFPackage -Categories
             Should -Invoke Find-DFPackage -ParameterFilter { $WorksWith -eq 'text' }
         }
 
         It 'does nothing when the divider row is selected' {
             Mock Invoke-DFFzf { '— browse by works-with —' }
             Mock Find-DFPackage { }
-            Select-DFPackage -Category
+            Select-DFPackage -Categories
             Should -Invoke Find-DFPackage -Times 0 -Exactly
         }
 
@@ -2366,7 +2370,7 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
         It 'warns when the category database is unavailable' {
             Mock Get-DFCategoryDb { [pscustomobject]@{ Raw = $null; FacetIndex = @{} } }
             $w = $null
-            Select-DFPackage -Category -WarningVariable w -WarningAction SilentlyContinue
+            Select-DFPackage -Categories -WarningVariable w -WarningAction SilentlyContinue
             "$w" | Should -Match 'unavailable'
         }
     }
@@ -2375,21 +2379,23 @@ git commit -m "feat(trifle): detail card Category/Related/Alt-to sections"
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `pwsh -NoProfile -Command "Invoke-Pester tests/Select-DFPackage.Tests.ps1 -Output Detailed"`
-Expected: new `Context` FAILs (no `-Category` param); pre-existing blocks PASS.
+Expected: new `Context` FAILs (no `-Categories`/`-Category` params); pre-existing blocks PASS.
 
 - [ ] **Step 3: Implement — modify `Public/Select-DFPackage.ps1`**
 
 3a. Add to the `param()` block, after `[string[]]$Query`:
 
 ```powershell
+        [switch]$Categories,
+
         [string]$Category,
 ```
 
-Update the comment-based help: add `.PARAMETER Category` ("Browse by taxonomy category. Bare -Category lists every function/works-with value with live tool counts and recurses into your pick; -Category <value> searches that facet directly, same preview/selection flow as -Query.") and a new `.EXAMPLE`:
+Update the comment-based help: add `.PARAMETER Categories` ("Browse the full taxonomy vocabulary (every function/works-with value, live tool counts); Enter drills into the picked facet.") and `.PARAMETER Category` ("Search this specific function value directly — same preview/selection flow as -Query.") and a new `.EXAMPLE`:
 
 ```
 .EXAMPLE
-    ftrifle -Category
+    ftrifle -Categories
     Pick a category or works-with value from the full vocabulary; Enter drills
     into that facet's tools with the same preview/selection flow as a query.
 ```
@@ -2397,7 +2403,7 @@ Update the comment-based help: add `.PARAMETER Category` ("Browse by taxonomy ca
 3b. Insert, as the very first statement in the function body (before the existing `if ($Query) { ... }` block):
 
 ```powershell
-    if ($PSBoundParameters.ContainsKey('Category') -and -not $Category) {
+    if ($Categories) {
         $db = Get-DFCategoryDb
         if (-not $db.Raw) {
             Write-Warning 'DotForge: category database unavailable — run Update-DFCategoryDb.'
@@ -2466,7 +2472,7 @@ Expected: `.PARAMETER Category` and the new example render.
 
 ```bash
 git add Public/Select-DFPackage.ps1 tests/Select-DFPackage.Tests.ps1
-git commit -m "feat(trifle): ftrifle -Category browse mode"
+git commit -m "feat(trifle): ftrifle -Categories browse mode"
 ```
 
 ---
@@ -2695,7 +2701,7 @@ In the "Package Catalog Info (trifle)" section, update the `Find-DFPackage` row'
 - `trifle -Category <c> [-WorksWith <w>]` / `trifle -WorksWith <w>` — facet search, renders the match table with the Id column; AND across facets, OR within one; `-All` is rejected when combined (parameter-set level).
 - `Get-DFCategoryList` (`tcats`) — lists the valid `-Category`/`-WorksWith` vocabulary with live tool counts; `-Facet function|worksWith` narrows; `-Counts:$false` for a bare list.
 - The detail card's new `Category` / `Related` / `Alt to` lines, shown whenever the package is in the seed database.
-- `ftrifle -Category` — bare form browses the vocabulary; with a value, searches and previews like a query.
+- `ftrifle -Categories` browses the vocabulary (bare switch, no value); `ftrifle -Category <value>` searches and previews that facet directly, like a query.
 - `Update-DFCategoryDb` — opt-in refresh of the category database from the latest published release, independent of module version, never run implicitly.
 - Add a two-line note: the shipped seed database covers ~70 well-known CLI tools; it grows over time via `build/categories/*.jsonc` content, not code changes (matching the entry added to TODO.md in Step 4).
 
@@ -2712,7 +2718,7 @@ tcats                              # list every valid -Category/-WorksWith term,
 # trifle -Category search           # facet search: every seed-db tool tagged 'search'
 # trifle -Category search -WorksWith filesystem   # AND across facets
 # trifle ripgrep                    # detail card now also shows Category/Related/Alt-to
-# ftrifle -Category                 # browse the vocabulary in fzf, drill into a facet
+# ftrifle -Categories               # browse the vocabulary in fzf, drill into a facet
 ```
 
 - [ ] **Step 3: `CHANGELOG.md`**
@@ -2728,7 +2734,7 @@ Add a bullet under `[Unreleased]` → `### Added` (matching the existing trifle-
   and versions are never a stale snapshot. `Get-DFCategoryList` (`tcats`)
   lists the valid vocabulary with live tool counts. The detail card gains
   `Category`/`Related`/`Alt to` lines for any package in the seed database.
-  `ftrifle -Category` browses the vocabulary interactively. `Update-DFCategoryDb`
+  `ftrifle -Categories` browses the vocabulary interactively. `Update-DFCategoryDb`
   refreshes the database independently of module releases (opt-in only,
   never run implicitly). Built and regenerated via `build/Build-DFCategoryDb.ps1`
   from hand-authored `build/categories/*.jsonc` fragments.
@@ -2769,7 +2775,7 @@ Expected: every parameter documented on all four functions, no `Get-Help` render
 Run: `pwsh -NoProfile -Command "Import-Module ./DotForge.psd1 -Force; Get-DFCategoryList -Facet function | Select-Object -First 5; trifle -Category search -AsObject | Select-Object -First 3 Name, Installed; (trifle ripgrep -AsObject).Category"`
 Expected: real function values with counts; real facet-search hits (accurate installed state); ripgrep's `.Category.Entry.function` shows `search` and `.Category.Related` shows related tools.
 
-**Note for the human:** `ftrifle -Category`'s fzf flow needs a live terminal, same as the trifle detail-view plan's `ftrifle <query>` — please try it once (`ftrifle -Category` → pick a value → pick a tool → Enter) after this task lands.
+**Note for the human:** `ftrifle -Categories`'s fzf flow needs a live terminal, same as the trifle detail-view plan's `ftrifle <query>` — please try it once (`ftrifle -Categories` → pick a value → pick a tool → Enter) after this task lands.
 
 - [ ] **Step 7: Commit**
 
@@ -2785,7 +2791,7 @@ git commit -m "docs(trifle): document -Category/-WorksWith discovery, Get-DFCate
 1. `pwsh -NoProfile -Command "Invoke-Pester tests/ -Output Detailed"` — all green.
 2. `pwsh -NoProfile -Command "Test-ModuleManifest ./DotForge.psd1"` — clean.
 3. `Get-Help Find-DFPackage -Full` / `Get-Help Select-DFPackage -Full` / `Get-Help Get-DFCategoryList -Full` / `Get-Help Update-DFCategoryDb -Full` — every param documented.
-4. Live smoke: `tcats`, `trifle -Category search`, `trifle ripgrep` (Category/Related/Alt-to lines), `ftrifle -Category` (live terminal).
+4. Live smoke: `tcats`, `trifle -Category search`, `trifle ripgrep` (Category/Related/Alt-to lines), `ftrifle -Categories` (live terminal).
 
 
 
