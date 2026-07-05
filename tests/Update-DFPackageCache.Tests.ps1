@@ -79,4 +79,18 @@ Describe 'Update-DFPackageCache' {
         { Update-DFPackageCache -Quiet -WarningAction SilentlyContinue } | Should -Not -Throw
         $global:DFTestRefreshLog | Should -Contain 'npm:ripgrep'
     }
+
+    It 're-warms cached detail entries with the stored raw PackageId' {
+        $script:DetailCalls = [System.Collections.Generic.List[string]]::new()
+        $script:DFCatalogProviders['npm'].Detail = { param($Id, $Fresh)
+            $script:DetailCalls.Add("$Id fresh=$Fresh") }
+
+        $detailsDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs/npm/details'
+        New-Item -ItemType Directory -Path $detailsDir -Force | Out-Null
+        @{ timestamp = [datetime]::UtcNow.ToString('o'); query = 'RipGrep'; results = @(@{ PackageId = 'RipGrep' }) } |
+            ConvertTo-Json -Depth 4 | Set-Content (Join-Path $detailsDir 'ripgrep-abcd1234.json')
+
+        Update-DFPackageCache -Quiet
+        $script:DetailCalls | Should -Contain 'RipGrep fresh=True'
+    }
 }

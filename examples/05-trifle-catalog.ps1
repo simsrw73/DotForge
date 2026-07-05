@@ -15,6 +15,18 @@ trifle static site generator      # keyword search → compact match table
 trifle bat -Source scoop,winget   # restrict to specific catalogs
 trifle rg -Fresh                  # block on live catalog data instead of cache
 
+# ── Detail view ────────────────────────────────────────────────────────────
+# A single confident match (exact id, exact name/moniker, or sole hit) renders
+# a detail card — the info card plus one catalog's extra detail (manifest
+# notes, dist-tags, GitHub description, …). "+N more matches" appears on the
+# card when other candidates also matched.
+# trifle zed                        # detail card
+# trifle zed -All                   # force the full match table; Id column
+#                                    # shows values usable as `trifle <source>:<id>`
+# trifle winget:Zed.Zed -GitInfo    # qualified id + GitHub stars/release/activity
+# ftrifle zed -Readme               # fzf live-search with instant preview cards;
+#                                    # Enter -> detail card, then paged readme
+
 # ── Scripting ──────────────────────────────────────────────────────────────
 # Piped output is always raw DotForge.ToolInfo objects (no ANSI). For capture
 # via assignment, use -AsObject (assignment looks interactive to pipeline

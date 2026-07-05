@@ -40,6 +40,23 @@ All notable changes to DotForge are documented here.
 - **`Select-DFPackage` (`ftrifle`):** fzf browser over every locally cached
   package (scoop + winget indexes, cached web queries, installed snapshot);
   Enter renders the trifle info card.
+- **`trifle` detail view:** a confident single match (exact id, exact
+  name/moniker, or the only hit) now renders a richer detail card instead of
+  the summary card — every catalog (scoop, winget, choco, npm, PyPI,
+  crates.io, PSGallery) contributes a `Detail` hook (manifest notes, dist-tags,
+  resolved GitHub metadata, etc.). Qualified `source:id` queries (e.g. `trifle
+  winget:Zed.Zed`) bypass keyword ranking and always resolve to that one
+  package's detail card. `-All` forces the full match table even on an exact
+  hit, and its table gains an `Id` column with values usable directly as a
+  qualified query. `-Readme` fetches and pages the package's readme (npm
+  registry, GitHub, or PyPI long description); `-GitInfo` resolves the GitHub
+  repo and adds stars/latest release/activity, using `gh` when available and
+  falling back to the anonymous GitHub REST API otherwise. `ftrifle <query>`
+  live-searches and pre-renders instant preview cards for fzf's preview pane,
+  with Enter re-entering `trifle` via the qualified id for the full detail
+  card. `Update-DFPackageCache` now also re-warms every cached detail entry
+  (the files under each provider's `details/` cache ARE the re-warm list) so
+  detail lookups stay warm alongside search results.
 
 ## [0.3.0-preview] - 2026-06-20
 

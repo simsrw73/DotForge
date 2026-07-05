@@ -11,9 +11,12 @@ function Update-DFPackageCache {
         rebuilds snapshot indexes (scoop bucket index, winget SQLite extraction),
         refreshes the unified installed-package snapshot, then re-fetches every
         recently seen query plus the exact name of every installed tool against
-        each web catalog. Safe to run while an interactive session is open —
-        all cache writes are atomic renames, so last writer wins and both stay
-        valid.
+        each web catalog. Also re-warms every cached package-detail entry
+        (readme/GitHub/install-hint data fetched by `trifle`'s detail card) —
+        the files under each provider's `details/` cache directory ARE the
+        re-warm list, keyed off the raw PackageId stored in each entry. Safe to
+        run while an interactive session is open — all cache writes are atomic
+        renames, so last writer wins and both stay valid.
     .PARAMETER Source
         Restrict the refresh to these catalogs.
     .PARAMETER Quiet
@@ -83,7 +86,28 @@ function Update-DFPackageCache {
         }
     }
 
+    # Re-warm every cached detail entry (the files themselves are the list;
+    # the envelope's query field holds the raw PackageId).
+    $detailCount = 0
+    if ($cacheRoot) {
+        foreach ($provider in $providers) {
+            if (-not $provider.Detail) { continue }
+            $detailsDir = Join-Path $cacheRoot "$($provider.Name)/details"
+            if (-not (Test-Path $detailsDir)) { continue }
+            foreach ($file in Get-ChildItem $detailsDir -Filter '*.json' -File) {
+                $cached = Read-DFCatalogCacheFile -Path $file.FullName -Ttl ([timespan]::MaxValue)
+                if (-not $cached -or -not $cached.Query) { continue }
+                try {
+                    $null = & $provider.Detail $cached.Query $true
+                    $detailCount++
+                } catch {
+                    Write-Warning "DotForge: $($provider.Name) detail re-warm of '$($cached.Query)' failed: $_"
+                }
+            }
+        }
+    }
+
     if (-not $Quiet) {
-        Write-Host "Re-warmed $($queries.Count) queries across $($webProviders.Count) web catalogs."
+        Write-Host "Re-warmed $($queries.Count) queries across $($webProviders.Count) web catalogs and $detailCount detail entries."
     }
 }
