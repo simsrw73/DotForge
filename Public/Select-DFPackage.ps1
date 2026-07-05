@@ -19,6 +19,16 @@ function Select-DFPackage {
     .PARAMETER Query
         Search terms. When present, the list is live search results with a
         detail-card pipeline; when absent, the local-cache browser.
+    .PARAMETER Categories
+        Browse the full taxonomy vocabulary (every function/works-with value,
+        live tool counts); Enter drills into the picked facet.
+    .PARAMETER Category
+        Search this specific function value directly — same preview/selection
+        flow as -Query.
+    .PARAMETER WorksWith
+        Search this specific works-with value directly — same preview/selection
+        flow as -Query. Set internally when -Categories recurses into a
+        picked works-with row; also usable directly.
     .PARAMETER Source
         Restrict to packages known to these catalogs.
     .PARAMETER Readme
@@ -32,6 +42,10 @@ function Select-DFPackage {
     .EXAMPLE
         ftrifle
         Browse all locally known packages; Enter renders the info card.
+    .EXAMPLE
+        ftrifle -Categories
+        Pick a category or works-with value from the full vocabulary; Enter drills
+        into that facet's tools with the same preview/selection flow as a query.
     .OUTPUTS
         None — the selection is rendered via Find-DFPackage.
     #>
@@ -39,6 +53,12 @@ function Select-DFPackage {
     param(
         [Parameter(Position = 0, ValueFromRemainingArguments)]
         [string[]]$Query,
+
+        [switch]$Categories,
+
+        [string]$Category,
+
+        [string]$WorksWith,
 
         [ValidateSet('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 'psgallery')]
         [string[]]$Source,
@@ -48,12 +68,43 @@ function Select-DFPackage {
         [switch]$GitInfo
     )
 
-    if ($Query) {
-        $findArgs = @{ Query = $Query; AsObject = $true }
+    if ($Categories) {
+        $db = Get-DFCategoryDb
+        if (-not $db.Raw) {
+            Write-Warning 'DotForge: category database unavailable — run Update-DFCategoryDb.'
+            return
+        }
+        $catLines = @($db.Raw.taxonomy.function | Sort-Object | ForEach-Object {
+            "$_`t$(@($db.FacetIndex["function:$_"]).Count) tools`tfunction"
+        })
+        $wwLines = @($db.Raw.taxonomy.worksWith | Sort-Object | ForEach-Object {
+            "$_`t$(@($db.FacetIndex["worksWith:$_"]).Count) tools`tworksWith"
+        })
+        $pickLines = @($catLines) + @('— browse by works-with —') + @($wwLines)
+
+        $picked = Invoke-DFPicker -List { $pickLines }.GetNewClosure() `
+            -Header 'Select a category or works-with facet' `
+            -Delimiter "`t" -WithNth '1,2'
+        if (-not $picked -or $picked -like '— browse by works-with —*') { return }
+
+        $parts = $picked -split "`t"
+        $facetArgs = ($parts[2] -eq 'worksWith') ? @{ WorksWith = $parts[0] } : @{ Category = $parts[0] }
+        if ($Source) { $facetArgs.Source = $Source }
+        Select-DFPackage @facetArgs -Readme:$Readme -GitInfo:$GitInfo
+        return
+    }
+
+    if ($Query -or $Category -or $WorksWith) {
+        $findArgs = if ($Category) { @{ Category = $Category; AsObject = $true } }
+            elseif ($WorksWith) { @{ WorksWith = $WorksWith; AsObject = $true } }
+            else { @{ Query = $Query; AsObject = $true } }
         if ($Source) { $findArgs.Source = $Source }
         $results = @(Find-DFPackage @findArgs)
         if (-not $results) {
-            Write-Warning "DotForge: no matches for '$($Query -join ' ')'."
+            $what = if ($Category) { "category '$Category'" }
+                elseif ($WorksWith) { "works-with '$WorksWith'" }
+                else { "'$($Query -join ' ')'" }
+            Write-Warning "DotForge: no matches for $what."
             return
         }
 

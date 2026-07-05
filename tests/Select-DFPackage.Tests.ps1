@@ -8,6 +8,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
     . "$PSScriptRoot/../Public/Select-DFPackage.ps1"
+    . "$PSScriptRoot/../Private/Get-DFCategoryDb.ps1"
 
     function Initialize-LocalCaches {
         # Scoop index + one cached npm query + installed snapshot — local data only.
@@ -56,8 +57,11 @@ Describe 'Select-DFPackage' {
         $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
         Initialize-LocalCaches
         function Find-DFPackage {
+            [CmdletBinding()]
             param(
                 [string[]]$Query,
+                [string]$Category,
+                [string]$WorksWith,
                 [string[]]$Source,
                 [switch]$AsObject,
                 [switch]$Readme,
@@ -153,6 +157,86 @@ Describe 'Select-DFPackage' {
             $w = $null
             Select-DFPackage zzz -WarningVariable w -WarningAction SilentlyContinue
             "$w" | Should -Match 'no matches'
+        }
+    }
+
+    Context '-Categories browse mode' {
+        BeforeEach {
+            $script:FakeDb = [pscustomobject]@{
+                Raw = [pscustomobject]@{
+                    taxonomy = [pscustomobject]@{ function = @('search', 'editor'); worksWith = @('text') }
+                }
+                FacetIndex = @{
+                    'function:search' = @('ripgrep')
+                    'function:editor' = @('micro')
+                    'worksWith:text'  = @('ripgrep', 'micro')
+                }
+            }
+            Mock Get-DFCategoryDb { $script:FakeDb }
+        }
+
+        It '-Categories lists function and worksWith values with counts, divided' {
+            Mock Invoke-DFFzf {
+                $script:CapturedItems = $InputItems
+                $null   # simulate cancel — just inspect what was offered
+            }
+            Select-DFPackage -Categories
+            $joined = $script:CapturedItems -join "`n"
+            $joined | Should -Match 'search'
+            $joined | Should -Match 'editor'
+            $joined | Should -Match 'text'
+            $joined | Should -Match '— browse by works-with —'
+        }
+
+        It 'recurses into -Category when a function value is picked' {
+            Mock Invoke-DFFzf {
+                ($InputItems | Where-Object { $_ -like 'search*' }) | Select-Object -First 1
+            }
+            Mock Find-DFPackage { @() } -ParameterFilter { $Category -eq 'search' -and $AsObject }
+            Select-DFPackage -Categories
+            Should -Invoke Find-DFPackage -ParameterFilter { $Category -eq 'search' }
+        }
+
+        It 'recurses into -WorksWith when a worksWith value is picked' {
+            Mock Invoke-DFFzf {
+                ($InputItems | Where-Object { $_ -like 'text*' }) | Select-Object -First 1
+            }
+            Mock Find-DFPackage { @() } -ParameterFilter { $WorksWith -eq 'text' -and $AsObject }
+            Select-DFPackage -Categories
+            Should -Invoke Find-DFPackage -ParameterFilter { $WorksWith -eq 'text' }
+        }
+
+        It 'does nothing when the divider row is selected' {
+            Mock Invoke-DFFzf { '— browse by works-with —' }
+            Mock Find-DFPackage { }
+            Select-DFPackage -Categories
+            Should -Invoke Find-DFPackage -Times 0 -Exactly
+        }
+
+        It '-Category <value> searches, previews, and selects exactly like query mode' {
+            Mock Find-DFPackage {
+                $src = New-DFToolSourceInfo -Source scoop -PackageId 'main/ripgrep' -Name ripgrep `
+                    -Description 'search tool' -LatestVersion '14.1.0' -MatchKind exact-name
+                New-DFToolInfo -Name ripgrep -Description 'search tool' -Sources @($src) -MatchKind exact-name
+            } -ParameterFilter { $Category -eq 'search' -and $AsObject }
+            Mock Invoke-DFFzf { $InputItems[0] }
+            Mock Find-DFPackage { 'card' } -ParameterFilter { -not $AsObject }
+            Select-DFPackage -Category search
+            Should -Invoke Find-DFPackage -ParameterFilter { (-not $AsObject) -and ($Query -contains 'scoop:main/ripgrep') }
+        }
+
+        It 'warns when -Category <value> has no matches' {
+            Mock Find-DFPackage { @() } -ParameterFilter { $Category -eq 'search' -and $AsObject }
+            $w = $null
+            Select-DFPackage -Category search -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -Match "category 'search'"
+        }
+
+        It 'warns when the category database is unavailable' {
+            Mock Get-DFCategoryDb { [pscustomobject]@{ Raw = $null; FacetIndex = @{} } }
+            $w = $null
+            Select-DFPackage -Categories -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -Match 'unavailable'
         }
     }
 }
