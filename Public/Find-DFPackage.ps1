@@ -97,119 +97,7 @@ function Find-DFPackage {
     }
 
     $normalized = (ConvertTo-DFCatalogQueryKey -Query $queryText).Normalized
-    $providers = @(Get-DFCatalogProvider -Source $Source)
-
-    # Fan out across catalogs (canonical order), then overlay installed state
-    # from the cached unified snapshot (15-min TTL — avoids re-enumerating slow
-    # sources like Get-Module -ListAvailable on every query). First runs can
-    # spend a while on index builds and live fetches, so keep the user informed
-    # via the progress stream (renders as a status line; never pollutes stdout).
-    $progressId = 47
-    try {
-        $hits = [System.Collections.Generic.List[object]]::new()
-        for ($i = 0; $i -lt $providers.Count; $i++) {
-            $provider = $providers[$i]
-            Write-Progress -Id $progressId -Activity 'trifle' `
-                -Status "Searching $($provider.Name) catalog… (first run may build local indexes)" `
-                -PercentComplete ([int](100 * $i / ($providers.Count + 1)))
-            foreach ($hit in @(& $provider.Search $queryText $Fresh.IsPresent)) {
-                if ($hit) { $hits.Add($hit) }
-            }
-        }
-
-        Write-Progress -Id $progressId -Activity 'trifle' `
-            -Status 'Reading installed packages…' `
-            -PercentComplete ([int](100 * $providers.Count / ($providers.Count + 1)))
-        $installedInfo = Get-DFCatalogInstalled
-    } finally {
-        Write-Progress -Id $progressId -Activity 'trifle' -Completed
-    }
-    $installedBySource = @{}
-    foreach ($item in $installedInfo.Items) {
-        if (-not $installedBySource.ContainsKey($item.Source)) { $installedBySource[$item.Source] = @{} }
-        foreach ($key in @($item.Name, $item.PackageId)) {
-            if ($key) { $installedBySource[$item.Source][([string]$key).ToLowerInvariant()] = $item.InstalledVersion }
-        }
-    }
-    foreach ($hit in $hits) {
-        $map = $installedBySource[$hit.Source]
-        if (-not $map) { continue }
-        foreach ($key in @($hit.Name, $hit.PackageId)) {
-            $lookup = ([string]$key).ToLowerInvariant()
-            if ($map.ContainsKey($lookup)) {
-                $hit.Installed = $true
-                $hit.InstalledVersion = $map[$lookup]
-                break
-            }
-        }
-    }
-
-    Add-DFCatalogSeenQuery -Query $queryText
-
-    # Merge per-catalog hits into one row per tool: identity-mapped hits
-    # (Tools/*.json packages blocks) collapse under the DotForge tool name even
-    # when catalogs name the package differently; the rest group by name.
-    $dfToolNames = @{}
-    foreach ($value in $installedInfo.IdentityMap.Values) { $dfToolNames[$value.ToLowerInvariant()] = $value }
-
-    $resolveDFTool = {
-        param($Hit)
-        $id = $Hit.PackageId.ToLowerInvariant()
-        $name = $installedInfo.IdentityMap["$($Hit.Source):$id"]
-        if (-not $name -and $id.Contains('/')) {
-            # scoop ids are bucket-qualified; the packages map holds bare names
-            $name = $installedInfo.IdentityMap["$($Hit.Source):$(($id -split '/')[-1])"]
-        }
-        if (-not $name) {
-            # No explicit mapping for this catalog, but the package shares a DF
-            # tool's name — group it there so one tool never renders twice.
-            $name = $dfToolNames[$Hit.Name.ToLowerInvariant()]
-        }
-        $name
-    }
-
-    $groups = [ordered]@{}
-    $dfNames = @{}
-    foreach ($hit in $hits) {
-        $dfName = & $resolveDFTool $hit
-        $key = $dfName ? "df:$dfName" : $hit.Name.ToLowerInvariant()
-        if (-not $groups.Contains($key)) {
-            $groups[$key] = [System.Collections.Generic.List[object]]::new()
-            if ($dfName) { $dfNames[$key] = $dfName }
-        }
-        $groups[$key].Add($hit)
-    }
-
-    $merged = @(foreach ($entry in $groups.GetEnumerator()) {
-        $sources = @($entry.Value)
-        $dfTool = $dfNames[$entry.Key]
-        $latest = [ordered]@{}
-        foreach ($s in $sources) { if ($s.LatestVersion) { $latest[$s.Source] = $s.LatestVersion } }
-
-        $installedSources = @($sources | Where-Object Installed)
-        $matchKind = if ($sources.MatchKind -contains 'exact-id') { 'exact-id' }
-                     elseif ($sources.MatchKind -contains 'exact-name') { 'exact-name' }
-                     else { 'keyword' }
-
-        New-DFToolInfo -Name ($dfTool ? $dfTool : $sources[0].Name) `
-            -Description (@($sources.Description) -ne '' -ne $null | Select-Object -First 1) `
-            -Installed:($installedSources.Count -gt 0) `
-            -InstalledVia @($installedSources.Source) `
-            -InstalledVersion (@($installedSources.InstalledVersion) | Select-Object -First 1) `
-            -Sources $sources `
-            -Latest $latest `
-            -Homepage (@($sources.Homepage) -ne '' -ne $null | Select-Object -First 1) `
-            -License (@($sources.License) -ne '' -ne $null | Select-Object -First 1) `
-            -DFTool $dfTool `
-            -MatchKind $matchKind `
-            -CacheAge (@($sources.CacheAgeMinutes | Measure-Object -Maximum).Maximum)
-    })
-
-    # Best matches first: exact package-id, then exact name/moniker, then
-    # keyword hits; installed tools win ties, then alphabetical.
-    $matchRank = @{ 'exact-id' = 0; 'exact-name' = 1; 'keyword' = 2 }
-    $merged = @($merged | Sort-Object `
-        { $matchRank[$_.MatchKind] }, { -not $_.Installed }, Name)
+    $merged = Resolve-DFCatalogQueryMerge -QueryText $queryText -Source $Source -Fresh:$Fresh
 
     if ($qualified) {
         # Keep only the group that actually contains the qualified package.
@@ -221,20 +109,6 @@ function Find-DFPackage {
         } else {
             Write-Warning "DotForge: No package '$($qualified.Id)' found in $($qualified.Source) — showing matches for '$queryText'."
             $qualified = $null
-        }
-    }
-
-    # PATH fallback: the command exists locally but no catalog claims it.
-    if ($normalized -notmatch ' ') {
-        $pathCommand = Get-Command -Name $normalized -ErrorAction Ignore | Select-Object -First 1
-        if ($pathCommand) {
-            foreach ($info in $merged) {
-                if (-not $info.Installed -and $info.MatchKind -in 'exact-id', 'exact-name') {
-                    $info.Installed = $true
-                    $info.InstalledVia = @('PATH')
-                    if ($pathCommand.Version) { $info.InstalledVersion = [string]$pathCommand.Version }
-                }
-            }
         }
     }
 

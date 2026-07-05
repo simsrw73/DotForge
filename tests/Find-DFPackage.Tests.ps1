@@ -9,6 +9,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
     . "$PSScriptRoot/../Private/Get-DFGitHubRepoInfo.ps1"
     . "$PSScriptRoot/../Private/Get-DFPackageReadme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFCatalogQueryMerge.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFPagerExe.ps1"
     . "$PSScriptRoot/../Public/DFHelpers.Pager.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
