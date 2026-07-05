@@ -193,8 +193,10 @@ Describe 'Get-DFCategoryDbEntry' {
 }
 
 Describe 'Get-DFCategoryRelatedTools' {
-    BeforeAll { $script:Db = Get-DFCategoryDb -Path (Join-Path $TestDrive 'fixture2.json') }
-    BeforeAll { New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture2.json') }
+    BeforeAll {
+        New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture2.json')
+        $script:Db = Get-DFCategoryDb -Path (Join-Path $TestDrive 'fixture2.json')
+    }
 
     It 'lists curated relatedTo first' {
         (Get-DFCategoryRelatedTools -Database $script:Db -Key 'ripgrep') | Select-Object -First 1 | Should -Be 'fd'

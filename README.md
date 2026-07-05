@@ -243,7 +243,7 @@ trifle npm:left-pad -Readme           # + paged package readme
 ### Discovery (`-Category` / `-WorksWith`)
 
 A curated, offline taxonomy ships with the module in `data/tool-categories.json`
-— function categories (e.g. `search`, `file-manager`) and works-with facets
+— function categories (e.g. `search`, `file-management`) and works-with facets
 (e.g. `filesystem`, `git`) for a seed set of well-known CLI tools. Every facet
 match still resolves through the same live catalog search-and-merge path as an
 ordinary query, so installed state and versions are never a stale snapshot —
