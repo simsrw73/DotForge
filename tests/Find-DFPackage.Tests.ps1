@@ -317,6 +317,30 @@ Describe 'Find-DFPackage' {
         $r[0].Details['choco'] | Should -BeNullOrEmpty
     }
 
+    It 'attaches Category (Entry + Related) to the top exact match' {
+        Mock Get-DFCategoryDb {
+            [pscustomobject]@{
+                Raw = [pscustomobject]@{
+                    taxonomy = [pscustomobject]@{ function = @('search'); worksWith = @('text') }
+                    tools    = [pscustomobject]@{
+                        ripgrep = [pscustomobject]@{ function = @('search'); worksWith = @('text'); interface = 'cli'; alternativeTo = @('grep') }
+                    }
+                }
+                FacetIndex = @{ 'function:search' = @('ripgrep') }
+                NameIndex  = @{ 'ripgrep' = 'ripgrep' }
+                IdIndex    = @{}
+            }
+        }
+        $r = @(Find-DFPackage ripgrep)
+        $r[0].Category.Entry.alternativeTo | Should -Contain 'grep'
+    }
+
+    It 'leaves Category $null when the tool is not in the seed db' {
+        Mock Get-DFCategoryDb { [pscustomobject]@{ Raw = $null; FacetIndex = @{}; NameIndex = @{}; IdIndex = @{} } }
+        $r = @(Find-DFPackage ripgrep)
+        $r[0].Category | Should -BeNullOrEmpty
+    }
+
     Context '-Category / -WorksWith facet search' {
         BeforeEach {
             $script:FakeDb = [pscustomobject]@{

@@ -205,6 +205,14 @@ function Find-DFPackage {
     if ($detailMode -and $merged.Count -gt 0) {
         $top = $merged[0]
         $top.Details = Get-DFToolInfoDetails -Info $top -Fresh:$Fresh
+        $catDb = Get-DFCategoryDb
+        $catEntry = Get-DFCategoryDbEntry -Info $top -Database $catDb
+        if ($catEntry) {
+            $top.Category = [pscustomobject]@{
+                Entry   = $catEntry.Entry
+                Related = Get-DFCategoryRelatedTools -Database $catDb -Key $catEntry.Key
+            }
+        }
         if ($GitInfo) {
             $repo = Resolve-DFGitHubRepoUrl -Info $top
             if ($repo) {

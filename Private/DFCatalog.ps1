@@ -232,7 +232,8 @@ function New-DFToolInfo {
         [string]$MatchKind,
         [int]$CacheAge,
         [System.Collections.Specialized.OrderedDictionary]$Details,
-        [object]$GitHub
+        [object]$GitHub,
+        [object]$Category
     )
 
     [pscustomobject]@{
@@ -251,6 +252,7 @@ function New-DFToolInfo {
         CacheAge         = $CacheAge
         Details          = $Details
         GitHub           = $GitHub
+        Category         = $Category
     }
 }
 

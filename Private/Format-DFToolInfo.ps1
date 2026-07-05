@@ -194,6 +194,19 @@ function Format-DFToolDetailCard {
     $notes = @($details | ForEach-Object { $_.Notes } | Where-Object { $_ }) | Select-Object -First 1
     if ($notes) { $lines.Add((& $label 'Notes') + $notes) }
 
+    if ($Info.Category) {
+        $cat = $Info.Category.Entry
+        $catParts = [System.Collections.Generic.List[string]]::new()
+        $catParts.AddRange([string[]]@($cat.function))
+        if ($cat.worksWith) { $catParts.Add("works with: $(@($cat.worksWith) -join ', ')") }
+        $lines.Add((& $label 'Category') + ($catParts -join ' · '))
+
+        $related = @($Info.Category.Related)
+        if ($related) { $lines.Add((& $label 'Related') + ($related -join ' · ')) }
+
+        if ($cat.alternativeTo) { $lines.Add((& $label 'Alt to') + (@($cat.alternativeTo) -join ', ')) }
+    }
+
     if ($Info.GitHub) {
         $gh = $Info.GitHub
         $parts = [System.Collections.Generic.List[string]]::new()

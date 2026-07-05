@@ -3,12 +3,12 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
 
     function New-TestInfo {
-        param($Details, $GitHub)
+        param($Details, $GitHub, $Category)
         $src = New-DFToolSourceInfo -Source scoop -PackageId 'extras/zed' -Name zed `
             -Description 'code editor' -LatestVersion '0.191.6' -MatchKind exact-name
         New-DFToolInfo -Name zed -Description 'code editor' -Sources @($src) `
             -Latest ([ordered]@{ scoop = '0.191.6' }) -Homepage 'https://zed.dev' `
-            -License 'GPL-3.0' -MatchKind exact-name -Details $Details -GitHub $GitHub
+            -License 'GPL-3.0' -MatchKind exact-name -Details $Details -GitHub $GitHub -Category $Category
     }
 }
 
@@ -76,6 +76,43 @@ Describe 'Format-DFToolDetailCard' {
         $out | Should -Not -Match 'Publisher'
         $out | Should -Not -Match '(?m)^Install\s'
         $out | Should -Not -Match 'GitHub'
+    }
+
+    It 'renders Category/Related/Alt-to when Category is populated' {
+        $category = [pscustomobject]@{
+            Entry   = [pscustomobject]@{ function = @('editor'); worksWith = @('text', 'code'); alternativeTo = @('vim') }
+            Related = @('micro', 'lazygit')
+        }
+        $out = (Format-DFToolDetailCard -Info (New-TestInfo -Category $category) -Color $false) -join "`n"
+        $out | Should -Match 'Category\s+editor . works with: text, code'
+        $out | Should -Match 'Related\s+micro . lazygit'
+        $out | Should -Match 'Alt to\s+vim'
+    }
+
+    It 'omits Category/Related/Alt-to when Category is $null' {
+        $out = (Format-DFToolDetailCard -Info (New-TestInfo) -Color $false) -join "`n"
+        $out | Should -Not -Match 'Category'
+        $out | Should -Not -Match 'Related'
+        $out | Should -Not -Match 'Alt to'
+    }
+
+    It 'omits Alt-to specifically when alternativeTo is absent, keeping Category/Related' {
+        $category = [pscustomobject]@{
+            Entry   = [pscustomobject]@{ function = @('editor'); worksWith = @() }
+            Related = @('micro')
+        }
+        $out = (Format-DFToolDetailCard -Info (New-TestInfo -Category $category) -Color $false) -join "`n"
+        $out | Should -Match 'Category\s+editor'
+        $out | Should -Not -Match 'Alt to'
+    }
+
+    It 'omits Related when the related list is empty' {
+        $category = [pscustomobject]@{
+            Entry   = [pscustomobject]@{ function = @('editor'); worksWith = @() }
+            Related = @()
+        }
+        $out = (Format-DFToolDetailCard -Info (New-TestInfo -Category $category) -Color $false) -join "`n"
+        $out | Should -Not -Match 'Related'
     }
 }
 
