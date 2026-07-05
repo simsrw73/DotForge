@@ -55,7 +55,8 @@
         # Catalog Info (trifle)
         'Find-DFPackage',
         'Update-DFPackageCache',
-        'Select-DFPackage'
+        'Select-DFPackage',
+        'Get-DFCategoryList'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
@@ -68,7 +69,7 @@
         'env', 'path', 'fenv', 'ep', 'reload',
         'copy', 'paste',
         'uuidgen',
-        'trifle', 'ftrifle'
+        'trifle', 'ftrifle', 'tcats'
     )
     PrivateData       = @{
         PSData = @{
