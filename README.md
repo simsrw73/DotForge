@@ -172,9 +172,11 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 
 | Cmdlet                                              | Alias     | Purpose                                                        |
 | --------------------------------------------------- | --------- | -------------------------------------------------------------- |
-| `Find-DFPackage <name-or-keywords> [-Source] [-Fresh] [-AsObject] [-All] [-Readme] [-GitInfo]` | `trifle`  | Search every installer catalog at once and render a merged info card (or match table): description, installed status + source, per-catalog availability and versions, homepage, license, cache age |
+| `Find-DFPackage <name-or-keywords> [-Source] [-Fresh] [-AsObject] [-All] [-Readme] [-GitInfo]` / `Find-DFPackage -Category <c> [-WorksWith <w>] [-Source] [-Fresh] [-AsObject] [-Readme] [-GitInfo]` | `trifle`  | Search every installer catalog at once and render a merged info card (or match table): description, installed status + source, per-catalog availability and versions, homepage, license, cache age. The `-Category`/`-WorksWith` form facet-searches the offline taxonomy instead of keyword-ranking a query. |
 | `Update-DFPackageCache [-Source] [-Quiet]`           |           | Refresh-only entry point for Task Scheduler: rebuilds snapshot indexes and re-warms cached queries + cached detail entries |
-| `Select-DFPackage [-Query] [-Source] [-Readme] [-GitInfo]` | `ftrifle` | Fuzzy-browse locally cached packages, or live-search with instant preview cards; Enter shows the full detail card |
+| `Select-DFPackage [-Query] [-Categories] [-Category <c>] [-WorksWith <w>] [-Source] [-Readme] [-GitInfo]` | `ftrifle` | Fuzzy-browse locally cached packages, or live-search with instant preview cards; Enter shows the full detail card. `-Categories` browses the taxonomy vocabulary; `-Category`/`-WorksWith` search a specific facet directly. |
+| `Get-DFCategoryList [-Facet function\|worksWith] [-Counts]` | `tcats` | List the valid `-Category`/`-WorksWith` vocabulary, each term annotated with its live tool count |
+| `Update-DFCategoryDb [-WhatIf]`                       |           | Opt-in refresh of the category database from the latest published release, independent of module version — never run implicitly |
 
 ```powershell
 trifle ripgrep          # info card: installed via scoop? what do winget/choco/npm/crates carry?
@@ -237,6 +239,53 @@ trifle npm:left-pad -Readme           # + paged package readme
   already cached locally.
 - Detail entries are cached alongside search results and re-warmed by
   `Update-DFPackageCache`, so a query you've looked up before stays instant.
+
+### Discovery (`-Category` / `-WorksWith`)
+
+A curated, offline taxonomy ships with the module in `data/tool-categories.json`
+— function categories (e.g. `search`, `file-manager`) and works-with facets
+(e.g. `filesystem`, `git`) for a seed set of well-known CLI tools. Every facet
+match still resolves through the same live catalog search-and-merge path as an
+ordinary query, so installed state and versions are never a stale snapshot —
+the database is an index into live catalogs, not a cached answer.
+
+```powershell
+tcats                                          # every valid -Category/-WorksWith term, with live counts
+tcats -Facet function -Counts:$false           # bare list of function-facet terms only
+trifle -Category search                        # facet search: every seed-db tool tagged 'search'
+trifle -Category search -WorksWith filesystem   # AND across facets; -Category a,b ORs within one facet
+trifle ripgrep                                   # detail card now also shows Category/Related/Alt-to
+ftrifle -Categories                              # browse the vocabulary in fzf, drill into a facet
+```
+
+- **`trifle -Category <c> [-WorksWith <w>]`** / **`trifle -WorksWith <w>`** always
+  renders the match table (never the detail card), with the same `Id` column as
+  `-All`. Multiple values passed to one facet (`-Category a,b`) OR together;
+  `-Category` and `-WorksWith` combined AND across facets. `-Category`/
+  `-WorksWith` are their own parameter set — combining either with `-All` is
+  rejected at parameter binding, not just discouraged.
+- **`Get-DFCategoryList`** (`tcats`) lists the valid `-Category`/`-WorksWith`
+  vocabulary, each term annotated with its live tool count (the same index the
+  facet search itself uses, so counts never drift from what a matching search
+  would return). `-Facet function` or `-Facet worksWith` narrows to one
+  taxonomy; `-Counts:$false` prints a bare term list for scripting.
+- Any package found in the seed database gets `Category` / `Related` / `Alt to`
+  lines added to its detail card automatically — no flag needed, shown
+  whenever a detail card renders.
+- **`ftrifle -Categories`** browses the full vocabulary (every function and
+  works-with value, with live counts) in fzf; picking one drills into that
+  facet with the same live-search-and-preview flow as `ftrifle <query>`.
+  **`ftrifle -Category <value>`** / **`ftrifle -WorksWith <value>`** skip the
+  vocabulary browse and search that facet directly.
+- **`Update-DFCategoryDb`** downloads the latest published category database
+  and installs it under `$XDG_DATA_HOME/dotforge/`, taking precedence over the
+  module's shipped copy on the next load. Purely opt-in — independent of
+  module version, never run implicitly by `trifle`, `ftrifle`, or
+  `Update-DFPackageCache`.
+
+The shipped seed database covers ~70 well-known CLI tools. It grows over time
+via `build/categories/*.jsonc` content authoring and a
+`build/Build-DFCategoryDb.ps1` rebuild — not code changes.
 
 ### Scheduled cache refresh
 

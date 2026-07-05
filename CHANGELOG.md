@@ -57,6 +57,18 @@ All notable changes to DotForge are documented here.
   the full detail card. `Update-DFPackageCache` now also re-warms every cached
   detail entry (the files under each provider's `details/` cache ARE the
   re-warm list) so detail lookups stay warm alongside search results.
+- **trifle discovery (`-Category`/`-WorksWith`):** a curated, offline taxonomy
+  (~70 well-known CLI tools, function + works-with facets) ships with the
+  module in `data/tool-categories.json`. `trifle -Category <c> [-WorksWith <w>]`
+  facet-searches the seed database and resolves every match through the same
+  live catalog search-and-merge path as an ordinary query — installed state
+  and versions are never a stale snapshot. `Get-DFCategoryList` (`tcats`)
+  lists the valid vocabulary with live tool counts. The detail card gains
+  `Category`/`Related`/`Alt to` lines for any package in the seed database.
+  `ftrifle -Categories` browses the vocabulary interactively. `Update-DFCategoryDb`
+  refreshes the database independently of module releases (opt-in only,
+  never run implicitly). Built and regenerated via `build/Build-DFCategoryDb.ps1`
+  from hand-authored `build/categories/*.jsonc` fragments.
 
 ## [0.3.0-preview] - 2026-06-20
 

@@ -27,6 +27,16 @@ trifle rg -Fresh                  # block on live catalog data instead of cache
 # ftrifle zed -Readme               # fzf live-search with instant preview cards;
 #                                    # Enter -> detail card, then paged readme
 
+# ── Discovery (categories) ─────────────────────────────────────────────────
+# A curated, offline taxonomy ships with the module (~70 well-known CLI
+# tools). Every match still resolves through a live catalog search — the
+# database is an index, never a cached snapshot.
+tcats                              # list every valid -Category/-WorksWith term, with live counts
+# trifle -Category search           # facet search: every seed-db tool tagged 'search'
+# trifle -Category search -WorksWith filesystem   # AND across facets
+# trifle ripgrep                    # detail card now also shows Category/Related/Alt-to
+# ftrifle -Categories               # browse the vocabulary in fzf, drill into a facet
+
 # ── Scripting ──────────────────────────────────────────────────────────────
 # Piped output is always raw DotForge.ToolInfo objects (no ANSI). For capture
 # via assignment, use -AsObject (assignment looks interactive to pipeline

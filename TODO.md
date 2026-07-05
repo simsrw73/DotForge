@@ -33,6 +33,18 @@
 - [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true` for PS7+
 - [ ] **`Invoke-DFMaintenance`** — maintenance command that runs on a configurable schedule: purge completion cache, refresh help topic index, `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache
 - [ ] **trifle: alternatives / related commands** — deferred from trifle v1. Surface "alternatives" (e.g. ripgrep ↔ other tools tagged `search`) and related commands on the `Find-DFPackage` card. Candidate sources: shared `tags` in `Tools/*.json`, a curated `alternatives` field, or catalog keyword overlap. Revisit together with the name-collision merge wart (npm `bat` vs scoop `bat` currently merge into one row).
+- [ ] **Expand the trifle category-db seed corpus** — v1 ships ~70 hand-picked
+  tools (32 curated from `Tools/*.json` + 40 well-known extras). The spec's
+  long-run target is the full CLI-tool-union corpus (~300-500 tools). Growing
+  toward that is pure content authoring — add more `build/categories/*.jsonc`
+  fragments and rerun `build/Build-DFCategoryDb.ps1` — no code changes needed.
+- [ ] **trifle category-db phase 2: automated gathering pipeline** — deferred
+  from the discovery v1 spec (`docs/superpowers/specs/2026-07-05-trifle-discovery-v1-design.md`).
+  Auto-populate/maintain the category database from live external sources:
+  debtags, crates.io/PyPI trove classifiers, Homebrew analytics, Repology
+  identity resolution, GitHub topics, distro package-section mining. Also
+  covers making `popularity` a live, periodically-refreshed metric instead of
+  a build-time editorial tier.
 
 ## Priority 4 — Improvements
 
