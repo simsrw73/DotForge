@@ -56,16 +56,46 @@ Describe 'Get-DFCatalogDetailCache' {
         (Get-Content $file -Raw | ConvertFrom-Json).query | Should -BeExactly 'Extras/Zed'
     }
 
-    It 'kicks a background detail re-warm on a stale hit' {
+    It 'kicks a background detail re-warm on a stale hit (registered provider)' {
         Mock Start-DFCatalogRefreshJob { }
-        $null = Get-DFCatalogDetailCache -Provider npm -PackageId left-pad -Fetch { param($id)
-            New-DFToolSourceDetail -Source npm -PackageId $id }
-        $script:DFCatalogTtl['npm'] = [timespan]::FromMinutes(-1)   # force stale
+        # Background re-warm only fires for a REGISTERED provider — register a
+        # stand-in npm entry so this test reflects that precondition.
+        $script:DFCatalogProviders['npm'] = @{ Name = 'npm' }
         try {
-            $d = Get-DFCatalogDetailCache -Provider npm -PackageId left-pad -Fetch { throw 'no inline fetch' }
-            $d | Should -Not -BeNullOrEmpty
-            Should -Invoke Start-DFCatalogRefreshJob -ParameterFilter { $Kind -eq 'detail' -and $Query -eq 'left-pad' }
-        } finally { $script:DFCatalogTtl.Remove('npm') }
+            $null = Get-DFCatalogDetailCache -Provider npm -PackageId left-pad -Fetch { param($id)
+                New-DFToolSourceDetail -Source npm -PackageId $id }
+            $script:DFCatalogTtl['npm'] = [timespan]::FromMinutes(-1)   # force stale
+            try {
+                $d = Get-DFCatalogDetailCache -Provider npm -PackageId left-pad -Fetch { throw 'no inline fetch' }
+                $d | Should -Not -BeNullOrEmpty
+                Should -Invoke Start-DFCatalogRefreshJob -ParameterFilter { $Kind -eq 'detail' -and $Query -eq 'left-pad' }
+            } finally { $script:DFCatalogTtl.Remove('npm') }
+        } finally { $script:DFCatalogProviders.Remove('npm') }
+    }
+
+    It 'treats a stale hit as a miss for an unregistered provider (no background job, inline refresh)' {
+        Mock Start-DFCatalogRefreshJob { }
+        $null = Get-DFCatalogDetailCache -Provider github -PackageId 'owner/repo' -Fetch { param($id)
+            New-DFToolSourceDetail -Source github -PackageId $id -Publisher 'old' }
+        $script:DFCatalogTtl['github'] = [timespan]::FromMinutes(-1)   # force stale
+        try {
+            $d = Get-DFCatalogDetailCache -Provider github -PackageId 'owner/repo' -Fetch { param($id)
+                New-DFToolSourceDetail -Source github -PackageId $id -Publisher 'fresh' }
+            $d.Publisher | Should -Be 'fresh'
+            Should -Invoke Start-DFCatalogRefreshJob -Times 0
+        } finally { $script:DFCatalogTtl.Remove('github') }
+    }
+
+    It 'falls back to the stale cache for an unregistered provider when the inline refresh throws' {
+        Mock Start-DFCatalogRefreshJob { }
+        $null = Get-DFCatalogDetailCache -Provider github -PackageId 'owner/repo' -Fetch { param($id)
+            New-DFToolSourceDetail -Source github -PackageId $id -Publisher 'old' }
+        $script:DFCatalogTtl['github'] = [timespan]::FromMinutes(-1)   # force stale
+        try {
+            $d = Get-DFCatalogDetailCache -Provider github -PackageId 'owner/repo' -Fetch { throw 'api down' }
+            $d.Publisher | Should -Be 'old'
+            Should -Invoke Start-DFCatalogRefreshJob -Times 0
+        } finally { $script:DFCatalogTtl.Remove('github') }
     }
 
     It 'falls back to stale cache when the live fetch throws' {

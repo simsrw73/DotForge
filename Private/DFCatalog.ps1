@@ -312,6 +312,14 @@ function Get-DFCatalogDetailCache {
         (package has no detail) is NOT cached, so transient failures don't
         poison the cache. Cache-hit rehydration returns plain PSCustomObjects —
         consumers must be duck-typed, not PSTypeName-typed.
+
+        Pseudo-providers (e.g. 'github', 'github-readme') have no entry in
+        $script:DFCatalogProviders, so a background re-warm job would look up
+        the provider, find nothing, and no-op — leaving a stale entry stale
+        forever while still wasting a ThreadJob. For those, a stale hit is
+        treated as a MISS instead: the inline Fetch runs immediately (its
+        failure path still falls back to the stale copy), and no background
+        job is spawned.
     .PARAMETER Provider
         Provider name (cache subdirectory and TTL key). 'github' is valid here
         too — the GitHub enrichment reuses this engine.
@@ -344,11 +352,20 @@ function Get-DFCatalogDetailCache {
     $file = $cacheRoot ? (Join-Path $cacheRoot "$Provider/details/$($keyInfo.Key).json") : $null
     $cached = $file ? (Read-DFCatalogCacheFile -Path $file -Ttl $ttl) : $null
 
+    $treatAsMiss = $false
     if (-not $Fresh -and $cached) {
         if ($cached.Stale) {
-            Start-DFCatalogRefreshJob -Provider $Provider -Query $PackageId -Kind detail
+            if ($script:DFCatalogProviders.ContainsKey($Provider)) {
+                Start-DFCatalogRefreshJob -Provider $Provider -Query $PackageId -Kind detail
+            } else {
+                # No registered provider can re-warm this entry in the background
+                # (github / github-readme pseudo-providers) — refresh inline instead.
+                # $cached is kept around (not nulled) so the fetch-failure path below
+                # can still fall back to the stale copy.
+                $treatAsMiss = $true
+            }
         }
-        return @($cached.Data) | Select-Object -First 1
+        if (-not $treatAsMiss) { return @($cached.Data) | Select-Object -First 1 }
     }
 
     try {
