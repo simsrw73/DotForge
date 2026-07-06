@@ -9,6 +9,8 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
     . "$PSScriptRoot/../Private/Get-DFGitHubRepoInfo.ps1"
     . "$PSScriptRoot/../Private/Get-DFPackageReadme.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolIdentityGuideSchema.ps1"
+    . "$PSScriptRoot/../Private/Get-DFToolIdentityGuide.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFCatalogQueryMerge.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFPagerExe.ps1"
     . "$PSScriptRoot/../Public/DFHelpers.Pager.ps1"
@@ -65,6 +67,7 @@ Describe 'Find-DFPackage' {
         # shipped data/tool-categories.json. Tests that specifically exercise
         # category behavior override this with their own richer fixture.
         Mock Get-DFCategoryDb { [pscustomobject]@{ Raw = $null; FacetIndex = @{}; NameIndex = @{}; IdIndex = @{} } }
+        Mock Get-DFToolIdentityGuide { [pscustomobject]@{ Raw = $null; IdIndex = @{} } }
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedXdgCache
@@ -176,9 +179,10 @@ Describe 'Find-DFPackage' {
         $r[0].Sources.Source | Should -Contain 'scoop'
     }
 
-    It 'merges name-matched hits into the identity-mapped group (no duplicate rows)' {
+    It 'keeps a name-matched hit from an unlinked source separate (no false merge)' {
         # scoop is identity-mapped to DF tool 'ripgrep'; choco has no identity
-        # entry but the same package name — they must land in ONE merged row.
+        # entry at all. Sharing a package name is not proof of shared
+        # identity, so they must render as two separate rows, not merge.
         Mock Get-DFCatalogInstalled {
             @{
                 Items       = @()
@@ -186,10 +190,9 @@ Describe 'Find-DFPackage' {
             }
         }
         $r = @(Find-DFPackage ripgrep)
-        $r.Count | Should -Be 1
-        $r[0].DFTool | Should -Be 'ripgrep'
-        $r[0].Sources.Source | Should -Contain 'scoop'
-        $r[0].Sources.Source | Should -Contain 'choco'
+        $r.Count | Should -Be 2
+        ($r | Where-Object DFTool -eq 'ripgrep').Sources.Source | Should -Be @('scoop')
+        ($r | Where-Object { -not $_.DFTool }).Sources.Source | Should -Be @('choco')
     }
 
     It 'orders exact matches before keyword matches' {

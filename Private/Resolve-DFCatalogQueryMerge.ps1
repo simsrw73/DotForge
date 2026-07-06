@@ -90,24 +90,32 @@ function Resolve-DFCatalogQueryMerge {
 
     if ($RecordSeenQuery) { Add-DFCatalogSeenQuery -Query $QueryText }
 
-    # Merge per-catalog hits into one row per tool: identity-mapped hits
-    # (Tools/*.json packages blocks) collapse under the DotForge tool name even
-    # when catalogs name the package differently; the rest group by name.
-    $dfToolNames = @{}
-    foreach ($value in $installedInfo.IdentityMap.Values) { $dfToolNames[$value.ToLowerInvariant()] = $value }
+    # Merge per-catalog hits into one row per tool: an identity link — either
+    # the live Tools/*.json packages map, or the precomputed tool-identity
+    # guide (data/tool-identities.json) — collapses hits under the DotForge
+    # tool name even when catalogs name the package differently. On a
+    # (source, packageId) conflict between the two, Tools/*.json wins (it's
+    # checked first and short-circuits). Bare name-string matching across
+    # DIFFERENT catalog sources is never used as a grouping key — two
+    # unlinked same-named hits from different sources render as separate
+    # rows, on purpose: a shared display name is not proof of shared
+    # identity (see docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md).
+    $identityGuide = Get-DFToolIdentityGuide
 
     $resolveDFTool = {
         param($Hit)
         $id = $Hit.PackageId.ToLowerInvariant()
-        $name = $installedInfo.IdentityMap["$($Hit.Source):$id"]
+        $lookup = "$($Hit.Source):$id"
+        $name = $installedInfo.IdentityMap[$lookup]
         if (-not $name -and $id.Contains('/')) {
             # scoop ids are bucket-qualified; the packages map holds bare names
             $name = $installedInfo.IdentityMap["$($Hit.Source):$(($id -split '/')[-1])"]
         }
         if (-not $name) {
-            # No explicit mapping for this catalog, but the package shares a DF
-            # tool's name — group it there so one tool never renders twice.
-            $name = $dfToolNames[$Hit.Name.ToLowerInvariant()]
+            $name = $identityGuide.IdIndex[$lookup]
+            if (-not $name -and $id.Contains('/')) {
+                $name = $identityGuide.IdIndex["$($Hit.Source):$(($id -split '/')[-1])"]
+            }
         }
         $name
     }
@@ -116,7 +124,10 @@ function Resolve-DFCatalogQueryMerge {
     $dfNames = @{}
     foreach ($hit in $hits) {
         $dfName = & $resolveDFTool $hit
-        $key = $dfName ? "df:$dfName" : $hit.Name.ToLowerInvariant()
+        # No identity link: group by source-qualified name, never bare name
+        # alone — two different catalogs' same-named packages must never
+        # merge without a genuine identity link backing them.
+        $key = $dfName ? "df:$dfName" : "$($hit.Source):$($hit.Name.ToLowerInvariant())"
         if (-not $groups.Contains($key)) {
             $groups[$key] = [System.Collections.Generic.List[object]]::new()
             if ($dfName) { $dfNames[$key] = $dfName }
