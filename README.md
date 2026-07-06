@@ -177,6 +177,7 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 | `Select-DFPackage [-Query] [-Categories] [-Category <c>] [-WorksWith <w>] [-Source] [-Readme] [-GitInfo]` | `ftrifle` | Fuzzy-browse locally cached packages, or live-search with instant preview cards; Enter shows the full detail card. `-Categories` browses the taxonomy vocabulary; `-Category`/`-WorksWith` search a specific facet directly. |
 | `Get-DFCategoryList [-Facet function\|worksWith] [-Counts]` | `tcats` | List the valid `-Category`/`-WorksWith` vocabulary, each term annotated with its live tool count |
 | `Update-DFCategoryDb [-WhatIf]`                       |           | Opt-in refresh of the category database from the latest published release, independent of module version — never run implicitly |
+| `Update-DFToolIdentityGuide [-WhatIf]`                |           | Opt-in refresh of the tool-identity guide from the latest published release, independent of module version — never run implicitly |
 
 ```powershell
 trifle ripgrep          # info card: installed via scoop? what do winget/choco/npm/crates carry?
@@ -286,6 +287,16 @@ ftrifle -Categories                              # browse the vocabulary in fzf,
 The shipped seed database covers ~70 well-known CLI tools. It grows over time
 via `build/categories/*.jsonc` content authoring and a
 `build/Build-DFCategoryDb.ps1` rebuild — not code changes.
+
+**Cross-catalog identity.** Two catalogs' packages only ever merge into one
+row when they're genuinely the same tool — confirmed either by a curated
+`Tools/*.json` mapping or by the shipped tool-identity guide
+(`data/tool-identities.json`, verified via matching GitHub repos or
+homepages, refreshable independently via `Update-DFToolIdentityGuide`).
+A shared *name* alone is never enough: `trifle zed` shows the winget Zed
+editor and choco's unrelated `zed` package as separate rows, because they
+are, in fact, different tools. Coverage grows over time the same way the
+category database does — nothing is ever merged on a guess.
 
 ### Scheduled cache refresh
 

@@ -70,6 +70,21 @@ All notable changes to DotForge are documented here.
   never run implicitly). Built and regenerated via `build/Build-DFCategoryDb.ps1`
   from hand-authored `build/categories/*.jsonc` fragments.
 
+### Fixed
+
+- **trifle cross-catalog identity fix:** `Find-DFPackage`/`ftrifle` no longer
+  merge two different catalogs' packages into one row on a bare name match.
+  A new shipped, offline-verified tool-identity guide
+  (`data/tool-identities.json`, built from `Tools/*.json`'s existing curated
+  mappings via automated GitHub-repo and homepage-match verification, see
+  `build/Build-DFToolIdentities.ps1`) supplements the existing live
+  `Tools/*.json` identity mapping. Two catalog hits merge only when a
+  genuine identity link says they're the same tool; anything else renders
+  as separate rows — this fixes `trifle zed` wrongly combining the winget
+  Zed editor with choco's unrelated `zed` package. `Update-DFToolIdentityGuide`
+  refreshes the guide independently of module releases (opt-in only, never
+  run implicitly).
+
 ## [0.3.0-preview] - 2026-06-20
 
 ### Added

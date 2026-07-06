@@ -37,6 +37,11 @@ tcats                              # list every valid -Category/-WorksWith term,
 # trifle ripgrep                    # detail card now also shows Category/Related/Alt-to
 # ftrifle -Categories               # browse the vocabulary in fzf, drill into a facet
 
+# `trifle zed` never merges the winget Zed editor with choco's unrelated
+# `zed` package just because they share a name — cross-catalog merges
+# require a verified identity link (Tools/*.json or the shipped
+# tool-identity guide), never a name-string guess.
+
 # ── Scripting ──────────────────────────────────────────────────────────────
 # Piped output is always raw DotForge.ToolInfo objects (no ANSI). For capture
 # via assignment, use -AsObject (assignment looks interactive to pipeline

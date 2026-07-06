@@ -45,6 +45,24 @@
   identity resolution, GitHub topics, distro package-section mining. Also
   covers making `popularity` a live, periodically-refreshed metric instead of
   a build-time editorial tier.
+- [ ] **Grow the tool-identity guide past the 32 curated seed tools** — v1's
+  guide only links tools where `Tools/*.json` already provides multiple
+  known catalog ids to compare (that's what makes automated repo/homepage
+  verification possible in the first place). Growing coverage requires
+  first discovering candidate `(source, packageId)` pairs for
+  not-yet-curated tools — e.g. a future crawl, or mining co-occurrences from
+  live search results over time — deferred alongside the category
+  database's own phase-2 pipeline (`docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md`).
+- [ ] **trifle install-status verification (manifest/binary-driven)** —
+  sequenced next after the tool-identity guide. Package names frequently
+  differ from the binaries they install (Sysinternals-style collections:
+  one package, dozens of executables, none matching the package name).
+  Verify installed status against a package's actual declared
+  binaries/manifest rather than name-based heuristics; investigate whether
+  per-catalog checks can run live (uncached) cheaply enough for most
+  catalogs, given `Get-DFCatalogInstalled`'s existing 15-minute cache exists
+  specifically to amortize the few genuinely slow probes (PSGallery's
+  `Get-Module -ListAvailable` fallback, pipx's process spawn).
 
 ## Priority 4 — Improvements
 
