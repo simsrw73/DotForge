@@ -45,13 +45,16 @@
   identity resolution, GitHub topics, distro package-section mining. Also
   covers making `popularity` a live, periodically-refreshed metric instead of
   a build-time editorial tier.
-- [ ] **Grow the tool-identity guide past the 32 curated seed tools** — v1's
+- [ ] **Grow the tool-identity guide past the 28 curated seed tools** — v1's
   guide only links tools where `Tools/*.json` already provides multiple
   known catalog ids to compare (that's what makes automated repo/homepage
-  verification possible in the first place). Growing coverage requires
-  first discovering candidate `(source, packageId)` pairs for
-  not-yet-curated tools — e.g. a future crawl, or mining co-occurrences from
-  live search results over time — deferred alongside the category
+  verification possible in the first place). Of the 32 `Tools/*.json`
+  candidates, 4 (`npm`, `psreadline`, `scoop`, `winget` — catalog/companion
+  tooling, not standalone CLI tools) have an empty `packages` block and get
+  filtered out by `build/Build-DFToolIdentities.ps1`, leaving 28. Growing
+  coverage requires first discovering candidate `(source, packageId)` pairs
+  for not-yet-curated tools — e.g. a future crawl, or mining co-occurrences
+  from live search results over time — deferred alongside the category
   database's own phase-2 pipeline (`docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md`).
 - [ ] **trifle install-status verification (manifest/binary-driven)** —
   sequenced next after the tool-identity guide. Package names frequently
