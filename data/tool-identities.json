@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-07-06",
+  "tools": {
+    "bat": {
+      "packages": {
+        "scoop": "bat",
+        "winget": "sharkdp.bat",
+        "choco": "bat"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/sharkdp/bat"
+    },
+    "bitwarden": {
+      "packages": {
+        "scoop": "bitwarden-cli",
+        "winget": "Bitwarden.CLI"
+      },
+      "linkedVia": "curated"
+    },
+    "broot": {
+      "packages": {
+        "scoop": "broot",
+        "choco": "broot"
+      },
+      "linkedVia": "curated"
+    },
+    "chezmoi": {
+      "packages": {
+        "scoop": "chezmoi",
+        "winget": "twpayne.chezmoi",
+        "choco": "chezmoi"
+      },
+      "linkedVia": "curated"
+    },
+    "curl": {
+      "packages": {
+        "scoop": "curl",
+        "winget": "cURL.cURL",
+        "choco": "curl"
+      },
+      "linkedVia": "curated"
+    },
+    "delta": {
+      "packages": {
+        "scoop": "delta",
+        "winget": "dandavison.delta",
+        "choco": "delta"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/dandavison/delta"
+    },
+    "docker": {
+      "packages": {
+        "winget": "Docker.DockerDesktop"
+      },
+      "linkedVia": "curated"
+    },
+    "eza": {
+      "packages": {
+        "scoop": "eza",
+        "winget": "eza-community.eza",
+        "choco": "eza"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/eza-community/eza"
+    },
+    "fd": {
+      "packages": {
+        "scoop": "fd",
+        "winget": "sharkdp.fd",
+        "choco": "fd"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/sharkdp/fd"
+    },
+    "fzf": {
+      "packages": {
+        "scoop": "fzf",
+        "winget": "junegunn.fzf",
+        "choco": "fzf"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/junegunn/fzf"
+    },
+    "gh": {
+      "packages": {
+        "scoop": "gh",
+        "winget": "GitHub.cli",
+        "choco": "gh"
+      },
+      "linkedVia": "curated"
+    },
+    "glow": {
+      "packages": {
+        "scoop": "glow",
+        "choco": "glow"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/charmbracelet/glow"
+    },
+    "gsudo": {
+      "packages": {
+        "scoop": "gsudo",
+        "winget": "gerardog.gsudo",
+        "choco": "gsudo"
+      },
+      "linkedVia": "curated"
+    },
+    "jq": {
+      "packages": {
+        "scoop": "jq",
+        "winget": "jqlang.jq",
+        "choco": "jq"
+      },
+      "linkedVia": "curated"
+    },
+    "lazygit": {
+      "packages": {
+        "scoop": "lazygit",
+        "winget": "JesseDuffield.lazygit",
+        "choco": "lazygit"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/jesseduffield/lazygit"
+    },
+    "less": {
+      "packages": {
+        "scoop": "less",
+        "choco": "less"
+      },
+      "linkedVia": "curated"
+    },
+    "micro": {
+      "packages": {
+        "scoop": "micro",
+        "choco": "micro"
+      },
+      "linkedVia": "curated"
+    },
+    "oh-my-posh": {
+      "packages": {
+        "scoop": "oh-my-posh",
+        "winget": "JanDeDobbeleer.OhMyPosh"
+      },
+      "linkedVia": "curated"
+    },
+    "posh-git": {
+      "packages": {
+        "psresource": "posh-git",
+        "scoop": "posh-git"
+      },
+      "linkedVia": "curated"
+    },
+    "procs": {
+      "packages": {
+        "scoop": "procs",
+        "choco": "procs"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/dalance/procs"
+    },
+    "PSFzf": {
+      "packages": {
+        "psresource": "PSFzf",
+        "scoop": "psfzf"
+      },
+      "linkedVia": "curated"
+    },
+    "ripgrep": {
+      "packages": {
+        "scoop": "ripgrep",
+        "winget": "BurntSushi.ripgrep.MSVC",
+        "choco": "ripgrep"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/burntsushi/ripgrep"
+    },
+    "rustup": {
+      "packages": {
+        "scoop": "rustup",
+        "winget": "Rustlang.Rustup"
+      },
+      "linkedVia": "curated"
+    },
+    "Terminal-Icons": {
+      "packages": {
+        "psresource": "Terminal-Icons"
+      },
+      "linkedVia": "curated"
+    },
+    "uv": {
+      "packages": {
+        "scoop": "uv",
+        "winget": "astral-sh.uv"
+      },
+      "linkedVia": "curated"
+    },
+    "wget": {
+      "packages": {
+        "scoop": "wget",
+        "choco": "wget"
+      },
+      "linkedVia": "curated"
+    },
+    "winfetch": {
+      "packages": {
+        "scoop": "winfetch"
+      },
+      "linkedVia": "curated"
+    },
+    "zoxide": {
+      "packages": {
+        "scoop": "zoxide",
+        "winget": "ajeetdsouza.zoxide",
+        "choco": "zoxide"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/ajeetdsouza/zoxide"
+    }
+  }
+}
