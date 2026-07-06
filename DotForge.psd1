@@ -57,7 +57,8 @@
         'Update-DFPackageCache',
         'Select-DFPackage',
         'Get-DFCategoryList',
-        'Update-DFCategoryDb'
+        'Update-DFCategoryDb',
+        'Update-DFToolIdentityGuide'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
