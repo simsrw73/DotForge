@@ -38,8 +38,8 @@ All notable changes to DotForge are documented here.
   cmdlet help) — otherwise the winget index ages silently on machines that
   rarely invoke winget.
 - **`Select-DFPackage` (`ftrifle`):** fzf browser over every locally cached
-  package (scoop + winget indexes, cached web queries, installed snapshot);
-  Enter renders the trifle info card.
+  package (scoop + winget indexes, cached web queries, and a live
+  installed-package check); Enter renders the trifle info card.
 - **`trifle` detail view:** a confident single match (exact id or exact
   name/moniker) now renders a richer detail card instead of
   the summary card — every catalog (scoop, winget, choco, npm, PyPI,
