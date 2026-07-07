@@ -60,6 +60,21 @@ Describe 'Find-DFPackage' {
             }
         }
         $script:DFCatalogAvailability = @{}
+
+        # Get-DFCatalogInstalled (trifle-live-install-status) now calls
+        # Invoke-DFCatalogInstalledFetch against the real shipped provider files
+        # instead of iterating $script:DFCatalogProviders -- mock the fetch
+        # itself so these tests' fake GetInstalled scriptblocks are still
+        # consulted, keeping them isolated from this machine's real installed
+        # packages. IdentityMap construction is untouched and still runs for
+        # real (against the live Tools/*.json db), unless a test below
+        # overrides Get-DFCatalogInstalled wholesale for its own fixture.
+        Mock Invoke-DFCatalogInstalledFetch {
+            @(foreach ($p in $script:DFCatalogProviders.Values) {
+                if ($p.GetInstalled) { & $p.GetInstalled }
+            })
+        }
+
         Mock Test-DFOutputPiped { $true }   # default: object output
 
         # Isolated, harmless default so the query-path detail-enrichment
