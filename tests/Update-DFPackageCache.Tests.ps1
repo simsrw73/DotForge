@@ -19,20 +19,24 @@ Describe 'Update-DFPackageCache' {
             scoop = @{
                 Name = 'scoop'; Kind = 'snapshot'; Test = { $true }
                 Search = { }
-                GetInstalled = { [pscustomobject]@{ Source = 'scoop'; Name = 'ripgrep'; PackageId = 'ripgrep'; InstalledVersion = '14.1.0' } }
                 Refresh = { param($Query) $global:DFTestRefreshLog.Add("scoop:$Query") }
             }
             crates = @{
                 Name = 'crates'; Kind = 'query-cache'; Test = { $true }
                 Search = { }
-                GetInstalled = { }
                 Refresh = { param($Query) $global:DFTestRefreshLog.Add("crates:$Query") }
             }
             npm = @{
                 Name = 'npm'; Kind = 'query-cache'; Test = { $true }
                 Search = { }
-                GetInstalled = { }
                 Refresh = { param($Query) $global:DFTestRefreshLog.Add("npm:$Query") }
+            }
+        }
+
+        Mock Get-DFCatalogInstalled {
+            @{
+                Items       = @([pscustomobject]@{ Source = 'scoop'; Name = 'ripgrep'; PackageId = 'ripgrep'; InstalledVersion = '14.1.0' })
+                IdentityMap = @{}
             }
         }
     }
