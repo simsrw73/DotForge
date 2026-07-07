@@ -4,6 +4,9 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFSqliteQuery.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
+    . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogLocalPackages.ps1"
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
@@ -18,9 +21,6 @@ BeforeAll {
         Write-DFCatalogCacheFile -Path (Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs/npm/queries/prettier-abc.json') -Query 'prettier' -Results @(
             [pscustomobject]@{ Source = 'npm'; PackageId = 'prettier'; Name = 'prettier'; Description = 'formatter'; LatestVersion = '3.3.0'; MatchKind = 'exact-name' }
         )
-        Write-DFCatalogCacheFile -Path (Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs/installed.json') -Query '' -Results @(
-            [pscustomobject]@{ Source = 'crates'; Name = 'ripgrep'; PackageId = 'ripgrep'; InstalledVersion = '14.1.1' }
-        )
     }
 }
 
@@ -29,6 +29,12 @@ Describe 'Get-DFCatalogLocalPackages' {
         $script:SavedXdgCache = $Env:XDG_CACHE_HOME
         $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
         Initialize-LocalCaches
+        Mock Get-DFCatalogInstalled {
+            @{
+                Items       = @([pscustomobject]@{ Source = 'crates'; Name = 'ripgrep'; PackageId = 'ripgrep'; InstalledVersion = '14.1.1' })
+                IdentityMap = @{}
+            }
+        }
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedXdgCache
@@ -56,6 +62,7 @@ Describe 'Select-DFPackage' {
         $script:SavedXdgCache = $Env:XDG_CACHE_HOME
         $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
         Initialize-LocalCaches
+        Mock Get-DFCatalogInstalled { @{ Items = @(); IdentityMap = @{} } }
         function Find-DFPackage {
             [CmdletBinding()]
             param(

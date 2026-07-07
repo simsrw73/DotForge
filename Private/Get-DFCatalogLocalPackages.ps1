@@ -3,9 +3,9 @@
 function Get-DFCatalogLocalPackages {
     <#
     .SYNOPSIS
-        Aggregates every locally cached catalog (scoop index, winget index,
-        cached web queries, installed snapshot) into one entry per package name
-        with merged sources — never touches the network.
+        Aggregates every local catalog source (scoop index, winget index,
+        cached web queries, and a live installed-package check) into one entry
+        per package name with merged sources — never touches the network.
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -51,8 +51,8 @@ function Get-DFCatalogLocalPackages {
         }
     }
 
-    $installed = Read-DFCatalogCacheFile -Path (Join-Path $cacheRoot 'installed.json') -Ttl ([timespan]::MaxValue)
-    foreach ($entry in @($installed.Data)) { & $add $entry.Name $entry.Source $null }
+    $installed = Get-DFCatalogInstalled
+    foreach ($entry in @($installed.Items)) { & $add $entry.Name $entry.Source $null }
 
     foreach ($value in $aggregate.Values) {
         [pscustomobject]@{
