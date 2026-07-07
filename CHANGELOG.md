@@ -84,6 +84,13 @@ All notable changes to DotForge are documented here.
   Zed editor with choco's unrelated `zed` package. `Update-DFToolIdentityGuide`
   refreshes the guide independently of module releases (opt-in only, never
   run implicitly).
+- **trifle installed-status caching:** `trifle`'s installed-status check no
+  longer relies on a 15-minute cache that `-Fresh` never actually reached —
+  installing a tool and immediately re-running `trifle <tool>` now always
+  reflects the true current state. All 7 catalog providers run as one
+  parallel batch, each dot-sourcing only the small set of private files its
+  own check needs (not the whole module), keeping the added latency to
+  roughly the single slowest provider rather than their sum.
 
 ## [0.3.0-preview] - 2026-06-20
 
