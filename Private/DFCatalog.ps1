@@ -17,9 +17,8 @@ $script:DFCatalogOrder = @('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 
 # TTLs are test-overridable; choco gets a long TTL because the community OData
 # API is slow and aggressively rate-limited.
 $script:DFCatalogTtl = @{
-    installed = [timespan]::FromMinutes(15)
-    choco     = [timespan]::FromHours(72)
-    default   = [timespan]::FromHours(24)
+    choco   = [timespan]::FromHours(72)
+    default = [timespan]::FromHours(24)
 }
 
 $script:DFCatalogSeenQueryLimit = 50
