@@ -62,3 +62,4 @@
 - [ ] **Dynamic fzf preview sizing** — replace the hardcoded `right:60%` default with sizing derived from content length or terminal width
 - [ ] **PSGallery icon** — add `IconUri` to `PrivateData.PSData` in psd1 for a better gallery page presentation
 - [ ] **Themes via LS_COLORS** — use `vivid` to setup LS_COLORS
+- [ ] **$HOME vs $LOCALAPPDATA** — We could allow users to choose between `$HOME` and `$LOCALAPPDATA` for the root of XDG directories.

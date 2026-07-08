@@ -24,8 +24,10 @@ function Initialize-DFEnvironment {
     if (-not $Env:XDG_DATA_HOME)   { $Env:XDG_DATA_HOME   = Join-Path $home '.local' 'share' }
     if (-not $Env:XDG_STATE_HOME)  { $Env:XDG_STATE_HOME  = Join-Path $home '.local' 'state' }
     if (-not $Env:XDG_CACHE_HOME)  { $Env:XDG_CACHE_HOME  = Join-Path $home '.cache' }
+    # The variable is not part of the XDG spec, but the location is, so this is useful
+    if (-not $Env:XDG_BIN_HOME)  { $Env:XDG_BIN_HOME  = Join-Path $home '.local' 'bin' }
 
-    @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME) |
+    @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME, $Env:XDG_BIN_HOME) |
         ForEach-Object { New-DFDirectory $_ }
 
     $pms = @(Resolve-DFPackageManager -Force | Where-Object { $_ })
