@@ -14,7 +14,11 @@
   },
   "xdg": {
     "compliance": "none",
-    "method": "default"
+    "method": "env",
+    "vars": {
+      "GIT_PAGER": "delta",
+      "DELTA_FEATURES": "catppuccin-mocha"
+    }
   },
   "aliases": {},
   "picker": null
