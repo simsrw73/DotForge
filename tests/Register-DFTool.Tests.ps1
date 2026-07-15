@@ -8,6 +8,9 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
     . "$PSScriptRoot/../Public/Get-DFTool.ps1"
     . "$PSScriptRoot/../Public/Find-DFTool.ps1"
+    # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
+    . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
+    . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
