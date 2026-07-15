@@ -1,0 +1,20 @@
+{
+  "name": "carapace",
+  "description": "Multi-shell completion engine — argument completers for 500+ CLI tools",
+  "tags": [
+    "completion",
+    "shell",
+    "productivity"
+  ],
+  "executable": "carapace.exe",
+  "packages": {
+    "scoop": "carapace-bin",
+    "winget": "rsteube.Carapace"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "default"
+  },
+  "aliases": {},
+  "picker": null
+}

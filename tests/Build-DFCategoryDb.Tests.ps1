@@ -75,7 +75,7 @@ Describe 'the shipped data/tool-categories.json' {
         Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs) | Should -BeTrue -Because ($errs -join '; ')
     }
 
-    It 'contains all 32 tools curated in Tools/*.json' {
+    It 'contains every tool curated in Tools/*.json' {
         $doc = Get-Content "$PSScriptRoot/../data/tool-categories.json" -Raw | ConvertFrom-Json
         $curatedNames = Get-ChildItem "$PSScriptRoot/../Tools" -Filter '*.json' | ForEach-Object BaseName
         foreach ($name in $curatedNames) {

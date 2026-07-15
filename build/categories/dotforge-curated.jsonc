@@ -23,6 +23,11 @@
     "ids": { "scoop": "broot", "choco": "broot" },
     "relatedTo": ["fzf", "fd"], "popularity": 1
   },
+  "carapace": {
+    "function": ["shell-enhancement"], "worksWith": ["text"], "interface": "cli",
+    "ids": { "scoop": "carapace-bin", "winget": "rsteube.Carapace" },
+    "relatedTo": ["psreadline", "PSFzf"], "popularity": 1
+  },
   "chezmoi": {
     "function": ["dotfiles-management"], "worksWith": ["filesystem", "git"], "interface": "cli",
     "ids": { "scoop": "chezmoi", "winget": "twpayne.chezmoi", "choco": "chezmoi" },

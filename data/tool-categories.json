@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-05",
+  "updated": "2026-07-15",
   "taxonomy": {
     "function": [
       "search",
@@ -169,6 +169,24 @@
       "relatedTo": [
         "fzf",
         "fd"
+      ],
+      "popularity": 1
+    },
+    "carapace": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "carapace-bin",
+        "winget": "rsteube.Carapace"
+      },
+      "relatedTo": [
+        "psreadline",
+        "PSFzf"
       ],
       "popularity": 1
     },

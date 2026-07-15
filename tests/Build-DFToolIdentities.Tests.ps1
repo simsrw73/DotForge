@@ -105,7 +105,7 @@ Describe 'the shipped data/tool-identities.json' {
         Test-DFToolIdentityGuideSchema -Database $doc -Errors ([ref]$errs) | Should -BeTrue -Because ($errs -join '; ')
     }
 
-    It 'contains all 32 tools that have a packages block in Tools/*.json' {
+    It 'contains every tool that has a packages block in Tools/*.json' {
         $doc = Get-Content "$PSScriptRoot/../data/tool-identities.json" -Raw | ConvertFrom-Json
         $curatedNames = Get-ChildItem "$PSScriptRoot/../Tools" -Filter '*.json' | ForEach-Object {
             $t = Get-Content $_.FullName -Raw | ConvertFrom-Json
