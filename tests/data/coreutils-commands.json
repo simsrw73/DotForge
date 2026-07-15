@@ -1,0 +1,34 @@
+{
+  "//": "Dev-time tripwire fixture — NOT used at runtime. Get-DFCommandConflict always",
+  "//2": "reads the live set from the user's machine; this list exists only so that",
+  "//3": "tests/Coreutils.Conflicts.Tests.ps1 can flag a NEW DotForge alias that collides",
+  "//4": "with coreutils on a dev box or CI runner that has no coreutils installed.",
+  "//5": "",
+  "//6": "Provenance: `coreutils-manager status` on Coreutils for Windows 2026.6.16",
+  "//7": "(winget Microsoft.Coreutils), captured 2026-07-15. Includes utilities that are",
+  "//8": "currently disabled, because the tripwire cares about the full namespace, not one",
+  "//9": "machine's configuration.",
+  "//10": "",
+  "//11": "'la' is deliberately absent: it is not a utility. The installer synthesizes it",
+  "//12": "into the readline hook only while 'ls' is enabled, and coreutils-manager rejects",
+  "//13": "`disable la`. See docs/external-dependencies.md.",
+  "//14": "",
+  "//15": "Staleness is acceptable and expected: a newer coreutils may add utilities this",
+  "//16": "list lacks. That only weakens the tripwire, never the runtime check. Refresh with:",
+  "//17": "  coreutils-manager status | ForEach-Object { ($_ -split '\\s+')[0] }",
+
+  "version": "2026.6.16",
+  "captured": "2026-07-15",
+  "commands": [
+    "arch", "b2sum", "base32", "base64", "basename", "basenc", "cat", "cksum",
+    "comm", "cp", "csplit", "cut", "date", "df", "dirname", "du", "echo", "env",
+    "expr", "factor", "false", "find", "fmt", "fold", "grep", "head", "hostname",
+    "join", "link", "ln", "ls", "md5sum", "mkdir", "mktemp", "mv", "nl", "nproc",
+    "numfmt", "od", "paste", "pathchk", "pr", "printenv", "printf", "ptx", "pwd",
+    "readlink", "realpath", "rm", "rmdir", "seq", "sha1sum", "sha224sum",
+    "sha256sum", "sha384sum", "sha512sum", "shuf", "sleep", "sort", "split",
+    "stat", "sum", "tac", "tail", "tee", "test", "touch", "tr", "true",
+    "truncate", "tsort", "unexpand", "uniq", "unlink", "uptime", "wc", "xargs",
+    "yes"
+  ]
+}

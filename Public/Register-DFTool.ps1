@@ -235,4 +235,26 @@ function Register-DFTool {
 
         Write-Verbose "DotForge: $($tool.name) registered"
     }
+
+    # ── Shadowed-command notice ─────────────────────────────────────────────────
+    # One consolidated warning rather than one per tool. Costs nothing when coreutils
+    # is absent (Get-DFCoreutilsShadowSet returns early), and self-extinguishes once
+    # the conflict is resolved, so it is not a standing nag. Resolving it needs
+    # elevation and is a policy choice, so DotForge only ever prints the command.
+    if (-not ($Global:DFConfig -and $Global:DFConfig['SkipConflictCheck'])) {
+        $conflicts = @(Get-DFCommandConflict -ToolsPath $resolvedToolsPath -ErrorAction Ignore)
+        if ($conflicts) {
+            $names = ($conflicts.Command | Sort-Object) -join ' '
+            # DisableWith, not Command: 'la' is not a coreutils utility and the manager
+            # rejects it — disabling 'ls' is what removes it.
+            $disable = ($conflicts.DisableWith | Sort-Object -Unique) -join ' '
+            Write-Warning @"
+DotForge: coreutils shadows $($conflicts.Count) DotForge command(s) before PowerShell resolves them: $names
+  These will not reach DotForge's version at the prompt, even though Get-Command reports otherwise.
+  Keep DotForge's:  coreutils-manager disable $disable   (run elevated, once)
+  Keep coreutils':  `$DFConfig.IgnoreConflicts = @($(($conflicts.Command | Sort-Object | ForEach-Object { "'$_'" }) -join ', '))
+  Silence entirely: `$DFConfig.SkipConflictCheck = `$true
+"@
+        }
+    }
 }

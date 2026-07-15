@@ -58,7 +58,8 @@
         'Select-DFPackage',
         'Get-DFCategoryList',
         'Update-DFCategoryDb',
-        'Update-DFToolIdentityGuide'
+        'Update-DFToolIdentityGuide',
+        'Get-DFCommandConflict'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
