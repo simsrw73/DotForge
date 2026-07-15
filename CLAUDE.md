@@ -98,6 +98,15 @@ Each `Tools/*.json` must have at minimum:
 - `xdg.method`: one of `default | env | config | wrapper | manual`
 - `xdg.vars`: env vars to set when applying XDG config — values may be XDG path templates (expanded via `Expand-DFXdgPath`) OR plain strings (e.g., `LESS` flag strings). Phase 3 tooling must not assume all `vars` values are filesystem paths.
 
+## External Dependencies
+
+DotForge relies on undocumented internals of several tools it configures (coreutils' `$__COREUTILS__`
+variable and section-marker GUID, PSReadLine's `Colors` suppression, zoxide's prompt hooking, …).
+**All of them are catalogued in `docs/external-dependencies.md` — read it before changing
+`Private/Get-DFCoreutilsShadowSet.ps1` or any `Tools/*.ps1` sidecar, and add an entry there when you
+take a new dependency on another tool's internals.** Each entry records what breaks and how it
+degrades; the rule is that undocumented dependencies must degrade silently, never fail.
+
 ## Key Design Decisions
 
 - `Invoke-DFPicker` uses a private `Invoke-DFFzf` wrapper so tests can mock fzf

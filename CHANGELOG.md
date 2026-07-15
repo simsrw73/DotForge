@@ -6,6 +6,46 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Get-DFCommandConflict`:** reports DotForge commands that Coreutils for Windows
+  shadows before PowerShell can resolve them. Coreutils installs a
+  `PSConsoleHostReadLine` hook that rewrites matching command names to `<name>.cmd`
+  above command resolution, so affected aliases (`cat`, `touch`, `env`, `paste`) never
+  run — while `Get-Command` still reports DotForge's version, making the failure
+  invisible to normal probing. `Register-DFTool` now emits one consolidated warning
+  listing the affected commands and the exact `coreutils-manager disable` line.
+  Resolving the conflict needs elevation and is a policy choice, so DotForge only ever
+  prints the command; it never elevates or writes to the registry. Suppress per-command
+  with `$DFConfig.IgnoreConflicts`, or entirely with `$DFConfig.SkipConflictCheck`.
+  The check reads the same set the hook itself consults, so it costs nothing when
+  coreutils is absent and correctly reports no conflict in hosts where the hook never
+  loads (it is injected into the ConsoleHost profile only, so the VS Code terminal is
+  unaffected).
+- **`docs/external-dependencies.md`:** catalogues every undocumented internal DotForge
+  relies on in the tools it configures — coreutils' `$__COREUTILS__` variable, its
+  section-marker GUID and generated code shape, its profile load order and per-host
+  injection, its synthesized `la`; PSReadLine's suppression of `Colors` in non-VT
+  terminals; zoxide's prompt hooking and re-hook guard — plus documented-but-load-bearing
+  assumptions. Each entry records what breaks if it changes and how DotForge degrades.
+  Undocumented dependencies degrade silently; they never fail.
+- **Coreutils collision tripwire (`tests/Coreutils.Conflicts.Tests.ps1`):** fails the suite
+  when a new DotForge alias collides with a coreutils utility, so contributors without
+  coreutils installed find out at dev time rather than shipping a command that silently
+  cannot run. Accepted collisions are listed with reasons; the fixture records the
+  coreutils version it was captured from.
+- **`carapace` tool record:** registers native argument completers for ~519 commands,
+  including `eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`,
+  and `winget`. Composes with PSFzf, which owns the Tab key and routes through
+  `TabExpansion2`.
+
+### Fixed
+
+- **`eza` aliases dropped their path argument.** `--icons` and `--hyperlink` take an
+  optional value, and a trailing bare `--hyperlink` consumed the caller's path, so
+  `ll .` failed with `invalid value '.' for '--hyperlink [<WHEN>]'`. All four aliases
+  now bind values explicitly (`--icons=auto`, `--hyperlink=auto`).
+- **`fzf` and `delta` configuration restored** to `Tools/fzf.json` and
+  `Tools/delta.json` (`FZF_DEFAULT_OPTS` and friends; `GIT_PAGER`, `DELTA_FEATURES`).
+
 - **`Find-DFPackage` (`trifle`):** fast multi-catalog tool lookup. Given a command
   name or keywords, searches scoop, winget, choco, npm, PyPI, crates.io, and
   PSGallery and renders a merged info card (single confident match) or match

@@ -12,6 +12,15 @@ $DFConfig = @{
     # Tools excluded from Register-DFTool -All
     # lsd conflicts with eza; both provide ls — keep only one
     SkipTools = @('lsd')
+
+    # If Coreutils for Windows is installed, its readline hook rewrites command
+    # names before PowerShell resolves them, so DotForge aliases sharing a name
+    # (cat, touch, env, paste) never run. Register-DFTool warns once; see
+    # `Get-DFCommandConflict` and the Coreutils Conflicts section of the README.
+    # List commands here to keep coreutils' version and silence the warning:
+    #   IgnoreConflicts = @('cat')
+    # Or turn the check off entirely:
+    #   SkipConflictCheck = $true
 }
 
 Import-Module DotForge

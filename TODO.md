@@ -7,6 +7,16 @@
 
 ## Priority 2 — Open Problems
 
+- [ ] **Legacy profile fold-in is incomplete — the remainder is silently inactive** — see [the design spec](docs/superpowers/specs/2026-07-15-legacy-profile-fold-in-design.md) for the full audit. `cli_tools_config.ps1` is no longer dot-sourced by any profile, so everything not yet folded in is a **live regression**, not a backlog. Remaining: 12 fzf pickers, 5 uncovered completers, small functions, and 6 tools with no record. Sub-items:
+  - [x] **Restore `fzf` and `delta` env vars** — done 2026-07-15 (`Tools/fzf.json`, `Tools/delta.json`). Caveat: `DELTA_FEATURES=catppuccin-mocha` is a **no-op** — no `[delta "catppuccin-mocha"]` feature is defined in any git config scope and delta silently ignores unknown features. Define it to make it live.
+  - [x] **Decide Carapace vs. a DotForge completion engine** — done 2026-07-15: **carapace adopted**, no engine built. Now a DotForge tool (`Tools/carapace.json` + `.ps1`), picked up by the existing `Register-DFTool -All`; no profile change needed. Covers 11/16 (`eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`, `winget`). Composes with PSFzf because it registers argument completers and never binds Tab.
+  - [ ] **5 tools still lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`) over reviving a completion engine.
+  - [ ] **`"picker": "custom"` is unverified** — 10 tools declare it with no sidecar picker (`gh`, `jq`, `glow`, `docker`, `rustup`, `npm`, `uv`, `chezmoi`, `bitwarden`, `scoop`); `Register-DFTool` silently does nothing. Add a test asserting every `custom` tool has a sidecar that defines a picker.
+  - [ ] **`Register-DFTool` help claims it "registers argument completers"** (`Public/Register-DFTool.ps1:11`) — only indirectly true now, via the carapace sidecar; the wording still implies a schema-driven feature that does not exist. Fix the wording.
+  - [ ] **`xdg.method` can't express `env` + config seeding** — `ripgrep` needs `RIPGREP_CONFIG_PATH` *and* a seeded default `ripgreprc`; `wget` needs `WGETRC` *and* an empty file. `method` is a single value and the `config` branch sets no env vars. Consider allowing an array, or a `seed` block independent of `method`.
+- [ ] **Clipboard tests are flaky — they use the real OS clipboard** — `tests/DFHelpers.Clipboard.Tests.ps1` round-trips through `Set-Clipboard`/`Get-Clipboard`, which is shared machine-wide state. Any concurrent clipboard write (another app, a parallel test run) makes `sets clipboard from a positional argument` fail intermittently; observed once on 2026-07-15, then 5/5 passing three runs in isolation. Mock the clipboard boundary the way `Invoke-DFFzf` is mocked for fzf, rather than driving the real one.
+- [ ] **Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` was captured from Coreutils for Windows 2026.6.16 on 2026-07-15. A newer release may add utilities the list lacks, which weakens the dev-time tripwire (never the runtime check, which always reads the live set). Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
+- [ ] **`AliasesToExport` is decorative** — DotForge's helper aliases are created with `Set-Alias -Scope Global` at dot-source time, so the module never owns them: `(Get-Module DotForge).ExportedAliases` is empty and `Remove-Module DotForge` leaves the aliases behind. `Get-DFCommandConflict` reads `AliasesToExport` out of the manifest for exactly this reason. Related to the `-Force` alias item below; fixing that would likely fix this.
 - [ ] **Help header colorization misses `ABOUT_ALIAS_PROVIDER`-style headers** — `Invoke-DFHelp` regex matches ALL-CAPS headers but fails when they contain underscores (e.g. `ABOUT_ALIAS_PROVIDER`). Extend the regex to allow underscores.
 - [ ] **`'Out-String" 2>nul' is not recognized`** — error appears in some contexts; investigate source (likely a companion script using CMD-style stderr redirect instead of PowerShell `2>$null`)
 - [ ] **Red `?` on a line by itself in some Help output** — appears at the same indentation as surrounding content; investigate whether it's a broken ANSI sequence or a `Get-Help` rendering artifact
@@ -33,8 +43,8 @@
 - [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true` for PS7+
 - [ ] **`Invoke-DFMaintenance`** — maintenance command that runs on a configurable schedule: purge completion cache, refresh help topic index, `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache
 - [ ] **trifle: alternatives / related commands** — deferred from trifle v1. Surface "alternatives" (e.g. ripgrep ↔ other tools tagged `search`) and related commands on the `Find-DFPackage` card. Candidate sources: shared `tags` in `Tools/*.json`, a curated `alternatives` field, or catalog keyword overlap. Revisit together with the name-collision merge wart (npm `bat` vs scoop `bat` currently merge into one row).
-- [ ] **Expand the trifle category-db seed corpus** — v1 ships ~70 hand-picked
-  tools (32 curated from `Tools/*.json` + 40 well-known extras). The spec's
+- [ ] **Expand the trifle category-db seed corpus** — currently 73 hand-picked
+  tools (33 curated from `Tools/*.json` + 40 well-known extras). The spec's
   long-run target is the full CLI-tool-union corpus (~300-500 tools). Growing
   toward that is pure content authoring — add more `build/categories/*.jsonc`
   fragments and rerun `build/Build-DFCategoryDb.ps1` — no code changes needed.
@@ -45,13 +55,13 @@
   identity resolution, GitHub topics, distro package-section mining. Also
   covers making `popularity` a live, periodically-refreshed metric instead of
   a build-time editorial tier.
-- [ ] **Grow the tool-identity guide past the 28 curated seed tools** — v1's
+- [ ] **Grow the tool-identity guide past the 29 curated seed tools** — v1's
   guide only links tools where `Tools/*.json` already provides multiple
   known catalog ids to compare (that's what makes automated repo/homepage
-  verification possible in the first place). Of the 32 `Tools/*.json`
+  verification possible in the first place). Of the 33 `Tools/*.json`
   candidates, 4 (`npm`, `psreadline`, `scoop`, `winget` — catalog/companion
   tooling, not standalone CLI tools) have an empty `packages` block and get
-  filtered out by `build/Build-DFToolIdentities.ps1`, leaving 28. Growing
+  filtered out by `build/Build-DFToolIdentities.ps1`, leaving 29. Growing
   coverage requires first discovering candidate `(source, packageId)` pairs
   for not-yet-curated tools — e.g. a future crawl, or mining co-occurrences
   from live search results over time — deferred alongside the category

@@ -77,10 +77,61 @@ $DFConfig = @{
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
+    IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
+    SkipConflictCheck   = $false                # $true silences the shadowed-command check
 }
 Import-Module DotForge
 Register-DFTool -All
 ```
+
+## Coreutils Conflicts
+
+If you have [Coreutils for Windows](https://github.com/uutils/coreutils) installed, some DotForge
+aliases will silently not work — `cat`, `touch`, `env`, and `paste` are the usual ones.
+
+Coreutils installs a `PSConsoleHostReadLine` hook that rewrites matching command names to
+`<name>.cmd` **before PowerShell resolves them**. No alias, function, or `-Force` can win, because
+the name is gone before resolution begins. The confusing part: `Get-Command cat` still reports
+DotForge's version, so the alias inspects as correct while typing `cat` runs coreutils.
+
+`Register-DFTool` detects this and warns once, listing the affected commands. To see them anytime:
+
+```powershell
+Get-DFCommandConflict
+
+# Command ShadowedBy WouldResolveTo Ignored DisableWith
+# ------- ---------- -------------- ------- -----------
+# cat     coreutils  bat            False   cat
+# la      coreutils  eza            False   ls
+# touch   coreutils  New-DFFile     False   touch
+```
+
+Use `DisableWith`, not `Command`, to build the disable list — `la` is not a coreutils
+utility and the manager rejects it, so it maps to `ls`.
+
+Resolving it needs elevation and is a policy choice, so DotForge only ever prints the command —
+it never elevates or writes to the registry. Pick a side:
+
+```powershell
+# Keep DotForge's versions — run once, elevated. Persists across coreutils upgrades:
+# the installer regenerates its profile block from this registry list.
+coreutils-manager disable cat touch env paste
+
+# ...or keep coreutils' versions and silence the warning:
+$DFConfig.IgnoreConflicts = @('cat', 'touch', 'env', 'paste')
+```
+
+Disabling `ls` also removes `la` (there is no `la.cmd`; coreutils adds `la` only while `ls` is
+enabled). Don't hand-edit the `DO NOT MODIFY -- coreutils` block in your profile — the installer
+regenerates it from the registry on every upgrade.
+
+The check is cheap: it reads the same set the hook itself consults, so it costs nothing when
+coreutils isn't installed and correctly reports **no** conflict in hosts where the hook never loads
+(it's injected into the ConsoleHost profile only, so the VS Code terminal is unaffected).
+
+Detecting this relies on coreutils internals that its authors never promised — see
+[External Dependencies](docs/external-dependencies.md) for exactly what, and what happens when it
+changes. Short version: the check silently disables itself; nothing else breaks.
 
 ## Exported Cmdlets
 
@@ -94,6 +145,7 @@ Register-DFTool -All
 | `New-DFShim [[-Target] <path>] [-Name] [-Force]` |       | Create a `.cmd` shim forwarding invocations to an off-PATH executable |
 | `Get-DFTool [-Name] [-Tag]`     |       | Query the tool registry                          |
 | `Find-DFTool -Pattern <str>`    |       | Wildcard search across name / description / tags |
+| `Get-DFCommandConflict [-IncludeIgnored]` |       | Report DotForge commands shadowed by coreutils   |
 | `Add-DFToPath <dir> [-Prepend]` |       | Normalized, dedup PATH addition                  |
 | `New-DFDirectory <path>`        |       | Idempotent directory creation                    |
 | `Invoke-DFPicker`               |       | Generalized fzf picker skeleton                  |
