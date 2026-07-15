@@ -17,18 +17,18 @@
       "command": "eza",
       "args": [
         "--color=auto",
-        "--icons",
+        "--icons=auto",
         "--group-directories-first",
-        "--hyperlink"
+        "--hyperlink=auto"
       ]
     },
     "ll": {
       "command": "eza",
-      "args": ["--all", "--long", "--header", "--hyperlink"]
+      "args": ["--all", "--long", "--header", "--hyperlink=auto"]
     },
     "la": {
       "command": "eza",
-      "args": ["--all", "--group", "--hyperlink"]
+      "args": ["--all", "--group", "--hyperlink=auto"]
     },
     "tree": {
       "command": "eza",

@@ -107,6 +107,25 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         }
     }
 
+    It 'generated wrapper forwards caller arguments after the configured args' {
+        # Regression: the wrapper must splat the JSON args and then the caller's
+        # own arguments, so a path arrives as a separate positional. eza's
+        # --icons/--hyperlink take an optional value, so a trailing bare flag
+        # would otherwise consume the path (see Tools/eza.json).
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
+        # The wrapper resolves its command by name at call time, so a global
+        # function named 'testtool' stands in for the real executable.
+        function global:testtool { $global:TTCaptured = $args }
+        try {
+            Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+            & 'tt-v' 'somepath'
+            $global:TTCaptured | Should -Be @('--verbose', 'somepath')
+        } finally {
+            Remove-Item 'function:global:testtool' -ErrorAction Ignore
+            Remove-Variable -Name TTCaptured -Scope Global -ErrorAction Ignore
+        }
+    }
+
     It 'creates a global picker function from declarative picker JSON' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
 Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
