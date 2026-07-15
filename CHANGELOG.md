@@ -39,6 +39,15 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
+  builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
+  that actually builds one did nothing at all — no error, no warning, no picker.
+  `gh`, `jq`, `glow`, `docker`, `rustup`, `npm`, `uv`, `chezmoi`, `bitwarden`, `scoop`
+  and `gsudo` were affected; `scoop` had a sidecar holding only the scoop-search hook.
+  The field also under-reported: `psreadline` declared `null` while its sidecar builds
+  the `fprl` picker. Records now match reality, and
+  `tests/Tools.PickerDeclaration.Tests.ps1` fails the suite in both directions. The
+  unported pickers are tracked in the fold-in spec.
 - **`eza` aliases dropped their path argument.** `--icons` and `--hyperlink` take an
   optional value, and a trailing bare `--hyperlink` consumed the caller's path, so
   `ll .` failed with `invalid value '.' for '--hyperlink [<WHEN>]'`. All four aliases

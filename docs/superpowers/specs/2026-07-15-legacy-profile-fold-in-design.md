@@ -34,7 +34,7 @@ sidecars, `Public/`, and the loaded profile chain (`Env.ps1`, `Aliases.ps1`, `Fu
 `Completers.ps1`, `PSReadline.ps1`, `profile.ps1`). A region counts as folded in only when its
 env vars, aliases/functions, completer, and picker all have a live home.
 
-### Picker declaration semantics (discovered during audit)
+### Picker declaration semantics — FIXED 2026-07-15
 
 `Tools/*.json` uses three `picker` shapes, and `Register-DFTool.ps1:167` only acts on the third:
 
@@ -42,10 +42,23 @@ env vars, aliases/functions, completer, and picker all have a live home.
 - `"picker": "custom"` — implemented by a `Tools/<name>.ps1` sidecar.
 - `"picker": { … }` — declarative; built by `Register-DFTool`.
 
-**`"custom"` is unverified.** A tool may declare `"custom"` with no sidecar, or with a sidecar that
-defines no picker, and `Register-DFTool` will silently do nothing. Ten tools are in this state today
-(§3). `scoop.json` is the clearest case: it declares `"custom"`, and `Tools/scoop.ps1` contains only
-the scoop-search hook — no `sins`/`srm`.
+**`"custom"` used to be unverified**, so a tool could declare it with no sidecar — or with a sidecar
+defining no picker — and `Register-DFTool` would silently do nothing: no error, no warning, no
+picker. **Eleven tools were in that state** (not ten: `gsudo` also declared `"custom"` while
+`gsudo.ps1` only imports the module). `scoop` was the clearest case — it *had* a sidecar, holding
+only the scoop-search hook, no `sins`/`srm`.
+
+The field also under-reported in the other direction: `psreadline.json` said `null` while
+`psreadline.ps1:123` genuinely builds the `fprl` picker.
+
+Fixed by making the records honest — the 11 false `"custom"` are now `null`, and `psreadline` is
+now `"custom"` — and guarded by `tests/Tools.PickerDeclaration.Tests.ps1`, which fails the suite in
+**both** directions: `"custom"` without a sidecar picker, and a sidecar picker not declared
+`"custom"`. `Invoke-DFPicker` is the marker for "this sidecar builds a picker" (it is the module's
+picker primitive; `Invoke-DFFzf` is private and mocked in tests).
+
+Setting those 11 to `null` does not lose the backlog: the missing pickers are enumerated in §3, and
+`null` is simply what is true today.
 
 ## 1. Folded in — legacy regions deleted
 
@@ -127,10 +140,10 @@ maintenance. Revisit only if carapace is dropped or its specs drift badly from t
 binaries. The deleted implementations are recoverable from
 `git show 713f6ff:ProfileModules/cli_tools_config.ps1` in the profile repo.
 
-## 3. Gap: pickers declared but not implemented
+## 3. Gap: pickers not implemented
 
-Nine tools declare `"picker": "custom"` with **no sidecar**; `scoop` has a sidecar without a picker.
-All are silently inert:
+These pickers were never ported. Their records now honestly say `"picker": null` (they used to
+claim `"custom"` and silently do nothing — see above):
 
 | Tool | Lost picker(s) | Legacy source |
 |---|---|---|
@@ -148,8 +161,9 @@ All are silently inert:
 Several are expressible declaratively (`fgl`, `frtc`, `czf` are close to `eza`'s `ff` shape);
 others need sidecars (`fbw` parses JSON, `fns` reads `package.json`, `fpr` uses `--json`).
 
-**Guard against recurrence:** add a test asserting every `"picker": "custom"` tool has a sidecar
-that defines a picker function. That single test would have caught all ten.
+**Recurrence is now guarded** by `tests/Tools.PickerDeclaration.Tests.ps1`. Implementing any of
+these means flipping the record to `"custom"` (or a declarative object); the guard fails the suite
+if record and reality ever disagree again, in either direction.
 
 ## 4. Gap: env/config not folded
 

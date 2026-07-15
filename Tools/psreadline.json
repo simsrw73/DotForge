@@ -15,5 +15,5 @@
     "historySaveStyle":    "SaveIncrementally"
   },
   "aliases": {},
-  "picker": null
+  "picker": "custom"
 }
