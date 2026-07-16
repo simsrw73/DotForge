@@ -19,6 +19,9 @@ coverage/
 scratch/
 potential-tools.txt
 
+# Package-universe build working data (regenerable, not committed)
+build/.package-universe/
+
 # Local secrets (PSGallery API key, etc.)
 .env
 
