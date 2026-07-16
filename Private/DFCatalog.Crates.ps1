@@ -141,7 +141,7 @@ function Get-DFCatalogCratesDetail {
         -Fetch { param($id) Invoke-DFCatalogCratesDetailFetch -PackageId $id }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['crates'] = @{
     Name         = 'crates'
     Kind         = 'query-cache'

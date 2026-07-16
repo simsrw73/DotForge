@@ -70,6 +70,23 @@ All notable changes to DotForge are documented here.
   never run implicitly). Built and regenerated via `build/Build-DFCategoryDb.ps1`
   from hand-authored `build/categories/*.jsonc` fragments.
 
+### Changed
+
+- **Strict-mode-safe catalog mappers (internal; no behavior change).** The
+  OData/NuGet feed mappers in `Private/DFCatalog.*.ps1` now probe for absent
+  feed properties via new private `Get-DFXmlMember`/`Get-DFXmlText` helpers
+  instead of reading them bare, and every provider's registration guard-init
+  uses `Get-Variable` rather than testing an unset `$script:` variable. Absent
+  members are normal in these feeds by design — NuGet's feed customization
+  omits `Id`/`Authors` from `<m:properties>` and remaps them onto the Atom
+  `<title>`/`<author>` elements — so the mappers relied on a non-strict runtime
+  returning `$null`, and threw under an inherited `Set-StrictMode`. Identical
+  output for every existing caller; the module still sets no strict mode of its
+  own. This lets author-side tooling run `Set-StrictMode -Version Latest`, which
+  is what surfaced a real silent-data bug: a mapper reading `$props.Authors` (a
+  property the feed never sends) had been yielding an empty `publisher` for
+  every choco package rather than reading `<author><name>`.
+
 ### Fixed
 
 - **trifle cross-catalog identity fix:** `Find-DFPackage`/`ftrifle` no longer

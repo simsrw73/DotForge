@@ -164,7 +164,7 @@ function Get-DFCatalogPypiDetail {
         -Fetch { param($id) Invoke-DFCatalogPypiDetailFetch -PackageId $id }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['pypi'] = @{
     Name         = 'pypi'
     Kind         = 'query-cache'

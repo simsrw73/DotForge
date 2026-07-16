@@ -31,25 +31,25 @@ function ConvertFrom-DFCatalogODataEntry {
 
     foreach ($e in @($Entry)) {
         if (-not $e) { continue }
-        $props = $e.properties
+        # Every read below goes through Get-DFXmlText: <d:Id> is absent from
+        # <m:properties> by design (feed customization — see Get-DFXmlMember),
+        # so probing for it must not throw under strict mode. The <title>
+        # fallback is where the id actually lives.
+        $props = Get-DFXmlMember -Element $e -Name 'properties'
 
-        $id = [string]$props.Id
-        if (-not $id) {
-            $id = if ($e.title -is [string]) { $e.title } else { [string]$e.title.'#text' }
-        }
+        $id = Get-DFXmlText -Element $props -Name 'Id'
+        if (-not $id) { $id = Get-DFXmlText -Element $e -Name 'title' }
         if (-not $id) { continue }
 
-        # Typed OData elements (m:type attribute) come back as XmlElement with '#text'.
-        $publishedRaw = $props.Published
-        if ($publishedRaw -and $publishedRaw -isnot [string]) { $publishedRaw = [string]$publishedRaw.'#text' }
+        $publishedRaw = Get-DFXmlText -Element $props -Name 'Published'
         $published = $null
         if ($publishedRaw) { try { $published = [datetime]$publishedRaw } catch {} }
 
         New-DFToolSourceInfo -Source $Source `
             -PackageId $id -Name $id `
-            -Description ([string]$props.Description) `
-            -LatestVersion ([string]$props.Version) `
-            -Homepage ([string]$props.ProjectUrl) `
+            -Description ([string](Get-DFXmlText -Element $props -Name 'Description')) `
+            -LatestVersion ([string](Get-DFXmlText -Element $props -Name 'Version')) `
+            -Homepage ([string](Get-DFXmlText -Element $props -Name 'ProjectUrl')) `
             -PublishedAt $published `
             -MatchKind ($id -eq $Query ? 'exact-name' : 'keyword')
     }
@@ -153,31 +153,40 @@ function ConvertFrom-DFCatalogODataDetailEntry {
     )
 
     if (-not $Entry) { return $null }
-    $props = $Entry.properties
-    $id = [string]$props.Id
+    $props = Get-DFXmlMember -Element $Entry -Name 'properties'
+    # NOTE: no <title> fallback here, unlike ConvertFrom-DFCatalogODataEntry.
+    # Preserved as-is during the 2026-07-15 strict retrofit (behavior must not
+    # change), but suspicious: if the detail endpoint's feed omits <d:Id> the way
+    # the search feed does, this returns $null for every real package. Verify
+    # against a live FindPackagesById response before changing.
+    $id = Get-DFXmlText -Element $props -Name 'Id'
     if (-not $id) { return $null }
 
-    # m:typed OData elements surface as XmlElement with '#text'.
-    $text = { param($v) ($v -and $v -isnot [string]) ? [string]$v.'#text' : [string]$v }
-
     $downloads = $null
-    $raw = & $text $props.DownloadCount
+    $raw = Get-DFXmlText -Element $props -Name 'DownloadCount'
     if ($raw) { try { $downloads = [long]$raw } catch {} }
 
-    $deps = @(foreach ($spec in ((& $text $props.Dependencies) -split '\|') -ne '') {
+    $deps = @(foreach ($spec in ((Get-DFXmlText -Element $props -Name 'Dependencies') -split '\|') -ne '') {
+        # A dependency spec is 'id' or 'id:versionrange'. -split on a spec with
+        # no colon yields a 1-element array, so $parts[1] would be an
+        # out-of-bounds index — which throws under strict mode rather than
+        # returning $null. Check the count instead of indexing speculatively.
         $parts = $spec -split ':'
-        $parts[1] ? "$($parts[0]) ($($parts[1]))" : $parts[0]
+        if ($parts.Count -gt 1 -and $parts[1]) { "$($parts[0]) ($($parts[1]))" } else { $parts[0] }
     })
+
+    $repositoryUrl = Get-DFXmlText -Element $props -Name 'ProjectSourceUrl'
+    if (-not $repositoryUrl) { $repositoryUrl = Get-DFXmlText -Element $props -Name 'ProjectUrl' }
 
     New-DFToolSourceDetail -Source $Source `
         -PackageId $id `
-        -Publisher (& $text $props.Authors) `
+        -Publisher ([string](Get-DFXmlText -Element $props -Name 'Authors')) `
         -Dependencies $deps `
-        -Tags @(((& $text $props.Tags) -split '\s+') -ne '') `
+        -Tags @((([string](Get-DFXmlText -Element $props -Name 'Tags')) -split '\s+') -ne '') `
         -Downloads $downloads `
-        -ReleaseNotes (& $text $props.ReleaseNotes) `
-        -RepositoryUrl ((& $text $props.ProjectSourceUrl) ? (& $text $props.ProjectSourceUrl) : (& $text $props.ProjectUrl)) `
-        -DocsUrl (& $text $props.DocsUrl) `
+        -ReleaseNotes ([string](Get-DFXmlText -Element $props -Name 'ReleaseNotes')) `
+        -RepositoryUrl ([string]$repositoryUrl) `
+        -DocsUrl ([string](Get-DFXmlText -Element $props -Name 'DocsUrl')) `
         -InstallHint $InstallHint
 }
 
@@ -221,7 +230,7 @@ function Get-DFCatalogChocoDetail {
         -Fetch { param($id) Invoke-DFCatalogChocoDetailFetch -PackageId $id }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['choco'] = @{
     Name         = 'choco'
     Kind         = 'query-cache'

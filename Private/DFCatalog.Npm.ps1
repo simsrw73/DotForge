@@ -185,7 +185,7 @@ function Get-DFCatalogNpmDetail {
         -Fetch { param($id) Invoke-DFCatalogNpmDetailFetch -PackageId $id }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['npm'] = @{
     Name         = 'npm'
     Kind         = 'query-cache'
