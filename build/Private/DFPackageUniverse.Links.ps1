@@ -19,8 +19,10 @@ function Get-DFPackageUniverseRepoKey {
         $Row
     )
 
+    # Priority (per spec): the source-specific repo fields win over homepage,
+    # because homepage is often a docs/landing page while ProjectSourceUrl /
+    # checkver / autoupdate name the actual source repo. Homepage is the fallback.
     $candidates = [System.Collections.Generic.List[string]]::new()
-    if ($Row.homepage) { $candidates.Add([string]$Row.homepage) }
 
     $extra = $null
     if ($Row.extra) { try { $extra = $Row.extra | ConvertFrom-Json } catch { $extra = $null } }
@@ -35,8 +37,10 @@ function Get-DFPackageUniverseRepoKey {
                 }
             }
             'scoop' {
-                # checkver frequently names the real repo when homepage is a
-                # vanity domain: either a bare github url string or { github: ... }.
+                # checkver / autoupdate frequently name the real repo when homepage
+                # is a vanity domain: checkver is a bare github url or { github: ... };
+                # autoupdate is a nested object whose arch urls point at github
+                # releases -- serialize it and let the github regex find the repo.
                 $cv = $extra.PSObject.Properties['checkver']
                 if ($cv -and $cv.Value) {
                     if ($cv.Value -is [string]) {
@@ -46,9 +50,13 @@ function Get-DFPackageUniverseRepoKey {
                         if ($gh -and $gh.Value) { $candidates.Add([string]$gh.Value) }
                     }
                 }
+                $au = $extra.PSObject.Properties['autoupdate']
+                if ($au -and $au.Value) { $candidates.Add((ConvertTo-Json -Compress -Depth 8 -InputObject $au.Value)) }
             }
         }
     }
+
+    if ($Row.homepage) { $candidates.Add([string]$Row.homepage) }
 
     foreach ($url in $candidates) {
         if ($url -match 'github\.com[/:]([^/#?\s]+)/([^/#?\s]+)') {
@@ -128,6 +136,17 @@ function Get-DFPackageUniverseLinkKeys {
     }
 }
 
+function Get-DFPackageUniverseKeyedRows {
+    <#
+    .SYNOPSIS
+        Projects raw rows to { Row; Keys } items (link keys precomputed once).
+        Shared by the edge builder and the family collector.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Rows)
+    @(foreach ($r in $Rows) { [pscustomobject]@{ Row = $r; Keys = (Get-DFPackageUniverseLinkKeys -Row $r) } })
+}
+
 function Test-DFPackageUniverseFamily {
     <#
     .SYNOPSIS
@@ -163,9 +182,7 @@ function Get-DFPackageUniverseFamilyGroups {
         [int]$FamilySizeThreshold = 5
     )
 
-    $items = @(foreach ($r in $Rows) {
-        [pscustomobject]@{ Row = $r; Keys = (Get-DFPackageUniverseLinkKeys -Row $r) }
-    })
+    $items = Get-DFPackageUniverseKeyedRows -Rows $Rows
 
     foreach ($tier in @('Repo', 'Homepage')) {
         $groups = $items | Where-Object { $_.Keys.$tier } | Group-Object { $_.Keys.$tier }
@@ -209,9 +226,7 @@ function Get-DFPackageUniverseLinkEdges {
         [int]$FamilySizeThreshold = 5
     )
 
-    $items = @(foreach ($r in $Rows) {
-        [pscustomobject]@{ Row = $r; Keys = (Get-DFPackageUniverseLinkKeys -Row $r) }
-    })
+    $items = Get-DFPackageUniverseKeyedRows -Rows $Rows
 
     $edges = [System.Collections.Generic.List[object]]::new()
     $linked = [System.Collections.Generic.HashSet[string]]::new()

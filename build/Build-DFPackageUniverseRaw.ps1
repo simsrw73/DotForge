@@ -40,6 +40,12 @@
     terminated, prune results, and per-catalog summaries — so a failed or
     partial run can be diagnosed after the fact. This transcript is what made
     the 2026-07-15 redesign diagnosable from a killed run's logs alone.
+.PARAMETER SkipScoopUpdate
+    Skip the 'scoop update' bucket refresh that otherwise runs before scoop
+    acquisition. Use for offline runs, or when the buckets are already current.
+.PARAMETER ScoopUpdate
+    Override the scoop bucket-refresh step (default: 'scoop update'). Tests
+    inject a no-op or a spy here so no real scoop process runs.
 .PARAMETER ScoopFetchItems
     Override the scoop manifest fetcher (default: a thin wrapper around the
     real Build-DFCatalogScoopIndexData). Tests inject canned entries here.
@@ -71,7 +77,10 @@ param(
     [int]$ChocoMaxRequests = 500,
     [string]$LogFile,
 
+    [switch]$SkipScoopUpdate,
+
     [scriptblock]$ScoopFetchItems,
+    [scriptblock]$ScoopUpdate,
     [scriptblock]$ChocoFetchPage,
     [scriptblock]$ChocoSleep
 )
@@ -122,6 +131,13 @@ if (-not $ScoopFetchItems) {
     # -IncludeRaw: Stage 0 full-fidelity capture keeps the verbatim scoop
     # manifest (checkver/autoupdate reveal the repo when homepage is a vanity URL).
     $ScoopFetchItems = { param($ScoopRoot) Build-DFCatalogScoopIndexData -ScoopRoot $ScoopRoot -IncludeRaw }
+}
+if (-not $ScoopUpdate -and -not $SkipScoopUpdate) {
+    # Refresh local scoop buckets (git-pull) before reading them, so the snapshot
+    # reflects current upstream manifests -- scoop reads local bucket clones,
+    # unlike winget's snapshot re-download and choco's live walk. Output is
+    # suppressed; a failure degrades to a warning in Get-DFPackageUniverseScoopRows.
+    $ScoopUpdate = { scoop update *>&1 | Out-Null }
 }
 if (-not $ChocoFetchPage) {
     # The real implementation lives in Private/DFPackageUniverse.Choco.ps1 so it
@@ -220,7 +236,7 @@ try {
         try {
             $rows = switch ($catalog) {
                 'scoop' {
-                    Get-DFPackageUniverseScoopRows -ScoopRoot $ScoopRoot -FetchItems $ScoopFetchItems `
+                    Get-DFPackageUniverseScoopRows -ScoopRoot $ScoopRoot -FetchItems $ScoopFetchItems -ScoopUpdate $ScoopUpdate `
                         -Log { param($l, $p, $m) & $logger $l 'scoop' $p $m }
                 }
                 'winget' {

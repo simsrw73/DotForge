@@ -55,6 +55,35 @@ Describe 'DFPackageUniverse.Scoop' {
     Context 'Get-DFPackageUniverseScoopRows' {
         BeforeEach {
             $script:logged = @()
+            $script:updateRan = $false
+        }
+
+        It 'invokes the ScoopUpdate seam before acquiring rows (refresh buckets first)' {
+            $update = { $script:updateRan = $true }
+            $fetch = { param($ScoopRoot) @([pscustomobject]@{ name = 'a'; bucket = 'main'; version = '1'; description = 'd'; homepage = 'h'; license = 'MIT' }) }
+            $log = { param($Level, $PackageId, $Message) $script:logged += , @($Level, $PackageId, $Message) }
+
+            $rows = @(Get-DFPackageUniverseScoopRows -ScoopRoot 'C:\fake\scoop' -ScoopUpdate $update -FetchItems $fetch -Log $log)
+
+            $script:updateRan | Should -BeTrue
+            $rows.Count | Should -Be 1
+        }
+
+        It 'logs a warning and still acquires rows when ScoopUpdate fails (catalog-level isolation)' {
+            $update = { throw 'scoop not installed' }
+            $fetch = { param($ScoopRoot) @([pscustomobject]@{ name = 'a'; bucket = 'main'; version = '1'; description = 'd'; homepage = 'h'; license = 'MIT' }) }
+            $log = { param($Level, $PackageId, $Message) $script:logged += , @($Level, $PackageId, $Message) }
+
+            $rows = @(Get-DFPackageUniverseScoopRows -ScoopRoot 'C:\fake\scoop' -ScoopUpdate $update -FetchItems $fetch -Log $log)
+
+            $rows.Count | Should -Be 1
+            @($script:logged | Where-Object { $_[0] -eq 'warning' }).Count | Should -BeGreaterThan 0
+        }
+
+        It 'does not require a ScoopUpdate seam (existing callers unaffected)' {
+            $fetch = { param($ScoopRoot) @() }
+            $log = { param($Level, $PackageId, $Message) $script:logged += , @($Level, $PackageId, $Message) }
+            { Get-DFPackageUniverseScoopRows -ScoopRoot 'C:\fake\scoop' -FetchItems $fetch -Log $log } | Should -Not -Throw
         }
 
         It 'converts every fetched item to a row' {

@@ -48,6 +48,13 @@ function Get-DFPackageUniverseScoopRows {
     .PARAMETER FetchItems
         Scriptblock: param($ScoopRoot) -> manifest entries. Defaults to
         Build-DFCatalogScoopIndexData; tests inject canned entries here.
+    .PARAMETER ScoopUpdate
+        Optional scriptblock run before acquisition to refresh the local buckets
+        (git-pull), so the snapshot reflects current upstream manifests rather
+        than whatever was last on disk -- scoop, unlike the winget snapshot
+        re-download and the live choco walk, reads local bucket clones. A failure
+        here (scoop not installed, offline) logs a warning and acquisition
+        proceeds against the on-disk buckets. Omit to skip the refresh.
     .PARAMETER Log
         Scriptblock: param($Level, $PackageId, $Message) -> logs to
         pipeline_log.
@@ -61,8 +68,15 @@ function Get-DFPackageUniverseScoopRows {
         [scriptblock]$FetchItems,
 
         [Parameter(Mandatory)]
-        [scriptblock]$Log
+        [scriptblock]$Log,
+
+        [scriptblock]$ScoopUpdate
     )
+
+    if ($ScoopUpdate) {
+        try { & $ScoopUpdate }
+        catch { & $Log 'warning' $null "scoop: bucket refresh ('scoop update') failed; reading buckets as-is: $_" }
+    }
 
     $items = @(& $FetchItems $ScoopRoot)
     if ($items.Count -eq 0) {

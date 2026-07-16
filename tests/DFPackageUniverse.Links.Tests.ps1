@@ -71,6 +71,22 @@ Describe 'DFPackageUniverse.Links' {
             Get-DFPackageUniverseRepoKey -Row $row | Should -Be 'acme/tool'
         }
 
+        It 'prefers choco ProjectSourceUrl (source repo) over a differing github homepage (docs repo)' {
+            $row = New-RawRow -Source 'choco' -PackageId 'tool' -Homepage 'https://github.com/acme/tool-docs' -Extra @{
+                ProjectSourceUrl = 'https://github.com/acme/tool'
+                ProjectUrl       = 'https://github.com/acme/tool-docs'
+            }
+            Get-DFPackageUniverseRepoKey -Row $row | Should -Be 'acme/tool'
+        }
+
+        It 'recovers the repo from scoop autoupdate urls when homepage is a vanity domain and checkver is absent' {
+            $row = New-RawRow -Source 'scoop' -PackageId 'main/tool' -Homepage 'https://vanity.example/tool' -Extra @{
+                version    = '1.0'
+                autoupdate = @{ architecture = @{ '64bit' = @{ url = 'https://github.com/acme/tool/releases/download/v$version/tool.zip' } } }
+            }
+            Get-DFPackageUniverseRepoKey -Row $row | Should -Be 'acme/tool'
+        }
+
         It 'does not throw under strict mode on a row with null homepage and null extra' {
             Set-StrictMode -Version Latest
             $row = New-RawRow -Source 'winget' -PackageId 'X.Y'

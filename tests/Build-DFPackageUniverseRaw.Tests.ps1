@@ -95,7 +95,7 @@ Describe 'Build-DFPackageUniverseRaw' {
     }
 
     It 'acquires from all three catalogs and writes raw_packages + pipeline_log' {
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -124,8 +124,18 @@ Describe 'Build-DFPackageUniverseRaw' {
         }
     }
 
+    It 'runs the scoop bucket refresh (ScoopUpdate) before scoop acquisition by default' {
+        $marker = Join-Path $script:WorkDir 'scoop-updated.marker'
+        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+            -WingetPkgsSnapshot $script:WingetSnapshot `
+            -ScoopUpdate ([scriptblock]::Create("Set-Content -Path '$marker' -Value ran")) `
+            -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
+
+        Test-Path $marker | Should -BeTrue
+    }
+
     It 'isolates a scoop failure: winget and choco still populate raw_packages, and an error is logged' {
-        & $script:ScriptPath -DatabasePath $script:DatabasePath `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath `
             -ScoopFetchItems { param($ScoopRoot) throw 'scoop is down' } `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
@@ -153,7 +163,7 @@ Describe 'Build-DFPackageUniverseRaw' {
         # watermark, no LastUpdated clause. A date-filtered query would still
         # return correct data, just at ~16x the request cost, so nothing but an
         # explicit URL assertion catches this.
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -164,7 +174,7 @@ Describe 'Build-DFPackageUniverseRaw' {
             [pscustomobject]@{ Entries = @((New-FakeChocoEntry -Id 'bat'), (New-FakeChocoEntry -Id 'fd')); NextUrl = $null }
         }.GetNewClosure()
 
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $recordingFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -184,13 +194,13 @@ Describe 'Build-DFPackageUniverseRaw' {
     }
 
     It 'prunes a choco package no longer present in a complete walk' {
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
         $shrunkFetch = New-FakeChocoFetch -Pages @(@((New-FakeChocoEntry -Id 'bat')), @())
 
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $shrunkFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -209,13 +219,13 @@ Describe 'Build-DFPackageUniverseRaw' {
     It 'does NOT prune when the walk is incomplete -- keeps prior rows and says why' {
         # The dangerous case: a 429 half-way through must never be read as
         # "every package we did not reach was removed upstream".
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
         $rateLimitedFetch = { param($Url) throw [System.Exception]::new('Response status code does not indicate success: 429 (Too Many Requests).') }
 
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $rateLimitedFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -253,7 +263,7 @@ Describe 'Build-DFPackageUniverseRaw' {
             throw 'network died mid-walk'
         }.GetNewClosure()
 
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $dyingFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
@@ -267,7 +277,7 @@ Describe 'Build-DFPackageUniverseRaw' {
     }
 
     It 'writes a verbose run-transcript log file' {
-        & $script:ScriptPath -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
+        & $script:ScriptPath -SkipScoopUpdate -DatabasePath $script:DatabasePath -ScoopRoot $script:ScoopRoot `
             -WingetPkgsSnapshot $script:WingetSnapshot `
             -ChocoFetchPage $script:ChocoFetch -ChocoSleep $script:ChocoSleep -ChocoDelayMinMs 0 -ChocoDelayMaxMs 1 | Out-Null
 
