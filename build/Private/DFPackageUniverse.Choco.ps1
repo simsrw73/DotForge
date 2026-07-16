@@ -104,6 +104,29 @@ function ConvertTo-DFPackageUniverseChocoRow {
     $author = Get-DFXmlMember -Element $Entry -Name 'author'
     $publisher = [string](Get-DFXmlText -Element $author -Name 'name')
 
+    # Full-fidelity capture: walk the <m:properties> child ELEMENT nodes
+    # (LocalName -> InnerText) so only the real OData <d:...> fields are stored.
+    # Iterating $props.PSObject.Properties instead sweeps in the whole XML-DOM API
+    # on a live XmlElement (InnerXml, OuterXml, BaseURI, ChildNodes, d, m, ...) --
+    # a gap the clean pscustomobject fakes could not surface, caught by a live
+    # walk-page check on 2026-07-16. m:null elements are skipped (absent data).
+    # Plus the Atom-only Summary/updated that feed customization keeps off
+    # <m:properties>. Fields also promoted to typed columns are kept here too, so a
+    # manual reviewer sees the complete raw record without cross-referencing.
+    $metaNs = 'http://schemas.microsoft.com/ado/2007/08/dataservices/metadata'
+    $extraMap = [ordered]@{}
+    if ($props -and $props.PSObject.Properties['ChildNodes']) {
+        foreach ($node in $props.ChildNodes) {
+            if ($node.NodeType -ne [System.Xml.XmlNodeType]::Element) { continue }
+            if ($node.GetAttribute('null', $metaNs) -eq 'true') { continue }
+            $extraMap[$node.LocalName] = $node.InnerText
+        }
+    }
+    $summary = Get-DFXmlText -Element $Entry -Name 'summary'
+    if ($null -ne $summary) { $extraMap['Summary'] = $summary }
+    $lastUpdated = Get-DFXmlText -Element $Entry -Name 'updated'
+    if ($null -ne $lastUpdated) { $extraMap['LastUpdated'] = $lastUpdated }
+
     [pscustomobject]@{
         source      = 'choco'
         package_id  = $base.PackageId
@@ -114,7 +137,7 @@ function ConvertTo-DFPackageUniverseChocoRow {
         license     = [string](Get-DFXmlText -Element $props -Name 'LicenseUrl')
         publisher   = $publisher
         tags        = ($tags.Count -gt 0 ? (ConvertTo-Json -Compress -InputObject $tags) : $null)
-        extra       = $null
+        extra       = ($extraMap.Count -gt 0 ? (ConvertTo-Json -Compress -InputObject $extraMap) : $null)
         fetched_at  = [datetime]::UtcNow.ToString('o')
     }
 }

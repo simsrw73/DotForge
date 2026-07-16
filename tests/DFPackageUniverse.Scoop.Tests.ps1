@@ -28,6 +28,28 @@ Describe 'DFPackageUniverse.Scoop' {
             $row.extra | Should -BeNullOrEmpty
             $row.fetched_at | Should -Not -BeNullOrEmpty
         }
+
+        It 'captures the full manifest json (raw) into extra, preserving checkver/autoupdate' {
+            $manifest = '{"version":"14.1.1","homepage":"https://vanity.example/ripgrep","license":"MIT","checkver":{"github":"https://github.com/BurntSushi/ripgrep"},"autoupdate":{"url":"https://github.com/BurntSushi/ripgrep/releases/download/v$version/x.zip"},"bin":"rg.exe"}'
+            $entry = [pscustomobject]@{
+                name = 'ripgrep'; bucket = 'main'; version = '14.1.1'
+                description = 'd'; homepage = 'https://vanity.example/ripgrep'; license = 'MIT'
+                raw = $manifest
+            }
+
+            $extra = (ConvertTo-DFPackageUniverseScoopRow -Entry $entry).extra | ConvertFrom-Json
+
+            $extra.checkver.github | Should -Be 'https://github.com/BurntSushi/ripgrep'
+            $extra.autoupdate.url  | Should -Match 'github\.com/BurntSushi/ripgrep'
+            $extra.bin             | Should -Be 'rg.exe'
+        }
+
+        It 'sets extra to $null and does not throw under strict when the entry carries no raw manifest' {
+            Set-StrictMode -Version Latest
+            $entry = [pscustomobject]@{ name = 'fd'; bucket = 'main'; version = '10'; description = 'd'; homepage = 'h'; license = 'MIT' }
+            { ConvertTo-DFPackageUniverseScoopRow -Entry $entry } | Should -Not -Throw
+            (ConvertTo-DFPackageUniverseScoopRow -Entry $entry).extra | Should -BeNullOrEmpty
+        }
     }
 
     Context 'Get-DFPackageUniverseScoopRows' {

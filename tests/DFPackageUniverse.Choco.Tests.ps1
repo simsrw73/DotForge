@@ -25,6 +25,52 @@ BeforeAll {
         }
     }
 
+    # A REAL Atom/OData entry, parsed through the same production feed parser the
+    # live walk uses, so extra-capture is tested against a genuine XmlElement
+    # (whose PSObject surface differs wildly from a pscustomobject fake -- the
+    # exact gap a live check exposed on 2026-07-16). -Sparse omits every optional
+    # field, mirroring the ~34% of the catalog that ships minimal manifests.
+    function New-RealChocoEntry {
+        param([string]$Id = 'ripgrep', [switch]$Sparse)
+        $propsXml = if ($Sparse) {
+            "<d:Id>$Id</d:Id><d:Version>1.0</d:Version>"
+        } else {
+            @"
+<d:Id>$Id</d:Id>
+<d:Version>14.1.1</d:Version>
+<d:Description>Recursively search directories for a regex pattern</d:Description>
+<d:ProjectUrl>https://github.com/BurntSushi/ripgrep</d:ProjectUrl>
+<d:ProjectSourceUrl>https://github.com/BurntSushi/ripgrep</d:ProjectSourceUrl>
+<d:PackageSourceUrl>https://github.com/chocolatey-community/chocolatey-packages</d:PackageSourceUrl>
+<d:DocsUrl>https://github.com/BurntSushi/ripgrep/blob/master/README.md</d:DocsUrl>
+<d:BugTrackerUrl>https://github.com/BurntSushi/ripgrep/issues</d:BugTrackerUrl>
+<d:ReleaseNotes>https://github.com/BurntSushi/ripgrep/releases</d:ReleaseNotes>
+<d:Copyright>Copyright (c) 2016 Andrew Gallant</d:Copyright>
+<d:DownloadCount m:type="Edm.Int32">123456</d:DownloadCount>
+<d:Dependencies>chocolatey-core.extension:1.3.3</d:Dependencies>
+<d:Published m:type="Edm.DateTime">2024-01-05T00:00:00Z</d:Published>
+<d:Tags>search grep cli</d:Tags>
+<d:LicenseUrl>https://github.com/BurntSushi/ripgrep/blob/master/LICENSE-MIT</d:LicenseUrl>
+"@
+        }
+        $atomExtra = if ($Sparse) { '' } else {
+            '<summary>ripgrep recursively searches directories</summary><updated>2024-01-06T00:00:00Z</updated>'
+        }
+        $feedText = @"
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata">
+  <entry>
+    <title>$Id</title>
+    $atomExtra
+    <author><name>BurntSushi</name></author>
+    <m:properties>
+      $propsXml
+    </m:properties>
+  </entry>
+</feed>
+"@
+        @((ConvertFrom-DFPackageUniverseChocoFeedXml -Xml ([xml]$feedText)).Entries)[0]
+    }
+
     # A fake fetch seam matching the production contract: param($Url) ->
     # @{ Entries; NextUrl }. Pages are returned by call order; NextUrl is a
     # non-null sentinel for every page except the last, mirroring the server's
@@ -84,6 +130,68 @@ Describe 'DFPackageUniverse.Choco' {
             Set-StrictMode -Version Latest
             { ConvertTo-DFPackageUniverseChocoRow -Entry ([pscustomobject]@{ title = 'lonely' }) } | Should -Not -Throw
             (ConvertTo-DFPackageUniverseChocoRow -Entry ([pscustomobject]@{ title = 'lonely' })).package_id | Should -Be 'lonely'
+        }
+    }
+
+    Context 'extra (full-fidelity capture)' {
+        It 'captures the full source property set into extra, including the dropped ProjectSourceUrl and sibling urls' {
+            $row   = ConvertTo-DFPackageUniverseChocoRow -Entry (New-RealChocoEntry -Id 'ripgrep')
+            $extra = $row.extra | ConvertFrom-Json
+
+            # the load-bearing repo signal Phase A discarded
+            $extra.ProjectSourceUrl | Should -Be 'https://github.com/BurntSushi/ripgrep'
+            $extra.PackageSourceUrl | Should -Be 'https://github.com/chocolatey-community/chocolatey-packages'
+            $extra.DocsUrl          | Should -Be 'https://github.com/BurntSushi/ripgrep/blob/master/README.md'
+            $extra.BugTrackerUrl    | Should -Be 'https://github.com/BurntSushi/ripgrep/issues'
+            $extra.ReleaseNotes     | Should -Be 'https://github.com/BurntSushi/ripgrep/releases'
+            $extra.Copyright        | Should -Be 'Copyright (c) 2016 Andrew Gallant'
+            $extra.Dependencies     | Should -Be 'chocolatey-core.extension:1.3.3'
+            # Published is date-shaped; assert the persisted JSON string, since
+            # ConvertFrom-Json would coerce it back to a [datetime].
+            $row.extra | Should -Match ([regex]::Escape('"Published":"2024-01-05T00:00:00Z"'))
+        }
+
+        It 'captures a typed (m:type) element by its text value, like DownloadCount' {
+            $extra = (ConvertTo-DFPackageUniverseChocoRow -Entry (New-RealChocoEntry -Id 'ripgrep')).extra | ConvertFrom-Json
+            $extra.DownloadCount | Should -Be '123456'
+        }
+
+        It 'captures Atom-level summary and updated (LastUpdated) into extra' {
+            $row = ConvertTo-DFPackageUniverseChocoRow -Entry (New-RealChocoEntry -Id 'ripgrep')
+            ($row.extra | ConvertFrom-Json).Summary | Should -Be 'ripgrep recursively searches directories'
+            $row.extra | Should -Match ([regex]::Escape('"LastUpdated":"2024-01-06T00:00:00Z"'))
+        }
+
+        It 'is full-fidelity: fields also promoted to typed columns still appear in extra' {
+            $extra = (ConvertTo-DFPackageUniverseChocoRow -Entry (New-RealChocoEntry -Id 'ripgrep')).extra | ConvertFrom-Json
+            $extra.ProjectUrl | Should -Be 'https://github.com/BurntSushi/ripgrep'
+            $extra.Version    | Should -Be '14.1.1'
+        }
+
+        It 'captures ONLY real OData fields -- no XML-DOM members leak into extra' {
+            # Regression lock for the 2026-07-16 finding: iterating a live
+            # XmlElement's PSObject.Properties swept in InnerXml/BaseURI/etc.
+            $names = ((ConvertTo-DFPackageUniverseChocoRow -Entry (New-RealChocoEntry -Id 'ripgrep')).extra | ConvertFrom-Json).PSObject.Properties.Name
+            foreach ($junk in 'InnerXml', 'OuterXml', 'BaseURI', 'ChildNodes', 'LocalName', 'NamespaceURI', 'NodeType', 'Attributes') {
+                $names | Should -Not -Contain $junk
+            }
+        }
+
+        It 'sets extra to $null when there is nothing beyond a bare title to capture' {
+            Set-StrictMode -Version Latest
+            $row = ConvertTo-DFPackageUniverseChocoRow -Entry ([pscustomobject]@{ title = 'lonely' })
+            $row.package_id | Should -Be 'lonely'
+            $row.extra | Should -BeNullOrEmpty
+        }
+
+        It 'does not throw under strict on a sparse real entry and captures only the properties present' {
+            Set-StrictMode -Version Latest
+            $entry = New-RealChocoEntry -Id 'mini' -Sparse
+            { ConvertTo-DFPackageUniverseChocoRow -Entry $entry } | Should -Not -Throw
+            $extra = (ConvertTo-DFPackageUniverseChocoRow -Entry $entry).extra | ConvertFrom-Json
+            $extra.Id      | Should -Be 'mini'
+            $extra.Version | Should -Be '1.0'
+            $extra.PSObject.Properties.Name | Should -Not -Contain 'ProjectSourceUrl'
         }
     }
 

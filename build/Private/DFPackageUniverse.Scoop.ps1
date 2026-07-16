@@ -14,6 +14,14 @@ function ConvertTo-DFPackageUniverseScoopRow {
         $Entry
     )
 
+    # Full-fidelity capture: the scoop manifest is already clean JSON, so store
+    # it verbatim (checkver/autoupdate frequently name the real GitHub repo even
+    # when homepage is a vanity domain; bin/depends/suggest/notes come along too).
+    # Strict-safe probe: a raw-less entry (runtime-shaped, or a test fixture)
+    # yields $null rather than throwing under Set-StrictMode.
+    $rawProp = $Entry.PSObject.Properties['raw']
+    $extra = if ($rawProp -and $rawProp.Value) { [string]$rawProp.Value } else { $null }
+
     [pscustomobject]@{
         source      = 'scoop'
         package_id  = "$($Entry.bucket)/$($Entry.name)"
@@ -24,7 +32,7 @@ function ConvertTo-DFPackageUniverseScoopRow {
         license     = $Entry.license
         publisher   = $null
         tags        = $null
-        extra       = $null
+        extra       = $extra
         fetched_at  = [datetime]::UtcNow.ToString('o')
     }
 }

@@ -132,6 +132,27 @@ Describe 'DFPackageUniverse.Winget' {
             $fields.homepage | Should -BeNullOrEmpty
         }
 
+        It 'captures the full manifest into extra, including fields Phase A dropped (PublisherUrl, Moniker, PrivacyUrl, LicenseUrl)' {
+            $fields = ConvertFrom-DFPackageUniverseWingetLocaleYaml -YamlText $script:DefaultLocaleManifestYaml
+            $extra = $fields.extra | ConvertFrom-Json
+
+            $extra.PublisherUrl | Should -Be 'https://www.microsoft.com/'
+            $extra.PrivacyUrl   | Should -Be 'https://privacy.microsoft.com/'
+            $extra.Moniker      | Should -Be 'vscode'
+            $extra.LicenseUrl   | Should -Be 'https://code.visualstudio.com/license'
+            $extra.PackageUrl   | Should -Be 'https://code.visualstudio.com'
+        }
+
+        It 'captures only present fields into extra for a minimal manifest, under strict mode' {
+            Set-StrictMode -Version Latest
+            $fields = ConvertFrom-DFPackageUniverseWingetLocaleYaml -YamlText $script:MinimalLocaleManifestYaml
+            $extra = $fields.extra | ConvertFrom-Json
+
+            $extra.PublisherUrl | Should -Be 'https://github.com/0state'
+            $extra.PSObject.Properties.Name | Should -Not -Contain 'Moniker'
+            $extra.PSObject.Properties.Name | Should -Not -Contain 'PackageUrl'
+        }
+
         It 'resolves a full version folder whose locale manifest omits Tags, under strict mode' {
             Set-StrictMode -Version Latest
             $dir = Join-Path $TestDrive 'strict/0state.scafld/2.5.0'
@@ -151,6 +172,7 @@ ManifestVersion: 1.10.0
             $row.package_id | Should -Be '0state.scafld'
             $row.version | Should -Be '2.5.0'
             $row.tags | Should -BeNullOrEmpty
+            ($row.extra | ConvertFrom-Json).PublisherUrl | Should -Be 'https://github.com/0state'
         }
     }
 

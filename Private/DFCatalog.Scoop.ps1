@@ -81,11 +81,18 @@ function Build-DFCatalogScoopIndexData {
         Projects all bucket manifests into flat index entries.
     .PARAMETER ScoopRoot
         The scoop root directory.
+    .PARAMETER IncludeRaw
+        When set, each entry also carries a 'raw' member holding the manifest's
+        verbatim JSON text. Off by default so the runtime index shape (and its
+        on-disk size) is unchanged; the package-universe build opts in to
+        preserve the full manifest (checkver/autoupdate/bin/depends/...).
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$ScoopRoot
+        [string]$ScoopRoot,
+
+        [switch]$IncludeRaw
     )
 
     $bucketsDir = Join-Path $ScoopRoot 'buckets'
@@ -99,8 +106,9 @@ function Build-DFCatalogScoopIndexData {
         if (-not (Test-Path $manifestDir)) { continue }
 
         foreach ($file in [System.IO.Directory]::EnumerateFiles($manifestDir, '*.json')) {
+            $text = [System.IO.File]::ReadAllText($file)
             try {
-                $doc = [System.Text.Json.JsonDocument]::Parse([System.IO.File]::ReadAllText($file))
+                $doc = [System.Text.Json.JsonDocument]::Parse($text)
             } catch {
                 Write-Verbose "DotForge: skipping unreadable scoop manifest '$file'"
                 continue
@@ -127,7 +135,7 @@ function Build-DFCatalogScoopIndexData {
                     } else { $el.ToString() }
                 }
 
-                [pscustomobject]@{
+                $entry = [ordered]@{
                     name        = [System.IO.Path]::GetFileNameWithoutExtension($file)
                     bucket      = $bucket.Name
                     version     = $version
@@ -135,6 +143,8 @@ function Build-DFCatalogScoopIndexData {
                     homepage    = $homepage
                     license     = $license
                 }
+                if ($IncludeRaw) { $entry['raw'] = $text }
+                [pscustomobject]$entry
             } finally {
                 $doc.Dispose()
             }

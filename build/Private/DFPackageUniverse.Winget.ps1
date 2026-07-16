@@ -162,6 +162,12 @@ function ConvertFrom-DFPackageUniverseWingetLocaleYaml {
     $shortDescription = [string]$content['ShortDescription']
     $description = $shortDescription ? $shortDescription : [string]$content['Description']
 
+    # Full-fidelity capture: the entire parsed manifest, verbatim (Depth covers
+    # nested Tags/Documentations/Agreements arrays). Fields also promoted to
+    # typed columns are kept here too, so the complete raw record is preserved
+    # for manual review and later phases (e.g. PublisherUrl/Moniker/ReleaseNotesUrl).
+    $extra = ConvertTo-Json -Compress -Depth 10 -InputObject $content
+
     [pscustomobject]@{
         name        = [string]$content['PackageName']
         publisher   = [string]$content['Publisher']
@@ -169,6 +175,7 @@ function ConvertFrom-DFPackageUniverseWingetLocaleYaml {
         homepage    = [string]$content['PackageUrl']
         license     = [string]$content['License']
         tags        = $tags.Count -gt 0 ? (ConvertTo-Json -Compress -InputObject @($tags)) : $null
+        extra       = $extra
     }
 }
 
@@ -244,7 +251,7 @@ function Resolve-DFPackageUniverseWingetVersionRow {
         license     = $fields.license
         publisher   = $fields.publisher
         tags        = $fields.tags
-        extra       = $null
+        extra       = $fields.extra
         fetched_at  = [datetime]::UtcNow.ToString('o')
     }
 }

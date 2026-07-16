@@ -119,7 +119,9 @@ if (-not (Get-Command Get-DFPackageUniverseScoopRows -ErrorAction Ignore)) {
 if (-not $ScoopRoot) { $ScoopRoot = Get-DFCatalogScoopRoot }
 
 if (-not $ScoopFetchItems) {
-    $ScoopFetchItems = { param($ScoopRoot) Build-DFCatalogScoopIndexData -ScoopRoot $ScoopRoot }
+    # -IncludeRaw: Stage 0 full-fidelity capture keeps the verbatim scoop
+    # manifest (checkver/autoupdate reveal the repo when homepage is a vanity URL).
+    $ScoopFetchItems = { param($ScoopRoot) Build-DFCatalogScoopIndexData -ScoopRoot $ScoopRoot -IncludeRaw }
 }
 if (-not $ChocoFetchPage) {
     # The real implementation lives in Private/DFPackageUniverse.Choco.ps1 so it
