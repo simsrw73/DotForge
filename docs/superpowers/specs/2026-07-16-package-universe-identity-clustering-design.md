@@ -1,7 +1,13 @@
 # Package Universe — Phase B: Identity Clustering — Design
 
 **Date:** 2026-07-16
-**Status:** Approved (design). Not yet implemented.
+**Status:** Implemented and validated against live data 2026-07-16. Stage 0 re-acquired
+30,251 rows with 100% `extra` population and zero errors; Stage 1 clustering over the enriched
+corpus produced 3,847 clusters (max size 10) covering 9,200 members, 3,241 review candidates, and
+235 monorepo/vendor families flagged for review. Ground truth (`bat`/`fd`/`ripgrep`) clusters
+correctly. The **monorepo/vendor-family guard** below was added during implementation after a live
+run exposed repo/homepage over-merging (nerd-fonts: 280 fonts, one repo; `dot.net/core`: 108 distinct
+packages, one URL) — see that section and Rejected Alternatives.
 
 **Part of:** the cross-catalog package-index effort (identity linking + metadata merge + categorization).
 Phase A (catalog acquisition) is complete and validated live. This spec covers **Phase B: identity
@@ -185,6 +191,23 @@ stage='link'`, then rebuilds. Clusters are a reproducible view over the edge gra
    and `conflict` (0.30) never union — they persist in `identity_links` as review candidates.
 4. Materialize `identity_clusters` + `cluster_members`; set `has_curated`/`needs_review` accordingly.
 
+### Monorepo / vendor-family guard (added after live validation)
+Repo-identity and homepage-identity are **not** tool-identity when one repo or host publishes many
+distinct packages. A live run over the real corpus over-merged badly: `ryanoasis/nerd-fonts` fused
+280 different fonts into one cluster, and `https://dot.net/core` fused 108 distinct .NET packages —
+the O(n²) pairwise blow-up also drove edges from ~10k to ~82k. The `bat`/`air` unit fixtures could
+not catch this (one package per repo); only the monorepo shape in production does.
+
+**Policy (user decision, "cap + route to review"):** a repo or homepage group is a *family* when it
+has **≥ `FamilySizeThreshold` members (default 5) carrying ≥ 2 distinct normalized names**. Families
+are **not auto-merged** — `Get-DFPackageUniverseFamilyGroups` surfaces each one as a
+`pipeline_log` (`stage='link'`, `level='review'`) row naming the shared key and size, for a human to
+curate (split into per-tool families, or mark as a category). This applies only to the repo and
+homepage tiers; publisher-name and name-only groups share one name by construction and are never
+families. Small variant groups (e.g. ripgrep's GNU/MSVC winget builds, size < threshold) still
+cluster. The guard makes the pipeline err toward **under**-merging (safe, reviewable) over
+**over**-merging (silent, wrong) — the same principle as name-only being review-only.
+
 ### Curation & review loop (the durable human layer)
 - **Source of truth: `data/package-universe-curation.jsonc`** — version-controlled, so it **survives the
   regenerable `universe.db`** (a full rebuild ~54 min recreates the DB; human verdicts are the one artifact
@@ -251,3 +274,11 @@ annotation, not a lost opportunity — it is out of scope for Phase B.
   rides the walk feed's `<m:properties>` (verify once live), so a free re-walk suffices.
 - **README/repo mining for install commands** — chicken-and-egg (you can only read a README for a repo you
   already have, which is already linked by the repo tier) plus unstructured parsing; rejected.
+- **Auto-merging monorepos/vendor families** — repo/homepage over-merges when one repo/host publishes many
+  packages (nerd-fonts, dot.net/core). Rejected in favor of the cap-to-review guard above.
+- **Name-compatibility gate on repo/homepage edges** (only merge same-repo packages whose names also agree)
+  — considered as the family fix and rejected: catalogs name the same tool very differently (nerd-fonts is
+  `Hack-NF` on scoop vs `nerd-fonts-Hack` on choco), so a name gate would *under*-cluster genuine matches
+  while still needing a size cap. The heterogeneity-size cap is simpler and loses no real links.
+- **Accept large clusters and flag them** (keep the over-merges, mark heterogeneous ones `needs_review`) —
+  rejected: leaves ~6,800 members mis-clustered until hand-curated; the cap prevents the bad merge up front.

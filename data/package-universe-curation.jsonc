@@ -1,0 +1,39 @@
+{
+  // Package-universe curation: human-verified cross-catalog identity verdicts.
+  //
+  // This file is the SOURCE OF TRUTH for identity clustering overrides. It is
+  // version-controlled precisely because universe.db is gitignored and rebuilt
+  // from scratch (~54 min) -- these hand-verified verdicts are the one artifact
+  // in the pipeline that cannot be regenerated. Build-DFPackageUniverseLinks.ps1
+  // loads it every run and mirrors it into the curated_links table.
+  //
+  // Work the review queue (pipeline_log WHERE stage='link' AND level='review',
+  // conflict candidates first), then record verdicts here; the next run applies
+  // them and the queue shrinks to only-new candidates.
+  //
+  // "same":      confirmed-identical packages -> force-merged into one cluster
+  //              (method 'curated', confidence 1.0).
+  // "different": confirmed-distinct packages that a signal would otherwise merge
+  //              -> a permanent cannot-link, enforced during union-find.
+  //
+  // Members are keyed by durable (source, package_id). Examples of the shape
+  // (currently empty -- populate from review):
+  //
+  //   "same": [
+  //     { "id": "bat", "members": [
+  //       { "source": "scoop",  "package_id": "bat" },
+  //       { "source": "winget", "package_id": "sharkdp.bat" },
+  //       { "source": "choco",  "package_id": "bat" }
+  //     ] }
+  //   ],
+  //   "different": [
+  //     { "note": "Wii-U emulator vs calculator emulator", "members": [
+  //       { "source": "scoop",  "package_id": "main/cemu" },
+  //       { "source": "winget", "package_id": "CE-Programming.CEmu" }
+  //     ] }
+  //   ]
+
+  "schemaVersion": 1,
+  "same": [],
+  "different": []
+}
