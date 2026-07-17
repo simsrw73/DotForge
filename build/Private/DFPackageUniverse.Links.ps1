@@ -79,6 +79,21 @@ function ConvertTo-DFNormalizedName {
     ($Value.ToLowerInvariant() -replace '[^a-z0-9]', '')
 }
 
+function ConvertTo-DFPackageUniverseBaseName {
+    <#
+    .SYNOPSIS
+        Strips chocolatey's packaging-variant suffixes (.install / .portable /
+        .commandline) from a choco package name so the variants normalize to the
+        same base tool (e.g. '7zip.install' -> '7zip'). Chocolatey's own public
+        packaging convention; other sources are returned unchanged.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowNull()][string]$Source, [AllowNull()][string]$Name)
+    if ($Source -eq 'choco' -and $Name) { return ($Name -replace '\.(install|portable|commandline)$', '') }
+    $Name
+}
+
 function ConvertTo-DFNormalizedPublisher {
     <#
     .SYNOPSIS
@@ -119,7 +134,7 @@ function Get-DFPackageUniverseLinkKeys {
         $Row
     )
 
-    $name = ConvertTo-DFNormalizedName -Value $Row.name
+    $name = ConvertTo-DFNormalizedName -Value (ConvertTo-DFPackageUniverseBaseName -Source $Row.source -Name $Row.name)
     $pub = ConvertTo-DFNormalizedPublisher -Value $Row.publisher
 
     $homepage = $null

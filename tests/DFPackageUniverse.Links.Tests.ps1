@@ -117,6 +117,27 @@ Describe 'DFPackageUniverse.Links' {
         }
     }
 
+    Context 'ConvertTo-DFPackageUniverseBaseName' {
+        It 'strips the .install suffix from a choco name' {
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name '7zip.install' | Should -Be '7zip'
+        }
+
+        It 'strips .install / .portable / .commandline suffixes, case-insensitively' {
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name '7zip.install' | Should -Be '7zip'
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name '7zip.portable' | Should -Be '7zip'
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name '7zip.commandline' | Should -Be '7zip'
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name 'GitDepend.Portable' | Should -Be 'GitDepend'
+        }
+
+        It 'leaves a choco name without such a suffix unchanged' {
+            ConvertTo-DFPackageUniverseBaseName -Source 'choco' -Name 'ripgrep' | Should -Be 'ripgrep'
+        }
+
+        It 'leaves a non-choco name with a .portable-looking suffix unchanged (choco-only strip)' {
+            ConvertTo-DFPackageUniverseBaseName -Source 'winget' -Name 'X.portable' | Should -Be 'X.portable'
+        }
+    }
+
     Context 'Get-DFPackageUniverseLinkKeys' {
         It 'returns a repo key and no homepage key for a github homepage' {
             $row = New-RawRow -Source 'scoop' -PackageId 'main/ripgrep' -Name 'ripgrep' -Homepage 'https://github.com/BurntSushi/ripgrep'
@@ -148,6 +169,12 @@ Describe 'DFPackageUniverse.Links' {
         It 'gates the name-only key to names of length >= 4' {
             (Get-DFPackageUniverseLinkKeys -Row (New-RawRow -Source 'choco' -PackageId 'fd' -Name 'fd')).Name | Should -BeNullOrEmpty
             (Get-DFPackageUniverseLinkKeys -Row (New-RawRow -Source 'choco' -PackageId 'ripgrep' -Name 'ripgrep')).Name | Should -Be 'ripgrep'
+        }
+
+        It 'normalizes chocolatey packaging-variant suffixes to the same Name key as the base tool (7zip / 7zip.install)' {
+            $base = New-RawRow -Source 'choco' -PackageId '7zip' -Name '7zip'
+            $variant = New-RawRow -Source 'choco' -PackageId '7zip.install' -Name '7zip.install'
+            (Get-DFPackageUniverseLinkKeys -Row $base).Name | Should -Be (Get-DFPackageUniverseLinkKeys -Row $variant).Name
         }
     }
 
