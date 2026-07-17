@@ -143,3 +143,84 @@ function Get-DFPackageUniverseToolTags {
     }
     $out.ToArray()
 }
+
+function Import-DFPackageUniverseCategoryRules {
+    <#
+    .SYNOPSIS
+        Loads the version-controlled keyword->category rule file into
+        { Category; Keywords[] } objects. JSONC: whole-line // comments and
+        /* */ blocks are stripped (line comments anchored to line start so a
+        '//' inside a value is safe). A missing file yields @().
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path $Path)) { return @() }
+    $text = Get-Content -Raw -Path $Path
+    $text = [regex]::Replace($text, '(?m)^\s*//.*$', '')
+    $text = [regex]::Replace($text, '(?s)/\*.*?\*/', '')
+    $doc = $text | ConvertFrom-Json
+
+    $rulesProp = $doc.PSObject.Properties['rules']
+    if (-not $rulesProp) { return @() }
+    @(foreach ($r in @($rulesProp.Value)) {
+        $kw = @(@($r.keywords) | ForEach-Object { "$_".Trim().ToLowerInvariant() } | Where-Object { $_ })
+        [pscustomobject]@{ Category = [string]$r.category; Keywords = $kw }
+    })
+}
+
+function Get-DFPackageUniverseCategoryTokens {
+    <#
+    .SYNOPSIS
+        The match set for category derivation: the tool's tag union plus any
+        winget Moniker (a strong single-word category hint), all lowercased.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Members,
+        [AllowEmptyCollection()][string[]]$Tags = @()
+    )
+    $tokens = [System.Collections.Generic.List[string]]::new()
+    foreach ($t in @($Tags)) { if ($t) { $tokens.Add("$t".Trim().ToLowerInvariant()) } }
+    foreach ($m in $Members) {
+        if ($m.source -eq 'winget') {
+            $extra = ConvertFrom-DFDbNull $m.extra
+            if ($extra) {
+                $e = $null
+                try { $e = $extra | ConvertFrom-Json } catch { $e = $null }
+                if ($e) {
+                    $mon = $e.PSObject.Properties['Moniker']
+                    if ($mon -and $mon.Value) { $tokens.Add("$($mon.Value)".Trim().ToLowerInvariant()) }
+                }
+            }
+        }
+    }
+    $tokens.ToArray()
+}
+
+function ConvertTo-DFPackageUniverseCategories {
+    <#
+    .SYNOPSIS
+        Categories whose rule keywords intersect the token set. Deduped, rule
+        order preserved (deterministic).
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowEmptyCollection()][string[]]$Tokens = @(),
+        [AllowEmptyCollection()][object[]]$Rules = @()
+    )
+    $set = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($t in @($Tokens)) { if ($t) { [void]$set.Add(("$t".Trim().ToLowerInvariant())) } }
+
+    $out = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($rule in @($Rules)) {
+        foreach ($kw in @($rule.Keywords)) {
+            if ($set.Contains($kw)) {
+                if ($seen.Add($rule.Category)) { $out.Add($rule.Category) }
+                break
+            }
+        }
+    }
+    $out.ToArray()
+}

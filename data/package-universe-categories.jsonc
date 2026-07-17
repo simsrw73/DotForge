@@ -1,0 +1,17 @@
+{
+  // Phase C first-pass category rules. Each rule maps any matching `keywords`
+  // (compared against a tool's normalized tags + winget Moniker) to `category`.
+  // Version-controlled and human-growable; full ontology is Phase D.
+  "schemaVersion": 1,
+  "rules": [
+    { "category": "search",   "keywords": ["search", "grep", "find", "ripgrep", "fuzzy-finder"] },
+    { "category": "editor",   "keywords": ["editor", "ide", "vim", "neovim", "emacs", "text-editor"] },
+    { "category": "viewer",   "keywords": ["cat", "pager", "viewer", "less", "syntax-highlighting"] },
+    { "category": "shell",    "keywords": ["shell", "terminal", "prompt", "console"] },
+    { "category": "git",      "keywords": ["git", "version-control", "vcs", "diff"] },
+    { "category": "files",    "keywords": ["filesystem", "file-manager", "ls", "directory", "disk-usage"] },
+    { "category": "network",  "keywords": ["http", "network", "curl", "dns", "download"] },
+    { "category": "dev",      "keywords": ["compiler", "build", "linter", "formatter", "package-manager"] },
+    { "category": "data",     "keywords": ["json", "yaml", "csv", "database", "sql"] }
+  ]
+}

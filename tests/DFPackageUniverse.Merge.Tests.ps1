@@ -125,4 +125,52 @@ Describe 'DFPackageUniverse.Merge' {
             @(Get-DFPackageUniverseToolTags -Members $members).Count | Should -Be 0
         }
     }
+
+    Context 'categories' {
+        BeforeAll {
+            $script:rulesFile = Join-Path ([System.IO.Path]::GetTempPath()) ("catrules-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            @'
+{
+  // keyword -> category rules (first-pass)
+  "schemaVersion": 1,
+  "rules": [
+    { "category": "viewer", "keywords": ["cat", "pager", "viewer"] },
+    { "category": "search", "keywords": ["search", "grep", "find"] }
+  ]
+}
+'@ | Set-Content -Path $script:rulesFile -Encoding utf8
+        }
+        AfterAll { Remove-Item -Path $script:rulesFile -ErrorAction Ignore }
+
+        It 'loads rules, ignoring comments' {
+            $rules = Import-DFPackageUniverseCategoryRules -Path $script:rulesFile
+            @($rules).Count | Should -Be 2
+            $rules[0].Category | Should -Be 'viewer'
+            $rules[0].Keywords | Should -Contain 'cat'
+        }
+
+        It 'returns empty for a missing rules file' {
+            @(Import-DFPackageUniverseCategoryRules -Path 'C:\nope\missing.jsonc').Count | Should -Be 0
+        }
+
+        It 'includes a winget Moniker in the token set' {
+            $members = @([pscustomobject]@{ source = 'winget'; package_id = 'A.X'; extra = (ConvertTo-Json -Compress @{ Moniker = 'grep' }) })
+            $tokens = Get-DFPackageUniverseCategoryTokens -Members $members -Tags @('viewer')
+            $tokens | Should -Contain 'grep'
+            $tokens | Should -Contain 'viewer'
+        }
+
+        It 'maps tokens to categories via the rules, deduped' {
+            $rules = Import-DFPackageUniverseCategoryRules -Path $script:rulesFile
+            $cats = ConvertTo-DFPackageUniverseCategories -Tokens @('cat', 'grep') -Rules $rules
+            $cats | Should -Contain 'viewer'
+            $cats | Should -Contain 'search'
+            @($cats).Count | Should -Be 2
+        }
+
+        It 'yields no category for unmatched tokens' {
+            $rules = Import-DFPackageUniverseCategoryRules -Path $script:rulesFile
+            @(ConvertTo-DFPackageUniverseCategories -Tokens @('zzz') -Rules $rules).Count | Should -Be 0
+        }
+    }
 }
