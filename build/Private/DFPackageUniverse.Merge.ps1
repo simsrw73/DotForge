@@ -84,6 +84,8 @@ function Resolve-DFPackageUniverseToolRecord {
 
     $display = @('winget', 'choco', 'scoop')
     $name = Select-DFByPriority -Members $Members -Order $display -Field 'name'
+    # Clean chocolatey packaging suffixes off the display name (choco-only).
+    $nameValue = ConvertTo-DFPackageUniverseBaseName -Source $name.Source -Name $name.Value
     $desc = Select-DFByPriority -Members $Members -Order $display -Field 'description'
     # Not named $home -- that's PowerShell's read-only automatic variable and
     # assigning to it throws SessionStateUnauthorizedAccessException.
@@ -112,7 +114,7 @@ function Resolve-DFPackageUniverseToolRecord {
         $reasons.Add("license-conflict: $($raw -join ' | ')")
     }
 
-    $nameVal = if ($name.Value) { $name.Value } else { [string](@($Members)[0].package_id) }
+    $nameVal = if ($nameValue) { $nameValue } else { [string](@($Members)[0].package_id) }
 
     [pscustomobject]@{
         Name              = $nameVal

@@ -138,6 +138,26 @@ Describe 'DFPackageUniverse.Merge' {
         It 'rejects an empty member collection (a tool always has at least one package)' {
             { Resolve-DFPackageUniverseToolRecord -Members @() } | Should -Throw
         }
+
+        It 'strips the chocolatey packaging suffix from the merged display name when the picked name is choco-only' {
+            $members = @(
+                (M -Source 'choco' -PackageId '7zip.install' -Name '7zip.install')
+                (M -Source 'choco' -PackageId '7zip.portable' -Name '7zip.portable')
+            )
+            $rec = Resolve-DFPackageUniverseToolRecord -Members $members
+            $rec.Name | Should -Be '7zip'
+            $rec.NameSource | Should -Be 'choco'
+        }
+
+        It 'leaves a winget-sourced display name untouched (regression: strip is choco-only)' {
+            $members = @(
+                (M -Source 'winget' -PackageId 'sharkdp.bat' -Name 'bat')
+                (M -Source 'scoop'  -PackageId 'main/bat'    -Name 'bat')
+            )
+            $rec = Resolve-DFPackageUniverseToolRecord -Members $members
+            $rec.Name | Should -Be 'bat'
+            $rec.NameSource | Should -Be 'winget'
+        }
     }
 
     Context 'Get-DFPackageUniverseToolTags' {
