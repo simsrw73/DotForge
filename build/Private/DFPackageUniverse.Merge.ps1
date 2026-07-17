@@ -322,3 +322,65 @@ CREATE TABLE IF NOT EXISTS tool_categories (
     }
     Invoke-SqliteQuery -DataSource $DatabasePath -Query "DELETE FROM pipeline_log WHERE stage = 'merge';"
 }
+
+function Save-DFPackageUniverseTools {
+    <#
+    .SYNOPSIS
+        Persists a merge run in one transaction: the master tools rows (sequential
+        tool_id), the lossless tool_packages children (every member's typed fields
+        + verbatim extra), tool_tags, tool_categories, and a pipeline_log
+        stage='merge' level='review' row per needs-review tool.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] $Connection,
+        [Parameter(Mandatory)] [AllowEmptyCollection()] [object[]]$Tools
+    )
+
+    $now = [datetime]::UtcNow.ToString('o')
+    Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'BEGIN TRANSACTION;'
+    try {
+        $tid = 0
+        foreach ($tool in $Tools) {
+            $tid++
+            $rec = $tool.Record
+            $rr = if (@($rec.ReviewReasons).Count -gt 0) { ConvertTo-Json -Compress -InputObject @($rec.ReviewReasons) } else { $null }
+            Invoke-SqliteQuery -SQLiteConnection $Connection -Query @'
+INSERT INTO tools (tool_id, name, name_source, description, description_source, homepage, repo_url, license, source_count, cluster_id, needs_review, review_reasons, created_at)
+VALUES (@id, @name, @ns, @desc, @ds, @home, @repo, @lic, @sc, @cid, @rev, @rr, @at);
+'@ -SqlParameters @{
+                id = $tid; name = $rec.Name; ns = $rec.NameSource; desc = $rec.Description; ds = $rec.DescriptionSource
+                home = $rec.Homepage; repo = $rec.RepoUrl; lic = $rec.License; sc = $rec.SourceCount
+                cid = $tool.ClusterId; rev = [int][bool]$rec.NeedsReview; rr = $rr; at = $now
+            }
+
+            foreach ($m in $tool.Members) {
+                Invoke-SqliteQuery -SQLiteConnection $Connection -Query @'
+INSERT INTO tool_packages (tool_id, source, package_id, name, version, description, homepage, license, publisher, extra)
+VALUES (@id, @src, @pid, @name, @ver, @desc, @home, @lic, @pub, @extra);
+'@ -SqlParameters @{
+                    id = $tid; src = $m.source; pid = $m.package_id; name = $m.name; ver = $m.version
+                    desc = $m.description; home = $m.homepage; lic = $m.license; pub = $m.publisher; extra = $m.extra
+                }
+            }
+
+            foreach ($tag in @($tool.Tags)) {
+                Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'INSERT OR IGNORE INTO tool_tags (tool_id, tag) VALUES (@id, @tag);' -SqlParameters @{ id = $tid; tag = $tag }
+            }
+            foreach ($cat in @($tool.Categories)) {
+                Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'INSERT OR IGNORE INTO tool_categories (tool_id, category) VALUES (@id, @cat);' -SqlParameters @{ id = $tid; cat = $cat }
+            }
+
+            if ($rec.NeedsReview) {
+                Invoke-SqliteQuery -SQLiteConnection $Connection -Query @'
+INSERT INTO pipeline_log (stage, source, package_id, level, message, logged_at)
+VALUES ('merge', NULL, NULL, 'review', @msg, @at);
+'@ -SqlParameters @{ msg = "tool $tid ($($rec.Name)) needs review: $(@($rec.ReviewReasons) -join '; ')"; at = $now }
+            }
+        }
+        Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'COMMIT;'
+    } catch {
+        Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'ROLLBACK;'
+        throw
+    }
+}

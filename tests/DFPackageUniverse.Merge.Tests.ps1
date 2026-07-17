@@ -3,6 +3,17 @@ BeforeAll {
     Import-Module PSSQLite
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Links.ps1"  # Get-DFPackageUniverseRepoKey
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Merge.ps1"
+
+    function New-MergeTestDb {
+        $db = Join-Path ([System.IO.Path]::GetTempPath()) ("mergetest-" + [guid]::NewGuid().ToString('N') + ".db")
+        Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE raw_packages (id INTEGER PRIMARY KEY, source TEXT, package_id TEXT, name TEXT, version TEXT, description TEXT, homepage TEXT, license TEXT, publisher TEXT, tags TEXT, extra TEXT, fetched_at TEXT, UNIQUE(source, package_id));
+CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);
+CREATE TABLE cluster_members (cluster_id INTEGER, source TEXT, package_id TEXT, join_method TEXT, join_confidence REAL, PRIMARY KEY(source, package_id));
+'@
+        Initialize-DFPackageUniverseToolsSchema -DatabasePath $db
+        $db
+    }
 }
 
 Describe 'DFPackageUniverse.Merge' {
@@ -266,6 +277,39 @@ Describe 'DFPackageUniverse.Merge' {
                 $logs = @(Invoke-SqliteQuery -DataSource $db -Query 'SELECT stage FROM pipeline_log')
                 @($logs).Count | Should -Be 1
                 $logs[0].stage | Should -Be 'link'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
+
+    Context 'Save-DFPackageUniverseTools' {
+        It 'writes the parent, packages, tags, categories, and a review log row' {
+            $db = New-MergeTestDb
+            try {
+                $tool = [pscustomobject]@{
+                    ClusterId = 1
+                    Record = [pscustomobject]@{
+                        Name = 'bat'; NameSource = 'winget'; Description = 'A cat clone'; DescriptionSource = 'winget'
+                        Homepage = 'https://github.com/sharkdp/bat'; RepoUrl = 'https://github.com/sharkdp/bat'
+                        License = 'MIT'; SourceCount = 2; NeedsReview = $true; ReviewReasons = @('license-conflict: MIT | Apache-2.0')
+                    }
+                    Members = @(
+                        [pscustomobject]@{ source = 'winget'; package_id = 'sharkdp.bat'; name = 'bat'; version = '0.24'; description = 'A cat clone'; homepage = 'h'; license = 'MIT'; publisher = 'sharkdp'; extra = '{"a":1}' }
+                        [pscustomobject]@{ source = 'choco'; package_id = 'bat'; name = 'Bat'; version = '0.24.0'; description = 'd'; homepage = 'h'; license = 'https://x/LICENSE'; publisher = 'p'; extra = $null }
+                    )
+                    Tags = @('cat', 'viewer')
+                    Categories = @('viewer')
+                }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { Save-DFPackageUniverseTools -Connection $conn -Tools @($tool) } finally { $conn.Close() }
+
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tools').n | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT name, name_source, needs_review FROM tools').name | Should -Be 'bat'
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT needs_review FROM tools').needs_review | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_packages').n | Should -Be 2
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT extra FROM tool_packages WHERE source='winget'").extra | Should -Be '{"a":1}'
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_tags').n | Should -Be 2
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_categories').n | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM pipeline_log WHERE stage='merge' AND level='review'").n | Should -Be 1
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
