@@ -150,7 +150,8 @@ function Import-DFPackageUniverseCategoryRules {
         Loads the version-controlled keyword->category rule file into
         { Category; Keywords[] } objects. JSONC: whole-line // comments and
         /* */ blocks are stripped (line comments anchored to line start so a
-        '//' inside a value is safe). A missing file yields @().
+        '//' inside a value is safe). A missing file, or one that is empty or
+        entirely comments, yields @().
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
@@ -159,6 +160,7 @@ function Import-DFPackageUniverseCategoryRules {
     $text = Get-Content -Raw -Path $Path
     $text = [regex]::Replace($text, '(?m)^\s*//.*$', '')
     $text = [regex]::Replace($text, '(?s)/\*.*?\*/', '')
+    if (-not $text.Trim()) { return @() }
     $doc = $text | ConvertFrom-Json
 
     $rulesProp = $doc.PSObject.Properties['rules']

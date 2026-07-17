@@ -176,6 +176,20 @@ Describe 'DFPackageUniverse.Merge' {
             @(Import-DFPackageUniverseCategoryRules -Path 'C:\nope\missing.jsonc').Count | Should -Be 0
         }
 
+        It 'returns empty for an empty/all-comment rules file' {
+            $script:commentOnlyFile = Join-Path ([System.IO.Path]::GetTempPath()) ("catrules-comments-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            try {
+                @'
+// this file intentionally has no JSON, only comments
+/*
+  placeholder for future rules
+*/
+'@ | Set-Content -Path $script:commentOnlyFile -Encoding utf8
+
+                @(Import-DFPackageUniverseCategoryRules -Path $script:commentOnlyFile).Count | Should -Be 0
+            } finally { Remove-Item -Path $script:commentOnlyFile -ErrorAction Ignore }
+        }
+
         It 'includes a winget Moniker in the token set' {
             $members = @([pscustomobject]@{ source = 'winget'; package_id = 'A.X'; extra = (ConvertTo-Json -Compress @{ Moniker = 'grep' }) })
             $tokens = Get-DFPackageUniverseCategoryTokens -Members $members -Tags @('viewer')
