@@ -6,6 +6,7 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Package-universe Phase C (tool merge)** — `build/Build-DFPackageUniverseTools.ps1` flattens Phase B clusters and singletons into a master `tools` table (one row per real-world tool across the whole corpus, lossless via a `tool_packages` child), with per-field priority picks (winget > choco > scoop) and provenance, a license single-answer conflict flag, a `tool_tags` union, and first-pass `tool_categories` from a committed `data/package-universe-categories.jsonc` rule file. Build-only; no public module surface change.
 - **`Find-DFPackage` (`trifle`):** fast multi-catalog tool lookup. Given a command
   name or keywords, searches scoop, winget, choco, npm, PyPI, crates.io, and
   PSGallery and renders a merged info card (single confident match) or match

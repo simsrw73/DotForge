@@ -382,4 +382,25 @@ Describe 'DFPackageUniverse.Merge' {
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
+
+    Context 'Build-DFPackageUniverseTools.ps1' {
+        It 'runs end-to-end against a prepared DB and returns a summary' {
+            $db = New-MergeTestDb
+            try {
+                Add-RawRow -Db $db -Source 'winget' -PackageId 'A.X' -Name 'x'
+                Add-RawRow -Db $db -Source 'scoop'  -PackageId 'main/y' -Name 'y'
+                $summary = & "$PSScriptRoot/../build/Build-DFPackageUniverseTools.ps1" -DatabasePath $db -CategoryRulesPath $null 6>$null
+                $summary.Tools | Should -Be 2
+                $summary.Packages | Should -Be 2
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'throws a helpful error when cluster_members is missing (Phase B not run)' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("nob-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query 'CREATE TABLE raw_packages (id INTEGER PRIMARY KEY, source TEXT, package_id TEXT, fetched_at TEXT); CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);'
+                { & "$PSScriptRoot/../build/Build-DFPackageUniverseTools.ps1" -DatabasePath $db -CategoryRulesPath $null 6>$null } | Should -Throw '*cluster_members*'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
 }
