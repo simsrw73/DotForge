@@ -19,10 +19,13 @@ function ConvertTo-DFNormalizedLicense {
     .SYNOPSIS
         Canonical license identifier for single-answer conflict detection:
         lowercased, the word 'license' removed, non-alphanumeric stripped
-        ('MIT' and 'MIT License' -> 'mit'). Returns $null for empties AND for
-        URL-shaped values -- choco's license column holds LicenseUrl, not an
-        SPDX id, so comparing it to winget's 'MIT' would false-conflict on every
-        multi-source choco tool. URLs simply do not participate in the check.
+        ('MIT' and 'MIT License' -> 'mit'). Also folds SPDX modifier suffixes
+        (-only, -or-later, +) so e.g. 'GPL-3.0-only' and 'GPL-3.0' compare equal
+        (the modifier is not a different license for conflict detection), while
+        distinct families stay distinct ('LGPL-3.0' != 'GPL-3.0'). Returns $null
+        for empties AND for URL-shaped values -- choco's license column holds
+        LicenseUrl, not an SPDX id, so comparing it to winget's 'MIT' would
+        false-conflict on every multi-source choco tool. URLs do not participate.
     #>
     [CmdletBinding()]
     [OutputType([string])]
