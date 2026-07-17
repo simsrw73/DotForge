@@ -151,15 +151,24 @@ function Test-DFPackageUniverseFamily {
     <#
     .SYNOPSIS
         True when a repo/homepage group looks like a monorepo or vendor family:
-        at least -Threshold members carrying at least two distinct normalized
-        names. Such a group is not one tool and must not be auto-merged.
+        either at least -Threshold members carrying at least two distinct
+        normalized names (the large heterogeneous case, e.g. nerd-fonts), OR
+        every member comes from a single source and carries at least two
+        distinct normalized names regardless of size (a small same-source
+        vendor cluster, e.g. winget's OpenDsc.Lcm/Resources/Server -- distinct
+        tools sharing one repo). Such a group is not one tool and must not be
+        auto-merged. A CROSS-source group with distinct names (e.g. ripgrep's
+        winget+choco+scoop cluster) is deliberately NOT covered by the
+        single-source rule and still merges.
     #>
     [CmdletBinding()]
     param([object[]]$Members, [int]$Threshold)
 
-    if (@($Members).Count -lt $Threshold) { return $false }
-    $names = @($Members | ForEach-Object { ConvertTo-DFNormalizedName -Value $_.Row.name } | Where-Object { $_ } | Select-Object -Unique)
-    ($names.Count -ge 2)
+    $members = @($Members)
+    $names = @($members | ForEach-Object { ConvertTo-DFNormalizedName -Value $_.Row.name } | Where-Object { $_ } | Select-Object -Unique)
+    if ($names.Count -lt 2) { return $false }
+    $sources = @($members | ForEach-Object { $_.Row.source } | Select-Object -Unique)
+    return ($members.Count -ge $Threshold) -or ($sources.Count -eq 1)
 }
 
 function Get-DFPackageUniverseFamilyGroups {

@@ -238,6 +238,37 @@ Describe 'DFPackageUniverse.Links' {
         }
     }
 
+    Context 'Test-DFPackageUniverseFamily' {
+        It 'flags a single-source multi-name group as a family even below the size threshold (OpenDsc vendor cluster)' {
+            $rows = @(
+                New-RawRow -Source 'winget' -PackageId 'OpenDsc.Lcm'       -Name 'OpenDsc Lcm'
+                New-RawRow -Source 'winget' -PackageId 'OpenDsc.Resources' -Name 'OpenDsc Resources'
+                New-RawRow -Source 'winget' -PackageId 'OpenDsc.Server'    -Name 'OpenDsc Server'
+            )
+            $members = Get-DFPackageUniverseKeyedRows -Rows $rows
+            Test-DFPackageUniverseFamily -Members $members -Threshold 5 | Should -BeTrue
+        }
+
+        It 'does not flag a cross-source multi-name group below the size threshold (protects the ripgrep-shape merge)' {
+            $rows = @(
+                New-RawRow -Source 'winget' -PackageId 'BurntSushi.ripgrep.MSVC' -Name 'ripgrep MSVC'
+                New-RawRow -Source 'choco'  -PackageId 'ripgrep'                 -Name 'ripgrep'
+                New-RawRow -Source 'scoop'  -PackageId 'main/ripgrep'            -Name 'ripgrep GNU'
+            )
+            $members = Get-DFPackageUniverseKeyedRows -Rows $rows
+            Test-DFPackageUniverseFamily -Members $members -Threshold 5 | Should -BeFalse
+        }
+
+        It 'does not flag a single-source group with only one distinct name (variant/repackage of one tool)' {
+            $rows = @(
+                New-RawRow -Source 'winget' -PackageId 'A.X' -Name 'Tool'
+                New-RawRow -Source 'winget' -PackageId 'A.Y' -Name 'Tool'
+            )
+            $members = Get-DFPackageUniverseKeyedRows -Rows $rows
+            Test-DFPackageUniverseFamily -Members $members -Threshold 5 | Should -BeFalse
+        }
+    }
+
     Context 'Get-DFPackageUniverseFamilyGroups' {
         It 'surfaces a monorepo (shared repo, many distinct names) for review' {
             $rows = @(1..6 | ForEach-Object {
