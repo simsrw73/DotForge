@@ -104,4 +104,25 @@ Describe 'DFPackageUniverse.Merge' {
             { Resolve-DFPackageUniverseToolRecord -Members @() } | Should -Throw
         }
     }
+
+    Context 'Get-DFPackageUniverseToolTags' {
+        It 'unions and normalizes tags across members, deduping' {
+            $members = @(
+                [pscustomobject]@{ source = 'winget'; package_id = 'A.X'; tags = (ConvertTo-Json -Compress @('Cat', 'Viewer')) }
+                [pscustomobject]@{ source = 'choco';  package_id = 'x';   tags = (ConvertTo-Json -Compress @('cat', 'less')) }
+                [pscustomobject]@{ source = 'scoop';  package_id = 'main/x'; tags = $null }
+            )
+            $tags = Get-DFPackageUniverseToolTags -Members $members
+            $tags | Should -Contain 'cat'
+            $tags | Should -Contain 'viewer'
+            $tags | Should -Contain 'less'
+            @($tags | Where-Object { $_ -eq 'cat' }).Count | Should -Be 1
+        }
+
+        It 'does not throw under strict on a DBNull tags cell' {
+            $members = @([pscustomobject]@{ source = 'scoop'; package_id = 'main/x'; tags = [DBNull]::Value })
+            { Get-DFPackageUniverseToolTags -Members $members } | Should -Not -Throw
+            @(Get-DFPackageUniverseToolTags -Members $members).Count | Should -Be 0
+        }
+    }
 }

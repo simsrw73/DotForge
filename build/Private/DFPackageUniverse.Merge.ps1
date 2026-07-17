@@ -116,3 +116,30 @@ function Resolve-DFPackageUniverseToolRecord {
         ReviewReasons     = $reasons.ToArray()
     }
 }
+
+function Get-DFPackageUniverseToolTags {
+    <#
+    .SYNOPSIS
+        Normalized (lowercase/trim) deduped union of every member's tags. Each
+        catalog stores tags as a JSON array string in the tags column (winget and
+        choco populate it; scoop leaves it NULL). First-seen order is preserved so
+        the output is deterministic (idempotent runs).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Members)
+
+    $out = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($m in $Members) {
+        $raw = ConvertFrom-DFDbNull $m.tags
+        if (-not $raw) { continue }
+        $parsed = $null
+        try { $parsed = $raw | ConvertFrom-Json } catch { $parsed = $null }
+        if ($null -eq $parsed) { continue }
+        foreach ($t in @($parsed)) {
+            $norm = "$t".Trim().ToLowerInvariant()
+            if ($norm -and $seen.Add($norm)) { $out.Add($norm) }
+        }
+    }
+    $out.ToArray()
+}
