@@ -99,5 +99,9 @@ Describe 'DFPackageUniverse.Merge' {
             $rec = Resolve-DFPackageUniverseToolRecord -Members @( (M -Source 'scoop' -PackageId 'main/thing') )
             $rec.Name | Should -Be 'main/thing'
         }
+
+        It 'rejects an empty member collection (a tool always has at least one package)' {
+            { Resolve-DFPackageUniverseToolRecord -Members @() } | Should -Throw
+        }
     }
 }

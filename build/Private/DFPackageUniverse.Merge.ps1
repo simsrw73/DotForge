@@ -69,7 +69,7 @@ function Resolve-DFPackageUniverseToolRecord {
         a post-normalization license disagreement sets NeedsReview.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Members)
+    param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][object[]]$Members)
 
     $display = @('winget', 'choco', 'scoop')
     $name = Select-DFByPriority -Members $Members -Order $display -Field 'name'
