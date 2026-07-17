@@ -265,3 +265,60 @@ function Get-DFPackageUniverseToolGroups {
     }
     $groups.ToArray()
 }
+
+function Initialize-DFPackageUniverseToolsSchema {
+    <#
+    .SYNOPSIS
+        Creates the Phase C (merge stage) tables if missing, then clears this
+        stage's own rows -- the four tool tables plus pipeline_log stage='merge'
+        -- so each run rebuilds the master tools table as a reproducible view
+        over raw_packages + cluster_members. Other phases' log history is untouched.
+    .PARAMETER DatabasePath
+        Path to the shared universe.db.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DatabasePath
+    )
+
+    Invoke-SqliteQuery -DataSource $DatabasePath -Query @'
+CREATE TABLE IF NOT EXISTS tools (
+  tool_id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  name_source TEXT,
+  description TEXT,
+  description_source TEXT,
+  homepage TEXT,
+  repo_url TEXT,
+  license TEXT,
+  source_count INTEGER NOT NULL,
+  cluster_id INTEGER,
+  needs_review INTEGER NOT NULL,
+  review_reasons TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tool_packages (
+  tool_id INTEGER NOT NULL,
+  source TEXT NOT NULL, package_id TEXT NOT NULL,
+  name TEXT, version TEXT, description TEXT, homepage TEXT, license TEXT, publisher TEXT,
+  extra TEXT,
+  PRIMARY KEY(source, package_id)
+);
+CREATE TABLE IF NOT EXISTS tool_tags (
+  tool_id INTEGER NOT NULL,
+  tag TEXT NOT NULL,
+  PRIMARY KEY(tool_id, tag)
+);
+CREATE TABLE IF NOT EXISTS tool_categories (
+  tool_id INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  PRIMARY KEY(tool_id, category)
+);
+'@
+
+    foreach ($t in 'tools', 'tool_packages', 'tool_tags', 'tool_categories') {
+        Invoke-SqliteQuery -DataSource $DatabasePath -Query "DELETE FROM $t;"
+    }
+    Invoke-SqliteQuery -DataSource $DatabasePath -Query "DELETE FROM pipeline_log WHERE stage = 'merge';"
+}

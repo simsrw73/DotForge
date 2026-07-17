@@ -247,4 +247,26 @@ Describe 'DFPackageUniverse.Merge' {
             $groups[3].Members[0].package_id | Should -Be 'last'
         }
     }
+
+    Context 'Initialize-DFPackageUniverseToolsSchema' {
+        It 'creates the four tables and clears only stage=merge log rows' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("schematest-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query 'CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);'
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO pipeline_log (stage, level, message, logged_at) VALUES ('link', 'review', 'keep me', 'now'), ('merge', 'review', 'drop me', 'now');"
+
+                Initialize-DFPackageUniverseToolsSchema -DatabasePath $db
+
+                $tables = @(Invoke-SqliteQuery -DataSource $db -Query "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").name
+                $tables | Should -Contain 'tools'
+                $tables | Should -Contain 'tool_packages'
+                $tables | Should -Contain 'tool_tags'
+                $tables | Should -Contain 'tool_categories'
+
+                $logs = @(Invoke-SqliteQuery -DataSource $db -Query 'SELECT stage FROM pipeline_log')
+                @($logs).Count | Should -Be 1
+                $logs[0].stage | Should -Be 'link'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
 }
