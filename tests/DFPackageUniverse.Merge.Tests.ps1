@@ -187,6 +187,8 @@ Describe 'DFPackageUniverse.Merge' {
             function CM($cid, $s, $p) { [pscustomobject]@{ cluster_id = $cid; source = $s; package_id = $p } }
         }
 
+        AfterAll { Set-Alias -Name r -Value Invoke-History -Scope Global -ErrorAction Ignore }
+
         It 'groups clustered rows together and makes each unclustered row a singleton' {
             $rows = @( (R 'scoop' 'main/bat'), (R 'winget' 'sharkdp.bat'), (R 'choco' 'solo') )
             $members = @( (CM 1 'scoop' 'main/bat'), (CM 1 'winget' 'sharkdp.bat') )
@@ -205,6 +207,44 @@ Describe 'DFPackageUniverse.Merge' {
             $groups = Get-DFPackageUniverseToolGroups -Rows $rows -ClusterMembers $members
             $total = (@($groups | ForEach-Object { $_.Members.Count } | Measure-Object -Sum).Sum)
             $total | Should -Be 3
+        }
+
+        It 'orders clustered groups by cluster_id ascending then singletons by source|package_id ascending, regardless of input order' {
+            # Rows are fed with cluster 5 before cluster 2, and singleton
+            # "zzz|last" before singleton "aaa|first" -- the opposite of the
+            # required output order -- so a missing/reversed Sort-Object would
+            # surface as a failing assertion below rather than passing by luck.
+            $rows = @(
+                (R 'winget' 'foo.bar')   # cluster 5 member
+                (R 'scoop'  'main/foo')  # cluster 5 member
+                (R 'zzz'    'last')      # singleton, key "zzz|last"
+                (R 'winget' 'baz.qux')   # cluster 2 member
+                (R 'choco'  'baz')       # cluster 2 member
+                (R 'aaa'    'first')     # singleton, key "aaa|first"
+            )
+            $members = @(
+                (CM 5 'winget' 'foo.bar')
+                (CM 5 'scoop'  'main/foo')
+                (CM 2 'winget' 'baz.qux')
+                (CM 2 'choco'  'baz')
+            )
+            $groups = Get-DFPackageUniverseToolGroups -Rows $rows -ClusterMembers $members
+
+            @($groups).Count | Should -Be 4
+
+            $groups[0].ClusterId | Should -Be 2
+            @($groups[0].Members).Count | Should -Be 2
+
+            $groups[1].ClusterId | Should -Be 5
+            @($groups[1].Members).Count | Should -Be 2
+
+            $groups[2].ClusterId | Should -BeNullOrEmpty
+            $groups[2].Members[0].source | Should -Be 'aaa'
+            $groups[2].Members[0].package_id | Should -Be 'first'
+
+            $groups[3].ClusterId | Should -BeNullOrEmpty
+            $groups[3].Members[0].source | Should -Be 'zzz'
+            $groups[3].Members[0].package_id | Should -Be 'last'
         }
     }
 }
