@@ -384,3 +384,66 @@ VALUES ('merge', NULL, NULL, 'review', @msg, @at);
         throw
     }
 }
+
+function Invoke-DFPackageUniverseToolMerge {
+    <#
+    .SYNOPSIS
+        The Phase C core: reads raw_packages + cluster_members from an open
+        connection, groups them into tools (clusters + singletons), resolves each
+        tool's canonical record/tags/categories, persists everything, and returns
+        a reconciliation summary. The schema must already be initialized. Asserts
+        the no-data-lost contract (grouped packages == raw_packages count).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] $Connection,
+        [string]$CategoryRulesPath
+    )
+
+    $raw = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT source, package_id, name, version, description, homepage, license, publisher, tags, extra FROM raw_packages')
+    $rows = @(foreach ($r in $raw) {
+        [pscustomobject]@{
+            source      = $r.source
+            package_id  = $r.package_id
+            name        = ConvertFrom-DFDbNull $r.name
+            version     = ConvertFrom-DFDbNull $r.version
+            description = ConvertFrom-DFDbNull $r.description
+            homepage    = ConvertFrom-DFDbNull $r.homepage
+            license     = ConvertFrom-DFDbNull $r.license
+            publisher   = ConvertFrom-DFDbNull $r.publisher
+            tags        = ConvertFrom-DFDbNull $r.tags
+            extra       = ConvertFrom-DFDbNull $r.extra
+        }
+    })
+
+    $members = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT cluster_id, source, package_id FROM cluster_members')
+    $groups = @(Get-DFPackageUniverseToolGroups -Rows $rows -ClusterMembers $members)
+
+    $grouped = [int](@($groups | ForEach-Object { $_.Members.Count } | Measure-Object -Sum).Sum)
+    if ($grouped -ne $rows.Count) {
+        throw "Phase C reconciliation failed: $grouped packages grouped but raw_packages has $($rows.Count)"
+    }
+
+    $rules = @(if ($CategoryRulesPath) { Import-DFPackageUniverseCategoryRules -Path $CategoryRulesPath } else { @() })
+
+    $tools = @(foreach ($g in $groups) {
+        $ms = @($g.Members)
+        $record = Resolve-DFPackageUniverseToolRecord -Members $ms
+        $tags = @(Get-DFPackageUniverseToolTags -Members $ms)
+        $tokens = @(Get-DFPackageUniverseCategoryTokens -Members $ms -Tags $tags)
+        $cats = @(ConvertTo-DFPackageUniverseCategories -Tokens $tokens -Rules $rules)
+        [pscustomobject]@{ Record = $record; Members = $ms; Tags = $tags; Categories = $cats; ClusterId = $g.ClusterId }
+    })
+
+    Save-DFPackageUniverseTools -Connection $Connection -Tools $tools
+
+    [pscustomobject]@{
+        RowsRead   = $rows.Count
+        Tools      = $tools.Count
+        Packages   = $grouped
+        Singletons = @($tools | Where-Object { $_.Record.SourceCount -eq 1 }).Count
+        Tags       = [int](@($tools | ForEach-Object { $_.Tags.Count } | Measure-Object -Sum).Sum)
+        Categories = [int](@($tools | ForEach-Object { $_.Categories.Count } | Measure-Object -Sum).Sum)
+        Review     = @($tools | Where-Object { $_.Record.NeedsReview }).Count
+    }
+}

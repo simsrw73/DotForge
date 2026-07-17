@@ -14,6 +14,18 @@ CREATE TABLE cluster_members (cluster_id INTEGER, source TEXT, package_id TEXT, 
         Initialize-DFPackageUniverseToolsSchema -DatabasePath $db
         $db
     }
+
+    function Add-RawRow {
+        param($Db, $Source, $PackageId, $Name, $Description = 'd', $Homepage = $null, $License = 'MIT', $Publisher = $null, $Tags = $null, $Extra = $null)
+        Invoke-SqliteQuery -DataSource $Db -Query @'
+INSERT INTO raw_packages (source, package_id, name, version, description, homepage, license, publisher, tags, extra, fetched_at)
+VALUES (@s, @p, @n, '1', @d, @h, @l, @pub, @t, @e, 'now');
+'@ -SqlParameters @{ s = $Source; p = $PackageId; n = $Name; d = $Description; h = $Homepage; l = $License; pub = $Publisher; t = $Tags; e = $Extra }
+    }
+    function Add-ClusterMember {
+        param($Db, $Cid, $Source, $PackageId)
+        Invoke-SqliteQuery -DataSource $Db -Query "INSERT INTO cluster_members (cluster_id, source, package_id, join_method, join_confidence) VALUES (@c, @s, @p, 'repo', 1.0);" -SqlParameters @{ c = $Cid; s = $Source; p = $PackageId }
+    }
 }
 
 Describe 'DFPackageUniverse.Merge' {
@@ -310,6 +322,63 @@ Describe 'DFPackageUniverse.Merge' {
                 (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_tags').n | Should -Be 2
                 (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_categories').n | Should -Be 1
                 (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM pipeline_log WHERE stage='merge' AND level='review'").n | Should -Be 1
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
+
+    Context 'Invoke-DFPackageUniverseToolMerge' {
+        It 'merges a 3-catalog cluster into one tool and keeps a singleton separate (no data lost)' {
+            $db = New-MergeTestDb
+            try {
+                $batExtra = ConvertTo-Json -Compress @{ ProjectSourceUrl = 'https://github.com/sharkdp/bat' }
+                Add-RawRow -Db $db -Source 'scoop'  -PackageId 'main/bat'    -Name 'bat' -Description 'short' -Tags (ConvertTo-Json -Compress @('cat'))
+                Add-RawRow -Db $db -Source 'winget' -PackageId 'sharkdp.bat' -Name 'bat' -Description 'A cat(1) clone with wings.' -Tags (ConvertTo-Json -Compress @('cat', 'less'))
+                Add-RawRow -Db $db -Source 'choco'  -PackageId 'bat'         -Name 'Bat' -License 'https://x/LICENSE' -Extra $batExtra
+                Add-RawRow -Db $db -Source 'scoop'  -PackageId 'main/solo'   -Name 'solo'
+                Add-ClusterMember -Db $db -Cid 1 -Source 'scoop'  -PackageId 'main/bat'
+                Add-ClusterMember -Db $db -Cid 1 -Source 'winget' -PackageId 'sharkdp.bat'
+                Add-ClusterMember -Db $db -Cid 1 -Source 'choco'  -PackageId 'bat'
+
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $summary = Invoke-DFPackageUniverseToolMerge -Connection $conn -CategoryRulesPath $null } finally { $conn.Close() }
+
+                $summary.RowsRead | Should -Be 4
+                $summary.Tools | Should -Be 2
+                $summary.Packages | Should -Be 4     # no data lost: every package accounted for
+                $summary.Singletons | Should -Be 1
+
+                $bat = Invoke-SqliteQuery -DataSource $db -Query "SELECT * FROM tools WHERE cluster_id = 1"
+                $bat.name | Should -Be 'bat'
+                $bat.name_source | Should -Be 'winget'
+                $bat.description_source | Should -Be 'winget'
+                $bat.repo_url | Should -Be 'https://github.com/sharkdp/bat'
+                $bat.source_count | Should -Be 3
+
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_packages WHERE tool_id = $($bat.tool_id)").n | Should -Be 3
+                $tags = @(Invoke-SqliteQuery -DataSource $db -Query "SELECT tag FROM tool_tags WHERE tool_id = $($bat.tool_id)").tag
+                $tags | Should -Contain 'cat'
+                $tags | Should -Contain 'less'
+
+                # Core contract: sum of children equals the input row count.
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_packages').n | Should -Be 4
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'is idempotent: a second run reproduces identical row counts' {
+            $db = New-MergeTestDb
+            try {
+                Add-RawRow -Db $db -Source 'winget' -PackageId 'A.X' -Name 'x' -Tags (ConvertTo-Json -Compress @('grep'))
+                Add-RawRow -Db $db -Source 'scoop'  -PackageId 'main/y' -Name 'y'
+                foreach ($i in 1..2) {
+                    $conn = New-SQLiteConnection -DataSource $db
+                    try { Invoke-DFPackageUniverseToolMerge -Connection $conn -CategoryRulesPath $null | Out-Null } finally { $conn.Close() }
+                    Initialize-DFPackageUniverseToolsSchema -DatabasePath $db  # truncate before re-run, as the orchestrator does
+                }
+                # Final populated run (schema was just truncated):
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $s = Invoke-DFPackageUniverseToolMerge -Connection $conn -CategoryRulesPath $null } finally { $conn.Close() }
+                $s.Tools | Should -Be 2
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_packages').n | Should -Be 2
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
