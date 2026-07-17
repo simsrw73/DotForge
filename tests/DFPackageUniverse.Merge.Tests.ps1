@@ -336,6 +336,7 @@ Describe 'DFPackageUniverse.Merge' {
                 (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_tags').n | Should -Be 2
                 (Invoke-SqliteQuery -DataSource $db -Query 'SELECT COUNT(*) n FROM tool_categories').n | Should -Be 1
                 (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM pipeline_log WHERE stage='merge' AND level='review'").n | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query 'SELECT review_reasons FROM tools').review_reasons | Should -Be '["license-conflict: MIT | Apache-2.0"]'
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
