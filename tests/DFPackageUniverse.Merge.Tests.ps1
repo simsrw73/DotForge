@@ -49,6 +49,18 @@ Describe 'DFPackageUniverse.Merge' {
         It 'distinguishes genuinely different licenses' {
             (ConvertTo-DFNormalizedLicense 'Apache-2.0') | Should -Not -Be (ConvertTo-DFNormalizedLicense 'MIT')
         }
+        It 'folds the -only SPDX modifier' {
+            (ConvertTo-DFNormalizedLicense 'GPL-3.0-only') | Should -Be (ConvertTo-DFNormalizedLicense 'GPL-3.0')
+        }
+        It 'folds the -or-later SPDX modifier' {
+            (ConvertTo-DFNormalizedLicense 'GPL-3.0-or-later') | Should -Be (ConvertTo-DFNormalizedLicense 'GPL-3.0')
+        }
+        It 'folds the + SPDX modifier' {
+            (ConvertTo-DFNormalizedLicense 'GPL-3.0+') | Should -Be (ConvertTo-DFNormalizedLicense 'GPL-3.0')
+        }
+        It 'keeps LGPL distinct from GPL (regression: must not over-collapse)' {
+            (ConvertTo-DFNormalizedLicense 'LGPL-3.0-only') | Should -Not -Be (ConvertTo-DFNormalizedLicense 'GPL-3.0')
+        }
     }
 
     Context 'Resolve-DFPackageUniverseToolRecord' {

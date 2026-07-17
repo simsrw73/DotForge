@@ -30,7 +30,15 @@ function ConvertTo-DFNormalizedLicense {
 
     if (-not $Value) { return $null }
     if ($Value -match '^\s*https?://') { return $null }
-    $t = ($Value.ToLowerInvariant() -replace '\blicense\b', '') -replace '[^a-z0-9]', ''
+    $t = $Value.ToLowerInvariant()
+    $t = $t -replace '\blicense\b', ''
+    # Fold SPDX modifier suffixes: GPL-3.0-only / GPL-3.0-or-later / GPL-3.0+ are
+    # the same license family; the modifier is not a different license for
+    # single-answer conflict detection. Applied while '-'/'+' are still present.
+    $t = $t -replace '-or-later\b', ''
+    $t = $t -replace '-only\b', ''
+    $t = $t -replace '\+', ''
+    $t = $t -replace '[^a-z0-9]', ''
     if ($t -eq '') { return $null }
     $t
 }
