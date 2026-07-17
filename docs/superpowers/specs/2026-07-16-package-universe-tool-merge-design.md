@@ -65,6 +65,37 @@ Phase C writes into the same shared `universe.db` (Phase A/B convention), adds i
 `build/Build-DFPackageUniverseTools.ps1`, mirroring the Phase A and Phase B scripts. It reads
 `raw_packages` and `cluster_members` and the new category rule file; it re-reads nothing over the network.
 
+## Re-running the pipeline (incremental execution)
+
+The pipeline is a strictly linear dependency chain — **A (acquire) → B (link) → C (merge)** — of three
+independently-invocable build scripts. Each script reads its inputs from persisted upstream state (prior
+phases' DB tables + version-controlled files) and **truncates only its own tables** before rebuilding
+(`stage='acquire'|'link'|'merge'`; Phase A/B/C discipline). Consequences:
+
+- **No phase is ever re-run from scratch for review.** Re-running a phase requires re-running every phase
+  *downstream* of it, but **never anything upstream**.
+- **The two human-review integration points are version-controlled files, not the DB**, so verdicts survive
+  the regenerable `universe.db`: Phase B reads `data/package-universe-curation.jsonc` (confirmed-same /
+  confirmed-different); Phase C reads `data/package-universe-categories.jsonc` (keyword→category rules).
+  The loop is: inspect a phase's output → edit the file → re-run that phase and its downstream tail.
+- **Only Phase A is expensive** (~54 min live crawl, incl. the choco re-walk). B and C are offline and fast.
+  Review almost never forces an A re-run, so review-driven re-runs are cheap.
+
+| You reviewed / want to change | Edit | Minimal re-run |
+|---|---|---|
+| Phase B clusters (packages wrongly merged, or should be) | `package-universe-curation.jsonc` (`same`/`different`) | **B → C** |
+| Phase B monorepo/family flags (split or accept a family) | same curation file | **B → C** |
+| Phase C categories (wrong/missing) | `package-universe-categories.jsonc` | **C only** |
+| Phase C merge (bad canonical pick / license flag that is purely a merge-layer choice) | merge-layer rule/code | **C only** |
+| Phase C merge, but the real cause is "these are/aren't the same tool" | curation file (a *clustering* verdict) | **B → C** |
+| Phase A raw data (bad/missing `extra`) | re-acquire | **A → B → C** (full) |
+
+**Governing rule:** re-run the earliest phase whose *input* changed, plus every phase after it. A phase
+re-run leaves downstream tables stale until they too are re-run (re-running B updates `cluster_members`, but
+`tools` still reflects the old clustering until C re-runs), so the minimal unit is always "the changed phase
+**through the end**," never a phase in isolation. Per-cluster/incremental re-runs are deliberately **not**
+built: whole-phase truncate-rebuild of the cheap offline phases is simpler and loses nothing.
+
 ## Key facts this design rests on (established in Phase A/B, verified in the code)
 
 - **Winget's `name` column already holds the friendly display name.** `DFPackageUniverse.Winget.ps1:172`
