@@ -112,7 +112,7 @@ function Get-DFCatalogPSGalleryDetail {
         -Fetch { param($id) Invoke-DFCatalogPSGalleryDetailFetch -PackageId $id }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['psgallery'] = @{
     Name         = 'psgallery'
     Kind         = 'query-cache'

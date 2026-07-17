@@ -5,7 +5,7 @@
     CompanyName       = ''
     Copyright         = '(c) Randy W. Sims. All rights reserved.'
     Description       = 'Framework for registering and configuring CLI tools in a PowerShell profile — XDG paths, PATH management, fzf pickers, and aliases.'
-    PowerShellVersion    = '7.0'
+    PowerShellVersion    = '7.2'
     CompatiblePSEditions = @('Core')
     RootModule           = 'DotForge.psm1'
     FunctionsToExport = @(

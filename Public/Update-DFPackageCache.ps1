@@ -56,8 +56,8 @@ function Update-DFPackageCache {
         }
     }
 
-    if (-not $Quiet) { Write-Host 'Refreshing installed-package snapshot…' }
-    $installed = Get-DFCatalogInstalled -Force
+    if (-not $Quiet) { Write-Host 'Reading installed packages…' }
+    $installed = Get-DFCatalogInstalled
 
     # Re-warm targets: recently seen queries + names of everything installed.
     $queries = [System.Collections.Generic.List[string]]::new()

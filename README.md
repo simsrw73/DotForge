@@ -248,6 +248,8 @@ own SQLite index queried directly via `winsqlite3.dll` — no multi-second
 stale entries are served instantly while a background thread re-warms them, so
 the *next* query is fresh; a typical warm query answers in ~200 ms across all
 seven catalogs. Cache ages are shown on the card; `-Fresh` forces live fetches.
+Installed-status checking is always live (not cached) — every query re-checks
+all seven catalogs' actual installed state in parallel, so it never goes stale.
 PyPI has no search API, so it only participates in exact-name lookups.
 
 ### Detail view

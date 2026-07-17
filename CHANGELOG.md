@@ -36,6 +36,7 @@ All notable changes to DotForge are documented here.
   including `eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`,
   and `winget`. Composes with PSFzf, which owns the Tab key and routes through
   `TabExpansion2`.
+- **Package-universe Phase C (tool merge)** — `build/Build-DFPackageUniverseTools.ps1` flattens Phase B clusters and singletons into a master `tools` table (one row per real-world tool across the whole corpus, lossless via a `tool_packages` child), with per-field priority picks (winget > choco > scoop) and provenance, a license single-answer conflict flag, a `tool_tags` union, and first-pass `tool_categories` from a committed `data/package-universe-categories.jsonc` rule file. Build-only; no public module surface change.
 
 ### Fixed
 

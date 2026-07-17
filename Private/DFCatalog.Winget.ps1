@@ -388,7 +388,7 @@ function Get-DFCatalogWingetDetail {
     }
 }
 
-if (-not $script:DFCatalogProviders) { $script:DFCatalogProviders = @{} }
+if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 $script:DFCatalogProviders['winget'] = @{
     Name         = 'winget'
     Kind         = 'snapshot'

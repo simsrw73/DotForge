@@ -63,6 +63,29 @@ Describe 'DFCatalog.Scoop' {
         }
     }
 
+    Context 'Build-DFCatalogScoopIndexData -IncludeRaw' {
+        It 'omits the raw manifest by default so the runtime index shape is unchanged' {
+            $entry = @(Build-DFCatalogScoopIndexData -ScoopRoot $script:ScoopRoot | Where-Object name -eq 'ripgrep')[0]
+            $entry.PSObject.Properties.Name | Should -Not -Contain 'raw'
+        }
+
+        It 'attaches the verbatim manifest json as raw when -IncludeRaw is set' {
+            # A manifest whose real repo is only in checkver, not homepage --
+            # exactly the signal Phase B needs and Phase A discarded.
+            @{
+                version  = '1.0'
+                homepage = 'https://vanity.example/tool'
+                license  = 'MIT'
+                checkver = @{ github = 'https://github.com/acme/tool' }
+            } | ConvertTo-Json | Set-Content (Join-Path $script:ScoopRoot 'buckets/main/bucket/tool.json')
+
+            $entry = @(Build-DFCatalogScoopIndexData -ScoopRoot $script:ScoopRoot -IncludeRaw | Where-Object name -eq 'tool')[0]
+
+            $entry.raw | Should -Not -BeNullOrEmpty
+            ($entry.raw | ConvertFrom-Json).checkver.github | Should -Be 'https://github.com/acme/tool'
+        }
+    }
+
     Context 'Search-DFCatalogScoop' {
         It 'returns an exact-name match as DotForge.ToolSourceInfo' {
             $r = @(Search-DFCatalogScoop -Query 'ripgrep' -ScoopRoot $script:ScoopRoot)
