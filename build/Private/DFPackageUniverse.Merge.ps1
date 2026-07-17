@@ -224,3 +224,44 @@ function ConvertTo-DFPackageUniverseCategories {
     }
     $out.ToArray()
 }
+
+function Get-DFPackageUniverseToolGroups {
+    <#
+    .SYNOPSIS
+        Partitions raw_packages rows into per-tool groups: rows in cluster_members
+        accumulate under their cluster_id; every other row is its own singleton
+        group (ClusterId $null). Clustered groups (sorted by cluster_id) precede
+        singletons (sorted by source|package_id) so tool_id assignment is
+        deterministic and runs are idempotent. Every row appears in exactly one group.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Rows,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ClusterMembers
+    )
+
+    $byKey = @{}
+    foreach ($cm in $ClusterMembers) { $byKey["$($cm.source)|$($cm.package_id)"] = [int]$cm.cluster_id }
+
+    $clustered = @{}
+    $singletons = [System.Collections.Generic.List[object]]::new()
+    foreach ($r in $Rows) {
+        $k = "$($r.source)|$($r.package_id)"
+        if ($byKey.ContainsKey($k)) {
+            $cid = $byKey[$k]
+            if (-not $clustered.ContainsKey($cid)) { $clustered[$cid] = [System.Collections.Generic.List[object]]::new() }
+            $clustered[$cid].Add($r)
+        } else {
+            $singletons.Add($r)
+        }
+    }
+
+    $groups = [System.Collections.Generic.List[object]]::new()
+    foreach ($cid in ($clustered.Keys | Sort-Object)) {
+        $groups.Add([pscustomobject]@{ ClusterId = $cid; Members = @($clustered[$cid]) })
+    }
+    foreach ($r in ($singletons | Sort-Object { "$($_.source)|$($_.package_id)" })) {
+        $groups.Add([pscustomobject]@{ ClusterId = $null; Members = @($r) })
+    }
+    $groups.ToArray()
+}

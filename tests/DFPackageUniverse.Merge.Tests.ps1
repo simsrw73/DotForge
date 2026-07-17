@@ -173,4 +173,38 @@ Describe 'DFPackageUniverse.Merge' {
             @(ConvertTo-DFPackageUniverseCategories -Tokens @('zzz') -Rules $rules).Count | Should -Be 0
         }
     }
+
+    Context 'Get-DFPackageUniverseToolGroups' {
+        BeforeAll {
+            # Pester 5.8.0 does not carry a function defined directly in a
+            # Context body (outside a hook) into Run-phase It scope; wrapping
+            # in BeforeAll is the idiomatic fix. Body/behavior unchanged.
+            # PowerShell ships a built-in alias 'r' -> Invoke-History, and alias
+            # resolution wins over a same-named function -- remove it first so
+            # calls to R() actually hit our helper instead of Invoke-History.
+            Remove-Item -Path Alias:r -Force -ErrorAction Ignore
+            function R($s, $p) { [pscustomobject]@{ source = $s; package_id = $p } }
+            function CM($cid, $s, $p) { [pscustomobject]@{ cluster_id = $cid; source = $s; package_id = $p } }
+        }
+
+        It 'groups clustered rows together and makes each unclustered row a singleton' {
+            $rows = @( (R 'scoop' 'main/bat'), (R 'winget' 'sharkdp.bat'), (R 'choco' 'solo') )
+            $members = @( (CM 1 'scoop' 'main/bat'), (CM 1 'winget' 'sharkdp.bat') )
+            $groups = Get-DFPackageUniverseToolGroups -Rows $rows -ClusterMembers $members
+
+            @($groups).Count | Should -Be 2
+            $groups[0].ClusterId | Should -Be 1
+            @($groups[0].Members).Count | Should -Be 2
+            $groups[1].ClusterId | Should -BeNullOrEmpty
+            $groups[1].Members[0].package_id | Should -Be 'solo'
+        }
+
+        It 'accounts for every row exactly once' {
+            $rows = @( (R 'scoop' 'a'), (R 'winget' 'b'), (R 'choco' 'c') )
+            $members = @( (CM 7 'scoop' 'a'), (CM 7 'winget' 'b') )
+            $groups = Get-DFPackageUniverseToolGroups -Rows $rows -ClusterMembers $members
+            $total = (@($groups | ForEach-Object { $_.Members.Count } | Measure-Object -Sum).Sum)
+            $total | Should -Be 3
+        }
+    }
 }
