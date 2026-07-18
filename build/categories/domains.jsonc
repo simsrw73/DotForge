@@ -1,0 +1,10 @@
+{
+  // Phase D coarse top-level "domain" axis (single-valued per tool). The finer
+  // function/worksWith facets live in the trifle taxonomy (data/tool-categories.json).
+  // Grown deliberately via human-gated discovery; keep it small (~10-15).
+  "schemaVersion": 1,
+  "domain": [
+    "dev", "system", "network", "text", "media", "security",
+    "data", "productivity", "cloud", "gaming", "science", "hardware"
+  ]
+}

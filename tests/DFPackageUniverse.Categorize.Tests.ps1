@@ -120,4 +120,29 @@ Describe 'DFPackageUniverse.Categorize' {
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
+
+    Context 'vocabulary' {
+        BeforeAll {
+            . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1"
+            $script:dom = Join-Path ([System.IO.Path]::GetTempPath()) ("dom-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            @'
+{ // coarse top-level domains
+  "schemaVersion": 1,
+  "domain": ["dev", "system", "network", "text", "media", "security", "data", "productivity"]
+}
+'@ | Set-Content -Path $script:dom -Encoding utf8
+            $script:tax = Join-Path ([System.IO.Path]::GetTempPath()) ("tax-" + [guid]::NewGuid().ToString('N') + ".json")
+            (@{ taxonomy = @{ function = @('search', 'editor'); worksWith = @('text', 'json') } } | ConvertTo-Json -Depth 5) | Set-Content -Path $script:tax -Encoding utf8
+        }
+        AfterAll { Remove-Item $script:dom, $script:tax -ErrorAction Ignore }
+        It 'loads the three axes' {
+            $v = Import-DFPackageUniverseVocab -DomainsPath $script:dom -TaxonomyPath $script:tax
+            $v.Domain | Should -Contain 'network'; $v.Function | Should -Contain 'search'; $v.WorksWith | Should -Contain 'json'
+        }
+        It 'validates membership' {
+            $v = Import-DFPackageUniverseVocab -DomainsPath $script:dom -TaxonomyPath $script:tax
+            Test-DFPackageUniverseVocabValue -Value 'search' -Vocab $v.Function | Should -BeTrue
+            Test-DFPackageUniverseVocabValue -Value 'nope' -Vocab $v.Function | Should -BeFalse
+        }
+    }
 }
