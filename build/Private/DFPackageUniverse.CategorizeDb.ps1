@@ -147,6 +147,7 @@ function Export-DFPackageUniverseClassifications {
             cacheKey = $r.cache_key; domain = $r.domain
             function = @(($r.function_json | ConvertFrom-Json)); worksWith = @(($r.works_with_json | ConvertFrom-Json))
             interface = $r.interface; alternativeTo = @(($r.alternative_to_json | ConvertFrom-Json))
+            suggestedTerms = @(($r.suggested_terms_json | ConvertFrom-Json))
             confidence = $r.confidence; nothingFits = [bool]$r.nothing_fits
             signalSource = $r.signal_source; model = $r.model
         }
@@ -193,12 +194,13 @@ function Import-DFPackageUniverseClassifications {
 INSERT OR REPLACE INTO tool_classifications
   (cache_key, domain, function_json, works_with_json, interface, alternative_to_json,
    confidence, nothing_fits, suggested_terms_json, signal_source, model, status, classified_at)
-VALUES (@k, @dom, @fn, @ww, @if, @alt, @conf, @nf, '[]', @src, @model, 'done', @at);
+VALUES (@k, @dom, @fn, @ww, @if, @alt, @conf, @nf, @st, @src, @model, 'done', @at);
 '@ -SqlParameters @{
                 k = $e.cacheKey; dom = $e.domain
                 fn = (ConvertTo-Json -Compress -InputObject @($e.function)); ww = (ConvertTo-Json -Compress -InputObject @($e.worksWith))
                 if = $e.interface; alt = (ConvertTo-Json -Compress -InputObject @($e.alternativeTo)); conf = $e.confidence
-                nf = [int][bool]$e.nothingFits; src = $e.signalSource; model = $e.model; at = [datetime]::UtcNow.ToString('o')
+                nf = [int][bool]$e.nothingFits; st = (ConvertTo-Json -Compress -InputObject @($e.suggestedTerms))
+                src = $e.signalSource; model = $e.model; at = [datetime]::UtcNow.ToString('o')
             }
         }
     } finally { $conn.Close() }

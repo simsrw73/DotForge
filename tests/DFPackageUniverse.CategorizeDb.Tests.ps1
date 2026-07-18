@@ -39,6 +39,28 @@ Describe 'DFPackageUniverse.CategorizeDb' {
                     $row = Invoke-SqliteQuery -DataSource $db2 -Query "SELECT domain, function_json FROM tool_classifications WHERE cache_key = 'repo:https://github.com/sharkdp/bat|bat'"
                     $row.domain | Should -Be 'text'
                     ($row.function_json | ConvertFrom-Json) | Should -Contain 'search'
+                    $row.function_json | Should -Be '["search"]'
+                } finally { Remove-Item -Path $db2 -ErrorAction Ignore }
+            } finally { Remove-Item -Path $db, $js -ErrorAction Ignore }
+        }
+
+        It 'preserves SuggestedTerms across the export/import round-trip (no data loss)' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("st-" + [guid]::NewGuid().ToString('N') + ".db")
+            $js = Join-Path ([System.IO.Path]::GetTempPath()) ("st-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            try {
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $conn = New-SQLiteConnection -DataSource $db
+                $cls = [pscustomobject]@{ Domain='dev'; Function=@('search'); WorksWith=@('text'); Interface='cli'; AlternativeTo=@(); Confidence=0.3; NothingFits=$true; SuggestedTerms=@('foo','bar') }
+                try { Save-DFPackageUniverseClassification -Connection $conn -CacheKey 'pkg:scoop|main/x' -Classification $cls -SignalSource 'metadata' -Model 'm' -Status 'done' }
+                finally { $conn.Close() }
+                Export-DFPackageUniverseClassifications -DatabasePath $db -Path $js
+                $db2 = Join-Path ([System.IO.Path]::GetTempPath()) ("st2-" + [guid]::NewGuid().ToString('N') + ".db")
+                try {
+                    Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db2
+                    Import-DFPackageUniverseClassifications -DatabasePath $db2 -Path $js
+                    $st = (Invoke-SqliteQuery -DataSource $db2 -Query "SELECT suggested_terms_json FROM tool_classifications WHERE cache_key='pkg:scoop|main/x'").suggested_terms_json
+                    @($st | ConvertFrom-Json) | Should -Contain 'foo'
+                    @($st | ConvertFrom-Json) | Should -Contain 'bar'
                 } finally { Remove-Item -Path $db2 -ErrorAction Ignore }
             } finally { Remove-Item -Path $db, $js -ErrorAction Ignore }
         }
