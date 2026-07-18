@@ -48,4 +48,34 @@ Describe 'DFPackageUniverse.Categorize' {
             (Resolve-DFPackageUniverseRepo -Homepage 'https://vanity.example/tool' -Extra $extra).Url | Should -Be 'https://github.com/acme/tool'
         }
     }
+
+    Context 'Get-DFPackageUniverseDurableKey' {
+        BeforeAll {
+            function Mem($s, $p, $homepage = $null, $extra = $null) {
+                [pscustomobject]@{ source = $s; package_id = $p; name = $p; homepage = $homepage; extra = $extra }
+            }
+        }
+        It 'keys on the repo (name-suffixed) when a member resolves a repo' {
+            $m = @( (Mem 'choco' 'bat' 'https://github.com/sharkdp/bat') )
+            Get-DFPackageUniverseDurableKey -Members $m -Name 'bat' | Should -Be 'repo:https://github.com/sharkdp/bat|bat'
+        }
+        It 'gives two tools sharing one repo but different names distinct keys' {
+            $a = @( (Mem 'winget' 'OpenDsc.Lcm' 'https://github.com/opendsc/opendsc') )
+            $b = @( (Mem 'winget' 'OpenDsc.Server' 'https://github.com/opendsc/opendsc') )
+            (Get-DFPackageUniverseDurableKey -Members $a -Name 'OpenDsc Lcm') |
+                Should -Not -Be (Get-DFPackageUniverseDurableKey -Members $b -Name 'OpenDsc Server')
+        }
+        It 'falls back to a path-bearing homepage when no repo' {
+            $m = @( (Mem 'winget' 'X.Y' 'https://vendor.example/tool') )
+            Get-DFPackageUniverseDurableKey -Members $m -Name 'tool' | Should -Be 'home:vendor.example/tool'
+        }
+        It 'falls back to the anchor source|package_id for a repo-less, homepage-less singleton' {
+            $m = @( (Mem 'scoop' 'main/thing') )
+            Get-DFPackageUniverseDurableKey -Members $m -Name 'thing' | Should -Be 'pkg:scoop|main/thing'
+        }
+        It 'picks the winget anchor over choco/scoop deterministically' {
+            $m = @( (Mem 'scoop' 'main/x'), (Mem 'winget' 'A.X'), (Mem 'choco' 'x') )
+            Get-DFPackageUniverseDurableKey -Members $m -Name 'x' | Should -Be 'pkg:winget|A.X'
+        }
+    }
 }

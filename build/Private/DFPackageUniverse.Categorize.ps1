@@ -74,3 +74,55 @@ function Resolve-DFPackageUniverseRepo {
     }
     $null
 }
+
+function Get-DFPackageUniverseDurableKey {
+    <#
+    .SYNOPSIS
+        The stable cache key for a tool's classification, resolved by a ladder:
+        repo (name-suffixed, so a family-split shared repo stays distinct) ->
+        path-bearing homepage -> anchor (source|package_id). Independent of the
+        volatile tool_id, so it survives re-clustering. Name-normalization:
+        lowercase, non-alphanumeric stripped.
+    .DESCRIPTION
+        Walks the member rows in order for each rung of the ladder rather than
+        picking a single "primary" member up front, so a repo or homepage
+        found on any member is used. The repo rung is suffixed with the
+        normalized tool name so that two distinct tools sharing one upstream
+        repo (a family split) still get distinct durable keys. The anchor
+        rung sorts members by source priority (winget > choco > scoop) then
+        lexically by "source|package_id" for determinism.
+    .PARAMETER Members
+        The tool's merged package rows: objects with source, package_id,
+        name, homepage, and extra properties.
+    .PARAMETER Name
+        The tool's canonical name, used for repo-rung disambiguation.
+    .EXAMPLE
+        Get-DFPackageUniverseDurableKey -Members $members -Name 'bat'
+        Returns 'repo:https://github.com/sharkdp/bat|bat' when a member's
+        homepage or extra resolves to that repo.
+    .OUTPUTS
+        [string] The durable cache key.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Members,
+        [AllowNull()][string]$Name
+    )
+    $normName = if ($Name) { ($Name.ToLowerInvariant() -replace '[^a-z0-9]', '') } else { '' }
+
+    foreach ($m in $Members) {
+        $repo = Resolve-DFPackageUniverseRepo -Homepage ([string]$m.homepage) -Extra ([string]$m.extra)
+        if ($repo) { return "repo:$($repo.Url)|$normName" }
+    }
+    foreach ($m in $Members) {
+        if ($m.homepage) {
+            $h = ([string]$m.homepage) -replace '^https?://', '' -replace '^www\.', '' -replace '/$', ''
+            $h = $h.ToLowerInvariant()
+            if ($h -notmatch '(github|gitlab|bitbucket|codeberg)\b' -and $h.Contains('/')) { return "home:$h" }
+        }
+    }
+    $order = @{ winget = 0; choco = 1; scoop = 2 }
+    $anchor = @($Members | Sort-Object @{ e = { $order[[string]$_.source] } }, @{ e = { "$($_.source)|$($_.package_id)" } })[0]
+    "pkg:$($anchor.source)|$($anchor.package_id)"
+}
