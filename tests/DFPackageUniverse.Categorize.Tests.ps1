@@ -176,4 +176,29 @@ Describe 'DFPackageUniverse.Categorize' {
             Test-DFPackageUniverseVocabValue -Value 'nope' -Vocab $v.Function | Should -BeFalse
         }
     }
+
+    Context 'ConvertTo-DFPackageUniverseClassification' {
+        BeforeAll {
+            . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1"
+            $script:vocab = [pscustomobject]@{ Domain = @('dev','text'); Function = @('search','editor'); WorksWith = @('text','json') }
+        }
+        It 'keeps in-vocab values and drops out-of-vocab ones' {
+            $raw = [pscustomobject]@{ domain='text'; function=@('search','bogus'); worksWith=@('text'); interface='cli'; alternativeTo=@('grep'); confidence=0.9; nothing_fits=$false; suggested_terms=@() }
+            $c = ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $script:vocab
+            $c.Domain | Should -Be 'text'
+            $c.Function | Should -Be @('search')        # 'bogus' dropped
+            $c.AlternativeTo | Should -Be @('grep')
+            $c.NothingFits | Should -BeFalse
+        }
+        It 'forces NothingFits when the model output has no in-vocab facet at all' {
+            $raw = [pscustomobject]@{ domain='nope'; function=@('nope'); worksWith=@(); interface='cli'; confidence=0.2; nothing_fits=$false; suggested_terms=@('newthing') }
+            $c = ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $script:vocab
+            $c.NothingFits | Should -BeTrue
+            $c.SuggestedTerms | Should -Contain 'newthing'
+        }
+        It 'honors an explicit nothing_fits from the model' {
+            $raw = [pscustomobject]@{ domain='dev'; function=@('search'); worksWith=@('text'); interface='cli'; confidence=0.3; nothing_fits=$true; suggested_terms=@() }
+            (ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $script:vocab).NothingFits | Should -BeTrue
+        }
+    }
 }

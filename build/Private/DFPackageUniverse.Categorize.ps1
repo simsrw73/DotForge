@@ -306,3 +306,67 @@ function Get-DFPackageUniverseClassifierInput {
         DocExcerpt = $excerpt; SignalSource = $source
     }
 }
+
+function ConvertTo-DFPackageUniverseClassification {
+    <#
+    .SYNOPSIS
+        The trust boundary between the model and the cache: validates a raw model
+        output against the closed vocabulary, dropping out-of-vocab domain/
+        function/worksWith values. Forces NothingFits when nothing in-vocab
+        survived (or the model set nothing_fits). Returns the normalized record.
+    .DESCRIPTION
+        Reads $Raw's properties strict-safely via PSObject.Properties probes
+        (the model's JSON may omit fields). domain/function/worksWith values
+        are each checked against the corresponding $Vocab list via
+        Test-DFPackageUniverseVocabValue and dropped when out-of-vocab.
+        NothingFits is forced true when the model explicitly set nothing_fits,
+        OR when domain is $null AND Function is empty AND WorksWith is empty
+        after filtering -- i.e. nothing in-vocab survived. This is the trust
+        boundary between the model and the durable cache: no out-of-vocab
+        value is ever persisted as a classification facet.
+    .PARAMETER Raw
+        The parsed model output object (e.g. from ConvertFrom-Json).
+    .PARAMETER Vocab
+        The closed vocabulary object { Domain; Function; WorksWith }, as
+        returned by Import-DFPackageUniverseVocab.
+    .EXAMPLE
+        ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $vocab
+
+        Returns a normalized classification with out-of-vocab values dropped.
+    .OUTPUTS
+        [pscustomobject] with Domain, Function, WorksWith, Interface,
+        AlternativeTo, Confidence, NothingFits, and SuggestedTerms properties.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)]$Raw, [Parameter(Mandatory)]$Vocab)
+
+    function Keep([object[]]$Values, [string[]]$Allowed) {
+        # ,$result (not a bare @()) -- a function's natural output is enumerated
+        # onto the pipeline, so a bare empty array collapses to $null at the
+        # call site. The unary comma prevents that unwrap.
+        $result = @(@($Values) | ForEach-Object { [string]$_ } | Where-Object { Test-DFPackageUniverseVocabValue -Value $_ -Vocab $Allowed })
+        , $result
+    }
+    $domainRaw = [string]$Raw.PSObject.Properties['domain'].Value
+    $domain = if (Test-DFPackageUniverseVocabValue -Value $domainRaw -Vocab $Vocab.Domain) { $domainRaw.ToLowerInvariant() } else { $null }
+    $func = Keep -Values @($Raw.function) -Allowed $Vocab.Function
+    $ww   = Keep -Values @($Raw.worksWith) -Allowed $Vocab.WorksWith
+    # Same unwrap hazard as Keep above: an if/else block's output is also
+    # enumerated onto the pipeline, so the true-branch needs the same ,@(...)
+    # guard whenever its pipeline can filter down to zero items.
+    $altProp = $Raw.PSObject.Properties['alternativeTo']
+    $alt = if ($altProp) { , @(@($altProp.Value) | ForEach-Object { [string]$_ } | Where-Object { $_ }) } else { @() }
+    $stProp = $Raw.PSObject.Properties['suggested_terms']
+    $suggested = if ($stProp) { , @(@($stProp.Value) | ForEach-Object { [string]$_ } | Where-Object { $_ }) } else { @() }
+    $confProp = $Raw.PSObject.Properties['confidence']
+    $conf = if ($confProp -and $null -ne $confProp.Value) { [double]$confProp.Value } else { 0.0 }
+    $modelSaysNothing = [bool]($Raw.PSObject.Properties['nothing_fits'] -and $Raw.nothing_fits)
+    $nothingFits = $modelSaysNothing -or (-not $domain -and $func.Count -eq 0 -and $ww.Count -eq 0)
+
+    [pscustomobject]@{
+        Domain = $domain; Function = $func; WorksWith = $ww
+        Interface = [string]$Raw.PSObject.Properties['interface'].Value
+        AlternativeTo = $alt; Confidence = $conf
+        NothingFits = $nothingFits; SuggestedTerms = $suggested
+    }
+}
