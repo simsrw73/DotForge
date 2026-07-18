@@ -220,3 +220,89 @@ VALUES (@u, @c, @ct, @s, @at);
 '@ -SqlParameters @{ u = $Url; c = $result.Content; ct = $result.ContentType; s = $result.Status; at = [datetime]::UtcNow.ToString('o') }
     $result
 }
+
+function Get-DFPackageUniverseClassifierInput {
+    <#
+    .SYNOPSIS
+        Assembles the classifier input for one tool, best-signal-first: any-host
+        repo README -> documentation/homepage page -> metadata only. Returns
+        { Name; Publisher; Description; Tags; DocExcerpt; SignalSource }; DocExcerpt
+        is truncated to 4000 chars. Fetches go through the cached $Http seam.
+    .DESCRIPTION
+        Tier 1 walks each member's homepage/extra through
+        Resolve-DFPackageUniverseRepo; for the first member that resolves to a
+        known forge, tries that forge's raw-README URL via the cached fetch
+        seam and uses the first non-empty result (signal_source = readme).
+        Tier 2, when no repo README was found, fetches the first member's
+        homepage as a documentation page (signal_source = docs). Tier 3, when
+        neither tier produced content, falls back to metadata-only
+        (signal_source = metadata) using just Name/Publisher/Description/Tags.
+    .PARAMETER Members
+        The tool's merged package rows: objects with source, package_id,
+        name, homepage, and extra properties.
+    .PARAMETER Name
+        The tool's canonical name, passed through to the returned object.
+    .PARAMETER Publisher
+        The tool's publisher, passed through to the returned object.
+    .PARAMETER Description
+        The tool's metadata description, passed through to the returned object.
+    .PARAMETER Tags
+        The tool's metadata tags, passed through to the returned object.
+    .PARAMETER Connection
+        An open PSSQLite connection (from New-SQLiteConnection) pointed at the
+        Phase D categorize database, used for the fetch cache.
+    .PARAMETER Http
+        A scriptblock seam: param($Url) -> { Content; ContentType; Status }.
+        Swapped for a mock in tests; a real implementation performs the
+        network call.
+    .EXAMPLE
+        Get-DFPackageUniverseClassifierInput -Members $m -Name 'bat' -Publisher 'sharkdp' -Description 'd' -Tags $null -Connection $conn -Http $http
+
+        Returns an object with DocExcerpt from bat's GitHub README and
+        SignalSource = 'readme' when the fetch succeeds.
+    .OUTPUTS
+        [pscustomobject] with Name, Publisher, Description, Tags, DocExcerpt,
+        and SignalSource properties.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Members,
+        [AllowNull()][string]$Name, [AllowNull()][string]$Publisher,
+        [AllowNull()][string]$Description, [AllowNull()][string]$Tags,
+        [Parameter(Mandatory)]$Connection, [Parameter(Mandatory)][scriptblock]$Http
+    )
+    $excerpt = $null; $source = 'metadata'
+
+    # Tier 1: repo README (any host) via a raw-README URL guess per forge.
+    foreach ($m in $Members) {
+        $repo = Resolve-DFPackageUniverseRepo -Homepage ([string]$m.homepage) -Extra ([string]$m.extra)
+        if (-not $repo) { continue }
+        $rawUrls = switch ($repo.Host) {
+            'github.com' { @("https://raw.githubusercontent.com/$($repo.Owner)/$($repo.Repo)/HEAD/README.md") }
+            'gitlab.com' { @("https://gitlab.com/$($repo.Owner)/$($repo.Repo)/-/raw/HEAD/README.md") }
+            'codeberg.org' { @("https://codeberg.org/$($repo.Owner)/$($repo.Repo)/raw/branch/main/README.md") }
+            'bitbucket.org' { @("https://bitbucket.org/$($repo.Owner)/$($repo.Repo)/raw/HEAD/README.md") }
+            default { @() }
+        }
+        foreach ($u in $rawUrls) {
+            $f = Get-DFPackageUniverseFetch -Url $u -Connection $Connection -Http $Http
+            if ($f.Content) { $excerpt = $f.Content; $source = 'readme'; break }
+        }
+        if ($excerpt) { break }
+    }
+
+    # Tier 2: a documentation / homepage page.
+    if (-not $excerpt) {
+        $docUrl = @($Members | ForEach-Object { [string]$_.homepage } | Where-Object { $_ }) | Select-Object -First 1
+        if ($docUrl) {
+            $f = Get-DFPackageUniverseFetch -Url $docUrl -Connection $Connection -Http $Http
+            if ($f.Content) { $excerpt = $f.Content; $source = 'docs' }
+        }
+    }
+
+    if ($excerpt -and $excerpt.Length -gt 4000) { $excerpt = $excerpt.Substring(0, 4000) }
+    [pscustomobject]@{
+        Name = $Name; Publisher = $Publisher; Description = $Description; Tags = $Tags
+        DocExcerpt = $excerpt; SignalSource = $source
+    }
+}

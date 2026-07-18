@@ -121,6 +121,37 @@ Describe 'DFPackageUniverse.Categorize' {
         }
     }
 
+    Context 'Get-DFPackageUniverseClassifierInput' {
+        BeforeAll { Import-Module PSSQLite; . "$PSScriptRoot/../build/Private/DFPackageUniverse.CategorizeDb.ps1" }
+        It 'uses the repo README when available and records signal_source=readme' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("in-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $conn = New-SQLiteConnection -DataSource $db
+                $http = { param($Url) [pscustomobject]@{ Content = "# bat`nA cat clone with wings"; ContentType = 'text/markdown'; Status = 'ok' } }
+                $m = @( [pscustomobject]@{ source='choco'; package_id='bat'; name='bat'; homepage='https://github.com/sharkdp/bat'; extra=$null } )
+                try {
+                    $in = Get-DFPackageUniverseClassifierInput -Members $m -Name 'bat' -Publisher 'sharkdp' -Description 'd' -Tags $null -Connection $conn -Http $http
+                    $in.SignalSource | Should -Be 'readme'
+                    $in.DocExcerpt | Should -Match 'cat clone'
+                } finally { $conn.Close() }
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'falls back to metadata-only when no repo/doc and records signal_source=metadata' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("in2-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $conn = New-SQLiteConnection -DataSource $db
+                $http = { param($Url) throw 'no network' }
+                $m = @( [pscustomobject]@{ source='winget'; package_id='A.X'; name='x'; homepage=$null; extra=$null } )
+                try {
+                    $in = Get-DFPackageUniverseClassifierInput -Members $m -Name 'x' -Publisher 'A' -Description 'thin' -Tags $null -Connection $conn -Http $http
+                    $in.SignalSource | Should -Be 'metadata'
+                } finally { $conn.Close() }
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
+
     Context 'vocabulary' {
         BeforeAll {
             . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1"
