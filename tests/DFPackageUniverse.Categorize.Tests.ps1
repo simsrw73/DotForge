@@ -229,6 +229,11 @@ Describe 'DFPackageUniverse.Categorize' {
             $script:captured.Headers['Authorization'] | Should -Be 'Bearer sk-test'
             $script:captured.Uri | Should -Match 'openai\.com'
             ($script:captured.Body | ConvertFrom-Json).model | Should -Be 'gpt-test'
+            # Proves the classifier input actually reached the request body --
+            # regression guard for the $Input-is-reserved bug where the tool's
+            # Name/Description silently came through empty.
+            $script:captured.Body | Should -Match 'bat'          # the tool name reached the request
+            $script:captured.Body | Should -Match 'cat clone'    # the description reached the request
         }
     }
 

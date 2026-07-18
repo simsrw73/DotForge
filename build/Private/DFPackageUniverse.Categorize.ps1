@@ -376,7 +376,7 @@ function ConvertTo-DFPackageUniverseClassification {
 function New-DFPackageUniverseClassifySeam {
     <#
     .SYNOPSIS
-        Builds the classifier seam (param($Input,$Vocab) -> {Raw;Model;Usage}) for
+        Builds the classifier seam (param($ClassifierInput,$Vocab) -> {Raw;Model;Usage}) for
         an OpenAI chat-completions call with JSON-schema structured output that
         constrains domain/function/worksWith to the closed vocabulary. The wire
         POST is delegated to $Rest (param($Uri,$Headers,$Body) -> parsed response)
@@ -403,7 +403,7 @@ function New-DFPackageUniverseClassifySeam {
 
         Returns { Raw; Model; Usage } from a live OpenAI classification call.
     .OUTPUTS
-        [scriptblock] with signature param($Input,$Vocab) -> { Raw; Model; Usage }.
+        [scriptblock] with signature param($ClassifierInput,$Vocab) -> { Raw; Model; Usage }.
     #>
     [CmdletBinding()]
     [OutputType([scriptblock])]
@@ -416,7 +416,7 @@ function New-DFPackageUniverseClassifySeam {
         }
     )
     {
-        param($Input, $Vocab)
+        param($ClassifierInput, $Vocab)
         $schema = @{
             type = 'object'; additionalProperties = $false
             required = @('domain', 'function', 'worksWith', 'interface', 'alternativeTo', 'confidence', 'nothing_fits', 'suggested_terms')
@@ -432,7 +432,7 @@ function New-DFPackageUniverseClassifySeam {
             }
         }
         $sys = 'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat).'
-        $user = @{ name = $Input.Name; publisher = $Input.Publisher; description = $Input.Description; tags = $Input.Tags; docs = $Input.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
+        $user = @{ name = $ClassifierInput.Name; publisher = $ClassifierInput.Publisher; description = $ClassifierInput.Description; tags = $ClassifierInput.Tags; docs = $ClassifierInput.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
         $body = @{
             model = $Model
             messages = @(@{ role = 'system'; content = $sys }, @{ role = 'user'; content = $user })
