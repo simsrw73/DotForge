@@ -28,5 +28,24 @@ Describe 'DFPackageUniverse.Categorize' {
         It 'does not throw under strict on null inputs' {
             { Resolve-DFPackageUniverseRepo -Homepage $null -Extra $null } | Should -Not -Throw
         }
+        It 'returns null for a forge subdomain that is not a repo path' {
+            Resolve-DFPackageUniverseRepo -Homepage 'https://docs.github.com/en/get-started' | Should -BeNullOrEmpty
+        }
+        It 'returns null for a gist subdomain' {
+            Resolve-DFPackageUniverseRepo -Homepage 'https://gist.github.com/user/abc123' | Should -BeNullOrEmpty
+        }
+        It 'resolves a Bitbucket homepage' {
+            (Resolve-DFPackageUniverseRepo -Homepage 'https://bitbucket.org/team/proj').Url | Should -Be 'https://bitbucket.org/team/proj'
+        }
+        It 'resolves a git.sr.ht homepage' {
+            (Resolve-DFPackageUniverseRepo -Homepage 'https://git.sr.ht/~user/repo').Url | Should -Be 'https://git.sr.ht/~user/repo'
+        }
+        It 'resolves a mixed-case host' {
+            (Resolve-DFPackageUniverseRepo -Homepage 'https://GitHub.com/sharkdp/bat').Url | Should -Be 'https://github.com/sharkdp/bat'
+        }
+        It 'recovers the repo from a scoop autoupdate blob with an embedded github release url' {
+            $extra = ConvertTo-Json -Compress -Depth 8 @{ autoupdate = @{ architecture = @{ '64bit' = @{ url = 'https://github.com/acme/tool/releases/download/v$version/tool.zip' } } } }
+            (Resolve-DFPackageUniverseRepo -Homepage 'https://vanity.example/tool' -Extra $extra).Url | Should -Be 'https://github.com/acme/tool'
+        }
     }
 }

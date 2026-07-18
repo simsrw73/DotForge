@@ -30,9 +30,6 @@ function Resolve-DFPackageUniverseRepo {
     [CmdletBinding()]
     param([AllowNull()][string]$Homepage, [AllowNull()][string]$Extra)
 
-    $hosts = 'github\.com', 'gitlab\.com', 'bitbucket\.org', 'codeberg\.org', 'git\.sr\.ht'
-    $pattern = "(?:$($hosts -join '|'))[/:]([^/#?\s]+)/([^/#?\s]+)"
-
     $candidates = [System.Collections.Generic.List[string]]::new()
     if ($Extra) {
         $doc = $null
@@ -52,13 +49,26 @@ function Resolve-DFPackageUniverseRepo {
     }
     if ($Homepage) { $candidates.Add([string]$Homepage) }
 
+    $forges = @('github.com', 'gitlab.com', 'bitbucket.org', 'codeberg.org', 'git.sr.ht')
     foreach ($c in $candidates) {
-        $m = [regex]::Match($c, $pattern)
-        if ($m.Success) {
-            $forgeHost = ([regex]::Match($m.Value, '(?:github|gitlab|bitbucket|codeberg|sr)\.[a-z]+')).Value.ToLowerInvariant()
-            if ($forgeHost -eq 'sr.ht') { $forgeHost = 'git.sr.ht' }
-            $owner = $m.Groups[1].Value.ToLowerInvariant()
-            $repo = ($m.Groups[2].Value -replace '\.git$', '').ToLowerInvariant()
+        # Pull URL-shaped substrings out of each candidate -- handles bare URLs
+        # AND URLs embedded in an autoupdate JSON blob.
+        foreach ($m in [regex]::Matches([string]$c, 'https?://[^\s"''<>]+')) {
+            $u = $null; try { $u = [uri]$m.Value } catch { continue }
+            $forgeHost = $u.Host.ToLowerInvariant()
+            if ($forgeHost -notin $forges) { continue }        # EXACT host, not substring
+            $segs = @(($u.AbsolutePath.Trim('/') -split '/') | Where-Object { $_ })
+            if ($segs.Count -lt 2) { continue }
+            $owner = $segs[0].ToLowerInvariant()
+            $repo = ($segs[1] -replace '\.git$', '').ToLowerInvariant()
+            return [pscustomobject]@{ Host = $forgeHost; Owner = $owner; Repo = $repo; Url = "https://$forgeHost/$owner/$repo" }
+        }
+        # SSH scp-like form: git@host:owner/repo(.git)
+        $ssh = [regex]::Match([string]$c, 'git@([^:\s]+):([^/\s]+)/([^/\s]+)')
+        if ($ssh.Success -and ($ssh.Groups[1].Value.ToLowerInvariant() -in $forges)) {
+            $forgeHost = $ssh.Groups[1].Value.ToLowerInvariant()
+            $owner = $ssh.Groups[2].Value.ToLowerInvariant()
+            $repo = ($ssh.Groups[3].Value -replace '\.git$', '').ToLowerInvariant()
             return [pscustomobject]@{ Host = $forgeHost; Owner = $owner; Repo = $repo; Url = "https://$forgeHost/$owner/$repo" }
         }
     }
