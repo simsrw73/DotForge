@@ -254,8 +254,8 @@ function Update-DFPackageUniverseToolCategories {
         Invoke-SqliteQuery -SQLiteConnection $conn -Query 'BEGIN TRANSACTION;'
         foreach ($t in $tools) {
             $id = [int]$t.tool_id
+            if (-not $byTool.ContainsKey($id)) { continue }
             $mm = @($byTool[$id])
-            if ($mm.Count -eq 0) { continue }
             $key = Get-DFPackageUniverseDurableKey -Members $mm -Name ([string]$t.name)
             $c = @(Invoke-SqliteQuery -SQLiteConnection $conn -Query "SELECT domain, function_json FROM tool_classifications WHERE cache_key=@k AND status='done'" -SqlParameters @{ k = $key })
             if ($c.Count -eq 0) { continue }

@@ -86,5 +86,60 @@ CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_i
                 @(Invoke-SqliteQuery -DataSource $db -Query "SELECT category FROM tool_categories WHERE tool_id=1").category | Should -Contain 'file-viewing'
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
+
+        It 'skips a tool with no tool_packages members without throwing, and still updates a sibling tool with a cached classification' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("agg-orphan-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, domain TEXT);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+'@
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name) VALUES (1,'bat')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name) VALUES (2,'orphan')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (1,'choco','bat','https://github.com/sharkdp/bat')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_classifications (cache_key,domain,function_json,works_with_json,interface,alternative_to_json,confidence,nothing_fits,suggested_terms_json,status,classified_at) VALUES ('repo:https://github.com/sharkdp/bat|bat','text','[`"file-viewing`"]','[`"text`"]','cli','[`"cat`"]',0.9,0,'[]','done','now')"
+                { Update-DFPackageUniverseToolCategories -DatabasePath $db } | Should -Not -Throw
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT domain FROM tools WHERE tool_id=1").domain | Should -Be 'text'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'leaves a tool with members but no cached classification unchanged' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("agg-nocache-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, domain TEXT);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+'@
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name) VALUES (1,'nocache')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (1,'choco','nocache','https://github.com/example/nocache')"
+                Update-DFPackageUniverseToolCategories -DatabasePath $db
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT domain FROM tools WHERE tool_id=1").domain | Should -BeNullOrEmpty
+                @(Invoke-SqliteQuery -DataSource $db -Query "SELECT category FROM tool_categories WHERE tool_id=1").Count | Should -Be 0
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'is idempotent across repeated runs (no duplicate tool_categories rows, no error)' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("agg-idem-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, domain TEXT);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+'@
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name) VALUES (1,'bat')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (1,'choco','bat','https://github.com/sharkdp/bat')"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_classifications (cache_key,domain,function_json,works_with_json,interface,alternative_to_json,confidence,nothing_fits,suggested_terms_json,status,classified_at) VALUES ('repo:https://github.com/sharkdp/bat|bat','text','[`"file-viewing`"]','[`"text`"]','cli','[`"cat`"]',0.9,0,'[]','done','now')"
+                Update-DFPackageUniverseToolCategories -DatabasePath $db
+                $firstCount = @(Invoke-SqliteQuery -DataSource $db -Query "SELECT category FROM tool_categories WHERE tool_id=1").Count
+                { Update-DFPackageUniverseToolCategories -DatabasePath $db } | Should -Not -Throw
+                $secondCount = @(Invoke-SqliteQuery -DataSource $db -Query "SELECT category FROM tool_categories WHERE tool_id=1").Count
+                $secondCount | Should -Be $firstCount
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
     }
 }
