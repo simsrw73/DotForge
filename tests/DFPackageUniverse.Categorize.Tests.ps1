@@ -210,4 +210,25 @@ Describe 'DFPackageUniverse.Categorize' {
             $script:c.Domain | Should -BeNullOrEmpty
         }
     }
+
+    Context 'New-DFPackageUniverseClassifySeam' {
+        It 'builds a request with the vocab-constrained schema and parses the response' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $captured = $null
+            $rest = {
+                param($Uri, $Headers, $Body)
+                $script:captured = [pscustomobject]@{ Uri=$Uri; Headers=$Headers; Body=$Body }
+                # Mimic OpenAI chat-completions shape with a JSON string in message content.
+                [pscustomobject]@{ choices=@([pscustomobject]@{ message=[pscustomobject]@{ content='{"domain":"text","function":["search"],"worksWith":["text"],"interface":"cli","alternativeTo":["grep"],"confidence":0.9,"nothing_fits":false,"suggested_terms":[]}' } }); usage=[pscustomobject]@{ total_tokens=321 } }
+            }
+            $seam = New-DFPackageUniverseClassifySeam -ApiKey 'sk-test' -Model 'gpt-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher='sharkdp'; Description='cat clone'; Tags=$null; DocExcerpt='# bat'; SignalSource='readme' }
+            $out = & $seam $in $vocab
+            $out.Raw.domain | Should -Be 'text'
+            $out.Usage.total_tokens | Should -Be 321
+            $script:captured.Headers['Authorization'] | Should -Be 'Bearer sk-test'
+            $script:captured.Uri | Should -Match 'openai\.com'
+            ($script:captured.Body | ConvertFrom-Json).model | Should -Be 'gpt-test'
+        }
+    }
 }

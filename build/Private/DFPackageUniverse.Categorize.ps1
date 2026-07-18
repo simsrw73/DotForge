@@ -372,3 +372,75 @@ function ConvertTo-DFPackageUniverseClassification {
         NothingFits = $nothingFits; SuggestedTerms = $suggested
     }
 }
+
+function New-DFPackageUniverseClassifySeam {
+    <#
+    .SYNOPSIS
+        Builds the classifier seam (param($Input,$Vocab) -> {Raw;Model;Usage}) for
+        an OpenAI chat-completions call with JSON-schema structured output that
+        constrains domain/function/worksWith to the closed vocabulary. The wire
+        POST is delegated to $Rest (param($Uri,$Headers,$Body) -> parsed response)
+        so it is unit-testable. The default $Rest uses Invoke-RestMethod.
+    .DESCRIPTION
+        The returned scriptblock builds a system/user chat-completions message
+        pair from the classifier input, a json_schema response_format whose
+        domain/function/worksWith enums are populated from $Vocab, and POSTs it
+        via $Rest to the OpenAI chat-completions endpoint. $Rest is an
+        injectable seam -- param($Uri,$Headers,$Body) -> parsed response --
+        so tests can supply a canned response with no network call. The
+        response's choices[0].message.content JSON string is parsed and
+        returned alongside the model name and token usage.
+    .PARAMETER ApiKey
+        The OpenAI API key, sent as an Authorization: Bearer header.
+    .PARAMETER Model
+        The chat-completions model name. Defaults to 'gpt-4o-mini'.
+    .PARAMETER Rest
+        The injectable HTTP-POST seam: param($Uri,$Headers,$Body) -> parsed
+        response. Defaults to a real Invoke-RestMethod call.
+    .EXAMPLE
+        $seam = New-DFPackageUniverseClassifySeam -ApiKey $key -Model 'gpt-4o-mini'
+        & $seam $classifierInput $vocab
+
+        Returns { Raw; Model; Usage } from a live OpenAI classification call.
+    .OUTPUTS
+        [scriptblock] with signature param($Input,$Vocab) -> { Raw; Model; Usage }.
+    #>
+    [CmdletBinding()]
+    [OutputType([scriptblock])]
+    param(
+        [Parameter(Mandatory)][string]$ApiKey,
+        [string]$Model = 'gpt-4o-mini',
+        [scriptblock]$Rest = {
+            param($Uri, $Headers, $Body)
+            Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60
+        }
+    )
+    {
+        param($Input, $Vocab)
+        $schema = @{
+            type = 'object'; additionalProperties = $false
+            required = @('domain', 'function', 'worksWith', 'interface', 'alternativeTo', 'confidence', 'nothing_fits', 'suggested_terms')
+            properties = @{
+                domain      = @{ type = 'string'; enum = @($Vocab.Domain) }
+                function    = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.Function) } }
+                worksWith   = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.WorksWith) } }
+                interface   = @{ type = 'string'; enum = @('cli', 'tui', 'gui') }
+                alternativeTo = @{ type = 'array'; items = @{ type = 'string' } }
+                confidence  = @{ type = 'number' }
+                nothing_fits = @{ type = 'boolean' }
+                suggested_terms = @{ type = 'array'; items = @{ type = 'string' } }
+            }
+        }
+        $sys = 'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat).'
+        $user = @{ name = $Input.Name; publisher = $Input.Publisher; description = $Input.Description; tags = $Input.Tags; docs = $Input.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
+        $body = @{
+            model = $Model
+            messages = @(@{ role = 'system'; content = $sys }, @{ role = 'user'; content = $user })
+            response_format = @{ type = 'json_schema'; json_schema = @{ name = 'tool_classification'; schema = $schema; strict = $true } }
+        } | ConvertTo-Json -Depth 12
+        $headers = @{ Authorization = "Bearer $ApiKey" }
+        $resp = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
+        $content = [string]$resp.choices[0].message.content
+        [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage }
+    }.GetNewClosure()
+}
