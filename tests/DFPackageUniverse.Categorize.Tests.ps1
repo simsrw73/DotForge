@@ -78,4 +78,46 @@ Describe 'DFPackageUniverse.Categorize' {
             Get-DFPackageUniverseDurableKey -Members $m -Name 'x' | Should -Be 'pkg:winget|A.X'
         }
     }
+
+    Context 'Get-DFPackageUniverseApiKey' {
+        It 'reads a key from a .env, ignoring comments and blanks' {
+            $f = Join-Path ([System.IO.Path]::GetTempPath()) ("env-" + [guid]::NewGuid().ToString('N'))
+            try {
+                Set-Content -Path $f -Value @('# comment', '', 'OPENAI_API_KEY=sk-abc123', 'OTHER=x')
+                Get-DFPackageUniverseApiKey -EnvPath $f -Name 'OPENAI_API_KEY' | Should -Be 'sk-abc123'
+                Get-DFPackageUniverseApiKey -EnvPath $f -Name 'MISSING' | Should -BeNullOrEmpty
+            } finally { Remove-Item -Path $f -ErrorAction Ignore }
+        }
+    }
+    Context 'Get-DFPackageUniverseFetch' {
+        BeforeAll { Import-Module PSSQLite; . "$PSScriptRoot/../build/Private/DFPackageUniverse.CategorizeDb.ps1" }
+        It 'fetches once, then serves from cache without re-calling Http' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("fetch-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $conn = New-SQLiteConnection -DataSource $db
+                $script:calls = 0
+                $http = { param($Url) $script:calls++; [pscustomobject]@{ Content = 'README!'; ContentType = 'text/markdown'; Status = 'ok' } }
+                try {
+                    (Get-DFPackageUniverseFetch -Url 'https://x/readme' -Connection $conn -Http $http).Content | Should -Be 'README!'
+                    (Get-DFPackageUniverseFetch -Url 'https://x/readme' -Connection $conn -Http $http).Content | Should -Be 'README!'
+                } finally { $conn.Close() }
+                $script:calls | Should -Be 1
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'caches a failed fetch so it is not retried' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("fetch2-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $conn = New-SQLiteConnection -DataSource $db
+                $script:calls2 = 0
+                $http = { param($Url) $script:calls2++; throw '404' }
+                try {
+                    (Get-DFPackageUniverseFetch -Url 'https://dead/x' -Connection $conn -Http $http).Content | Should -BeNullOrEmpty
+                    Get-DFPackageUniverseFetch -Url 'https://dead/x' -Connection $conn -Http $http | Out-Null
+                } finally { $conn.Close() }
+                $script:calls2 | Should -Be 1
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
 }

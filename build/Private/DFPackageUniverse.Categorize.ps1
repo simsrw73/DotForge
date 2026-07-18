@@ -126,3 +126,97 @@ function Get-DFPackageUniverseDurableKey {
     $anchor = @($Members | Sort-Object @{ e = { $order[[string]$_.source] } }, @{ e = { "$($_.source)|$($_.package_id)" } })[0]
     "pkg:$($anchor.source)|$($anchor.package_id)"
 }
+
+function Get-DFPackageUniverseApiKey {
+    <#
+    .SYNOPSIS
+        Reads NAME=value from a .env file (comments and blank lines ignored).
+        Returns $null when the file or the key is absent.
+    .DESCRIPTION
+        Scans EnvPath line by line, skipping blank lines and lines starting
+        with '#'. Splits each remaining line on the first '=' and compares
+        the trimmed key against Name. The matched value is trimmed and has
+        surrounding double quotes stripped.
+    .PARAMETER EnvPath
+        Path to the .env file. If it does not exist, returns $null.
+    .PARAMETER Name
+        The key to look up (exact match, case-sensitive as written).
+    .EXAMPLE
+        Get-DFPackageUniverseApiKey -EnvPath ./.env -Name 'OPENAI_API_KEY'
+
+        Returns the value of OPENAI_API_KEY from ./.env, or $null if absent.
+    .OUTPUTS
+        [string] The key's value, or $null if the file or key is absent.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$EnvPath, [Parameter(Mandatory)][string]$Name)
+
+    if (-not (Test-Path $EnvPath)) { return $null }
+    foreach ($line in (Get-Content -Path $EnvPath)) {
+        $t = $line.Trim()
+        if (-not $t -or $t.StartsWith('#')) { continue }
+        $eq = $t.IndexOf('=')
+        if ($eq -lt 1) { continue }
+        if ($t.Substring(0, $eq).Trim() -eq $Name) { return $t.Substring($eq + 1).Trim().Trim('"') }
+    }
+    $null
+}
+
+function Get-DFPackageUniverseFetch {
+    <#
+    .SYNOPSIS
+        Cache-first document fetch. Returns the fetch_cache row if present; else
+        invokes the injectable $Http seam (param($Url) -> {Content;ContentType;
+        Status}), persists the result (success OR failure), and returns it. Never
+        throws -- a failure caches {Content=$null; Status='error:...'} so a dead
+        URL is fetched at most once.
+    .DESCRIPTION
+        Checks the fetch_cache table for Url first. On a cache hit, returns the
+        stored row (DBNull cells coerced to $null via ConvertFrom-DFDbNull). On
+        a miss, invokes Http, wraps any thrown error into a cached failure
+        record instead of propagating it, persists the outcome via
+        INSERT OR REPLACE, and returns the result. This makes network access
+        an injectable seam for tests and guarantees a dead URL is retried at
+        most once per cache lifetime.
+    .PARAMETER Url
+        The URL to fetch, used as the fetch_cache primary key.
+    .PARAMETER Connection
+        An open PSSQLite connection (from New-SQLiteConnection) pointed at the
+        Phase D categorize database.
+    .PARAMETER Http
+        A scriptblock seam: param($Url) -> { Content; ContentType; Status }.
+        Swapped for a mock in tests; a real implementation performs the
+        network call.
+    .EXAMPLE
+        Get-DFPackageUniverseFetch -Url 'https://x/readme' -Connection $conn -Http $http
+
+        Returns the cached row if 'https://x/readme' was fetched before;
+        otherwise calls $http, caches, and returns the result.
+    .OUTPUTS
+        [pscustomobject] with Content, ContentType, and Status properties.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Url,
+        [Parameter(Mandatory)]$Connection,
+        [Parameter(Mandatory)][scriptblock]$Http
+    )
+    $cached = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT content, content_type, status FROM fetch_cache WHERE url = @u' -SqlParameters @{ u = $Url })
+    if ($cached.Count -gt 0) {
+        $c = $cached[0]
+        return [pscustomobject]@{ Content = (ConvertFrom-DFDbNull $c.content); ContentType = (ConvertFrom-DFDbNull $c.content_type); Status = (ConvertFrom-DFDbNull $c.status) }
+    }
+    $result = [pscustomobject]@{ Content = $null; ContentType = $null; Status = 'ok' }
+    try {
+        $r = & $Http $Url
+        $result = [pscustomobject]@{ Content = [string]$r.Content; ContentType = [string]$r.ContentType; Status = [string]$r.Status }
+    } catch {
+        $result = [pscustomobject]@{ Content = $null; ContentType = $null; Status = "error: $_" }
+    }
+    Invoke-SqliteQuery -SQLiteConnection $Connection -Query @'
+INSERT OR REPLACE INTO fetch_cache (url, content, content_type, status, fetched_at)
+VALUES (@u, @c, @ct, @s, @at);
+'@ -SqlParameters @{ u = $Url; c = $result.Content; ct = $result.ContentType; s = $result.Status; at = [datetime]::UtcNow.ToString('o') }
+    $result
+}
