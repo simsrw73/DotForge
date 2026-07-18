@@ -40,6 +40,12 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Package-universe Phase D `Resolve-DFPackageUniverseRepo` matched the forge domain
+  as a substring**, so forge *subdomains* (`docs.github.com`, `gist.github.com`, …)
+  were mis-resolved into a fabricated owner/repo instead of returning `$null`. Now
+  extracts URL-shaped substrings and matches `[uri].Host` exactly against the known
+  forge list, with an scp-like `git@host:owner/repo` fallback. Build-only; no public
+  module surface change.
 - **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
   builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
   that actually builds one did nothing at all — no error, no warning, no picker.
