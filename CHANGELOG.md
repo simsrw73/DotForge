@@ -46,6 +46,12 @@ All notable changes to DotForge are documented here.
   extracts URL-shaped substrings and matches `[uri].Host` exactly against the known
   forge list, with an scp-like `git@host:owner/repo` fallback. Build-only; no public
   module surface change.
+- **Package-universe Phase D `ConvertTo-DFPackageUniverseClassification` threw under
+  `Set-StrictMode`** when a model response omitted `domain`, `function`, `worksWith`,
+  or `interface` — exactly the trust-boundary case it exists to absorb. These four
+  reads now use the same `PSObject.Properties['x']` existence-probe already used for
+  the peripheral fields (`confidence`, `alternativeTo`, `suggested_terms`,
+  `nothing_fits`). Build-only; no public module surface change.
 - **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
   builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
   that actually builds one did nothing at all — no error, no warning, no picker.
