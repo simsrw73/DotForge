@@ -200,5 +200,14 @@ Describe 'DFPackageUniverse.Categorize' {
             $raw = [pscustomobject]@{ domain='dev'; function=@('search'); worksWith=@('text'); interface='cli'; confidence=0.3; nothing_fits=$true; suggested_terms=@() }
             (ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $script:vocab).NothingFits | Should -BeTrue
         }
+        It 'does not throw and forces NothingFits when the model omits domain/function/worksWith/interface' {
+            $raw = [pscustomobject]@{ confidence = 0.4; nothing_fits = $false }   # central fields ABSENT
+            $c = $null
+            { $script:c = ConvertTo-DFPackageUniverseClassification -Raw $raw -Vocab $script:vocab } | Should -Not -Throw
+            $script:c.NothingFits | Should -BeTrue
+            @($script:c.Function).Count | Should -Be 0
+            @($script:c.WorksWith).Count | Should -Be 0
+            $script:c.Domain | Should -BeNullOrEmpty
+        }
     }
 }

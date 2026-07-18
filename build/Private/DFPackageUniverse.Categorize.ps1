@@ -347,10 +347,11 @@ function ConvertTo-DFPackageUniverseClassification {
         $result = @(@($Values) | ForEach-Object { [string]$_ } | Where-Object { Test-DFPackageUniverseVocabValue -Value $_ -Vocab $Allowed })
         , $result
     }
-    $domainRaw = [string]$Raw.PSObject.Properties['domain'].Value
+    $domainProp = $Raw.PSObject.Properties['domain']
+    $domainRaw = if ($domainProp) { [string]$domainProp.Value } else { $null }
     $domain = if (Test-DFPackageUniverseVocabValue -Value $domainRaw -Vocab $Vocab.Domain) { $domainRaw.ToLowerInvariant() } else { $null }
-    $func = Keep -Values @($Raw.function) -Allowed $Vocab.Function
-    $ww   = Keep -Values @($Raw.worksWith) -Allowed $Vocab.WorksWith
+    $func = Keep -Values @(if ($Raw.PSObject.Properties['function']) { $Raw.function }) -Allowed $Vocab.Function
+    $ww   = Keep -Values @(if ($Raw.PSObject.Properties['worksWith']) { $Raw.worksWith }) -Allowed $Vocab.WorksWith
     # Same unwrap hazard as Keep above: an if/else block's output is also
     # enumerated onto the pipeline, so the true-branch needs the same ,@(...)
     # guard whenever its pipeline can filter down to zero items.
@@ -363,9 +364,10 @@ function ConvertTo-DFPackageUniverseClassification {
     $modelSaysNothing = [bool]($Raw.PSObject.Properties['nothing_fits'] -and $Raw.nothing_fits)
     $nothingFits = $modelSaysNothing -or (-not $domain -and $func.Count -eq 0 -and $ww.Count -eq 0)
 
+    $ifProp = $Raw.PSObject.Properties['interface']
     [pscustomobject]@{
         Domain = $domain; Function = $func; WorksWith = $ww
-        Interface = [string]$Raw.PSObject.Properties['interface'].Value
+        Interface = if ($ifProp) { [string]$ifProp.Value } else { $null }
         AlternativeTo = $alt; Confidence = $conf
         NothingFits = $nothingFits; SuggestedTerms = $suggested
     }
