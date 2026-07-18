@@ -485,7 +485,7 @@ function Invoke-DFPackageUniverseCategorizeRun {
         A scriptblock seam: param($Url) -> { Content; ContentType; Status },
         passed through to Get-DFPackageUniverseClassifierInput's fetch cache.
     .PARAMETER Classify
-        The classifier seam: param($Input,$Vocab) -> { Raw; Model; Usage }
+        The classifier seam: param($ClassifierInput,$Vocab) -> { Raw; Model; Usage }
         (see New-DFPackageUniverseClassifySeam).
     .PARAMETER Escalate
         An optional stronger-model seam with the same signature as Classify,

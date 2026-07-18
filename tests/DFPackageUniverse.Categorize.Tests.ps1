@@ -339,4 +339,40 @@ CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, pack
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }
+
+    Context 'Build-DFPackageUniverseCategories.ps1' {
+        BeforeAll { Import-Module PSSQLite; . "$PSScriptRoot/../build/Private/DFPackageUniverse.CategorizeDb.ps1"; . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1" }
+        It 'runs end-to-end against a prepared DB with injected seams and returns a summary' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("orch-" + [guid]::NewGuid().ToString('N') + ".db")
+            $js = Join-Path ([System.IO.Path]::GetTempPath()) ("orch-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, source_count INTEGER);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);
+'@
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name,source_count) VALUES (1,'bat',1)"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (1,'choco','bat','https://github.com/sharkdp/bat')"
+                '{ "schemaVersion":1, "classifications":[] }' | Set-Content -Path $js
+                $http = { param($Url) [pscustomobject]@{ Content='# bat'; ContentType='text/markdown'; Status='ok' } }
+                # NOTE: the brief's seam used `param($Input,$Vocab)`; $Input/$input is a
+                # reserved PowerShell automatic variable (see the note in the
+                # Invoke-DFPackageUniverseCategorizeRun Context above). Renamed to
+                # $ClassifierInput to match the real seam signature (Task 8).
+                $classify = { param($ClassifierInput,$Vocab) [pscustomobject]@{ Raw=[pscustomobject]@{ domain='text'; function=@('file-viewing'); worksWith=@('text'); interface='cli'; alternativeTo=@('cat'); confidence=0.9; nothing_fits=$false; suggested_terms=@() }; Model='m'; Usage=[pscustomobject]@{total_tokens=10} } }
+                $summary = & "$PSScriptRoot/../build/Build-DFPackageUniverseCategories.ps1" -DatabasePath $db -ClassificationsPath $js -Http $http -Classify $classify -BudgetCalls 100 6>$null
+                $summary.Classified | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT domain FROM tools WHERE tool_id=1").domain | Should -Be 'text'
+                (Get-Content -Raw $js) | Should -Match 'sharkdp/bat'
+            } finally { Remove-Item -Path $db, $js -ErrorAction Ignore }
+        }
+        It 'throws when tool_packages is missing (Phase C not run)' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("noc-" + [guid]::NewGuid().ToString('N') + ".db")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query "CREATE TABLE tools (tool_id INTEGER PRIMARY KEY)"
+                { & "$PSScriptRoot/../build/Build-DFPackageUniverseCategories.ps1" -DatabasePath $db -Http {} -Classify {} 6>$null } | Should -Throw '*tool_packages*'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
 }

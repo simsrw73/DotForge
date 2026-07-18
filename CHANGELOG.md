@@ -37,21 +37,10 @@ All notable changes to DotForge are documented here.
   and `winget`. Composes with PSFzf, which owns the Tab key and routes through
   `TabExpansion2`.
 - **Package-universe Phase C (tool merge)** — `build/Build-DFPackageUniverseTools.ps1` flattens Phase B clusters and singletons into a master `tools` table (one row per real-world tool across the whole corpus, lossless via a `tool_packages` child), with per-field priority picks (winget > choco > scoop) and provenance, a license single-answer conflict flag, a `tool_tags` union, and first-pass `tool_categories` from a committed `data/package-universe-categories.jsonc` rule file. Build-only; no public module surface change.
+- **Package-universe Phase D — categorization engine (Plan 1)** — `build/Build-DFPackageUniverseCategories.ps1` classifies every merged tool into a closed taxonomy (coarse `domain` + `function`/`worksWith` facets + `interface`, plus `alternativeTo`) by reading each tool's own docs (any-host README → doc page → metadata) via a small OpenAI model. Each result is cached durably (keyed on a stable identity signal, not the volatile tool_id) and exported to a version-controlled `data/package-universe-classifications.jsonc`, so the run is resumable, budget-capped, and survives DB rebuilds and re-clustering. Build-only; no public module surface change.
 
 ### Fixed
 
-- **Package-universe Phase D `Resolve-DFPackageUniverseRepo` matched the forge domain
-  as a substring**, so forge *subdomains* (`docs.github.com`, `gist.github.com`, …)
-  were mis-resolved into a fabricated owner/repo instead of returning `$null`. Now
-  extracts URL-shaped substrings and matches `[uri].Host` exactly against the known
-  forge list, with an scp-like `git@host:owner/repo` fallback. Build-only; no public
-  module surface change.
-- **Package-universe Phase D `ConvertTo-DFPackageUniverseClassification` threw under
-  `Set-StrictMode`** when a model response omitted `domain`, `function`, `worksWith`,
-  or `interface` — exactly the trust-boundary case it exists to absorb. These four
-  reads now use the same `PSObject.Properties['x']` existence-probe already used for
-  the peripheral fields (`confidence`, `alternativeTo`, `suggested_terms`,
-  `nothing_fits`). Build-only; no public module surface change.
 - **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
   builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
   that actually builds one did nothing at all — no error, no warning, no picker.
