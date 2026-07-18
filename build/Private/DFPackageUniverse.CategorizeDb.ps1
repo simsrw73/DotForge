@@ -205,3 +205,66 @@ VALUES (@k, @dom, @fn, @ww, @if, @alt, @conf, @nf, @st, @src, @model, 'done', @a
         }
     } finally { $conn.Close() }
 }
+
+function Update-DFPackageUniverseToolCategories {
+    <#
+    .SYNOPSIS
+        Writes each tool the classification cached under its durable key: sets
+        tools.domain and replaces its Phase C first-pass tool_categories with the
+        classifier's function facets. Idempotent. Requires
+        Get-DFPackageUniverseDurableKey to be loaded (orchestrator dot-sources it).
+    .DESCRIPTION
+        For every row in tools, computes the tool's durable key from its merged
+        tool_packages members (Get-DFPackageUniverseDurableKey) and looks up the
+        cached 'done' classification for that key in tool_classifications. When
+        found, writes the classification's domain onto tools.domain (a column
+        added via ALTER TABLE on first call if not already present) and REPLACEs
+        the tool's tool_categories rows with the classifier's function facets --
+        so downstream discovery reads the richer classifier-derived categories
+        instead of the Phase C first-pass ones. Tools with no members or no
+        cached classification are left untouched. The whole pass is one
+        transaction, rolled back on any failure. Safe to re-run.
+    .PARAMETER DatabasePath
+        Path to the SQLite database holding tools, tool_packages, tool_categories,
+        and tool_classifications.
+    .EXAMPLE
+        Update-DFPackageUniverseToolCategories -DatabasePath ./data/universe.db
+
+        Writes tools.domain and refreshes tool_categories for every tool with a
+        cached classification.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$DatabasePath)
+
+    $cols = @(Invoke-SqliteQuery -DataSource $DatabasePath -Query "PRAGMA table_info(tools)").name
+    if ($cols -notcontains 'domain') { Invoke-SqliteQuery -DataSource $DatabasePath -Query "ALTER TABLE tools ADD COLUMN domain TEXT" }
+
+    $tools = @(Invoke-SqliteQuery -DataSource $DatabasePath -Query 'SELECT tool_id, name FROM tools')
+    $members = @(Invoke-SqliteQuery -DataSource $DatabasePath -Query 'SELECT tool_id, source, package_id, homepage, extra FROM tool_packages')
+    $byTool = @{}
+    foreach ($m in $members) {
+        $id = [int]$m.tool_id
+        if (-not $byTool.ContainsKey($id)) { $byTool[$id] = [System.Collections.Generic.List[object]]::new() }
+        $byTool[$id].Add([pscustomobject]@{ source = $m.source; package_id = $m.package_id; homepage = (ConvertFrom-DFDbNull $m.homepage); extra = (ConvertFrom-DFDbNull $m.extra) })
+    }
+    $conn = New-SQLiteConnection -DataSource $DatabasePath
+    try {
+        Invoke-SqliteQuery -SQLiteConnection $conn -Query 'BEGIN TRANSACTION;'
+        foreach ($t in $tools) {
+            $id = [int]$t.tool_id
+            $mm = @($byTool[$id])
+            if ($mm.Count -eq 0) { continue }
+            $key = Get-DFPackageUniverseDurableKey -Members $mm -Name ([string]$t.name)
+            $c = @(Invoke-SqliteQuery -SQLiteConnection $conn -Query "SELECT domain, function_json FROM tool_classifications WHERE cache_key=@k AND status='done'" -SqlParameters @{ k = $key })
+            if ($c.Count -eq 0) { continue }
+            Invoke-SqliteQuery -SQLiteConnection $conn -Query 'UPDATE tools SET domain=@d WHERE tool_id=@i' -SqlParameters @{ d = (ConvertFrom-DFDbNull $c[0].domain); i = $id }
+            Invoke-SqliteQuery -SQLiteConnection $conn -Query 'DELETE FROM tool_categories WHERE tool_id=@i' -SqlParameters @{ i = $id }
+            foreach ($fn in @(($c[0].function_json | ConvertFrom-Json))) {
+                Invoke-SqliteQuery -SQLiteConnection $conn -Query 'INSERT OR IGNORE INTO tool_categories (tool_id, category) VALUES (@i, @c)' -SqlParameters @{ i = $id; c = $fn }
+            }
+        }
+        Invoke-SqliteQuery -SQLiteConnection $conn -Query 'COMMIT;'
+    } catch { Invoke-SqliteQuery -SQLiteConnection $conn -Query 'ROLLBACK;'; throw } finally { $conn.Close() }
+}
