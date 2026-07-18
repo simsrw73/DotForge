@@ -231,4 +231,107 @@ Describe 'DFPackageUniverse.Categorize' {
             ($script:captured.Body | ConvertFrom-Json).model | Should -Be 'gpt-test'
         }
     }
+
+    Context 'Invoke-DFPackageUniverseCategorizeRun' {
+        BeforeAll {
+            Import-Module PSSQLite
+            . "$PSScriptRoot/../build/Private/DFPackageUniverse.CategorizeDb.ps1"
+            . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1"
+
+            function New-CatRunDb {
+                $db = Join-Path ([System.IO.Path]::GetTempPath()) ("run-" + [guid]::NewGuid().ToString('N') + ".db")
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, cluster_id INTEGER, source_count INTEGER);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);
+'@
+                Initialize-DFPackageUniverseCategorizeSchema -DatabasePath $db
+                $db
+            }
+            # NOTE: the task brief's helper used -Pid/-Home parameter names, which
+            # shadow the PowerShell automatic variables $PID/$HOME. Renamed to
+            # -PackageId/-HomepageUrl per repo convention (CLAUDE.md: never name a
+            # local variable $home, among others).
+            function Add-Tool {
+                param($Db, $Id, $Name, $Src, $PackageId, $HomepageUrl)
+                Invoke-SqliteQuery -DataSource $Db -Query "INSERT INTO tools (tool_id,name,source_count) VALUES (@i,@n,1)" -SqlParameters @{ i = $Id; n = $Name }
+                Invoke-SqliteQuery -DataSource $Db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (@i,@s,@p,@h)" -SqlParameters @{ i = $Id; s = $Src; p = $PackageId; h = $HomepageUrl }
+            }
+
+            # NOTE: the brief's classify/escalate seams used `param($Input, $Vocab)`.
+            # $Input/$input is a reserved PowerShell automatic variable (the pipeline
+            # enumerator) -- declaring a parameter with that name does NOT bind the
+            # positional argument passed via `&`; property access on it either throws
+            # PropertyNotFoundException or silently evaluates empty depending on
+            # whether the scriptblock was built via .GetNewClosure() inside an
+            # enclosing function. Confirmed by isolated repro: both a 'bad' and a
+            # 'good' tool came back 'deferred' because `$Input.Name` threw for every
+            # call. Renamed the seam's parameter to $ToolInput throughout (CLAUDE.md's
+            # do-not-shadow list already forbids $input for exactly this reason).
+            $script:vocab = [pscustomobject]@{ Domain = @('text', 'dev'); Function = @('search'); WorksWith = @('text') }
+            $script:goodClassify = { param($ToolInput, $Vocab) [pscustomobject]@{ Raw = [pscustomobject]@{ domain = 'text'; function = @('search'); worksWith = @('text'); interface = 'cli'; alternativeTo = @(); confidence = 0.9; nothing_fits = $false; suggested_terms = @() }; Model = 'm'; Usage = [pscustomobject]@{ total_tokens = 10 } } }
+            $script:http = { param($Url) [pscustomobject]@{ Content = '# readme'; ContentType = 'text/markdown'; Status = 'ok' } }
+            # Brief used -Pid, but $PID is a read-only automatic variable in PowerShell --
+            # binding to it via `&` throws SessionStateUnauthorizedAccessException.
+            $script:log = { param($Level, $Src, $PackageId, $Msg) }
+        }
+
+        It 'classifies unprocessed tools and is idempotent on a second run (resume)' {
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'bat' -Src 'choco' -PackageId 'bat' -HomepageUrl 'https://github.com/sharkdp/bat'
+                $conn = New-SQLiteConnection -DataSource $db
+                try {
+                    $r1 = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $script:goodClassify -BudgetCalls 100 -Log $script:log
+                    $r1.Classified | Should -Be 1
+                    $script:secondCalls = 0
+                    # Reference the shared $script:goodClassify seam directly -- $using: is only
+                    # valid inside Invoke-Command/ForEach-Object -Parallel/Start-Job, not here.
+                    $countingClassify = { param($ToolInput, $Vocab) $script:secondCalls++; & $script:goodClassify $ToolInput $Vocab }
+                    $r2 = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $countingClassify -BudgetCalls 100 -Log $script:log
+                    $r2.Classified | Should -Be 0    # already cached -> resume skips it
+                } finally { $conn.Close() }
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_classifications WHERE status='done'").n | Should -Be 1
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'stops at the budget, leaving the rest unprocessed for a later run' {
+            $db = New-CatRunDb
+            try {
+                1..3 | ForEach-Object { Add-Tool -Db $db -Id $_ -Name "t$_" -Src 'scoop' -PackageId "main/t$_" -HomepageUrl $null }
+                $conn = New-SQLiteConnection -DataSource $db
+                try {
+                    $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $script:goodClassify -BudgetCalls 2 -Log $script:log
+                    $r.Classified | Should -Be 2; $r.Remaining | Should -BeGreaterThan 0
+                } finally { $conn.Close() }
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'marks a tool deferred (not done) when classify throws, without aborting the batch' {
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'bad' -Src 'scoop' -PackageId 'main/bad' -HomepageUrl $null
+                Add-Tool -Db $db -Id 2 -Name 'good' -Src 'scoop' -PackageId 'main/good' -HomepageUrl $null
+                $mixed = { param($ToolInput, $Vocab) if ($ToolInput.Name -eq 'bad') { throw 'boom' }; & $script:goodClassify $ToolInput $Vocab }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $mixed -BudgetCalls 100 -Log $script:log } finally { $conn.Close() }
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT status FROM tool_classifications WHERE cache_key='pkg:scoop|main/bad'").status | Should -Be 'deferred'
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT status FROM tool_classifications WHERE cache_key='pkg:scoop|main/good'").status | Should -Be 'done'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'escalates a low-confidence result to the Escalate seam' {
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'x' -Src 'scoop' -PackageId 'main/x' -HomepageUrl $null
+                $lowConf = { param($ToolInput, $Vocab) [pscustomobject]@{ Raw = [pscustomobject]@{ domain = 'text'; function = @('search'); worksWith = @('text'); interface = 'cli'; alternativeTo = @(); confidence = 0.2; nothing_fits = $false; suggested_terms = @() }; Model = 'small'; Usage = [pscustomobject]@{ total_tokens = 5 } } }
+                $script:escalated = 0
+                $esc = { param($ToolInput, $Vocab) $script:escalated++; [pscustomobject]@{ Raw = [pscustomobject]@{ domain = 'dev'; function = @('search'); worksWith = @('text'); interface = 'cli'; alternativeTo = @(); confidence = 0.95; nothing_fits = $false; suggested_terms = @() }; Model = 'strong'; Usage = [pscustomobject]@{ total_tokens = 8 } } }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $lowConf -Escalate $esc -BudgetCalls 100 -Log $script:log } finally { $conn.Close() }
+                $script:escalated | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT model FROM tool_classifications WHERE cache_key='pkg:scoop|main/x'").model | Should -Be 'strong'
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
 }

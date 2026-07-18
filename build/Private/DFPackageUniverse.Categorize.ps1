@@ -444,3 +444,128 @@ function New-DFPackageUniverseClassifySeam {
         [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage }
     }.GetNewClosure()
 }
+
+function Invoke-DFPackageUniverseCategorizeRun {
+    <#
+    .SYNOPSIS
+        The Phase D run loop: for each tool whose durable key is not yet cached
+        (resume), gather input, classify (escalating low-confidence/nothing-fits),
+        persist per-tool, stop at the call budget. A tool whose input/classify
+        throws is marked 'deferred' (retried next run) and never aborts the batch.
+        Signal-rich tools (has-repo, higher source_count) are processed first.
+        Returns a reconciliation summary.
+    .DESCRIPTION
+        Reads every tool + its merged tool_packages members from Connection,
+        computes each tool's durable key (Get-DFPackageUniverseDurableKey), and
+        skips any key already 'done' in tool_classifications -- this is the
+        resume behavior that makes reruns idempotent and cheap. Remaining tools
+        are ordered signal-rich-first (has a homepage, then higher
+        source_count, then tool_id for determinism) so the budget is spent on
+        the tools most likely to classify well. For each tool this assembles
+        the classifier input (Get-DFPackageUniverseClassifierInput), invokes
+        the injectable $Classify seam, validates the result against the closed
+        vocabulary (ConvertTo-DFPackageUniverseClassification), and escalates
+        to $Escalate when confidence is below EscalateThreshold or the model
+        reported nothing_fits. The classification is persisted per-tool
+        (Save-DFPackageUniverseClassification) as soon as it is produced, so a
+        crash or budget cutoff loses at most the in-flight tool. A thrown error
+        from gathering input or classifying is caught, logged via $Log, and the
+        tool is persisted with status 'deferred' so the NEXT run retries it --
+        the batch itself never aborts. The loop stops once BudgetCalls model
+        calls (classify + any escalate) have been spent. Returns a
+        reconciliation summary of what happened this run.
+    .PARAMETER Connection
+        An open PSSQLite connection (from New-SQLiteConnection) pointed at the
+        Phase D categorize database, and also holding the merged tools /
+        tool_packages tables from earlier phases.
+    .PARAMETER Vocab
+        The closed vocabulary object { Domain; Function; WorksWith }, as
+        returned by Import-DFPackageUniverseVocab.
+    .PARAMETER Http
+        A scriptblock seam: param($Url) -> { Content; ContentType; Status },
+        passed through to Get-DFPackageUniverseClassifierInput's fetch cache.
+    .PARAMETER Classify
+        The classifier seam: param($Input,$Vocab) -> { Raw; Model; Usage }
+        (see New-DFPackageUniverseClassifySeam).
+    .PARAMETER Escalate
+        An optional stronger-model seam with the same signature as Classify,
+        used when the initial result's confidence is below EscalateThreshold
+        or it reported nothing_fits. When omitted, no escalation happens.
+    .PARAMETER BudgetCalls
+        The maximum number of model calls (classify + escalate) to spend this
+        run. Defaults to unlimited. The loop stops as soon as the budget is
+        exhausted, leaving remaining tools for a later run.
+    .PARAMETER EscalateThreshold
+        Confidence below which (or on nothing_fits) the Escalate seam is used.
+    .PARAMETER Log
+        A scriptblock seam: param($Level,$Source,$PackageId,$Message), used to
+        record review-worthy outcomes (nothing-fits, low-confidence, deferred).
+    .EXAMPLE
+        Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $vocab -Http $http -Classify $classify -BudgetCalls 500 -Log $log
+
+        Classifies up to 500 model-calls' worth of not-yet-cached tools,
+        resuming automatically on the next call.
+    .OUTPUTS
+        [pscustomobject] with Processed, Classified, Escalated, Deferred,
+        NothingFits, and Remaining properties.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Connection, [Parameter(Mandatory)]$Vocab,
+        [Parameter(Mandatory)][scriptblock]$Http, [Parameter(Mandatory)][scriptblock]$Classify,
+        [scriptblock]$Escalate, [int]$BudgetCalls = [int]::MaxValue,
+        [double]$EscalateThreshold = 0.5, [Parameter(Mandatory)][scriptblock]$Log
+    )
+    $De = { param($v) if ($v -is [DBNull]) { $null } else { $v } }
+    $rawTools = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT tool_id, name, source_count FROM tools')
+    $members = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT tool_id, source, package_id, homepage, extra FROM tool_packages')
+    $byTool = @{}
+    foreach ($m in $members) {
+        $id = [int]$m.tool_id
+        if (-not $byTool.ContainsKey($id)) { $byTool[$id] = [System.Collections.Generic.List[object]]::new() }
+        $byTool[$id].Add([pscustomobject]@{ source = $m.source; package_id = $m.package_id; homepage = (& $De $m.homepage); extra = (& $De $m.extra) })
+    }
+    # Signal-rich first: has-homepage/repo, then higher source_count.
+    $ordered = @($rawTools | Sort-Object `
+        @{ e = { $mm = $byTool[[int]$_.tool_id]; if ($mm -and @($mm | Where-Object { $_.homepage }).Count) { 0 } else { 1 } } }, `
+        @{ e = { - [int]$_.source_count } }, @{ e = { [int]$_.tool_id } })
+
+    $processed = 0; $classified = 0; $escalated = 0; $deferred = 0; $nothing = 0; $calls = 0
+    foreach ($t in $ordered) {
+        if ($calls -ge $BudgetCalls) { break }
+        $id = [int]$t.tool_id
+        $mm = @($byTool[$id])
+        $key = Get-DFPackageUniverseDurableKey -Members $mm -Name ([string]$t.name)
+        $exists = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT 1 FROM tool_classifications WHERE cache_key = @k AND status = ''done''' -SqlParameters @{ k = $key })
+        if ($exists.Count -gt 0) { continue }
+        $processed++
+        try {
+            $anchor = $mm[0]
+            $in = Get-DFPackageUniverseClassifierInput -Members $mm -Name ([string]$t.name) -Publisher $null -Description $null -Tags $null -Connection $Connection -Http $Http
+            $calls++
+            $out = & $Classify $in $Vocab
+            $cls = ConvertTo-DFPackageUniverseClassification -Raw $out.Raw -Vocab $Vocab
+            $model = [string]$out.Model
+            if ($Escalate -and ($cls.Confidence -lt $EscalateThreshold -or $cls.NothingFits)) {
+                $calls++; $escalated++
+                $out2 = & $Escalate $in $Vocab
+                $cls = ConvertTo-DFPackageUniverseClassification -Raw $out2.Raw -Vocab $Vocab
+                $model = [string]$out2.Model
+            }
+            Save-DFPackageUniverseClassification -Connection $Connection -CacheKey $key -Classification $cls -SignalSource $in.SignalSource -Model $model -Status 'done'
+            $classified++
+            if ($cls.NothingFits) { $nothing++ ; & $Log 'review' $anchor.source $anchor.package_id "nothing-fits: suggested $($cls.SuggestedTerms -join ',')" }
+            elseif ($cls.Confidence -lt $EscalateThreshold) { & $Log 'review' $anchor.source $anchor.package_id "low-confidence $($cls.Confidence)" }
+        } catch {
+            $deferred++
+            & $Log 'warning' $mm[0].source $mm[0].package_id "categorize deferred: $_"
+            Save-DFPackageUniverseClassification -Connection $Connection -CacheKey $key -Classification ([pscustomobject]@{ Domain = $null; Function = @(); WorksWith = @(); Interface = $null; AlternativeTo = @(); Confidence = 0.0; NothingFits = $false; SuggestedTerms = @() }) -SignalSource 'error' -Model $null -Status 'deferred'
+        }
+    }
+    $remaining = @($ordered | Where-Object {
+        $k = Get-DFPackageUniverseDurableKey -Members @($byTool[[int]$_.tool_id]) -Name ([string]$_.name)
+        @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT 1 FROM tool_classifications WHERE cache_key=@k AND status=''done''' -SqlParameters @{ k = $k }).Count -eq 0
+    }).Count
+
+    [pscustomobject]@{ Processed = $processed; Classified = $classified; Escalated = $escalated; Deferred = $deferred; NothingFits = $nothing; Remaining = $remaining }
+}
