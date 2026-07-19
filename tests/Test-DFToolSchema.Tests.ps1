@@ -90,7 +90,7 @@ Describe 'Seed tool JSON files' {
         'fd', 'broot', 'jq', 'glow', 'procs', 'winfetch',
         'curl', 'wget', 'docker', 'less', 'gh', 'delta',
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
-        'bitwarden', 'npm', 'scoop', 'winget',
+        'bitwarden', 'npm', 'fnm', 'scoop', 'winget',
         'posh-git', 'psreadline', 'PSFzf', 'Terminal-Icons', 'oh-my-posh',
         'gsudo'
     ) | ForEach-Object {

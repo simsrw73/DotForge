@@ -82,6 +82,15 @@ Two categories, and the difference matters:
 | **Why** | It forces an ordering constraint: oh-my-posh must initialize **before** zoxide so zoxide wraps OMP's prompt. `Register-DFTool -All` gets this right alphabetically (`oh-my-posh` < `zoxide`). |
 | **If it changes** | **Known live limitation:** after a theme switch via `fpot`, OMP re-inits and replaces `function:prompt`, but zoxide's guard prevents re-hooking — so directory tracking stops until the next shell. No clean workaround. |
 
+### 8. fnm: the `cd` hook shape (`Set-LocationWithFnm` / `Set-FnmOnLoad`)
+
+| | |
+|---|---|
+| **What** | `fnm env --use-on-cd --shell powershell` emits a global `Set-LocationWithFnm` function that calls plain `Set-Location`, a `Set-FnmOnLoad` helper, and `Set-Alias -Option AllScope -Scope global cd Set-LocationWithFnm`. `Tools/fnm.ps1` (a) captures the pre-fnm `cd` target from zoxide's alias via `(Get-Alias 'cd').ReferencedCommand`, then (b) **redefines `global:Set-LocationWithFnm`** to route through that captured command so zoxide's jump and fnm's version switch both run. |
+| **Where** | `Tools/fnm.ps1` |
+| **Why** | fnm's wrapper hardcodes `Set-Location`, so without the re-wrap fnm silently clobbers zoxide's smart `cd`. The re-wrap depends on the exact names `Set-LocationWithFnm` (the function fnm's `cd` alias points at) and `Set-FnmOnLoad` (the per-directory switch), plus zoxide binding `cd` as an alias so `.ReferencedCommand` is callable. `fnm.json` declares `"dependsOn": ["zoxide"]` so the capture in step 1 sees zoxide's binding, not the built-in `cd`. |
+| **If it changes** | If fnm renames `Set-LocationWithFnm`/`Set-FnmOnLoad` or stops routing `cd` through the function, the re-wrap no longer chains: `cd` falls back to whatever fnm's newer init installs (still a working `cd`, just without zoxide's jump). If zoxide ever binds `cd` as a function instead of an alias, `(Get-Alias 'cd')` returns nothing and `$global:cdBeforeFnm` falls back to `Set-Location` — fnm keeps working, zoxide's jump is lost. Both degrade to a functional `cd`, never an error. |
+
 ---
 
 ## Documented but load-bearing

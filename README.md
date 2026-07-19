@@ -427,7 +427,7 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (32)
+## Included Tools (33)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -440,7 +440,7 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |
 | Package managers | scoop, winget, npm                                 |
-| Dev              | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
+| Dev              | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv |
 | PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
 
 ## Tool-Specific Helpers

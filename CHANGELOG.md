@@ -6,6 +6,17 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **fnm tool (`Tools/fnm.json` + `Tools/fnm.ps1`):** configures the Fast Node Manager,
+  including its `--use-on-cd` per-directory version switching. fnm's generated hook
+  rebinds `cd` to a wrapper that calls plain `Set-Location`, which would clobber
+  zoxide's smart `cd`. The companion captures whatever owns `cd` before fnm loads
+  (`$global:cdBeforeFnm`) and re-points fnm's `Set-LocationWithFnm` back through it, so
+  a single `cd` performs zoxide's jump **and** fnm's Node switch; it forwards `@args`
+  (not fnm's single `$path`) so zoxide's multi-keyword queries survive. `fnm.json`
+  declares `"dependsOn": ["zoxide"]` so `Register-DFTool` topo-sorts zoxide first; with
+  zoxide absent it falls back to `Set-Location` and fnm still works standalone. XDG:
+  `FNM_DIR` points at `${XDG_DATA_HOME}/fnm`. The dependency on fnm's and zoxide's
+  internals is catalogued in `docs/external-dependencies.md`.
 - **`Get-DFCommandConflict`:** reports DotForge commands that Coreutils for Windows
   shadows before PowerShell can resolve them. Coreutils installs a
   `PSConsoleHostReadLine` hook that rewrites matching command names to `<name>.cmd`
