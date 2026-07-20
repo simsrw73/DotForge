@@ -81,6 +81,21 @@ Describe 'Initialize-DFCompletionStack' {
         Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
     }
 
+    It 'falls back to Native when only the inshellisense command is available' {
+        $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
+        function Start-DFInshellisense {}
+        Mock Get-Command {
+            param($Name)
+            if ($Name -eq 'inshellisense') { [pscustomobject]@{ Source = 'C:\bin\inshellisense.exe' } }
+        }
+        Mock Start-DFInshellisense {}
+
+        Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
+
+        $warns | Should -Match 'Inshellisense'
+        Assert-MockCalled Start-DFInshellisense -Times 0
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+    }
     It 'starts Inshellisense and does not bind Tab when its executable is available' {
         $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
         function Start-DFInshellisense {}

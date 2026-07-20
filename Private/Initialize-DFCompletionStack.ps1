@@ -33,7 +33,7 @@ function Initialize-DFCompletionStack {
     foreach ($tool in @($RegisteredTools)) { if ($tool) { $null = $tools.Add($tool) } }
     if ((Get-DFCompletionMode) -eq 'Inshellisense') {
         $executable = Get-Command is -ErrorAction Ignore
-        if (-not $executable) { $executable = Get-Command inshellisense -ErrorAction Ignore }
+        # Start-DFInshellisense invokes the is executable directly.
         if ($executable) {
             if (Get-Command Start-DFInshellisense -ErrorAction Ignore) { Start-DFInshellisense }
             return
