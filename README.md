@@ -97,10 +97,22 @@ precedence.
 
 When Native mode finds `is` (or `inshellisense`), DotForge augments
 `CARAPACE_BRIDGES` with `inshellisense` without discarding user bridge entries.
+Because `is` is typically a Node-hosted command, `carapace` declares
+`"dependsOn": ["fnm"]` so fnm puts `is` on PATH before the bridge check runs.
 Set `CompletionMode = 'Inshellisense'` to start inshellisense directly instead;
 direct mode requires the `is` command and starts only after tool registration.
 It first checks `is -c`, so an existing session is left alone. If `is` is
 unavailable, DotForge warns and falls back to the Native behavior.
+
+Carapace styles its completion results with ANSI colour when attached to a
+console. When both Carapace and PSFzf are registered, the resolver adds `--ansi`
+to `FZF_DEFAULT_OPTS` so the fuzzy picker renders those colours instead of
+printing raw escape sequences; the text inserted at the prompt is unaffected.
+
+Carapace ships no completer for some tools (e.g. `scoop`). DotForge bundles
+carapace specs under `Tools/carapace/specs/` and deploys them to
+`$XDG_CONFIG_HOME/carapace/specs/`, where carapace auto-loads them. To add your
+own, drop a `*.yaml` spec in that directory (see `carapace --schema`).
 
 Do not change PSReadLine's edit mode after `Register-DFTool -All`: a raw
 post-registration `Set-PSReadLineOption -EditMode ...` resets Tab. Set
@@ -449,10 +461,11 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (33)
+## Included Tools (35)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
+| Completion       | carapace, inshellisense                            |
 | File/dir         | bat, eza, fd, ripgrep, broot                       |
 | Text/data        | jq, glow                                           |
 | System           | procs, winfetch, gsudo                             |

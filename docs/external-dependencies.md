@@ -93,6 +93,28 @@ Two categories, and the difference matters:
 
 ---
 
+### 9. carapace: completion results are ANSI-styled only when console-attached
+
+| | |
+|---|---|
+| **What** | Carapace emits colour escape sequences inside each completion's `ListItemText` (and `ToolTip`), but **only when it detects an attached console**. When stdout is redirected — as in every headless test — the same results come back as plain text. |
+| **Where** | `Private/Initialize-DFCompletionStack.ps1` (`Enable-DFFzfAnsiOption`) |
+| **Why** | With PSFzf owning Tab, those styled strings are piped to `fzf`. Without `--ansi`, `fzf` prints the escapes literally, so the picker (and any common-prefix insert) shows garbage like `^[[33m…`. The resolver adds `--ansi` to `FZF_DEFAULT_OPTS` — a documented fzf option, set via the documented env var, touching no PSFzf internal — when both PSFzf and Carapace are registered. The **`CompletionText`** carapace returns is never styled, so the text inserted at the prompt stays clean regardless. |
+| **If it changes** | If carapace stops styling `ListItemText`, `--ansi` becomes a harmless no-op (fzf renders plain text unchanged). If it styles `CompletionText` too, inserted text could gain escapes — caught quickly at the prompt, not silently. Because the console-only behavior is invisible to redirected output, unit tests cannot observe it; this entry is the record that the styling is real at an interactive prompt. |
+
+---
+
+### 10. carapace: init codegen shape (`[CompletionResult]::new($_.CompletionText, …)`) and the trailing space
+
+| | |
+|---|---|
+| **What** | `carapace _carapace powershell` emits a completer that appends a trailing space to each `CompletionText` ("token complete" convention) and builds results with the literal call `[CompletionResult]::new($_.CompletionText, …)`. When PSFzf owns Tab, its `FixCompletionResult` quotes any completion containing a space, so a fuzzy-picked `docker build` is inserted as `docker "build "`. |
+| **Where** | `Tools/carapace.ps1` |
+| **Why** | Only in Native mode with PSFzf available, `Tools/carapace.ps1` string-replaces that constructor call to wrap the first argument in `.TrimEnd()`, dropping the trailing space so PSFzf does not quote. PSFzf re-adds a single trailing space itself, so the picked value lands clean and unquoted. The space is left intact when PSFzf is not in play because PSReadLine's `MenuComplete` needs it to chain into subcommand completion. |
+| **If it changes** | If carapace renames the constructor call or drops the trailing space, the `.Replace` matches nothing and no-ops — completions still work; at worst the old `"build "` quoting reappears in the PSFzf path (cosmetic, self-evident at the prompt). The transform touches only the `CompletionText` argument, never `ListItemText`/`ToolTip`, so styling and the `--ansi` path are unaffected. |
+
+---
+
 ## Documented but load-bearing
 
 These are public API. They are listed because DotForge visibly misbehaves if they change.
@@ -109,6 +131,8 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 | `oh-my-posh init pwsh --config` emits the prompt init | `Tools/oh-my-posh.ps1` | Requires `Invoke-Expression`. Also reads `POSH_THEME` / `POSH_THEMES_PATH`. |
 | `Set-PsFzfOption`, `Invoke-FzfTabCompletion` | `Tools/PSFzf.ps1` | Public PSFzf API. The completion coordinator owns the Tab key binding. |
 | `TabExpansion2` consults registered argument completers | `Tools/carapace.ps1` | Documented PowerShell behavior; the reason carapace results reach PSFzf's Tab UI. |
+| carapace loads user specs from `$XDG_CONFIG_HOME/carapace/specs/*.yaml` | `Tools/carapace.ps1`, `Tools/carapace/specs/scoop.yaml` | Documented in `carapace --help` ("Specs are loaded from …"). DotForge deploys bundled specs there to complete tools carapace ships no completer for (e.g. `scoop`). Spec flag syntax is short-first (`-g, --global`); a `$(…)` macro runs in carapace's shell, not PowerShell, so dynamic PowerShell-command completion is not used. |
+| `fzf` merges `FZF_DEFAULT_OPTS` into every invocation | `Private/Initialize-DFCompletionStack.ps1` | Documented fzf behavior. Used to inject `--ansi` for Carapace's styled results without touching PSFzf's command construction. |
 | eza's `--icons`/`--hyperlink` take an **optional** value | `Tools/eza.json` | Documented in `eza --help`. A trailing bare flag consumes the next positional, so all values are bound (`--icons=auto`). Guarded by `tests/eza.Tests.ps1`. |
 
 ---

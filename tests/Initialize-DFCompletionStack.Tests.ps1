@@ -54,6 +54,34 @@ Describe 'Completion stack coordinator' {
             Enable-DFCarapaceInshellisenseBridge | Should -BeFalse
         }
     }
+
+    Context 'Enable-DFFzfAnsiOption' {
+        BeforeEach {
+            $script:hadFzfOpts = Test-Path Env:FZF_DEFAULT_OPTS
+            if ($script:hadFzfOpts) { $script:originalFzfOpts = $Env:FZF_DEFAULT_OPTS }
+        }
+        AfterEach {
+            if ($script:hadFzfOpts) { $Env:FZF_DEFAULT_OPTS = $script:originalFzfOpts } else { Remove-Item Env:FZF_DEFAULT_OPTS -ErrorAction Ignore }
+        }
+
+        It 'adds --ansi when FZF_DEFAULT_OPTS is unset' {
+            Remove-Item Env:FZF_DEFAULT_OPTS -ErrorAction Ignore
+            Enable-DFFzfAnsiOption
+            $Env:FZF_DEFAULT_OPTS | Should -Be '--ansi'
+        }
+
+        It 'appends --ansi while preserving existing options' {
+            $Env:FZF_DEFAULT_OPTS = '--height=40% --reverse'
+            Enable-DFFzfAnsiOption
+            $Env:FZF_DEFAULT_OPTS | Should -Be '--height=40% --reverse --ansi'
+        }
+
+        It 'is idempotent — does not duplicate --ansi' {
+            $Env:FZF_DEFAULT_OPTS = '--ansi --reverse'
+            Enable-DFFzfAnsiOption
+            $Env:FZF_DEFAULT_OPTS | Should -Be '--ansi --reverse'
+        }
+    }
 }
 Describe 'Initialize-DFCompletionStack' {
     BeforeEach {
@@ -69,6 +97,18 @@ Describe 'Initialize-DFCompletionStack' {
     It 'binds PSFzf Tab completion with its script block' {
         Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
         Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $ScriptBlock }
+    }
+
+    It 'enables fzf --ansi when PSFzf and Carapace are both registered' {
+        Mock Enable-DFFzfAnsiOption {}
+        Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
+        Assert-MockCalled Enable-DFFzfAnsiOption -Times 1
+    }
+
+    It 'does not enable fzf --ansi when Carapace is absent' {
+        Mock Enable-DFFzfAnsiOption {}
+        Initialize-DFCompletionStack -RegisteredTools 'PSFzf'
+        Assert-MockCalled Enable-DFFzfAnsiOption -Times 0
     }
 
     It 'binds Carapace Tab completion when PSFzf is absent' {

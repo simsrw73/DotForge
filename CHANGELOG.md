@@ -47,10 +47,38 @@ All notable changes to DotForge are documented here.
   including `eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`,
   and `winget`. Composes with PSFzf, which owns the Tab key and routes through
   `TabExpansion2`.
+- **Bundled carapace spec for `scoop`.** Carapace ships no scoop completer, so
+  `scoop <TAB>` fell through to filesystem completion (offering `.\` and directory
+  names). `Tools/carapace/specs/scoop.yaml` supplies static subcommand and flag
+  completion; `Tools/carapace.ps1` deploys bundled specs into
+  `$XDG_CONFIG_HOME/carapace/specs/`, which carapace auto-loads. Deployed copies are
+  refreshed only when the bundled content changes.
 - **Package-universe Phase C (tool merge)** — `build/Build-DFPackageUniverseTools.ps1` flattens Phase B clusters and singletons into a master `tools` table (one row per real-world tool across the whole corpus, lossless via a `tool_packages` child), with per-field priority picks (winget > choco > scoop) and provenance, a license single-answer conflict flag, a `tool_tags` union, and first-pass `tool_categories` from a committed `data/package-universe-categories.jsonc` rule file. Build-only; no public module surface change.
 
 ### Fixed
 
+- **`docker <TAB>` emitted raw ANSI escape sequences through the PSFzf picker.**
+  Carapace styles completion `ListItemText` with colour escapes whenever it is
+  attached to a console (invisible when stdout is redirected, so headless tests never
+  saw it). PSFzf ran `fzf` without `--ansi`, so the escapes rendered literally. The
+  completion-stack resolver now adds `--ansi` to `FZF_DEFAULT_OPTS` — a documented fzf
+  environment variable, not a PSFzf internal — whenever PSFzf and Carapace are both
+  registered. The inserted text stays clean because it comes from `CompletionText`,
+  which Carapace never styles. The merge is idempotent and preserves existing options.
+- **A fuzzy-picked Carapace completion was inserted quoted (`docker "build "`).**
+  Carapace appends a trailing space to each `CompletionText`, and PSFzf quotes any
+  completion containing a space. When PSFzf owns Tab (Native mode + PSFzf available),
+  `Tools/carapace.ps1` now trims that trailing space from Carapace's generated
+  completer, so the picked value lands unquoted (`docker build `); PSFzf re-adds the
+  single trailing space. The space is preserved when PSFzf is not in play, where
+  `MenuComplete` needs it for subcommand chaining. Catalogued in
+  `docs/external-dependencies.md`.
+- **The inshellisense Carapace bridge never activated.** `Tools/carapace.ps1` checks
+  for the `is` executable before merging it into `CARAPACE_BRIDGES`, but Carapace
+  sorted ahead of fnm, so `is` was not yet on PATH and the check always failed.
+  `Tools/carapace.json` now declares `"dependsOn": ["fnm"]`, so `Register-DFTool`
+  configures fnm (which puts the Node-hosted `is` on PATH) before Carapace runs. With
+  fnm absent the dependency is skipped and Carapace still registers normally.
 - **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
   builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
   that actually builds one did nothing at all — no error, no warning, no picker.

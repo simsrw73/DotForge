@@ -26,6 +26,23 @@ function Enable-DFCarapaceInshellisenseBridge {
     $true
 }
 
+function Enable-DFFzfAnsiOption {
+    # Carapace styles completion ListItemText with ANSI colour escapes whenever it
+    # is attached to a console (invisible when stdout is redirected, e.g. in tests).
+    # PSFzf's Tab handler pipes those strings to fzf, so fzf must be told to render
+    # ANSI or it prints the raw escapes. --ansi is a documented fzf option; setting
+    # it via FZF_DEFAULT_OPTS (fzf merges this env var into every invocation) keeps
+    # us off PSFzf's internal command construction. The returned CompletionText is
+    # never styled, so the inserted text stays clean.
+    [CmdletBinding()]
+    param()
+    $existing = [string]$Env:FZF_DEFAULT_OPTS
+    foreach ($tok in ($existing -split '\s+')) {
+        if ($tok -ceq '--ansi') { return }
+    }
+    $Env:FZF_DEFAULT_OPTS = if ($existing) { "$existing --ansi" } else { '--ansi' }
+}
+
 function Initialize-DFCompletionStack {
     [CmdletBinding()]
     param([string[]]$RegisteredTools)
@@ -40,6 +57,9 @@ function Initialize-DFCompletionStack {
         }
         Write-Warning 'DotForge: Inshellisense completion requested but its executable or starter was not found; using Native.'
     }
-    if ($tools.Contains('psfzf')) { Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion } }
+    if ($tools.Contains('psfzf')) {
+        if ($tools.Contains('carapace')) { Enable-DFFzfAnsiOption }
+        Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+    }
     elseif ($tools.Contains('carapace')) { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete }
 }
