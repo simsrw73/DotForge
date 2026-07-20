@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.4.0-preview] - 2026-07-20
+
 ### Added
 
 - **fnm tool (`Tools/fnm.json` + `Tools/fnm.ps1`):** configures the Fast Node Manager,
