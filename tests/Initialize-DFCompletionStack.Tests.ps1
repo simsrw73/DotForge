@@ -1,0 +1,93 @@
+BeforeAll {
+    $completionStackPath = Join-Path $PSScriptRoot '..' 'Private' 'Initialize-DFCompletionStack.ps1'
+    if (Test-Path $completionStackPath) { . $completionStackPath }
+}
+
+Describe 'Completion stack coordinator' {
+    BeforeEach {
+        $script:hadConfig = Test-Path Variable:Global:DFConfig
+        if ($script:hadConfig) { $script:originalConfig = $Global:DFConfig }
+        $script:hadBridges = Test-Path Env:CARAPACE_BRIDGES
+        if ($script:hadBridges) { $script:originalBridges = $Env:CARAPACE_BRIDGES }
+    }
+
+    AfterEach {
+        if ($script:hadConfig) { $Global:DFConfig = $script:originalConfig } else { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+        if ($script:hadBridges) { $Env:CARAPACE_BRIDGES = $script:originalBridges } else { Remove-Item Env:CARAPACE_BRIDGES -ErrorAction Ignore }
+    }
+
+    Context 'Get-DFCompletionMode' {
+        It 'defaults to Native' {
+            Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+            Get-DFCompletionMode | Should -Be 'Native'
+        }
+
+        It 'warns and falls back for an invalid value' {
+            $Global:DFConfig = @{ CompletionMode = 'invalid' }
+            Get-DFCompletionMode -WarningVariable warns 3>$null | Should -Be 'Native'
+            $warns | Should -Match 'CompletionMode'
+        }
+    }
+
+    Context 'Enable-DFCarapaceInshellisenseBridge' {
+        It 'deduplicates the bridge without changing user casing' {
+            $Global:DFConfig = @{ CompletionMode = 'Native' }
+            $Env:CARAPACE_BRIDGES = 'bash,InShelliSense,fish'
+            Mock Get-Command { [pscustomobject]@{ Source = 'C:\bin\is.exe' } }
+
+            Enable-DFCarapaceInshellisenseBridge | Should -BeTrue
+            $Env:CARAPACE_BRIDGES | Should -Be 'bash,InShelliSense,fish'
+        }
+
+        It 'returns false when the native bridge executable is unavailable' {
+            $Global:DFConfig = @{ CompletionMode = 'Native' }
+            Mock Get-Command { $null }
+
+            Enable-DFCarapaceInshellisenseBridge | Should -BeFalse
+        }
+    }
+}
+Describe 'Initialize-DFCompletionStack' {
+    BeforeEach {
+        $script:hadConfig = Test-Path Variable:Global:DFConfig
+        if ($script:hadConfig) { $script:originalConfig = $Global:DFConfig }
+        Mock Set-PSReadLineKeyHandler {}
+    }
+
+    AfterEach {
+        if ($script:hadConfig) { $Global:DFConfig = $script:originalConfig } else { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+    }
+
+    It 'binds PSFzf Tab completion with its script block' {
+        Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $ScriptBlock }
+    }
+
+    It 'binds Carapace Tab completion when PSFzf is absent' {
+        Initialize-DFCompletionStack -RegisteredTools 'Carapace'
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $Function -eq 'MenuComplete' }
+    }
+
+    It 'does not bind Tab without a registered completion component' {
+        Initialize-DFCompletionStack -RegisteredTools @()
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 0
+    }
+
+    It 'warns and uses the Native result when Inshellisense is unavailable' {
+        $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
+        Mock Get-Command { $null }
+        Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
+        $warns | Should -Match 'Inshellisense'
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+    }
+
+    It 'starts Inshellisense and does not bind Tab when its executable is available' {
+        $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
+        function Start-DFInshellisense {}
+        Mock Get-Command { [pscustomobject]@{ Source = 'C:\bin\is.exe' } }
+        Mock Start-DFInshellisense {}
+        Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
+        Assert-MockCalled Start-DFInshellisense -Times 1
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 0
+    }
+}
