@@ -98,9 +98,9 @@ precedence.
 When Native mode finds `is` (or `inshellisense`), DotForge augments
 `CARAPACE_BRIDGES` with `inshellisense` without discarding user bridge entries.
 Set `CompletionMode = 'Inshellisense'` to start inshellisense directly instead;
-it starts only after tool registration and first checks `is -c`, so an existing
-session is left alone. If the executable is unavailable, DotForge warns and
-falls back to the Native behavior.
+direct mode requires the `is` command and starts only after tool registration.
+It first checks `is -c`, so an existing session is left alone. If `is` is
+unavailable, DotForge warns and falls back to the Native behavior.
 
 Do not change PSReadLine's edit mode after `Register-DFTool -All`: a raw
 post-registration `Set-PSReadLineOption -EditMode ...` resets Tab. Set
