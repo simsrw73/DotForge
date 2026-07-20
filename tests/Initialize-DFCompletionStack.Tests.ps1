@@ -39,6 +39,14 @@ Describe 'Completion stack coordinator' {
             $Env:CARAPACE_BRIDGES | Should -Be 'bash,InShelliSense,fish'
         }
 
+        It 'appends inshellisense when no user bridge entry exists' {
+            $Global:DFConfig = @{ CompletionMode = 'Native' }
+            $Env:CARAPACE_BRIDGES = 'bash,fish'
+            Mock Get-Command { [pscustomobject]@{ Source = 'C:\bin\is.exe' } }
+
+            Enable-DFCarapaceInshellisenseBridge | Should -BeTrue
+            $Env:CARAPACE_BRIDGES | Should -Be 'bash,fish,inshellisense'
+        }
         It 'returns false when the native bridge executable is unavailable' {
             $Global:DFConfig = @{ CompletionMode = 'Native' }
             Mock Get-Command { $null }
@@ -94,6 +102,19 @@ Describe 'Initialize-DFCompletionStack' {
 
         $warns | Should -Match 'Inshellisense'
         Assert-MockCalled Start-DFInshellisense -Times 0
+        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+    }
+    It 'falls back to Native when the Inshellisense starter is unavailable' {
+        $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
+        Remove-Item Function:Start-DFInshellisense -ErrorAction Ignore
+        Mock Get-Command {
+            param($Name)
+            if ($Name -eq 'is') { [pscustomobject]@{ Source = 'C:\bin\is.exe' } }
+        }
+
+        Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
+
+        $warns | Should -Match 'starter'
         Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
     }
     It 'starts Inshellisense and does not bind Tab when its executable is available' {

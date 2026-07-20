@@ -34,11 +34,11 @@ function Initialize-DFCompletionStack {
     if ((Get-DFCompletionMode) -eq 'Inshellisense') {
         $executable = Get-Command is -ErrorAction Ignore
         # Start-DFInshellisense invokes the is executable directly.
-        if ($executable) {
-            if (Get-Command Start-DFInshellisense -ErrorAction Ignore) { Start-DFInshellisense }
+        if ($executable -and (Get-Command Start-DFInshellisense -ErrorAction Ignore)) {
+            Start-DFInshellisense
             return
         }
-        Write-Warning 'DotForge: Inshellisense completion requested but its executable was not found; using Native.'
+        Write-Warning 'DotForge: Inshellisense completion requested but its executable or starter was not found; using Native.'
     }
     if ($tools.Contains('psfzf')) { Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion } }
     elseif ($tools.Contains('carapace')) { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete }
