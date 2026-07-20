@@ -64,6 +64,14 @@
     "ids": { "scoop": "fzf", "winget": "junegunn.fzf", "choco": "fzf" },
     "relatedTo": ["fd", "ripgrep", "PSFzf"], "popularity": 3
   },
+  "fnm": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "ids": { "scoop": "fnm", "winget": "Schniz.fnm", "choco": "fnm" }, "popularity": 2
+  },
+  "inshellisense": {
+    "function": ["shell-enhancement"], "worksWith": ["text"], "interface": "cli",
+    "ids": { "npm": "@microsoft/inshellisense" }, "popularity": 1
+  },
   "gh": {
     "function": ["vcs-client"], "worksWith": ["git"], "interface": "cli",
     "ids": { "scoop": "gh", "winget": "GitHub.cli", "choco": "gh" },

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-15",
+  "updated": "2026-07-20",
   "tools": {
     "bat": {
       "packages": {
@@ -81,6 +81,15 @@
       "linkedVia": "repo",
       "repo": "https://github.com/sharkdp/fd"
     },
+    "fnm": {
+      "packages": {
+        "scoop": "fnm",
+        "winget": "Schniz.fnm",
+        "choco": "fnm"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/schniz/fnm"
+    },
     "fzf": {
       "packages": {
         "scoop": "fzf",
@@ -111,6 +120,12 @@
         "scoop": "gsudo",
         "winget": "gerardog.gsudo",
         "choco": "gsudo"
+      },
+      "linkedVia": "curated"
+    },
+    "inshellisense": {
+      "packages": {
+        "npm": "@microsoft/inshellisense"
       },
       "linkedVia": "curated"
     },

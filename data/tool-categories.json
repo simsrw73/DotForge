@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-15",
+  "updated": "2026-07-20",
   "taxonomy": {
     "function": [
       "search",
@@ -466,6 +466,21 @@
       ],
       "popularity": 3
     },
+    "fnm": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "fnm",
+        "winget": "Schniz.fnm",
+        "choco": "fnm"
+      },
+      "popularity": 2
+    },
     "fx": {
       "function": [
         "json-processing"
@@ -633,6 +648,19 @@
       ],
       "interface": "cli",
       "popularity": 2
+    },
+    "inshellisense": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "ids": {
+        "npm": "@microsoft/inshellisense"
+      },
+      "popularity": 1
     },
     "jc": {
       "function": [
