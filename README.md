@@ -75,6 +75,8 @@ Set `$DFConfig` in your profile **before** importing DotForge:
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
+    CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
+    PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
@@ -84,6 +86,26 @@ Import-Module DotForge
 Register-DFTool -All
 ```
 
+## Completion Stack
+
+DotForge finalizes completion once, after registered tools and PSReadLine's
+edit mode have been applied. `CompletionMode = 'Native'` is the default: PSReadLine
+provides the editor, Carapace supplies styled argument-completion results, and
+PSFzf is optional. In a Carapace-only Native session, Tab uses PSReadLine's
+`MenuComplete`; when PSFzf is registered, its fuzzy Tab completion takes
+precedence.
+
+When Native mode finds `is` (or `inshellisense`), DotForge augments
+`CARAPACE_BRIDGES` with `inshellisense` without discarding user bridge entries.
+Set `CompletionMode = 'Inshellisense'` to start inshellisense directly instead;
+it starts only after tool registration and first checks `is -c`, so an existing
+session is left alone. If the executable is unavailable, DotForge warns and
+falls back to the Native behavior.
+
+Do not change PSReadLine's edit mode after `Register-DFTool -All`: a raw
+post-registration `Set-PSReadLineOption -EditMode ...` resets Tab. Set
+`PSReadLineEditMode` in `$DFConfig` before importing DotForge so the completion
+stack can install its final Tab binding afterward.
 ## Coreutils Conflicts
 
 If you have [Coreutils for Windows](https://github.com/uutils/coreutils) installed, some DotForge

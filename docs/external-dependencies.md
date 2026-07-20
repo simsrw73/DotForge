@@ -99,13 +99,15 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 
 | Dependency | Where | Notes |
 |---|---|---|
-| `carapace _carapace powershell` emits the init script | `Tools/carapace.ps1` | Underscore-prefixed but listed in `carapace --help`. |
-| carapace registers argument completers and **never binds Tab** | `Tools/carapace.ps1` | This is *observed*, not promised. It is why carapace composes with PSFzf, which owns Tab and routes through `TabExpansion2`. If carapace ever bound Tab, the two would fight and PSFzf's fuzzy Tab would break. |
+| `carapace _carapace powershell` emits the init script | `Tools/carapace.ps1` | Underscore-prefixed but listed in `carapace --help`. Carapace registers argument completers and does not bind Tab; this observed behavior lets the coordinator choose the final binding. |
+| Carapace Native completion and `CARAPACE_BRIDGES` | `Private/Initialize-DFCompletionStack.ps1`, `Tools/carapace.ps1` | In a Carapace-only Native session, the coordinator binds Tab to `MenuComplete` for styled results. It merges `inshellisense` into `CARAPACE_BRIDGES` only in Native mode and only when `is` (or `inshellisense`) is available, preserving user bridge entries. If Carapace changes its Tab behavior or bridge contract, completion may lose this composition but remains usable. |
+| PSFzf's Tab completion | `Private/Initialize-DFCompletionStack.ps1`, `Tools/PSFzf.ps1` | PSFzf configures Tab expansion but does not bind Tab itself. After PSReadLine's edit mode is applied, the coordinator alone binds Tab to `Invoke-FzfTabCompletion` when PSFzf registered; this takes precedence over Carapace's `MenuComplete`. |
+| inshellisense direct session | `Private/Initialize-DFCompletionStack.ps1`, `Tools/inshellisense.ps1` | Direct `CompletionMode = 'Inshellisense'` starts last, after tool registration, and `Start-DFInshellisense` first runs `is -c`; a zero exit code leaves the existing session alone, otherwise `is init pwsh` is evaluated. If `is` is unavailable, DotForge warns and uses Native completion. |
 | carapace's init prepends `$XDG_CONFIG_HOME/carapace/bin` to `PATH` itself | `Tools/carapace.ps1` | A deviation from DotForge's rule that all PATH edits go through `Add-DFToPath`. The line is emitted by carapace and cannot be rerouted. |
 | `zoxide init` emits `Set-Alias -Name cd -Option AllScope -Force` | `Tools/zoxide.ps1` | Replaces the built-in `cd` alias in place, so no function-shadowing is needed. Verified against zoxide's emitted init. |
 | `scoop-search --hook` emits a search hook | `Tools/scoop.ps1` | Requires `Invoke-Expression`; no alternative exists. |
 | `oh-my-posh init pwsh --config` emits the prompt init | `Tools/oh-my-posh.ps1` | Requires `Invoke-Expression`. Also reads `POSH_THEME` / `POSH_THEMES_PATH`. |
-| `Set-PsFzfOption`, `Invoke-FzfTabCompletion` | `Tools/PSFzf.ps1` | Public PSFzf API. PSFzf owns the Tab key binding. |
+| `Set-PsFzfOption`, `Invoke-FzfTabCompletion` | `Tools/PSFzf.ps1` | Public PSFzf API. The completion coordinator owns the Tab key binding. |
 | `TabExpansion2` consults registered argument completers | `Tools/carapace.ps1` | Documented PowerShell behavior; the reason carapace results reach PSFzf's Tab UI. |
 | eza's `--icons`/`--hyperlink` take an **optional** value | `Tools/eza.json` | Documented in `eza --help`. A trailing bare flag consumes the next positional, so all values are bound (`--icons=auto`). Guarded by `tests/eza.Tests.ps1`. |
 
