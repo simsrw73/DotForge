@@ -18,4 +18,5 @@ param()
 #
 # CARAPACE_BRIDGES is deliberately left unset. Bridging (zsh/fish/bash/inshellisense)
 # shells out per completion, and of those only bash is present on this machine.
+Enable-DFCarapaceInshellisenseBridge | Out-Null
 Invoke-Expression (& { (carapace _carapace powershell | Out-String) })

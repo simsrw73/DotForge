@@ -1,0 +1,19 @@
+{
+  "name": "inshellisense",
+  "description": "AI-powered terminal completion engine",
+  "tags": [
+    "completion",
+    "shell",
+    "productivity"
+  ],
+  "executable": "is",
+  "packages": {
+    "npm": "@microsoft/inshellisense"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "default"
+  },
+  "aliases": {},
+  "picker": null
+}

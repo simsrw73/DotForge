@@ -73,6 +73,7 @@ function Register-DFTool {
     # Topological sort respects dependsOn declarations
     $tools = Invoke-DFTopoSort -Tools @($tools)
 
+    $registeredTools = [System.Collections.Generic.List[string]]::new()
     foreach ($tool in $tools) {
         # ── Guard: skip if not available ──────────────────────────────────
         $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
@@ -234,8 +235,10 @@ function Register-DFTool {
         }
 
         Write-Verbose "DotForge: $($tool.name) registered"
+        $registeredTools.Add($tool.name)
     }
 
+    Initialize-DFCompletionStack -RegisteredTools $registeredTools.ToArray()
     # ── Shadowed-command notice ─────────────────────────────────────────────────
     # One consolidated warning rather than one per tool. Costs nothing when coreutils
     # is absent (Get-DFCoreutilsShadowSet returns early), and self-extinguishes once

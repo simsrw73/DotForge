@@ -12,6 +12,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
+    . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
 
 Describe 'Register-DFTool' {
@@ -160,6 +161,29 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
     It 'registers all installed tools when -All is specified' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+    }
+
+    It 'finalizes completion ownership after registering completion tools' {
+        @'
+{ "name": "carapace", "executable": "carapace.exe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'carapace.json')
+        @'
+{ "name": "PSFzf", "type": "module", "executable": "PSFzf" }
+'@ | Set-Content (Join-Path $script:TmpTools 'PSFzf.json')
+        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'carapace.ps1')
+        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'PSFzf.ps1')
+        $script:DFToolDb = $null
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Get-Module { [PSCustomObject]@{ Name = 'PSFzf' } }
+        Mock Initialize-DFCompletionStack {}
+
+        Register-DFTool -All -ToolsPath $script:TmpTools
+
+        Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
+            @($RegisteredTools) -contains 'carapace' -and
+            @($RegisteredTools) -contains 'PSFzf'
+        }
     }
 
     It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
