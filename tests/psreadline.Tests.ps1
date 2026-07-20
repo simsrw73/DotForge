@@ -11,6 +11,7 @@ BeforeAll {
     # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
+    . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
