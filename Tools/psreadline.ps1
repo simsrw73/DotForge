@@ -20,6 +20,20 @@ if ($_settings) {
             Write-Warning "DotForge: unknown PSReadLine setting '$($_.Name)' — skipping"
         }
     }
+    $_editModeSetting = $null
+    if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+        $_editModeSetting = $Global:DFConfig['PSReadLineEditMode']
+    }
+    if ($null -ne $_editModeSetting) {
+        if ($_editModeSetting -ieq 'Windows') {
+            $_optionArgs['EditMode'] = 'Windows'
+        } elseif ($_editModeSetting -ieq 'Emacs') {
+            $_optionArgs['EditMode'] = 'Emacs'
+        } else {
+            Write-Warning "DotForge: invalid PSReadLineEditMode '$_editModeSetting' — retaining tool setting"
+        }
+    }
+
     if ($_optionArgs.Count -gt 0) {
         try {
             Set-PSReadLineOption @_optionArgs
