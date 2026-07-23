@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.5.0-preview] - 2026-07-23
+
 ### Added
 
 - **Debounced picker previews:** the winget/scoop/choco preview panes are
