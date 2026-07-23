@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-20",
+  "updated": "2026-07-23",
   "taxonomy": {
     "function": [
       "search",
@@ -205,6 +205,16 @@
         "choco": "chezmoi"
       },
       "popularity": 2
+    },
+    "choco": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "popularity": 3
     },
     "choose": {
       "function": [

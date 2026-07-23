@@ -1,11 +1,11 @@
 {
-  "name": "scoop",
-  "description": "Windows command-line installer",
+  "name": "choco",
+  "description": "Chocolatey — Windows package manager",
   "tags": [
     "package-manager",
     "windows"
   ],
-  "executable": "scoop.cmd",
+  "executable": "choco.exe",
   "packages": {},
   "xdg": {
     "compliance": "none",

@@ -33,6 +33,10 @@
     "ids": { "scoop": "chezmoi", "winget": "twpayne.chezmoi", "choco": "chezmoi" },
     "popularity": 2
   },
+  "choco": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "popularity": 3
+  },
   "curl": {
     "function": ["network-transfer", "http-client"], "worksWith": ["http", "filesystem"], "interface": "cli",
     "ids": { "scoop": "curl", "winget": "cURL.cURL", "choco": "curl" },

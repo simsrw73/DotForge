@@ -4,6 +4,52 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Debounced picker previews:** the winget/scoop/choco preview panes are
+  prefixed with a ~1s cmd sleep (`ping -n 2 127.0.0.1 >nul &`). fzf kills the
+  running preview when the cursor moves, so scrolling quickly through a list no
+  longer spawns `winget show` / `scoop info` / `choco info` for every skipped
+  item — the preview only fetches once the cursor rests on an item.
+- **Command-line prefill chords for the search pickers:** when PSReadLine is
+  available, each companion binds a `Ctrl+G` chord — `Ctrl+G W` (winget),
+  `Ctrl+G S` (scoop), `Ctrl+G C` (choco) — that reads the current line as the
+  search query, opens the fuzzy picker, and drops the resulting install command
+  onto the command line (editable; press Enter to run). Guarded, so it is a no-op
+  when PSReadLine is not loaded.
+- **scoop fuzzy pickers (`Tools/scoop.ps1`):** `Select-ScoopPackage` / `sins`,
+  `Remove-ScoopPackage` / `srm`, `Invoke-ScoopUpdate` / `sup` — same picker set
+  and keybindings as winget, with a `scoop info` preview. Search uses
+  `scoop-search` when present (fast, matches names and binaries) and falls back
+  to the [`Scoop`](https://www.powershellgallery.com/packages/Scoop) module's
+  `Find-ScoopApp`; the installed list and install/uninstall/update actions use the
+  Scoop module (object output — no `scoop list` table scraping). `scoop.json`
+  `picker` is now `"custom"`.
+- **choco tool + fuzzy pickers (`Tools/choco.json` + `Tools/choco.ps1`):**
+  `Select-ChocoPackage` / `cins`, `Remove-ChocoPackage` / `crm`,
+  `Invoke-ChocoUpdate` / `cup`, driven by choco's machine-readable `-r` output
+  (pipe-delimited, not table-scraped). Install/uninstall/upgrade run through
+  `gsudo` when it is available (elevation); otherwise the search picker's `Enter`
+  returns the command to run elevated.
+- **winget fuzzy pickers (`Tools/winget.ps1`):** rebuilt on the
+  `Microsoft.WinGet.Client` module (object output — no CLI table scraping) with a
+  live `winget show` preview pane.
+  - `Select-WingetPackage` / `wins [query]` — search → install. `Enter` returns
+    the `winget install …` command; `Alt-R` installs now; `Alt-I` installs the
+    highlighted package in place while you keep browsing.
+  - `Remove-WingetPackage` / `wrm` — browse installed → uninstall (`Alt-C`
+    returns the command, `Alt-X` uninstalls in place). `-Source <src>` (e.g.
+    `wrm -Source winget`) filters the list to one source, hiding ARP/registry-only
+    entries.
+  - `Invoke-WingetUpdate` / `wup` — browse upgradable packages, multi-select to
+    update (`Tab` marks, `Alt-A` runs `winget upgrade --all`). New picker.
+  - The pickers warn and no-op if `Microsoft.WinGet.Client` is not installed.
+- **`Invoke-DFPicker` keybinding support:** new `-Expect` (fzf `--expect`
+  multi-key mode; returns a `{ Key; Selected }` object so callers branch on the
+  pressed key), `-Bind` (one `--bind` per spec, for act-in-place `execute(...)`
+  bindings), and `-FzfArgs` (verbatim passthrough). All backward-compatible —
+  existing callers and the declarative picker generator are unaffected.
+
 ## [0.4.0-preview] - 2026-07-20
 
 ### Added

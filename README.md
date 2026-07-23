@@ -474,7 +474,7 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | Editors          | micro                                              |
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |
-| Package managers | scoop, winget, npm                                 |
+| Package managers | scoop, winget, choco, npm                          |
 | Dev              | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv |
 | PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
 
@@ -504,6 +504,86 @@ Companion `.ps1` files register globals (not module exports) when their tool is 
 | `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
 | `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
+**winget** (`Tools/winget.ps1`)
+
+Fuzzy package pickers with a live `winget show` preview pane. Each item carries
+a hidden id field, so filtering matches on name **or** id. Requires the
+[`Microsoft.WinGet.Client`](https://learn.microsoft.com/windows/package-manager/winget/)
+module (`Install-Module Microsoft.WinGet.Client -Scope CurrentUser`); the
+pickers warn and no-op if it is missing.
+
+| Function / Alias                | Purpose                                                        |
+| ------------------------------- | -------------------------------------------------------------- |
+| `Select-WingetPackage [-Query]` / `wins` | Search (`Find-WinGetPackage`) → install. Prompts for a query when none is given. |
+| `Remove-WingetPackage [-Source <src>]` / `wrm` | Browse installed packages → uninstall. `-Source winget` filters the list to that source, hiding ARP/registry-only entries. |
+| `Invoke-WingetUpdate` / `wup`   | Browse upgradable packages (multi-select) → update.            |
+
+Each picker binds keys two ways — an `--expect` key that exits fzf and runs the
+action back in PowerShell (clean UAC/output), and an in-place `--bind execute`
+key that acts on the highlighted item while you keep browsing:
+
+| Picker | `Enter` | Other keys |
+| ------ | ------- | ---------- |
+| `wins` | **returns** the `winget install …` command string | `Alt-R` install now · `Alt-I` install highlighted in place (keep browsing) |
+| `wrm`  | uninstall the selection | `Alt-X` uninstall in place · `Alt-C` return the uninstall command |
+| `wup`  | update the marked selection(s) | `Tab` mark · `Alt-A` `winget upgrade --all` |
+
+```powershell
+wins ripgrep     # search → Enter prints `winget install --id BurntSushi.ripgrep.MSVC --exact`
+wrm              # pick an installed app → uninstall
+wup              # Tab to mark several upgrades → Enter updates them
+```
+
+`Invoke-DFPicker` gained `-Expect` (multi-key mode; returns a `{ Key; Selected }`
+object), `-Bind` (per-spec `--bind`), and `-FzfArgs` (verbatim passthrough) to
+support these workflows.
+
+**scoop** (`Tools/scoop.ps1`)
+
+The same picker set for scoop, with a `scoop info` preview. Search uses
+[`scoop-search`](https://github.com/shilangyu/scoop-search) when present (fast;
+matches names **and** binaries), else the module's `Find-ScoopApp`. Requires the
+[`Scoop`](https://www.powershellgallery.com/packages/Scoop) module
+(`Install-Module Scoop -Scope CurrentUser`) for the installed list and typed
+install/uninstall/update actions.
+
+| Function / Alias                | Purpose                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| `Select-ScoopPackage [-Query]` / `sins` | Search → install (`Enter` returns the command, `Alt-R` installs, `Alt-I` installs in place) |
+| `Remove-ScoopPackage` / `srm`   | Installed apps → uninstall (`Alt-X` in place, `Alt-C` command) |
+| `Invoke-ScoopUpdate` / `sup`    | Installed apps, multi-select → update (`Tab` mark, `Alt-A` `scoop update *`) |
+
+**choco** (`Tools/choco.json` + `Tools/choco.ps1`)
+
+The same picker set for Chocolatey, driven by choco's machine-readable `-r`
+output (no module exists). `choco info` preview. Install/uninstall/upgrade need
+elevation and run through [`gsudo`](https://github.com/gerardog/gsudo) when it is
+on PATH; otherwise `Enter` on the search picker returns the command to run in an
+elevated shell.
+
+| Function / Alias                | Purpose                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| `Select-ChocoPackage [-Query]` / `cins` | Search → install (`Enter` returns the command, `Alt-R` installs, `Alt-I` installs in place) |
+| `Remove-ChocoPackage` / `crm`   | Installed packages → uninstall (`Alt-X` in place, `Alt-C` command) |
+| `Invoke-ChocoUpdate` / `cup`    | Outdated packages, multi-select → upgrade (`Tab` mark, `Alt-A` `choco upgrade all`) |
+
+**Command-line prefill (PSReadLine chords).** When PSReadLine is available, each
+search picker is also bound to a `Ctrl+G` chord that lands the install command
+directly on the command line, editable, ready to run:
+
+| Chord | Manager |
+| ----- | ------- |
+| `Ctrl+G` `W` | winget |
+| `Ctrl+G` `S` | scoop |
+| `Ctrl+G` `C` | choco |
+
+Type a search term, press the chord, pick in fzf — the term is replaced by e.g.
+`winget install --id BurntSushi.ripgrep.MSVC --exact` with the cursor at the end.
+Edit if you like, then press Enter. (The bindings use the current line as the
+query and no-op on an empty line. Pressing `Alt-R` inside the picker installs
+immediately instead of prefilling.)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
