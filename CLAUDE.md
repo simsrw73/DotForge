@@ -31,6 +31,11 @@ DotForge/
 - **No `$ErrorActionPreference = 'Stop'`** in any module file — inherited from caller.
 - **All directory creation** goes through `New-DFDirectory`, never raw `New-Item`.
 - **All PATH additions** go through `Add-DFToPath`, never raw `$Env:Path +=`.
+- **Paths are canonical.** Every path DotForge stores, compares, emits, or accepts as input goes
+  through `ConvertTo-DFPath` (`Private/ConvertTo-DFPath.ps1`): absolute, native separator, no `.`/`..`,
+  no trailing separator. Write `$HOME` in module code — never `~`; a user-supplied `~` path is
+  expanded by `ConvertTo-DFPath`. A relative path is returned unchanged with a warning, never bound to
+  CWD. New path boundaries must route through it.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
 - **`$XDG_CACHE_HOME` must be set** for General Helpers cache (help topics) to work. Set it in your profile: `$Env:XDG_CACHE_HOME = "$Env:USERPROFILE\.cache"`.
 - **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.

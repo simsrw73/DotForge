@@ -35,11 +35,11 @@ function Add-DFToPath {
         return
     }
 
-    $normalized = [IO.Path]::GetFullPath($Dir)
+    $normalized = ConvertTo-DFPath $Dir
 
     $existing = ($Env:Path -split [IO.Path]::PathSeparator) |
         Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
-        ForEach-Object { try { [IO.Path]::GetFullPath($_) } catch { $_ } }
+        ForEach-Object { try { ConvertTo-DFPath $_ } catch { $_ } }
 
     if ($normalized -notin $existing) {
         if ($Prepend) {

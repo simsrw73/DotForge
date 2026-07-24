@@ -22,15 +22,10 @@ if ($_name -notin $_valid) {
     $_name = 'terminal'
 }
 
-# 2. Seed config.yaml when absent. MDV_CONFIG_PATH was set by the env method; fall
-#    back to the XDG path if it is somehow empty.
-#    Normalize path separators for the current platform.
-if ($Env:MDV_CONFIG_PATH) {
-    $Env:MDV_CONFIG_PATH = $Env:MDV_CONFIG_PATH -replace [regex]::Escape([System.IO.Path]::AltDirectorySeparatorChar), [System.IO.Path]::DirectorySeparatorChar
-    $_cfgDir = $Env:MDV_CONFIG_PATH
-} else {
-    $_cfgDir = Expand-DFXdgPath '${XDG_CONFIG_HOME}/mdv'
-}
+# 2. Seed config.yaml when absent. MDV_CONFIG_PATH was set (and canonicalized) by
+#    the env method via Expand-DFXdgPath; fall back to the XDG path if it is empty.
+$_cfgDir = if ($Env:MDV_CONFIG_PATH) { $Env:MDV_CONFIG_PATH }
+           else { Expand-DFXdgPath '${XDG_CONFIG_HOME}/mdv' }
 New-DFDirectory $_cfgDir | Out-Null
 
 $_cfgFile = Join-Path $_cfgDir 'config.yaml'

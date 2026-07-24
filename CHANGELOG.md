@@ -26,6 +26,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Canonical path handling (`ConvertTo-DFPath`).** All paths DotForge stores, compares, emits, or
+  accepts are now absolute, native-separator, free of `.`/`..`, and without a trailing separator, with
+  a leading `~` expanded to `$HOME`. This fixes the mixed `\`/`/` separators that XDG-derived env vars
+  (`BAT_CONFIG_PATH`, `MDV_CONFIG_PATH`, …) previously carried on Windows, and collapses `..` in
+  internal path defaults. Non-path flag strings (`LESS`, `FZF_DEFAULT_OPTS`) are unaffected.
 - **Two markdown viewers — `mdcat` and `mdv`:** both catppuccin by default. `mdcat`
   is themed via `MDCAT_THEME` with native `--completions`; `mdv` is themed by a seeded
   `config.yaml` (written only when absent) plus a bundled carapace spec. A shared

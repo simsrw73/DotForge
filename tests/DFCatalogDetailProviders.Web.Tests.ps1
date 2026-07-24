@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Npm.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Pypi.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Crates.ps1"

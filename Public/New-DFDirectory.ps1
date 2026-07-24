@@ -20,6 +20,9 @@ function New-DFDirectory {
     param([string]$Path)
 
     if ($Path) {
+        # Canonicalize an absolute path (collapses .., native separators); leave a
+        # relative path untouched so creating a relative dir stays valid and silent.
+        if ([System.IO.Path]::IsPathRooted($Path)) { $Path = ConvertTo-DFPath $Path }
         New-Item -ItemType Directory -Force -Path $Path -ErrorAction SilentlyContinue | Out-Null
     }
 }

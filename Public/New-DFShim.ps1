@@ -79,14 +79,17 @@ function New-DFShim {
         Join-Path $HOME '.local' 'bin'
     }
 
+    # Canonicalize (expands a ~ in ShimsPath / $DFConfig['ShimsPath'], collapses ..,
+    # normalizes separators) before creating the dir, checking PATH, and naming the shim.
+    $shimsDir = ConvertTo-DFPath $shimsDir
+
     # 2. Create directory (idempotent)
     New-DFDirectory $shimsDir
 
     # 3. PATH check
-    $normalizedShims = [IO.Path]::GetFullPath($shimsDir).TrimEnd('\', '/')
     $onPath = $Env:PATH -split [IO.Path]::PathSeparator |
-        Where-Object { $_ } |
-        Where-Object { [IO.Path]::GetFullPath($_).TrimEnd('\', '/') -eq $normalizedShims }
+        Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
+        Where-Object { (ConvertTo-DFPath $_) -eq $shimsDir }
     if (-not $onPath) {
         Write-Warning "DotForge: '$shimsDir' is not on PATH — shims won't be invocable until it is added"
     }

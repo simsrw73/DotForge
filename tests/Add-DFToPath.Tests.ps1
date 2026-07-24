@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
 }
 
 Describe 'Add-DFToPath' {
@@ -49,5 +50,15 @@ Describe 'Add-DFToPath' {
         $Env:Path = 'C:\good\path;:::bad:::;C:\other'
         { Add-DFToPath 'C:\new\path' } | Should -Not -Throw
         $Env:Path -split [IO.Path]::PathSeparator | Should -Contain 'C:\new\path'
+    }
+
+    It 'dedups a path that differs only by trailing separator / .. against its canonical form' {
+        $saved = $Env:Path
+        try {
+            $Env:Path = 'C:\tools\bin'
+            Add-DFToPath 'C:\tools\extra\..\bin\'
+            ($Env:Path -split ';' | Where-Object { $_ -eq 'C:\tools\bin' }).Count | Should -Be 1
+            $Env:Path | Should -Not -Match 'extra'
+        } finally { $Env:Path = $saved }
     }
 }
