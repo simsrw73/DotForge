@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-23",
+  "updated": "2026-07-24",
   "taxonomy": {
     "function": [
       "search",
@@ -791,6 +791,43 @@
       "interface": "cli",
       "relatedTo": [
         "atuin"
+      ],
+      "popularity": 1
+    },
+    "mdcat": {
+      "function": [
+        "markdown-renderer"
+      ],
+      "worksWith": [
+        "markdown",
+        "text"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "mdcat",
+        "cargo": "mdcat"
+      },
+      "relatedTo": [
+        "glow",
+        "mdv"
+      ],
+      "popularity": 1
+    },
+    "mdv": {
+      "function": [
+        "markdown-renderer"
+      ],
+      "worksWith": [
+        "markdown",
+        "text"
+      ],
+      "interface": "tui",
+      "ids": {
+        "cargo": "mdv"
+      },
+      "relatedTo": [
+        "glow",
+        "mdcat"
       ],
       "popularity": 1
     },

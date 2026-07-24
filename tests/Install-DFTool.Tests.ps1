@@ -62,6 +62,48 @@ Describe 'Install-DFTool' {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
 
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
+        function script:scoop { $global:LASTEXITCODE = 0 }
+        { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools } |
+            Should -Not -Throw
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+    }
+
+    It 'installs a cargo-only tool via cargo when scoop/winget/choco lack it' {
+        @'
+{ "name": "cargotool", "executable": "cargotool.exe", "packages": { "cargo": "cargotool" } }
+'@ | Set-Content (Join-Path $script:TmpTools 'cargotool.json')
+        $script:DFToolDb = $null
+
+        $script:CargoArgs = $null
+        function script:cargo { $script:CargoArgs = $args; $global:LASTEXITCODE = 0 }
+        # cargo present; the default managers are not
+        Mock Get-Command { if ($Name -eq 'cargo') { [PSCustomObject]@{ Name = 'cargo' } } else { $null } }
+
+        Install-DFTool -Name 'cargotool' -ToolsPath $script:TmpTools
+        ($script:CargoArgs -join ' ') | Should -Match 'install\s+cargotool'
+    }
+
+    It 'prefers scoop over cargo when both are declared and available' {
+        @'
+{ "name": "dualtool", "executable": "dualtool.exe", "packages": { "scoop": "dualtool", "cargo": "dualtool" } }
+'@ | Set-Content (Join-Path $script:TmpTools 'dualtool.json')
+        $script:DFToolDb = $null
+
+        $script:ScoopHit = $false; $script:CargoHit = $false
+        function script:scoop { $script:ScoopHit = $true; $global:LASTEXITCODE = 0 }
+        function script:cargo { $script:CargoHit = $true; $global:LASTEXITCODE = 0 }
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }   # everything available
+
+        Install-DFTool -Name 'dualtool' -ToolsPath $script:TmpTools
+        $script:ScoopHit | Should -BeTrue
+        $script:CargoHit | Should -BeFalse
+    }
+
     It 'does not throw when -WhatIf is specified' {
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
         { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools -WhatIf } |

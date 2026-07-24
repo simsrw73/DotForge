@@ -12,14 +12,13 @@
     "choco": "glow"
   },
   "xdg": {
-    "compliance": "partial",
-    "method": "env",
-    "vars": {
-      "GLOW_CONFIG_DIR": "${XDG_CONFIG_HOME}/glow"
-    },
-    "dirs": [
-      "${XDG_CONFIG_HOME}/glow"
-    ]
+    "compliance": "none",
+    "method": "wrapper",
+    "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly."
+  },
+  "settings": {
+    "theme": "catppuccin-mocha",
+    "configFile": "${XDG_CONFIG_HOME}/glow/glow.yml"
   },
   "aliases": {},
   "picker": null

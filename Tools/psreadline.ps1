@@ -21,7 +21,9 @@ if ($_settings) {
         }
     }
     $_editModeSetting = $null
-    if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
+    # variable defined, and indexing into it throws "Cannot index into a null array".
+    if ($null -ne $Global:DFConfig) {
         $_editModeSetting = $Global:DFConfig['PSReadLineEditMode']
     }
     if ($null -ne $_editModeSetting) {
@@ -59,6 +61,9 @@ $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
+
+    # Family alias: the shared 'catppuccin' key means the bundled mocha flavour.
+    if ($Name -eq 'catppuccin') { $Name = 'catppuccin-mocha' }
 
     # Resolve path: absolute path passthrough, XDG user dir, then bundled
     $path = $null
@@ -100,12 +105,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme
-$_themeSetting = $null
-if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
-    $_themeSetting = $Global:DFConfig['PSReadLineTheme']
-}
-Invoke-DFApplyPSReadLineTheme -Name ($_themeSetting ?? 'dark')
+# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
+$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'dark'
+Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
 # 4. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({

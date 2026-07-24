@@ -55,7 +55,9 @@ function Register-DFTool {
     $resolvedToolsPath = if ($ToolsPath) { $ToolsPath }
                          else            { Join-Path $PSScriptRoot '../Tools' }
 
-    $skipTools = @(if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+    # Test the value, not just the variable's existence: `$DFConfig = $null` leaves
+    # the variable defined, and indexing into it throws "Cannot index into a null array".
+    $skipTools = @(if ($null -ne $Global:DFConfig) {
         $Global:DFConfig['SkipTools']
     })
 

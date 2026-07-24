@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-20",
+  "updated": "2026-07-24",
   "tools": {
     "bat": {
       "packages": {
@@ -150,6 +150,19 @@
       "packages": {
         "scoop": "less",
         "choco": "less"
+      },
+      "linkedVia": "curated"
+    },
+    "mdcat": {
+      "packages": {
+        "scoop": "mdcat",
+        "cargo": "mdcat"
+      },
+      "linkedVia": "curated"
+    },
+    "mdv": {
+      "packages": {
+        "cargo": "mdv"
       },
       "linkedVia": "curated"
     },
