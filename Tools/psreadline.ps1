@@ -62,6 +62,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
 
+    # Family alias: the shared 'catppuccin' key means the bundled mocha flavour.
+    if ($Name -eq 'catppuccin') { $Name = 'catppuccin-mocha' }
+
     # Resolve path: absolute path passthrough, XDG user dir, then bundled
     $path = $null
     if ([System.IO.Path]::IsPathRooted($Name)) {
@@ -102,12 +105,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme
-$_themeSetting = $null
-if ($null -ne $Global:DFConfig) {
-    $_themeSetting = $Global:DFConfig['PSReadLineTheme']
-}
-Invoke-DFApplyPSReadLineTheme -Name ($_themeSetting ?? 'dark')
+# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
+$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'dark'
+Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
 # 4. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({

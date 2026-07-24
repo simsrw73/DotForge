@@ -12,6 +12,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
     $script:GlowJson  = Get-Content "$PSScriptRoot/../Tools/glow.json" -Raw | ConvertFrom-Json
@@ -50,6 +51,12 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         $script:SavedConfigDir  = $Env:GLOW_CONFIG_DIR
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
         $Env:GLOW_CONFIG_DIR    = $null
+
+        # TestDrive persists for the whole file's run, not per-It: without this,
+        # a theme file written to the XDG user dir by one test (e.g. the "prefers
+        # a theme from the XDG user dir" test below) leaks into every later test
+        # that reuses this same $Env:XDG_CONFIG_HOME path.
+        Remove-Item $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
 
         # Do not inherit $DFConfig from whichever test file ran before this one
         # (tests/Get-DFCommandConflict.Tests.ps1 leaves it set to $null).
@@ -111,6 +118,19 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
 
     It 'passes a glow built-in style name through unchanged' {
         $Global:DFConfig = @{ GlowTheme = 'dracula' }
+        Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
+        $global:DFGlowStyle | Should -Be 'dracula'
+    }
+
+    It 'follows the shared $DFConfig[Theme] key (catppuccin -> bundled mocha)' {
+        $Global:DFConfig = @{ Theme = 'catppuccin' }
+        Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
+        $expected = (Resolve-Path (Join-Path $script:RealTools 'glow' 'catppuccin-mocha.json')).Path
+        $global:DFGlowStyle | Should -Be $expected
+    }
+
+    It 'lets GlowTheme override the shared Theme key' {
+        $Global:DFConfig = @{ Theme = 'catppuccin'; GlowTheme = 'dracula' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
         $global:DFGlowStyle | Should -Be 'dracula'
     }

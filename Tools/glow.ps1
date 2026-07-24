@@ -11,18 +11,12 @@
 # Only the --config and -s flags work reliably, hence this wrapper.
 # See docs/external-dependencies.md.
 
-# 1. Settings from tool JSON, with $DFConfig override for the theme name
+# 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
-$_theme    = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
+$_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
+$_theme    = Get-DFConfiguredTheme -ToolKey 'GlowTheme' -Default $_default
 $_cfgRaw   = $_settings.PSObject.Properties['configFile']?.Value ?? '${XDG_CONFIG_HOME}/glow/glow.yml'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
-
-# Test the value, not the variable's existence: `$DFConfig = $null` leaves the
-# variable defined, and indexing into it throws.
-if ($null -ne $Global:DFConfig) {
-    $_override = $Global:DFConfig['GlowTheme']
-    if ($_override) { $_theme = $_override }
-}
 
 New-DFDirectory (Split-Path $_cfg) | Out-Null
 
@@ -37,6 +31,9 @@ Set-Item -Path 'function:global:Resolve-DFGlowStyle' -Value ({
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Name)
+
+    # Family alias: the shared 'catppuccin' key means glow's bundled mocha flavour.
+    if ($Name -eq 'catppuccin') { $Name = 'catppuccin-mocha' }
 
     # glow's own style names — passed through verbatim when no file matches.
     $builtin = @('auto', 'dark', 'light', 'dracula', 'pink', 'notty', 'ascii', 'tokyo-night')

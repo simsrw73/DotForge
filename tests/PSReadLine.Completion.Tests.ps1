@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/psreadline.ps1'
 }
 
