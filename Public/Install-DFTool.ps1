@@ -42,11 +42,12 @@ function Install-DFTool {
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
 
-    $dfConfigVar = Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore
+    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
+    # variable defined, and indexing into it throws "Cannot index into a null array".
     $pmOrder = if ($PackageManager) {
         @($PackageManager)
-    } elseif ($null -ne $dfConfigVar -and $dfConfigVar.Value['PackageManagerOrder']) {
-        @($dfConfigVar.Value['PackageManagerOrder'])
+    } elseif ($null -ne $Global:DFConfig -and $Global:DFConfig['PackageManagerOrder']) {
+        @($Global:DFConfig['PackageManagerOrder'])
     } else {
         Resolve-DFPackageManager
     }

@@ -62,6 +62,17 @@ Describe 'Install-DFTool' {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
 
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
+        function script:scoop { $global:LASTEXITCODE = 0 }
+        { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools } |
+            Should -Not -Throw
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+    }
+
     It 'does not throw when -WhatIf is specified' {
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
         { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools -WhatIf } |

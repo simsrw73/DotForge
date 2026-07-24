@@ -76,6 +76,15 @@ Describe 'New-DFShim' {
         Test-Path (Join-Path $configDir 'myapp.cmd') | Should -BeTrue
     }
 
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        { New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir } |
+            Should -Not -Throw
+        Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue
+    }
+
     It 'falls back to $HOME\.local\bin when no $DFConfig ShimsPath is set' {
         $defaultDir = Join-Path $HOME '.local' 'bin'
         $shimPath   = Join-Path $defaultDir 'dfshimtest.cmd'

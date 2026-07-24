@@ -210,6 +210,15 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
 
+    It 'tolerates $Global:DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+    }
+
     It 'list_accepts_path: creates picker function without error (path safety)' {
         @'
 {

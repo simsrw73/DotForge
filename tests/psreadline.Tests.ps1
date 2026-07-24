@@ -132,6 +132,14 @@ Describe 'psreadline tool sidecar' {
         $warnings | Where-Object { $_ -match 'not found' } | Should -Not -BeNullOrEmpty
     }
 
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        { Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools } | Should -Not -Throw
+        Test-Path 'function:global:Invoke-DFApplyPSReadLineTheme' | Should -BeTrue
+    }
+
     It 'Invoke-DFApplyPSReadLineTheme accepts an absolute path directly' {
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $themePath = Join-Path $script:RealTools 'psreadline' 'light.json'

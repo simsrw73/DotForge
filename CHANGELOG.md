@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,
+  `Install-DFTool`, `New-DFShim`, and both `$DFConfig` reads in `Tools/psreadline.ps1`
+  guarded on the *variable's existence* (`Get-Variable -Name DFConfig`) before indexing
+  into it. Assigning `$null` leaves the variable defined, so the index threw
+  `Cannot index into a null array`. All five now test the value (`$null -ne $Global:DFConfig`),
+  matching the already-safe short-circuit in `Get-DFCommandConflict`. Regression tests
+  added for each.
+
 - **glow ignored its DotForge configuration entirely.** `Tools/glow.json` set
   `GLOW_CONFIG_DIR` and created `$XDG_CONFIG_HOME/glow`, but glow honors no XDG
   environment variable: its config path comes from a Win32 known-folder lookup

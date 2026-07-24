@@ -21,7 +21,9 @@ if ($_settings) {
         }
     }
     $_editModeSetting = $null
-    if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
+    # variable defined, and indexing into it throws "Cannot index into a null array".
+    if ($null -ne $Global:DFConfig) {
         $_editModeSetting = $Global:DFConfig['PSReadLineEditMode']
     }
     if ($null -ne $_editModeSetting) {
@@ -102,7 +104,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
 
 # 3. Apply initial theme
 $_themeSetting = $null
-if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+if ($null -ne $Global:DFConfig) {
     $_themeSetting = $Global:DFConfig['PSReadLineTheme']
 }
 Invoke-DFApplyPSReadLineTheme -Name ($_themeSetting ?? 'dark')
