@@ -17,11 +17,6 @@
     "compliance": "none",
     "method": "default"
   },
-  "aliases": {
-    "sudo": {
-      "command": "gsudo",
-      "args": []
-    }
-  },
+  "aliases": {},
   "picker": null
 }

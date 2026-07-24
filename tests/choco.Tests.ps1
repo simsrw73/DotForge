@@ -19,6 +19,8 @@ Describe 'choco pickers' {
         'Assert-DFChoco', 'Invoke-DFChocoElevated' |
             ForEach-Object { Remove-Item "function:global:$_" -ErrorAction Ignore }
         'cins', 'crm', 'cup' | ForEach-Object { Remove-Item "alias:global:$_" -ErrorAction Ignore }
+        Remove-Alias sudo -Scope Global -Force -ErrorAction Ignore
+        Remove-Item 'function:global:gsudo' -ErrorAction Ignore
         Remove-PSReadLineKeyHandler -Chord 'Ctrl+g,c' -ErrorAction Ignore
     }
 
@@ -118,6 +120,18 @@ Describe 'choco pickers' {
             Mock Invoke-DFPicker { throw 'picker should not run' }
             { Select-ChocoPackage -Query 'x' } | Should -Not -Throw
             Should -Invoke Invoke-DFPicker -Times 0
+        }
+    }
+
+    It 'uses the configured sudo alias for elevated Chocolatey commands' {
+        function global:gsudo { }
+        Set-Alias -Name sudo -Value gsudo -Scope Global -Force
+        Mock gsudo { }
+
+        Invoke-DFChocoElevated install ripgrep -y
+
+        Should -Invoke gsudo -Times 1 -ParameterFilter {
+            $args -contains 'choco' -and $args -contains 'install' -and $args -contains 'ripgrep'
         }
     }
 }
