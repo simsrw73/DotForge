@@ -26,6 +26,12 @@ Describe 'Add-DFToPath' {
         ($Env:Path -split [IO.Path]::PathSeparator)[0] | Should -Be 'C:\tools\bin'
     }
 
+    It 'moves an existing directory to the front when -Prepend is specified' {
+        $Env:Path = 'C:\Windows\system32;C:\tools\bin;C:\other'
+        Add-DFToPath 'C:\tools\bin' -Prepend
+        ($Env:Path -split [IO.Path]::PathSeparator)[0] | Should -Be 'C:\tools\bin'
+    }
+
     It 'silently skips empty string' {
         $before = $Env:Path
         Add-DFToPath ''

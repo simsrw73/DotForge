@@ -12,5 +12,8 @@
     "method": "default"
   },
   "aliases": {},
+  "dependsOn": [
+    "gsudo"
+  ],
   "picker": "custom"
 }

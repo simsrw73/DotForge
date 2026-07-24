@@ -9,7 +9,8 @@
 # Chocolatey has no first-class object module, but its CLI has a machine-readable
 # mode (`-r` / `--limit-output`) that emits pipe-delimited rows — so we split on
 # '|' instead of scraping aligned columns. install/uninstall/upgrade need
-# elevation; they run through gsudo when it is available (see Invoke-DFChocoElevated).
+# elevation; they run through the configured sudo alias when it is available
+# (see Invoke-DFChocoElevated).
 #
 # Previews are prefixed with `ping -n 2 127.0.0.1 >nul &` — a ~1s cmd sleep that
 # debounces the preview: fzf kills the running preview command when the cursor
@@ -22,11 +23,11 @@ function global:Assert-DFChoco {
     return $false
 }
 
-# Run a choco command elevated via gsudo when present; otherwise run directly
+# Run a choco command elevated via DotForge's sudo alias when present; otherwise run directly
 # (choco will fail/prompt for elevation itself if the shell is not admin).
 function global:Invoke-DFChocoElevated {
     param([Parameter(ValueFromRemainingArguments)][string[]]$ChocoArgs)
-    if (Get-Command gsudo -ErrorAction Ignore) { gsudo choco @ChocoArgs }
+    if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { sudo choco @ChocoArgs }
     else { choco @ChocoArgs }
 }
 
@@ -44,8 +45,8 @@ function global:Select-ChocoPackage {
         }
     )
 
-    # gsudo-aware command for the in-place execute() key (runs in a cmd subshell).
-    $run = if (Get-Command gsudo -ErrorAction Ignore) { 'gsudo choco' } else { 'choco' }
+    # sudo-aware command for the in-place execute() key (runs in a cmd subshell).
+    $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
 
     $sel = Invoke-DFPicker `
         -List          { $items }.GetNewClosure() `
@@ -85,7 +86,7 @@ function global:Remove-ChocoPackage {
         }
     )
 
-    $run = if (Get-Command gsudo -ErrorAction Ignore) { 'gsudo choco' } else { 'choco' }
+    $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
 
     $sel = Invoke-DFPicker `
         -List          { $items }.GetNewClosure() `

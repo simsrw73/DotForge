@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
@@ -21,8 +22,11 @@ Describe 'Register-DFTool' {
         $script:DFToolDb = $null
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        $script:SavedPath       = $Env:Path
+        $script:SavedWinDir     = $Env:WINDIR
         $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
         $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        $Env:WINDIR = 'C:\Windows'
 
         # Create a minimal test tools directory
         $script:TmpTools = Join-Path $TestDrive 'tools'
@@ -57,11 +61,14 @@ Describe 'Register-DFTool' {
     AfterEach {
         $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
+        $Env:Path             = $script:SavedPath
+        $Env:WINDIR           = $script:SavedWinDir
         Remove-Item Env:\TESTTOOL_CONFIG -ErrorAction Ignore
         Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
         Remove-Item 'function:global:tt-v'            -ErrorAction Ignore
         Remove-Item 'function:global:Select-TestTool' -ErrorAction Ignore
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
+        Remove-Alias sudo -Force -Scope Global -ErrorAction Ignore
     }
 
     It 'skips tools not found on PATH (no error)' {
