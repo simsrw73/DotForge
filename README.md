@@ -31,6 +31,7 @@ alternative fuzzy finder.
 
 **One-command install.** `Install-DFTool -Name <tool>` installs via whichever of
 scoop, winget, or choco you have available — no need to remember package IDs.
+cargo is tried as a last resort for tools that declare a `packages.cargo` entry.
 
 ## Requirements
 
@@ -78,6 +79,9 @@ $DFConfig = @{
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
+    Theme               = 'catppuccin'          # shared theme for all viewers (per-tool keys override)
+    MdcatTheme          = 'catppuccin-mocha'    # mdcat theme (overrides Theme)
+    MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme)
     GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
@@ -468,7 +472,7 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | ---------------- | -------------------------------------------------- |
 | Completion       | carapace, inshellisense                            |
 | File/dir         | bat, eza, fd, ripgrep, broot                       |
-| Text/data        | jq, glow                                           |
+| Text/data        | jq, glow, mdcat, mdv                               |
 | System           | procs, winfetch, gsudo                             |
 | Network          | curl, wget                                         |
 | Container        | docker                                             |
@@ -506,6 +510,25 @@ and `tokyo-night` are accepted as bare names.
 glow README.md                     # rendered with the configured theme
 $global:DFGlowStyle = 'dracula'    # switch for this session
 ```
+
+**mdcat** (`Tools/mdcat.ps1`)
+
+mdcat is XDG-native and its `MDCAT_THEME` env var works from any shell, so DotForge
+sets the theme via that variable (no wrapper) and registers mdcat's own
+`--completions powershell`. Theme comes from `$DFConfig['MdcatTheme']`, then the
+shared `$DFConfig['Theme']`, then `catppuccin-mocha`. Built-ins: `catppuccin-mocha`,
+`catppuccin-latte`, `dracula`, `nord`, `gruvbox-dark/-light`, `solarized-dark/-light`,
+`auto`, `dark`, `light`.
+
+**mdv** (`Tools/mdv.ps1`)
+
+mdv has no config auto-discovery and no theme env var, so DotForge points
+`MDV_CONFIG_PATH` at `$XDG_CONFIG_HOME/mdv` and seeds `config.yaml` with the resolved
+theme **only when the file is absent** — your edits are never overwritten. Theme comes
+from `$DFConfig['MdvTheme']`, then `$DFConfig['Theme']`, then `catppuccin`. Because the
+seed is write-when-absent, **changing the theme after first run means editing or
+deleting `config.yaml`** and re-registering. Completion is provided by a bundled
+carapace spec (`Tools/carapace/specs/mdv.yaml`).
 
 **oh-my-posh** (`Tools/oh-my-posh.ps1`)
 

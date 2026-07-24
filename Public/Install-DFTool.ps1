@@ -8,14 +8,15 @@ function Install-DFTool {
     .PARAMETER Name
         One or more tool names to install (must exist in the tool registry).
     .PARAMETER PackageManager
-        Override the package manager for this call (scoop | winget | choco | psresource).
+        Override the package manager for this call (scoop | winget | choco | psresource | cargo).
     .PARAMETER ToolsPath
         Override the tools directory (used in tests).
     .DESCRIPTION
         Looks up each tool in the JSON registry, determines which package managers
         are available, and installs via the first compatible one. Package manager
         preference order uses -PackageManager override, then $DFConfig['PackageManagerOrder'],
-        then auto-detected order. Supports -WhatIf.
+        then auto-detected order. cargo is tried as a per-tool last resort when a tool
+        declares a packages.cargo entry. Supports -WhatIf.
     .EXAMPLE
         Install-DFTool -Name ripgrep
         Installs ripgrep via scoop, winget, or choco — whichever is available first.

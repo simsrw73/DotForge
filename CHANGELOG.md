@@ -26,6 +26,12 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Two markdown viewers — `mdcat` and `mdv`:** both catppuccin by default. `mdcat`
+  is themed via `MDCAT_THEME` with native `--completions`; `mdv` is themed by a seeded
+  `config.yaml` (written only when absent) plus a bundled carapace spec. A shared
+  `$DFConfig['Theme']` key now drives `glow`, `mdcat`, `mdv`, and `psreadline`, with
+  per-tool keys (`GlowTheme`, `MdcatTheme`, `MdvTheme`, `PSReadLineTheme`) overriding it.
+  `Install-DFTool` gained a `cargo` arm (last-resort) so cargo-only tools install.
 - **Bundled glow theme + `$DFConfig['GlowTheme']`:** `Tools/glow/catppuccin-mocha.json`
   ships with the module, and `Resolve-DFGlowStyle` resolves a theme name the same
   way PSReadLine themes resolve — rooted path, then
