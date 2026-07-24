@@ -23,7 +23,7 @@ $DFConfig = @{
     #   SkipConflictCheck = $true
 
     # Theme selection for tools whose companions ship themes. Each accepts a
-    # bundled name, a name under $XDG_CONFIG_HOME/<tool>/themes/, or a full path:
+    # bundled name, a name under $XDG_CONFIG_HOME/<tool>/themes/, or a full path.
     # One shared theme for every viewer; per-tool keys override it:
     #   Theme           = 'catppuccin'         # glow, mdcat, mdv, psreadline
     #   MdcatTheme      = 'dracula'             # override just mdcat
