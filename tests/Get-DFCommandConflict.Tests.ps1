@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"

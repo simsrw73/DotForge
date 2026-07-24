@@ -77,6 +77,7 @@ Describe 'Initialize-DFEnvironment' {
     }
 
     It 'canonicalizes a ~-rooted XDG value the user set' {
+        Mock Get-Command { $null }
         $saved = $Env:XDG_CONFIG_HOME
         try {
             $Env:XDG_CONFIG_HOME = '~/dftest-config'
