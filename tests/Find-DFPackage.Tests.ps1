@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"

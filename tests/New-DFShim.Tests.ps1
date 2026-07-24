@@ -3,6 +3,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Public/New-DFShim.ps1"
 }
 
@@ -180,5 +181,13 @@ Describe 'New-DFShim' {
         New-DFShim -Name 'myapp' -Target $script:FakeExe `
             -ShimsPath $script:ShimsDir -WhatIf
         Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeFalse
+    }
+
+    It 'expands a ~ in ShimsPath to $HOME' {
+        $shim = Join-Path $HOME '.local' 'bin' 'dftilde.cmd'
+        try {
+            New-DFShim -Name 'dftilde' -Target $script:FakeExe -ShimsPath '~/.local/bin' 3>$null
+            Test-Path $shim | Should -BeTrue
+        } finally { Remove-Item $shim -ErrorAction Ignore }
     }
 }
