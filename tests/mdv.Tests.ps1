@@ -88,3 +88,22 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
         { Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools } | Should -Not -Throw
     }
 }
+
+Describe 'Tools/carapace/specs/mdv.yaml' {
+    BeforeAll {
+        $script:SpecPath = "$PSScriptRoot/../Tools/carapace/specs/mdv.yaml"
+        $script:Spec     = Get-Content $script:SpecPath -Raw
+    }
+    It 'exists and names the mdv command' {
+        Test-Path $script:SpecPath | Should -BeTrue
+        $script:Spec | Should -Match '(?m)^name:\s*mdv\b'
+    }
+    It 'declares the theme flag with catppuccin among its values' {
+        $script:Spec | Should -Match '--theme'
+        $script:Spec | Should -Match 'catppuccin'
+    }
+    It 'declares the config-file and pager flags' {
+        $script:Spec | Should -Match '--config-file'
+        $script:Spec | Should -Match '--pager'
+    }
+}
