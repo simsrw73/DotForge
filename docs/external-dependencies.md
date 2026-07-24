@@ -148,6 +148,12 @@ These are public API. They are listed because DotForge visibly misbehaves if the
   `(Get-Module DotForge).ExportedAliases` is empty and `Remove-Module DotForge` leaves them
   behind. `Get-DFCommandConflict` reads `AliasesToExport` out of the manifest file for exactly
   this reason. Tracked in `TODO.md`.
+- **`Expand-DFXdgPath` normalizes only token-bearing values.** A `Tools/*.json` `xdg.vars` value is
+  either an XDG path template (`${XDG_CONFIG_HOME}/…`) — canonicalized to a native path via
+  `ConvertTo-DFPath` — or a literal flag string (`LESS`, `FZF_DEFAULT_OPTS`) with no XDG token, which
+  passes through byte-for-byte. A flag string must never embed an XDG path token, or its separators
+  would be rewritten. Nothing ships that way today; this is the assumption that lets one function
+  serve both value kinds without a per-var `type` flag.
 
 ## Keeping this honest
 
