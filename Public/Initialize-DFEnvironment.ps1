@@ -27,6 +27,13 @@ function Initialize-DFEnvironment {
     # The variable is not part of the XDG spec, but the location is, so this is useful
     if (-not $Env:XDG_BIN_HOME)  { $Env:XDG_BIN_HOME  = Join-Path $home '.local' 'bin' }
 
+    # Canonicalize each root (expands a user-supplied ~, collapses .., native seps)
+    # so every downstream Expand-DFXdgPath substitution starts from a clean path.
+    foreach ($_var in 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_BIN_HOME') {
+        $_val = [System.Environment]::GetEnvironmentVariable($_var)
+        if ($_val) { Set-Item -Path "Env:$_var" -Value (ConvertTo-DFPath $_val) }
+    }
+
     @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME, $Env:XDG_BIN_HOME) |
         ForEach-Object { New-DFDirectory $_ }
 

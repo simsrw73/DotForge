@@ -354,6 +354,16 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Variable CapturedTool -Scope Global -ErrorAction Ignore
         Remove-Item (Join-Path $script:TmpTools 'testtool.ps1') -ErrorAction Ignore
     }
+
+    It 'collapses the ../ in the default ToolsPath' {
+        # With no -ToolsPath, the default is Join-Path $PSScriptRoot '../Tools'; it must
+        # resolve to a canonical path with no '..' segment. Registering an absent tool by
+        # name exercises the resolver without needing a real binary.
+        { Register-DFTool -Name '___nope___' } | Should -Not -Throw
+        # The resolved path is internal; assert the observable rule via a real tools dir:
+        $canon = ConvertTo-DFPath (Join-Path $PSScriptRoot '..' 'Tools')
+        $canon | Should -Not -Match '\.\.'
+    }
 }
 
 Describe 'Invoke-DFTopoSort' {

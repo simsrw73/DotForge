@@ -75,4 +75,16 @@ Describe 'Initialize-DFEnvironment' {
         $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
         { Initialize-DFEnvironment; Initialize-DFEnvironment } | Should -Not -Throw
     }
+
+    It 'canonicalizes a ~-rooted XDG value the user set' {
+        $saved = $Env:XDG_CONFIG_HOME
+        try {
+            $Env:XDG_CONFIG_HOME = '~/dftest-config'
+            Initialize-DFEnvironment 6>$null
+            $Env:XDG_CONFIG_HOME | Should -Be (Join-Path $HOME 'dftest-config')
+        } finally {
+            $Env:XDG_CONFIG_HOME = $saved
+            Remove-Item (Join-Path $HOME 'dftest-config') -Recurse -Force -ErrorAction Ignore
+        }
+    }
 }

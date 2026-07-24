@@ -52,8 +52,8 @@ function Register-DFTool {
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
 
-    $resolvedToolsPath = if ($ToolsPath) { $ToolsPath }
-                         else            { Join-Path $PSScriptRoot '../Tools' }
+    $resolvedToolsPath = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath }
+                                            else            { Join-Path $PSScriptRoot '../Tools' })
 
     # Test the value, not just the variable's existence: `$DFConfig = $null` leaves
     # the variable defined, and indexing into it throws "Cannot index into a null array".
