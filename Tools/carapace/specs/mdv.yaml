@@ -29,6 +29,30 @@ flags:
   -s, --code-block-style=: Visual style for code blocks
   -O, --callout-style=: Visual style for callouts
   -D, --pretty-list: Render list markers as Nerd Font icons
+  -R, --reflow: Collapse in-paragraph newlines and refill to width
+  -r, --reverse: Render the document from the end
+  -m, --monitor: Monitor the file for changes and re-render
+  -I, --smart-indent: Smooth heading indentation jumps
+  -S, --table-smart-indent: Auto-adjust table indentation
+  -J, --custom-code-block=: Override code block icon/label/aliases
+  -P, --pretty-checkbox=: Render task-list checkboxes as Nerd Font icons
+  -B, --custom-checkbox=: Override checkbox icons/states
+  -Q, --custom-list=: Override list marker icon/color per level
+  -K, --code-wrap-indent=: Hanging-indent mode inside code blocks
+  -i, --theme-info=: Print palette info (optional file)
+  -b, --tab-length=: Spaces per tab
+  -c, --cols=: Output width in columns
+  -W, --wrap=: Line-wrapping mode
+  -w, --table-wrap=: Table wrapping mode
+  -f, --from=: Render starting from the first line containing this text
+  -y, --custom-theme=: Override individual UI colors
+  -Y, --custom-code-theme=: Override syntax colors
+  -U, --custom-callout=: Override or create callout styles
+  -u, --link-style=: Link rendering style
+  -l, --link-truncation=: Link truncation mode
+  -o, --footnote-style=: Footnote placement
+  -M, --missing-footnote-style=: How to render missing footnotes
+  -d, --heading-layout=: Heading indentation layout
 completion:
   flag:
     theme:
@@ -51,3 +75,41 @@ completion:
       - monokai
       - material-ocean
       - catppuccin
+    pretty-checkbox:
+      - square
+      - circle
+    code-wrap-indent:
+      - none
+      - base
+      - double
+    wrap:
+      - char
+      - word
+      - none
+    table-wrap:
+      - fit
+      - wrap
+      - none
+    link-style:
+      - clickable
+      - fclickable
+      - inline
+      - inlinetable
+      - endtable
+      - hide
+    link-truncation:
+      - wrap
+      - cut
+      - tablecut
+      - none
+    footnote-style:
+      - endnotes
+      - attached
+    missing-footnote-style:
+      - show
+      - hide
+    heading-layout:
+      - level
+      - center
+      - flat
+      - none
