@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
 }
 
 Describe 'Expand-DFXdgPath' {
@@ -20,31 +21,26 @@ Describe 'Expand-DFXdgPath' {
         $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
     }
 
-    It 'expands ${XDG_CONFIG_HOME}' {
-        Expand-DFXdgPath '${XDG_CONFIG_HOME}/bat/bat.conf' |
-            Should -Be 'C:\config/bat/bat.conf'
+    It 'expands ${XDG_CONFIG_HOME} to a canonical native path' {
+        Expand-DFXdgPath '${XDG_CONFIG_HOME}/bat/bat.conf' | Should -Be 'C:\config\bat\bat.conf'
     }
-
-    It 'expands ${XDG_DATA_HOME}' {
-        Expand-DFXdgPath '${XDG_DATA_HOME}/zoxide' |
-            Should -Be 'C:\data/zoxide'
+    It 'expands ${XDG_DATA_HOME} to a canonical native path' {
+        Expand-DFXdgPath '${XDG_DATA_HOME}/zoxide' | Should -Be 'C:\data\zoxide'
     }
-
-    It 'expands ${XDG_STATE_HOME}' {
-        Expand-DFXdgPath '${XDG_STATE_HOME}/less/history' |
-            Should -Be 'C:\state/less/history'
+    It 'expands ${XDG_STATE_HOME} to a canonical native path' {
+        Expand-DFXdgPath '${XDG_STATE_HOME}/less/history' | Should -Be 'C:\state\less\history'
     }
-
-    It 'expands ${XDG_CACHE_HOME}' {
-        Expand-DFXdgPath '${XDG_CACHE_HOME}/uv' | Should -Be 'C:\cache/uv'
+    It 'expands ${XDG_CACHE_HOME} to a canonical native path' {
+        Expand-DFXdgPath '${XDG_CACHE_HOME}/uv' | Should -Be 'C:\cache\uv'
     }
-
-    It 'passes through strings with no placeholders unchanged' {
-        Expand-DFXdgPath 'C:\absolute\path' | Should -Be 'C:\absolute\path'
+    It 'collapses a trailing segment to no trailing separator' {
+        Expand-DFXdgPath '${XDG_CONFIG_HOME}/glow/' | Should -Be 'C:\config\glow'
     }
-
-    It 'expands multiple placeholders in one string' {
-        Expand-DFXdgPath '${XDG_CONFIG_HOME}/tool and ${XDG_CACHE_HOME}/tool' |
-            Should -Be 'C:\config/tool and C:\cache/tool'
+    It 'returns a token-less flag string byte-for-byte' {
+        Expand-DFXdgPath '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init' |
+            Should -Be '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
+    }
+    It 'leaves forward slashes in a token-less string untouched' {
+        Expand-DFXdgPath 'fd --type f --exclude .git' | Should -Be 'fd --type f --exclude .git'
     }
 }

@@ -3,6 +3,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
@@ -72,7 +73,7 @@ Describe 'Register-DFTool' {
     It 'sets XDG env vars when method is env' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
 Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
-        $Env:TESTTOOL_CONFIG | Should -Be "$($Env:XDG_CONFIG_HOME)/testtool/config.conf"
+        $Env:TESTTOOL_CONFIG | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'testtool' 'config.conf')
     }
 
     It 'creates XDG dirs when method is env' {
