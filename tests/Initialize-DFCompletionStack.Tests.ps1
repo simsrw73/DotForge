@@ -96,29 +96,29 @@ Describe 'Initialize-DFCompletionStack' {
 
     It 'binds PSFzf Tab completion with its script block' {
         Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $ScriptBlock }
+        Should -Invoke Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $ScriptBlock }
     }
 
     It 'enables fzf --ansi when PSFzf and Carapace are both registered' {
         Mock Enable-DFFzfAnsiOption {}
         Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
-        Assert-MockCalled Enable-DFFzfAnsiOption -Times 1
+        Should -Invoke Enable-DFFzfAnsiOption -Times 1
     }
 
     It 'does not enable fzf --ansi when Carapace is absent' {
         Mock Enable-DFFzfAnsiOption {}
         Initialize-DFCompletionStack -RegisteredTools 'PSFzf'
-        Assert-MockCalled Enable-DFFzfAnsiOption -Times 0
+        Should -Invoke Enable-DFFzfAnsiOption -Times 0 -Exactly
     }
 
     It 'binds Carapace Tab completion when PSFzf is absent' {
         Initialize-DFCompletionStack -RegisteredTools 'Carapace'
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $Function -eq 'MenuComplete' }
+        Should -Invoke Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Key -eq 'Tab' -and $Function -eq 'MenuComplete' }
     }
 
     It 'does not bind Tab without a registered completion component' {
         Initialize-DFCompletionStack -RegisteredTools @()
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 0
+        Should -Invoke Set-PSReadLineKeyHandler -Times 0 -Exactly
     }
 
     It 'warns and uses the Native result when Inshellisense is unavailable' {
@@ -126,7 +126,7 @@ Describe 'Initialize-DFCompletionStack' {
         Mock Get-Command { $null }
         Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
         $warns | Should -Match 'Inshellisense'
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+        Should -Invoke Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
     }
 
     It 'falls back to Native when only the inshellisense command is available' {
@@ -141,8 +141,8 @@ Describe 'Initialize-DFCompletionStack' {
         Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
 
         $warns | Should -Match 'Inshellisense'
-        Assert-MockCalled Start-DFInshellisense -Times 0
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+        Should -Invoke Start-DFInshellisense -Times 0 -Exactly
+        Should -Invoke Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
     }
     It 'falls back to Native when the Inshellisense starter is unavailable' {
         $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
@@ -155,7 +155,7 @@ Describe 'Initialize-DFCompletionStack' {
         Initialize-DFCompletionStack -RegisteredTools 'Carapace' -WarningVariable warns 3>$null
 
         $warns | Should -Match 'starter'
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
+        Should -Invoke Set-PSReadLineKeyHandler -Times 1 -ParameterFilter { $Function -eq 'MenuComplete' }
     }
     It 'starts Inshellisense and does not bind Tab when its executable is available' {
         $Global:DFConfig = @{ CompletionMode = 'Inshellisense' }
@@ -163,7 +163,7 @@ Describe 'Initialize-DFCompletionStack' {
         Mock Get-Command { [pscustomobject]@{ Source = 'C:\bin\is.exe' } }
         Mock Start-DFInshellisense {}
         Initialize-DFCompletionStack -RegisteredTools 'PSFzf', 'Carapace'
-        Assert-MockCalled Start-DFInshellisense -Times 1
-        Assert-MockCalled Set-PSReadLineKeyHandler -Times 0
+        Should -Invoke Start-DFInshellisense -Times 1
+        Should -Invoke Set-PSReadLineKeyHandler -Times 0 -Exactly
     }
 }

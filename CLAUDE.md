@@ -62,7 +62,7 @@ Load module for development:
 Import-Module ./DotForge.psd1 -Force
 ```
 
-Pester 5. Run all tests:
+Pester 5 or 6 (the suite passes under both Pester 5.8 and 6.0.1). Run all tests:
 
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference
