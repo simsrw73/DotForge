@@ -105,6 +105,16 @@
     "function": ["file-viewing"], "worksWith": ["text", "logs"], "interface": "tui",
     "ids": { "scoop": "less" }, "popularity": 1
   },
+  "mdcat": {
+    "function": ["markdown-renderer"], "worksWith": ["markdown", "text"], "interface": "cli",
+    "ids": { "scoop": "mdcat", "cargo": "mdcat" },
+    "relatedTo": ["glow", "mdv"], "popularity": 1
+  },
+  "mdv": {
+    "function": ["markdown-renderer"], "worksWith": ["markdown", "text"], "interface": "tui",
+    "ids": { "cargo": "mdv" },
+    "relatedTo": ["glow", "mdcat"], "popularity": 1
+  },
   "micro": {
     "function": ["editor"], "worksWith": ["text", "code"], "interface": "tui",
     "ids": { "scoop": "micro" }, "popularity": 1

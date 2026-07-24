@@ -153,6 +153,19 @@
       },
       "linkedVia": "curated"
     },
+    "mdcat": {
+      "packages": {
+        "scoop": "mdcat",
+        "cargo": "mdcat"
+      },
+      "linkedVia": "curated"
+    },
+    "mdv": {
+      "packages": {
+        "cargo": "mdv"
+      },
+      "linkedVia": "curated"
+    },
     "micro": {
       "packages": {
         "scoop": "micro",
