@@ -62,7 +62,17 @@ function Install-DFTool {
         $packages = $tool.PSObject.Properties['packages']?.Value
         $installedVia = $null
 
-        foreach ($pm in $pmOrder) {
+        # cargo is not in the auto-detect priority; append it as a last resort when
+        # this tool declares a cargo package (skipped when -PackageManager pins one).
+        $toolPmOrder = @($pmOrder)
+        if (-not $PackageManager -and
+            $null -ne $packages -and
+            $packages.PSObject.Properties['cargo'] -and
+            $toolPmOrder -notcontains 'cargo') {
+            $toolPmOrder += 'cargo'
+        }
+
+        foreach ($pm in $toolPmOrder) {
             $pmAvailable = if ($pm -eq 'psresource') {
                 Get-Command Install-PSResource -ErrorAction Ignore
             } else {
@@ -84,6 +94,7 @@ function Install-DFTool {
                                        --accept-source-agreements `
                                        --accept-package-agreements 2>&1 }
                     'choco'      { choco  install $pkgId -y 2>&1 }
+                    'cargo'      { cargo install $pkgId 2>&1 }
                     'psresource' {
                         try {
                             Install-PSResource -Name $pkgId -Scope CurrentUser -ErrorAction Stop | Out-Null
