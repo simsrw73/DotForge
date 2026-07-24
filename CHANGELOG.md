@@ -4,6 +4,30 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **glow ignored its DotForge configuration entirely.** `Tools/glow.json` set
+  `GLOW_CONFIG_DIR` and created `$XDG_CONFIG_HOME/glow`, but glow honors no XDG
+  environment variable: its config path comes from a Win32 known-folder lookup
+  (it does not move even when `APPDATA`/`LOCALAPPDATA` are redirected),
+  `GLAMOUR_STYLE` is never read at all, and `GLOW_STYLE` is parsed but loses to
+  glow's non-TTY downgrade. The result was an empty config directory and a theme
+  that never rendered. A new companion `Tools/glow.ps1` now wraps the executable
+  and passes `--config` and `-s` as flags — the only knobs that work — so
+  `xdg.method` moves from `env` to `wrapper` and the dead `xdg.vars` are gone.
+
+### Added
+
+- **Bundled glow theme + `$DFConfig['GlowTheme']`:** `Tools/glow/catppuccin-mocha.json`
+  ships with the module, and `Resolve-DFGlowStyle` resolves a theme name the same
+  way PSReadLine themes resolve — rooted path, then
+  `$XDG_CONFIG_HOME/glow/themes/<name>.json`, then the bundled copy, then glow's
+  own built-in style names (`auto`, `dark`, `light`, `dracula`, `pink`, `notty`,
+  `ascii`, `tokyo-night`). An unresolved name warns and falls back to `auto`,
+  because a `-s` path glow cannot load makes it exit 1 rather than degrade. The
+  resolved value lives in `$global:DFGlowStyle` and is read at call time, so
+  assigning to it switches theme for the rest of the session.
+
 ## [0.5.0-preview] - 2026-07-23
 
 ### Added

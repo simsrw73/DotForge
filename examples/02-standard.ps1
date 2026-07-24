@@ -21,6 +21,11 @@ $DFConfig = @{
     #   IgnoreConflicts = @('cat')
     # Or turn the check off entirely:
     #   SkipConflictCheck = $true
+
+    # Theme selection for tools whose companions ship themes. Each accepts a
+    # bundled name, a name under $XDG_CONFIG_HOME/<tool>/themes/, or a full path:
+    #   PSReadLineTheme = 'catppuccin-mocha'
+    #   GlowTheme       = 'catppuccin-mocha'   # or a glow built-in: dark, dracula, ...
 }
 
 Import-Module DotForge

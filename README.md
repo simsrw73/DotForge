@@ -78,6 +78,7 @@ $DFConfig = @{
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
+    GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
     SkipConflictCheck   = $false                # $true silences the shadowed-command check
@@ -481,6 +482,30 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 ## Tool-Specific Helpers
 
 Companion `.ps1` files register globals (not module exports) when their tool is registered.
+
+**glow** (`Tools/glow.ps1`)
+
+glow honors no XDG environment variable — its config path is a Win32 known-folder
+lookup, `GLAMOUR_STYLE` is never read, and `GLOW_STYLE` loses to glow's non-TTY
+downgrade. So DotForge wraps the executable in a global `glow` function that passes
+`--config` and `-s` explicitly. Piped input (`Get-Content x.md | glow`) is forwarded;
+glow's own flags (`-w`, `-p`, `-t`, `-a`) and its subcommands pass through unchanged,
+and carapace completion for `glow` still works.
+
+| Function / Variable            | Purpose                                                  |
+| ------------------------------ | -------------------------------------------------------- |
+| `glow`                         | Wrapper passing `--config $XDG_CONFIG_HOME/glow/glow.yml` and `-s <style>` |
+| `Resolve-DFGlowStyle -Name <n>` | Resolves a style: rooted path → `$XDG_CONFIG_HOME/glow/themes/<n>.json` → bundled `Tools/glow/<n>.json` → glow built-in name → warn and fall back to `auto` |
+| `$global:DFGlowStyle`          | The active style, read at call time — assign to it to switch theme for the session |
+
+Set the startup theme with `$DFConfig['GlowTheme']`. `catppuccin-mocha` ships with
+the module; glow's own `auto`, `dark`, `light`, `dracula`, `pink`, `notty`, `ascii`,
+and `tokyo-night` are accepted as bare names.
+
+```powershell
+glow README.md                     # rendered with the configured theme
+$global:DFGlowStyle = 'dracula'    # switch for this session
+```
 
 **oh-my-posh** (`Tools/oh-my-posh.ps1`)
 
