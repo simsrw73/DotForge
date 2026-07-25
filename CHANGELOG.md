@@ -67,6 +67,15 @@ All notable changes to DotForge are documented here.
   and `mdcat` (fzf/delta/mdcat move to `xdg.method: default`). Behavior is unchanged — the same
   variables are set to the same values, just declared in `env`.
 
+- **Theme family→dialect mapping moved from hardcoded sidecar rules into an optional per-tool
+  `themeMap`**, resolved by the new `Private/Resolve-DFThemeName.ps1` from each tool's own
+  declaration (no central registry — governed by `docs/plugin-architecture.md`). The bare
+  `catppuccin` alias is retired in favor of the canonical `catppuccin-mocha`; the shared
+  `$DFConfig.Theme` is now canonical-name-only, while a per-tool `<Tool>Theme` still accepts a
+  tool's own native names. All tool defaults remain canonical, so out-of-the-box rendering is
+  unchanged. `delta` gains a new companion (`Tools/delta.ps1`) so `DELTA_FEATURES` tracks
+  `$DFConfig.Theme`/`DeltaTheme` instead of being a static value.
+
 ## [0.5.0-preview] - 2026-07-23
 
 ### Added

@@ -24,12 +24,18 @@ $DFConfig = @{
 
     # Theme selection for tools whose companions ship themes. Each accepts a
     # bundled name, a name under $XDG_CONFIG_HOME/<tool>/themes/, or a full path.
-    # One shared theme for every viewer; per-tool keys override it:
-    #   Theme           = 'catppuccin'         # glow, mdcat, mdv, psreadline
+    # One shared theme for every viewer; per-tool keys override it. The shared
+    # Theme key must be the canonical family name (e.g. 'catppuccin-mocha', not
+    # the bare 'catppuccin' — DotForge resolves each tool's own dialect from it,
+    # e.g. mdv's native 'catppuccin'). Per-tool keys accept the canonical name
+    # OR that tool's own native names:
+    #   Theme           = 'catppuccin-mocha'   # glow, mdcat, mdv, psreadline, delta
     #   MdcatTheme      = 'dracula'             # override just mdcat
     #   MdvTheme        = 'nord'                # override just mdv
     #   GlowTheme       = 'catppuccin-mocha'    # override just glow
     #   PSReadLineTheme = 'catppuccin-mocha'    # override just psreadline
+    #   DeltaTheme      = 'catppuccin-mocha'    # override just delta (a delta
+    #                                           #   config must define the feature)
 }
 
 Import-Module DotForge

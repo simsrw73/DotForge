@@ -119,6 +119,12 @@ Each `Tools/*.json` must have at minimum:
   `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through
   `Expand-DFXdgPath` (flag strings pass through; `${XDG_*}` still expands). Keep `xdg.vars`
   for `${XDG_*}` path templates only.
+- `themeMap` (optional): a map of canonical theme family → this tool's native dialect (e.g.
+  `{ "catppuccin-mocha": "catppuccin" }`). Only needed when the tool's native name differs from
+  the canonical (per the plugin invariant — no central theme registry). Sidecars resolve the
+  configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
+  this map), then validate against their own built-in list. Shared `$DFConfig.Theme` is
+  canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
 
 ## External Dependencies
 

@@ -138,6 +138,7 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 | mdcat's `MDCAT_THEME` env var and `--completions powershell` | `Tools/mdcat.ps1`, `Tools/mdcat.json` | Both documented (mdcat 2.13.0). Env var honored from any shell; `--completions` emits one `-Native` completer. carapace ships no mdcat spec, so no conflict. An unrecognized theme falls back to `auto`. |
 | mdv's config path (`MDV_CONFIG_PATH`) and `config.yaml` theme key | `Tools/mdv.ps1`, `Tools/mdv.json` | mdv 4.2.1 has **no config auto-discovery** (redirecting HOME/APPDATA/XDG_CONFIG_HOME loads nothing) and **no theme env var**; theme lives only in `config.yaml` found via `MDV_CONFIG_PATH`. DotForge seeds that file when absent, never clobbering user edits — so a theme change after first run needs a manual edit/delete. |
 | carapace loads `Tools/carapace/specs/mdv.yaml` | `Tools/carapace.ps1`, `Tools/carapace/specs/mdv.yaml` | mdv has no completion generator and carapace ships no spec (`carapace mdv export` → 0 bytes). Hand-authored spec, deployed like `scoop.yaml`; can drift from the binary. |
+| delta's `DELTA_FEATURES` is a plain, unvalidated env var | `Tools/delta.ps1`, `Tools/delta.json` | Documented delta behavior: `DELTA_FEATURES` names one or more config-defined feature sections; an unrecognized name is silently ignored (delta degrades on its own, no DotForge involvement needed). DotForge sets it from the resolved theme (`Get-DFConfiguredTheme` + `Resolve-DFThemeName`) so it tracks `$DFConfig.Theme`/`DeltaTheme`. **DotForge sets the value only** — actually rendering catppuccin requires a delta config that defines a `catppuccin-mocha` feature, which is out of DotForge's scope and not shipped. |
 
 ---
 
@@ -150,12 +151,18 @@ These are public API. They are listed because DotForge visibly misbehaves if the
   this reason. Tracked in `TODO.md`.
 - **`Expand-DFXdgPath` normalizes only token-bearing values.** A `Tools/*.json` `xdg.vars` value is
   an XDG path template (`${XDG_CONFIG_HOME}/…`) — canonicalized to a native path via
-  `ConvertTo-DFPath`. Token-less flag strings (`LESS`, `FZF_DEFAULT_OPTS`, `DELTA_FEATURES`, …) no
-  longer arrive via `xdg.vars`; they arrive from a tool's top-level `env` block, which is expanded
-  through the same `Expand-DFXdgPath` function and passes through byte-for-byte when it carries no
-  XDG token. A flag string must never embed an XDG path token, or its separators would be rewritten.
-  Nothing ships that way today; this is the assumption that lets one function serve both value
-  kinds — path templates and flag strings — without a per-var `type` flag.
+  `ConvertTo-DFPath`. Token-less flag strings (`LESS`, `FZF_DEFAULT_OPTS`, …) no longer arrive via
+  `xdg.vars`; they arrive from a tool's top-level `env` block, which is expanded through the same
+  `Expand-DFXdgPath` function and passes through byte-for-byte when it carries no XDG token. A flag
+  string must never embed an XDG path token, or its separators would be rewritten. Nothing ships
+  that way today; this is the assumption that lets one function serve both value kinds — path
+  templates and flag strings — without a per-var `type` flag. (`delta`'s `DELTA_FEATURES` is set
+  directly by its sidecar via `Resolve-DFThemeName`, not through the `env` block/`Expand-DFXdgPath`
+  — it is a theme name, not a path or a flag string.)
+- **`Resolve-DFThemeName` is per-tool, not centralized.** Per `docs/plugin-architecture.md`, the
+  theme family→dialect mapping lives in each tool's own optional `themeMap`, read from the
+  already-loaded tool record — no central `data/*.json` registry and no extra startup file-read.
+  Adding a themed tool whose dialect matches the canonical needs no declaration at all.
 
 ## Keeping this honest
 

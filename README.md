@@ -79,10 +79,11 @@ $DFConfig = @{
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
-    Theme               = 'catppuccin'          # shared theme for all viewers (per-tool keys override)
+    Theme               = 'catppuccin-mocha'    # shared theme for all viewers (canonical name only; per-tool keys override)
     MdcatTheme          = 'catppuccin-mocha'    # mdcat theme (overrides Theme)
-    MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme)
+    MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme; mdv's own native name)
     GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
+    DeltaTheme          = 'catppuccin-mocha'    # delta features string (overrides Theme)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
     SkipConflictCheck   = $false                # $true silences the shadowed-command check
@@ -501,6 +502,22 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
 Companion `.ps1` files register globals (not module exports) when their tool is registered.
 
+**Theme resolution.** The shared `$DFConfig['Theme']` accepts only a **canonical**
+family name (e.g. `catppuccin-mocha`) — DotForge translates it to each tool's own
+dialect (e.g. mdv's native `catppuccin`). A per-tool override (`GlowTheme`,
+`MdvTheme`, …) accepts the canonical name **or** that tool's own native names; only
+the canonical value triggers translation, so a name that happens to be a *different*
+tool's dialect is never mistaken for it.
+
+**delta** (`Tools/delta.ps1`)
+
+delta's `DELTA_FEATURES` is a plain env var with no auto-discovery, so DotForge sets
+it from the resolved theme (`$DFConfig['DeltaTheme']`, then the shared
+`$DFConfig['Theme']`, then `catppuccin-mocha`) — no wrapper, no built-in validation
+(delta silently ignores an unrecognized feature name). Rendering catppuccin still
+requires a delta config that defines the `catppuccin-mocha` feature; DotForge tracks
+the *value*, not the config.
+
 **glow** (`Tools/glow.ps1`)
 
 glow honors no XDG environment variable — its config path is a Win32 known-folder
@@ -539,7 +556,8 @@ shared `$DFConfig['Theme']`, then `catppuccin-mocha`. Built-ins: `catppuccin-moc
 mdv has no config auto-discovery and no theme env var, so DotForge points
 `MDV_CONFIG_PATH` at `$XDG_CONFIG_HOME/mdv` and seeds `config.yaml` with the resolved
 theme **only when the file is absent** — your edits are never overwritten. Theme comes
-from `$DFConfig['MdvTheme']`, then `$DFConfig['Theme']`, then `catppuccin`. Because the
+from `$DFConfig['MdvTheme']`, then the shared `$DFConfig['Theme']` (resolved to mdv's
+own `catppuccin` dialect), then `catppuccin-mocha` (resolved to `catppuccin`). Because the
 seed is write-when-absent, **changing the theme after first run means editing or
 deleting `config.yaml`** and re-registering. Completion is provided by a bundled
 carapace spec (`Tools/carapace/specs/mdv.yaml`).

@@ -199,27 +199,41 @@ Theme resolution is `Private/Get-DFConfiguredTheme.ps1`: per-tool key (`GlowThem
 `$DFConfig.Theme = 'catppuccin-mocha'` MUST theme every honoring tool; a per-tool key overrides just
 that tool.
 
-### 6.2 Central translation table (replaces per-sidecar mapping)
+### 6.2 Per-tool translation (governed by `docs/plugin-architecture.md`)
 
-Tools name the same theme differently ("catppuccin-mocha" vs "mocha" vs "catppuccin"). The canonical↔
-per-tool mapping MUST live in a single data file, `data/theme-aliases.json` — **not** decentralized
-in each sidecar (this supersedes the prior per-sidecar convention).
+Tools name the same theme family differently (e.g. glow/mdcat/psreadline/delta call it
+`catppuccin-mocha`; mdv calls it `catppuccin`). Per the plugin invariant, this mapping MUST NOT
+live in a central registry keyed by tool — that would require editing core data to add a themed
+tool. Instead, **each tool optionally declares its own `themeMap`** (canonical family → its
+dialect) in its own JSON:
 
 ```jsonc
-{
-  "catppuccin-mocha": {
-    "aliases": ["catppuccin", "mocha"],
-    "tools": { "glow": "catppuccin-mocha", "mdcat": "catppuccin-mocha",
-               "mdv": "catppuccin", "psreadline": "catppuccin-mocha" }
-  }
-}
+// Tools/mdv.json — only needed when the tool's native name differs from the canonical
+"themeMap": { "catppuccin-mocha": "catppuccin" }
 ```
 
-- The resolver MUST accept **either** the canonical name **or** any listed alias **or** the tool's
-  own native name, and resolve to what the tool expects. A user who knows a tool calls it "mocha"
-  MAY write "mocha"; a user standardizing system-wide writes "catppuccin-mocha" once.
-- Sidecars are reduced to **validating** the resolved name against the tool's built-in theme list
-  and applying it via the §3 ladder; they no longer own the family→dialect mapping.
+A tool whose native dialect equals the canonical (glow, mdcat, psreadline, delta) needs no
+`themeMap` at all.
+
+**Configuration vocabulary (collision-free):**
+
+- The shared `$DFConfig.Theme` accepts the **canonical family name only**.
+- A per-tool override (`$DFConfig.<Tool>Theme`) accepts the canonical name **or** a name that
+  tool alone natively understands.
+- **The canonical name is the only value that triggers translation.** A per-tool override that
+  is not a canonical key in that tool's map passes through unchanged to the tool's own built-in
+  validation (which falls back to a safe default if unrecognized). There are no aliases and no
+  cross-tool matching — this is what prevents one tool's dialect (e.g. mdv's `catppuccin`) from
+  being mistaken for another tool's input.
+
+`Private/Resolve-DFThemeName.ps1` implements the translation: given a name and a tool's own
+`themeMap` (or `$null`), it returns the mapped dialect on a canonical match, else the name
+unchanged. It is a pure function — no file I/O, no module state, no validation, no fallback;
+those remain the sidecar's job.
+
+- Sidecars call `Get-DFConfiguredTheme` (the chain) then `Resolve-DFThemeName` (reading their own
+  `$DFCurrentTool.themeMap`), then validate the result against their own built-in theme list and
+  apply it via the §3 ladder. They no longer hardcode any family→dialect mapping.
 
 ### 6.3 Acquiring/creating the theme
 
