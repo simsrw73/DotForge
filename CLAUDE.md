@@ -10,6 +10,18 @@ PowerShell 7+ module that configures CLI tools (XDG paths, fzf pickers,
 aliases) from a JSON tool database. Extracted and generalized from a real-world
 PowerShell profile.
 
+## Core Invariant: Plugin Architecture
+
+**Adding or updating a tool never modifies core logic.** Each tool is a plugin
+(`Tools/<tool>.json` + optional `Tools/<tool>.ps1`); a new core feature is an
+optional declarative extension point the core reads when present and no-ops when
+absent. Cross-tool queries resolve from the loaded tool DB or a build-time
+generated index — never runtime reflection, and never a `switch ($tool.name)` in
+core code. Startup speed is a first-class constraint; per-tool declarations are
+free (JSON already loaded) and aggregation is paid once at build time. Full
+statement, rules, and the realistic boundary (the psd1 manifest): **`docs/plugin-architecture.md`** —
+read it before designing any new core feature or a central tool-keyed data file.
+
 ## Structure
 
 ```
