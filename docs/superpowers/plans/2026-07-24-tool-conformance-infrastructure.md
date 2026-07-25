@@ -21,7 +21,8 @@ Copied from `docs/superpowers/specs/2026-07-24-tool-conformance-infrastructure-d
 - **Verdict enum:** `pass | fail | manual | unknown`. A `manual` claim MUST carry a non-empty `retest` string.
 - **Probe `kind` set:** `env-then-spawn | flag-then-spawn | manual | code`.
 - **`expect` vocabulary (spawn kinds):** exactly one of `match` (regex), `notMatch` (regex), `contains` (literal substring), `notContains` (literal substring); tested against combined `StdOut` + `StdErr`. Values are token-expanded before comparison.
-- **Token expansion:** descriptor string values expand `${SCRATCH}` (the per-probe temp dir) then delegate `${XDG_*}` to `Private/Expand-DFXdgPath.ps1`.
+- **Token expansion:** descriptor string values expand `${SCRATCH}` (the per-probe temp dir) then delegate `${XDG_*}` to `Private/Expand-DFXdgPath.ps1`. `Expand-DFConformanceToken` does NOT normalize non-XDG values — a `${SCRATCH}`-expanded path is already canonical, and normalizing an `expect` substring would break `contains` matching against the tool's raw output.
+- **StrictMode-safe optional property access.** Under `Set-StrictMode -Version Latest`, referencing a genuinely-absent property of a `[pscustomobject]` (a JSON field omitted from a fragment) THROWS `PropertyNotFoundException` — it does NOT return `$null`. For any OPTIONAL field on a parsed fragment/probe/claim, read it with `$obj.PSObject.Properties['name']?.Value` (yields `$null` when absent), never bare `$obj.name`. Fields already validated as present may use bare access. Hashtables are exempt — `$hash.MissingKey` returns `$null` under StrictMode.
 - **Paths through `ConvertTo-DFPath`** where a filesystem path is stored/compared (house rule). `Expand-DFXdgPath` already applies it for `${XDG_*}` values.
 - **Tests run:** `pwsh -NoProfile -Command 'Invoke-Pester tests/<file> -Output Detailed'`. Full suite: `Invoke-Pester tests/ -Output Detailed`. Must stay green under Pester 5.8.0 and 6.0.1.
 
@@ -360,8 +361,8 @@ function Invoke-DFConformanceProbe {
     switch ($probe.kind) {
         'manual' {
             $result.verdict  = 'manual'
-            $result.retest   = $Claim.retest ?? $probe.retest
-            $result.evidence = $probe.evidence ?? 'human-verified; see retest'
+            $result.retest   = ($Claim.PSObject.Properties['retest']?.Value) ?? ($probe.PSObject.Properties['retest']?.Value)
+            $result.evidence = ($probe.PSObject.Properties['evidence']?.Value) ?? 'human-verified; see retest'
             return $result
         }
         'code' {
@@ -378,13 +379,15 @@ function Invoke-DFConformanceProbe {
         default {
             # env-then-spawn / flag-then-spawn
             $envMap = @{}
-            if ($probe.setEnv) {
-                foreach ($p in $probe.setEnv.PSObject.Properties) {
+            $setEnv = $probe.PSObject.Properties['setEnv']?.Value
+            if ($setEnv) {
+                foreach ($p in $setEnv.PSObject.Properties) {
                     $envMap[$p.Name] = Expand-DFConformanceToken -Value $p.Value -Scratch $Scratch
                 }
             }
-            if ($probe.writeFile) {
-                foreach ($p in $probe.writeFile.PSObject.Properties) {
+            $writeFile = $probe.PSObject.Properties['writeFile']?.Value
+            if ($writeFile) {
+                foreach ($p in $writeFile.PSObject.Properties) {
                     $path = Expand-DFConformanceToken -Value $p.Name -Scratch $Scratch
                     New-Item -ItemType Directory -Path (Split-Path $path) -Force | Out-Null
                     Set-Content -Path $path -Value $p.Value -NoNewline
@@ -943,7 +946,8 @@ foreach ($file in ($fragments | Sort-Object Name)) {
     Test-DFConformanceDescriptor -Fragment $frag
     $toolName = $frag.tool
 
-    $exe = ($frag.claims | ForEach-Object { $_.probe.spawn } | Where-Object { $_ } | Select-Object -First 1)
+    $exe = ($frag.claims | ForEach-Object { $_.probe.PSObject.Properties['spawn']?.Value } |
+                Where-Object { $_ } | Select-Object -First 1)
     $exe = if ($exe) { $exe[0] } else { $toolName }
     $verArgs = if ($frag.PSObject.Properties['versionArgs']) { @($frag.versionArgs) } else { @('--version') }
     $version = Get-DFToolVersion -Exe $exe -VersionArgs $verArgs -SpawnTool $SpawnTool

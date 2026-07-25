@@ -30,30 +30,30 @@ function Expand-DFConformanceToken {
     # would be interpreted as regex replacement groups.
     $v = $Value.Replace('${SCRATCH}', $Scratch)
     if ($v -cmatch '\$\{XDG_(CONFIG|DATA|STATE|CACHE)_HOME\}') { $v = Expand-DFXdgPath $v }
-    # Normalize paths (convert forward slashes to native separators)
-    if ($v -cmatch '^[A-Z]:|^\\') { $v = ConvertTo-DFPath $v }
     $v
 }
 
 function Test-DFConformanceDescriptor {
     [CmdletBinding()]
     param([Parameter(Mandatory)][pscustomobject]$Fragment)
-    if (-not $Fragment.tool -or $Fragment.tool -isnot [string]) {
+    $tool = $Fragment.PSObject.Properties['tool']?.Value
+    if (-not $tool -or $tool -isnot [string]) {
         throw "DFConformance: fragment missing a string 'tool' field."
     }
-    if ($null -eq $Fragment.claims) { throw "DFConformance: '$($Fragment.tool)' has no 'claims' array." }
+    if ($null -eq $Fragment.claims) { throw "DFConformance: '$tool' has no 'claims' array." }
     foreach ($c in $Fragment.claims) {
         if (-not $c.id -or $c.id -cnotmatch $script:DFConfClaimGrammar) {
             throw "DFConformance: claim id '$($c.id)' violates the id grammar."
         }
-        $probe = $c.probe
+        $probe = $c.PSObject.Properties['probe']?.Value
         if (-not $probe -or $probe.kind -notin $script:DFConfKinds) {
             throw "DFConformance: claim '$($c.id)' has an unknown probe kind '$($probe.kind)'."
         }
         switch ($probe.kind) {
             { $_ -in $script:DFConfSpawnKinds } {
-                if (-not $probe.spawn) { throw "DFConformance: claim '$($c.id)' ($_) needs a 'spawn' array." }
-                $exp = $probe.expect
+                $spawn = $probe.PSObject.Properties['spawn']?.Value
+                if (-not $spawn) { throw "DFConformance: claim '$($c.id)' ($_) needs a 'spawn' array." }
+                $exp = $probe.PSObject.Properties['expect']?.Value
                 $set = @('match','notMatch','contains','notContains') |
                     Where-Object { $exp -and $null -ne $exp.PSObject.Properties[$_] }
                 if (@($set).Count -ne 1) {
@@ -61,12 +61,15 @@ function Test-DFConformanceDescriptor {
                 }
             }
             'manual' {
-                if (-not $c.probe.retest -and -not $c.retest) {
+                $probeRetest = $probe.PSObject.Properties['retest']?.Value
+                $claimRetest = $c.PSObject.Properties['retest']?.Value
+                if (-not $probeRetest -and -not $claimRetest) {
                     throw "DFConformance: manual claim '$($c.id)' needs a 'retest' string."
                 }
             }
             'code' {
-                if (-not $probe.ref) { throw "DFConformance: code claim '$($c.id)' needs a 'ref'." }
+                $ref = $probe.PSObject.Properties['ref']?.Value
+                if (-not $ref) { throw "DFConformance: code claim '$($c.id)' needs a 'ref'." }
             }
         }
     }
