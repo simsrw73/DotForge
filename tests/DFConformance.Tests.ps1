@@ -272,3 +272,49 @@ Describe 'Test-DFConformanceLedgerSchema' {
         { Test-DFConformanceLedgerSchema -Ledger $led } | Should -Throw '*invalid verdict*'
     }
 }
+
+Describe 'Get-DFConformanceAdapterLink' {
+    It 'finds "adapter for CLAIM-ID" comments in Tools/*.ps1' {
+        $tools = Join-Path $TestDrive 'Tools'; New-Item -ItemType Directory -Path $tools -Force | Out-Null
+        Set-Content (Join-Path $tools 'glow.ps1') "# adapter for glow/honors-env:GLOW_CONFIG_DIR`n`$x = 1"
+        $links = @(Get-DFConformanceAdapterLink -ToolsPath $tools)
+        $links[0].Claim | Should -Be 'glow/honors-env:GLOW_CONFIG_DIR'
+        $links[0].File  | Should -Match 'glow\.ps1'
+    }
+    It 'returns an empty collection when no adapter comments exist' {
+        $tools = Join-Path $TestDrive 'ToolsEmpty'; New-Item -ItemType Directory -Path $tools -Force | Out-Null
+        Set-Content (Join-Path $tools 'plain.ps1') "`$x = 1"
+        @(Get-DFConformanceAdapterLink -ToolsPath $tools).Count | Should -Be 0
+    }
+}
+
+Describe 'Write-DFConformanceReport' {
+    BeforeEach { $script:rpt = Join-Path $TestDrive ([guid]::NewGuid().Guid + '.md') }
+
+    It 'writes a fail section for each failing claim' {
+        $led = @{ glow = @{ versionTested='2.1.2'; claims=@(
+            @{ id='glow/honors-env:GLOW_CONFIG_DIR'; verdict='fail'; kind='env-then-spawn'; evidence='no scratch path in --help' }) } }
+        Write-DFConformanceReport -Ledger $led -AdapterLinks @() -Path $script:rpt
+        (Get-Content $script:rpt -Raw) | Should -Match 'glow/honors-env:GLOW_CONFIG_DIR'
+    }
+    It 'writes a no-failures stub when everything passes' {
+        $led = @{ bat = @{ versionTested='0.24.0'; claims=@(
+            @{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='pass'; kind='env-then-spawn'; evidence='x' }) } }
+        Write-DFConformanceReport -Ledger $led -AdapterLinks @() -Path $script:rpt
+        (Get-Content $script:rpt -Raw) | Should -Match 'no open conformance failures'
+    }
+    It 'flags a dead adapter when its claim now passes' {
+        $led = @{ glow = @{ versionTested='2.2.0'; claims=@(
+            @{ id='glow/honors-env:GLOW_CONFIG_DIR'; verdict='pass'; kind='env-then-spawn'; evidence='fixed upstream' }) } }
+        $links = @( @{ Claim='glow/honors-env:GLOW_CONFIG_DIR'; File='Tools/glow.ps1'; Line=1 } )
+        Write-DFConformanceReport -Ledger $led -AdapterLinks $links -Path $script:rpt
+        (Get-Content $script:rpt -Raw) | Should -Match 'dead code'
+    }
+    It 'warns about an orphan adapter referencing an unknown claim' {
+        $led = @{ glow = @{ versionTested='2.1.2'; claims=@(
+            @{ id='glow/honors-flag:-s'; verdict='pass'; kind='flag-then-spawn'; evidence='x' }) } }
+        $links = @( @{ Claim='glow/honors-env:TYPO'; File='Tools/glow.ps1'; Line=1 } )
+        Write-DFConformanceReport -Ledger $led -AdapterLinks $links -Path $script:rpt
+        (Get-Content $script:rpt -Raw) | Should -Match 'Orphan'
+    }
+}
