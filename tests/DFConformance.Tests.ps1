@@ -142,11 +142,53 @@ Describe 'Invoke-DFConformanceProbe' {
             kind='env-then-spawn'; setEnv=[pscustomobject]@{ BAT_CONFIG_PATH='${SCRATCH}/bat.conf' };
             writeFile=[pscustomobject]@{ '${SCRATCH}/bat.conf'='--not-a-real-flag' };
             spawn=@('bat','x'); expect=[pscustomobject]@{ contains='error' } } }
-        $seen = $null
+        $script:seen = $null
         $spawn = { param($e,$a,$env,$cwd)
             $script:seen = Get-Content (Join-Path $script:scratch 'bat.conf') -Raw
             @{ ExitCode=1; StdOut=''; StdErr='error: unexpected argument'; Absent=$false } }
         $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
         $r.verdict | Should -Be 'pass'
+        $script:seen | Should -Be '--not-a-real-flag'
+    }
+    It 'returns unknown when the seam reports the tool absent' {
+        $claim = [pscustomobject]@{ id='bat/honors-env:BAT_CONFIG_PATH'; probe=[pscustomobject]@{
+            kind='env-then-spawn'; setEnv=[pscustomobject]@{ BAT_CONFIG_PATH='${SCRATCH}/bat.conf' };
+            spawn=@('bat','--config-file'); expect=[pscustomobject]@{ contains='${SCRATCH}' } } }
+        $spawn = { param($e,$a,$env,$cwd) @{ Absent=$true; ExitCode=-1; StdOut=''; StdErr='' } }
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'unknown'
+    }
+    It 'handles a single-element spawn array without a StrictMode index error' {
+        $claim = [pscustomobject]@{ id='bat/honors-config-read'; probe=[pscustomobject]@{
+            kind='env-then-spawn'; spawn=@('bat'); expect=[pscustomobject]@{ contains='ok' } } }
+        $script:gotArgv = $null
+        $spawn = { param($e,$a,$env,$cwd) $script:gotArgv = $a; @{ ExitCode=0; StdOut='ok'; StdErr=''; Absent=$false } }
+        # A direct call: if the slice throws under StrictMode, the It errors and fails.
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'pass'
+        @($script:gotArgv).Count | Should -Be 0
+    }
+}
+
+Describe 'Test-DFConformanceExpect' {
+    It 'match: true when the regex matches, false when it does not' {
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ match='fo+' }) -Text 'foo bar' -Scratch 'x' | Should -BeTrue
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ match='zzz' }) -Text 'foo bar' -Scratch 'x' | Should -BeFalse
+    }
+    It 'notMatch: false when the regex matches, true when it does not' {
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ notMatch='fo+' }) -Text 'foo bar' -Scratch 'x' | Should -BeFalse
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ notMatch='zzz' }) -Text 'foo bar' -Scratch 'x' | Should -BeTrue
+    }
+    It 'contains: literal substring present/absent' {
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ contains='bar' }) -Text 'foo bar' -Scratch 'x' | Should -BeTrue
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ contains='baz' }) -Text 'foo bar' -Scratch 'x' | Should -BeFalse
+    }
+    It 'notContains: literal substring present/absent' {
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ notContains='bar' }) -Text 'foo bar' -Scratch 'x' | Should -BeFalse
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ notContains='baz' }) -Text 'foo bar' -Scratch 'x' | Should -BeTrue
+    }
+    It 'expands ${SCRATCH} in the expected value before comparing' {
+        Test-DFConformanceExpect -Expect ([pscustomobject]@{ contains='${SCRATCH}' }) `
+            -Text 'path is C:\tmp\scr\x' -Scratch 'C:\tmp\scr' | Should -BeTrue
     }
 }

@@ -91,6 +91,7 @@ function Get-DFToolVersion {
 }
 
 function Test-DFConformanceExpect {
+    [CmdletBinding()] [OutputType([bool])]
     param([pscustomobject]$Expect, [string]$Text, [string]$Scratch)
     if ($null -ne $Expect.PSObject.Properties['match']) {
         return [bool]($Text -match (Expand-DFConformanceToken -Value $Expect.match -Scratch $Scratch)) }
@@ -147,7 +148,9 @@ function Invoke-DFConformanceProbe {
                 }
             }
             $exe  = $probe.spawn[0]
-            $argv = @($probe.spawn[1..($probe.spawn.Count-1)] |
+            # Select-Object -Skip 1 (not [1..Count-1]) so a single-element spawn array
+            # yields @() instead of the range 1..0 = @(1,0) indexing out of bounds under StrictMode.
+            $argv = @($probe.spawn | Select-Object -Skip 1 |
                         ForEach-Object { Expand-DFConformanceToken -Value $_ -Scratch $Scratch })
             $res = & $SpawnTool $exe $argv $envMap $Scratch
             if ($res.Absent) { $result.verdict = 'unknown'; $result.evidence = 'tool absent'; return $result }
