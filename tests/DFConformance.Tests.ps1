@@ -216,3 +216,59 @@ Describe 'code probe: bat.theme' {
             Should -Be 'unknown'
     }
 }
+
+Describe 'Merge-DFConformanceRecord' {
+    It 'overwrites automated claims with fresh results' {
+        $existing = [pscustomobject]@{ versionTested='0.23.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='fail'; kind='env-then-spawn'; evidence='old' }) }
+        $fresh = @( @{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='pass'; kind='env-then-spawn'; evidence='new'; retest=$null } )
+        $m = Merge-DFConformanceRecord -Existing $existing -FreshClaims $fresh -Version '0.24.0'
+        ($m.Claims | Where-Object id -eq 'bat/honors-env:BAT_CONFIG_PATH').verdict | Should -Be 'pass'
+    }
+    It 'preserves a manual verdict when versionTested is unchanged' {
+        $existing = [pscustomobject]@{ versionTested='0.24.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-config-content:theme'; verdict='manual'; kind='code';
+                evidence='confirmed visually 2026-07-24'; retest='...' }) }
+        $fresh = @( @{ id='bat/honors-config-content:theme'; verdict='manual'; kind='code'; evidence='generic'; retest='...' } )
+        $m = Merge-DFConformanceRecord -Existing $existing -FreshClaims $fresh -Version '0.24.0'
+        ($m.Claims | Where-Object id -eq 'bat/honors-config-content:theme').evidence |
+            Should -Be 'confirmed visually 2026-07-24'
+    }
+    It 'flags a manual verdict for re-confirmation when the version moved' {
+        $existing = [pscustomobject]@{ versionTested='0.23.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-config-content:theme'; verdict='manual'; kind='code';
+                evidence='confirmed 0.23.0'; retest='...' }) }
+        $fresh = @( @{ id='bat/honors-config-content:theme'; verdict='manual'; kind='code'; evidence='generic'; retest='...' } )
+        $m = Merge-DFConformanceRecord -Existing $existing -FreshClaims $fresh -Version '0.24.0'
+        ($m.Notes -join ' ') | Should -Match 'reconfirm'
+    }
+    It 'handles a null Existing (no prior ledger) without error' {
+        $fresh = @( @{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='pass'; kind='env-then-spawn'; evidence='x'; retest=$null } )
+        $m = Merge-DFConformanceRecord -Existing $null -FreshClaims $fresh -Version '0.24.0'
+        @($m.Claims).Count | Should -Be 1
+        @($m.Notes).Count  | Should -Be 0
+    }
+}
+
+Describe 'Test-DFConformanceLedgerSchema' {
+    It 'accepts a well-formed ledger' {
+        $led = [pscustomobject]@{ bat = [pscustomobject]@{ versionTested='0.24.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='pass'; kind='env-then-spawn'; evidence='x' }) } }
+        { Test-DFConformanceLedgerSchema -Ledger $led } | Should -Not -Throw
+    }
+    It 'rejects a record with no versionTested key at all (StrictMode-safe)' {
+        $led = [pscustomobject]@{ bat = [pscustomobject]@{ claims=@(
+            [pscustomobject]@{ id='bat/honors-env:X'; verdict='pass'; kind='env-then-spawn'; evidence='x' }) } }
+        { Test-DFConformanceLedgerSchema -Ledger $led } | Should -Throw '*missing versionTested*'
+    }
+    It 'rejects a manual claim with no retest key at all (StrictMode-safe)' {
+        $led = [pscustomobject]@{ bat = [pscustomobject]@{ versionTested='0.24.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-config-content:theme'; verdict='manual'; kind='code'; evidence='x' }) } }
+        { Test-DFConformanceLedgerSchema -Ledger $led } | Should -Throw '*needs a retest string*'
+    }
+    It 'rejects a verdict outside the enum' {
+        $led = [pscustomobject]@{ bat = [pscustomobject]@{ versionTested='0.24.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-env:X'; verdict='maybe'; kind='env-then-spawn'; evidence='x' }) } }
+        { Test-DFConformanceLedgerSchema -Ledger $led } | Should -Throw '*invalid verdict*'
+    }
+}

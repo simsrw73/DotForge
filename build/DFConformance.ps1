@@ -164,3 +164,56 @@ function Invoke-DFConformanceProbe {
         }
     }
 }
+
+function Merge-DFConformanceRecord {
+    [CmdletBinding()] [OutputType([hashtable])]
+    param([pscustomobject]$Existing,
+          [Parameter(Mandatory)][hashtable[]]$FreshClaims,
+          [Parameter(Mandatory)][string]$Version)
+    $notes = @()
+    $prev = @{}
+    $existingClaims = if ($Existing) { $Existing.PSObject.Properties['claims']?.Value } else { $null }
+    if ($existingClaims) {
+        foreach ($c in $existingClaims) { $prev[$c.id] = $c }
+    }
+    $prevVersion = if ($Existing) { $Existing.PSObject.Properties['versionTested']?.Value } else { $null }
+
+    $claims = foreach ($f in $FreshClaims) {
+        if ($f.verdict -eq 'manual' -and $prev.ContainsKey($f.id) -and $prev[$f.id].verdict -eq 'manual') {
+            if ($prevVersion -eq $Version) {
+                # Human's ledger evidence is authoritative — keep it verbatim.
+                $keep = $prev[$f.id]
+                @{ id=$keep.id; verdict='manual'; kind=$keep.kind; evidence=$keep.evidence; retest=$keep.retest }
+            } else {
+                $notes += "manual claim '$($f.id)' needs reconfirmation (version $prevVersion -> $Version)"
+                @{ id=$f.id; verdict='manual'; kind=$f.kind; evidence=$f.evidence; retest=$f.retest }
+            }
+        } else {
+            $out = @{ id=$f.id; verdict=$f.verdict; kind=$f.kind; evidence=$f.evidence }
+            if ($f.verdict -eq 'manual') { $out.retest = $f.retest }
+            $out
+        }
+    }
+    @{ Claims = @($claims); Notes = $notes }
+}
+
+function Test-DFConformanceLedgerSchema {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Ledger)
+    foreach ($tool in $Ledger.PSObject.Properties) {
+        $rec = $tool.Value
+        if (-not ($rec.PSObject.Properties['versionTested']?.Value)) {
+            throw "DFConformance: '$($tool.Name)' missing versionTested." }
+        foreach ($c in ($rec.PSObject.Properties['claims']?.Value)) {
+            $id = $c.PSObject.Properties['id']?.Value
+            if (-not $id -or $id -cnotmatch $script:DFConfClaimGrammar) {
+                throw "DFConformance: ledger claim id '$id' violates the grammar." }
+            $verdict = $c.PSObject.Properties['verdict']?.Value
+            if ($verdict -notin $script:DFConfVerdicts) {
+                throw "DFConformance: ledger claim '$id' has an invalid verdict '$verdict'." }
+            $retest = $c.PSObject.Properties['retest']?.Value
+            if ($verdict -eq 'manual' -and -not $retest) {
+                throw "DFConformance: manual ledger claim '$id' needs a retest string." }
+        }
+    }
+}
