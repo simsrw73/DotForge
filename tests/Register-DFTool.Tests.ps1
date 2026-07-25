@@ -395,6 +395,121 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $canon = ConvertTo-DFPath (Join-Path $PSScriptRoot '..' 'Tools')
         $canon | Should -Not -Match '\.\.'
     }
+
+    Context 'default-tool role resolution' {
+        BeforeEach {
+            @'
+{
+  "name": "roletoolwinner",
+  "executable": "roletoolwinner.exe",
+  "role": "testrole",
+  "aliases": {
+    "rt":   { "command": "roletoolwinner", "args": [] },
+    "rtl":  { "command": "roletoolwinner", "args": ["--long"] }
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolwinner.json')
+
+            @'
+{
+  "name": "roletoolloser",
+  "executable": "roletoolloser.exe",
+  "role": "testrole",
+  "aliases": {
+    "rt":     { "command": "roletoolloser", "args": [] },
+    "rtl":    { "command": "roletoolloser", "args": ["--long"] },
+    "rtonly": { "command": "roletoolloser", "args": ["--only"] }
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolloser.json')
+
+            Mock Get-Command {
+                param($Name)
+                if ($Name -in 'roletoolwinner.exe', 'roletoolloser.exe', 'testtool.exe') {
+                    [PSCustomObject]@{ Path = "C:\fake\$Name" }
+                }
+            }
+        }
+        AfterEach {
+            Remove-Item 'function:global:rt', 'function:global:rtl', 'function:global:rtonly' -ErrorAction Ignore
+            Remove-Alias rt, rtl, rtonly -Force -Scope Global -ErrorAction Ignore
+            Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        }
+
+        It 'suppresses only the alias keys the loser shares with the declared winner' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolwinner'
+            Test-Path 'function:global:rtl' | Should -BeTrue
+            # rtl is a wrapper function (has args); confirm it resolves to the winner's command
+            # by invoking it and capturing which underlying command actually ran (the wrapper's
+            # closure binds values at creation time, so ScriptBlock.ToString() only ever shows
+            # the unbound template source `& $capturedCmd @capturedArgs @args` -- invocation is
+            # the only way to observe which tool actually won).
+            function global:roletoolwinner { $global:RtlCaptured = $args }
+            try {
+                & 'rtl' 'x'
+                $global:RtlCaptured | Should -Be @('--long', 'x')
+            } finally {
+                Remove-Item 'function:global:roletoolwinner' -ErrorAction Ignore
+                Remove-Variable RtlCaptured -Scope Global -ErrorAction Ignore
+            }
+
+            # The loser's non-contested alias must still be created.
+            Test-Path 'function:global:rtonly' | Should -BeTrue
+        }
+
+        It 'warns and does not suppress anything when the named winner does not declare that role' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolloser' } }
+            # roletoolloser DOES declare 'testrole' in this fixture, so use a role mismatch:
+            # rewrite the winner fixture to declare a DIFFERENT role than requested.
+            @'
+{
+  "name": "roletoolwinner",
+  "executable": "roletoolwinner.exe",
+  "role": "someotherrole",
+  "aliases": { "rt": { "command": "roletoolwinner", "args": [] } }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolwinner.json')
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools -WarningVariable warnings -WarningAction SilentlyContinue
+
+            $warnings | Should -Not -BeNullOrEmpty
+            # No suppression happened: the loser's 'rt' alias registers normally.
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolloser'
+        }
+
+        It 'does not suppress anything when the named winner is not available this run' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Mock Get-Command {
+                param($Name)
+                if ($Name -eq 'roletoolloser.exe') { [PSCustomObject]@{ Path = 'C:\fake\roletoolloser.exe' } }
+                # roletoolwinner.exe reports absent
+            }
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+
+            # Winner never registered (absent), loser's aliases are untouched.
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolloser'
+        }
+
+        It 'leaves a tool with no role property completely unaffected' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+            # testtool.json (from the outer BeforeEach) has no 'role' -- registers exactly as before.
+            (Get-Alias tt -ErrorAction Ignore) | Should -Not -BeNullOrEmpty
+            Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
+            Remove-Item 'function:global:tt-v' -ErrorAction Ignore
+        }
+
+        It 'registers both tools normally when no Defaults entry exists for the role' {
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+            # No Defaults set at all -- last-registered-wins is unchanged/untouched by this feature;
+            # just confirm no exception and the loser's non-contested alias exists.
+            Test-Path 'function:global:rtonly' | Should -BeTrue
+        }
+    }
 }
 
 Describe 'Invoke-DFTopoSort' {

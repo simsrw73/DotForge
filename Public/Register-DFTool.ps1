@@ -75,6 +75,42 @@ function Register-DFTool {
     # Topological sort respects dependsOn declarations
     $tools = Invoke-DFTopoSort -Tools @($tools)
 
+    # ── Default-tool role resolution (§10) ─────────────────────────────────
+    # For each role named in $DFConfig.Defaults, resolve whether the declared
+    # winner is role-valid AND actually registering this call; if so, record
+    # its own declared alias keys. A role LOSER (same 'role', different name)
+    # then has ONLY those specific alias keys suppressed below -- everything
+    # else about it (XDG, picker, companion, non-overlapping aliases) still
+    # applies. Degrades silently on every invalid/absent case -- never throws.
+    $defaults = @(if ($null -ne $Global:DFConfig) { $Global:DFConfig['Defaults'] })[0]
+    $activeRoleWinners = @{}
+    if ($defaults) {
+        foreach ($roleName in $defaults.Keys) {
+            $winnerName = $defaults[$roleName]
+            if (-not $db.ContainsKey($winnerName)) {
+                Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names unknown tool '$winnerName' — ignoring."
+                continue
+            }
+            $winnerTool = $db[$winnerName]
+            $winnerRole = $winnerTool.PSObject.Properties['role']?.Value
+            if ($winnerRole -ne $roleName) {
+                Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names '$winnerName', which declares role '$winnerRole' (expected '$roleName') — ignoring."
+                continue
+            }
+            if (-not ($tools | Where-Object { $_.name -eq $winnerName })) { continue }
+            $winnerType = $winnerTool.PSObject.Properties['type']?.Value ?? 'exe'
+            $winnerAvailable = if ($winnerType -eq 'module') {
+                Get-Module -Name $winnerTool.executable -ListAvailable -ErrorAction Ignore
+            } else {
+                Get-Command $winnerTool.executable -ErrorAction Ignore
+            }
+            if (-not $winnerAvailable) { continue }
+            $winnerAliasesObj = $winnerTool.PSObject.Properties['aliases']?.Value
+            $winnerAliasKeys  = if ($winnerAliasesObj) { @($winnerAliasesObj.PSObject.Properties.Name) } else { @() }
+            $activeRoleWinners[$roleName] = @{ WinnerName = $winnerName; AliasKeys = $winnerAliasKeys }
+        }
+    }
+
     $registeredTools = [System.Collections.Generic.List[string]]::new()
     foreach ($tool in $tools) {
         # ── Guard: skip if not available ──────────────────────────────────
@@ -150,10 +186,19 @@ function Register-DFTool {
         }
 
         # ── Aliases ─────────────────────────────────────────────────────────
+        $toolRole   = $tool.PSObject.Properties['role']?.Value
+        $roleWinner = if ($toolRole) { $activeRoleWinners[$toolRole] } else { $null }
+
         $aliases = $tool.PSObject.Properties['aliases']?.Value
         if ($aliases) {
             $aliases.PSObject.Properties | ForEach-Object {
                 $aliasName = $_.Name
+
+                if ($roleWinner -and $roleWinner.WinnerName -ne $tool.name -and $aliasName -in $roleWinner.AliasKeys) {
+                    Write-Verbose "DotForge: $($tool.name) alias '$aliasName' suppressed — '$($roleWinner.WinnerName)' won role '$toolRole'"
+                    return
+                }
+
                 $aliasCmd  = $_.Value.PSObject.Properties['command']?.Value
                 $rawArgs   = $_.Value.PSObject.Properties['args']?.Value
                 $aliasArgs = [object[]]@($rawArgs)
