@@ -80,4 +80,19 @@ Describe 'Test-DFConformanceDescriptor' {
                 kind = 'manual'; retest = 'x' } }) }
         { Test-DFConformanceDescriptor -Fragment $frag } | Should -Throw '*id*'
     }
+    It 'rejects a fragment with a tool but no claims key at all (StrictMode-safe)' {
+        $frag = [pscustomobject]@{ tool = 'bat' }
+        { Test-DFConformanceDescriptor -Fragment $frag } | Should -Throw "*no 'claims' array*"
+    }
+    It 'rejects a claim with no id key at all (StrictMode-safe)' {
+        $frag = [pscustomobject]@{ tool = 'bat'; claims = @(
+            [pscustomobject]@{ probe = [pscustomobject]@{ kind = 'manual'; retest = 'x' } }) }
+        { Test-DFConformanceDescriptor -Fragment $frag } | Should -Throw '*violates the id grammar*'
+    }
+    It 'rejects a present probe object with no kind key at all (StrictMode-safe)' {
+        $frag = [pscustomobject]@{ tool = 'bat'; claims = @(
+            [pscustomobject]@{ id = 'bat/honors-env:X'; probe = [pscustomobject]@{
+                spawn = @('bat') } }) }
+        { Test-DFConformanceDescriptor -Fragment $frag } | Should -Throw '*unknown probe kind*'
+    }
 }

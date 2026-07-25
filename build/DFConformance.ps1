@@ -40,36 +40,39 @@ function Test-DFConformanceDescriptor {
     if (-not $tool -or $tool -isnot [string]) {
         throw "DFConformance: fragment missing a string 'tool' field."
     }
-    if ($null -eq $Fragment.claims) { throw "DFConformance: '$tool' has no 'claims' array." }
-    foreach ($c in $Fragment.claims) {
-        if (-not $c.id -or $c.id -cnotmatch $script:DFConfClaimGrammar) {
-            throw "DFConformance: claim id '$($c.id)' violates the id grammar."
+    $claims = $Fragment.PSObject.Properties['claims']?.Value
+    if ($null -eq $claims) { throw "DFConformance: '$tool' has no 'claims' array." }
+    foreach ($c in $claims) {
+        $id = $c.PSObject.Properties['id']?.Value
+        if (-not $id -or $id -cnotmatch $script:DFConfClaimGrammar) {
+            throw "DFConformance: claim id '$id' violates the id grammar."
         }
         $probe = $c.PSObject.Properties['probe']?.Value
-        if (-not $probe -or $probe.kind -notin $script:DFConfKinds) {
-            throw "DFConformance: claim '$($c.id)' has an unknown probe kind '$($probe.kind)'."
+        $kind = if ($null -ne $probe) { $probe.PSObject.Properties['kind']?.Value } else { $null }
+        if (-not $probe -or $kind -notin $script:DFConfKinds) {
+            throw "DFConformance: claim '$id' has an unknown probe kind '$kind'."
         }
-        switch ($probe.kind) {
+        switch ($kind) {
             { $_ -in $script:DFConfSpawnKinds } {
                 $spawn = $probe.PSObject.Properties['spawn']?.Value
-                if (-not $spawn) { throw "DFConformance: claim '$($c.id)' ($_) needs a 'spawn' array." }
+                if (-not $spawn) { throw "DFConformance: claim '$id' ($_) needs a 'spawn' array." }
                 $exp = $probe.PSObject.Properties['expect']?.Value
                 $set = @('match','notMatch','contains','notContains') |
                     Where-Object { $exp -and $null -ne $exp.PSObject.Properties[$_] }
                 if (@($set).Count -ne 1) {
-                    throw "DFConformance: claim '$($c.id)' needs exactly one 'expect' rule (got $(@($set).Count))."
+                    throw "DFConformance: claim '$id' needs exactly one 'expect' rule (got $(@($set).Count))."
                 }
             }
             'manual' {
                 $probeRetest = $probe.PSObject.Properties['retest']?.Value
                 $claimRetest = $c.PSObject.Properties['retest']?.Value
                 if (-not $probeRetest -and -not $claimRetest) {
-                    throw "DFConformance: manual claim '$($c.id)' needs a 'retest' string."
+                    throw "DFConformance: manual claim '$id' needs a 'retest' string."
                 }
             }
             'code' {
                 $ref = $probe.PSObject.Properties['ref']?.Value
-                if (-not $ref) { throw "DFConformance: code claim '$($c.id)' needs a 'ref'." }
+                if (-not $ref) { throw "DFConformance: code claim '$id' needs a 'ref'." }
             }
         }
     }
