@@ -4,6 +4,19 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Author-time tool-conformance harness.** `build/Test-DFToolConformance.ps1`
+  probes whether a tool actually honors its configuration (env vars, config
+  files, flags) rather than trusting the docs, recording per-claim
+  `pass`/`fail`/`manual`/`unknown` verdicts in a versioned ledger
+  (`data/tool-conformance.json`) and generating an upstream-ready issue report
+  (`reports/tool-conformance-issues.md`). Probe descriptors live in
+  `build/conformance/*.jsonc`; sidecar adapters cite the claim they work around
+  (`# adapter for <claim-id>`), and the harness flags orphaned or upstream-fixed
+  adapters. Piloted on `bat` and `glow`. Author-time only — never loaded or run
+  by the module.
+
 ### Fixed
 
 - **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,

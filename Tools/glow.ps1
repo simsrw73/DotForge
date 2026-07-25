@@ -9,6 +9,7 @@
 #   * GLOW_STYLE is parsed, but loses to glow's non-TTY downgrade, so it silently
 #     fails to apply.
 # Only the --config and -s flags work reliably, hence this wrapper.
+# adapter for glow/honors-env:GLOW_CONFIG_DIR
 # See docs/external-dependencies.md.
 
 # 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.

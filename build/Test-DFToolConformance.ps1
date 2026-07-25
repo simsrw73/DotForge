@@ -80,9 +80,15 @@ foreach ($file in ($fragments | Sort-Object Name)) {
     Test-DFConformanceDescriptor -Fragment $frag
     $toolName = $frag.tool
 
-    $exe = ($frag.claims | ForEach-Object { $_.probe.PSObject.Properties['spawn']?.Value } |
-                Where-Object { $_ } | Select-Object -First 1)
-    $exe = if ($exe) { $exe[0] } else { $toolName }
+    # Find the first claim carrying a spawn array; its [0] is the executable.
+    # (A ForEach-Object pipeline would unroll the arrays and flatten to strings,
+    # so Select -First 1 would pick 'bat' and $exe[0] would be the char 'b'.)
+    $firstSpawn = $null
+    foreach ($claim in $frag.claims) {
+        $s = $claim.probe.PSObject.Properties['spawn']?.Value
+        if ($s) { $firstSpawn = $s; break }
+    }
+    $exe = if ($firstSpawn) { $firstSpawn[0] } else { $toolName }
     $verArgs = if ($frag.PSObject.Properties['versionArgs']) { @($frag.versionArgs) } else { @('--version') }
     $version = Get-DFToolVersion -Exe $exe -VersionArgs $verArgs -SpawnTool $SpawnTool
 

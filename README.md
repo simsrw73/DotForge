@@ -391,6 +391,20 @@ editor and choco's unrelated `zed` package as separate rows, because they
 are, in fact, different tools. Coverage grows over time the same way the
 category database does — nothing is ever merged on a guess.
 
+### Tool conformance (author-time)
+
+DotForge verifies that each tool actually honors the configuration it's given,
+rather than trusting the docs. `build/Test-DFToolConformance.ps1` reads
+per-tool probe descriptors (`build/conformance/*.jsonc`), spawns the real tool
+in an isolated environment, and records a `pass`/`fail`/`manual`/`unknown`
+verdict per claim into the versioned ledger `data/tool-conformance.json`, plus
+an upstream-ready issue report at `reports/tool-conformance-issues.md`. When a
+tool fails a claim and a sidecar works around it, the sidecar carries a
+`# adapter for <claim-id>` comment that the harness cross-checks — flagging
+orphaned references and adapters that upstream has since fixed. This is an
+**author-time** activity only: the DotForge module never loads or runs the
+harness, and there is no runtime cost.
+
 ### Scheduled cache refresh
 
 Schedule a nightly refresh so interactive queries always hit warm caches. Run

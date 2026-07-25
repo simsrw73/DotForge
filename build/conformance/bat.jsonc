@@ -1,0 +1,39 @@
+{
+  // bat — conformance probes. See docs/superpowers/specs/2026-07-24-tool-conformance-infrastructure-design.md
+  "tool": "bat",
+  "claims": [
+    {
+      "id": "bat/honors-env:BAT_CONFIG_PATH",
+      "probe": {
+        "kind": "env-then-spawn",
+        "setEnv": { "BAT_CONFIG_PATH": "${SCRATCH}/bat.conf" },
+        "writeFile": { "${SCRATCH}/bat.conf": "--theme=\"ansi\"" },
+        "spawn": ["bat", "--config-file"],
+        "expect": { "contains": "${SCRATCH}" }
+      }
+    },
+    {
+      "id": "bat/honors-config-read",
+      "probe": {
+        "kind": "env-then-spawn",
+        "setEnv": { "BAT_CONFIG_PATH": "${SCRATCH}/bat.conf" },
+        "writeFile": {
+          "${SCRATCH}/bat.conf": "--this-is-not-a-real-bat-flag",
+          "${SCRATCH}/sample.md": "# hi"
+        },
+        "spawn": ["bat", "${SCRATCH}/sample.md"],
+        "expect": { "contains": "error" }
+      }
+    },
+    {
+      "id": "bat/honors-config-content:theme",
+      "probe": {
+        "kind": "code",
+        "ref": "bat.theme",
+        "manualFallback": {
+          "retest": "set theme=ansi in bat.conf; run `bat sample.md`; confirm the ANSI palette"
+        }
+      }
+    }
+  ]
+}

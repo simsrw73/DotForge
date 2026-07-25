@@ -1,0 +1,32 @@
+{
+  // glow — env vars are ignored (Win32 known-folder config path); only flags work.
+  // See Tools/glow.ps1 and docs/external-dependencies.md.
+  "tool": "glow",
+  "claims": [
+    {
+      "id": "glow/honors-env:GLOW_CONFIG_DIR",
+      "probe": {
+        "kind": "env-then-spawn",
+        "setEnv": { "GLOW_CONFIG_DIR": "${SCRATCH}" },
+        "spawn": ["glow", "--help"],
+        "expect": { "contains": "${SCRATCH}" }
+      }
+    },
+    {
+      "id": "glow/honors-flag:-s",
+      "probe": {
+        "kind": "flag-then-spawn",
+        "writeFile": { "${SCRATCH}/s.md": "# hi" },
+        "spawn": ["glow", "-s", "__no_such_style__", "${SCRATCH}/s.md"],
+        "expect": { "contains": "does not exist" }
+      }
+    },
+    {
+      "id": "glow/honors-flag:--config",
+      "probe": {
+        "kind": "manual",
+        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2); re-check on new versions whether --config content becomes effective"
+      }
+    }
+  ]
+}

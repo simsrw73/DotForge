@@ -112,6 +112,20 @@ variable and section-marker GUID, PSReadLine's `Colors` suppression, zoxide's pr
 take a new dependency on another tool's internals.** Each entry records what breaks and how it
 degrades; the rule is that undocumented dependencies must degrade silently, never fail.
 
+## Tool Conformance (author-time)
+
+Whether a tool actually honors its configuration is verified, not assumed. The harness
+`build/Test-DFToolConformance.ps1` reads probe descriptors (`build/conformance/*.jsonc`),
+spawns the real tool through an injectable seam (defaulting to a real isolated
+`ProcessStartInfo`; tests inject a canned scriptblock — same pattern as
+`build/Build-DFToolIdentities.ps1`'s `-ResolveLinkage`), and writes per-claim verdicts to
+the versioned ledger `data/tool-conformance.json` plus `reports/tool-conformance-issues.md`.
+Sidecar adapters cite the failing claim (`# adapter for <claim-id>`); the harness flags
+orphaned and upstream-fixed adapters. **Author-time only** — the module never loads or runs
+any of it, and there is no runtime cost. The shared logic lives in `build/DFConformance.ps1`
+(dot-sourced by the harness and by `tests/DFConformance.Tests.ps1`). Optional `[pscustomobject]`
+fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Properties['name']?.Value`).
+
 ## Key Design Decisions
 
 - `Invoke-DFPicker` uses a private `Invoke-DFFzf` wrapper so tests can mock fzf
