@@ -92,8 +92,14 @@ foreach ($file in ($fragments | Sort-Object Name)) {
     $verArgs = if ($frag.PSObject.Properties['versionArgs']) { @($frag.versionArgs) } else { @('--version') }
     $version = Get-DFToolVersion -Exe $exe -VersionArgs $verArgs -SpawnTool $SpawnTool
 
+    $existingRec = if ($existingLedger -and $existingLedger.PSObject.Properties[$toolName]) {
+        $existingLedger.$toolName } else { $null }
+
     $fresh = foreach ($claim in $frag.claims) {
-        if ($null -eq $version) {
+        # Only spawn/code claims need the tool. Manual claims are descriptor-derived,
+        # so they are evaluated even when the tool is absent (never faked to 'unknown').
+        $needsTool = $claim.probe.kind -in @('env-then-spawn','flag-then-spawn','code')
+        if ($null -eq $version -and $needsTool) {
             @{ id=$claim.id; verdict='unknown'; kind=$claim.probe.kind; evidence='tool absent'; retest=$null }
         } else {
             $scratch = Join-Path ([System.IO.Path]::GetTempPath()) ("dfconf-" + [guid]::NewGuid().Guid)
@@ -104,14 +110,24 @@ foreach ($file in ($fragments | Sort-Object Name)) {
         }
     }
 
-    $existingRec = if ($existingLedger -and $existingLedger.PSObject.Properties[$toolName]) {
-        $existingLedger.$toolName } else { $null }
-    $merged = Merge-DFConformanceRecord -Existing $existingRec -FreshClaims @($fresh) -Version ($version ?? 'unknown')
+    # When the tool is absent, keep the prior record's version so the verdicts
+    # Merge preserves below stay version-consistent (rather than stamping 'unknown'
+    # over claims that were really tested at the prior version).
+    $effectiveVersion = if ($null -ne $version) { $version }
+                        elseif ($existingRec) { ($existingRec.PSObject.Properties['versionTested']?.Value) ?? 'unknown' }
+                        else { 'unknown' }
+    $merged = Merge-DFConformanceRecord -Existing $existingRec -FreshClaims @($fresh) -Version $effectiveVersion
     $allNotes += $merged.Notes
 
-    $rec = [ordered]@{ versionTested = ($version ?? 'unknown') }
+    $rec = [ordered]@{ versionTested = $effectiveVersion }
     if ($ProbedAt) { $rec.probedAt = $ProbedAt }
-    $rec.claims = $merged.Claims
+    # Emit claims with a canonical key order so the committed JSON is stable across
+    # regenerations (a plain hashtable enumerates keys non-deterministically).
+    $rec.claims = @($merged.Claims | ForEach-Object {
+        $o = [ordered]@{ id = $_.id; verdict = $_.verdict; kind = $_.kind; evidence = $_.evidence }
+        if ($_.ContainsKey('retest') -and $null -ne $_.retest) { $o.retest = $_.retest }
+        $o
+    })
     $ledger[$toolName] = $rec
 }
 

@@ -157,7 +157,10 @@ function Invoke-DFConformanceProbe {
             $text = "$($res.StdOut) $($res.StdErr)"
             $ok = Test-DFConformanceExpect -Expect $probe.expect -Text $text -Scratch $Scratch
             $result.verdict  = if ($ok) { 'pass' } else { 'fail' }
-            $flat = ($text -replace '\s+', ' ').Trim()
+            # Redact the ephemeral scratch path so evidence is deterministic across
+            # runs (the dir carries a fresh GUID each probe) — the verdict is already
+            # decided from the raw $text above.
+            $flat = (($text -replace '\s+', ' ').Trim()).Replace($Scratch, '${SCRATCH}')
             if ($flat.Length -gt 200) { $flat = $flat.Substring(0, 200) }
             $result.evidence = "exit=$($res.ExitCode); output=$flat"
             return $result
@@ -179,16 +182,33 @@ function Merge-DFConformanceRecord {
     $prevVersion = if ($Existing) { $Existing.PSObject.Properties['versionTested']?.Value } else { $null }
 
     $claims = foreach ($f in $FreshClaims) {
-        if ($f.verdict -eq 'manual' -and $prev.ContainsKey($f.id) -and $prev[$f.id].verdict -eq 'manual') {
+        $priorClaim   = if ($prev.ContainsKey($f.id)) { $prev[$f.id] } else { $null }
+        $priorVerdict = if ($priorClaim) { $priorClaim.PSObject.Properties['verdict']?.Value } else { $null }
+
+        if ($f.verdict -eq 'manual' -and $priorVerdict -eq 'manual') {
             if ($prevVersion -eq $Version) {
                 # Human's ledger evidence is authoritative — keep it verbatim.
-                $keep = $prev[$f.id]
-                @{ id=$keep.id; verdict='manual'; kind=$keep.kind; evidence=$keep.evidence; retest=$keep.retest }
+                @{ id=$f.id; verdict='manual'
+                   kind     = $priorClaim.PSObject.Properties['kind']?.Value
+                   evidence = $priorClaim.PSObject.Properties['evidence']?.Value
+                   retest   = $priorClaim.PSObject.Properties['retest']?.Value }
             } else {
                 $notes += "manual claim '$($f.id)' needs reconfirmation (version $prevVersion -> $Version)"
                 @{ id=$f.id; verdict='manual'; kind=$f.kind; evidence=$f.evidence; retest=$f.retest }
             }
-        } else {
+        }
+        elseif ($f.verdict -eq 'unknown' -and $priorVerdict -and $priorVerdict -ne 'unknown') {
+            # Tool absent this run — keep the last known verdict rather than downgrade,
+            # so a regen on a machine missing the tool never discards a real result.
+            $notes += "claim '$($f.id)' not reprobed (tool absent); kept prior '$priorVerdict' verdict"
+            $out = @{ id=$f.id; verdict=$priorVerdict
+                      kind     = $priorClaim.PSObject.Properties['kind']?.Value
+                      evidence = $priorClaim.PSObject.Properties['evidence']?.Value }
+            $r = $priorClaim.PSObject.Properties['retest']?.Value
+            if ($r) { $out.retest = $r }
+            $out
+        }
+        else {
             $out = @{ id=$f.id; verdict=$f.verdict; kind=$f.kind; evidence=$f.evidence }
             if ($f.verdict -eq 'manual') { $out.retest = $f.retest }
             $out

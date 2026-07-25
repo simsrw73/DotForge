@@ -248,6 +248,26 @@ Describe 'Merge-DFConformanceRecord' {
         @($m.Claims).Count | Should -Be 1
         @($m.Notes).Count  | Should -Be 0
     }
+    It 'keeps a prior pass when the fresh claim is unknown (tool absent), not downgrading it' {
+        $existing = [pscustomobject]@{ versionTested='0.24.0'; claims=@(
+            [pscustomobject]@{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='pass'; kind='env-then-spawn'; evidence='real evidence' }) }
+        $fresh = @( @{ id='bat/honors-env:BAT_CONFIG_PATH'; verdict='unknown'; kind='env-then-spawn'; evidence='tool absent'; retest=$null } )
+        $m = Merge-DFConformanceRecord -Existing $existing -FreshClaims $fresh -Version '0.24.0'
+        $c = $m.Claims | Where-Object id -eq 'bat/honors-env:BAT_CONFIG_PATH'
+        $c.verdict  | Should -Be 'pass'
+        $c.evidence | Should -Be 'real evidence'
+        ($m.Notes -join ' ') | Should -Match 'not reprobed'
+    }
+    It 'keeps a prior manual verdict and its retest when the fresh claim is unknown (tool absent)' {
+        $existing = [pscustomobject]@{ versionTested='2.1.2'; claims=@(
+            [pscustomobject]@{ id='glow/honors-flag:--config'; verdict='manual'; kind='manual';
+                evidence='confirmed 2026-07-24'; retest='re-check --config content' }) }
+        $fresh = @( @{ id='glow/honors-flag:--config'; verdict='unknown'; kind='manual'; evidence='tool absent'; retest=$null } )
+        $m = Merge-DFConformanceRecord -Existing $existing -FreshClaims $fresh -Version '2.1.2'
+        $c = $m.Claims | Where-Object id -eq 'glow/honors-flag:--config'
+        $c.verdict | Should -Be 'manual'
+        $c.retest  | Should -Be 're-check --config content'
+    }
 }
 
 Describe 'Test-DFConformanceLedgerSchema' {

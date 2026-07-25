@@ -4,22 +4,22 @@
     "probedAt": "2026-07-24",
     "claims": [
       {
+        "id": "bat/honors-env:BAT_CONFIG_PATH",
         "verdict": "pass",
         "kind": "env-then-spawn",
-        "evidence": "exit=0; output=C:\\Users\\simsr\\AppData\\Local\\Temp\\dfconf-cc931c9c-5298-49bc-9c48-3b40eb053d10/bat.conf",
-        "id": "bat/honors-env:BAT_CONFIG_PATH"
+        "evidence": "exit=0; output=${SCRATCH}/bat.conf"
       },
       {
+        "id": "bat/honors-config-read",
         "verdict": "pass",
         "kind": "env-then-spawn",
-        "evidence": "exit=2; output=error: unexpected argument '--this-is-not-a-real-bat-flag' found tip: to pass '--this-is-not-a-real-bat-flag' as a value, use '-- --this-is-not-a-real-bat-flag' Usage: bat.exe [OPTIONS] [FILE]... bat.",
-        "id": "bat/honors-config-read"
+        "evidence": "exit=2; output=error: unexpected argument '--this-is-not-a-real-bat-flag' found tip: to pass '--this-is-not-a-real-bat-flag' as a value, use '-- --this-is-not-a-real-bat-flag' Usage: bat.exe [OPTIONS] [FILE]... bat."
       },
       {
+        "id": "bat/honors-config-content:theme",
         "verdict": "pass",
         "kind": "code",
-        "evidence": "rendered output differs between config theme=ansi and theme=Dracula",
-        "id": "bat/honors-config-content:theme"
+        "evidence": "rendered output differs between config theme=ansi and theme=Dracula"
       }
     ]
   },
@@ -28,23 +28,23 @@
     "probedAt": "2026-07-24",
     "claims": [
       {
+        "id": "glow/honors-env:GLOW_CONFIG_DIR",
         "verdict": "fail",
         "kind": "env-then-spawn",
-        "evidence": "exit=0; output=Render markdown on the CLI, with pizzazz! Usage: glow [SOURCE|DIR] [flags] glow [command] Available Commands: completion Generate the autocompletion script for the specified shell config Edit the glow",
-        "id": "glow/honors-env:GLOW_CONFIG_DIR"
+        "evidence": "exit=0; output=Render markdown on the CLI, with pizzazz! Usage: glow [SOURCE|DIR] [flags] glow [command] Available Commands: completion Generate the autocompletion script for the specified shell config Edit the glow"
       },
       {
+        "id": "glow/honors-flag:-s",
         "verdict": "pass",
         "kind": "flag-then-spawn",
-        "evidence": "exit=1; output=Error: specified style does not exist: __no_such_style__",
-        "id": "glow/honors-flag:-s"
+        "evidence": "exit=1; output=Error: specified style does not exist: __no_such_style__"
       },
       {
+        "id": "glow/honors-flag:--config",
         "verdict": "manual",
         "kind": "manual",
-        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2); re-check on new versions whether --config content becomes effective",
         "evidence": "human-verified; see retest",
-        "id": "glow/honors-flag:--config"
+        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2); re-check on new versions whether --config content becomes effective"
       }
     ]
   }
