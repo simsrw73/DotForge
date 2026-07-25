@@ -309,7 +309,7 @@ Describe 'Invoke-DFConformanceProbe' {
             spawn=@('bat','x'); expect=[pscustomobject]@{ contains='error' } } }
         $seen = $null
         $spawn = { param($e,$a,$env,$cwd)
-            $script:seen = Get-Content (Join-Path $using:script:scratch 'bat.conf') -Raw
+            $script:seen = Get-Content (Join-Path $script:scratch 'bat.conf') -Raw
             @{ ExitCode=1; StdOut=''; StdErr='error: unexpected argument'; Absent=$false } }
         $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
         $r.verdict | Should -Be 'pass'
@@ -394,7 +394,9 @@ function Invoke-DFConformanceProbe {
                 }
             }
             $exe  = $probe.spawn[0]
-            $argv = @($probe.spawn[1..($probe.spawn.Count-1)] |
+            # Select-Object -Skip 1 (not [1..Count-1]) so a single-element spawn array
+            # yields @() instead of the range 1..0 = @(1,0) indexing out of bounds.
+            $argv = @($probe.spawn | Select-Object -Skip 1 |
                         ForEach-Object { Expand-DFConformanceToken -Value $_ -Scratch $Scratch })
             $res = & $SpawnTool $exe $argv $envMap $Scratch
             if ($res.Absent) { $result.verdict = 'unknown'; $result.evidence = 'tool absent'; return $result }
@@ -445,9 +447,9 @@ Describe 'code probe: bat.theme' {
     $probesDir = "$PSScriptRoot/../build/conformance/probes"
 
     It 'PASS when the two theme configs yield different rendered output' {
-        $calls = 0
-        $spawn = { param($e,$a,$env,$cwd) $script:calls++
-                   @{ ExitCode=0; StdOut="render-$($script:calls)"; StdErr=''; Absent=$false } }
+        # The probe passes a different BAT_CONFIG_PATH per theme; mirror it into StdOut
+        # so the two renders differ (a call counter via $script: does not survive the & boundary).
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut="rendered:$($env.BAT_CONFIG_PATH)"; StdErr=''; Absent=$false } }
         $out = & "$probesDir/bat.theme.ps1" -Scratch $script:scratch -SpawnTool $spawn
         $out.verdict | Should -Be 'pass'
     }
@@ -475,7 +477,6 @@ Create `build/conformance/probes/bat.theme.ps1`:
 
 ```powershell
 #Requires -Version 7.0
-Set-StrictMode -Version Latest
 <#
 .SYNOPSIS
     Code probe for bat/honors-config-content:theme. Dispositive test that the
@@ -487,6 +488,7 @@ Set-StrictMode -Version Latest
 [CmdletBinding()] [OutputType([hashtable])]
 param([Parameter(Mandatory)][string]$Scratch,
       [Parameter(Mandatory)][scriptblock]$SpawnTool)
+Set-StrictMode -Version Latest
 
 $sample = Join-Path $Scratch 'sample.md'
 Set-Content -Path $sample -Value "# Title`n`n``code``" -NoNewline
@@ -736,7 +738,9 @@ function Get-DFConformanceAdapterLink {
             }
         }
     }
-    ,$links
+    # Return plain; callers wrap in @(...). (,$links double-wraps and makes the
+    # empty case count as 1 once the caller re-wraps in @().)
+    $links
 }
 
 function Write-DFConformanceReport {
@@ -946,9 +950,15 @@ foreach ($file in ($fragments | Sort-Object Name)) {
     Test-DFConformanceDescriptor -Fragment $frag
     $toolName = $frag.tool
 
-    $exe = ($frag.claims | ForEach-Object { $_.probe.PSObject.Properties['spawn']?.Value } |
-                Where-Object { $_ } | Select-Object -First 1)
-    $exe = if ($exe) { $exe[0] } else { $toolName }
+    # Find the first claim carrying a spawn array; its [0] is the executable.
+    # (A ForEach-Object pipeline would unroll the arrays and flatten to strings,
+    # so Select -First 1 would pick 'bat' and $exe[0] would be the char 'b'.)
+    $firstSpawn = $null
+    foreach ($claim in $frag.claims) {
+        $s = $claim.probe.PSObject.Properties['spawn']?.Value
+        if ($s) { $firstSpawn = $s; break }
+    }
+    $exe = if ($firstSpawn) { $firstSpawn[0] } else { $toolName }
     $verArgs = if ($frag.PSObject.Properties['versionArgs']) { @($frag.versionArgs) } else { @('--version') }
     $version = Get-DFToolVersion -Exe $exe -VersionArgs $verArgs -SpawnTool $SpawnTool
 
