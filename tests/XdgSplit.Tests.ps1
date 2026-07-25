@@ -14,6 +14,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
 }
@@ -53,10 +54,10 @@ Describe 'env-block relocation preserves the migrated values' {
         $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
         $j.env.FZF_CTRL_T_OPTS  | Should -Be '--preview "bat --color=always --line-range=:500 {}"'
     }
-    It 'delta env carries GIT_PAGER and DELTA_FEATURES' {
+    It 'delta env carries GIT_PAGER (DELTA_FEATURES moved to the sidecar)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json
-        $j.env.GIT_PAGER      | Should -Be 'delta'
-        $j.env.DELTA_FEATURES | Should -Be 'catppuccin-mocha'
+        $j.env.GIT_PAGER | Should -Be 'delta'
+        $j.env.PSObject.Properties['DELTA_FEATURES'] | Should -BeNullOrEmpty
     }
     It 'less keeps its XDG paths and moves LESS to env' {
         $j = Get-Content (Join-Path $script:RealTools 'less.json') -Raw | ConvertFrom-Json

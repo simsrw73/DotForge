@@ -17,8 +17,7 @@
     "method": "default"
   },
   "env": {
-    "GIT_PAGER": "delta",
-    "DELTA_FEATURES": "catppuccin-mocha"
+    "GIT_PAGER": "delta"
   },
   "aliases": {},
   "picker": null
