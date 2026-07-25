@@ -77,3 +77,87 @@ function Test-DFConformanceDescriptor {
         }
     }
 }
+
+function Get-DFToolVersion {
+    [CmdletBinding()] [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Exe,
+          [string[]]$VersionArgs = @('--version'),
+          [Parameter(Mandatory)][scriptblock]$SpawnTool)
+    $res = & $SpawnTool $Exe $VersionArgs @{} $null
+    if ($res.Absent) { return $null }
+    $text = "$($res.StdOut) $($res.StdErr)"
+    if ($text -match '\d+\.\d+(\.\d+)?') { return $Matches[0] }
+    ($text.Trim() -split "`n")[0].Trim()
+}
+
+function Test-DFConformanceExpect {
+    param([pscustomobject]$Expect, [string]$Text, [string]$Scratch)
+    if ($null -ne $Expect.PSObject.Properties['match']) {
+        return [bool]($Text -match (Expand-DFConformanceToken -Value $Expect.match -Scratch $Scratch)) }
+    if ($null -ne $Expect.PSObject.Properties['notMatch']) {
+        return -not [bool]($Text -match (Expand-DFConformanceToken -Value $Expect.notMatch -Scratch $Scratch)) }
+    if ($null -ne $Expect.PSObject.Properties['contains']) {
+        return $Text.Contains((Expand-DFConformanceToken -Value $Expect.contains -Scratch $Scratch)) }
+    return -not $Text.Contains((Expand-DFConformanceToken -Value $Expect.notContains -Scratch $Scratch))
+}
+
+function Invoke-DFConformanceProbe {
+    [CmdletBinding()] [OutputType([hashtable])]
+    param([Parameter(Mandatory)][pscustomobject]$Claim,
+          [Parameter(Mandatory)][string]$Scratch,
+          [Parameter(Mandatory)][string]$ProbesDir,
+          [Parameter(Mandatory)][scriptblock]$SpawnTool)
+
+    $probe = $Claim.probe
+    $result = @{ id = $Claim.id; kind = $probe.kind; verdict = 'unknown'; evidence = ''; retest = $null }
+
+    switch ($probe.kind) {
+        'manual' {
+            $result.verdict  = 'manual'
+            $result.retest   = ($Claim.PSObject.Properties['retest']?.Value) ?? ($probe.PSObject.Properties['retest']?.Value)
+            $result.evidence = ($probe.PSObject.Properties['evidence']?.Value) ?? 'human-verified; see retest'
+            return $result
+        }
+        'code' {
+            $script = Join-Path $ProbesDir "$($probe.ref).ps1"
+            $out = & $script -Scratch $Scratch -SpawnTool $SpawnTool
+            $result.verdict  = $out.verdict
+            $result.evidence = $out.evidence
+            if ($out.verdict -eq 'manual') {
+                $fallback = $probe.PSObject.Properties['manualFallback']?.Value?.retest
+                $result.retest = $out.retest ?? $fallback
+            }
+            return $result
+        }
+        default {
+            # env-then-spawn / flag-then-spawn
+            $envMap = @{}
+            $setEnv = $probe.PSObject.Properties['setEnv']?.Value
+            if ($setEnv) {
+                foreach ($p in $setEnv.PSObject.Properties) {
+                    $envMap[$p.Name] = Expand-DFConformanceToken -Value $p.Value -Scratch $Scratch
+                }
+            }
+            $writeFile = $probe.PSObject.Properties['writeFile']?.Value
+            if ($writeFile) {
+                foreach ($p in $writeFile.PSObject.Properties) {
+                    $path = Expand-DFConformanceToken -Value $p.Name -Scratch $Scratch
+                    New-Item -ItemType Directory -Path (Split-Path $path) -Force | Out-Null
+                    Set-Content -Path $path -Value $p.Value -NoNewline
+                }
+            }
+            $exe  = $probe.spawn[0]
+            $argv = @($probe.spawn[1..($probe.spawn.Count-1)] |
+                        ForEach-Object { Expand-DFConformanceToken -Value $_ -Scratch $Scratch })
+            $res = & $SpawnTool $exe $argv $envMap $Scratch
+            if ($res.Absent) { $result.verdict = 'unknown'; $result.evidence = 'tool absent'; return $result }
+            $text = "$($res.StdOut) $($res.StdErr)"
+            $ok = Test-DFConformanceExpect -Expect $probe.expect -Text $text -Scratch $Scratch
+            $result.verdict  = if ($ok) { 'pass' } else { 'fail' }
+            $flat = ($text -replace '\s+', ' ').Trim()
+            if ($flat.Length -gt 200) { $flat = $flat.Substring(0, 200) }
+            $result.evidence = "exit=$($res.ExitCode); output=$flat"
+            return $result
+        }
+    }
+}

@@ -96,3 +96,57 @@ Describe 'Test-DFConformanceDescriptor' {
         { Test-DFConformanceDescriptor -Fragment $frag } | Should -Throw '*unknown probe kind*'
     }
 }
+
+Describe 'Get-DFToolVersion' {
+    It 'returns the first semver-looking token from --version output' {
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut='bat 0.24.0 (a1b2c3)'; StdErr=''; Absent=$false } }
+        Get-DFToolVersion -Exe 'bat' -SpawnTool $spawn | Should -Be '0.24.0'
+    }
+    It 'returns $null when the tool is absent' {
+        $spawn = { param($e,$a,$env,$cwd) @{ Absent=$true; ExitCode=-1; StdOut=''; StdErr='' } }
+        Get-DFToolVersion -Exe 'nope' -SpawnTool $spawn | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Invoke-DFConformanceProbe' {
+    BeforeEach { $script:scratch = Join-Path $TestDrive ([guid]::NewGuid().Guid)
+                 New-Item -ItemType Directory -Path $script:scratch -Force | Out-Null }
+
+    It 'env-then-spawn: PASS when combined output contains the expected substring' {
+        $claim = [pscustomobject]@{ id='bat/honors-env:BAT_CONFIG_PATH'; probe=[pscustomobject]@{
+            kind='env-then-spawn'; setEnv=[pscustomobject]@{ BAT_CONFIG_PATH='${SCRATCH}/bat.conf' };
+            writeFile=[pscustomobject]@{ '${SCRATCH}/bat.conf'='--theme="ansi"' };
+            spawn=@('bat','--config-file'); expect=[pscustomobject]@{ contains='${SCRATCH}' } } }
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut="$($env.BAT_CONFIG_PATH)"; StdErr=''; Absent=$false } }
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'pass'
+    }
+    It 'env-then-spawn: FAIL when output lacks the expected substring' {
+        $claim = [pscustomobject]@{ id='glow/honors-env:GLOW_CONFIG_DIR'; probe=[pscustomobject]@{
+            kind='env-then-spawn'; setEnv=[pscustomobject]@{ GLOW_CONFIG_DIR='${SCRATCH}' };
+            spawn=@('glow','--help'); expect=[pscustomobject]@{ contains='${SCRATCH}' } } }
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut='config default C:\Users\me\AppData\glow'; StdErr=''; Absent=$false } }
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'fail'
+    }
+    It 'manual: passes the descriptor verdict and retest through' {
+        $claim = [pscustomobject]@{ id='glow/honors-flag:--config'; probe=[pscustomobject]@{
+            kind='manual'; retest='run glow config; confirm file path' } }
+        $spawn = { throw 'manual must not spawn' }
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'manual'
+        $r.retest  | Should -Match 'glow config'
+    }
+    It 'writeFile writes the sentinel into the scratch dir before spawning' {
+        $claim = [pscustomobject]@{ id='bat/honors-config-read'; probe=[pscustomobject]@{
+            kind='env-then-spawn'; setEnv=[pscustomobject]@{ BAT_CONFIG_PATH='${SCRATCH}/bat.conf' };
+            writeFile=[pscustomobject]@{ '${SCRATCH}/bat.conf'='--not-a-real-flag' };
+            spawn=@('bat','x'); expect=[pscustomobject]@{ contains='error' } } }
+        $seen = $null
+        $spawn = { param($e,$a,$env,$cwd)
+            $script:seen = Get-Content (Join-Path $script:scratch 'bat.conf') -Raw
+            @{ ExitCode=1; StdOut=''; StdErr='error: unexpected argument'; Absent=$false } }
+        $r = Invoke-DFConformanceProbe -Claim $claim -Scratch $script:scratch -ProbesDir $TestDrive -SpawnTool $spawn
+        $r.verdict | Should -Be 'pass'
+    }
+}
