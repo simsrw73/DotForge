@@ -192,3 +192,27 @@ Describe 'Test-DFConformanceExpect' {
             -Text 'path is C:\tmp\scr\x' -Scratch 'C:\tmp\scr' | Should -BeTrue
     }
 }
+
+Describe 'code probe: bat.theme' {
+    BeforeEach { $script:scratch = Join-Path $TestDrive ([guid]::NewGuid().Guid)
+                 New-Item -ItemType Directory -Path $script:scratch -Force | Out-Null }
+
+    It 'PASS when the two theme configs yield different rendered output' {
+        # The probe passes a different BAT_CONFIG_PATH per theme (bat.ansi.conf vs
+        # bat.Dracula.conf); a real bat renders differently, so mirror the path into StdOut.
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut="rendered:$($env.BAT_CONFIG_PATH)"; StdErr=''; Absent=$false } }
+        $out = & "$PSScriptRoot/../build/conformance/probes/bat.theme.ps1" -Scratch $script:scratch -SpawnTool $spawn
+        $out.verdict | Should -Be 'pass'
+    }
+    It 'falls back to manual when the two renders are identical' {
+        $spawn = { param($e,$a,$env,$cwd) @{ ExitCode=0; StdOut='same'; StdErr=''; Absent=$false } }
+        $out = & "$PSScriptRoot/../build/conformance/probes/bat.theme.ps1" -Scratch $script:scratch -SpawnTool $spawn
+        $out.verdict | Should -Be 'manual'
+        $out.retest  | Should -Not -BeNullOrEmpty
+    }
+    It 'reports unknown when bat is absent' {
+        $spawn = { param($e,$a,$env,$cwd) @{ Absent=$true; ExitCode=-1; StdOut=''; StdErr='' } }
+        (& "$PSScriptRoot/../build/conformance/probes/bat.theme.ps1" -Scratch $script:scratch -SpawnTool $spawn).verdict |
+            Should -Be 'unknown'
+    }
+}
