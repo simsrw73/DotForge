@@ -7,11 +7,9 @@
 
 # 1. Theme: per-tool key -> shared Theme -> JSON default 'catppuccin'.
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
-$_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin'
+$_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_name     = Get-DFConfiguredTheme -ToolKey 'MdvTheme' -Default $_default
-
-# Family alias: mdv ships one catppuccin flavour, so any catppuccin-* -> catppuccin.
-if ($_name -like 'catppuccin-*') { $_name = 'catppuccin' }
+$_name     = Resolve-DFThemeName -Name $_name -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 
 $_valid = @(
     'terminal', 'solarized-dark', 'nord', 'tokyonight',

@@ -13,6 +13,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
     $script:MdvJson = Get-Content "$PSScriptRoot/../Tools/mdv.json" -Raw | ConvertFrom-Json
@@ -25,8 +26,11 @@ Describe 'Tools/mdv.json' {
     It 'points MDV_CONFIG_PATH at the XDG mdv dir' {
         $script:MdvJson.xdg.vars.MDV_CONFIG_PATH | Should -Be '${XDG_CONFIG_HOME}/mdv'
     }
-    It 'names catppuccin as the seed theme' {
-        $script:MdvJson.settings.theme | Should -Be 'catppuccin'
+    It 'names catppuccin-mocha as the default theme' {
+        $script:MdvJson.settings.theme | Should -Be 'catppuccin-mocha'
+    }
+    It 'declares a themeMap translating the canonical family to catppuccin' {
+        $script:MdvJson.themeMap.'catppuccin-mocha' | Should -Be 'catppuccin'
     }
     It 'declares a cargo package' {
         $script:MdvJson.packages.cargo | Should -Be 'mdv'

@@ -21,7 +21,10 @@
     ]
   },
   "settings": {
-    "theme": "catppuccin"
+    "theme": "catppuccin-mocha"
+  },
+  "themeMap": {
+    "catppuccin-mocha": "catppuccin"
   },
   "aliases": {},
   "picker": null
