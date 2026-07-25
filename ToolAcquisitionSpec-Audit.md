@@ -76,11 +76,14 @@ conditional.
 
 ### 4. Centralize themes
 
-Add `data/theme-aliases.json` and `Private/Get-DFConfiguredTheme.ps1`. The
+**Superseded** — implemented via a per-tool `themeMap` (not a central registry) to satisfy the
+plugin-architecture invariant; see `ToolAcquisitionSpec.md` §6.2 and `Private/Resolve-DFThemeName.ps1`.
+
+~~Add `data/theme-aliases.json` and `Private/Get-DFConfiguredTheme.ps1`. The
 resolver must accept a canonical family name, a shared alias, or a tool-native
 name, then return the native theme name for the target tool. Sidecars may
 validate and apply the result but must not contain their own family-to-dialect
-mapping.
+mapping.~~
 
 Initial candidates requiring a theme decision are bat, delta, fzf, glow,
 lazygit, less, micro, oh-my-posh, procs, psreadline, and winfetch. A decision

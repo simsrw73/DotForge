@@ -365,8 +365,10 @@ governing section.
    behavior. Read `$DFCurrentTool.settings` defensively; expose prompt-level functions/aliases via
    `function:global:` / `Set-Alias -Scope Global`. Adapter code MUST reference its conformance
    failure ID (§4.4).
-6. **Theme (§6)** if the tool renders styled output: add the tool to `data/theme-aliases.json`; have
-   the sidecar validate + apply; bundle the default theme if the tool lacks it.
+6. **Theme (§6)** if the tool renders styled output: declare an optional `themeMap` (canonical →
+   this tool's dialect) in the tool's own JSON, only if its native name differs from the canonical
+   (§6.2); have the sidecar resolve via `Resolve-DFThemeName`, validate + apply; bundle the default
+   theme if the tool lacks it.
 7. **Completion (§7):** nothing if carapace/inshellisense cover it; else tool-provided if
    non-conflicting; else a bundled `Tools/carapace/specs/<tool>.yaml`.
 8. **Pickers & aliases (§8, §9):** add a picker only if genuinely useful; add paging/short/well-known

@@ -5,7 +5,8 @@
 # user-edited config is never clobbered — the same restraint as Register-DFTool's
 # 'config' method. See docs/external-dependencies.md.
 
-# 1. Theme: per-tool key -> shared Theme -> JSON default 'catppuccin'.
+# 1. Theme: per-tool key -> shared Theme -> JSON default 'catppuccin-mocha'
+#    (resolved via themeMap to mdv's native 'catppuccin').
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_name     = Get-DFConfiguredTheme -ToolKey 'MdvTheme' -Default $_default
