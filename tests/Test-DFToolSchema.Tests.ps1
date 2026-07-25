@@ -92,7 +92,7 @@ Describe 'Seed tool JSON files' {
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
         'bitwarden', 'npm', 'fnm', 'scoop', 'winget',
         'posh-git', 'psreadline', 'PSFzf', 'Terminal-Icons', 'oh-my-posh',
-        'gsudo'
+        'gsudo', 'mdcat'
     ) | ForEach-Object {
         @{ Name = $_; Path = Join-Path $PSScriptRoot "../Tools/$_.json" }
     }

@@ -19,11 +19,11 @@ BeforeAll {
 }
 
 Describe 'Tools/mdcat.json' {
-    It 'declares the env XDG method' {
-        $script:McatJson.xdg.method | Should -Be 'env'
+    It 'declares the default XDG method (mdcat is XDG-native)' {
+        $script:McatJson.xdg.method | Should -Be 'default'
     }
-    It 'sets a catppuccin MDCAT_THEME default' {
-        $script:McatJson.xdg.vars.MDCAT_THEME | Should -Be 'catppuccin-mocha'
+    It 'sets a catppuccin MDCAT_THEME default in the env block' {
+        $script:McatJson.env.MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
     It 'declares scoop and cargo packages' {
         $script:McatJson.packages.scoop | Should -Be 'mdcat'

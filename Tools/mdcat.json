@@ -13,10 +13,10 @@
   },
   "xdg": {
     "compliance": "full",
-    "method": "env",
-    "vars": {
-      "MDCAT_THEME": "catppuccin-mocha"
-    }
+    "method": "default"
+  },
+  "env": {
+    "MDCAT_THEME": "catppuccin-mocha"
   },
   "aliases": {},
   "picker": null
