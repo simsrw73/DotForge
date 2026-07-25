@@ -16,6 +16,7 @@
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_theme    = Get-DFConfiguredTheme -ToolKey 'GlowTheme' -Default $_default
+$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 $_cfgRaw   = $_settings.PSObject.Properties['configFile']?.Value ?? '${XDG_CONFIG_HOME}/glow/glow.yml'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
 
@@ -32,9 +33,6 @@ Set-Item -Path 'function:global:Resolve-DFGlowStyle' -Value ({
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Name)
-
-    # Family alias: the shared 'catppuccin' key means glow's bundled mocha flavour.
-    if ($Name -eq 'catppuccin') { $Name = 'catppuccin-mocha' }
 
     # glow's own style names — passed through verbatim when no file matches.
     $builtin = @('auto', 'dark', 'light', 'dracula', 'pink', 'notty', 'ascii', 'tokyo-night')

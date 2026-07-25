@@ -14,6 +14,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
@@ -79,9 +80,9 @@ Describe 'psreadline tool sidecar' {
         $commandColor | Should -Match '0;0;255'
     }
 
-    It 'follows the shared $DFConfig[Theme] key (catppuccin -> mocha)' {
+    It 'follows the shared $DFConfig[Theme] key (catppuccin-mocha -> mocha)' {
         # Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
-        $Global:DFConfig = @{ Theme = 'catppuccin' }
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
@@ -90,7 +91,7 @@ Describe 'psreadline tool sidecar' {
     }
 
     It 'lets PSReadLineTheme override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin'; PSReadLineTheme = 'light' }
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; PSReadLineTheme = 'light' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }

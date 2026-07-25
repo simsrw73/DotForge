@@ -14,6 +14,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
     $script:GlowJson  = Get-Content "$PSScriptRoot/../Tools/glow.json" -Raw | ConvertFrom-Json
@@ -123,17 +124,25 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         $global:DFGlowStyle | Should -Be 'dracula'
     }
 
-    It 'follows the shared $DFConfig[Theme] key (catppuccin -> bundled mocha)' {
-        $Global:DFConfig = @{ Theme = 'catppuccin' }
+    It 'follows the shared $DFConfig[Theme] key (catppuccin-mocha -> bundled mocha)' {
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
         $expected = (Resolve-Path (Join-Path $script:RealTools 'glow' 'catppuccin-mocha.json')).Path
         $global:DFGlowStyle | Should -Be $expected
     }
 
     It 'lets GlowTheme override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin'; GlowTheme = 'dracula' }
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; GlowTheme = 'dracula' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
         $global:DFGlowStyle | Should -Be 'dracula'
+    }
+
+    It 'no longer treats the bare "catppuccin" alias as the mocha family (retired)' {
+        $Global:DFConfig = @{ Theme = 'catppuccin' }
+        Register-DFTool -Name 'glow' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+        # Old code mapped 'catppuccin' -> catppuccin-mocha.json; new code passes it
+        # through and glow, not recognizing it, falls back to 'auto'.
+        $global:DFGlowStyle | Should -Be 'auto'
     }
 
     It 'falls back to auto and warns for an unknown theme' {

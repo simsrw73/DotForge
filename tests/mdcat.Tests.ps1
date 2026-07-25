@@ -13,6 +13,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
     $script:McatJson = Get-Content "$PSScriptRoot/../Tools/mdcat.json" -Raw | ConvertFrom-Json
@@ -56,8 +57,8 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
         $Env:MDCAT_THEME | Should -Be 'dracula'
     }
 
-    It 'maps the shared catppuccin family to catppuccin-mocha' {
-        $Global:DFConfig = @{ Theme = 'catppuccin' }
+    It 'maps the shared catppuccin-mocha family to catppuccin-mocha' {
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
         $Env:MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
