@@ -134,6 +134,21 @@ function Register-DFTool {
             'default' { } # tool already follows XDG natively — no env config needed
         }
 
+        # ── Non-XDG environment settings ───────────────────────────────────
+        # Applied unconditionally (env vars are not tied to xdg.method). Values
+        # go through Expand-DFXdgPath so ${XDG_*} still expands while flag
+        # strings pass through byte-for-byte.
+        $envBlock = $tool.PSObject.Properties['env']?.Value
+        if ($envBlock) {
+            $envBlock.PSObject.Properties | ForEach-Object {
+                [System.Environment]::SetEnvironmentVariable(
+                    $_.Name,
+                    (Expand-DFXdgPath $_.Value),
+                    'Process'
+                )
+            }
+        }
+
         # ── Aliases ─────────────────────────────────────────────────────────
         $aliases = $tool.PSObject.Properties['aliases']?.Value
         if ($aliases) {

@@ -83,6 +83,30 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $Env:TESTTOOL_CONFIG | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'testtool' 'config.conf')
     }
 
+    It 'applies the top-level env block independently of xdg.method' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\envtool.exe' } }
+        @'
+{
+  "name": "envtool",
+  "executable": "envtool.exe",
+  "xdg": { "compliance": "none", "method": "default" },
+  "env": {
+    "ENVTOOL_OPTS": "--layout=reverse\n--border",
+    "ENVTOOL_XDGREF": "${XDG_CONFIG_HOME}/envtool"
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'envtool.json')
+        try {
+            Register-DFTool -Name 'envtool' -ToolsPath $script:TmpTools
+            # Flag string preserved byte-for-byte (including the newline)
+            $Env:ENVTOOL_OPTS   | Should -Be "--layout=reverse`n--border"
+            # ${XDG_*} inside an env value still expands
+            $Env:ENVTOOL_XDGREF | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'envtool')
+        } finally {
+            Remove-Item Env:\ENVTOOL_OPTS, Env:\ENVTOOL_XDGREF -ErrorAction Ignore
+        }
+    }
+
     It 'creates XDG dirs when method is env' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
 Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
