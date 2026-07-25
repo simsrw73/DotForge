@@ -101,7 +101,12 @@ Each `Tools/*.json` must have at minimum:
 - `name` (string, required)
 - `executable` (string, required)
 - `xdg.method`: one of `default | env | config | wrapper | manual`
-- `xdg.vars`: env vars to set when applying XDG config — values may be XDG path templates (expanded via `Expand-DFXdgPath`) OR plain strings (e.g., `LESS` flag strings). Phase 3 tooling must not assume all `vars` values are filesystem paths.
+- `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
+- `env` (optional): a top-level map of environment variable → value for **non-XDG** session
+  settings (fzf options, `GIT_PAGER`, `LESS`, theme names, …). Applied unconditionally by
+  `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through
+  `Expand-DFXdgPath` (flag strings pass through; `${XDG_*}` still expands). Keep `xdg.vars`
+  for `${XDG_*}` path templates only.
 
 ## External Dependencies
 

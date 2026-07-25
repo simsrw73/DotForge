@@ -60,6 +60,13 @@ All notable changes to DotForge are documented here.
   resolved value lives in `$global:DFGlowStyle` and is read at call time, so
   assigning to it switches theme for the rest of the session.
 
+### Changed
+
+- **Non-XDG environment variables moved out of `xdg.vars` into a dedicated top-level `env`
+  block.** `xdg.vars` is now `${XDG_*}` path-templates only. Affects `fzf`, `delta`, `less`,
+  and `mdcat` (fzf/delta/mdcat move to `xdg.method: default`). Behavior is unchanged — the same
+  variables are set to the same values, just declared in `env`.
+
 ## [0.5.0-preview] - 2026-07-23
 
 ### Added

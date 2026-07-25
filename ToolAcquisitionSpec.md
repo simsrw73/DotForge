@@ -67,8 +67,10 @@ to the next only when a conformance probe (§4) shows the higher rung does not w
 Path templating: `xdg.vars`/`xdg.dirs`/`config_path` values MAY use the tokens `${XDG_CONFIG_HOME}`,
 `${XDG_DATA_HOME}`, `${XDG_STATE_HOME}`, `${XDG_CACHE_HOME}`, expanded by
 `Private/Expand-DFXdgPath.ps1` (case-sensitive `-creplace`; exact `${…}` form only). `XDG_BIN_HOME` is
-**not** a supported token. `xdg.vars` values MAY also be plain strings (e.g. a `LESS` flag string),
-so integration code MUST NOT assume every value is a filesystem path.
+**not** a supported token. **`xdg.vars` values are `${XDG_*}` path templates only.** Non-path
+environment variables (flag strings, tool options, `GIT_PAGER`, theme names, …) belong in the
+tool's top-level **`env`** block, applied unconditionally by `Register-DFTool` (also via
+`Expand-DFXdgPath`, so an `env` value that references `${XDG_*}` still expands).
 
 **Rung-preference rule.** When a tool supports *both* an env var and an in-config path for the same
 state/data/cache location, put the path **in the config file** (rung 3) and reserve env vars for
