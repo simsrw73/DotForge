@@ -325,6 +325,15 @@ Describe 'eza/lsd share role: listing (real tool records)' {
             param($Name)
             if ($Name -in 'eza.exe', 'lsd.exe') { [PSCustomObject]@{ Path = "C:\fake\$Name" } }
         }
+        # Stand-in functions so a wrapper's `& eza ...` / `& lsd ...` resolves to a
+        # capturable function (PowerShell resolves Function before Application),
+        # regardless of whether real eza.exe/lsd.exe are installed on this machine.
+        # This is the only reliable way to observe which command a wrapper actually
+        # calls: a .GetNewClosure() wrapper's ScriptBlock.ToString() shows only the
+        # unbound template source (`& $capturedCmd @capturedArgs @args`), never the
+        # bound values -- verified empirically in Task 1; do not use ToString() here.
+        function global:eza { $global:LastCommandCalled = 'eza' }
+        function global:lsd { $global:LastCommandCalled = 'lsd' }
     }
     AfterEach {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
@@ -333,6 +342,8 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         Remove-Item 'function:global:ls', 'function:global:ll', 'function:global:la', 'function:global:tree' -ErrorAction Ignore
         Remove-Item 'function:global:ff' -ErrorAction Ignore
         Remove-Alias ff -Force -Scope Global -ErrorAction Ignore
+        Remove-Item 'function:global:eza', 'function:global:lsd' -ErrorAction Ignore
+        Remove-Variable LastCommandCalled -Scope Global -ErrorAction Ignore
     }
 
     It 'declares role: listing on both tools' {
@@ -346,22 +357,20 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         $Global:DFConfig = @{ Defaults = @{ listing = 'eza' } }
         Register-DFTool -Name 'eza', 'lsd' -ToolsPath $script:RealTools
 
-        # Both eza's and lsd's 'ls' alias declares args, so it is ALWAYS a wrapper
-        # function (never a plain Set-Alias) -- check the function body, not Get-Alias.
-        (Get-Item 'function:global:ls').ScriptBlock.ToString()   | Should -Match 'eza'
-        (Get-Item 'function:global:ll').ScriptBlock.ToString()   | Should -Match 'eza'
-        (Get-Item 'function:global:la').ScriptBlock.ToString()   | Should -Match 'eza'
-        (Get-Item 'function:global:tree').ScriptBlock.ToString() | Should -Match 'eza'
+        & 'ls';   $global:LastCommandCalled | Should -Be 'eza'
+        & 'll';   $global:LastCommandCalled | Should -Be 'eza'
+        & 'la';   $global:LastCommandCalled | Should -Be 'eza'
+        & 'tree'; $global:LastCommandCalled | Should -Be 'eza'
     }
 
     It 'gives lsd the contested aliases when Defaults.listing = lsd' {
         $Global:DFConfig = @{ Defaults = @{ listing = 'lsd' } }
         Register-DFTool -Name 'eza', 'lsd' -ToolsPath $script:RealTools
 
-        (Get-Item 'function:global:ls').ScriptBlock.ToString()   | Should -Match 'lsd'
-        (Get-Item 'function:global:ll').ScriptBlock.ToString()   | Should -Match 'lsd'
-        (Get-Item 'function:global:la').ScriptBlock.ToString()   | Should -Match 'lsd'
-        (Get-Item 'function:global:tree').ScriptBlock.ToString() | Should -Match 'lsd'
+        & 'ls';   $global:LastCommandCalled | Should -Be 'lsd'
+        & 'll';   $global:LastCommandCalled | Should -Be 'lsd'
+        & 'la';   $global:LastCommandCalled | Should -Be 'lsd'
+        & 'tree'; $global:LastCommandCalled | Should -Be 'lsd'
     }
 
     It 'both register their full alias sets when no Defaults entry exists (unchanged behavior)' {
@@ -537,3 +546,4 @@ git commit -m "docs: default-tool role resolution, role field, lsd panic note"
 - **Type/name consistency:** `$activeRoleWinners[$roleName] = @{ WinnerName; AliasKeys }` shape is identical between the implementation (T1) and every test that reads it indirectly via alias behavior (T1, T2). `role` as a bare top-level string (not nested) is consistent across `Tools/eza.json`, `Tools/lsd.json`, and both doc sections.
 - **Degradation safety:** every failure path (unknown winner, role mismatch, winner unavailable, winner not in this call's `$tools`) is a `continue`/no-op with an optional `Write-Warning`, never a throw — matches the house rule and is exercised by name-matched tests in T1.
 - **Plugin invariant:** no central per-role or per-tool-pair data introduced; `role` is a per-tool declaration; a hypothetical third `listing` tool would need only its own JSON to participate.
+- **Post-Task-1 correction (applied to this plan file):** Task 1's implementation surfaced that `.ScriptBlock.ToString()` on a `.GetNewClosure()` wrapper shows only the unbound template source, never bound values — empirically confirmed, so `Should -Match '<toolname>'` against it can never discriminate. Task 2's test above was rewritten to use the same fix Task 1 landed on: define a real stand-in global function named after the underlying command (`eza`/`lsd`), invoke the wrapper for real, and assert on what actually ran (PowerShell resolves Function before Application, so this works whether or not the real binaries are installed).
