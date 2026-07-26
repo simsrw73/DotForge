@@ -42,6 +42,20 @@
 ## Priority 3 — Features
 
 - [ ] **Color theme system across all tools** — PSReadLine has per-tool theming; explore a unified palette that also applies to `bat`, `delta`, `glow`, and terminal colors so the whole environment shares one theme
+- [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
+  whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can
+  explicitly control global-namespace pollution instead of DotForge deciding
+  uniformly for everyone. Design sketch (shelved, not implemented): wrap
+  `Set-Alias` in a DotForge-owned function so tools/helpers *declare* an alias
+  without directly creating it; a central function then iterates all
+  declarations and filters per user config (allow-list or deny-list, at either
+  the individual-alias or whole-tool level) before actually binding anything.
+  Open question, unresolved: whether PowerShell's manifest system supports
+  anything resembling "optional/conditional exports" this could piggyback on,
+  or whether it would have to be entirely session-side (declarative data +
+  runtime filtering, no manifest involvement). See
+  `docs/builtin-safety-policy.md` for the related "never silently claim a
+  builtin" policy this would complement.
 - [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true` for PS7+
 - [ ] **`Invoke-DFMaintenance` and scheduled maintenance guide** — provide a manual, opt-in maintenance command for purging the completion cache, refreshing the help-topic index, and running `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache. DotForge must not create scheduled tasks or perform package updates automatically. Document user-owned Task Scheduler recipes for separately scheduling cache refreshes, cleanups, and explicit package-update workflows, including how to inspect, disable, and remove each task.
 - [ ] **trifle: alternatives / related commands** — deferred from trifle v1. Surface "alternatives" (e.g. ripgrep ↔ other tools tagged `search`) and related commands on the `Find-DFPackage` card. Candidate sources: shared `tags` in `Tools/*.json`, a curated `alternatives` field, or catalog keyword overlap. Revisit together with the name-collision merge wart (npm `bat` vs scoop `bat` currently merge into one row).
