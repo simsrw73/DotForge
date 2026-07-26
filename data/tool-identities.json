@@ -153,6 +153,14 @@
       },
       "linkedVia": "curated"
     },
+    "lsd": {
+      "packages": {
+        "scoop": "lsd",
+        "winget": "lsd-rs.lsd",
+        "choco": "lsd"
+      },
+      "linkedVia": "curated"
+    },
     "mdcat": {
       "packages": {
         "scoop": "mdcat",
