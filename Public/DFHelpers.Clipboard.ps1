@@ -14,8 +14,8 @@ function Copy-DFToClipboard {
         Get-Content file.txt | Copy-DFToClipboard
         Copies the entire file contents to the clipboard.
     .EXAMPLE
-        git log --oneline | copy
-        Copies the git log output to the clipboard using the copy alias.
+        git log --oneline | yank
+        Copies the git log output to the clipboard using the yank alias.
     .OUTPUTS
         None
     #>
@@ -28,7 +28,7 @@ function Copy-DFToClipboard {
     process { if ($null -ne $InputObject) { $lines.Add($InputObject) } }
     end     { Set-Clipboard -Value ($lines -join "`n") }
 }
-Set-Alias -Name copy -Value Copy-DFToClipboard -Scope Global -Force -Option AllScope
+Set-Alias -Name yank -Value Copy-DFToClipboard
 
 function Get-DFFromClipboard {
     <#

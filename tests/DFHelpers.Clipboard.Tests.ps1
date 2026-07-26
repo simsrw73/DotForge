@@ -32,10 +32,10 @@ Describe 'Copy-DFToClipboard' {
         $script:Captured | Should -Be "line1`nline2`nline3"
     }
 
-    # Note: the 'copy' alias cannot be verified inside Pester because Pester resets
-    # AllScope built-in aliases (copy -> Copy-Item) in its sandboxed session state.
-    # The alias is set correctly at module load time; verified manually with:
-    #   . Public/DFHelpers.Clipboard.ps1; (Get-Alias copy).Definition
+    It 'is aliased to yank' {
+        (Get-Alias -Name yank -ErrorAction SilentlyContinue).Definition |
+            Should -Be 'Copy-DFToClipboard'
+    }
 }
 
 Describe 'Get-DFFromClipboard' {
