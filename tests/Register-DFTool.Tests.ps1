@@ -431,7 +431,9 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             }
         }
         AfterEach {
-            Remove-Item 'function:global:rt', 'function:global:rtl', 'function:global:rtonly' -ErrorAction Ignore
+            # 'global:' in the path form is a Get-Item/Remove-Item no-op (confirmed
+            # empirically) -- use the bare 'function:<name>' form to actually remove.
+            Remove-Item 'function:rt', 'function:rtl', 'function:rtonly' -ErrorAction Ignore
             Remove-Alias rt, rtl, rtonly -Force -Scope Global -ErrorAction Ignore
             Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         }
@@ -500,7 +502,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             # testtool.json (from the outer BeforeEach) has no 'role' -- registers exactly as before.
             (Get-Alias tt -ErrorAction Ignore) | Should -Not -BeNullOrEmpty
             Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
-            Remove-Item 'function:global:tt-v' -ErrorAction Ignore
+            Remove-Item 'function:tt-v' -ErrorAction Ignore
         }
 
         It 'registers both tools normally when no Defaults entry exists for the role' {
