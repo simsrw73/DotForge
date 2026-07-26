@@ -21,7 +21,7 @@ function Get-DFPath {
     param()
     $Env:PATH -split [IO.Path]::PathSeparator
 }
-Set-Alias -Name path -Value Get-DFPath -Scope Global -Force
+Set-Alias -Name path -Value Get-DFPath
 
 function Select-DFEnvVar {
     <#
@@ -49,7 +49,7 @@ function Select-DFEnvVar {
         -Header    'Select env var  [Enter to output value]' `
         -Parse     { ($_ -split "`t", 2)[1] }
 }
-Set-Alias -Name fenv -Value Select-DFEnvVar -Scope Global -Force
+Set-Alias -Name fenv -Value Select-DFEnvVar
 
 function Edit-DFProfile {
     <#
@@ -76,7 +76,7 @@ function Edit-DFProfile {
     }
     & $Env:EDITOR $PROFILE
 }
-Set-Alias -Name ep -Value Edit-DFProfile -Scope Global -Force
+Set-Alias -Name ep -Value Edit-DFProfile
 
 function Get-DFEnv {
     <#
@@ -132,7 +132,7 @@ function Get-DFEnv {
             }
         }
 }
-Set-Alias -Name env -Value Get-DFEnv -Scope Global -Force
+Set-Alias -Name env -Value Get-DFEnv
 
 function Invoke-DFProfileReload {
     <#
@@ -159,4 +159,4 @@ function Invoke-DFProfileReload {
         Write-Warning "DotForge: `$PROFILE not found at $PROFILE"
     }
 }
-Set-Alias -Name reload -Value Invoke-DFProfileReload -Scope Global -Force
+Set-Alias -Name reload -Value Invoke-DFProfileReload

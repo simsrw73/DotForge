@@ -259,4 +259,4 @@ function Find-DFPackage {
     Format-DFToolInfoTable -Infos $merged -Color $color -Width $width
 }
 
-Set-Alias -Name trifle -Value Find-DFPackage -Scope Global -Force
+Set-Alias -Name trifle -Value Find-DFPackage

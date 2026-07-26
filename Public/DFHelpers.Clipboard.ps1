@@ -50,4 +50,4 @@ function Get-DFFromClipboard {
     param()
     Get-Clipboard
 }
-Set-Alias -Name paste -Value Get-DFFromClipboard -Scope Global -Force
+Set-Alias -Name paste -Value Get-DFFromClipboard
