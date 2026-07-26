@@ -454,7 +454,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
                 & 'rtl' 'x'
                 $global:RtlCaptured | Should -Be @('--long', 'x')
             } finally {
-                Remove-Item 'function:global:roletoolwinner' -ErrorAction Ignore
+                Remove-Item 'function:roletoolwinner' -ErrorAction Ignore
                 Remove-Variable RtlCaptured -Scope Global -ErrorAction Ignore
             }
 
