@@ -309,9 +309,11 @@ $DFConfig = @{
 }
 ```
 
-- **Roles are equivalence groups** drawn from the category taxonomy's `function` field
-  (`data/tool-categories.json`, built by `build/Build-DFCategoryDb.ps1`). Tools sharing a `function`
-  value form a group.
+- **Roles are equivalence groups a tool declares itself into** via the per-tool `role` field (§10.1a)
+  — NOT derived from the category taxonomy's `function` field (`data/tool-categories.json`). That
+  field is deliberately broad and multi-valued (e.g. `eza`, `broot`, and `fd` all carry
+  `file-management`, though only `eza` is a genuine `ls` replacement) and `Register-DFTool` never
+  reads it for role resolution; using it directly would wrongly group unrelated tools.
 - The **winner** for a role receives that role's **standard aliases** (e.g. `listing`'s winner gets
   `ls`, `ll`, `tree`).
 - **Contested aliases are computed, not declared.** A role's winner's own `aliases` block IS
