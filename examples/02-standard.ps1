@@ -1,17 +1,18 @@
 #Requires -Version 7.0
 # DotForge standard profile
 # ─────────────────────────────────────────────────────────────────────────────
-# Typical single-developer setup: package manager preference, tools to skip,
-# and a first-run bootstrap that installs missing core tools.
+# Typical single-developer setup: package manager preference, default-tool role
+# winners, and a first-run bootstrap that installs missing core tools.
 
 # ── DotForge config (set BEFORE Import-Module) ────────────────────────────────
 $DFConfig = @{
     # Package manager priority for Install-DFTool
     PackageManagerOrder = @('scoop', 'winget')
 
-    # Tools excluded from Register-DFTool -All
-    # lsd conflicts with eza; both provide ls — keep only one
-    SkipTools = @('lsd')
+    # eza and lsd both declare role: 'listing' and compete for ls/ll/la/tree.
+    # Defaults names the winner; the loser keeps everything else it declares
+    # (XDG config, other aliases) -- only the contested alias keys are suppressed.
+    Defaults = @{ listing = 'eza' }
 
     # If Coreutils for Windows is installed, its readline hook rewrites command
     # names before PowerShell resolves them, so DotForge aliases sharing a name

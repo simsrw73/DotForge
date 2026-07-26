@@ -23,10 +23,20 @@ $missing = @('eza', 'bat', 'fzf', 'ripgrep') |
 if ($missing) { Install-DFTool -Name $missing }
 ```
 
-### Skip conflicting tools
+### Pick a winner between competing tools
+
+`eza` and `lsd` both declare `role: 'listing'` and compete for `ls`/`ll`/`la`/`tree`.
+`Defaults` names the winner; the loser keeps everything else it declares (XDG
+config, other aliases) — only the contested alias keys are suppressed.
 
 ```powershell
-$DFConfig = @{ SkipTools = @('lsd') }  # lsd conflicts with eza
+$DFConfig = @{ Defaults = @{ listing = 'eza' } }
+```
+
+### Skip a tool entirely
+
+```powershell
+$DFConfig = @{ SkipTools = @('lsd') }  # don't register lsd at all
 ```
 
 ### Query the registry
