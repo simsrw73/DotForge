@@ -39,12 +39,17 @@ Describe 'eza/lsd share role: listing (real tool records)' {
     }
     AfterEach {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
-        # 'ls' always has args on both eza and lsd, so it is ALWAYS a wrapper
-        # function, never a plain Set-Alias -- clean up the function, not an alias.
-        Remove-Item 'function:global:ls', 'function:global:ll', 'function:global:la', 'function:global:tree' -ErrorAction Ignore
-        Remove-Item 'function:global:ff' -ErrorAction Ignore
+        # 'global:' in the path form is a Remove-Item no-op (same quirk as Get-Item,
+        # confirmed in Task 1) -- use the bare 'function:<name>' form to actually
+        # remove. 'ls' always has args on both eza and lsd, so it is ALWAYS a
+        # wrapper function, never a plain Set-Alias.
+        Remove-Item 'function:ls', 'function:ll', 'function:la', 'function:tree' -ErrorAction Ignore
+        # eza's real picker block creates function:global:Select-File as a side
+        # effect of registering the real eza.json -- must be cleaned up or it
+        # leaks into the rest of the suite's shared session.
+        Remove-Item 'function:Select-File' -ErrorAction Ignore
         Remove-Alias ff -Force -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:eza', 'function:global:lsd' -ErrorAction Ignore
+        Remove-Item 'function:eza', 'function:lsd' -ErrorAction Ignore
         Remove-Variable LastCommandCalled -Scope Global -ErrorAction Ignore
     }
 
