@@ -25,10 +25,10 @@ policy against silently claiming builtin names, and renames `copy`→`yank`.
 
 ## Grounding facts (verified empirically, not assumed)
 
-- **25 general-helper aliases** (`pg`, `hm`, `clh`, `clhp`, `fcmd`, `fverb`,
+- **27 general-helper aliases** (`pg`, `hm`, `clh`, `clhp`, `fcmd`, `fverb`,
   `fmod`, `fh`, `up`, `mkcd`, `fcd`, `touch`, `which`, `open`, `fps`, `top`,
   `env`, `path`, `fenv`, `ep`, `reload`, `copy`, `paste`, `uuidgen`, `trifle`,
-  `ftrifle`, `tcats`) are declared across 12 `Public/*.ps1` files, each via a
+  `ftrifle`, `tcats`) are declared across 11 `Public/*.ps1` files, each via a
   top-level `Set-Alias -Name <n> -Value <Function> -Scope Global -Force`. Each
   is 1:1 with a specific public function — a closed, static, author-time-known
   set.
@@ -50,7 +50,7 @@ policy against silently claiming builtin names, and renames `copy`→`yank`.
   ownership/introspection (`ExportedAliases`, `Remove-Module` cleanup), **not**
   clobber-safety. (A prior design draft assumed otherwise; corrected after
   empirical testing — see "Explicitly out of scope" below.)
-- **Only one of the 25 names collided with a PowerShell builtin: `copy`**
+- **Only one of the 27 names collided with a PowerShell builtin: `copy`**
   (→ `Copy-Item`, `Options=AllScope`). Verified: an `AllScope` alias cannot be
   overridden outside global scope, with or without `-Force` — the override
   fails with `"The AllScope option cannot be removed from the alias 'copy'"`
@@ -60,7 +60,7 @@ policy against silently claiming builtin names, and renames `copy`→`yank`.
   visibility — but it made this one alias structurally unfixable within the
   ownership model, and was never surfaced to users as a considered trade-off.
 - **Resolution: rename `copy` → `yank`.** Verified `yank` has no builtin
-  collision. This removes the exception entirely — all 25 aliases now follow
+  collision. This removes the exception entirely — all 27 aliases now follow
   the identical, uniform fix.
 - **Dynamic tool/picker aliases** (`ls`, `cat`, `ff`, …, created by
   `Register-DFTool` from `Tools/*.json`) are inherently session-created,
@@ -73,7 +73,7 @@ policy against silently claiming builtin names, and renames `copy`→`yank`.
 **In scope:**
 1. Rename the `copy` alias to `yank` (4 real files: `Public/DFHelpers.Clipboard.ps1`,
    `DotForge.psd1`, `README.md`, `tests/DFHelpers.Clipboard.Tests.ps1`).
-2. Make all 25 general-helper aliases genuinely module-owned by dropping
+2. Make all 27 general-helper aliases genuinely module-owned by dropping
    `-Scope Global -Force` (and, for `yank`, the now-unnecessary `-Option AllScope`)
    from their `Set-Alias` call sites.
 3. Document the dynamic tool/picker-alias category as intentionally
@@ -100,12 +100,12 @@ correction):
   documented Alias-outranks-Function precedence fix for wrapper functions) and
   is unaffected by this workstream.
 
-## Section 1 — The uniform fix (24 existing call sites + the `yank` rename)
+## Section 1 — The uniform fix (26 existing call sites + the `yank` rename)
 
-For each of the 25 `Set-Alias` call sites across `Public/*.ps1`:
+For each of the 27 `Set-Alias` call sites across `Public/*.ps1`:
 
 ```powershell
-# Before (all 25, e.g. Public/DFHelpers.Pager.ps1):
+# Before (all 27, e.g. Public/DFHelpers.Pager.ps1):
 Set-Alias -Name pg -Value Invoke-DFWithPager -Scope Global -Force
 
 # After:
@@ -126,7 +126,7 @@ Update the function's comment-based help (`.SYNOPSIS`/`.EXAMPLE` referencing
 "copy equivalent" / "using the copy alias") to say `yank`.
 
 `DotForge.psd1`'s `AliasesToExport` list is otherwise unchanged in *content*
-(all 25 names, `copy` replaced by `yank`) — it already had the right names;
+(all 27 names, `copy` replaced by `yank`) — it already had the right names;
 the mechanism now actually honors it.
 
 ## Section 2 — Formalize the dynamic tool/picker-alias category
@@ -153,7 +153,7 @@ A test (new or appended to an existing schema/consistency test file) that:
 
 - **Real-import test** against the actual `DotForge.psd1` (not a throwaway
   module): `Import-Module DotForge -Force`; assert `(Get-Module DotForge).ExportedAliases`
-  contains all 24 non-`yank`-affected names correctly (in fact all 25 including
+  contains all 26 non-`yank`-affected names correctly (in fact all 27 including
   `yank`, since it now has no collision either) plus `yank`; assert each
   resolves and its `.ModuleName` is `DotForge`; `Remove-Module DotForge` then
   removes all of them from the session.
@@ -185,10 +185,10 @@ A test (new or appended to an existing schema/consistency test file) that:
 
 ## Acceptance criteria
 
-- All 25 general-helper aliases (including `yank`, formerly `copy`) are
+- All 27 general-helper aliases (including `yank`, formerly `copy`) are
   created via a bare `Set-Alias` (no `-Scope Global`, no `-Force`, no
   `-Option AllScope`) and are genuinely exported: `(Get-Module DotForge).ExportedAliases`
-  lists all 25; each resolves with `.ModuleName -eq 'DotForge'`;
+  lists all 27; each resolves with `.ModuleName -eq 'DotForge'`;
   `Remove-Module DotForge` removes all of them.
 - No remaining reference to the `copy` alias in any current (non-historical)
   file; `yank` is documented everywhere `copy` was.
