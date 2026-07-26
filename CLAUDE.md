@@ -125,6 +125,9 @@ Each `Tools/*.json` must have at minimum:
   configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
   this map), then validate against their own built-in list. Shared `$DFConfig.Theme` is
   canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
+- `role` (optional): a string naming the equivalence group this tool competes in for
+  `$DFConfig.Defaults` resolution (e.g. `"listing"`). No central registry — see
+  `ToolAcquisitionSpec.md` §10.1a and `docs/plugin-architecture.md`.
 
 ## External Dependencies
 

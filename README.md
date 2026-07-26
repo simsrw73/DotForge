@@ -76,6 +76,7 @@ Set `$DFConfig` in your profile **before** importing DotForge:
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
+    Defaults            = @{ listing = 'eza' }  # role winner; loser's contested aliases suppressed
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
@@ -486,7 +487,7 @@ Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
 | Completion       | carapace, inshellisense                            |
-| File/dir         | bat, eza, fd, ripgrep, broot                       |
+| File/dir         | bat, eza, lsd, fd, ripgrep, broot                  |
 | Text/data        | jq, glow, mdcat, mdv                               |
 | System           | procs, winfetch, gsudo                             |
 | Network          | curl, wget                                         |

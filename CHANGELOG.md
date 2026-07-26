@@ -6,6 +6,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a
+  `role` (e.g. `"listing"`); `$DFConfig.Defaults = @{ listing = 'eza' }` names the winner, and
+  `Register-DFTool` suppresses only the alias keys a role LOSER shares with the winner — every
+  other alias, XDG config, and picker the loser declares still applies. Onboarded `lsd` as a real
+  second `listing`-role tool alongside `eza` to prove the mechanism.
 - **Author-time tool-conformance harness.** `build/Test-DFToolConformance.ps1`
   probes whether a tool actually honors its configuration (env vars, config
   files, flags) rather than trusting the docs, recording per-claim

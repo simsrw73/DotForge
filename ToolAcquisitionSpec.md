@@ -314,11 +314,23 @@ $DFConfig = @{
   value form a group.
 - The **winner** for a role receives that role's **standard aliases** (e.g. `listing`'s winner gets
   `ls`, `ll`, `tree`).
-- **Losers** in a chosen group are auto-added to the effective skip set (equivalent to today's manual
-  `$DFConfig.SkipTools`, e.g. `SkipTools = @('lsd')`), so only the winner registers its contested
-  aliases.
+- **Contested aliases are computed, not declared.** A role's winner's own `aliases` block IS
+  the set of aliases it claims. A **loser** (a tool sharing the same `role` but not named as the
+  winner) has ONLY the alias keys it shares with the winner suppressed — every other alias it
+  declares, its XDG config, picker, and companion `.ps1` still apply. This is computed live from
+  each tool's own declared `aliases`; there is no separate contested-alias list.
 - No startup prompt. Selection is purely declarative (consistent with `$DFConfig` being a plain
   user-authored hashtable read defensively).
+
+### 10.1a The `role` field
+
+A tool optionally declares a top-level `role` string in its own JSON (e.g. `"role": "listing"`) to
+say "I compete in this equivalence group." Per `docs/plugin-architecture.md`, this is NOT a central
+registry — a role name is just a string a tool declares and the user references as a key in
+`$DFConfig.Defaults`. `Register-DFTool` resolves the named winner for each `Defaults` entry,
+validating that the winner exists, declares that same role, and is actually available/registering
+this call before recording its alias keys; any of those checks failing degrades to no suppression
+for that role, never a thrown error.
 
 ### 10.2 Interaction with conflict detection
 
