@@ -22,6 +22,17 @@ All notable changes to DotForge are documented here.
   adapters. Piloted on `bat` and `glow`. Author-time only — never loaded or run
   by the module.
 
+### Changed
+
+- **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
+  (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
+  `Copy-DFToClipboard` needs to switch to `yank`.
+- **All 27 general-helper aliases (`pg`, `hm`, `touch`, `yank`, …) are now genuinely module-owned.**
+  `(Get-Module DotForge).ExportedAliases` reports them and `Remove-Module DotForge` cleans them up
+  correctly — previously the manifest's `AliasesToExport` was decorative. No change to how or when
+  they're created relative to a session's existing aliases (import-time collision behavior is
+  unchanged; see `docs/superpowers/specs/2026-07-26-alias-ownership-design.md` for why).
+
 ### Fixed
 
 - **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,

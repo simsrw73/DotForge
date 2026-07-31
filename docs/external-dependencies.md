@@ -145,11 +145,15 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 
 ## Internal to DotForge (not an external dependency, but surprising)
 
-- **`AliasesToExport` is decorative.** DotForge's helper aliases are created with
-  `Set-Alias -Scope Global` at dot-source time, so the module never owns them:
-  `(Get-Module DotForge).ExportedAliases` is empty and `Remove-Module DotForge` leaves them
-  behind. `Get-DFCommandConflict` reads `AliasesToExport` out of the manifest file for exactly
-  this reason. Tracked in `TODO.md`.
+- **`AliasesToExport` is real for general-helper aliases, intentionally absent for tool/picker
+  aliases.** The module's own aliases (`pg`, `hm`, `touch`, `yank`, …) are created via a bare
+  `Set-Alias` in module scope, so the manifest's `AliasesToExport` genuinely exports them —
+  `(Get-Module DotForge).ExportedAliases` reports them and `Remove-Module DotForge` cleans them up.
+  Tool and picker aliases (`ls`, `cat`, `ff`, …) are created dynamically by `Register-DFTool` from
+  `Tools/*.json` and are NOT in the manifest — they cannot be, since their existence depends on
+  which tools are installed and what `$DFConfig.Defaults` selects. `Get-DFCommandConflict` reads
+  them directly from the tool database for this reason; that split is by design, not a gap. See
+  `ToolAcquisitionSpec.md` §9.1.
 - **`Expand-DFXdgPath` normalizes only token-bearing values.** A `Tools/*.json` `xdg.vars` value is
   an XDG path template (`${XDG_CONFIG_HOME}/…`) — canonicalized to a native path via
   `ConvertTo-DFPath`. Token-less flag strings (`LESS`, `FZF_DEFAULT_OPTS`, …) no longer arrive via

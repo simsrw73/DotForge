@@ -289,7 +289,29 @@ wrapper function that first removes any colliding built-in alias). Guidance:
 - **Standard, contested aliases** (`ls`, `ll`, `tree`, `cat`) belong to the **default-tool winner**
   (§10), not to every tool that could claim them.
 
-Every new alias MUST also be added to `AliasesToExport` in `DotForge.psd1` (existing house rule).
+Tool and picker aliases declared here are dynamic and intentionally NOT added to
+`AliasesToExport` — see §9.1.
+
+### 9.1 Two categories, two ownership models
+
+DotForge creates two kinds of aliases, owned two different ways:
+
+- **General-helper aliases** (the module's own commands — `pg`, `hm`, `touch`, `yank`, …) are a
+  closed, static, author-time-known set. Each is created via a bare `Set-Alias -Name <n> -Value
+  <Function>` (no `-Scope Global`, no `-Force`) inside the relevant `Public/*.ps1` file, landing in
+  the module's own scope. `DotForge.psd1`'s `AliasesToExport` lists every one of them, and because
+  they are created in module scope, the manifest makes them genuinely exported:
+  `(Get-Module DotForge).ExportedAliases` reports them and `Remove-Module DotForge` cleans them up.
+  Every new general-helper alias MUST be added to `AliasesToExport`.
+- **Tool and picker aliases** (`ls`, `cat`, `ff`, …, declared per-tool in `Tools/*.json` and created
+  by `Register-DFTool` at runtime) are inherently dynamic — conditional on which tools are installed
+  and what `$DFConfig.Defaults` selects. They can never be a static manifest list, and are
+  intentionally NOT in `AliasesToExport`. `Get-DFCommandConflict` reads them directly from the tool
+  database for exactly this reason. This is a design fact, not a gap.
+
+The two categories MUST NOT share a name (guarded by `tests/AliasOwnership.Tests.ps1`). Before
+adding any alias in either category, check it against a PowerShell builtin per
+`docs/builtin-safety-policy.md`.
 
 ---
 
