@@ -10,6 +10,26 @@ PowerShell 7+ module that configures CLI tools (XDG paths, fzf pickers,
 aliases) from a JSON tool database. Extracted and generalized from a real-world
 PowerShell profile.
 
+## Core Invariant: Plugin Architecture
+
+**Adding or updating a tool never modifies core logic.** Each tool is a plugin
+(`Tools/<tool>.json` + optional `Tools/<tool>.ps1`); a new core feature is an
+optional declarative extension point the core reads when present and no-ops when
+absent. Cross-tool queries resolve from the loaded tool DB or a build-time
+generated index — never runtime reflection, and never a `switch ($tool.name)` in
+core code. Startup speed is a first-class constraint; per-tool declarations are
+free (JSON already loaded) and aggregation is paid once at build time. Full
+statement, rules, and the realistic boundary (the psd1 manifest): **`docs/plugin-architecture.md`** —
+read it before designing any new core feature or a central tool-keyed data file.
+
+## Core Invariant: Builtin Safety
+
+**Never overwrite a builtin PowerShell command or alias without explicit,
+documented reasoning.** Check every new alias (general-helper or per-tool) against
+`Get-Alias`/`Get-Command` before shipping it. Full statement and the `copy`→`yank`
+incident that prompted it: **`docs/builtin-safety-policy.md`** — read it before
+adding any new alias.
+
 ## Structure
 
 ```
@@ -31,6 +51,11 @@ DotForge/
 - **No `$ErrorActionPreference = 'Stop'`** in any module file — inherited from caller.
 - **All directory creation** goes through `New-DFDirectory`, never raw `New-Item`.
 - **All PATH additions** go through `Add-DFToPath`, never raw `$Env:Path +=`.
+- **Paths are canonical.** Every path DotForge stores, compares, emits, or accepts as input goes
+  through `ConvertTo-DFPath` (`Private/ConvertTo-DFPath.ps1`): absolute, native separator, no `.`/`..`,
+  no trailing separator. Write `$HOME` in module code — never `~`; a user-supplied `~` path is
+  expanded by `ConvertTo-DFPath`. A relative path is returned unchanged with a warning, never bound to
+  CWD. New path boundaries must route through it.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
 - **`$XDG_CACHE_HOME` must be set** for General Helpers cache (help topics) to work. Set it in your profile: `$Env:XDG_CACHE_HOME = "$Env:USERPROFILE\.cache"`.
 - **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.
@@ -57,7 +82,7 @@ Load module for development:
 Import-Module ./DotForge.psd1 -Force
 ```
 
-Pester 5. Run all tests:
+Pester 5 or 6 (the suite passes under both Pester 5.8 and 6.0.1). Run all tests:
 
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference
@@ -96,7 +121,21 @@ Each `Tools/*.json` must have at minimum:
 - `name` (string, required)
 - `executable` (string, required)
 - `xdg.method`: one of `default | env | config | wrapper | manual`
-- `xdg.vars`: env vars to set when applying XDG config — values may be XDG path templates (expanded via `Expand-DFXdgPath`) OR plain strings (e.g., `LESS` flag strings). Phase 3 tooling must not assume all `vars` values are filesystem paths.
+- `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
+- `env` (optional): a top-level map of environment variable → value for **non-XDG** session
+  settings (fzf options, `GIT_PAGER`, `LESS`, theme names, …). Applied unconditionally by
+  `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through
+  `Expand-DFXdgPath` (flag strings pass through; `${XDG_*}` still expands). Keep `xdg.vars`
+  for `${XDG_*}` path templates only.
+- `themeMap` (optional): a map of canonical theme family → this tool's native dialect (e.g.
+  `{ "catppuccin-mocha": "catppuccin" }`). Only needed when the tool's native name differs from
+  the canonical (per the plugin invariant — no central theme registry). Sidecars resolve the
+  configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
+  this map), then validate against their own built-in list. Shared `$DFConfig.Theme` is
+  canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
+- `role` (optional): a string naming the equivalence group this tool competes in for
+  `$DFConfig.Defaults` resolution (e.g. `"listing"`). No central registry — see
+  `ToolAcquisitionSpec.md` §10.1a and `docs/plugin-architecture.md`.
 
 ## External Dependencies
 
@@ -106,6 +145,20 @@ variable and section-marker GUID, PSReadLine's `Colors` suppression, zoxide's pr
 `Private/Get-DFCoreutilsShadowSet.ps1` or any `Tools/*.ps1` sidecar, and add an entry there when you
 take a new dependency on another tool's internals.** Each entry records what breaks and how it
 degrades; the rule is that undocumented dependencies must degrade silently, never fail.
+
+## Tool Conformance (author-time)
+
+Whether a tool actually honors its configuration is verified, not assumed. The harness
+`build/Test-DFToolConformance.ps1` reads probe descriptors (`build/conformance/*.jsonc`),
+spawns the real tool through an injectable seam (defaulting to a real isolated
+`ProcessStartInfo`; tests inject a canned scriptblock — same pattern as
+`build/Build-DFToolIdentities.ps1`'s `-ResolveLinkage`), and writes per-claim verdicts to
+the versioned ledger `data/tool-conformance.json` plus `reports/tool-conformance-issues.md`.
+Sidecar adapters cite the failing claim (`# adapter for <claim-id>`); the harness flags
+orphaned and upstream-fixed adapters. **Author-time only** — the module never loads or runs
+any of it, and there is no runtime cost. The shared logic lives in `build/DFConformance.ps1`
+(dot-sourced by the harness and by `tests/DFConformance.Tests.ps1`). Optional `[pscustomobject]`
+fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Properties['name']?.Value`).
 
 ## Key Design Decisions
 

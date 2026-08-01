@@ -29,5 +29,10 @@ Register-DFTool -Name eza, bat, fd, ripgrep, fzf, zoxide
 Register-DFTool -Name delta, lazygit, posh-git
 
 # ── Group 3: Dev tools ────────────────────────────────────────────────────────
-# Registers: gh/fpr/fgi (GitHub CLI), npm/nls/fns, uv/fvenv
-Register-DFTool -Name gh, npm, uv, chezmoi
+# Registers: gh/fpr/fgi (GitHub CLI), npm/nls/fns, uv/fvenv, fnm (Node version mgr)
+# fnm's --use-on-cd hook rebinds `cd`, so it must register AFTER zoxide (done in
+# Group 1) — its companion captures zoxide's `cd` and chains through it, so the
+# smart jump and the per-directory Node switch both fire. In one combined
+# Register-DFTool call, fnm.json's "dependsOn": ["zoxide"] enforces this order for
+# you; across separate calls like this, just keep zoxide's group first.
+Register-DFTool -Name gh, npm, uv, chezmoi, fnm

@@ -1,0 +1,23 @@
+{
+  "name": "mdcat",
+  "description": "cat for markdown — render CommonMark in the terminal",
+  "tags": [
+    "markdown",
+    "viewer",
+    "text"
+  ],
+  "executable": "mdcat.exe",
+  "packages": {
+    "scoop": "mdcat",
+    "cargo": "mdcat"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "default"
+  },
+  "env": {
+    "MDCAT_THEME": "catppuccin-mocha"
+  },
+  "aliases": {},
+  "picker": null
+}

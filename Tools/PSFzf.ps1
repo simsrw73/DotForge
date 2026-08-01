@@ -20,5 +20,4 @@ if (Get-Module -Name PSFzf) {
 
     Set-PsFzfOption -EnableAliasFuzzyScoop
     Set-PsFzfOption -TabExpansion
-    Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
 }

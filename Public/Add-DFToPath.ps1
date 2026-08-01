@@ -10,8 +10,9 @@ function Add-DFToPath {
         Add to the front of PATH instead of the end.
     .DESCRIPTION
         Normalizes the path, deduplicates against all existing PATH entries, and
-        appends (or prepends) if not already present. Relative paths are rejected
-        with a warning. All DotForge PATH additions use this function.
+        appends if not already present, or prepends while moving an existing
+        entry to the front. Relative paths are rejected with a warning. All
+        DotForge PATH additions use this function.
     .EXAMPLE
         Add-DFToPath 'C:\tools\bin'
         Appends C:\tools\bin to the current session PATH if not already present.
@@ -35,17 +36,22 @@ function Add-DFToPath {
         return
     }
 
-    $normalized = [IO.Path]::GetFullPath($Dir)
+    $normalized = ConvertTo-DFPath $Dir
 
     $existing = ($Env:Path -split [IO.Path]::PathSeparator) |
         Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
-        ForEach-Object { try { [IO.Path]::GetFullPath($_) } catch { $_ } }
+        ForEach-Object { try { ConvertTo-DFPath $_ } catch { $_ } }
+
+    if ($Prepend) {
+        $remaining = ($Env:Path -split [IO.Path]::PathSeparator) | Where-Object {
+            if (-not $_ -or -not [IO.Path]::IsPathRooted($_)) { return $true }
+            try { (ConvertTo-DFPath $_) -ne $normalized } catch { $true }
+        }
+        $Env:Path = (@($normalized) + @($remaining)) -join [IO.Path]::PathSeparator
+        return
+    }
 
     if ($normalized -notin $existing) {
-        if ($Prepend) {
-            $Env:Path = $normalized + [IO.Path]::PathSeparator + $Env:Path
-        } else {
-            $Env:Path += [IO.Path]::PathSeparator + $normalized
-        }
+        $Env:Path += [IO.Path]::PathSeparator + $normalized
     }
 }

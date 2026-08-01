@@ -6,6 +6,155 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a
+  `role` (e.g. `"listing"`); `$DFConfig.Defaults = @{ listing = 'eza' }` names the winner, and
+  `Register-DFTool` suppresses only the alias keys a role LOSER shares with the winner — every
+  other alias, XDG config, and picker the loser declares still applies. Onboarded `lsd` as a real
+  second `listing`-role tool alongside `eza` to prove the mechanism.
+- **Author-time tool-conformance harness.** `build/Test-DFToolConformance.ps1`
+  probes whether a tool actually honors its configuration (env vars, config
+  files, flags) rather than trusting the docs, recording per-claim
+  `pass`/`fail`/`manual`/`unknown` verdicts in a versioned ledger
+  (`data/tool-conformance.json`) and generating an upstream-ready issue report
+  (`reports/tool-conformance-issues.md`). Probe descriptors live in
+  `build/conformance/*.jsonc`; sidecar adapters cite the claim they work around
+  (`# adapter for <claim-id>`), and the harness flags orphaned or upstream-fixed
+  adapters. Piloted on `bat` and `glow`. Author-time only — never loaded or run
+  by the module.
+
+### Changed
+
+- **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
+  (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
+  `Copy-DFToClipboard` needs to switch to `yank`.
+- **All 27 general-helper aliases (`pg`, `hm`, `touch`, `yank`, …) are now genuinely module-owned.**
+  `(Get-Module DotForge).ExportedAliases` reports them and `Remove-Module DotForge` cleans them up
+  correctly — previously the manifest's `AliasesToExport` was decorative. No change to how or when
+  they're created relative to a session's existing aliases (import-time collision behavior is
+  unchanged; see `docs/superpowers/specs/2026-07-26-alias-ownership-design.md` for why).
+
+### Fixed
+
+- **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,
+  `Install-DFTool`, `New-DFShim`, and both `$DFConfig` reads in `Tools/psreadline.ps1`
+  guarded on the *variable's existence* (`Get-Variable -Name DFConfig`) before indexing
+  into it. Assigning `$null` leaves the variable defined, so the index threw
+  `Cannot index into a null array`. All five now test the value (`$null -ne $Global:DFConfig`),
+  matching the already-safe short-circuit in `Get-DFCommandConflict`. Regression tests
+  added for each.
+
+- **glow ignored its DotForge configuration entirely.** `Tools/glow.json` set
+  `GLOW_CONFIG_DIR` and created `$XDG_CONFIG_HOME/glow`, but glow honors no XDG
+  environment variable: its config path comes from a Win32 known-folder lookup
+  (it does not move even when `APPDATA`/`LOCALAPPDATA` are redirected),
+  `GLAMOUR_STYLE` is never read at all, and `GLOW_STYLE` is parsed but loses to
+  glow's non-TTY downgrade. The result was an empty config directory and a theme
+  that never rendered. A new companion `Tools/glow.ps1` now wraps the executable
+  and passes `--config` and `-s` as flags — the only knobs that work — so
+  `xdg.method` moves from `env` to `wrapper` and the dead `xdg.vars` are gone.
+
+### Added
+
+- **Canonical path handling (`ConvertTo-DFPath`).** All paths DotForge stores, compares, emits, or
+  accepts are now absolute, native-separator, free of `.`/`..`, and without a trailing separator, with
+  a leading `~` expanded to `$HOME`. This fixes the mixed `\`/`/` separators that XDG-derived env vars
+  (`BAT_CONFIG_PATH`, `MDV_CONFIG_PATH`, …) previously carried on Windows, and collapses `..` in
+  internal path defaults. Non-path flag strings (`LESS`, `FZF_DEFAULT_OPTS`) are unaffected.
+- **Two markdown viewers — `mdcat` and `mdv`:** both catppuccin by default. `mdcat`
+  is themed via `MDCAT_THEME` with native `--completions`; `mdv` is themed by a seeded
+  `config.yaml` (written only when absent) plus a bundled carapace spec. A shared
+  `$DFConfig['Theme']` key now drives `glow`, `mdcat`, `mdv`, and `psreadline`, with
+  per-tool keys (`GlowTheme`, `MdcatTheme`, `MdvTheme`, `PSReadLineTheme`) overriding it.
+  `Install-DFTool` gained a `cargo` arm (last-resort) so cargo-only tools install.
+- **Bundled glow theme + `$DFConfig['GlowTheme']`:** `Tools/glow/catppuccin-mocha.json`
+  ships with the module, and `Resolve-DFGlowStyle` resolves a theme name the same
+  way PSReadLine themes resolve — rooted path, then
+  `$XDG_CONFIG_HOME/glow/themes/<name>.json`, then the bundled copy, then glow's
+  own built-in style names (`auto`, `dark`, `light`, `dracula`, `pink`, `notty`,
+  `ascii`, `tokyo-night`). An unresolved name warns and falls back to `auto`,
+  because a `-s` path glow cannot load makes it exit 1 rather than degrade. The
+  resolved value lives in `$global:DFGlowStyle` and is read at call time, so
+  assigning to it switches theme for the rest of the session.
+
+### Changed
+
+- **Non-XDG environment variables moved out of `xdg.vars` into a dedicated top-level `env`
+  block.** `xdg.vars` is now `${XDG_*}` path-templates only. Affects `fzf`, `delta`, `less`,
+  and `mdcat` (fzf/delta/mdcat move to `xdg.method: default`). Behavior is unchanged — the same
+  variables are set to the same values, just declared in `env`.
+
+- **Theme family→dialect mapping moved from hardcoded sidecar rules into an optional per-tool
+  `themeMap`**, resolved by the new `Private/Resolve-DFThemeName.ps1` from each tool's own
+  declaration (no central registry — governed by `docs/plugin-architecture.md`). The bare
+  `catppuccin` alias is retired in favor of the canonical `catppuccin-mocha`; the shared
+  `$DFConfig.Theme` is now canonical-name-only, while a per-tool `<Tool>Theme` still accepts a
+  tool's own native names. All tool defaults remain canonical, so out-of-the-box rendering is
+  unchanged. `delta` gains a new companion (`Tools/delta.ps1`) so `DELTA_FEATURES` tracks
+  `$DFConfig.Theme`/`DeltaTheme` instead of being a static value.
+
+## [0.5.0-preview] - 2026-07-23
+
+### Added
+
+- **Debounced picker previews:** the winget/scoop/choco preview panes are
+  prefixed with a ~1s cmd sleep (`ping -n 2 127.0.0.1 >nul &`). fzf kills the
+  running preview when the cursor moves, so scrolling quickly through a list no
+  longer spawns `winget show` / `scoop info` / `choco info` for every skipped
+  item — the preview only fetches once the cursor rests on an item.
+- **Command-line prefill chords for the search pickers:** when PSReadLine is
+  available, each companion binds a `Ctrl+G` chord — `Ctrl+G W` (winget),
+  `Ctrl+G S` (scoop), `Ctrl+G C` (choco) — that reads the current line as the
+  search query, opens the fuzzy picker, and drops the resulting install command
+  onto the command line (editable; press Enter to run). Guarded, so it is a no-op
+  when PSReadLine is not loaded.
+- **scoop fuzzy pickers (`Tools/scoop.ps1`):** `Select-ScoopPackage` / `sins`,
+  `Remove-ScoopPackage` / `srm`, `Invoke-ScoopUpdate` / `sup` — same picker set
+  and keybindings as winget, with a `scoop info` preview. Search uses
+  `scoop-search` when present (fast, matches names and binaries) and falls back
+  to the [`Scoop`](https://www.powershellgallery.com/packages/Scoop) module's
+  `Find-ScoopApp`; the installed list and install/uninstall/update actions use the
+  Scoop module (object output — no `scoop list` table scraping). `scoop.json`
+  `picker` is now `"custom"`.
+- **choco tool + fuzzy pickers (`Tools/choco.json` + `Tools/choco.ps1`):**
+  `Select-ChocoPackage` / `cins`, `Remove-ChocoPackage` / `crm`,
+  `Invoke-ChocoUpdate` / `cup`, driven by choco's machine-readable `-r` output
+  (pipe-delimited, not table-scraped). Install/uninstall/upgrade run through
+  `gsudo` when it is available (elevation); otherwise the search picker's `Enter`
+  returns the command to run elevated.
+- **winget fuzzy pickers (`Tools/winget.ps1`):** rebuilt on the
+  `Microsoft.WinGet.Client` module (object output — no CLI table scraping) with a
+  live `winget show` preview pane.
+  - `Select-WingetPackage` / `wins [query]` — search → install. `Enter` returns
+    the `winget install …` command; `Alt-R` installs now; `Alt-I` installs the
+    highlighted package in place while you keep browsing.
+  - `Remove-WingetPackage` / `wrm` — browse installed → uninstall (`Alt-C`
+    returns the command, `Alt-X` uninstalls in place). `-Source <src>` (e.g.
+    `wrm -Source winget`) filters the list to one source, hiding ARP/registry-only
+    entries.
+  - `Invoke-WingetUpdate` / `wup` — browse upgradable packages, multi-select to
+    update (`Tab` marks, `Alt-A` runs `winget upgrade --all`). New picker.
+  - The pickers warn and no-op if `Microsoft.WinGet.Client` is not installed.
+- **`Invoke-DFPicker` keybinding support:** new `-Expect` (fzf `--expect`
+  multi-key mode; returns a `{ Key; Selected }` object so callers branch on the
+  pressed key), `-Bind` (one `--bind` per spec, for act-in-place `execute(...)`
+  bindings), and `-FzfArgs` (verbatim passthrough). All backward-compatible —
+  existing callers and the declarative picker generator are unaffected.
+
+## [0.4.0-preview] - 2026-07-20
+
+### Added
+
+- **fnm tool (`Tools/fnm.json` + `Tools/fnm.ps1`):** configures the Fast Node Manager,
+  including its `--use-on-cd` per-directory version switching. fnm's generated hook
+  rebinds `cd` to a wrapper that calls plain `Set-Location`, which would clobber
+  zoxide's smart `cd`. The companion captures whatever owns `cd` before fnm loads
+  (`$global:cdBeforeFnm`) and re-points fnm's `Set-LocationWithFnm` back through it, so
+  a single `cd` performs zoxide's jump **and** fnm's Node switch; it forwards `@args`
+  (not fnm's single `$path`) so zoxide's multi-keyword queries survive. `fnm.json`
+  declares `"dependsOn": ["zoxide"]` so `Register-DFTool` topo-sorts zoxide first; with
+  zoxide absent it falls back to `Set-Location` and fnm still works standalone. XDG:
+  `FNM_DIR` points at `${XDG_DATA_HOME}/fnm`. The dependency on fnm's and zoxide's
+  internals is catalogued in `docs/external-dependencies.md`.
 - **`Get-DFCommandConflict`:** reports DotForge commands that Coreutils for Windows
   shadows before PowerShell can resolve them. Coreutils installs a
   `PSConsoleHostReadLine` hook that rewrites matching command names to `<name>.cmd`
@@ -36,11 +185,39 @@ All notable changes to DotForge are documented here.
   including `eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`,
   and `winget`. Composes with PSFzf, which owns the Tab key and routes through
   `TabExpansion2`.
+- **Bundled carapace spec for `scoop`.** Carapace ships no scoop completer, so
+  `scoop <TAB>` fell through to filesystem completion (offering `.\` and directory
+  names). `Tools/carapace/specs/scoop.yaml` supplies static subcommand and flag
+  completion; `Tools/carapace.ps1` deploys bundled specs into
+  `$XDG_CONFIG_HOME/carapace/specs/`, which carapace auto-loads. Deployed copies are
+  refreshed only when the bundled content changes.
 - **Package-universe Phase C (tool merge)** — `build/Build-DFPackageUniverseTools.ps1` flattens Phase B clusters and singletons into a master `tools` table (one row per real-world tool across the whole corpus, lossless via a `tool_packages` child), with per-field priority picks (winget > choco > scoop) and provenance, a license single-answer conflict flag, a `tool_tags` union, and first-pass `tool_categories` from a committed `data/package-universe-categories.jsonc` rule file. Build-only; no public module surface change.
 - **Package-universe Phase D — categorization engine (Plan 1)** — `build/Build-DFPackageUniverseCategories.ps1` classifies every merged tool into a closed taxonomy (coarse `domain` + `function`/`worksWith` facets + `interface`, plus `alternativeTo`) by reading each tool's own docs (any-host README → doc page → metadata) via a small OpenAI model. Each result is cached durably (keyed on a stable identity signal, not the volatile tool_id) and exported to a version-controlled `data/package-universe-classifications.jsonc`, so the run is resumable, budget-capped, and survives DB rebuilds and re-clustering. Build-only; no public module surface change.
 
 ### Fixed
 
+- **`docker <TAB>` emitted raw ANSI escape sequences through the PSFzf picker.**
+  Carapace styles completion `ListItemText` with colour escapes whenever it is
+  attached to a console (invisible when stdout is redirected, so headless tests never
+  saw it). PSFzf ran `fzf` without `--ansi`, so the escapes rendered literally. The
+  completion-stack resolver now adds `--ansi` to `FZF_DEFAULT_OPTS` — a documented fzf
+  environment variable, not a PSFzf internal — whenever PSFzf and Carapace are both
+  registered. The inserted text stays clean because it comes from `CompletionText`,
+  which Carapace never styles. The merge is idempotent and preserves existing options.
+- **A fuzzy-picked Carapace completion was inserted quoted (`docker "build "`).**
+  Carapace appends a trailing space to each `CompletionText`, and PSFzf quotes any
+  completion containing a space. When PSFzf owns Tab (Native mode + PSFzf available),
+  `Tools/carapace.ps1` now trims that trailing space from Carapace's generated
+  completer, so the picked value lands unquoted (`docker build `); PSFzf re-adds the
+  single trailing space. The space is preserved when PSFzf is not in play, where
+  `MenuComplete` needs it for subcommand chaining. Catalogued in
+  `docs/external-dependencies.md`.
+- **The inshellisense Carapace bridge never activated.** `Tools/carapace.ps1` checks
+  for the `is` executable before merging it into `CARAPACE_BRIDGES`, but Carapace
+  sorted ahead of fnm, so `is` was not yet on PATH and the check always failed.
+  `Tools/carapace.json` now declares `"dependsOn": ["fnm"]`, so `Register-DFTool`
+  configures fnm (which puts the Node-hosted `is` on PATH) before Carapace runs. With
+  fnm absent the dependency is skipped and Carapace still registers normally.
 - **Eleven tools advertised fzf pickers that did not exist.** `Register-DFTool` only
   builds a picker from a declarative object, so `"picker": "custom"` without a sidecar
   that actually builds one did nothing at all — no error, no warning, no picker.

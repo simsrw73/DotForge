@@ -78,4 +78,4 @@ function New-DFUuid {
 # Always alias `uuidgen` to our generator so it behaves like the Unix command on
 # every platform, deliberately shadowing any native uuidgen (e.g. the Windows SDK
 # binary) for consistent, predictable output.
-Set-Alias -Name uuidgen -Value New-DFUuid -Scope Global -Force
+Set-Alias -Name uuidgen -Value New-DFUuid

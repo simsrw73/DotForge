@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFCommandCapture.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFCliHelpFlag.ps1"
 }

@@ -31,6 +31,7 @@ alternative fuzzy finder.
 
 **One-command install.** `Install-DFTool -Name <tool>` installs via whichever of
 scoop, winget, or choco you have available — no need to remember package IDs.
+cargo is tried as a last resort for tools that declare a `packages.cargo` entry.
 
 ## Requirements
 
@@ -75,7 +76,15 @@ Set `$DFConfig` in your profile **before** importing DotForge:
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
+    Defaults            = @{ listing = 'eza' }  # role winner; loser's contested aliases suppressed
+    CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
+    PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
+    Theme               = 'catppuccin-mocha'    # shared theme for all viewers (canonical name only; per-tool keys override)
+    MdcatTheme          = 'catppuccin-mocha'    # mdcat theme (overrides Theme)
+    MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme; mdv's own native name)
+    GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
+    DeltaTheme          = 'catppuccin-mocha'    # delta features string (overrides Theme)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
     SkipConflictCheck   = $false                # $true silences the shadowed-command check
@@ -84,6 +93,38 @@ Import-Module DotForge
 Register-DFTool -All
 ```
 
+## Completion Stack
+
+DotForge finalizes completion once, after registered tools and PSReadLine's
+edit mode have been applied. `CompletionMode = 'Native'` is the default: PSReadLine
+provides the editor, Carapace supplies styled argument-completion results, and
+PSFzf is optional. In a Carapace-only Native session, Tab uses PSReadLine's
+`MenuComplete`; when PSFzf is registered, its fuzzy Tab completion takes
+precedence.
+
+When Native mode finds `is` (or `inshellisense`), DotForge augments
+`CARAPACE_BRIDGES` with `inshellisense` without discarding user bridge entries.
+Because `is` is typically a Node-hosted command, `carapace` declares
+`"dependsOn": ["fnm"]` so fnm puts `is` on PATH before the bridge check runs.
+Set `CompletionMode = 'Inshellisense'` to start inshellisense directly instead;
+direct mode requires the `is` command and starts only after tool registration.
+It first checks `is -c`, so an existing session is left alone. If `is` is
+unavailable, DotForge warns and falls back to the Native behavior.
+
+Carapace styles its completion results with ANSI colour when attached to a
+console. When both Carapace and PSFzf are registered, the resolver adds `--ansi`
+to `FZF_DEFAULT_OPTS` so the fuzzy picker renders those colours instead of
+printing raw escape sequences; the text inserted at the prompt is unaffected.
+
+Carapace ships no completer for some tools (e.g. `scoop`). DotForge bundles
+carapace specs under `Tools/carapace/specs/` and deploys them to
+`$XDG_CONFIG_HOME/carapace/specs/`, where carapace auto-loads them. To add your
+own, drop a `*.yaml` spec in that directory (see `carapace --schema`).
+
+Do not change PSReadLine's edit mode after `Register-DFTool -All`: a raw
+post-registration `Set-PSReadLineOption -EditMode ...` resets Tab. Set
+`PSReadLineEditMode` in `$DFConfig` before importing DotForge so the completion
+stack can install its final Tab binding afterward.
 ## Coreutils Conflicts
 
 If you have [Coreutils for Windows](https://github.com/uutils/coreutils) installed, some DotForge
@@ -211,7 +252,7 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 
 | Cmdlet                | Alias   | Purpose                                    |
 | --------------------- | ------- | ------------------------------------------ |
-| `Copy-DFToClipboard`  | `copy`  | Copy string or pipeline input to clipboard |
+| `Copy-DFToClipboard`  | `yank`  | Copy string or pipeline input to clipboard |
 | `Get-DFFromClipboard` | `paste` | Get clipboard contents                     |
 
 **Utility**
@@ -352,6 +393,20 @@ editor and choco's unrelated `zed` package as separate rows, because they
 are, in fact, different tools. Coverage grows over time the same way the
 category database does — nothing is ever merged on a guess.
 
+### Tool conformance (author-time)
+
+DotForge verifies that each tool actually honors the configuration it's given,
+rather than trusting the docs. `build/Test-DFToolConformance.ps1` reads
+per-tool probe descriptors (`build/conformance/*.jsonc`), spawns the real tool
+in an isolated environment, and records a `pass`/`fail`/`manual`/`unknown`
+verdict per claim into the versioned ledger `data/tool-conformance.json`, plus
+an upstream-ready issue report at `reports/tool-conformance-issues.md`. When a
+tool fails a claim and a sidecar works around it, the sidecar carries a
+`# adapter for <claim-id>` comment that the harness cross-checks — flagging
+orphaned references and adapters that upstream has since fixed. This is an
+**author-time** activity only: the DotForge module never loads or runs the
+harness, and there is no runtime cost.
+
 ### Scheduled cache refresh
 
 Schedule a nightly refresh so interactive queries always hit warm caches. Run
@@ -427,25 +482,86 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (32)
+## Included Tools (35)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
-| File/dir         | bat, eza, fd, ripgrep, broot                       |
-| Text/data        | jq, glow                                           |
+| Completion       | carapace, inshellisense                            |
+| File/dir         | bat, eza, lsd, fd, ripgrep, broot                  |
+| Text/data        | jq, glow, mdcat, mdv                               |
 | System           | procs, winfetch, gsudo                             |
 | Network          | curl, wget                                         |
 | Container        | docker                                             |
 | Editors          | micro                                              |
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |
-| Package managers | scoop, winget, npm                                 |
-| Dev              | bitwarden, chezmoi, delta, gh, lazygit, rustup, uv |
+| Package managers | scoop, winget, choco, npm                          |
+| Dev              | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv |
 | PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
 
 ## Tool-Specific Helpers
 
 Companion `.ps1` files register globals (not module exports) when their tool is registered.
+
+**Theme resolution.** The shared `$DFConfig['Theme']` accepts only a **canonical**
+family name (e.g. `catppuccin-mocha`) — DotForge translates it to each tool's own
+dialect (e.g. mdv's native `catppuccin`). A per-tool override (`GlowTheme`,
+`MdvTheme`, …) accepts the canonical name **or** that tool's own native names; only
+the canonical value triggers translation, so a name that happens to be a *different*
+tool's dialect is never mistaken for it.
+
+**delta** (`Tools/delta.ps1`)
+
+delta's `DELTA_FEATURES` is a plain env var with no auto-discovery, so DotForge sets
+it from the resolved theme (`$DFConfig['DeltaTheme']`, then the shared
+`$DFConfig['Theme']`, then `catppuccin-mocha`) — no wrapper, no built-in validation
+(delta silently ignores an unrecognized feature name). Rendering catppuccin still
+requires a delta config that defines the `catppuccin-mocha` feature; DotForge tracks
+the *value*, not the config.
+
+**glow** (`Tools/glow.ps1`)
+
+glow honors no XDG environment variable — its config path is a Win32 known-folder
+lookup, `GLAMOUR_STYLE` is never read, and `GLOW_STYLE` loses to glow's non-TTY
+downgrade. So DotForge wraps the executable in a global `glow` function that passes
+`--config` and `-s` explicitly. Piped input (`Get-Content x.md | glow`) is forwarded;
+glow's own flags (`-w`, `-p`, `-t`, `-a`) and its subcommands pass through unchanged,
+and carapace completion for `glow` still works.
+
+| Function / Variable            | Purpose                                                  |
+| ------------------------------ | -------------------------------------------------------- |
+| `glow`                         | Wrapper passing `--config $XDG_CONFIG_HOME/glow/glow.yml` and `-s <style>` |
+| `Resolve-DFGlowStyle -Name <n>` | Resolves a style: rooted path → `$XDG_CONFIG_HOME/glow/themes/<n>.json` → bundled `Tools/glow/<n>.json` → glow built-in name → warn and fall back to `auto` |
+| `$global:DFGlowStyle`          | The active style, read at call time — assign to it to switch theme for the session |
+
+Set the startup theme with `$DFConfig['GlowTheme']`. `catppuccin-mocha` ships with
+the module; glow's own `auto`, `dark`, `light`, `dracula`, `pink`, `notty`, `ascii`,
+and `tokyo-night` are accepted as bare names.
+
+```powershell
+glow README.md                     # rendered with the configured theme
+$global:DFGlowStyle = 'dracula'    # switch for this session
+```
+
+**mdcat** (`Tools/mdcat.ps1`)
+
+mdcat is XDG-native and its `MDCAT_THEME` env var works from any shell, so DotForge
+sets the theme via that variable (no wrapper) and registers mdcat's own
+`--completions powershell`. Theme comes from `$DFConfig['MdcatTheme']`, then the
+shared `$DFConfig['Theme']`, then `catppuccin-mocha`. Built-ins: `catppuccin-mocha`,
+`catppuccin-latte`, `dracula`, `nord`, `gruvbox-dark/-light`, `solarized-dark/-light`,
+`auto`, `dark`, `light`.
+
+**mdv** (`Tools/mdv.ps1`)
+
+mdv has no config auto-discovery and no theme env var, so DotForge points
+`MDV_CONFIG_PATH` at `$XDG_CONFIG_HOME/mdv` and seeds `config.yaml` with the resolved
+theme **only when the file is absent** — your edits are never overwritten. Theme comes
+from `$DFConfig['MdvTheme']`, then the shared `$DFConfig['Theme']` (resolved to mdv's
+own `catppuccin` dialect), then `catppuccin-mocha` (resolved to `catppuccin`). Because the
+seed is write-when-absent, **changing the theme after first run means editing or
+deleting `config.yaml`** and re-registering. Completion is provided by a bundled
+carapace spec (`Tools/carapace/specs/mdv.yaml`).
 
 **oh-my-posh** (`Tools/oh-my-posh.ps1`)
 
@@ -469,6 +585,86 @@ Companion `.ps1` files register globals (not module exports) when their tool is 
 | `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
 | `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
+**winget** (`Tools/winget.ps1`)
+
+Fuzzy package pickers with a live `winget show` preview pane. Each item carries
+a hidden id field, so filtering matches on name **or** id. Requires the
+[`Microsoft.WinGet.Client`](https://learn.microsoft.com/windows/package-manager/winget/)
+module (`Install-Module Microsoft.WinGet.Client -Scope CurrentUser`); the
+pickers warn and no-op if it is missing.
+
+| Function / Alias                | Purpose                                                        |
+| ------------------------------- | -------------------------------------------------------------- |
+| `Select-WingetPackage [-Query]` / `wins` | Search (`Find-WinGetPackage`) → install. Prompts for a query when none is given. |
+| `Remove-WingetPackage [-Source <src>]` / `wrm` | Browse installed packages → uninstall. `-Source winget` filters the list to that source, hiding ARP/registry-only entries. |
+| `Invoke-WingetUpdate` / `wup`   | Browse upgradable packages (multi-select) → update.            |
+
+Each picker binds keys two ways — an `--expect` key that exits fzf and runs the
+action back in PowerShell (clean UAC/output), and an in-place `--bind execute`
+key that acts on the highlighted item while you keep browsing:
+
+| Picker | `Enter` | Other keys |
+| ------ | ------- | ---------- |
+| `wins` | **returns** the `winget install …` command string | `Alt-R` install now · `Alt-I` install highlighted in place (keep browsing) |
+| `wrm`  | uninstall the selection | `Alt-X` uninstall in place · `Alt-C` return the uninstall command |
+| `wup`  | update the marked selection(s) | `Tab` mark · `Alt-A` `winget upgrade --all` |
+
+```powershell
+wins ripgrep     # search → Enter prints `winget install --id BurntSushi.ripgrep.MSVC --exact`
+wrm              # pick an installed app → uninstall
+wup              # Tab to mark several upgrades → Enter updates them
+```
+
+`Invoke-DFPicker` gained `-Expect` (multi-key mode; returns a `{ Key; Selected }`
+object), `-Bind` (per-spec `--bind`), and `-FzfArgs` (verbatim passthrough) to
+support these workflows.
+
+**scoop** (`Tools/scoop.ps1`)
+
+The same picker set for scoop, with a `scoop info` preview. Search uses
+[`scoop-search`](https://github.com/shilangyu/scoop-search) when present (fast;
+matches names **and** binaries), else the module's `Find-ScoopApp`. Requires the
+[`Scoop`](https://www.powershellgallery.com/packages/Scoop) module
+(`Install-Module Scoop -Scope CurrentUser`) for the installed list and typed
+install/uninstall/update actions.
+
+| Function / Alias                | Purpose                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| `Select-ScoopPackage [-Query]` / `sins` | Search → install (`Enter` returns the command, `Alt-R` installs, `Alt-I` installs in place) |
+| `Remove-ScoopPackage` / `srm`   | Installed apps → uninstall (`Alt-X` in place, `Alt-C` command) |
+| `Invoke-ScoopUpdate` / `sup`    | Installed apps, multi-select → update (`Tab` mark, `Alt-A` `scoop update *`) |
+
+**choco** (`Tools/choco.json` + `Tools/choco.ps1`)
+
+The same picker set for Chocolatey, driven by choco's machine-readable `-r`
+output (no module exists). `choco info` preview. Install/uninstall/upgrade need
+elevation and run through [`gsudo`](https://github.com/gerardog/gsudo) when it is
+on PATH; otherwise `Enter` on the search picker returns the command to run in an
+elevated shell.
+
+| Function / Alias                | Purpose                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| `Select-ChocoPackage [-Query]` / `cins` | Search → install (`Enter` returns the command, `Alt-R` installs, `Alt-I` installs in place) |
+| `Remove-ChocoPackage` / `crm`   | Installed packages → uninstall (`Alt-X` in place, `Alt-C` command) |
+| `Invoke-ChocoUpdate` / `cup`    | Outdated packages, multi-select → upgrade (`Tab` mark, `Alt-A` `choco upgrade all`) |
+
+**Command-line prefill (PSReadLine chords).** When PSReadLine is available, each
+search picker is also bound to a `Ctrl+G` chord that lands the install command
+directly on the command line, editable, ready to run:
+
+| Chord | Manager |
+| ----- | ------- |
+| `Ctrl+G` `W` | winget |
+| `Ctrl+G` `S` | scoop |
+| `Ctrl+G` `C` | choco |
+
+Type a search term, press the chord, pick in fzf — the term is replaced by e.g.
+`winget install --id BurntSushi.ripgrep.MSVC --exact` with the cursor at the end.
+Edit if you like, then press Enter. (The bindings use the current line as the
+query and no-op on an empty line. Pressing `Alt-R` inside the picker installs
+immediately instead of prefilling.)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
+

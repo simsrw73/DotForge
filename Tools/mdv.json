@@ -1,0 +1,31 @@
+{
+  "name": "mdv",
+  "description": "Terminal markdown viewer with themes and syntax highlighting",
+  "tags": [
+    "markdown",
+    "viewer",
+    "text"
+  ],
+  "executable": "mdv.exe",
+  "packages": {
+    "cargo": "mdv"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "MDV_CONFIG_PATH": "${XDG_CONFIG_HOME}/mdv"
+    },
+    "dirs": [
+      "${XDG_CONFIG_HOME}/mdv"
+    ]
+  },
+  "settings": {
+    "theme": "catppuccin-mocha"
+  },
+  "themeMap": {
+    "catppuccin-mocha": "catppuccin"
+  },
+  "aliases": {},
+  "picker": null
+}

@@ -6,7 +6,7 @@
 
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')
-    SkipTools           = @('lsd')
+    Defaults            = @{ listing = 'eza' }  # eza wins ls/ll/la/tree over lsd
 }
 
 Import-Module DotForge

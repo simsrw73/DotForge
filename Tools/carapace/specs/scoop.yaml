@@ -1,0 +1,113 @@
+# Carapace spec for scoop (Windows command-line installer).
+#
+# Carapace ships no scoop completer, so without this spec `scoop <TAB>` falls
+# through to filesystem completion. DotForge deploys this file to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1), where carapace loads it
+# automatically. See `carapace --help` ("Specs are loaded from ...").
+#
+# Static subcommand + flag completion only. Dynamic app-name completion is
+# intentionally omitted: carapace executes spec `$(...)` macros in its own shell
+# context, not PowerShell, so `$(scoop ...)` cannot resolve the scoop shim.
+#
+# Carapace flag-key syntax is short-first: `-g, --global`; a trailing `=` marks a
+# flag that takes a value (`-a, --arch=`).
+name: scoop
+description: Windows command-line installer
+persistentflags:
+  -h, --help: Show help
+commands:
+  - name: install
+    description: Install apps
+    flags:
+      -g, --global: Install the app globally
+      -i, --independent: Do not install dependencies automatically
+      -k, --no-cache: Do not use the download cache
+      -s, --skip-hash-check: Skip hash validation
+      -u, --no-update-scoop: Do not update scoop before installing
+      -a, --arch=: Use the specified architecture
+  - name: uninstall
+    description: Uninstall apps
+    flags:
+      -g, --global: Uninstall a globally installed app
+      -p, --purge: Remove persisted data as well
+  - name: update
+    description: Update apps, or scoop itself
+    flags:
+      -g, --global: Update a globally installed app
+      -f, --force: Force update even when there is no new version
+      -k, --no-cache: Do not use the download cache
+      -s, --skip-hash-check: Skip hash validation
+      -q, --quiet: Hide extraneous messages
+      -a, --all: Update all apps
+  - name: search
+    description: Search available apps
+  - name: list
+    description: List installed apps
+  - name: info
+    description: Display information about an app
+    flags:
+      -v, --verbose: Show full paths and cached files
+  - name: status
+    description: Show status and check for available updates
+  - name: hold
+    description: Hold an app to disable updates
+    flags:
+      -g, --global: Hold a globally installed app
+  - name: unhold
+    description: Unhold an app to enable updates
+    flags:
+      -g, --global: Unhold a globally installed app
+  - name: reset
+    description: Reset an app to resolve conflicts
+  - name: cleanup
+    description: Cleanup apps by removing old versions
+    flags:
+      -g, --global: Cleanup a globally installed app
+      -a, --all: Cleanup all apps
+      -k, --cache: Remove outdated download cache
+  - name: cache
+    description: Show or clear the download cache
+    commands:
+      - name: show
+        description: Show the download cache
+      - name: rm
+        description: Remove an item from the download cache
+  - name: bucket
+    description: Manage scoop buckets
+    commands:
+      - name: add
+        description: Add a bucket
+      - name: list
+        description: List buckets
+      - name: known
+        description: List known buckets
+      - name: rm
+        description: Remove a bucket
+  - name: config
+    description: Get or set configuration values
+  - name: which
+    description: Locate the path to a shim/executable
+  - name: cat
+    description: Show the manifest of an app
+  - name: home
+    description: Open the app home page
+  - name: depends
+    description: List dependencies for an app
+  - name: prefix
+    description: Show the install directory for an app
+  - name: shim
+    description: Manipulate scoop shims
+  - name: export
+    description: Export installed apps, buckets, and config
+  - name: import
+    description: Import a previously exported installation
+  - name: checkup
+    description: Check for potential problems
+  - name: virustotal
+    description: Look for app hashes on VirusTotal
+    flags:
+      -a, --all: Check all installed apps
+  - name: download
+    description: Download apps without installing
+  - name: alias
+    description: Manage scoop aliases

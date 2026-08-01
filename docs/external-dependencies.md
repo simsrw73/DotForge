@@ -82,6 +82,37 @@ Two categories, and the difference matters:
 | **Why** | It forces an ordering constraint: oh-my-posh must initialize **before** zoxide so zoxide wraps OMP's prompt. `Register-DFTool -All` gets this right alphabetically (`oh-my-posh` < `zoxide`). |
 | **If it changes** | **Known live limitation:** after a theme switch via `fpot`, OMP re-inits and replaces `function:prompt`, but zoxide's guard prevents re-hooking — so directory tracking stops until the next shell. No clean workaround. |
 
+### 8. fnm: the `cd` hook shape (`Set-LocationWithFnm` / `Set-FnmOnLoad`)
+
+| | |
+|---|---|
+| **What** | `fnm env --use-on-cd --shell powershell` emits a global `Set-LocationWithFnm` function that calls plain `Set-Location`, a `Set-FnmOnLoad` helper, and `Set-Alias -Option AllScope -Scope global cd Set-LocationWithFnm`. `Tools/fnm.ps1` (a) captures the pre-fnm `cd` target from zoxide's alias via `(Get-Alias 'cd').ReferencedCommand`, then (b) **redefines `global:Set-LocationWithFnm`** to route through that captured command so zoxide's jump and fnm's version switch both run. |
+| **Where** | `Tools/fnm.ps1` |
+| **Why** | fnm's wrapper hardcodes `Set-Location`, so without the re-wrap fnm silently clobbers zoxide's smart `cd`. The re-wrap depends on the exact names `Set-LocationWithFnm` (the function fnm's `cd` alias points at) and `Set-FnmOnLoad` (the per-directory switch), plus zoxide binding `cd` as an alias so `.ReferencedCommand` is callable. `fnm.json` declares `"dependsOn": ["zoxide"]` so the capture in step 1 sees zoxide's binding, not the built-in `cd`. |
+| **If it changes** | If fnm renames `Set-LocationWithFnm`/`Set-FnmOnLoad` or stops routing `cd` through the function, the re-wrap no longer chains: `cd` falls back to whatever fnm's newer init installs (still a working `cd`, just without zoxide's jump). If zoxide ever binds `cd` as a function instead of an alias, `(Get-Alias 'cd')` returns nothing and `$global:cdBeforeFnm` falls back to `Set-Location` — fnm keeps working, zoxide's jump is lost. Both degrade to a functional `cd`, never an error. |
+
+---
+
+### 9. carapace: completion results are ANSI-styled only when console-attached
+
+| | |
+|---|---|
+| **What** | Carapace emits colour escape sequences inside each completion's `ListItemText` (and `ToolTip`), but **only when it detects an attached console**. When stdout is redirected — as in every headless test — the same results come back as plain text. |
+| **Where** | `Private/Initialize-DFCompletionStack.ps1` (`Enable-DFFzfAnsiOption`) |
+| **Why** | With PSFzf owning Tab, those styled strings are piped to `fzf`. Without `--ansi`, `fzf` prints the escapes literally, so the picker (and any common-prefix insert) shows garbage like `^[[33m…`. The resolver adds `--ansi` to `FZF_DEFAULT_OPTS` — a documented fzf option, set via the documented env var, touching no PSFzf internal — when both PSFzf and Carapace are registered. The **`CompletionText`** carapace returns is never styled, so the text inserted at the prompt stays clean regardless. |
+| **If it changes** | If carapace stops styling `ListItemText`, `--ansi` becomes a harmless no-op (fzf renders plain text unchanged). If it styles `CompletionText` too, inserted text could gain escapes — caught quickly at the prompt, not silently. Because the console-only behavior is invisible to redirected output, unit tests cannot observe it; this entry is the record that the styling is real at an interactive prompt. |
+
+---
+
+### 10. carapace: init codegen shape (`[CompletionResult]::new($_.CompletionText, …)`) and the trailing space
+
+| | |
+|---|---|
+| **What** | `carapace _carapace powershell` emits a completer that appends a trailing space to each `CompletionText` ("token complete" convention) and builds results with the literal call `[CompletionResult]::new($_.CompletionText, …)`. When PSFzf owns Tab, its `FixCompletionResult` quotes any completion containing a space, so a fuzzy-picked `docker build` is inserted as `docker "build "`. |
+| **Where** | `Tools/carapace.ps1` |
+| **Why** | Only in Native mode with PSFzf available, `Tools/carapace.ps1` string-replaces that constructor call to wrap the first argument in `.TrimEnd()`, dropping the trailing space so PSFzf does not quote. PSFzf re-adds a single trailing space itself, so the picked value lands clean and unquoted. The space is left intact when PSFzf is not in play because PSReadLine's `MenuComplete` needs it to chain into subcommand completion. |
+| **If it changes** | If carapace renames the constructor call or drops the trailing space, the `.Replace` matches nothing and no-ops — completions still work; at worst the old `"build "` quoting reappears in the PSFzf path (cosmetic, self-evident at the prompt). The transform touches only the `CompletionText` argument, never `ListItemText`/`ToolTip`, so styling and the `--ansi` path are unaffected. |
+
 ---
 
 ## Documented but load-bearing
@@ -90,25 +121,53 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 
 | Dependency | Where | Notes |
 |---|---|---|
-| `carapace _carapace powershell` emits the init script | `Tools/carapace.ps1` | Underscore-prefixed but listed in `carapace --help`. |
-| carapace registers argument completers and **never binds Tab** | `Tools/carapace.ps1` | This is *observed*, not promised. It is why carapace composes with PSFzf, which owns Tab and routes through `TabExpansion2`. If carapace ever bound Tab, the two would fight and PSFzf's fuzzy Tab would break. |
+| `carapace _carapace powershell` emits the init script | `Tools/carapace.ps1` | Underscore-prefixed but listed in `carapace --help`. Carapace registers argument completers and does not bind Tab; this observed behavior lets the coordinator choose the final binding. |
+| Carapace Native completion and `CARAPACE_BRIDGES` | `Private/Initialize-DFCompletionStack.ps1`, `Tools/carapace.ps1` | In a Carapace-only Native session, the coordinator binds Tab to `MenuComplete` for styled results. It merges `inshellisense` into `CARAPACE_BRIDGES` only in Native mode and only when `is` (or `inshellisense`) is available, preserving user bridge entries. If Carapace changes its Tab behavior or bridge contract, completion may lose this composition but remains usable. |
+| PSFzf's Tab completion | `Private/Initialize-DFCompletionStack.ps1`, `Tools/PSFzf.ps1` | PSFzf configures Tab expansion but does not bind Tab itself. After PSReadLine's edit mode is applied, the coordinator alone binds Tab to `Invoke-FzfTabCompletion` when PSFzf registered; this takes precedence over Carapace's `MenuComplete`. |
+| inshellisense direct session | `Private/Initialize-DFCompletionStack.ps1`, `Tools/inshellisense.ps1` | Direct `CompletionMode = 'Inshellisense'` requires the `is` command and starts last, after tool registration. `Start-DFInshellisense` first runs `is -c`; a zero exit code leaves the existing session alone, otherwise `is init pwsh` is evaluated. If `is` is unavailable, DotForge warns and uses Native completion. |
 | carapace's init prepends `$XDG_CONFIG_HOME/carapace/bin` to `PATH` itself | `Tools/carapace.ps1` | A deviation from DotForge's rule that all PATH edits go through `Add-DFToPath`. The line is emitted by carapace and cannot be rerouted. |
 | `zoxide init` emits `Set-Alias -Name cd -Option AllScope -Force` | `Tools/zoxide.ps1` | Replaces the built-in `cd` alias in place, so no function-shadowing is needed. Verified against zoxide's emitted init. |
-| `scoop-search --hook` emits a search hook | `Tools/scoop.ps1` | Requires `Invoke-Expression`; no alternative exists. |
+| `scoop-search --hook` emits a search hook | `Tools/scoop.ps1` | Requires `Invoke-Expression`; no alternative exists. The hook emits `function scoop { … }` with **no scope modifier**; because the companion is dot-sourced inside `Register-DFTool`, the function would land in that function's scope and vanish on return. `Tools/scoop.ps1` rewrites `function scoop {` → `function global:scoop {` before `Invoke-Expression` so the hook reaches the prompt. The rewrite no-ops (degrading to the pre-fix, local-scope behavior) if scoop-search changes its codegen. |
 | `oh-my-posh init pwsh --config` emits the prompt init | `Tools/oh-my-posh.ps1` | Requires `Invoke-Expression`. Also reads `POSH_THEME` / `POSH_THEMES_PATH`. |
-| `Set-PsFzfOption`, `Invoke-FzfTabCompletion` | `Tools/PSFzf.ps1` | Public PSFzf API. PSFzf owns the Tab key binding. |
+| `Set-PsFzfOption`, `Invoke-FzfTabCompletion` | `Tools/PSFzf.ps1` | Public PSFzf API. The completion coordinator owns the Tab key binding. |
 | `TabExpansion2` consults registered argument completers | `Tools/carapace.ps1` | Documented PowerShell behavior; the reason carapace results reach PSFzf's Tab UI. |
+| carapace loads user specs from `$XDG_CONFIG_HOME/carapace/specs/*.yaml` | `Tools/carapace.ps1`, `Tools/carapace/specs/scoop.yaml` | Documented in `carapace --help` ("Specs are loaded from …"). DotForge deploys bundled specs there to complete tools carapace ships no completer for (e.g. `scoop`). Spec flag syntax is short-first (`-g, --global`); a `$(…)` macro runs in carapace's shell, not PowerShell, so dynamic PowerShell-command completion is not used. |
+| `fzf` merges `FZF_DEFAULT_OPTS` into every invocation | `Private/Initialize-DFCompletionStack.ps1` | Documented fzf behavior. Used to inject `--ansi` for Carapace's styled results without touching PSFzf's command construction. |
 | eza's `--icons`/`--hyperlink` take an **optional** value | `Tools/eza.json` | Documented in `eza --help`. A trailing bare flag consumes the next positional, so all values are bound (`--icons=auto`). Guarded by `tests/eza.Tests.ps1`. |
+| `lsd --config-file <path>` panics on a nonexistent path | `Tools/lsd.json` | Verified (lsd 1.2.0): `thread 'main' panicked at src\main.rs:116:33: Provided file path is invalid` — a hard crash, not a clean exit. DotForge never passes `--config-file`; `xdg.method` is `manual` for exactly this reason. A malformed-but-existing config is handled more gracefully (a field-name error is printed) but this workstream does not wire config at all. |
+| glow's `--config` / `-s` flags and its built-in style names | `Tools/glow.ps1`, `Tools/glow.json` | Both flags are documented in `glow --help` and are cobra-persistent (verified: they pass through `completion`, `help`, and `--version` unharmed). DotForge depends on them because **nothing else works** — glow ignores `GLOW_CONFIG_DIR`/`GLOW_CONFIG_HOME`/`GLOW_CONFIG`/`GLOW_CONFIG_FILE` (its config path is a Win32 known-folder lookup, unmoved even when `APPDATA`/`LOCALAPPDATA` are redirected), never reads `GLAMOUR_STYLE`, and reads `GLOW_STYLE` but lets its non-TTY downgrade override it. `--config` is passed for `glow config`/TUI mode only; its contents do not affect single-file rendering (a bogus path, malformed YAML, and a bogus `style:` all pass silently). If the built-in style list changes, `Resolve-DFGlowStyle` warns and falls back to `auto` — it never hands `-s` an unresolved value, because glow exits 1 on one rather than degrading. Guarded by `tests/glow.Tests.ps1`. Conformance ledger: claim `glow/honors-env:GLOW_CONFIG_DIR` = `fail` in `data/tool-conformance.json`; `Tools/glow.ps1` carries the matching `# adapter for glow/honors-env:GLOW_CONFIG_DIR` comment. |
+| mdcat's `MDCAT_THEME` env var and `--completions powershell` | `Tools/mdcat.ps1`, `Tools/mdcat.json` | Both documented (mdcat 2.13.0). Env var honored from any shell; `--completions` emits one `-Native` completer. carapace ships no mdcat spec, so no conflict. An unrecognized theme falls back to `auto`. |
+| mdv's config path (`MDV_CONFIG_PATH`) and `config.yaml` theme key | `Tools/mdv.ps1`, `Tools/mdv.json` | mdv 4.2.1 has **no config auto-discovery** (redirecting HOME/APPDATA/XDG_CONFIG_HOME loads nothing) and **no theme env var**; theme lives only in `config.yaml` found via `MDV_CONFIG_PATH`. DotForge seeds that file when absent, never clobbering user edits — so a theme change after first run needs a manual edit/delete. |
+| carapace loads `Tools/carapace/specs/mdv.yaml` | `Tools/carapace.ps1`, `Tools/carapace/specs/mdv.yaml` | mdv has no completion generator and carapace ships no spec (`carapace mdv export` → 0 bytes). Hand-authored spec, deployed like `scoop.yaml`; can drift from the binary. |
+| delta's `DELTA_FEATURES` is a plain, unvalidated env var | `Tools/delta.ps1`, `Tools/delta.json` | Documented delta behavior: `DELTA_FEATURES` names one or more config-defined feature sections; an unrecognized name is silently ignored (delta degrades on its own, no DotForge involvement needed). DotForge sets it from the resolved theme (`Get-DFConfiguredTheme` + `Resolve-DFThemeName`) so it tracks `$DFConfig.Theme`/`DeltaTheme`. **DotForge sets the value only** — actually rendering catppuccin requires a delta config that defines a `catppuccin-mocha` feature, which is out of DotForge's scope and not shipped. |
 
 ---
 
 ## Internal to DotForge (not an external dependency, but surprising)
 
-- **`AliasesToExport` is decorative.** DotForge's helper aliases are created with
-  `Set-Alias -Scope Global` at dot-source time, so the module never owns them:
-  `(Get-Module DotForge).ExportedAliases` is empty and `Remove-Module DotForge` leaves them
-  behind. `Get-DFCommandConflict` reads `AliasesToExport` out of the manifest file for exactly
-  this reason. Tracked in `TODO.md`.
+- **`AliasesToExport` is real for general-helper aliases, intentionally absent for tool/picker
+  aliases.** The module's own aliases (`pg`, `hm`, `touch`, `yank`, …) are created via a bare
+  `Set-Alias` in module scope, so the manifest's `AliasesToExport` genuinely exports them —
+  `(Get-Module DotForge).ExportedAliases` reports them and `Remove-Module DotForge` cleans them up.
+  Tool and picker aliases (`ls`, `cat`, `ff`, …) are created dynamically by `Register-DFTool` from
+  `Tools/*.json` and are NOT in the manifest — they cannot be, since their existence depends on
+  which tools are installed and what `$DFConfig.Defaults` selects. `Get-DFCommandConflict` reads
+  them directly from the tool database for this reason; that split is by design, not a gap. See
+  `ToolAcquisitionSpec.md` §9.1.
+- **`Expand-DFXdgPath` normalizes only token-bearing values.** A `Tools/*.json` `xdg.vars` value is
+  an XDG path template (`${XDG_CONFIG_HOME}/…`) — canonicalized to a native path via
+  `ConvertTo-DFPath`. Token-less flag strings (`LESS`, `FZF_DEFAULT_OPTS`, …) no longer arrive via
+  `xdg.vars`; they arrive from a tool's top-level `env` block, which is expanded through the same
+  `Expand-DFXdgPath` function and passes through byte-for-byte when it carries no XDG token. A flag
+  string must never embed an XDG path token, or its separators would be rewritten. Nothing ships
+  that way today; this is the assumption that lets one function serve both value kinds — path
+  templates and flag strings — without a per-var `type` flag. (`delta`'s `DELTA_FEATURES` is set
+  directly by its sidecar via `Resolve-DFThemeName`, not through the `env` block/`Expand-DFXdgPath`
+  — it is a theme name, not a path or a flag string.)
+- **`Resolve-DFThemeName` is per-tool, not centralized.** Per `docs/plugin-architecture.md`, the
+  theme family→dialect mapping lives in each tool's own optional `themeMap`, read from the
+  already-loaded tool record — no central `data/*.json` registry and no extra startup file-read.
+  Adding a themed tool whose dialect matches the canonical needs no declaration at all.
 
 ## Keeping this honest
 

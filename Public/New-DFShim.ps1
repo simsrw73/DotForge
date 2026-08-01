@@ -71,21 +71,25 @@ function New-DFShim {
     # 1. Resolve shims directory
     $shimsDir = if ($ShimsPath) {
         $ShimsPath
-    } elseif ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore) -and
-              $Global:DFConfig['ShimsPath']) {
+    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
+    # variable defined, and indexing into it throws "Cannot index into a null array".
+    } elseif ($null -ne $Global:DFConfig -and $Global:DFConfig['ShimsPath']) {
         $Global:DFConfig['ShimsPath']
     } else {
         Join-Path $HOME '.local' 'bin'
     }
 
+    # Canonicalize (expands a ~ in ShimsPath / $DFConfig['ShimsPath'], collapses ..,
+    # normalizes separators) before creating the dir, checking PATH, and naming the shim.
+    $shimsDir = ConvertTo-DFPath $shimsDir
+
     # 2. Create directory (idempotent)
     New-DFDirectory $shimsDir
 
     # 3. PATH check
-    $normalizedShims = [IO.Path]::GetFullPath($shimsDir).TrimEnd('\', '/')
     $onPath = $Env:PATH -split [IO.Path]::PathSeparator |
-        Where-Object { $_ } |
-        Where-Object { [IO.Path]::GetFullPath($_).TrimEnd('\', '/') -eq $normalizedShims }
+        Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
+        Where-Object { (ConvertTo-DFPath $_) -eq $shimsDir }
     if (-not $onPath) {
         Write-Warning "DotForge: '$shimsDir' is not on PATH — shims won't be invocable until it is added"
     }

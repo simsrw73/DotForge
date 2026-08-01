@@ -5,6 +5,7 @@ BeforeDiscovery {
 
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
     . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFSqliteQuery.ps1"

@@ -3,6 +3,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Public/New-DFShim.ps1"
 }
 
@@ -74,6 +75,15 @@ Describe 'New-DFShim' {
         $Global:DFConfig = @{ ShimsPath = $configDir }
         New-DFShim -Name 'myapp' -Target $script:FakeExe
         Test-Path (Join-Path $configDir 'myapp.cmd') | Should -BeTrue
+    }
+
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        { New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir } |
+            Should -Not -Throw
+        Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue
     }
 
     It 'falls back to $HOME\.local\bin when no $DFConfig ShimsPath is set' {
@@ -171,5 +181,13 @@ Describe 'New-DFShim' {
         New-DFShim -Name 'myapp' -Target $script:FakeExe `
             -ShimsPath $script:ShimsDir -WhatIf
         Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeFalse
+    }
+
+    It 'expands a ~ in ShimsPath to $HOME' {
+        $shim = Join-Path $HOME '.local' 'bin' 'dftilde.cmd'
+        try {
+            New-DFShim -Name 'dftilde' -Target $script:FakeExe -ShimsPath '~/.local/bin' 3>$null
+            Test-Path $shim | Should -BeTrue
+        } finally { Remove-Item $shim -ErrorAction Ignore }
     }
 }

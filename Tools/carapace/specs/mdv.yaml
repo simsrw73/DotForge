@@ -1,0 +1,115 @@
+# Carapace spec for mdv (WhoSowSee/mdv terminal markdown viewer).
+#
+# mdv has no completion generator of its own and carapace ships no mdv spec, so
+# without this file `mdv <TAB>` falls through to filesystem completion. DotForge
+# deploys this to $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1), where
+# carapace loads it automatically. See `carapace --help` ("Specs are loaded from ...").
+#
+# Hand-authored, so it can drift from the installed binary — catalogued in
+# docs/external-dependencies.md. Flag-key syntax is short-first (`-t, --theme`);
+# a trailing `=` marks a flag that takes a value.
+name: mdv
+description: Terminal markdown viewer
+flags:
+  -h, --help: Show help
+  -V, --version: Show version
+  -F, --config-file=: Directory containing config.yaml
+  -n, --no-config: Skip loading configuration files
+  -G, --init-config=: Create the default configuration file
+  -A, --no-colors: Strip all ANSI colors
+  -C, --hide-comments: Hide Markdown comments
+  -E, --render-html: Render raw HTML fragments
+  -H, --html: Print HTML instead of terminal formatting
+  -p, --pager: Show output in the built-in pager
+  -t, --theme=: Set the UI theme
+  -T, --code-theme=: Set the code-block highlight theme
+  -L, --no-code-language: Hide the language label above code blocks
+  -e, --show-empty-elements: Show empty Markdown elements
+  -g, --no-code-guessing: Disable heuristic language detection
+  -s, --code-block-style=: Visual style for code blocks
+  -O, --callout-style=: Visual style for callouts
+  -D, --pretty-list: Render list markers as Nerd Font icons
+  -R, --reflow: Collapse in-paragraph newlines and refill to width
+  -r, --reverse: Render the document from the end
+  -m, --monitor: Monitor the file for changes and re-render
+  -I, --smart-indent: Smooth heading indentation jumps
+  -S, --table-smart-indent: Auto-adjust table indentation
+  -J, --custom-code-block=: Override code block icon/label/aliases
+  -P, --pretty-checkbox=: Render task-list checkboxes as Nerd Font icons
+  -B, --custom-checkbox=: Override checkbox icons/states
+  -Q, --custom-list=: Override list marker icon/color per level
+  -K, --code-wrap-indent=: Hanging-indent mode inside code blocks
+  -i, --theme-info=: Print palette info (optional file)
+  -b, --tab-length=: Spaces per tab
+  -c, --cols=: Output width in columns
+  -W, --wrap=: Line-wrapping mode
+  -w, --table-wrap=: Table wrapping mode
+  -f, --from=: Render starting from the first line containing this text
+  -y, --custom-theme=: Override individual UI colors
+  -Y, --custom-code-theme=: Override syntax colors
+  -U, --custom-callout=: Override or create callout styles
+  -u, --link-style=: Link rendering style
+  -l, --link-truncation=: Link truncation mode
+  -o, --footnote-style=: Footnote placement
+  -M, --missing-footnote-style=: How to render missing footnotes
+  -d, --heading-layout=: Heading indentation layout
+completion:
+  flag:
+    theme:
+      - terminal
+      - solarized-dark
+      - nord
+      - tokyonight
+      - kanagawa
+      - gruvbox
+      - monokai
+      - material-ocean
+      - catppuccin
+    code-theme:
+      - terminal
+      - solarized-dark
+      - nord
+      - tokyonight
+      - kanagawa
+      - gruvbox
+      - monokai
+      - material-ocean
+      - catppuccin
+    pretty-checkbox:
+      - square
+      - circle
+    code-wrap-indent:
+      - none
+      - base
+      - double
+    wrap:
+      - char
+      - word
+      - none
+    table-wrap:
+      - fit
+      - wrap
+      - none
+    link-style:
+      - clickable
+      - fclickable
+      - inline
+      - inlinetable
+      - endtable
+      - hide
+    link-truncation:
+      - wrap
+      - cut
+      - tablecut
+      - none
+    footnote-style:
+      - endnotes
+      - attached
+    missing-footnote-style:
+      - show
+      - hide
+    heading-layout:
+      - level
+      - center
+      - flat
+      - none

@@ -18,6 +18,7 @@ coverage/
 # Local scratch
 scratch/
 potential-tools.txt
+.worktrees/
 
 # Package-universe build working data (regenerable, not committed)
 build/.package-universe/

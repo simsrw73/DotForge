@@ -1,5 +1,5 @@
 @{
-    ModuleVersion     = '0.3.0'
+    ModuleVersion     = '0.5.0'
     GUID              = '160e0d4a-5e2d-4c49-9ec2-562fbdb72b71'
     Author            = 'Randy W. Sims'
     CompanyName       = ''
@@ -70,7 +70,7 @@
         'touch', 'which', 'open',
         'fps', 'top',
         'env', 'path', 'fenv', 'ep', 'reload',
-        'copy', 'paste',
+        'yank', 'paste',
         'uuidgen',
         'trifle', 'ftrifle', 'tcats'
     )
@@ -81,7 +81,7 @@
             ProjectUri   = 'https://github.com/simsrw73/DotForge'
             IconUri      = 'https://raw.githubusercontent.com/simsrw73/DotForge/main/assets/dotforge1.png'
             Prerelease   = 'preview'
-            ReleaseNotes = 'Preview release. Registers and configures 32+ CLI tools from a JSON database — XDG path compliance, fzf pickers, aliases, and per-tool companion scripts. New in 0.3.0: New-DFUuid (uuidgen) — v4 UUID generator with composable -UpperCase/-NoHyphens/-Braces switches and an -Sdk preset; Get-DFEnv (env) now renders colorized, pipe-safe KEY=VALUE output. Carries forward: clh/clhp (Show-DFCliHelp) colorized external CLI help with cached flag detection, PSReadLine color theme system (dark/light/catppuccin-mocha + live fprl picker), .cmd shim generation (New-DFShim) for off-PATH executables, dependency-ordered tool registration via dependsOn, and 33 exported cmdlets plus general-purpose profile helpers (navigation, process, clipboard, environment).'
+            ReleaseNotes = 'Preview release. New in 0.5.0: fuzzy fzf package-manager pickers for winget (wins/wrm/wup), scoop (sins/srm/sup), and choco (cins/crm/cup) — search->install, uninstall, and multi-select update, each with a live preview pane (debounced so fast scrolling does not spawn a preview per skipped item) and multi-key/act-in-place fzf bindings; Ctrl+G W/S/C PSReadLine chords read the current line as a query and drop the resulting install command onto the command line for editing. Package data uses object output (Microsoft.WinGet.Client, the Scoop module) and choco -r machine-readable output instead of table scraping; scoop search uses the fast scoop-search hook. Invoke-DFPicker gains -Expect/-Bind/-FzfArgs; wrm -Source filters installed packages by source. Carries forward: the completion stack (PSReadLine + Carapace + PSFzf + inshellisense), trifle/ftrifle multi-catalog package discovery, fnm per-directory Node switching, clh/clhp colorized CLI help, the PSReadLine color theme system, .cmd shim generation, and dependency-ordered registration via dependsOn.'
         }
     }
 }

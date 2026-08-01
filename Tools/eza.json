@@ -3,6 +3,7 @@
   "description": "Modern ls replacement with icons, Git integration, and color",
   "tags": ["file", "directory", "ls"],
   "executable": "eza.exe",
+  "role": "listing",
   "packages": {
     "scoop": "eza",
     "winget": "eza-community.eza",

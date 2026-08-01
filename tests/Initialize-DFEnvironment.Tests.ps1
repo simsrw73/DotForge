@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
     . "$PSScriptRoot/../Public/Initialize-DFEnvironment.ps1"
 }
@@ -73,5 +74,18 @@ Describe 'Initialize-DFEnvironment' {
         $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
         $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
         { Initialize-DFEnvironment; Initialize-DFEnvironment } | Should -Not -Throw
+    }
+
+    It 'canonicalizes a ~-rooted XDG value the user set' {
+        Mock Get-Command { $null }
+        $saved = $Env:XDG_CONFIG_HOME
+        try {
+            $Env:XDG_CONFIG_HOME = '~/dftest-config'
+            Initialize-DFEnvironment 6>$null
+            $Env:XDG_CONFIG_HOME | Should -Be (Join-Path $HOME 'dftest-config')
+        } finally {
+            $Env:XDG_CONFIG_HOME = $saved
+            Remove-Item (Join-Path $HOME 'dftest-config') -Recurse -Force -ErrorAction Ignore
+        }
     }
 }

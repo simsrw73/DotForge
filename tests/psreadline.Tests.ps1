@@ -3,6 +3,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
@@ -11,6 +12,9 @@ BeforeAll {
     # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
+    . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
@@ -76,6 +80,25 @@ Describe 'psreadline tool sidecar' {
         $commandColor | Should -Match '0;0;255'
     }
 
+    It 'follows the shared $DFConfig[Theme] key (catppuccin-mocha -> mocha)' {
+        # Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $colors = (Get-PSReadLineOption).Colors
+        $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
+        # catppuccin-mocha Command color is #cba6f7 -> VT contains "203;166;247"
+        $commandColor | Should -Match '203;166;247'
+    }
+
+    It 'lets PSReadLineTheme override the shared Theme key' {
+        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; PSReadLineTheme = 'light' }
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $colors = (Get-PSReadLineOption).Colors
+        $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
+        # light theme Command color is #0000ff -> VT contains "0;0;255"
+        $commandColor | Should -Match '0;0;255'
+    }
+
     It 'applies a theme from XDG user dir, overriding bundled name' {
         # NOTE: Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
@@ -129,6 +152,14 @@ Describe 'psreadline tool sidecar' {
         $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools 3>&1 |
             Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
         $warnings | Where-Object { $_ -match 'not found' } | Should -Not -BeNullOrEmpty
+    }
+
+    It 'tolerates $DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        { Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools } | Should -Not -Throw
+        Test-Path 'function:global:Invoke-DFApplyPSReadLineTheme' | Should -BeTrue
     }
 
     It 'Invoke-DFApplyPSReadLineTheme accepts an absolute path directly' {

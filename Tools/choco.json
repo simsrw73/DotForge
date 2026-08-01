@@ -1,0 +1,19 @@
+{
+  "name": "choco",
+  "description": "Chocolatey — Windows package manager",
+  "tags": [
+    "package-manager",
+    "windows"
+  ],
+  "executable": "choco.exe",
+  "packages": {},
+  "xdg": {
+    "compliance": "none",
+    "method": "default"
+  },
+  "aliases": {},
+  "dependsOn": [
+    "gsudo"
+  ],
+  "picker": "custom"
+}

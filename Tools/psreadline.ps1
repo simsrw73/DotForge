@@ -20,6 +20,22 @@ if ($_settings) {
             Write-Warning "DotForge: unknown PSReadLine setting '$($_.Name)' — skipping"
         }
     }
+    $_editModeSetting = $null
+    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
+    # variable defined, and indexing into it throws "Cannot index into a null array".
+    if ($null -ne $Global:DFConfig) {
+        $_editModeSetting = $Global:DFConfig['PSReadLineEditMode']
+    }
+    if ($null -ne $_editModeSetting) {
+        if ($_editModeSetting -ieq 'Windows') {
+            $_optionArgs['EditMode'] = 'Windows'
+        } elseif ($_editModeSetting -ieq 'Emacs') {
+            $_optionArgs['EditMode'] = 'Emacs'
+        } else {
+            Write-Warning "DotForge: invalid PSReadLineEditMode '$_editModeSetting' — retaining tool setting"
+        }
+    }
+
     if ($_optionArgs.Count -gt 0) {
         try {
             Set-PSReadLineOption @_optionArgs
@@ -86,12 +102,10 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme
-$_themeSetting = $null
-if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
-    $_themeSetting = $Global:DFConfig['PSReadLineTheme']
-}
-Invoke-DFApplyPSReadLineTheme -Name ($_themeSetting ?? 'dark')
+# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
+$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'dark'
+$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
 # 4. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({

@@ -1,17 +1,18 @@
 #Requires -Version 7.0
 # DotForge standard profile
 # ─────────────────────────────────────────────────────────────────────────────
-# Typical single-developer setup: package manager preference, tools to skip,
-# and a first-run bootstrap that installs missing core tools.
+# Typical single-developer setup: package manager preference, default-tool role
+# winners, and a first-run bootstrap that installs missing core tools.
 
 # ── DotForge config (set BEFORE Import-Module) ────────────────────────────────
 $DFConfig = @{
     # Package manager priority for Install-DFTool
     PackageManagerOrder = @('scoop', 'winget')
 
-    # Tools excluded from Register-DFTool -All
-    # lsd conflicts with eza; both provide ls — keep only one
-    SkipTools = @('lsd')
+    # eza and lsd both declare role: 'listing' and compete for ls/ll/la/tree.
+    # Defaults names the winner; the loser keeps everything else it declares
+    # (XDG config, other aliases) -- only the contested alias keys are suppressed.
+    Defaults = @{ listing = 'eza' }
 
     # If Coreutils for Windows is installed, its readline hook rewrites command
     # names before PowerShell resolves them, so DotForge aliases sharing a name
@@ -21,6 +22,21 @@ $DFConfig = @{
     #   IgnoreConflicts = @('cat')
     # Or turn the check off entirely:
     #   SkipConflictCheck = $true
+
+    # Theme selection for tools whose companions ship themes. Each accepts a
+    # bundled name, a name under $XDG_CONFIG_HOME/<tool>/themes/, or a full path.
+    # One shared theme for every viewer; per-tool keys override it. The shared
+    # Theme key must be the canonical family name (e.g. 'catppuccin-mocha', not
+    # the bare 'catppuccin' — DotForge resolves each tool's own dialect from it,
+    # e.g. mdv's native 'catppuccin'). Per-tool keys accept the canonical name
+    # OR that tool's own native names:
+    #   Theme           = 'catppuccin-mocha'   # glow, mdcat, mdv, psreadline, delta
+    #   MdcatTheme      = 'dracula'             # override just mdcat
+    #   MdvTheme        = 'nord'                # override just mdv
+    #   GlowTheme       = 'catppuccin-mocha'    # override just glow
+    #   PSReadLineTheme = 'catppuccin-mocha'    # override just psreadline
+    #   DeltaTheme      = 'catppuccin-mocha'    # override just delta (a delta
+    #                                           #   config must define the feature)
 }
 
 Import-Module DotForge

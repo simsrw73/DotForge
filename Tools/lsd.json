@@ -1,0 +1,24 @@
+{
+  "name": "lsd",
+  "description": "Modern ls replacement with colors, icons, and tree view",
+  "tags": ["file", "directory", "ls"],
+  "executable": "lsd.exe",
+  "packages": {
+    "scoop": "lsd",
+    "winget": "lsd-rs.lsd",
+    "choco": "lsd"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "manual",
+    "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config."
+  },
+  "role": "listing",
+  "aliases": {
+    "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--hyperlink=auto"] },
+    "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--hyperlink=auto"] },
+    "la":   { "command": "lsd", "args": ["--all", "--hyperlink=auto"] },
+    "tree": { "command": "lsd", "args": ["--tree"] }
+  },
+  "picker": null
+}

@@ -14,9 +14,13 @@
   - [x] **`"picker": "custom"` is unverified** — done 2026-07-15. **11** tools declared it with no sidecar picker (`gh`, `jq`, `glow`, `docker`, `rustup`, `npm`, `uv`, `chezmoi`, `bitwarden`, `scoop`, and `gsudo`), and `psreadline` under-declared `null` while its sidecar builds `fprl`. Records are now honest and `tests/Tools.PickerDeclaration.Tests.ps1` fails the suite in both directions. The 12 unported pickers remain tracked in the spec (§3).
   - [ ] **`Register-DFTool` help claims it "registers argument completers"** (`Public/Register-DFTool.ps1:11`) — only indirectly true now, via the carapace sidecar; the wording still implies a schema-driven feature that does not exist. Fix the wording.
   - [ ] **`xdg.method` can't express `env` + config seeding** — `ripgrep` needs `RIPGREP_CONFIG_PATH` *and* a seeded default `ripgreprc`; `wget` needs `WGETRC` *and* an empty file. `method` is a single value and the `config` branch sets no env vars. Consider allowing an array, or a `seed` block independent of `method`.
-- [ ] **Clipboard tests are flaky — they use the real OS clipboard** — `tests/DFHelpers.Clipboard.Tests.ps1` round-trips through `Set-Clipboard`/`Get-Clipboard`, which is shared machine-wide state. Any concurrent clipboard write (another app, a parallel test run) makes `sets clipboard from a positional argument` fail intermittently; observed once on 2026-07-15, then 5/5 passing three runs in isolation. Mock the clipboard boundary the way `Invoke-DFFzf` is mocked for fzf, rather than driving the real one.
+- [x] **Clipboard tests are flaky — they use the real OS clipboard** — done 2026-07-24: `tests/DFHelpers.Clipboard.Tests.ps1` now mocks `Set-Clipboard`/`Get-Clipboard` (the `Invoke-DFFzf` pattern) instead of round-tripping the real clipboard, asserting the wrapper's join/pipeline logic deterministically. Verified 0 failures across 10 consecutive runs.
 - [ ] **Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` was captured from Coreutils for Windows 2026.6.16 on 2026-07-15. A newer release may add utilities the list lacks, which weakens the dev-time tripwire (never the runtime check, which always reads the live set). Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
-- [ ] **`AliasesToExport` is decorative** — DotForge's helper aliases are created with `Set-Alias -Scope Global` at dot-source time, so the module never owns them: `(Get-Module DotForge).ExportedAliases` is empty and `Remove-Module DotForge` leaves the aliases behind. `Get-DFCommandConflict` reads `AliasesToExport` out of the manifest for exactly this reason. Related to the `-Force` alias item below; fixing that would likely fix this.
+- [x] **`AliasesToExport` is decorative** — done 2026-07-31: all 27 general-helper aliases now
+  created via a bare `Set-Alias` (module scope, no `-Force`), so the manifest's `AliasesToExport`
+  is a genuine export — `(Get-Module DotForge).ExportedAliases` and `Remove-Module` both work
+  correctly now. Tool/picker aliases remain intentionally outside the manifest (see
+  `ToolAcquisitionSpec.md` §9.1) — that split is by design, not the gap this item described.
 - [ ] **Help header colorization misses `ABOUT_ALIAS_PROVIDER`-style headers** — `Invoke-DFHelp` regex matches ALL-CAPS headers but fails when they contain underscores (e.g. `ABOUT_ALIAS_PROVIDER`). Extend the regex to allow underscores.
 - [ ] **`'Out-String" 2>nul' is not recognized`** — error appears in some contexts; investigate source (likely a companion script using CMD-style stderr redirect instead of PowerShell `2>$null`)
 - [ ] **Red `?` on a line by itself in some Help output** — appears at the same indentation as surrounding content; investigate whether it's a broken ANSI sequence or a `Get-Help` rendering artifact
@@ -24,7 +28,16 @@
 
 ## Priority 2 — Review Follow-ups
 
-- [ ] **Stop force-creating global aliases at import time** — importing DotForge currently sets global aliases such as `copy`, `env`, `open`, and `touch` with `-Force`, which can overwrite user/session aliases. Prefer module-scope aliases exported by the manifest, or make short aliases opt-in.
+- [x] **Port `Initialize-DFCompletionStack.Tests.ps1` to Pester 6** — done 2026-07-24. Its 11 `Assert-MockCalled` calls (removed in Pester 6.0.1) are now `Should -Invoke`; the four "never called" checks use `-Times 0 -Exactly` so they stay meaningful under Pester 6 (plain `-Times 0` is "at least 0" there = vacuous). The full suite is now **899/0 under both Pester 5.8.0 and 6.0.1** — the `-RequiredVersion 5.8.0` pin is no longer needed.
+- [ ] **Path-normalization follow-ups** — from the `ConvertTo-DFPath` branch review (2026-07-24): (a) add a shared test bootstrap that dot-sources the `Private/` dependency graph so a new low-level dependency doesn't require adding its dot-source to every consumer-sourcing test file; (b) strengthen the `Register-DFTool` ToolsPath test to exercise a sidecar load via a `..`-bearing `-ToolsPath` (currently re-tests `ConvertTo-DFPath` directly); (c) resolve `$ToolsPath` once *before* `Import-DFToolDb` in `Register-DFTool` to remove the raw-vs-resolved asymmetry; (d) tests are Windows-only (`C:\` literals) — the macOS/Linux goal is unverified by CI though the runtime code is separator-agnostic.
+- [x] **Stop force-creating global aliases at import time** — done 2026-07-31: all 27 general-helper
+  aliases drop `-Scope Global -Force`. Correction to this item's original framing: real module
+  ownership does NOT change import-time clobbering behavior (verified empirically — a genuinely
+  exported alias still silently overwrites a same-named pre-existing global alias, with no
+  warning, identical to the old `-Force` behavior). That's normal PowerShell module behavior for
+  every module, not a DotForge-specific defect, so it is not addressed. The `copy` alias — the one
+  case that actually needed `-Force` to override a builtin — is renamed to `yank` instead, removing
+  the need for `-Force` entirely rather than working around it.
 - [ ] **Fix `Register-DFTool` `list_accepts_path` command splitting** — generated picker functions split the list command on whitespace, breaking quoted arguments and single-word commands. Add tests that invoke generated picker functions, not just tests that verify they exist.
 - [ ] **Key `Import-DFToolDb` cache by `ToolsPath`** — the current single `$script:DFToolDb` cache can return the wrong registry when callers use different `-ToolsPath` values without `-Force`.
 - [ ] **Key `Resolve-DFPackageManager` cache by priority order** — a prior default lookup can make later custom `-Priority` calls return stale ordering.
@@ -40,8 +53,22 @@
 ## Priority 3 — Features
 
 - [ ] **Color theme system across all tools** — PSReadLine has per-tool theming; explore a unified palette that also applies to `bat`, `delta`, `glow`, and terminal colors so the whole environment shares one theme
+- [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
+  whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can
+  explicitly control global-namespace pollution instead of DotForge deciding
+  uniformly for everyone. Design sketch (shelved, not implemented): wrap
+  `Set-Alias` in a DotForge-owned function so tools/helpers *declare* an alias
+  without directly creating it; a central function then iterates all
+  declarations and filters per user config (allow-list or deny-list, at either
+  the individual-alias or whole-tool level) before actually binding anything.
+  Open question, unresolved: whether PowerShell's manifest system supports
+  anything resembling "optional/conditional exports" this could piggyback on,
+  or whether it would have to be entirely session-side (declarative data +
+  runtime filtering, no manifest involvement). See
+  `docs/builtin-safety-policy.md` for the related "never silently claim a
+  builtin" policy this would complement.
 - [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true` for PS7+
-- [ ] **`Invoke-DFMaintenance`** — maintenance command that runs on a configurable schedule: purge completion cache, refresh help topic index, `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache
+- [ ] **`Invoke-DFMaintenance` and scheduled maintenance guide** — provide a manual, opt-in maintenance command for purging the completion cache, refreshing the help-topic index, and running `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache. DotForge must not create scheduled tasks or perform package updates automatically. Document user-owned Task Scheduler recipes for separately scheduling cache refreshes, cleanups, and explicit package-update workflows, including how to inspect, disable, and remove each task.
 - [ ] **trifle: alternatives / related commands** — deferred from trifle v1. Surface "alternatives" (e.g. ripgrep ↔ other tools tagged `search`) and related commands on the `Find-DFPackage` card. Candidate sources: shared `tags` in `Tools/*.json`, a curated `alternatives` field, or catalog keyword overlap. Revisit together with the name-collision merge wart (npm `bat` vs scoop `bat` currently merge into one row).
 - [ ] **Expand the trifle category-db seed corpus** — currently 73 hand-picked
   tools (33 curated from `Tools/*.json` + 40 well-known extras). The spec's

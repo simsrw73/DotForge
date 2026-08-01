@@ -52,10 +52,12 @@ function Register-DFTool {
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
 
-    $resolvedToolsPath = if ($ToolsPath) { $ToolsPath }
-                         else            { Join-Path $PSScriptRoot '../Tools' }
+    $resolvedToolsPath = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath }
+                                            else            { Join-Path $PSScriptRoot '../Tools' })
 
-    $skipTools = @(if ($null -ne (Get-Variable -Name DFConfig -Scope Global -ErrorAction Ignore)) {
+    # Test the value, not just the variable's existence: `$DFConfig = $null` leaves
+    # the variable defined, and indexing into it throws "Cannot index into a null array".
+    $skipTools = @(if ($null -ne $Global:DFConfig) {
         $Global:DFConfig['SkipTools']
     })
 
@@ -73,6 +75,43 @@ function Register-DFTool {
     # Topological sort respects dependsOn declarations
     $tools = Invoke-DFTopoSort -Tools @($tools)
 
+    # ── Default-tool role resolution (§10) ─────────────────────────────────
+    # For each role named in $DFConfig.Defaults, resolve whether the declared
+    # winner is role-valid AND actually registering this call; if so, record
+    # its own declared alias keys. A role LOSER (same 'role', different name)
+    # then has ONLY those specific alias keys suppressed below -- everything
+    # else about it (XDG, picker, companion, non-overlapping aliases) still
+    # applies. Degrades silently on every invalid/absent case -- never throws.
+    $defaults = @(if ($null -ne $Global:DFConfig) { $Global:DFConfig['Defaults'] })[0]
+    $activeRoleWinners = @{}
+    if ($defaults) {
+        foreach ($roleName in $defaults.Keys) {
+            $winnerName = $defaults[$roleName]
+            if (-not $db.ContainsKey($winnerName)) {
+                Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names unknown tool '$winnerName' — ignoring."
+                continue
+            }
+            $winnerTool = $db[$winnerName]
+            $winnerRole = $winnerTool.PSObject.Properties['role']?.Value
+            if ($winnerRole -ne $roleName) {
+                Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names '$winnerName', which declares role '$winnerRole' (expected '$roleName') — ignoring."
+                continue
+            }
+            if (-not ($tools | Where-Object { $_.name -eq $winnerName })) { continue }
+            $winnerType = $winnerTool.PSObject.Properties['type']?.Value ?? 'exe'
+            $winnerAvailable = if ($winnerType -eq 'module') {
+                Get-Module -Name $winnerTool.executable -ListAvailable -ErrorAction Ignore
+            } else {
+                Get-Command $winnerTool.executable -ErrorAction Ignore
+            }
+            if (-not $winnerAvailable) { continue }
+            $winnerAliasesObj = $winnerTool.PSObject.Properties['aliases']?.Value
+            $winnerAliasKeys  = if ($winnerAliasesObj) { @($winnerAliasesObj.PSObject.Properties.Name) } else { @() }
+            $activeRoleWinners[$roleName] = @{ WinnerName = $winnerName; AliasKeys = $winnerAliasKeys }
+        }
+    }
+
+    $registeredTools = [System.Collections.Generic.List[string]]::new()
     foreach ($tool in $tools) {
         # ── Guard: skip if not available ──────────────────────────────────
         $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
@@ -131,11 +170,35 @@ function Register-DFTool {
             'default' { } # tool already follows XDG natively — no env config needed
         }
 
+        # ── Non-XDG environment settings ───────────────────────────────────
+        # Applied unconditionally (env vars are not tied to xdg.method). Values
+        # go through Expand-DFXdgPath so ${XDG_*} still expands while flag
+        # strings pass through byte-for-byte.
+        $envBlock = $tool.PSObject.Properties['env']?.Value
+        if ($envBlock) {
+            $envBlock.PSObject.Properties | ForEach-Object {
+                [System.Environment]::SetEnvironmentVariable(
+                    $_.Name,
+                    (Expand-DFXdgPath $_.Value),
+                    'Process'
+                )
+            }
+        }
+
         # ── Aliases ─────────────────────────────────────────────────────────
+        $toolRole   = $tool.PSObject.Properties['role']?.Value
+        $roleWinner = if ($toolRole) { $activeRoleWinners[$toolRole] } else { $null }
+
         $aliases = $tool.PSObject.Properties['aliases']?.Value
         if ($aliases) {
             $aliases.PSObject.Properties | ForEach-Object {
                 $aliasName = $_.Name
+
+                if ($roleWinner -and $roleWinner.WinnerName -ne $tool.name -and $aliasName -in $roleWinner.AliasKeys) {
+                    Write-Verbose "DotForge: $($tool.name) alias '$aliasName' suppressed — '$($roleWinner.WinnerName)' won role '$toolRole'"
+                    return
+                }
+
                 $aliasCmd  = $_.Value.PSObject.Properties['command']?.Value
                 $rawArgs   = $_.Value.PSObject.Properties['args']?.Value
                 $aliasArgs = [object[]]@($rawArgs)
@@ -234,8 +297,10 @@ function Register-DFTool {
         }
 
         Write-Verbose "DotForge: $($tool.name) registered"
+        $registeredTools.Add($tool.name)
     }
 
+    Initialize-DFCompletionStack -RegisteredTools $registeredTools.ToArray()
     # ── Shadowed-command notice ─────────────────────────────────────────────────
     # One consolidated warning rather than one per tool. Costs nothing when coreutils
     # is absent (Get-DFCoreutilsShadowSet returns early), and self-extinguishes once

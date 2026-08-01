@@ -1,0 +1,31 @@
+{
+  "name": "fnm",
+  "description": "Fast Node.js version manager with automatic per-directory switching",
+  "tags": [
+    "node",
+    "javascript",
+    "version-manager",
+    "dev"
+  ],
+  "executable": "fnm.exe",
+  "packages": {
+    "scoop": "fnm",
+    "winget": "Schniz.fnm",
+    "choco": "fnm"
+  },
+  "dependsOn": [
+    "zoxide"
+  ],
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "FNM_DIR": "${XDG_DATA_HOME}/fnm"
+    },
+    "dirs": [
+      "${XDG_DATA_HOME}/fnm"
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

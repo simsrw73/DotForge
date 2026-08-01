@@ -1,8 +1,10 @@
 BeforeAll {
+    . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
@@ -12,6 +14,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
+    . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
 
 Describe 'Register-DFTool' {
@@ -19,8 +22,11 @@ Describe 'Register-DFTool' {
         $script:DFToolDb = $null
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        $script:SavedPath       = $Env:Path
+        $script:SavedWinDir     = $Env:WINDIR
         $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
         $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        $Env:WINDIR = 'C:\Windows'
 
         # Create a minimal test tools directory
         $script:TmpTools = Join-Path $TestDrive 'tools'
@@ -55,11 +61,14 @@ Describe 'Register-DFTool' {
     AfterEach {
         $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
+        $Env:Path             = $script:SavedPath
+        $Env:WINDIR           = $script:SavedWinDir
         Remove-Item Env:\TESTTOOL_CONFIG -ErrorAction Ignore
         Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
         Remove-Item 'function:global:tt-v'            -ErrorAction Ignore
         Remove-Item 'function:global:Select-TestTool' -ErrorAction Ignore
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
+        Remove-Alias sudo -Force -Scope Global -ErrorAction Ignore
     }
 
     It 'skips tools not found on PATH (no error)' {
@@ -71,7 +80,31 @@ Describe 'Register-DFTool' {
     It 'sets XDG env vars when method is env' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
 Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
-        $Env:TESTTOOL_CONFIG | Should -Be "$($Env:XDG_CONFIG_HOME)/testtool/config.conf"
+        $Env:TESTTOOL_CONFIG | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'testtool' 'config.conf')
+    }
+
+    It 'applies the top-level env block independently of xdg.method' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\envtool.exe' } }
+        @'
+{
+  "name": "envtool",
+  "executable": "envtool.exe",
+  "xdg": { "compliance": "none", "method": "default" },
+  "env": {
+    "ENVTOOL_OPTS": "--layout=reverse\n--border",
+    "ENVTOOL_XDGREF": "${XDG_CONFIG_HOME}/envtool"
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'envtool.json')
+        try {
+            Register-DFTool -Name 'envtool' -ToolsPath $script:TmpTools
+            # Flag string preserved byte-for-byte (including the newline)
+            $Env:ENVTOOL_OPTS   | Should -Be "--layout=reverse`n--border"
+            # ${XDG_*} inside an env value still expands
+            $Env:ENVTOOL_XDGREF | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'envtool')
+        } finally {
+            Remove-Item Env:\ENVTOOL_OPTS, Env:\ENVTOOL_XDGREF -ErrorAction Ignore
+        }
     }
 
     It 'creates XDG dirs when method is env' {
@@ -162,6 +195,29 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
 
+    It 'finalizes completion ownership after registering completion tools' {
+        @'
+{ "name": "carapace", "executable": "carapace.exe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'carapace.json')
+        @'
+{ "name": "PSFzf", "type": "module", "executable": "PSFzf" }
+'@ | Set-Content (Join-Path $script:TmpTools 'PSFzf.json')
+        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'carapace.ps1')
+        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'PSFzf.ps1')
+        $script:DFToolDb = $null
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Get-Module { [PSCustomObject]@{ Name = 'PSFzf' } }
+        Mock Initialize-DFCompletionStack {}
+
+        Register-DFTool -All -ToolsPath $script:TmpTools
+
+        Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
+            @($RegisteredTools) -contains 'carapace' -and
+            @($RegisteredTools) -contains 'PSFzf'
+        }
+    }
+
     It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
         @'
 { "name": "skiptool", "executable": "skiptool.exe" }
@@ -184,6 +240,15 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+    }
+
+    It 'tolerates $Global:DFConfig being set to $null' {
+        # Regression: guarding on the variable's existence rather than its value
+        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
+        $Global:DFConfig = $null
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
 
     It 'list_accepts_path: creates picker function without error (path safety)' {
@@ -319,6 +384,133 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 
         Remove-Variable CapturedTool -Scope Global -ErrorAction Ignore
         Remove-Item (Join-Path $script:TmpTools 'testtool.ps1') -ErrorAction Ignore
+    }
+
+    It 'collapses the ../ in the default ToolsPath' {
+        # With no -ToolsPath, the default is Join-Path $PSScriptRoot '../Tools'; it must
+        # resolve to a canonical path with no '..' segment. Registering an absent tool by
+        # name exercises the resolver without needing a real binary.
+        { Register-DFTool -Name '___nope___' } | Should -Not -Throw
+        # The resolved path is internal; assert the observable rule via a real tools dir:
+        $canon = ConvertTo-DFPath (Join-Path $PSScriptRoot '..' 'Tools')
+        $canon | Should -Not -Match '\.\.'
+    }
+
+    Context 'default-tool role resolution' {
+        BeforeEach {
+            @'
+{
+  "name": "roletoolwinner",
+  "executable": "roletoolwinner.exe",
+  "role": "testrole",
+  "aliases": {
+    "rt":   { "command": "roletoolwinner", "args": [] },
+    "rtl":  { "command": "roletoolwinner", "args": ["--long"] }
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolwinner.json')
+
+            @'
+{
+  "name": "roletoolloser",
+  "executable": "roletoolloser.exe",
+  "role": "testrole",
+  "aliases": {
+    "rt":     { "command": "roletoolloser", "args": [] },
+    "rtl":    { "command": "roletoolloser", "args": ["--long"] },
+    "rtonly": { "command": "roletoolloser", "args": ["--only"] }
+  }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolloser.json')
+
+            Mock Get-Command {
+                param($Name)
+                if ($Name -in 'roletoolwinner.exe', 'roletoolloser.exe', 'testtool.exe') {
+                    [PSCustomObject]@{ Path = "C:\fake\$Name" }
+                }
+            }
+        }
+        AfterEach {
+            # 'global:' in the path form is a Get-Item/Remove-Item no-op (confirmed
+            # empirically) -- use the bare 'function:<name>' form to actually remove.
+            Remove-Item 'function:rt', 'function:rtl', 'function:rtonly' -ErrorAction Ignore
+            Remove-Alias rt, rtl, rtonly -Force -Scope Global -ErrorAction Ignore
+            Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        }
+
+        It 'suppresses only the alias keys the loser shares with the declared winner' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolwinner'
+            Test-Path 'function:global:rtl' | Should -BeTrue
+            # rtl is a wrapper function (has args); confirm it resolves to the winner's command
+            # by invoking it and capturing which underlying command actually ran (the wrapper's
+            # closure binds values at creation time, so ScriptBlock.ToString() only ever shows
+            # the unbound template source `& $capturedCmd @capturedArgs @args` -- invocation is
+            # the only way to observe which tool actually won).
+            function global:roletoolwinner { $global:RtlCaptured = $args }
+            try {
+                & 'rtl' 'x'
+                $global:RtlCaptured | Should -Be @('--long', 'x')
+            } finally {
+                Remove-Item 'function:roletoolwinner' -ErrorAction Ignore
+                Remove-Variable RtlCaptured -Scope Global -ErrorAction Ignore
+            }
+
+            # The loser's non-contested alias must still be created.
+            Test-Path 'function:global:rtonly' | Should -BeTrue
+        }
+
+        It 'warns and does not suppress anything when the named winner does not declare that role' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolloser' } }
+            # roletoolloser DOES declare 'testrole' in this fixture, so use a role mismatch:
+            # rewrite the winner fixture to declare a DIFFERENT role than requested.
+            @'
+{
+  "name": "roletoolwinner",
+  "executable": "roletoolwinner.exe",
+  "role": "someotherrole",
+  "aliases": { "rt": { "command": "roletoolwinner", "args": [] } }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'roletoolwinner.json')
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools -WarningVariable warnings -WarningAction SilentlyContinue
+
+            $warnings | Should -Not -BeNullOrEmpty
+            # No suppression happened: the loser's 'rt' alias registers normally.
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolloser'
+        }
+
+        It 'does not suppress anything when the named winner is not available this run' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Mock Get-Command {
+                param($Name)
+                if ($Name -eq 'roletoolloser.exe') { [PSCustomObject]@{ Path = 'C:\fake\roletoolloser.exe' } }
+                # roletoolwinner.exe reports absent
+            }
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+
+            # Winner never registered (absent), loser's aliases are untouched.
+            (Get-Alias rt -ErrorAction Ignore).Definition | Should -Be 'roletoolloser'
+        }
+
+        It 'leaves a tool with no role property completely unaffected' {
+            $Global:DFConfig = @{ Defaults = @{ testrole = 'roletoolwinner' } }
+            Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+            # testtool.json (from the outer BeforeEach) has no 'role' -- registers exactly as before.
+            (Get-Alias tt -ErrorAction Ignore) | Should -Not -BeNullOrEmpty
+            Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
+            Remove-Item 'function:tt-v' -ErrorAction Ignore
+        }
+
+        It 'registers both tools normally when no Defaults entry exists for the role' {
+            Register-DFTool -Name 'roletoolwinner', 'roletoolloser' -ToolsPath $script:TmpTools
+            # No Defaults set at all -- last-registered-wins is unchanged/untouched by this feature;
+            # just confirm no exception and the loser's non-contested alias exists.
+            Test-Path 'function:global:rtonly' | Should -BeTrue
+        }
     }
 }
 

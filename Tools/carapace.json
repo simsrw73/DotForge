@@ -11,6 +11,9 @@
     "scoop": "carapace-bin",
     "winget": "rsteube.Carapace"
   },
+  "dependsOn": [
+    "fnm"
+  ],
   "xdg": {
     "compliance": "full",
     "method": "default"
