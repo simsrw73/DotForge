@@ -42,4 +42,4 @@ function Invoke-DFWithPager {
         }
     }
 }
-Set-Alias -Name pg -Value Invoke-DFWithPager -Scope Global -Force
+Set-Alias -Name pg -Value Invoke-DFWithPager

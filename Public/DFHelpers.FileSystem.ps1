@@ -34,7 +34,7 @@ function New-DFFile {
         }
     }
 }
-Set-Alias -Name touch -Value New-DFFile -Scope Global -Force
+Set-Alias -Name touch -Value New-DFFile
 
 function Get-DFWhich {
     <#
@@ -70,7 +70,7 @@ function Get-DFWhich {
         Get-Command @params | Select-Object -ExpandProperty Source
     }
 }
-Set-Alias -Name which -Value Get-DFWhich -Scope Global -Force
+Set-Alias -Name which -Value Get-DFWhich
 
 function Open-DFItem {
     <#
@@ -100,4 +100,4 @@ function Open-DFItem {
         foreach ($p in $Path) { Invoke-Item $p }
     }
 }
-Set-Alias -Name open -Value Open-DFItem -Scope Global -Force
+Set-Alias -Name open -Value Open-DFItem

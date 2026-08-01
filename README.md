@@ -252,7 +252,7 @@ and cached per command under `$XDG_CACHE_HOME/dotforge/cli-help-flags.json`; pas
 
 | Cmdlet                | Alias   | Purpose                                    |
 | --------------------- | ------- | ------------------------------------------ |
-| `Copy-DFToClipboard`  | `copy`  | Copy string or pipeline input to clipboard |
+| `Copy-DFToClipboard`  | `yank`  | Copy string or pipeline input to clipboard |
 | `Get-DFFromClipboard` | `paste` | Get clipboard contents                     |
 
 **Utility**

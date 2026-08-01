@@ -36,7 +36,7 @@ function Invoke-DFHelp {
 
     $helpText | Invoke-DFWithPager
 }
-Set-Alias -Name hm -Value Invoke-DFHelp -Scope Global -Force
+Set-Alias -Name hm -Value Invoke-DFHelp
 
 function Select-DFCommand {
     <#
@@ -71,7 +71,7 @@ function Select-DFCommand {
         -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fcmd -Value Select-DFCommand -Scope Global -Force
+Set-Alias -Name fcmd -Value Select-DFCommand
 
 function Select-DFVerb {
     <#
@@ -97,7 +97,7 @@ function Select-DFVerb {
         -Header 'Select verb  [Enter to output]' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fverb -Value Select-DFVerb -Scope Global -Force
+Set-Alias -Name fverb -Value Select-DFVerb
 
 function Select-DFModule {
     <#
@@ -124,7 +124,7 @@ function Select-DFModule {
         -Header 'Select module  [Enter to output name]' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fmod -Value Select-DFModule -Scope Global -Force
+Set-Alias -Name fmod -Value Select-DFModule
 
 function Select-DFHelpTopic {
     <#
@@ -172,7 +172,7 @@ function Select-DFHelpTopic {
         -Parse     { ($_ -split "`t", 2)[0] } `
         -Action    { param($topic) Invoke-DFHelp $topic }
 }
-Set-Alias -Name fh -Value Select-DFHelpTopic -Scope Global -Force
+Set-Alias -Name fh -Value Select-DFHelpTopic
 
 function Show-DFCliHelp {
     <#
@@ -239,7 +239,7 @@ function Show-DFCliHelp {
 
     if ($Paged) { $out | Invoke-DFWithPager } else { $out }
 }
-Set-Alias -Name clh -Value Show-DFCliHelp -Scope Global -Force
+Set-Alias -Name clh -Value Show-DFCliHelp
 
 function Show-DFCliHelpPaged {
     <#
@@ -278,4 +278,4 @@ function Show-DFCliHelpPaged {
     if ($Force) { $params.Force = $true }
     Show-DFCliHelp @params
 }
-Set-Alias -Name clhp -Value Show-DFCliHelpPaged -Scope Global -Force
+Set-Alias -Name clhp -Value Show-DFCliHelpPaged

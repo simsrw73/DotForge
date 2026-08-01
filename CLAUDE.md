@@ -22,6 +22,14 @@ free (JSON already loaded) and aggregation is paid once at build time. Full
 statement, rules, and the realistic boundary (the psd1 manifest): **`docs/plugin-architecture.md`** —
 read it before designing any new core feature or a central tool-keyed data file.
 
+## Core Invariant: Builtin Safety
+
+**Never overwrite a builtin PowerShell command or alias without explicit,
+documented reasoning.** Check every new alias (general-helper or per-tool) against
+`Get-Alias`/`Get-Command` before shipping it. Full statement and the `copy`→`yank`
+incident that prompted it: **`docs/builtin-safety-policy.md`** — read it before
+adding any new alias.
+
 ## Structure
 
 ```

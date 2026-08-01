@@ -70,7 +70,7 @@
         'touch', 'which', 'open',
         'fps', 'top',
         'env', 'path', 'fenv', 'ep', 'reload',
-        'copy', 'paste',
+        'yank', 'paste',
         'uuidgen',
         'trifle', 'ftrifle', 'tcats'
     )
