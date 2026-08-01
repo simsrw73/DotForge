@@ -2,6 +2,264 @@
   "schemaVersion": 1,
   "classifications": [
     {
+      "cacheKey": "home:almico.com/speedfan.php",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "environment-vars"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:autoitscript.com/site/autoit-script-editor",
+      "domain": "dev",
+      "function": [
+        "editor",
+        "syntax-highlighter"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:baremetalsoft.com/baregrep",
+      "domain": "dev",
+      "function": [
+        "search"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "grep"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:ccleaner.com/defraggler",
+      "domain": "system",
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "defrag"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:compuphase.com/software_termite.htm",
+      "domain": "system",
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "screen",
+        "tmux"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:crystalidea.com/speedyfox",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text",
+        "processes",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:cyotek.com/cyotek-webcopy",
+      "domain": "data",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "wget",
+        "httrack"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:developer.valvesoftware.com/wiki/steamcmd",
+      "domain": "gaming",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "updater",
+        "launcher"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:highrez.co.uk/downloads/xmousebuttoncontrol.htm",
+      "domain": "productivity",
+      "function": [
+        "shell-enhancement",
+        "file-management"
+      ],
+      "worksWith": [
+        "clipboard"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "xbindkeys"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:jetbrains.com/profiler",
+      "domain": "dev",
+      "function": [
+        "system-info",
+        "benchmarking"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:jetbrains.com/rust",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:mark0.net/soft-trid-e.html",
+      "domain": "system",
+      "function": [
+        "file-management",
+        "file-viewing",
+        "text-processing"
+      ],
+      "worksWith": [
+        "filesystem",
+        "binaries",
+        "archives"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:mh-nexus.de/en/hxd",
+      "domain": "dev",
+      "function": [
+        "file-management",
+        "editor"
+      ],
+      "worksWith": [
+        "binaries",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "hexedit",
+        "bless",
+        "wxHexEditor"
+      ],
+      "suggestedTerms": [
+        "binary editor",
+        "hex viewer"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "home:nirsoft.net/utils/chrome_cache_view.html",
       "domain": "productivity",
       "function": [
@@ -19,6 +277,129 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "home:nirsoft.net/utils/disk_counters_view.html",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "disk-usage"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/dns_lookup_view.html",
+      "domain": "network",
+      "function": [
+        "dns-tool"
+      ],
+      "worksWith": [
+        "dns"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/full_event_log_view.html",
+      "domain": "system",
+      "function": [
+        "log-viewer"
+      ],
+      "worksWith": [
+        "logs"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "eventvwr"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/installed_drivers_list.html",
+      "domain": "system",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/network_usage_view.html",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "system-info"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/shman.html",
+      "domain": "productivity",
+      "function": [
+        "clipboard"
+      ],
+      "worksWith": [
+        "clipboard"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/simple_program_debugger.html",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "home:nirsoft.net/utils/tcp_log_view.html",
       "domain": "network",
       "function": [
@@ -29,6 +410,27 @@
       ],
       "interface": "cli",
       "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/uninstall_view.html",
+      "domain": "system",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "Add/Remove Programs",
+        "Control Panel Uninstall"
+      ],
       "suggestedTerms": [],
       "confidence": 0.9,
       "nothingFits": false,
@@ -52,6 +454,211 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "home:nirsoft.net/utils/wifi_diagnostics_view.html",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "network-ports",
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/wifi_information_view.html",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "system-info"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:nirsoft.net/utils/zipinst.html",
+      "domain": "system",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "zip2exe"
+      ],
+      "suggestedTerms": [
+        "windows-installer",
+        "zip-application-installer"
+      ],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:opera.com/gx",
+      "domain": "cloud",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "chrome",
+        "firefox"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:ov2.eu/programs/rapidcrc-unicode",
+      "domain": "system",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "filesystem",
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "md5",
+        "sha1sum"
+      ],
+      "suggestedTerms": [
+        "checksum",
+        "file validation",
+        "file integrity checking"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:pdf-xchange.com/product/pdf-xchange-editor",
+      "domain": "media",
+      "function": [
+        "editor",
+        "file-management"
+      ],
+      "worksWith": [
+        "pdf"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "pdftotext",
+        "pdftk"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:pdflabs.com/tools/pdftk-server",
+      "domain": "productivity",
+      "function": [
+        "file-management",
+        "archive"
+      ],
+      "worksWith": [
+        "pdf"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "pdftk",
+        "ghostscript"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:proton.me/authenticator",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:softwareok.com/?seite=freeware/q-dir",
+      "domain": "productivity",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "explorer",
+        "nautilus"
+      ],
+      "suggestedTerms": [
+        "file explorer",
+        "quad file manager"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:speedtest.net/apps/cli",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "system-info"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "home:straightrunning.com/xmingnotes",
       "domain": "system",
       "function": [
@@ -65,6 +672,42 @@
       "alternativeTo": [],
       "suggestedTerms": [],
       "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:technelysium.com.au/wp/chromas",
+      "domain": "science",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:techpowerup.com/gpuz",
+      "domain": "system",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "environment-vars"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
@@ -86,6 +729,148 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "home:virtualhere.com/usb_client_software",
+      "domain": "system",
+      "function": [
+        "network-transfer",
+        "ssh-tool"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:vroid.com/en/studio",
+      "domain": "media",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "3D modeling",
+        "avatar creation",
+        "animation"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "home:xdlab.ru/en",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "text",
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mp3tag",
+        "kid3",
+        "beets"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/adguardteam/adguardhome|adguardhome",
+      "domain": "network",
+      "function": [
+        "vcs-client",
+        "network-transfer"
+      ],
+      "worksWith": [
+        "dns"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "dnsmasq",
+        "pihole"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/agalwood/motrix|motrix",
+      "domain": "network",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "http",
+        "http",
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "wget",
+        "curl"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ajeetdsouza/zoxide|zoxide",
+      "domain": "system",
+      "function": [
+        "navigation"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "cd"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/alexanderpro/smartsystemmenu|smartsystemmenu",
+      "domain": "system",
+      "function": [
+        "shell-enhancement",
+        "system-info",
+        "file-management"
+      ],
+      "worksWith": [
+        "processes",
+        "clipboard",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/amnweb/yasb|yasb",
       "domain": "productivity",
       "function": [
@@ -104,6 +889,91 @@
       "confidence": 0.9,
       "nothingFits": false,
       "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ankurk91/google-chat-electron|googlechatelectron",
+      "domain": "productivity",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "slack",
+        "discord"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/arcaderenegade/sidebardiagnostics|sidebardiagnostics",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/arduino/arduino-cli|arduinocli",
+      "domain": "dev",
+      "function": [
+        "package-manager",
+        "task-runner",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git",
+        "processes",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make"
+      ],
+      "suggestedTerms": [
+        "arduino-tool",
+        "embedded-development",
+        "microcontroller-tools"
+      ],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/asciidocfx/asciidocfx|asciidocfx",
+      "domain": "productivity",
+      "function": [
+        "editor",
+        "markdown-renderer"
+      ],
+      "worksWith": [
+        "text",
+        "markdown"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
       "model": "gpt-4o-mini"
     },
     {
@@ -137,6 +1007,68 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/authpass/authpass|authpass",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/automattic/simplenote-electron|simplenote",
+      "domain": "productivity",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "notepad",
+        "gedit"
+      ],
+      "suggestedTerms": [
+        "note-taking",
+        "synchronization"
+      ],
+      "confidence": 0.8,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/aws/aws-sam-cli|awssamcommandlineinterface",
+      "domain": "cloud",
+      "function": [
+        "task-runner",
+        "vcs-client",
+        "secrets"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "npm",
+        "serverless"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/axboe/fio|fio",
       "domain": "system",
       "function": [
@@ -154,6 +1086,25 @@
       "confidence": 0.5,
       "nothingFits": true,
       "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/axcore/tartube|tartube",
+      "domain": "media",
+      "function": [
+        "http-client",
+        "text-processing"
+      ],
+      "worksWith": [
+        "http",
+        "json"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
       "model": "gpt-4o-mini"
     },
     {
@@ -176,6 +1127,150 @@
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/benbuck/rbtray|rbtray",
+      "domain": "productivity",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "minimize to tray applications"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/betaflight/betaflight-configurator|betaflightconfigurator",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "file-management"
+      ],
+      "worksWith": [
+        "git",
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mission-planner",
+        "cleanflight"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/bitwarden/clients|bitwarden",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "1password",
+        "LastPass",
+        "KeePass"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/bluepointlilac/contextmenumanager|contextmenumanager",
+      "domain": "system",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "regedit"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/buildpacks/pack|pack",
+      "domain": "dev",
+      "function": [
+        "container-tooling"
+      ],
+      "worksWith": [
+        "containers"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "docker"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/burntsushi/xsv|xsv",
+      "domain": "data",
+      "function": [
+        "text-processing",
+        "search",
+        "file-viewing",
+        "file-management"
+      ],
+      "worksWith": [
+        "csv"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "csvkit",
+        "csvtool"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/canonical/multipass|multipass",
+      "domain": "dev",
+      "function": [
+        "container-tooling"
+      ],
+      "worksWith": [
+        "containers"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "vagrant",
+        "docker",
+        "virtualbox"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
       "nothingFits": false,
       "signalSource": "readme",
       "model": "gpt-4o-mini"
@@ -296,6 +1391,23 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/code52/carnac|carnac",
+      "domain": "productivity",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "clipboard"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/crate-ci/typos|typos",
       "domain": "dev",
       "function": [
@@ -310,6 +1422,165 @@
       "alternativeTo": [
         "aspell",
         "hunspell"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/d2phap/imageglass|imageglass",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "ranger",
+        "feh",
+        "gThumb"
+      ],
+      "suggestedTerms": [],
+      "confidence": 1.0,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/derailed/k9s|k9s",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "containers",
+        "terminal-sessions"
+      ],
+      "interface": "tui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/devolutions/unigetui|unigetui",
+      "domain": "dev",
+      "function": [
+        "package-manager",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "git",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "winget",
+        "choco",
+        "apt",
+        "brew",
+        "scoop",
+        "flatpak",
+        "snap",
+        "pip",
+        "npm"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/dnspyex/dnspy|dnspy",
+      "domain": "dev",
+      "function": [
+        "editor",
+        "vcs-client",
+        "process-monitor",
+        "text-processing"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        ".NET assembly editor",
+        "debugger",
+        "IL editor"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/dolthub/dolt|dolt",
+      "domain": "data",
+      "function": [
+        "vcs-client",
+        "database-client",
+        "file-management"
+      ],
+      "worksWith": [
+        "git",
+        "csv",
+        "http",
+        "code",
+        "databases"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "git",
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ducaale/xh|xh",
+      "domain": "network",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/dundee/gdu|gdu",
+      "domain": "system",
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "du"
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
@@ -337,6 +1608,120 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/elm/compiler|elm",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "programming language",
+        "web development",
+        "frontend framework"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/epi052/feroxbuster|feroxbuster",
+      "domain": "security",
+      "function": [
+        "search",
+        "network-transfer"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/equalsraf/win32yank|win32yank",
+      "domain": "productivity",
+      "function": [
+        "clipboard"
+      ],
+      "worksWith": [
+        "clipboard"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/erengy/taiga|taiga",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "anime-manager",
+        "anime-progress-tracker"
+      ],
+      "confidence": 0.8,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/evolus/pencil|pencil",
+      "domain": "media",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "drawing application",
+        "vector graphics editor",
+        "design tool"
+      ],
+      "confidence": 0.7,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/farag2/sophia-script-for-windows|sophiascriptforwindows",
+      "domain": "system",
+      "function": [
+        "vcs-client",
+        "text-processing",
+        "file-management"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/federico-terzi/espanso|espanso",
       "domain": "productivity",
       "function": [
@@ -349,6 +1734,150 @@
       ],
       "interface": "cli",
       "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/forkgram/tdesktop|forkgram",
+      "domain": "productivity",
+      "function": [
+        "editor",
+        "clipboard"
+      ],
+      "worksWith": [
+        "text",
+        "http",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "telegram",
+        "whatsapp"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/fsprojects/paket|paket",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "text",
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "nuget"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/getgauge/gauge|gauge",
+      "domain": "dev",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/getsentry/sentry-cli|sentrycli",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "file-management",
+        "network-transfer",
+        "log-viewer"
+      ],
+      "worksWith": [
+        "git",
+        "http",
+        "logs"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/getsops/sops|secretsoperations",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "secrets-management"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/git-cola/git-cola|gitcola",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "git gui",
+        "gitk"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/github/git-sizer|gitsizer",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "system-info"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "git gc",
+        "git prune"
+      ],
       "suggestedTerms": [],
       "confidence": 0.9,
       "nothingFits": false,
@@ -379,6 +1908,63 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/gluonhq/scenebuilder|scenebuilder",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/glzr-io/glazewm|glazewm",
+      "domain": "system",
+      "function": [
+        "shell-enhancement",
+        "navigation"
+      ],
+      "worksWith": [],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "window manager",
+        "tiling window manager"
+      ],
+      "confidence": 0.8,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/glzr-io/zebar|zebar",
+      "domain": "productivity",
+      "function": [
+        "editor",
+        "system-info",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "filesystem",
+        "clipboard"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/gokcehan/lf|lf",
       "domain": "system",
       "function": [
@@ -391,6 +1977,32 @@
       "interface": "cli",
       "alternativeTo": [
         "ranger"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/google/osv-scanner|osvscanner",
+      "domain": "security",
+      "function": [
+        "vcs-client",
+        "secrets",
+        "text-processing"
+      ],
+      "worksWith": [
+        "git",
+        "http",
+        "containers",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "npm audit",
+        "go vet",
+        "pip check"
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
@@ -448,6 +2060,175 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/hetznercloud/cli|hcloud",
+      "domain": "cloud",
+      "function": [
+        "container-tooling",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "containers"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "cloud-cli",
+        "cloud-management"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/hydrusnetwork/hydrus|hydrusnetwork",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "images",
+        "filesystem",
+        "archives"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "file-explorer",
+        "image-viewer"
+      ],
+      "suggestedTerms": [
+        "media-management",
+        "file-organization"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/int128/kubelogin|kubelogin",
+      "domain": "cloud",
+      "function": [
+        "vcs-client",
+        "ssh-tool",
+        "secrets"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "kubectl oidc-login"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ipfs/ipfs-desktop|ipfsdesktop",
+      "domain": "data",
+      "function": [
+        "vcs-client",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem",
+        "git"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "ipfs",
+        "filecoin"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jackett/jackett|jackett",
+      "domain": "cloud",
+      "function": [
+        "http-client",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "http",
+        "json",
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jandedobbeleer/oh-my-posh|ohmyposh",
+      "domain": "productivity",
+      "function": [
+        "prompt",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jendrikseipp/rednotebook|rednotebook",
+      "domain": "productivity",
+      "function": [
+        "editor",
+        "text-processing",
+        "file-management"
+      ],
+      "worksWith": [
+        "text",
+        "markdown",
+        "images",
+        "pdf"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jftuga/less-windows|less",
+      "domain": "text",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "more"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/jgm/pandoc|pandoc",
       "domain": "productivity",
       "function": [
@@ -464,6 +2245,372 @@
       "alternativeTo": [
         "markdown",
         "txt2html"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jhspetersson/fselect|fselect",
+      "domain": "system",
+      "function": [
+        "search",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "find",
+        "ls"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jj-vcs/jj|jj",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "git"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/jsdelivr/globalping-cli|globalpingcli",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "system-info",
+        "benchmarking"
+      ],
+      "worksWith": [
+        "http",
+        "dns",
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "ping",
+        "traceroute",
+        "mtr"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/junegunn/fzf|fzf",
+      "domain": "productivity",
+      "function": [
+        "fuzzy-finder",
+        "navigation"
+      ],
+      "worksWith": [
+        "text",
+        "processes",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "grep",
+        "find"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/kampfkarren/selene|selene",
+      "domain": "dev",
+      "function": [
+        "linter"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "luacheck"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/kimwalisch/primesieve|primesieve",
+      "domain": "science",
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "prime number generator",
+        "sieve algorithm tool"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/kirillosenkov/msbuildstructuredlog|msbuildstructuredlogviewer",
+      "domain": "dev",
+      "function": [
+        "log-viewer",
+        "file-management"
+      ],
+      "worksWith": [
+        "git",
+        "processes",
+        "logs"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "cat"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/koalaman/shellcheck|shellcheck",
+      "domain": "dev",
+      "function": [
+        "linter"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "bash -n",
+        "sh -n"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/kubernetes-sigs/krew|krew",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "brew",
+        "apt",
+        "dnf"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/leokhoa/laragon|laragon",
+      "domain": "dev",
+      "function": [
+        "package-manager",
+        "system-info",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "git",
+        "http",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/listen1/listen1_desktop|listen1",
+      "domain": "media",
+      "function": [
+        "fuzzy-finder",
+        "editor"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "music players"
+      ],
+      "suggestedTerms": [
+        "music-player",
+        "streaming-music"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/localsend/localsend|localsend",
+      "domain": "productivity",
+      "function": [
+        "network-transfer",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem",
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "send",
+        "airdrop"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/luals/lua-language-server|lualanguageserver",
+      "domain": "dev",
+      "function": [
+        "editor",
+        "formatter",
+        "linter"
+      ],
+      "worksWith": [
+        "code",
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "vim",
+        "emacs",
+        "code"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/marchellodev/sharik|sharik",
+      "domain": "productivity",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/meganz/megasync|megasync",
+      "domain": "cloud",
+      "function": [
+        "vcs-client",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "rsync"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/mesonbuild/meson|mesonbuildsystem",
+      "domain": "dev",
+      "function": [
+        "package-manager",
+        "task-runner"
+      ],
+      "worksWith": [
+        "code",
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make",
+        "cmake"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/microsoft/coreutils|coreutilsforwindows",
+      "domain": "system",
+      "function": [
+        "file-management",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text",
+        "processes",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "cat",
+        "cp",
+        "mv",
+        "rm",
+        "ls"
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
@@ -491,6 +2638,68 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/microsoft/edit|edit",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "nano",
+        "vi",
+        "emacs"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/microsoft/sbom-tool|sbomtool",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "container-tooling",
+        "task-runner"
+      ],
+      "worksWith": [
+        "git",
+        "processes",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/microsoft/terminal|windowsterminalpreview",
+      "domain": "system",
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "cmd",
+        "powershell"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/microsoft/winfile|windowsfilemanager",
       "domain": "productivity",
       "function": [
@@ -501,6 +2710,105 @@
       ],
       "interface": "gui",
       "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/microsoft/winget-create|windowspackagemanagermanifestcreator",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "npm",
+        "yarn",
+        "apt-get",
+        "brew"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/mintty/wsltty|wsltty",
+      "domain": "system",
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mintty"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/modernflyouts-community/modernflyouts|modernflyoutspreview",
+      "domain": "system",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "flyout manager",
+        "UI enhancement tool",
+        "Windows UI customization"
+      ],
+      "confidence": 0.9,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/mountain-loop/yaak|yaak",
+      "domain": "productivity",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/mpc-qt/mpc-qt|mediaplayerclassicqutetheater",
+      "domain": "media",
+      "function": [
+        "editor",
+        "text-processing",
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images",
+        "filesystem",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "vlc",
+        "mplayer"
+      ],
       "suggestedTerms": [],
       "confidence": 0.9,
       "nothingFits": false,
@@ -529,6 +2837,354 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/muesli/duf|duf",
+      "domain": "system",
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "df"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/mularahul/keyviz|keyviz",
+      "domain": "productivity",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/nektos/act|act",
+      "domain": "dev",
+      "function": [
+        "task-runner",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git",
+        "processes",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ninja-build/ninja|ninja",
+      "domain": "dev",
+      "function": [
+        "task-runner",
+        "package-manager"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make"
+      ],
+      "suggestedTerms": [
+        "build system",
+        "build tool"
+      ],
+      "confidence": 0.8,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/nomorefood/putty-cac|puttycac",
+      "domain": "network",
+      "function": [
+        "ssh-tool"
+      ],
+      "worksWith": [
+        "ssh-connections"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "putty"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/opentoonz/opentoonz|opentoonz",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/opentrack/opentrack|opentrack",
+      "domain": "gaming",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "processes",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "head-tracking",
+        "simulation",
+        "gaming control",
+        "input device relay"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/oracle/oci-cli|oraclecloudinfrastructurecli",
+      "domain": "cloud",
+      "function": [
+        "vcs-client",
+        "clipboard",
+        "file-management"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/orf/gping|gping",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "ping"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ozmartian/vidcutter|vidcutter",
+      "domain": "media",
+      "function": [
+        "editor",
+        "file-management"
+      ],
+      "worksWith": [
+        "images",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "cut",
+        "ffmpeg"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/peazip/peazip|peazip",
+      "domain": "productivity",
+      "function": [
+        "file-management",
+        "archive"
+      ],
+      "worksWith": [
+        "archives",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "zip",
+        "unzip",
+        "rar",
+        "7z",
+        "tar",
+        "gzip"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/protonmail/inbox-desktop|protonmail",
+      "domain": "productivity",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "email client",
+        "calendar application"
+      ],
+      "confidence": 0.0,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/qishibo/anotherredisdesktopmanager|anotherredisdesktopmanager",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "database-client"
+      ],
+      "worksWith": [
+        "git",
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "redis-cli"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/radarr/radarr|radarr",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ramonunch/altsnap|altsnap",
+      "domain": "productivity",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "window management",
+        "window resizing",
+        "desktop enhancement"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/raspberrypi/rpi-imager|raspberrypiimager",
+      "domain": "system",
+      "function": [
+        "disk-usage",
+        "package-manager"
+      ],
+      "worksWith": [
+        "images",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "dd",
+        "balenaEtcher"
+      ],
+      "suggestedTerms": [
+        "imaging-utility",
+        "system-image-writer"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/rclone-ui/rclone-ui|rcloneui",
+      "domain": "cloud",
+      "function": [
+        "vcs-client",
+        "network-transfer",
+        "file-management"
+      ],
+      "worksWith": [
+        "git",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "rclone"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/rejetto/hfs|hfs",
       "domain": "network",
       "function": [
@@ -546,6 +3202,73 @@
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/restic/restic|restic",
+      "domain": "system",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem",
+        "processes",
+        "ssh-connections"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "tar",
+        "rsync"
+      ],
+      "suggestedTerms": [
+        "backup",
+        "restore"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/revoland/steam-library-manager|steamlibrarymanager",
+      "domain": "gaming",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "steam-backup"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/ricochet-im/ricochet|ricochet",
+      "domain": "security",
+      "function": [
+        "network-transfer",
+        "secrets"
+      ],
+      "worksWith": [
+        "http",
+        "ssh-connections"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "Signal",
+        "Telegram",
+        "WhatsApp"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
       "nothingFits": false,
       "signalSource": "readme",
       "model": "gpt-4o-mini"
@@ -596,6 +3319,22 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/seerge/g-helper|ghelper",
+      "domain": "dev",
+      "function": [],
+      "worksWith": [],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "g-helper",
+        "general purpose helper tool"
+      ],
+      "confidence": 0.0,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/sentialx/multrin|multrin",
       "domain": "productivity",
       "function": [
@@ -607,6 +3346,27 @@
       ],
       "interface": "gui",
       "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/sharkdp/fd|fd",
+      "domain": "system",
+      "function": [
+        "search",
+        "file-viewing",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "find"
+      ],
       "suggestedTerms": [],
       "confidence": 0.9,
       "nothingFits": false,
@@ -635,6 +3395,165 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/siderolabs/talos|talosctl",
+      "domain": "cloud",
+      "function": [
+        "container-tooling"
+      ],
+      "worksWith": [
+        "containers"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "kubeadm",
+        "k3s",
+        "openShift"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/sindresorhus/caprine|caprine",
+      "domain": "productivity",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "social media client",
+        "messaging client"
+      ],
+      "confidence": 0.0,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/sophia-community/sophiapp|sophiapp",
+      "domain": "productivity",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "system-optimization",
+        "performance-tuning",
+        "system-maintenance"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/spatiumportae/portal|portal",
+      "domain": "system",
+      "function": [
+        "network-transfer",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem",
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "scp",
+        "rsync",
+        "ftp"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/streamlink/streamlink-twitch-gui|streamlinktwitchgui",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "browser"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/superfly/flyctl|flyctl",
+      "domain": "cloud",
+      "function": [
+        "vcs-client",
+        "package-manager"
+      ],
+      "worksWith": [
+        "git",
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "kubectl",
+        "heroku",
+        "docker",
+        "gcloud"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/sylikc/jpegview|jpegview",
+      "domain": "media",
+      "function": [
+        "file-viewing",
+        "text-processing"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mspaint",
+        "irfanview"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/synfig/synfig|synfigstudio",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images",
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/taiizor/sucrose|sucrosewallpaperengine",
       "domain": "media",
       "function": [],
@@ -649,6 +3568,86 @@
       "confidence": 0.0,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tamasfe/taplo|taplo",
+      "domain": "dev",
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "TOML-toolkit",
+        "TOML-parser",
+        "TOML-formatter"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tannerhelland/photodemon|photodemon",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "gimp",
+        "photoshop",
+        "paint.net"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tdesktop-x64/tdesktop|64gramdesktop",
+      "domain": "productivity",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "messaging",
+        "chat client",
+        "telegram client"
+      ],
+      "confidence": 0.7,
+      "nothingFits": true,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/terminals-origin/terminals|terminals",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "ssh-tool"
+      ],
+      "worksWith": [
+        "ssh-connections",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mstsc.exe"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
       "model": "gpt-4o-mini"
     },
     {
@@ -674,6 +3673,23 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/terraform-linters/tflint|tflint",
+      "domain": "dev",
+      "function": [
+        "linter"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/thejoefin/text-grab|textgrab",
       "domain": "productivity",
       "function": [
@@ -689,6 +3705,53 @@
       "confidence": 0.85,
       "nothingFits": false,
       "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/thomasnordquist/mqtt-explorer|mqttexplorer",
+      "domain": "network",
+      "function": [
+        "vcs-client",
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "mosquitto_pub",
+        "mosquitto_sub"
+      ],
+      "suggestedTerms": [
+        "mqtt-client",
+        "mqtt-tool"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tobya/docto|docto",
+      "domain": "productivity",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "text",
+        "pdf",
+        "csv"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "libreoffice",
+        "pandoc"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
       "model": "gpt-4o-mini"
     },
     {
@@ -733,6 +3796,76 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/transmission-remote-gui/transgui|transmissionremotegui",
+      "domain": "media",
+      "function": [
+        "vcs-client",
+        "network-transfer",
+        "documentation"
+      ],
+      "worksWith": [
+        "http",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "uTorrent",
+        "qBittorrent"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/transmission/transmission|transmission",
+      "domain": "network",
+      "function": [
+        "network-transfer",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "filesystem",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "curl",
+        "wget"
+      ],
+      "suggestedTerms": [
+        "bittorrent-client",
+        "file-sharing-client"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tribler/tribler|tribler",
+      "domain": "media",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem",
+        "http"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "transmission",
+        "qBittorrent",
+        "uTorrent"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/trzsz/trzsz-ssh|tssh",
       "domain": "network",
       "function": [
@@ -744,6 +3877,28 @@
       "interface": "cli",
       "alternativeTo": [
         "ssh"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/tutao/tutanota|tutanotadesktop",
+      "domain": "security",
+      "function": [
+        "secrets",
+        "http-client"
+      ],
+      "worksWith": [
+        "http",
+        "credentials"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "gmail",
+        "outlook"
       ],
       "suggestedTerms": [],
       "confidence": 0.9,
@@ -774,6 +3929,119 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/usebruno/bruno|bruno",
+      "domain": "system",
+      "function": [],
+      "worksWith": [],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "XML parser",
+        "XML document handling"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/virtuslab/scala-cli|scalacli",
+      "domain": "dev",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "sbt"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/virustotal/vt-cli|vtcli",
+      "domain": "security",
+      "function": [
+        "http-client",
+        "secrets",
+        "search"
+      ],
+      "worksWith": [
+        "http",
+        "filesystem",
+        "clipboard"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl",
+        "wget"
+      ],
+      "suggestedTerms": [
+        "VirusTotal API client",
+        "malware analysis CLI",
+        "threat intelligence tool"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/vladelaina/catime|catime",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "processes",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "timer",
+        "pomodoro"
+      ],
+      "suggestedTerms": [
+        "countdown",
+        "timer",
+        "Pomodoro tool"
+      ],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/vultr/vultr-cli|vultrcli",
+      "domain": "cloud",
+      "function": [
+        "network-transfer",
+        "database-client",
+        "dns-tool",
+        "system-info"
+      ],
+      "worksWith": [
+        "http",
+        "ssh-connections",
+        "filesystem",
+        "containers",
+        "databases",
+        "dns"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/wez/atomicparsley|atomicparsley",
       "domain": "media",
       "function": [
@@ -787,6 +4055,69 @@
       "alternativeTo": [],
       "suggestedTerms": [],
       "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/wilfred/difftastic|difftastic",
+      "domain": "dev",
+      "function": [
+        "diff-merge"
+      ],
+      "worksWith": [
+        "git",
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "diff"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/winauth/winauth|winauth",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/winsiderss/systeminformer|systeminformer",
+      "domain": "system",
+      "function": [
+        "process-monitor",
+        "system-info"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "network-ports",
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "top",
+        "htop",
+        "tasklist"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
       "nothingFits": false,
       "signalSource": "readme",
       "model": "gpt-4o-mini"
@@ -817,6 +4148,141 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "repo:https://github.com/xiph/flac|flac",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "editor",
+        "text-processing"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "audio codec",
+        "lossless audio"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/yerongai/office-tool|officetoolplus",
+      "domain": "productivity",
+      "function": [
+        "vcs-client",
+        "package-manager",
+        "system-info",
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "git",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "MS Office Installer",
+        "Office Deployment Tool"
+      ],
+      "suggestedTerms": [
+        "Office deployment tool",
+        "Office management tool",
+        "Office installer utility"
+      ],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/yorukot/superfile|superfile",
+      "domain": "dev",
+      "function": [
+        "file-management",
+        "vcs-client"
+      ],
+      "worksWith": [
+        "filesystem",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "find",
+        "xargs"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/yt-dlp/yt-dlp|ytdlp",
+      "domain": "media",
+      "function": [
+        "network-transfer",
+        "documentation"
+      ],
+      "worksWith": [
+        "http",
+        "filesystem",
+        "containers"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "youtube-dl"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/yubico/yubioath-flutter|yubicoauthenticator",
+      "domain": "security",
+      "function": [
+        "secrets"
+      ],
+      "worksWith": [
+        "credentials"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "docs",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/yutaka-sawada/multipar|multipar",
+      "domain": "data",
+      "function": [
+        "archive",
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem",
+        "archives"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "par2",
+        "rar",
+        "zip"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "repo:https://github.com/zarestia-dev/rclone-manager|rclonemanager",
       "domain": "productivity",
       "function": [
@@ -826,6 +4292,61 @@
         "filesystem"
       ],
       "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://github.com/zyedidia/eget|eget",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://gitlab.com/bztsrc/usbimager|usbimagergdiwo",
+      "domain": "system",
+      "function": [
+        "file-management",
+        "archive"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "dd"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "readme",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "repo:https://gitlab.com/gitlab-org/gitlab-runner|gitlabrunner",
+      "domain": "dev",
+      "function": [
+        "vcs-client",
+        "task-runner"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
       "alternativeTo": [],
       "suggestedTerms": [],
       "confidence": 0.9,
