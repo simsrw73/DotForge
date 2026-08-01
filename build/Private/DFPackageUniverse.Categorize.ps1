@@ -373,6 +373,69 @@ function ConvertTo-DFPackageUniverseClassification {
     }
 }
 
+function Get-DFPackageUniverseClassifierSystemPrompt {
+    <#
+    .SYNOPSIS
+        The classifier system prompt, shared verbatim by every provider seam
+        (New-DFPackageUniverseClassifySeam, New-DFPackageUniverseClaudeClassifySeam)
+        so the taxonomy instructions can never silently drift apart between
+        providers -- factored out after the vcs-client mistagging fixes
+        needed the exact same wording on both the bulk and escalation paths.
+    .OUTPUTS
+        [string]
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat). IMPORTANT: almost every tool''s docs are a README hosted on GitHub, so boilerplate like "git clone ...", "Pull Requests welcome", "Contributing", or github.com links is near-universal -- it describes how the PROJECT is developed, not what the TOOL does. Never treat that boilerplate as evidence for any classification, especially "vcs-client". Only use "vcs-client" for a tool whose primary END-USER purpose is acting as a client for version-control repository history itself (viewing diffs/log, committing, branching, merging, pushing/pulling) -- e.g. git, mercurial, jj, and GUI/TUI wrappers around them like lazygit, git-cola, gitkraken, tig. Do NOT use "vcs-client" for build tools, package managers, task runners, IaC/cloud CLIs, CI runners, torrent clients, decompilers, or any other tool merely because it is hosted on GitHub or its own docs mention git/contributing/cloning (e.g. sbt, uv, bicep, transmission, k9s, dnspy, mqtt-explorer, steamcmd are NOT vcs-clients). Also, the word "client" alone is NOT evidence -- most "client" software (chat clients, IRC clients, music/streaming clients, database clients, email clients, game clients) has nothing to do with version control (e.g. quassel, chatterino, spotify-tui, litecoin-core are NOT vcs-clients even though their docs call them "clients" or use words like "tree"/"staging" in an unrelated sense).'
+}
+
+function New-DFPackageUniverseClassifierSchema {
+    <#
+    .SYNOPSIS
+        The JSON-schema object (domain/function/worksWith enums drawn from
+        $Vocab) shared by every provider seam. Same rationale as
+        Get-DFPackageUniverseClassifierSystemPrompt.
+    .PARAMETER Vocab
+        The closed vocabulary { Domain; Function; WorksWith }.
+    .OUTPUTS
+        [hashtable]
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)]$Vocab)
+    @{
+        type = 'object'; additionalProperties = $false
+        required = @('domain', 'function', 'worksWith', 'interface', 'alternativeTo', 'confidence', 'nothing_fits', 'suggested_terms')
+        properties = @{
+            domain      = @{ type = 'string'; enum = @($Vocab.Domain) }
+            function    = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.Function) } }
+            worksWith   = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.WorksWith) } }
+            interface   = @{ type = 'string'; enum = @('cli', 'tui', 'gui') }
+            alternativeTo = @{ type = 'array'; items = @{ type = 'string' } }
+            confidence  = @{ type = 'number' }
+            nothing_fits = @{ type = 'boolean' }
+            suggested_terms = @{ type = 'array'; items = @{ type = 'string' } }
+        }
+    }
+}
+
+function Get-DFPackageUniverseClassifierUserPayload {
+    <#
+    .SYNOPSIS
+        The compact JSON user-message payload (name/publisher/description/
+        tags/docs) shared by every provider seam.
+    .PARAMETER ClassifierInput
+        The { Name; Publisher; Description; Tags; DocExcerpt } object from
+        Get-DFPackageUniverseClassifierInput.
+    .OUTPUTS
+        [string]
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)]$ClassifierInput)
+    @{ name = $ClassifierInput.Name; publisher = $ClassifierInput.Publisher; description = $ClassifierInput.Description; tags = $ClassifierInput.Tags; docs = $ClassifierInput.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
+}
+
 function New-DFPackageUniverseClassifySeam {
     <#
     .SYNOPSIS
@@ -415,33 +478,93 @@ function New-DFPackageUniverseClassifySeam {
             Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60
         }
     )
+    # Captured as plain variables (not resolved by name inside the closure below) so the
+    # returned scriptblock keeps working regardless of the caller's function-table scope
+    # chain -- GetNewClosure() reliably snapshots variables, not sibling function visibility.
+    $sysPrompt = Get-DFPackageUniverseClassifierSystemPrompt
+    $buildSchema = ${function:New-DFPackageUniverseClassifierSchema}
+    $buildPayload = ${function:Get-DFPackageUniverseClassifierUserPayload}
     {
         param($ClassifierInput, $Vocab)
-        $schema = @{
-            type = 'object'; additionalProperties = $false
-            required = @('domain', 'function', 'worksWith', 'interface', 'alternativeTo', 'confidence', 'nothing_fits', 'suggested_terms')
-            properties = @{
-                domain      = @{ type = 'string'; enum = @($Vocab.Domain) }
-                function    = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.Function) } }
-                worksWith   = @{ type = 'array'; items = @{ type = 'string'; enum = @($Vocab.WorksWith) } }
-                interface   = @{ type = 'string'; enum = @('cli', 'tui', 'gui') }
-                alternativeTo = @{ type = 'array'; items = @{ type = 'string' } }
-                confidence  = @{ type = 'number' }
-                nothing_fits = @{ type = 'boolean' }
-                suggested_terms = @{ type = 'array'; items = @{ type = 'string' } }
-            }
-        }
-        $sys = 'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat). IMPORTANT: almost every tool''s docs are a README hosted on GitHub, so boilerplate like "git clone ...", "Pull Requests welcome", "Contributing", or github.com links is near-universal -- it describes how the PROJECT is developed, not what the TOOL does. Never treat that boilerplate as evidence for any classification, especially "vcs-client". Only use "vcs-client" for a tool whose primary END-USER purpose is acting as a client for version-control repository history itself (viewing diffs/log, committing, branching, merging, pushing/pulling) -- e.g. git, mercurial, jj, and GUI/TUI wrappers around them like lazygit, git-cola, gitkraken, tig. Do NOT use "vcs-client" for build tools, package managers, task runners, IaC/cloud CLIs, CI runners, torrent clients, decompilers, or any other tool merely because it is hosted on GitHub or its own docs mention git/contributing/cloning (e.g. sbt, uv, bicep, transmission, k9s, dnspy, mqtt-explorer, steamcmd are NOT vcs-clients). Also, the word "client" alone is NOT evidence -- most "client" software (chat clients, IRC clients, music/streaming clients, database clients, email clients, game clients) has nothing to do with version control (e.g. quassel, chatterino, spotify-tui, litecoin-core are NOT vcs-clients even though their docs call them "clients" or use words like "tree"/"staging" in an unrelated sense).'
-        $user = @{ name = $ClassifierInput.Name; publisher = $ClassifierInput.Publisher; description = $ClassifierInput.Description; tags = $ClassifierInput.Tags; docs = $ClassifierInput.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
+        $schema = & $buildSchema -Vocab $Vocab
+        $user = & $buildPayload -ClassifierInput $ClassifierInput
         $body = @{
             model = $Model
-            messages = @(@{ role = 'system'; content = $sys }, @{ role = 'user'; content = $user })
+            messages = @(@{ role = 'system'; content = $sysPrompt }, @{ role = 'user'; content = $user })
             response_format = @{ type = 'json_schema'; json_schema = @{ name = 'tool_classification'; schema = $schema; strict = $true } }
         } | ConvertTo-Json -Depth 12
         $headers = @{ Authorization = "Bearer $ApiKey" }
         $resp = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
         $content = [string]$resp.choices[0].message.content
         [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage }
+    }.GetNewClosure()
+}
+
+function New-DFPackageUniverseClaudeClassifySeam {
+    <#
+    .SYNOPSIS
+        Builds the classifier seam (param($ClassifierInput,$Vocab) -> {Raw;Model;Usage}) for
+        an Anthropic Messages API call, using forced tool-use for structured
+        output that constrains domain/function/worksWith to the closed
+        vocabulary via the tool's input_schema. Intended as the escalation
+        seam (-Escalate) in Build-DFPackageUniverseCategories.ps1: a stronger
+        model for the low-confidence/nothing_fits tail, per the Phase D design.
+    .DESCRIPTION
+        Shares the exact system prompt, JSON schema, and user payload with
+        New-DFPackageUniverseClassifySeam (Get-DFPackageUniverseClassifierSystemPrompt,
+        New-DFPackageUniverseClassifierSchema, Get-DFPackageUniverseClassifierUserPayload)
+        so the two providers cannot silently classify against different
+        taxonomies. The wire POST is delegated to $Rest (param($Uri,$Headers,$Body)
+        -> parsed response) so it is unit-testable; the default $Rest uses
+        Invoke-RestMethod. The response's tool_use content block's `input` is
+        already a structured object (Claude does not return a JSON string to
+        re-parse, unlike the OpenAI seam).
+    .PARAMETER ApiKey
+        The Anthropic API key, sent as an x-api-key header.
+    .PARAMETER Model
+        The Claude model name. Defaults to 'claude-haiku-4-5-20251001'.
+    .PARAMETER Rest
+        The injectable HTTP-POST seam: param($Uri,$Headers,$Body) -> parsed
+        response. Defaults to a real Invoke-RestMethod call.
+    .EXAMPLE
+        $seam = New-DFPackageUniverseClaudeClassifySeam -ApiKey $key
+        & $seam $classifierInput $vocab
+
+        Returns { Raw; Model; Usage } from a live Claude classification call.
+    .OUTPUTS
+        [scriptblock] with signature param($ClassifierInput,$Vocab) -> { Raw; Model; Usage }.
+    #>
+    [CmdletBinding()]
+    [OutputType([scriptblock])]
+    param(
+        [Parameter(Mandatory)][string]$ApiKey,
+        [string]$Model = 'claude-haiku-4-5-20251001',
+        [scriptblock]$Rest = {
+            param($Uri, $Headers, $Body)
+            Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60
+        }
+    )
+    # See the matching comment in New-DFPackageUniverseClassifySeam for why these are
+    # captured as plain variables rather than resolved by name inside the closure.
+    $sysPrompt = Get-DFPackageUniverseClassifierSystemPrompt
+    $buildSchema = ${function:New-DFPackageUniverseClassifierSchema}
+    $buildPayload = ${function:Get-DFPackageUniverseClassifierUserPayload}
+    {
+        param($ClassifierInput, $Vocab)
+        $schema = & $buildSchema -Vocab $Vocab
+        $user = & $buildPayload -ClassifierInput $ClassifierInput
+        $body = @{
+            model = $Model
+            max_tokens = 1024
+            system = $sysPrompt
+            messages = @(@{ role = 'user'; content = $user })
+            tools = @(@{ name = 'tool_classification'; description = 'Emit the tool classification.'; input_schema = $schema })
+            tool_choice = @{ type = 'tool'; name = 'tool_classification' }
+        } | ConvertTo-Json -Depth 12
+        $headers = @{ 'x-api-key' = $ApiKey; 'anthropic-version' = '2023-06-01' }
+        $resp = & $Rest 'https://api.anthropic.com/v1/messages' $headers $body
+        $toolUse = @($resp.content | Where-Object { $_.type -eq 'tool_use' })[0]
+        [pscustomobject]@{ Raw = $toolUse.input; Model = $Model; Usage = $resp.usage }
     }.GetNewClosure()
 }
 

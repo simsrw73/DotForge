@@ -237,6 +237,55 @@ Describe 'DFPackageUniverse.Categorize' {
         }
     }
 
+    Context 'New-DFPackageUniverseClaudeClassifySeam' {
+        It 'builds a forced tool-use request with the vocab-constrained schema and parses the response' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $captured = $null
+            $rest = {
+                param($Uri, $Headers, $Body)
+                $script:captured = [pscustomobject]@{ Uri=$Uri; Headers=$Headers; Body=$Body }
+                # Mimic the Anthropic Messages API tool_use content-block shape.
+                [pscustomobject]@{
+                    content = @([pscustomobject]@{ type='tool_use'; name='tool_classification'; input=[pscustomobject]@{ domain='text'; function=@('search'); worksWith=@('text'); interface='cli'; alternativeTo=@('grep'); confidence=0.9; nothing_fits=$false; suggested_terms=@() } })
+                    usage = [pscustomobject]@{ input_tokens=200; output_tokens=50 }
+                }
+            }
+            $seam = New-DFPackageUniverseClaudeClassifySeam -ApiKey 'sk-ant-test' -Model 'claude-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher='sharkdp'; Description='cat clone'; Tags=$null; DocExcerpt='# bat'; SignalSource='readme' }
+            $out = & $seam $in $vocab
+            $out.Raw.domain | Should -Be 'text'
+            $out.Usage.input_tokens | Should -Be 200
+            $script:captured.Headers['x-api-key'] | Should -Be 'sk-ant-test'
+            $script:captured.Headers['anthropic-version'] | Should -Not -BeNullOrEmpty
+            $script:captured.Uri | Should -Match 'anthropic\.com'
+            ($script:captured.Body | ConvertFrom-Json).model | Should -Be 'claude-test'
+            ($script:captured.Body | ConvertFrom-Json).tool_choice.name | Should -Be 'tool_classification'
+            $script:captured.Body | Should -Match 'bat'
+            $script:captured.Body | Should -Match 'cat clone'
+        }
+        It 'sends the identical system prompt as the OpenAI seam, so the two providers cannot silently drift onto different taxonomies' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $in = [pscustomobject]@{ Name='x'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $script:openaiBody = $null
+            $restOpenAI = {
+                param($Uri, $Headers, $Body)
+                $script:openaiBody = $Body
+                [pscustomobject]@{ choices=@([pscustomobject]@{ message=[pscustomobject]@{ content='{"domain":"text","function":[],"worksWith":[],"interface":"cli","alternativeTo":[],"confidence":0.5,"nothing_fits":true,"suggested_terms":[]}' } }); usage=[pscustomobject]@{} }
+            }
+            $script:claudeBody = $null
+            $restClaude = {
+                param($Uri, $Headers, $Body)
+                $script:claudeBody = $Body
+                [pscustomobject]@{ content=@([pscustomobject]@{ type='tool_use'; input=[pscustomobject]@{ domain='text'; function=@(); worksWith=@(); interface='cli'; alternativeTo=@(); confidence=0.5; nothing_fits=$true; suggested_terms=@() } }); usage=[pscustomobject]@{} }
+            }
+            & (New-DFPackageUniverseClassifySeam -ApiKey 'k' -Rest $restOpenAI) $in $vocab | Out-Null
+            & (New-DFPackageUniverseClaudeClassifySeam -ApiKey 'k' -Rest $restClaude) $in $vocab | Out-Null
+            $openaiSys = ($script:openaiBody | ConvertFrom-Json).messages[0].content
+            $claudeSys = ($script:claudeBody | ConvertFrom-Json).system
+            $openaiSys | Should -Be $claudeSys
+        }
+    }
+
     Context 'Invoke-DFPackageUniverseCategorizeRun' {
         BeforeAll {
             Import-Module PSSQLite
@@ -373,6 +422,31 @@ CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, pack
                 Invoke-SqliteQuery -DataSource $db -Query "CREATE TABLE tools (tool_id INTEGER PRIMARY KEY)"
                 { & "$PSScriptRoot/../build/Build-DFPackageUniverseCategories.ps1" -DatabasePath $db -Http {} -Classify {} 6>$null } | Should -Throw '*tool_packages*'
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'warns and falls back to same-model escalation when ANTHROPIC_API_KEY is absent (no -Classify/-Escalate override)' {
+            # An empty tools table means the run loop selects nothing, so the
+            # auto-built Classify/Escalate seams are constructed (exercising the
+            # real key-reading + fallback logic) but never invoked -- no network,
+            # even though this test intentionally skips -Classify/-Escalate.
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("noclaude-" + [guid]::NewGuid().ToString('N') + ".db")
+            $js = Join-Path ([System.IO.Path]::GetTempPath()) ("noclaude-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            $envFile = Join-Path ([System.IO.Path]::GetTempPath()) ("noclaude-" + [guid]::NewGuid().ToString('N') + ".env")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, source_count INTEGER);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);
+'@
+                '{ "schemaVersion":1, "classifications":[] }' | Set-Content -Path $js
+                Set-Content -Path $envFile -Value @('OPENAI_API_KEY=sk-fake-never-called')   # no ANTHROPIC_API_KEY
+                $out = & "$PSScriptRoot/../build/Build-DFPackageUniverseCategories.ps1" -DatabasePath $db -ClassificationsPath $js -EnvPath $envFile -BudgetCalls 10 3>&1 6>$null
+                $warning = @($out | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+                $warning.Count | Should -Be 1
+                $warning[0].Message | Should -Match 'ANTHROPIC_API_KEY'
+                $summary = @($out | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] })[0]
+                $summary.Processed | Should -Be 0
+            } finally { Remove-Item -Path $db, $js, $envFile -ErrorAction Ignore }
         }
     }
 }

@@ -11,8 +11,9 @@
     Path to the shared SQLite working database (default: the standard
     build/.package-universe/universe.db next to this script).
 .PARAMETER EnvPath
-    Path to the .env file holding OPENAI_API_KEY (default: repo-root .env).
-    Not consulted when a -Classify seam is supplied.
+    Path to the .env file holding OPENAI_API_KEY and ANTHROPIC_API_KEY
+    (default: repo-root .env). Not consulted when the corresponding -Classify
+    / -Escalate seam is supplied.
 .PARAMETER ClassificationsPath
     Path to the durable, version-controlled classification export (default:
     data/package-universe-classifications.jsonc). Imported at the start of the
@@ -24,6 +25,12 @@
 .PARAMETER Model
     The OpenAI chat-completions model used by the real classify seam. Ignored
     when a -Classify seam is supplied.
+.PARAMETER EscalateModel
+    The Claude model used by the real escalate seam (default:
+    claude-haiku-4-5-20251001) -- a stronger model reserved for the
+    low-confidence/nothing_fits tail, per the Phase D design. Ignored when an
+    -Escalate seam is supplied. Falls back to escalating on the same $Model
+    (with a warning) when ANTHROPIC_API_KEY is absent from $EnvPath.
 .PARAMETER BudgetCalls
     Max model calls this run (stop-and-resume budget). Default: unlimited.
 .PARAMETER EscalateThreshold
@@ -43,6 +50,7 @@ param(
     [string]$DomainsPath = (Join-Path $PSScriptRoot 'categories/domains.jsonc'),
     [string]$TaxonomyPath = (Join-Path $PSScriptRoot '../data/tool-categories.json'),
     [string]$Model = 'gpt-4o-mini',
+    [string]$EscalateModel = 'claude-haiku-4-5-20251001',
     [int]$BudgetCalls = [int]::MaxValue,
     [double]$EscalateThreshold = 0.5,
     [scriptblock]$Http,
@@ -67,7 +75,15 @@ if (-not $Classify) {
     $key = Get-DFPackageUniverseApiKey -EnvPath $EnvPath -Name 'OPENAI_API_KEY'
     if (-not $key) { throw "Build-DFPackageUniverseCategories: OPENAI_API_KEY not found in '$EnvPath' (and no -Classify seam supplied)." }
     $Classify = New-DFPackageUniverseClassifySeam -ApiKey $key -Model $Model
-    if (-not $Escalate) { $Escalate = $Classify }   # Plan 1: escalate to the same model; Plan 2 wires a stronger one.
+    if (-not $Escalate) {
+        $claudeKey = Get-DFPackageUniverseApiKey -EnvPath $EnvPath -Name 'ANTHROPIC_API_KEY'
+        if ($claudeKey) {
+            $Escalate = New-DFPackageUniverseClaudeClassifySeam -ApiKey $claudeKey -Model $EscalateModel
+        } else {
+            Write-Warning "Build-DFPackageUniverseCategories: ANTHROPIC_API_KEY not found in '$EnvPath' -- escalating on the same model ($Model) instead of a stronger one."
+            $Escalate = $Classify
+        }
+    }
 }
 if (-not $Http) {
     $Http = { param($Url) $c = Invoke-RestMethod -Uri $Url -TimeoutSec 20 -Headers @{ 'User-Agent' = 'DotForge package-universe (+https://github.com/simsrw73/DotForge)' }; [pscustomobject]@{ Content = [string]$c; ContentType = 'text'; Status = 'ok' } }
