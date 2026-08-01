@@ -431,7 +431,7 @@ function New-DFPackageUniverseClassifySeam {
                 suggested_terms = @{ type = 'array'; items = @{ type = 'string' } }
             }
         }
-        $sys = 'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat).'
+        $sys = 'You classify a command-line tool into a FIXED taxonomy. Use only the provided enum values. If no function/worksWith value fits, set nothing_fits=true and put your suggested new term(s) in suggested_terms. interface is cli/tui/gui. alternativeTo lists classic commands this replaces (e.g. bat->cat). Only use the "vcs-client" function for tools whose primary purpose is interacting with a version-control system as a client (e.g. git, lazygit, gitkraken) -- NOT for build tools, package managers, task runners, or IaC CLIs merely because they operate on a source-code repository (e.g. sbt, uv, bicep are NOT vcs-clients).'
         $user = @{ name = $ClassifierInput.Name; publisher = $ClassifierInput.Publisher; description = $ClassifierInput.Description; tags = $ClassifierInput.Tags; docs = $ClassifierInput.DocExcerpt } | ConvertTo-Json -Depth 5 -Compress
         $body = @{
             model = $Model
