@@ -35,6 +35,10 @@
     Max model calls this run (stop-and-resume budget). Default: unlimited.
 .PARAMETER EscalateThreshold
     Confidence below which (or on nothing_fits) the Escalate seam is used.
+.PARAMETER RateLimitSafetyMargin
+    Proactive throttle: stop the run (after saving the in-flight tool) once a
+    provider's real-time remaining-requests count drops below this margin,
+    rather than waiting for an actual rate-limit failure. Default 20.
 .PARAMETER Http / Classify / Escalate
     Injectable seams (tests + custom models); defaults use the real network.
 .OUTPUTS
@@ -53,6 +57,7 @@ param(
     [string]$EscalateModel = 'claude-haiku-4-5-20251001',
     [int]$BudgetCalls = [int]::MaxValue,
     [double]$EscalateThreshold = 0.5,
+    [int]$RateLimitSafetyMargin = 20,
     [scriptblock]$Http,
     [scriptblock]$Classify,
     [scriptblock]$Escalate
@@ -100,7 +105,7 @@ $conn = New-SQLiteConnection -DataSource $DatabasePath
 # tests/DFPackageUniverse.Categorize.Tests.ps1). Renamed to $PackageId.
 $log = { param($Level, $Src, $PackageId, $Msg) Invoke-SqliteQuery -SQLiteConnection $conn -Query "INSERT INTO pipeline_log (stage,source,package_id,level,message,logged_at) VALUES ('categorize',@s,@p,@l,@m,@at)" -SqlParameters @{ s = $Src; p = $PackageId; l = $Level; m = $Msg; at = [datetime]::UtcNow.ToString('o') } }
 try {
-    $summary = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $vocab -Http $Http -Classify $Classify -Escalate $Escalate -BudgetCalls $BudgetCalls -EscalateThreshold $EscalateThreshold -Log $log
+    $summary = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $vocab -Http $Http -Classify $Classify -Escalate $Escalate -BudgetCalls $BudgetCalls -EscalateThreshold $EscalateThreshold -RateLimitSafetyMargin $RateLimitSafetyMargin -Log $log
 } finally { $conn.Close() }
 
 Update-DFPackageUniverseToolCategories -DatabasePath $DatabasePath

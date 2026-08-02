@@ -275,6 +275,34 @@ Describe 'DFPackageUniverse.Categorize' {
             $threw | Should -Not -Match 'DF_RATE_LIMITED'
             $threw | Should -Match 'could not be resolved'
         }
+        It 'propagates RateLimitRemaining and parses RateLimitResetRaw (a duration) into an absolute RateLimitResetAt' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = {
+                param($Uri, $Headers, $Body)
+                [pscustomobject]@{
+                    Body = [pscustomobject]@{ choices=@([pscustomobject]@{ message=[pscustomobject]@{ content='{"domain":"text","function":["search"],"worksWith":["text"],"interface":"cli","alternativeTo":[],"confidence":0.9,"nothing_fits":false,"suggested_terms":[]}' } }); usage=[pscustomobject]@{} }
+                    RateLimitRemaining = 42
+                    RateLimitResetRaw = '6m0s'
+                }
+            }
+            $seam = New-DFPackageUniverseClassifySeam -ApiKey 'sk-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $out = & $seam $in $vocab
+            $out.RateLimitRemaining | Should -Be 42
+            $out.RateLimitResetAt | Should -Not -BeNullOrEmpty
+            $parsed = [datetime]::Parse($out.RateLimitResetAt, [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+            ($parsed - [datetime]::UtcNow).TotalSeconds | Should -BeGreaterThan 300
+        }
+        It 'still works when $Rest returns the old bare response shape (no rate-limit info)' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = { param($Uri, $Headers, $Body) [pscustomobject]@{ choices=@([pscustomobject]@{ message=[pscustomobject]@{ content='{"domain":"text","function":["search"],"worksWith":["text"],"interface":"cli","alternativeTo":[],"confidence":0.9,"nothing_fits":false,"suggested_terms":[]}' } }); usage=[pscustomobject]@{} } }
+            $seam = New-DFPackageUniverseClassifySeam -ApiKey 'sk-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $out = & $seam $in $vocab
+            $out.Raw.domain | Should -Be 'text'
+            $out.RateLimitRemaining | Should -BeNullOrEmpty
+            $out.RateLimitResetAt | Should -BeNullOrEmpty
+        }
     }
 
     Context 'ConvertTo-DFPackageUniverseRateLimitSignal' {
@@ -332,6 +360,22 @@ Describe 'DFPackageUniverse.Categorize' {
             try { & $seam $in $vocab } catch { $threw = "$_" }
             $threw | Should -Match '^DF_RATE_LIMITED::::'   # empty reset -- credit exhaustion has no schedule
             $threw | Should -Match 'credit balance is too low'
+        }
+        It 'propagates RateLimitRemaining and an already-absolute RateLimitResetAt (Anthropic headers are absolute, not a duration)' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = {
+                param($Uri, $Headers, $Body)
+                [pscustomobject]@{
+                    Body = [pscustomobject]@{ content=@([pscustomobject]@{ type='tool_use'; input=[pscustomobject]@{ domain='text'; function=@('search'); worksWith=@('text'); interface='cli'; alternativeTo=@(); confidence=0.9; nothing_fits=$false; suggested_terms=@() } }); usage=[pscustomobject]@{} }
+                    RateLimitRemaining = 7
+                    RateLimitResetAt = '2026-08-02T00:15:00Z'
+                }
+            }
+            $seam = New-DFPackageUniverseClaudeClassifySeam -ApiKey 'sk-ant-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $out = & $seam $in $vocab
+            $out.RateLimitRemaining | Should -Be 7
+            $out.RateLimitResetAt | Should -Be '2026-08-02T00:15:00Z'
         }
         It 'sends the identical system prompt as the OpenAI seam, so the two providers cannot silently drift onto different taxonomies' {
             $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
@@ -480,6 +524,43 @@ CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, pack
                 $r.RateLimitResetAt | Should -Be '2026-08-02T00:15:00Z'
                 (Invoke-SqliteQuery -DataSource $db -Query "SELECT status FROM tool_classifications WHERE cache_key='pkg:scoop|main/first'").status | Should -Be 'deferred'
                 (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_classifications WHERE cache_key='pkg:scoop|main/second'").n | Should -Be 0
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+
+        It 'stops proactively once RateLimitRemaining drops below the safety margin, after saving the successful result that revealed it' {
+            # This is the "throttle around the limit" half of the fix: the
+            # reactive DF_RATE_LIMITED test above catches an actual failure
+            # after the fact. This one uses the real-time remaining-request
+            # count the provider returns on every SUCCESSFUL response (see
+            # x-ratelimit-remaining-requests in the real seams) to stop BEFORE
+            # ever making a call that's likely to fail -- the first tool's
+            # good result must still be saved; only the second tool is skipped.
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'first' -Src 'scoop' -PackageId 'main/first' -HomepageUrl $null
+                Add-Tool -Db $db -Id 2 -Name 'second' -Src 'scoop' -PackageId 'main/second' -HomepageUrl $null
+                $script:calls = 0
+                $lowBudget = { param($ToolInput, $Vocab) $script:calls++; [pscustomobject]@{ Raw = [pscustomobject]@{ domain='text'; function=@('search'); worksWith=@('text'); interface='cli'; alternativeTo=@(); confidence=0.9; nothing_fits=$false; suggested_terms=@() }; Model='small'; Usage=[pscustomobject]@{}; RateLimitRemaining=3; RateLimitResetAt='2026-08-02T00:15:00Z' } }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $lowBudget -BudgetCalls 100 -RateLimitSafetyMargin 5 -Log $script:log } finally { $conn.Close() }
+                $script:calls | Should -Be 1                     # never attempted the second tool
+                $r.Classified | Should -Be 1                     # the first tool's good result was saved
+                $r.RateLimited | Should -BeTrue
+                $r.RateLimitResetAt | Should -Be '2026-08-02T00:15:00Z'
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT status FROM tool_classifications WHERE cache_key='pkg:scoop|main/first'").status | Should -Be 'done'
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_classifications WHERE cache_key='pkg:scoop|main/second'").n | Should -Be 0
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'does not stop when RateLimitRemaining is present but above the safety margin' {
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'first' -Src 'scoop' -PackageId 'main/first' -HomepageUrl $null
+                Add-Tool -Db $db -Id 2 -Name 'second' -Src 'scoop' -PackageId 'main/second' -HomepageUrl $null
+                $healthy = { param($ToolInput, $Vocab) [pscustomobject]@{ Raw = [pscustomobject]@{ domain='text'; function=@('search'); worksWith=@('text'); interface='cli'; alternativeTo=@(); confidence=0.9; nothing_fits=$false; suggested_terms=@() }; Model='small'; Usage=[pscustomobject]@{}; RateLimitRemaining=500; RateLimitResetAt=$null } }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $healthy -BudgetCalls 100 -RateLimitSafetyMargin 5 -Log $script:log } finally { $conn.Close() }
+                $r.Classified | Should -Be 2
+                $r.RateLimited | Should -BeFalse
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
     }

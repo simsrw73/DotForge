@@ -527,14 +527,23 @@ function New-DFPackageUniverseClassifySeam {
         The chat-completions model name. Defaults to 'gpt-4o-mini'.
     .PARAMETER Rest
         The injectable HTTP-POST seam: param($Uri,$Headers,$Body) -> parsed
-        response. Defaults to a real Invoke-RestMethod call.
+        response, EITHER the bare response body (legacy/simple mocks) OR
+        { Body; RateLimitRemaining; RateLimitResetRaw } to also report the
+        provider's real-time remaining-requests/reset-duration (from
+        x-ratelimit-remaining-requests / x-ratelimit-reset-requests) so the
+        run loop can throttle proactively. Defaults to a real Invoke-RestMethod
+        call that captures those headers.
     .EXAMPLE
         $seam = New-DFPackageUniverseClassifySeam -ApiKey $key -Model 'gpt-4o-mini'
         & $seam $classifierInput $vocab
 
-        Returns { Raw; Model; Usage } from a live OpenAI classification call.
+        Returns { Raw; Model; Usage; RateLimitRemaining; RateLimitResetAt }
+        from a live OpenAI classification call.
     .OUTPUTS
-        [scriptblock] with signature param($ClassifierInput,$Vocab) -> { Raw; Model; Usage }.
+        [scriptblock] with signature param($ClassifierInput,$Vocab) ->
+        { Raw; Model; Usage; RateLimitRemaining; RateLimitResetAt }.
+        RateLimitRemaining/RateLimitResetAt are $null when the seam (real or
+        injected) didn't report rate-limit info.
     #>
     [CmdletBinding()]
     [OutputType([scriptblock])]
@@ -543,7 +552,18 @@ function New-DFPackageUniverseClassifySeam {
         [string]$Model = 'gpt-4o-mini',
         [scriptblock]$Rest = {
             param($Uri, $Headers, $Body)
-            Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60
+            $resp = Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60 -ResponseHeadersVariable rlHeaders
+            $remaining = $null
+            if ($rlHeaders -and $rlHeaders['x-ratelimit-remaining-requests']) {
+                $v = $rlHeaders['x-ratelimit-remaining-requests']; if ($v -is [array]) { $v = $v[0] }
+                $remaining = [int]$v
+            }
+            $resetRaw = $null
+            if ($rlHeaders -and $rlHeaders['x-ratelimit-reset-requests']) {
+                $v = $rlHeaders['x-ratelimit-reset-requests']; if ($v -is [array]) { $v = $v[0] }
+                $resetRaw = [string]$v
+            }
+            [pscustomobject]@{ Body = $resp; RateLimitRemaining = $remaining; RateLimitResetRaw = $resetRaw }
         }
     )
     # Captured as plain variables (not resolved by name inside the closure below) so the
@@ -553,6 +573,7 @@ function New-DFPackageUniverseClassifySeam {
     $buildSchema = ${function:New-DFPackageUniverseClassifierSchema}
     $buildPayload = ${function:Get-DFPackageUniverseClassifierUserPayload}
     $rateLimitSignal = ${function:ConvertTo-DFPackageUniverseRateLimitSignal}
+    $parseDuration = ${function:ConvertFrom-DFPackageUniverseRateLimitDuration}
     {
         param($ClassifierInput, $Vocab)
         $schema = & $buildSchema -Vocab $Vocab
@@ -564,14 +585,30 @@ function New-DFPackageUniverseClassifySeam {
         } | ConvertTo-Json -Depth 12
         $headers = @{ Authorization = "Bearer $ApiKey" }
         try {
-            $resp = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
+            $restResult = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
         } catch {
             $marker = & $rateLimitSignal -Message "$_"
             if ($marker) { throw $marker }
             throw
         }
+        # $Rest may return the bare response body (legacy/simple mocks) or the
+        # { Body; RateLimitRemaining; RateLimitResetRaw|RateLimitResetAt }
+        # wrapper -- unwrap when present, otherwise treat the whole result as
+        # the body and report no rate-limit info (both are valid, tested shapes).
+        $resp = $restResult
+        $rlRemaining = $null; $rlResetAt = $null
+        if ($restResult -is [pscustomobject] -and $restResult.PSObject.Properties['Body']) {
+            $resp = $restResult.Body
+            if ($restResult.PSObject.Properties['RateLimitRemaining']) { $rlRemaining = $restResult.RateLimitRemaining }
+            if ($restResult.PSObject.Properties['RateLimitResetAt'] -and $restResult.RateLimitResetAt) {
+                $rlResetAt = $restResult.RateLimitResetAt
+            } elseif ($restResult.PSObject.Properties['RateLimitResetRaw'] -and $restResult.RateLimitResetRaw) {
+                $secs = & $parseDuration -Duration $restResult.RateLimitResetRaw
+                if ($secs) { $rlResetAt = [datetime]::UtcNow.AddSeconds($secs).ToString('o') }
+            }
+        }
         $content = [string]$resp.choices[0].message.content
-        [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage }
+        [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage; RateLimitRemaining = $rlRemaining; RateLimitResetAt = $rlResetAt }
     }.GetNewClosure()
 }
 
@@ -600,14 +637,24 @@ function New-DFPackageUniverseClaudeClassifySeam {
         The Claude model name. Defaults to 'claude-haiku-4-5-20251001'.
     .PARAMETER Rest
         The injectable HTTP-POST seam: param($Uri,$Headers,$Body) -> parsed
-        response. Defaults to a real Invoke-RestMethod call.
+        response, EITHER the bare response body (legacy/simple mocks) OR
+        { Body; RateLimitRemaining; RateLimitResetAt } to also report the
+        provider's real-time remaining-requests/reset time (from
+        anthropic-ratelimit-requests-remaining / -reset, which -- unlike
+        OpenAI's -- is already an absolute timestamp) so the run loop can
+        throttle proactively. Defaults to a real Invoke-RestMethod call that
+        captures those headers.
     .EXAMPLE
         $seam = New-DFPackageUniverseClaudeClassifySeam -ApiKey $key
         & $seam $classifierInput $vocab
 
-        Returns { Raw; Model; Usage } from a live Claude classification call.
+        Returns { Raw; Model; Usage; RateLimitRemaining; RateLimitResetAt }
+        from a live Claude classification call.
     .OUTPUTS
-        [scriptblock] with signature param($ClassifierInput,$Vocab) -> { Raw; Model; Usage }.
+        [scriptblock] with signature param($ClassifierInput,$Vocab) ->
+        { Raw; Model; Usage; RateLimitRemaining; RateLimitResetAt }.
+        RateLimitRemaining/RateLimitResetAt are $null when the seam (real or
+        injected) didn't report rate-limit info.
     #>
     [CmdletBinding()]
     [OutputType([scriptblock])]
@@ -616,7 +663,18 @@ function New-DFPackageUniverseClaudeClassifySeam {
         [string]$Model = 'claude-haiku-4-5-20251001',
         [scriptblock]$Rest = {
             param($Uri, $Headers, $Body)
-            Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60
+            $resp = Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -ContentType 'application/json' -TimeoutSec 60 -ResponseHeadersVariable rlHeaders
+            $remaining = $null
+            if ($rlHeaders -and $rlHeaders['anthropic-ratelimit-requests-remaining']) {
+                $v = $rlHeaders['anthropic-ratelimit-requests-remaining']; if ($v -is [array]) { $v = $v[0] }
+                $remaining = [int]$v
+            }
+            $resetAt = $null
+            if ($rlHeaders -and $rlHeaders['anthropic-ratelimit-requests-reset']) {
+                $v = $rlHeaders['anthropic-ratelimit-requests-reset']; if ($v -is [array]) { $v = $v[0] }
+                $resetAt = [string]$v
+            }
+            [pscustomobject]@{ Body = $resp; RateLimitRemaining = $remaining; RateLimitResetAt = $resetAt }
         }
     )
     # See the matching comment in New-DFPackageUniverseClassifySeam for why these are
@@ -639,14 +697,23 @@ function New-DFPackageUniverseClaudeClassifySeam {
         } | ConvertTo-Json -Depth 12
         $headers = @{ 'x-api-key' = $ApiKey; 'anthropic-version' = '2023-06-01' }
         try {
-            $resp = & $Rest 'https://api.anthropic.com/v1/messages' $headers $body
+            $restResult = & $Rest 'https://api.anthropic.com/v1/messages' $headers $body
         } catch {
             $marker = & $rateLimitSignal -Message "$_"
             if ($marker) { throw $marker }
             throw
         }
+        # See the matching comment in New-DFPackageUniverseClassifySeam. Anthropic's reset
+        # header is already absolute (unlike OpenAI's duration), so no parsing is needed here.
+        $resp = $restResult
+        $rlRemaining = $null; $rlResetAt = $null
+        if ($restResult -is [pscustomobject] -and $restResult.PSObject.Properties['Body']) {
+            $resp = $restResult.Body
+            if ($restResult.PSObject.Properties['RateLimitRemaining']) { $rlRemaining = $restResult.RateLimitRemaining }
+            if ($restResult.PSObject.Properties['RateLimitResetAt']) { $rlResetAt = $restResult.RateLimitResetAt }
+        }
         $toolUse = @($resp.content | Where-Object { $_.type -eq 'tool_use' })[0]
-        [pscustomobject]@{ Raw = $toolUse.input; Model = $Model; Usage = $resp.usage }
+        [pscustomobject]@{ Raw = $toolUse.input; Model = $Model; Usage = $resp.usage; RateLimitRemaining = $rlRemaining; RateLimitResetAt = $rlResetAt }
     }.GetNewClosure()
 }
 
@@ -702,6 +769,17 @@ function Invoke-DFPackageUniverseCategorizeRun {
         exhausted, leaving remaining tools for a later run.
     .PARAMETER EscalateThreshold
         Confidence below which (or on nothing_fits) the Escalate seam is used.
+    .PARAMETER RateLimitSafetyMargin
+        Proactive throttle: after a SUCCESSFUL classify/escalate call, if the
+        seam reported RateLimitRemaining and it is below this margin, the
+        batch stops immediately (after saving that tool's good result) rather
+        than attempting one more call that's likely to fail -- the same
+        stop-early behavior as a DF_RATE_LIMITED marker, just triggered
+        proactively from the provider's real-time remaining-requests count
+        instead of reactively from an actual failure. Default 20 (a small
+        buffer, since other usage on the same account can consume from the
+        same shared daily pool between our checks). Ignored for a seam that
+        doesn't report RateLimitRemaining (e.g. an injected mock without it).
     .PARAMETER Log
         A scriptblock seam: param($Level,$Source,$PackageId,$Message), used to
         record review-worthy outcomes (nothing-fits, low-confidence, deferred).
@@ -723,7 +801,8 @@ function Invoke-DFPackageUniverseCategorizeRun {
         [Parameter(Mandatory)]$Connection, [Parameter(Mandatory)]$Vocab,
         [Parameter(Mandatory)][scriptblock]$Http, [Parameter(Mandatory)][scriptblock]$Classify,
         [scriptblock]$Escalate, [int]$BudgetCalls = [int]::MaxValue,
-        [double]$EscalateThreshold = 0.5, [Parameter(Mandatory)][scriptblock]$Log
+        [double]$EscalateThreshold = 0.5, [int]$RateLimitSafetyMargin = 20,
+        [Parameter(Mandatory)][scriptblock]$Log
     )
     $De = { param($v) if ($v -is [DBNull]) { $null } else { $v } }
     $rawTools = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT tool_id, name, source_count FROM tools')
@@ -756,16 +835,38 @@ function Invoke-DFPackageUniverseCategorizeRun {
             $out = & $Classify $in $Vocab
             $cls = ConvertTo-DFPackageUniverseClassification -Raw $out.Raw -Vocab $Vocab
             $model = [string]$out.Model
+            # StrictMode-safe: mocks (and seam outputs) that don't report rate-limit info
+            # simply lack these properties -- probe via PSObject rather than dotting in,
+            # which would throw PropertyNotFoundException under Set-StrictMode.
+            $remaining = $out.PSObject.Properties['RateLimitRemaining']
+            $lowestRemaining = if ($remaining -and $null -ne $remaining.Value) { [int]$remaining.Value } else { $null }
+            $resetProp = $out.PSObject.Properties['RateLimitResetAt']
+            $lowestRemainingReset = if ($resetProp) { $resetProp.Value } else { $null }
             if ($Escalate -and ($cls.Confidence -lt $EscalateThreshold -or $cls.NothingFits)) {
                 $calls++; $escalated++
                 $out2 = & $Escalate $in $Vocab
                 $cls = ConvertTo-DFPackageUniverseClassification -Raw $out2.Raw -Vocab $Vocab
                 $model = [string]$out2.Model
+                $remaining2 = $out2.PSObject.Properties['RateLimitRemaining']
+                if ($remaining2 -and $null -ne $remaining2.Value -and ($null -eq $lowestRemaining -or [int]$remaining2.Value -lt $lowestRemaining)) {
+                    $lowestRemaining = [int]$remaining2.Value
+                    $resetProp2 = $out2.PSObject.Properties['RateLimitResetAt']
+                    $lowestRemainingReset = if ($resetProp2) { $resetProp2.Value } else { $null }
+                }
             }
             Save-DFPackageUniverseClassification -Connection $Connection -CacheKey $key -Classification $cls -SignalSource $in.SignalSource -Model $model -Status 'done'
             $classified++
             if ($cls.NothingFits) { $nothing++ ; & $Log 'review' $anchor.source $anchor.package_id "nothing-fits: suggested $($cls.SuggestedTerms -join ',')" }
             elseif ($cls.Confidence -lt $EscalateThreshold) { & $Log 'review' $anchor.source $anchor.package_id "low-confidence $($cls.Confidence)" }
+            # Proactive throttle: the provider told us (on a SUCCESSFUL call) how many
+            # requests are left. Stop here -- after saving this tool's good result --
+            # rather than attempting one more call we can already see is likely to fail.
+            if ($null -ne $lowestRemaining -and $lowestRemaining -lt $RateLimitSafetyMargin) {
+                $rateLimited = $true
+                $rateLimitResetAt = $lowestRemainingReset
+                & $Log 'warning' $anchor.source $anchor.package_id "categorize stopping proactively: only $lowestRemaining requests remain (safety margin $RateLimitSafetyMargin)"
+                break
+            }
         } catch {
             $deferred++
             & $Log 'warning' $mm[0].source $mm[0].package_id "categorize deferred: $_"
