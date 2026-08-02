@@ -373,6 +373,74 @@ function ConvertTo-DFPackageUniverseClassification {
     }
 }
 
+function ConvertFrom-DFPackageUniverseRateLimitDuration {
+    <#
+    .SYNOPSIS
+        Parses a Go-style duration string -- as seen in OpenAI's "Please try
+        again in <duration>" rate-limit error text (e.g. "8.64s", "6m0s",
+        "1h2m3s", "2h") -- into total seconds. Returns $null for an empty or
+        unparseable string, never throws.
+    .PARAMETER Duration
+        The duration string.
+    .OUTPUTS
+        [double] or $null.
+    #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([AllowNull()][string]$Duration)
+    if (-not $Duration) { return $null }
+    $m = [regex]::Match($Duration, '^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?$')
+    if (-not $m.Success -or $m.Value -eq '') { return $null }
+    $h  = if ($m.Groups[1].Success) { [double]$m.Groups[1].Value } else { 0 }
+    $mi = if ($m.Groups[2].Success) { [double]$m.Groups[2].Value } else { 0 }
+    $s  = if ($m.Groups[3].Success) { [double]$m.Groups[3].Value } else { 0 }
+    if ($h -eq 0 -and $mi -eq 0 -and $s -eq 0) { return $null }
+    ($h * 3600) + ($mi * 60) + $s
+}
+
+function ConvertTo-DFPackageUniverseRateLimitSignal {
+    <#
+    .SYNOPSIS
+        Inspects a caught API-error message for a rate-limit or credit/quota
+        exhaustion signal (either OpenAI or Anthropic's error text) and, if
+        found, returns the DF_RATE_LIMITED::<resetAt>::<message> marker that
+        Invoke-DFPackageUniverseCategorizeRun recognizes to stop a batch
+        immediately instead of burning the rest of BudgetCalls on calls that
+        are certain to fail -- the fix for the 2026-08-01 incident where
+        OpenAI's daily cap was hit partway through a run and the loop kept
+        deferring every remaining tool anyway.
+    .DESCRIPTION
+        Matches on "rate limit" (OpenAI's rate_limit_exceeded / Anthropic's
+        rate_limit_error) or "credit balance is too low" (Anthropic
+        insufficient-credit, which has no scheduled reset but is exactly as
+        pointless to keep retrying against). When the message also contains
+        OpenAI's "Please try again in <duration>" text, the duration is
+        parsed (ConvertFrom-DFPackageUniverseRateLimitDuration) into an
+        absolute UTC reset timestamp; otherwise resetAt is empty (unknown --
+        e.g. Anthropic's credit-exhaustion message has no reset at all).
+    .PARAMETER Message
+        The stringified caught error (e.g. "$_" in a catch block).
+    .OUTPUTS
+        [string] the marker to throw, or $null when Message isn't a
+        rate-limit/exhaustion signal (the caller should re-throw unchanged).
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Message)
+    if ($Message -notmatch '(?i)rate.?limit' -and $Message -notmatch '(?i)credit balance is too low') { return $null }
+    $resetAt = ''
+    # Structurally mirrors ConvertFrom-DFPackageUniverseRateLimitDuration's own grammar
+    # (rather than an open [\d.hms]+ character class) so the capture stops right after a
+    # valid unit letter and never swallows trailing sentence punctuation (e.g. the "."
+    # after "...try again in 6m0s.").
+    $dm = [regex]::Match($Message, '(?i)try\s+again\s+in\s+((?:\d+h)?(?:\d+m)?(?:\d+(?:\.\d+)?s)?)')
+    if ($dm.Success) {
+        $secs = ConvertFrom-DFPackageUniverseRateLimitDuration -Duration $dm.Groups[1].Value
+        if ($secs) { $resetAt = [datetime]::UtcNow.AddSeconds($secs).ToString('o') }
+    }
+    "DF_RATE_LIMITED::$resetAt::$Message"
+}
+
 function Get-DFPackageUniverseClassifierSystemPrompt {
     <#
     .SYNOPSIS
@@ -484,6 +552,7 @@ function New-DFPackageUniverseClassifySeam {
     $sysPrompt = Get-DFPackageUniverseClassifierSystemPrompt
     $buildSchema = ${function:New-DFPackageUniverseClassifierSchema}
     $buildPayload = ${function:Get-DFPackageUniverseClassifierUserPayload}
+    $rateLimitSignal = ${function:ConvertTo-DFPackageUniverseRateLimitSignal}
     {
         param($ClassifierInput, $Vocab)
         $schema = & $buildSchema -Vocab $Vocab
@@ -494,7 +563,13 @@ function New-DFPackageUniverseClassifySeam {
             response_format = @{ type = 'json_schema'; json_schema = @{ name = 'tool_classification'; schema = $schema; strict = $true } }
         } | ConvertTo-Json -Depth 12
         $headers = @{ Authorization = "Bearer $ApiKey" }
-        $resp = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
+        try {
+            $resp = & $Rest 'https://api.openai.com/v1/chat/completions' $headers $body
+        } catch {
+            $marker = & $rateLimitSignal -Message "$_"
+            if ($marker) { throw $marker }
+            throw
+        }
         $content = [string]$resp.choices[0].message.content
         [pscustomobject]@{ Raw = ($content | ConvertFrom-Json); Model = $Model; Usage = $resp.usage }
     }.GetNewClosure()
@@ -549,6 +624,7 @@ function New-DFPackageUniverseClaudeClassifySeam {
     $sysPrompt = Get-DFPackageUniverseClassifierSystemPrompt
     $buildSchema = ${function:New-DFPackageUniverseClassifierSchema}
     $buildPayload = ${function:Get-DFPackageUniverseClassifierUserPayload}
+    $rateLimitSignal = ${function:ConvertTo-DFPackageUniverseRateLimitSignal}
     {
         param($ClassifierInput, $Vocab)
         $schema = & $buildSchema -Vocab $Vocab
@@ -562,7 +638,13 @@ function New-DFPackageUniverseClaudeClassifySeam {
             tool_choice = @{ type = 'tool'; name = 'tool_classification' }
         } | ConvertTo-Json -Depth 12
         $headers = @{ 'x-api-key' = $ApiKey; 'anthropic-version' = '2023-06-01' }
-        $resp = & $Rest 'https://api.anthropic.com/v1/messages' $headers $body
+        try {
+            $resp = & $Rest 'https://api.anthropic.com/v1/messages' $headers $body
+        } catch {
+            $marker = & $rateLimitSignal -Message "$_"
+            if ($marker) { throw $marker }
+            throw
+        }
         $toolUse = @($resp.content | Where-Object { $_.type -eq 'tool_use' })[0]
         [pscustomobject]@{ Raw = $toolUse.input; Model = $Model; Usage = $resp.usage }
     }.GetNewClosure()
@@ -630,7 +712,11 @@ function Invoke-DFPackageUniverseCategorizeRun {
         resuming automatically on the next call.
     .OUTPUTS
         [pscustomobject] with Processed, Classified, Escalated, Deferred,
-        NothingFits, and Remaining properties.
+        NothingFits, Remaining, RateLimited, and RateLimitResetAt properties.
+        RateLimited is $true when the run stopped early because a seam threw
+        a DF_RATE_LIMITED::<resetAt>::<message> marker (see the real seams'
+        default $Rest); RateLimitResetAt is that reset timestamp/duration
+        string, or $null if the provider didn't supply one.
     #>
     [CmdletBinding()]
     param(
@@ -654,6 +740,7 @@ function Invoke-DFPackageUniverseCategorizeRun {
         @{ e = { - [int]$_.source_count } }, @{ e = { [int]$_.tool_id } })
 
     $processed = 0; $classified = 0; $escalated = 0; $deferred = 0; $nothing = 0; $calls = 0
+    $rateLimited = $false; $rateLimitResetAt = $null
     foreach ($t in $ordered) {
         if ($calls -ge $BudgetCalls) { break }
         $id = [int]$t.tool_id
@@ -683,6 +770,18 @@ function Invoke-DFPackageUniverseCategorizeRun {
             $deferred++
             & $Log 'warning' $mm[0].source $mm[0].package_id "categorize deferred: $_"
             Save-DFPackageUniverseClassification -Connection $Connection -CacheKey $key -Classification ([pscustomobject]@{ Domain = $null; Function = @(); WorksWith = @(); Interface = $null; AlternativeTo = @(); Confidence = 0.0; NothingFits = $false; SuggestedTerms = @() }) -SignalSource 'error' -Model $null -Status 'deferred'
+            # A rate-limit signal means every remaining tool this run is also
+            # guaranteed to fail (the seam that just threw is shared across the
+            # whole batch) -- stop immediately rather than burning the rest of
+            # BudgetCalls on calls we already know will fail. See the real
+            # seams' default $Rest (New-DFPackageUniverseClassifySeam /
+            # -Claude...) for what throws this marker and why.
+            if ("$_" -like 'DF_RATE_LIMITED::*') {
+                $parts = "$_".Split('::', 3)
+                $rateLimited = $true
+                $rateLimitResetAt = if ($parts.Count -ge 2 -and $parts[1]) { $parts[1] } else { $null }
+                break
+            }
         }
     }
     $remaining = @($ordered | Where-Object {
@@ -690,5 +789,5 @@ function Invoke-DFPackageUniverseCategorizeRun {
         @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'SELECT 1 FROM tool_classifications WHERE cache_key=@k AND status=''done''' -SqlParameters @{ k = $k }).Count -eq 0
     }).Count
 
-    [pscustomobject]@{ Processed = $processed; Classified = $classified; Escalated = $escalated; Deferred = $deferred; NothingFits = $nothing; Remaining = $remaining }
+    [pscustomobject]@{ Processed = $processed; Classified = $classified; Escalated = $escalated; Deferred = $deferred; NothingFits = $nothing; Remaining = $remaining; RateLimited = $rateLimited; RateLimitResetAt = $rateLimitResetAt }
 }

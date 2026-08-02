@@ -177,6 +177,26 @@ Describe 'DFPackageUniverse.Categorize' {
         }
     }
 
+    Context 'ConvertFrom-DFPackageUniverseRateLimitDuration' {
+        It 'parses a plain-seconds duration' {
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration '8.64s' | Should -Be 8.64
+        }
+        It 'parses a minutes+seconds duration' {
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration '6m0s' | Should -Be 360
+        }
+        It 'parses a hours+minutes+seconds duration' {
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration '1h2m3s' | Should -Be 3723
+        }
+        It 'parses an hours-only duration' {
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration '2h' | Should -Be 7200
+        }
+        It 'returns $null for an empty or unparseable string' {
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration '' | Should -BeNullOrEmpty
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration $null | Should -BeNullOrEmpty
+            ConvertFrom-DFPackageUniverseRateLimitDuration -Duration 'not-a-duration' | Should -BeNullOrEmpty
+        }
+    }
+
     Context 'ConvertTo-DFPackageUniverseClassification' {
         BeforeAll {
             . "$PSScriptRoot/../build/Private/DFPackageUniverse.Vocab.ps1"
@@ -235,6 +255,46 @@ Describe 'DFPackageUniverse.Categorize' {
             $script:captured.Body | Should -Match 'bat'          # the tool name reached the request
             $script:captured.Body | Should -Match 'cat clone'    # the description reached the request
         }
+        It 'converts a rate-limit error from $Rest into the DF_RATE_LIMITED marker with a parsed reset time' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = { param($Uri, $Headers, $Body) throw 'Rate limit reached for gpt-4o-mini on requests per day (RPD): Limit 10000, Used 10000, Requested 1. Please try again in 8.64s.' }
+            $seam = New-DFPackageUniverseClassifySeam -ApiKey 'sk-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $threw = $null
+            try { & $seam $in $vocab } catch { $threw = "$_" }
+            $threw | Should -Match '^DF_RATE_LIMITED::'
+            $threw | Should -Match 'Rate limit reached'
+        }
+        It 'does not mark an unrelated $Rest failure as rate-limited' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = { param($Uri, $Headers, $Body) throw 'The remote name could not be resolved' }
+            $seam = New-DFPackageUniverseClassifySeam -ApiKey 'sk-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $threw = $null
+            try { & $seam $in $vocab } catch { $threw = "$_" }
+            $threw | Should -Not -Match 'DF_RATE_LIMITED'
+            $threw | Should -Match 'could not be resolved'
+        }
+    }
+
+    Context 'ConvertTo-DFPackageUniverseRateLimitSignal' {
+        It 'builds the marker with a parsed absolute reset time from a "try again in Xs" message' {
+            $marker = ConvertTo-DFPackageUniverseRateLimitSignal -Message 'Rate limit reached. Please try again in 6m0s.'
+            $marker | Should -Match '^DF_RATE_LIMITED::'
+            $resetAt = $marker.Split('::', 3)[1]
+            # RoundtripKind explicitly honors the 'Z' suffix as Utc -- a bare [datetime]
+            # cast does not reliably preserve Kind, which made this comparison flaky.
+            $parsed = [datetime]::Parse($resetAt, [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+            ($parsed - [datetime]::UtcNow).TotalSeconds | Should -BeGreaterThan 300   # > 5 min out
+            ($parsed - [datetime]::UtcNow).TotalSeconds | Should -BeLessThan 420      # < 7 min out
+        }
+        It 'builds the marker with an empty (unknown) reset time for credit exhaustion, which has no schedule' {
+            $marker = ConvertTo-DFPackageUniverseRateLimitSignal -Message 'Your credit balance is too low to access the Anthropic API.'
+            $marker | Should -Match '^DF_RATE_LIMITED::::'
+        }
+        It 'returns $null for a message that is neither rate-limit nor credit exhaustion' {
+            ConvertTo-DFPackageUniverseRateLimitSignal -Message 'The remote name could not be resolved' | Should -BeNullOrEmpty
+        }
     }
 
     Context 'New-DFPackageUniverseClaudeClassifySeam' {
@@ -262,6 +322,16 @@ Describe 'DFPackageUniverse.Categorize' {
             ($script:captured.Body | ConvertFrom-Json).tool_choice.name | Should -Be 'tool_classification'
             $script:captured.Body | Should -Match 'bat'
             $script:captured.Body | Should -Match 'cat clone'
+        }
+        It 'converts a credit-exhaustion error from $Rest into the DF_RATE_LIMITED marker with an unknown (empty) reset time' {
+            $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
+            $rest = { param($Uri, $Headers, $Body) throw 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.' }
+            $seam = New-DFPackageUniverseClaudeClassifySeam -ApiKey 'sk-ant-test' -Rest $rest
+            $in = [pscustomobject]@{ Name='bat'; Publisher=$null; Description=$null; Tags=$null; DocExcerpt=$null; SignalSource='metadata' }
+            $threw = $null
+            try { & $seam $in $vocab } catch { $threw = "$_" }
+            $threw | Should -Match '^DF_RATE_LIMITED::::'   # empty reset -- credit exhaustion has no schedule
+            $threw | Should -Match 'credit balance is too low'
         }
         It 'sends the identical system prompt as the OpenAI seam, so the two providers cannot silently drift onto different taxonomies' {
             $vocab = [pscustomobject]@{ Domain=@('text'); Function=@('search'); WorksWith=@('text') }
@@ -387,6 +457,31 @@ CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, pack
                 (Invoke-SqliteQuery -DataSource $db -Query "SELECT model FROM tool_classifications WHERE cache_key='pkg:scoop|main/x'").model | Should -Be 'strong'
             } finally { Remove-Item -Path $db -ErrorAction Ignore }
         }
+
+        It 'stops the batch immediately on a rate-limit signal, without burning the rest of the budget on guaranteed-to-fail calls' {
+            # Regression test for the 2026-08-01 incident: OpenAI's daily request
+            # cap was hit partway through a run and the loop kept trying (and
+            # deferring) every remaining tool up to BudgetCalls, wasting hundreds
+            # of calls that were certain to fail. A rate-limit signal (the
+            # DF_RATE_LIMITED marker the real seams throw -- see
+            # New-DFPackageUniverseClassifySeam / -Claude...) must stop the loop
+            # early instead, leaving everything after it genuinely untouched.
+            $db = New-CatRunDb
+            try {
+                Add-Tool -Db $db -Id 1 -Name 'first' -Src 'scoop' -PackageId 'main/first' -HomepageUrl $null
+                Add-Tool -Db $db -Id 2 -Name 'second' -Src 'scoop' -PackageId 'main/second' -HomepageUrl $null
+                $script:calls = 0
+                $rateLimited = { param($ToolInput, $Vocab) $script:calls++; throw "DF_RATE_LIMITED::2026-08-02T00:15:00Z::Rate limit reached for gpt-4o-mini on requests per day (RPD): Limit 10000, Used 10000." }
+                $conn = New-SQLiteConnection -DataSource $db
+                try { $r = Invoke-DFPackageUniverseCategorizeRun -Connection $conn -Vocab $script:vocab -Http $script:http -Classify $rateLimited -BudgetCalls 100 -Log $script:log } finally { $conn.Close() }
+                $script:calls | Should -Be 1                     # never attempted the second tool
+                $r.Deferred | Should -Be 1
+                $r.RateLimited | Should -BeTrue
+                $r.RateLimitResetAt | Should -Be '2026-08-02T00:15:00Z'
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT status FROM tool_classifications WHERE cache_key='pkg:scoop|main/first'").status | Should -Be 'deferred'
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_classifications WHERE cache_key='pkg:scoop|main/second'").n | Should -Be 0
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
     }
 
     Context 'Build-DFPackageUniverseCategories.ps1' {
@@ -447,6 +542,31 @@ CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, pack
                 $summary = @($out | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] })[0]
                 $summary.Processed | Should -Be 0
             } finally { Remove-Item -Path $db, $js, $envFile -ErrorAction Ignore }
+        }
+
+        It 'warns with the reset time and stops early when the Classify seam signals a rate limit' {
+            $db = Join-Path ([System.IO.Path]::GetTempPath()) ("orchrl-" + [guid]::NewGuid().ToString('N') + ".db")
+            $js = Join-Path ([System.IO.Path]::GetTempPath()) ("orchrl-" + [guid]::NewGuid().ToString('N') + ".jsonc")
+            try {
+                Invoke-SqliteQuery -DataSource $db -Query @'
+CREATE TABLE tools (tool_id INTEGER PRIMARY KEY, name TEXT, source_count INTEGER);
+CREATE TABLE tool_packages (tool_id INTEGER, source TEXT, package_id TEXT, homepage TEXT, extra TEXT, PRIMARY KEY(source,package_id));
+CREATE TABLE tool_categories (tool_id INTEGER, category TEXT, PRIMARY KEY(tool_id,category));
+CREATE TABLE pipeline_log (id INTEGER PRIMARY KEY, stage TEXT, source TEXT, package_id TEXT, level TEXT, message TEXT, logged_at TEXT);
+'@
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tools (tool_id,name,source_count) VALUES (1,'first',1),(2,'second',1)"
+                Invoke-SqliteQuery -DataSource $db -Query "INSERT INTO tool_packages (tool_id,source,package_id,homepage) VALUES (1,'choco','first',NULL),(2,'choco','second',NULL)"
+                '{ "schemaVersion":1, "classifications":[] }' | Set-Content -Path $js
+                $http = { param($Url) [pscustomobject]@{ Content=$null; ContentType=$null; Status='ok' } }
+                $classify = { param($ClassifierInput, $Vocab) throw 'DF_RATE_LIMITED::2026-08-02T00:15:00Z::Rate limit reached on requests per day (RPD): Limit 10000, Used 10000.' }
+                $out = & "$PSScriptRoot/../build/Build-DFPackageUniverseCategories.ps1" -DatabasePath $db -ClassificationsPath $js -Http $http -Classify $classify -BudgetCalls 100 3>&1 6>$null
+                $warning = @($out | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+                $warning.Count | Should -Be 1
+                $warning[0].Message | Should -Match '2026-08-02T00:15:00Z'
+                $summary = @($out | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] })[0]
+                $summary.RateLimited | Should -BeTrue
+                $summary.Processed | Should -Be 1   # stopped after the first tool, never touched the second
+            } finally { Remove-Item -Path $db, $js -ErrorAction Ignore }
         }
     }
 }

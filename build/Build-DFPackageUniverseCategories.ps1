@@ -113,5 +113,9 @@ Write-Host "  escalated    : $($summary.Escalated)"
 Write-Host "  deferred     : $($summary.Deferred)"
 Write-Host "  nothing-fits : $($summary.NothingFits)"
 Write-Host "  remaining    : $($summary.Remaining)  (re-run to continue)"
+if ($summary.RateLimited) {
+    $resetMsg = if ($summary.RateLimitResetAt) { "around $($summary.RateLimitResetAt)" } else { 'at an unknown time -- check the provider dashboard' }
+    Write-Warning "Stopped EARLY: a rate-limit / quota-exhaustion signal was hit. Every further call this run would have failed too, so the batch stopped rather than deferring the rest of the budget. Resets $resetMsg -- re-run after that."
+}
 
 $summary
