@@ -159,6 +159,48 @@ Describe 'DFPackageUniverse.VocabReview' {
         }
     }
 
+    Context 'Remove-DFPackageUniverseVocabGapClassificationsBulk' {
+        It 'deletes rows matching ANY of several terms, in one pass, leaving unrelated rows untouched' {
+            $db = New-VocabDb
+            try {
+                Add-Classification -Db $db -Key 'a' -NothingFits $true -SuggestedTerms @('static-analysis')
+                Add-Classification -Db $db -Key 'b' -NothingFits $true -SuggestedTerms @('Dependency-Management')
+                Add-Classification -Db $db -Key 'c' -NothingFits $true -SuggestedTerms @('version-manager', 'other')
+                Add-Classification -Db $db -Key 'd' -NothingFits $true -SuggestedTerms @('font-manager')            # unrelated, must survive
+                Add-Classification -Db $db -Key 'e' -NothingFits $true -SuggestedTerms @('static-analysis-ish')     # substring, must NOT match
+                $conn = New-SQLiteConnection -DataSource $db
+                try {
+                    $n = Remove-DFPackageUniverseVocabGapClassificationsBulk -Connection $conn -Terms @('static-analysis', 'dependency-management', 'version-manager')
+                } finally { $conn.Close() }
+                $n | Should -Be 3
+                @(Invoke-SqliteQuery -DataSource $db -Query "SELECT cache_key FROM tool_classifications ORDER BY cache_key").cache_key | Should -Be @('d', 'e')
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'does not double-count or double-delete a row that matches more than one of the given terms' {
+            $db = New-VocabDb
+            try {
+                Add-Classification -Db $db -Key 'a' -NothingFits $true -SuggestedTerms @('static-analysis', 'dependency-management')
+                $conn = New-SQLiteConnection -DataSource $db
+                try {
+                    $n = Remove-DFPackageUniverseVocabGapClassificationsBulk -Connection $conn -Terms @('static-analysis', 'dependency-management')
+                } finally { $conn.Close() }
+                $n | Should -Be 1
+                (Invoke-SqliteQuery -DataSource $db -Query "SELECT COUNT(*) n FROM tool_classifications").n | Should -Be 0
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+        It 'returns 0 and does not throw when Terms is empty' {
+            $db = New-VocabDb
+            try {
+                Add-Classification -Db $db -Key 'a' -NothingFits $true -SuggestedTerms @('static-analysis')
+                $conn = New-SQLiteConnection -DataSource $db
+                try {
+                    { Remove-DFPackageUniverseVocabGapClassificationsBulk -Connection $conn -Terms @() } | Should -Not -Throw
+                    Remove-DFPackageUniverseVocabGapClassificationsBulk -Connection $conn -Terms @() | Should -Be 0
+                } finally { $conn.Close() }
+            } finally { Remove-Item -Path $db -ErrorAction Ignore }
+        }
+    }
+
     Context 'Invoke-DFPackageUniverseVocabReview.ps1 (end-to-end, injected Prompt)' {
         It 'promotes one term, rejects another, clears affected rows, records both decisions, and stops when nothing remains' {
             $db = New-VocabDb

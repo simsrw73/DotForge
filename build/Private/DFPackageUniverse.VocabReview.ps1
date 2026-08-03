@@ -180,3 +180,48 @@ function Remove-DFPackageUniverseVocabGapClassifications {
     }
     $affected.Count
 }
+
+function Remove-DFPackageUniverseVocabGapClassificationsBulk {
+    <#
+    .SYNOPSIS
+        Bulk variant of Remove-DFPackageUniverseVocabGapClassifications: clears
+        every cached classification whose suggested_terms contains ANY of the
+        given terms (case-insensitive), in a single scan of the nothing_fits
+        rows rather than one full scan per term. Intended for promoting one
+        canonical category that absorbs many raw synonym phrasings at once
+        (e.g. applying a vocab-clustering pass's output), where calling the
+        single-term version once per variant would rescan the whole table
+        dozens or hundreds of times.
+    .DESCRIPTION
+        Same exact-array-membership matching as the single-term version (never
+        a LIKE substring match), and a row that matches more than one of the
+        given terms is still only counted/deleted once.
+    .PARAMETER Connection
+        An open PSSQLite connection to the categorize database.
+    .PARAMETER Terms
+        The exact suggested terms (any casing) to clear. An empty array is a
+        safe no-op.
+    .OUTPUTS
+        [int] the number of distinct rows deleted.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param([Parameter(Mandatory)]$Connection, [AllowEmptyCollection()][string[]]$Terms = @())
+
+    if ($Terms.Count -eq 0) { return 0 }
+    $wanted = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($t in $Terms) { [void]$wanted.Add($t) }
+
+    $rows = @(Invoke-SqliteQuery -SQLiteConnection $Connection -Query "SELECT cache_key, suggested_terms_json FROM tool_classifications WHERE nothing_fits = 1 AND status = 'done'")
+    $affected = [System.Collections.Generic.List[string]]::new()
+    foreach ($r in $rows) {
+        $terms = $null
+        try { $terms = $r.suggested_terms_json | ConvertFrom-Json } catch { $terms = $null }
+        $hit = @($terms | Where-Object { $_ -and $wanted.Contains(([string]$_).Trim()) })
+        if ($hit.Count -gt 0) { $affected.Add([string]$r.cache_key) }
+    }
+    foreach ($key in $affected) {
+        Invoke-SqliteQuery -SQLiteConnection $Connection -Query 'DELETE FROM tool_classifications WHERE cache_key = @k' -SqlParameters @{ k = $key }
+    }
+    $affected.Count
+}
