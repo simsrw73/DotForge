@@ -264763,6 +264763,32 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|TTS-WebUI.Ignition",
+      "domain": "dev",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make",
+        "gradle",
+        "rake"
+      ],
+      "suggestedTerms": [
+        "build-tool",
+        "project-initializer",
+        "development-framework",
+        "game-engine"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|TaKO8Ki.gobang",
       "domain": "data",
       "function": [
@@ -267263,6 +267289,27 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Trados.Passolo.2022",
+      "domain": "productivity",
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "localization-tool",
+        "translation-management",
+        "i18n-tool"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Traintastic.Traintastic",
       "domain": "hardware",
       "function": [
@@ -267283,6 +267330,33 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|TransIP.STACK",
+      "domain": "dev",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "apt",
+        "yum",
+        "brew",
+        "cargo"
+      ],
+      "suggestedTerms": [
+        "binary-installer",
+        "tool-installer",
+        "dependency-manager"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Trappist.AgentCat",
       "domain": "system",
       "function": [
@@ -267298,6 +267372,45 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|TravisCobbs.LDView",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images",
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TravisRobinson.LibUsbDotNet",
+      "domain": "dev",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "usb-library",
+        "hardware-interface",
+        "device-driver"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|TreasureData.TDAgent",
@@ -267449,6 +267562,27 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|TripleAGame.TripleA",
+      "domain": "gaming",
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-engine",
+        "game-client",
+        "strategy-game"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Triplex.Triplex",
       "domain": "dev",
       "function": [],
@@ -267501,6 +267635,78 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|TritiumLegal.Tritium",
+      "domain": "dev",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "code",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make",
+        "gradle",
+        "cargo"
+      ],
+      "suggestedTerms": [
+        "build-system",
+        "build-tool",
+        "compilation-tool"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TruckersMP.Launcher",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text",
+        "clipboard"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "application-launcher",
+        "command-launcher",
+        "program-launcher",
+        "quick-launch"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TrueConf.TrueConf",
+      "domain": "system",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "environment-vars",
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "configuration-management",
+        "dotenv-tool",
+        "settings-manager",
+        "config-loader"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Tseli485.MENA-Tuteur",
       "domain": "productivity",
       "function": [
@@ -267522,6 +267728,52 @@
       "confidence": 0.45,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TubeDigger.TubeDigger",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "youtube-dl",
+        "yt-dlp"
+      ],
+      "suggestedTerms": [
+        "video-downloader",
+        "stream-downloader"
+      ],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TukuiCommunity.TukuiClient",
+      "domain": "gaming",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "code",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "addon-manager",
+        "game-mod-manager",
+        "game-client"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -267563,6 +267815,25 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|TunesKit.AceMovi",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "video-editor"
+      ],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|TunnelBear.TunnelBear",
       "domain": "security",
       "function": [
@@ -267580,6 +267851,63 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Tweaking4All.RenameMyTVSeries",
+      "domain": "productivity",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "rename"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|TweakingTechnologies.TweakShotScreenCapture",
+      "domain": "media",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|TwibrightLabs.Links",
+      "domain": "productivity",
+      "function": [
+        "text-processing",
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "lynx",
+        "w3m"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
     },
     {
       "cacheKey": "pkg:winget|Twinkstar.TwinkstarBrowser",
@@ -267616,6 +267944,30 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|TwonotesAudioEngineering.TorpedoRemote",
+      "domain": "dev",
+      "function": [
+        "ssh-tool"
+      ],
+      "worksWith": [
+        "ssh-connections"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "ssh",
+        "putty",
+        "mremoteng"
+      ],
+      "suggestedTerms": [
+        "remote-desktop-client",
+        "remote-connection-manager"
+      ],
+      "confidence": 0.55,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|Typst.Typst",
@@ -267655,6 +268007,49 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|USEPA.EPANET",
+      "domain": "science",
+      "function": [],
+      "worksWith": [
+        "text",
+        "json"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "simulation",
+        "hydraulic-modeling"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Ubiquiti.WiFimanDesktop",
+      "domain": "network",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "inssider",
+        "wifi-analyzer"
+      ],
+      "suggestedTerms": [
+        "wifi-analyzer",
+        "network-diagnostic",
+        "wireless-scanner"
+      ],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Ubisoft.Connect",
       "domain": "gaming",
       "function": [],
@@ -267670,6 +268065,26 @@
       "nothingFits": true,
       "signalSource": "docs",
       "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|UderzoSoftware.SpaceSniffer",
+      "domain": "system",
+      "function": [
+        "disk-usage"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "du",
+        "ncdu"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
     },
     {
       "cacheKey": "pkg:winget|UdiFuchs.UFRaw",
@@ -267791,6 +268206,28 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Unifaun.UnifaunOnlinePrinter",
+      "domain": "productivity",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "shipping-label-generator",
+        "courier-integration",
+        "label-printing",
+        "shipping-software"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Unipro.UGENE",
       "domain": "science",
       "function": [
@@ -267864,6 +268301,27 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Unknown-HorizonsTeam.Unknown-Horizons",
+      "domain": "gaming",
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-engine",
+        "game-client",
+        "realtime-strategy-game"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Unvanquished.Unvanquished",
       "domain": "gaming",
       "function": [],
@@ -267900,6 +268358,23 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|UserBenchmark.UserBenchmark",
+      "domain": "hardware",
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Uzero.ScanScan",
       "domain": "productivity",
       "function": [
@@ -267919,6 +268394,200 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|VALD.ForceDecksSuite",
+      "domain": "science",
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "force-plate-analysis",
+        "biomechanics-software",
+        "athletic-performance-testing"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VALD.ForceFrame",
+      "domain": "dev",
+      "function": [
+        "benchmarking"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "force-testing",
+        "stress-testing",
+        "game-input-tool",
+        "gaming-utility"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VALD.NordBord",
+      "domain": "hardware",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "fitness-equipment-api",
+        "biometric-measurement-device",
+        "force-plate-interface",
+        "hardware-integration-tool",
+        "measurement-device-client"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VCCLive.VCCLiveDesk",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "live-dashboard",
+        "desk-workspace",
+        "interactive-console",
+        "monitoring-ui"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VMABroadcast.VMAMonitor",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "ps",
+        "top",
+        "htop"
+      ],
+      "suggestedTerms": [
+        "vma-specific-monitoring",
+        "memory-monitoring",
+        "vma-tool"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VMware.SpringToolSuite",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VOCALOMAKETS.YuzukiYukariRei",
+      "domain": "media",
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "voice-synthesis-engine",
+        "tts-voice-package",
+        "voice-synthesizer"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VOWSoft.iBackupBot",
+      "domain": "productivity",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "backup-tool",
+        "ios-device-manager"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VPNetwork.TorGuard",
+      "domain": "security",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports",
+        "ssh-connections"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "vpn"
+      ],
+      "suggestedTerms": [
+        "vpn-client",
+        "privacy-tool"
+      ],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|VRChat.CreatorCompanion",
@@ -268016,6 +268685,27 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Veloren.Airshipper",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "application-launcher",
+        "update-manager",
+        "package-distributor"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|VentoByte.Proxifier",
       "domain": "network",
       "function": [
@@ -268094,6 +268784,26 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Verizon.VerizonCloud",
+      "domain": "cloud",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "cloud-storage-client",
+        "file-sync"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Versa.MagiCut",
       "domain": "media",
       "function": [
@@ -268137,6 +268847,143 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|ViewSonic.myViewBoard.Display",
+      "domain": "productivity",
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "presentation-software",
+        "display-software",
+        "interactive-whiteboard"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VinaySajip.PythonLauncher",
+      "domain": "dev",
+      "function": [
+        "shell-enhancement",
+        "task-runner"
+      ],
+      "worksWith": [
+        "code",
+        "environment-vars",
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "py",
+        "python",
+        "python3"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Vipre.IPVTest",
+      "domain": "network",
+      "function": [
+        "dns-tool"
+      ],
+      "worksWith": [
+        "network-ports",
+        "dns"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "dig",
+        "nslookup",
+        "host"
+      ],
+      "suggestedTerms": [
+        "ipv4-ipv6-tester",
+        "address-resolution-tool"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Virenbar.ZapretControl",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes",
+        "network-ports"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "network-filter",
+        "traffic-control",
+        "bypass-tool"
+      ],
+      "confidence": 0.65,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VirtualCable.UDSClient",
+      "domain": "system",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "ssh-connections",
+        "network-ports"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "rdesktop",
+        "freerdp"
+      ],
+      "suggestedTerms": [
+        "remote-desktop-client",
+        "session-client"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|VirtualDesktop.Streamer",
+      "domain": "productivity",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "screen-sharing",
+        "remote-desktop",
+        "video-streaming"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|VirtualGL.TurboVNC",
@@ -268191,6 +269038,28 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|VisualSVNSoftwareLtd.VisualSVNRepositoryConfigurator",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "svnadmin"
+      ],
+      "suggestedTerms": [
+        "svn-repository-management",
+        "vcs-repository-admin"
+      ],
+      "confidence": 0.55,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|VisualSVNSoftwareLtd.VisualSVNServer",
@@ -268253,6 +269122,29 @@
       "confidence": 0.35,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Vleer.Vleer",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "git"
+      ],
+      "suggestedTerms": [
+        "git-wrapper",
+        "version-control-client",
+        "distributed-vcs"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -268404,6 +269296,31 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Vonage.VonageBusiness",
+      "domain": "cloud",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl",
+        "wget"
+      ],
+      "suggestedTerms": [
+        "api-client",
+        "sdk-cli",
+        "voip-client",
+        "unified-communications-client"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|VoodooSoft.VoodooShield",
       "domain": "security",
       "function": [
@@ -268429,6 +269346,52 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Vormats.Vormats",
+      "domain": "text",
+      "function": [
+        "formatter"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "code-formatter",
+        "templating-engine",
+        "template-processor"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Vulki.VulkiExplorer",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "top",
+        "htop",
+        "ps"
+      ],
+      "suggestedTerms": [
+        "process-explorer",
+        "vulkan-debugger"
+      ],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|WACUP.WACUP",
       "domain": "media",
       "function": [
@@ -268446,6 +269409,50 @@
       "confidence": 0.65,
       "nothingFits": false,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WASSTV.EasyPal",
+      "domain": "productivity",
+      "function": [
+        "search"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "contact-manager",
+        "friend-finder",
+        "social-tool",
+        "address-book"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WHONET.AutomationTool",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "text",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "microbiology-tool",
+        "data-analysis-automation",
+        "laboratory-automation"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -268471,6 +269478,29 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|WICSupport.wicreset",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "binaries",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "device-management",
+        "firmware-tool",
+        "hardware-reset",
+        "diagnostic-utility"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|WINBIGFOX.TimeScribe",
       "domain": "productivity",
       "function": [
@@ -268486,6 +269516,55 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|WK.WKRadar",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "top",
+        "htop",
+        "ps"
+      ],
+      "suggestedTerms": [
+        "process-viewer",
+        "activity-monitor",
+        "radar"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WOAToolsOfficial.WOAToolbox",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "filesystem",
+        "environment-vars",
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "windows-administration",
+        "system-utilities",
+        "device-management"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|WPD.WPD",
@@ -268566,6 +269645,48 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|Wago.Addons",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "wagoapp-specific",
+        "custom-app"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WallingfordHydroSolutions.WINFAP5",
+      "domain": "dev",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "debugger",
+        "disassembler",
+        "reverse-engineering",
+        "decompiler"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|WardianApp.Wardian",
@@ -268675,6 +269796,27 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|WaterbugStudios.Mazerator",
+      "domain": "gaming",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "maze-generator",
+        "procedural-generation",
+        "game-utility"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Waterfox.Waterfox",
       "domain": "productivity",
       "function": [
@@ -268694,6 +269836,70 @@
       "confidence": 0.85,
       "nothingFits": false,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Waterfox.WaterfoxClassic",
+      "domain": "dev",
+      "function": [
+        "documentation"
+      ],
+      "worksWith": [
+        "markdown"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "Firefox"
+      ],
+      "suggestedTerms": [
+        "web-browser"
+      ],
+      "confidence": 0.15,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WavesAudio.WavesCentral",
+      "domain": "productivity",
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "plugin-manager",
+        "product-manager",
+        "license-manager",
+        "audio-plugin-manager"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WazeSRE.Terraformer",
+      "domain": "dev",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "iac-client",
+        "terraform-converter",
+        "infrastructure-codegen"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -268794,6 +270000,32 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|Webrandt.Ax",
+      "domain": "dev",
+      "function": [
+        "editor",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "sed",
+        "awk"
+      ],
+      "suggestedTerms": [
+        "text-stream-processor",
+        "command-wrapper",
+        "shell-utility"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Webrox.Regedix",
       "domain": "system",
       "function": [
@@ -268831,6 +270063,31 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|WereDev.Wu10Man",
+      "domain": "system",
+      "function": [
+        "process-monitor",
+        "system-info"
+      ],
+      "worksWith": [
+        "processes",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "tasklist",
+        "Get-Process"
+      ],
+      "suggestedTerms": [
+        "windows-update-manager",
+        "windows-service-manager"
+      ],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|Wesnoth.BattleForWesnoth",
@@ -268924,6 +270181,28 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Whiteknight.Mdq",
+      "domain": "text",
+      "function": [
+        "json-processing"
+      ],
+      "worksWith": [
+        "json"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "jq"
+      ],
+      "suggestedTerms": [
+        "query-tool",
+        "data-query-processor"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|WhoElse.Ping",
       "domain": "productivity",
       "function": [
@@ -268965,6 +270244,31 @@
       "confidence": 0.3,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Whop42.LinuxConvert",
+      "domain": "data",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "text",
+        "filesystem"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "convert",
+        "iconv"
+      ],
+      "suggestedTerms": [
+        "file-conversion",
+        "encoding-converter"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -269342,6 +270646,50 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Windows-Spotlight.Windows-Spotlight",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "image-viewer",
+        "lockscreen-image-fetcher",
+        "wallpaper-manager"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WindowsPostInstallWizard.UniversalSilentSwitchFinder",
+      "domain": "security",
+      "function": [
+        "search"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "forensics-tool",
+        "malware-detection",
+        "rootkit-detector"
+      ],
+      "confidence": 0.55,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|WinsiderSS.SystemInformer.Canary",
       "domain": "system",
       "function": [
@@ -269402,6 +270750,137 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|WisdomSoftware.AutoScreenRecorder",
+      "domain": "media",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "screen-capture",
+        "video-recording"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WisdomSoftware.FreeMediaPlayer",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "vlc",
+        "mpv",
+        "ffplay"
+      ],
+      "suggestedTerms": [
+        "media-player"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WisdomSoftware.MotionGIF",
+      "domain": "media",
+      "function": [
+        "file-management",
+        "text-processing"
+      ],
+      "worksWith": [
+        "images",
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "imagemagick",
+        "ffmpeg"
+      ],
+      "suggestedTerms": [
+        "gif-creation",
+        "animation-generation",
+        "motion-video-to-gif"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WisdomSoftware.MotionStudio",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "animation-editor",
+        "motion-graphics-editor",
+        "video-editor"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WisdomSoftware.ScreenHunter",
+      "domain": "media",
+      "function": [],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "screenshot",
+        "scrot",
+        "import"
+      ],
+      "suggestedTerms": [
+        "screenshot-tool",
+        "screen-capture"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WiseCleaner.RegistryCleaner.Portable",
+      "domain": "system",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "registry-cleaner",
+        "system-optimization",
+        "system-maintenance"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|WiseCleaner.WiseToys",
       "domain": "productivity",
       "function": [
@@ -269440,6 +270919,32 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|WithSecure.ElementsAgent",
+      "domain": "security",
+      "function": [
+        "process-monitor",
+        "system-info"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "endpoint-protection",
+        "security-agent",
+        "malware-scanner",
+        "threat-detection",
+        "edr-client"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|WixPie.WixPie",
@@ -269583,6 +271088,23 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|Wondershare.Cropro",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Wondershare.DVDCreator",
       "domain": "media",
       "function": [
@@ -269656,6 +271178,25 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|Wondershare.Filmora.Pro",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [
+        "Adobe Premiere Pro",
+        "Final Cut Pro",
+        "DaVinci Resolve"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|Wondershare.HiPDF",
@@ -269955,6 +271496,45 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|WoowaBrothersCorp.BaeminOrder",
+      "domain": "productivity",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "order-management",
+        "workflow-automation",
+        "integration-platform"
+      ],
+      "confidence": 0.2,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WorkdayInc.PlanningforExcel",
+      "domain": "productivity",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "spreadsheet-planning",
+        "spreadsheet-tool"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Workrave.Workrave",
       "domain": "productivity",
       "function": [
@@ -269994,6 +271574,50 @@
       "confidence": 0.4,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WorldTimeCLI.WorldTimeCLI",
+      "domain": "productivity",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "date"
+      ],
+      "suggestedTerms": [
+        "time-zone-conversion",
+        "clock-utility"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|WorldofWorkflows.WorldofWorkflowsPE",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "processes",
+        "environment-vars"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "workflow-automation",
+        "workflow-engine",
+        "business-process-management"
+      ],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -270086,6 +271710,21 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|XINGInc.HAL-O-ROIDMinami",
+      "domain": "media",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "audio-synthesis"
+      ],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|XK72.Charles",
       "domain": "network",
       "function": [
@@ -270144,6 +271783,110 @@
       "confidence": 0.85,
       "nothingFits": false,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xanthus58.AfformationRequester",
+      "domain": "text",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "affirmation-generation",
+        "request-handler",
+        "query-processor"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xanthus58.RockPaperScissorsCLI",
+      "domain": "gaming",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-client",
+        "interactive-game"
+      ],
+      "confidence": 0.72,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xanthus58.Stanlys_Terminal",
+      "domain": "system",
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "tmux",
+        "screen"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xanthus58.ValorantRandomizer",
+      "domain": "gaming",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-randomizer",
+        "game-utility",
+        "character-selector"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xanthus58.VanillaRenewed",
+      "domain": "gaming",
+      "function": [
+        "search"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-mod",
+        "game-manager",
+        "texture-pack-manager",
+        "plugin-manager"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -270241,6 +271984,48 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|Xiaomi.MiAssistant",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "mobile-device-manager",
+        "phone-assistant",
+        "device-utility"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xiaomi.MiService",
+      "domain": "dev",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "service-manager",
+        "windows-service-manager",
+        "service-utility"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|XiaoweiCloud.CalendarTask",
       "domain": "productivity",
       "function": [
@@ -270259,6 +272044,74 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|Xidicone.AgentSVN",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "svn"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xidicone.ZeusIDE",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "code",
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "vscode",
+        "intellij",
+        "netbeans",
+        "eclipse"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Xidicone.ZeusLite",
+      "domain": "dev",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "make",
+        "gradle",
+        "maven"
+      ],
+      "suggestedTerms": [
+        "build-system",
+        "project-orchestrator",
+        "workflow-automation"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|XmirrorSecurity.OpenSCA-cli",
@@ -270327,6 +272180,27 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|XxDoomsdayxX.GitPulse",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "git-monitoring",
+        "repository-analytics",
+        "git-dashboard"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|YACReader.YACReader",
@@ -270502,6 +272376,119 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|YendisEntertainment.KrunkerClient",
+      "domain": "gaming",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "binaries",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "game-launcher",
+        "game-client"
+      ],
+      "confidence": 0.55,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|YetAnotherPomodoroApp.YAPA2",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "environment-vars"
+      ],
+      "interface": "tui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "task-management",
+        "pomodoro-timer",
+        "productivity-app"
+      ],
+      "confidence": 0.55,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|Yiays.AutoLogout",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "environment-vars",
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "session-management",
+        "idle-monitor",
+        "terminal-session-manager",
+        "auto-logout-utility"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|YoYoGames.GameMaker.Studio.2",
+      "domain": "gaming",
+      "function": [
+        "editor",
+        "task-runner"
+      ],
+      "worksWith": [
+        "code",
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "Unity",
+        "Unreal Engine",
+        "Godot"
+      ],
+      "suggestedTerms": [
+        "game-engine",
+        "ide"
+      ],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|YogeshSharma.NullByte",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "code",
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "hex-editor",
+        "binary-editor",
+        "debugging-tool"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|YouXiao.YXCalendar",
       "domain": "productivity",
       "function": [
@@ -270658,6 +272645,30 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|YunhoCho.OIMG",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "feh",
+        "eog",
+        "display"
+      ],
+      "suggestedTerms": [
+        "image-viewer",
+        "image-processor"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|ZPTStudio.02Engine",
       "domain": "gaming",
       "function": [
@@ -270678,6 +272689,113 @@
       "confidence": 0.65,
       "nothingFits": false,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZWSOFT.NetworkLicenseManager",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "license-manager",
+        "software-licensing",
+        "network-service-manager",
+        "product-activation"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZWSOFT.ZWCAD.Landscape.2025",
+      "domain": "system",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "CAD software",
+        "landscape design tool",
+        "3D modeling",
+        "architecture visualization"
+      ],
+      "confidence": 0.25,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZWSOFT.ZWCAD.Personal",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "code",
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "AutoCAD",
+        "LibreCAD"
+      ],
+      "suggestedTerms": [
+        "cad-tool",
+        "design-tool",
+        "drawing-software"
+      ],
+      "confidence": 0.55,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZWSOFT.ZWCADViewer",
+      "domain": "media",
+      "function": [],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "CAD",
+        "CAD Viewer",
+        "design",
+        "drawing viewer"
+      ],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|ZakKemble.avr-gcc",
+      "domain": "dev",
+      "function": [],
+      "worksWith": [
+        "code",
+        "binaries"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "gcc"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -270803,6 +272921,26 @@
       "confidence": 0.35,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZeqMacaw.Crowbar",
+      "domain": "security",
+      "function": [
+        "archive"
+      ],
+      "worksWith": [
+        "archives"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "unrar",
+        "7z"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -271117,6 +273255,27 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|Zoho.Arattai",
+      "domain": "text",
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "japanese-text-tool",
+        "tokenizer",
+        "morphological-analyzer"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|Zoho.Ulaa",
       "domain": "productivity",
       "function": [
@@ -271225,6 +273384,30 @@
       "confidence": 0.3,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ZorusInc.ArchonAgent",
+      "domain": "system",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes",
+        "logs"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "agent",
+        "automation",
+        "deployment-agent",
+        "infrastructure-agent",
+        "monitoring-agent"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -280657,6 +282840,96 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|trevorsandy.lpub3d",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text",
+        "images",
+        "pdf"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "document-builder",
+        "publication-tool",
+        "model-viewer"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|tritant.MiniMediaEdit",
+      "domain": "media",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "gimp",
+        "krita",
+        "paint"
+      ],
+      "suggestedTerms": [
+        "media-editor",
+        "image-editor"
+      ],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|tromoSM.XcreenDesk",
+      "domain": "productivity",
+      "function": [
+        "navigation"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "desktop-manager",
+        "workspace-switcher",
+        "virtual-desktop",
+        "window-manager"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|trzsz.lrzsz",
+      "domain": "system",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "filesystem",
+        "ssh-connections"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "sz",
+        "rz"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "pkg:winget|tsl0922.ttyd",
       "domain": "dev",
       "function": [
@@ -280689,6 +282962,30 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|ttimer.ttimer",
+      "domain": "productivity",
+      "function": [
+        "task-runner"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "timer",
+        "sleep"
+      ],
+      "suggestedTerms": [
+        "timer",
+        "countdown",
+        "stopwatch"
+      ],
+      "confidence": 0.6,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|tumic0.GPXSee",
@@ -280752,6 +283049,27 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|uGetdm.uGet",
+      "domain": "system",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "http",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "wget",
+        "curl"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "pkg:winget|ulyssa.iamb",
       "domain": "productivity",
       "function": [
@@ -280787,6 +283105,23 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|unlimited-clipboard.unlimited-clipboard",
+      "domain": "productivity",
+      "function": [
+        "clipboard"
+      ],
+      "worksWith": [
+        "clipboard"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|urwithajit9.evnx",
@@ -280830,6 +283165,49 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|vSpatialInc.vSpatialRemoteDesktop",
+      "domain": "productivity",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "ssh-connections"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "rdp",
+        "vnc",
+        "teamviewer"
+      ],
+      "suggestedTerms": [
+        "remote-desktop-client"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|vcsjones.AzureSignTool",
+      "domain": "security",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "binaries",
+        "credentials"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "signtool"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.85,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|ve3nea.HamCockpit",
       "domain": "productivity",
       "function": [
@@ -280848,6 +283226,44 @@
       "confidence": 0.45,
       "nothingFits": true,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|venipa.ytmdesktop",
+      "domain": "media",
+      "function": [],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "media-player",
+        "streaming-client",
+        "music-client"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|venko.ClassicGenerator",
+      "domain": "dev",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "code-generator",
+        "scaffold",
+        "boilerplate-generator"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -280981,6 +283397,290 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|voidtools.voidImageViewer",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.9,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|vvvv.gamma",
+      "domain": "dev",
+      "function": [
+        "editor",
+        "task-runner"
+      ],
+      "worksWith": [
+        "code",
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "visual-programming",
+        "node-based-editor",
+        "graphical-development-environment"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flamp",
+      "domain": "text",
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "email-client",
+        "irc-client",
+        "chat-client",
+        "messaging-tool"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.fldigi",
+      "domain": "hardware",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "digital-modes",
+        "radio-modem",
+        "radio-dsp",
+        "amateur-radio"
+      ],
+      "confidence": 0.45,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.fllog",
+      "domain": "dev",
+      "function": [
+        "log-viewer"
+      ],
+      "worksWith": [
+        "logs"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.5,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flmsg",
+      "domain": "text",
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "message-composer",
+        "form-editor",
+        "email-client",
+        "ham-radio-tool"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flnet",
+      "domain": "network",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl",
+        "wget"
+      ],
+      "suggestedTerms": [
+        "network-client",
+        "protocol-implementation",
+        "flux-network",
+        "ftp-client"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flrig",
+      "domain": "hardware",
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "radio-control",
+        "amateur-radio-tool"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flwkey",
+      "domain": "productivity",
+      "function": [
+        "clipboard"
+      ],
+      "worksWith": [
+        "clipboard",
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "xclip",
+        "xsel",
+        "pbcopy",
+        "pbpaste"
+      ],
+      "suggestedTerms": [
+        "clipboard-manager",
+        "hotkey-manager",
+        "keyboard-shortcuts"
+      ],
+      "confidence": 0.5,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|w1hkj.flwrap",
+      "domain": "dev",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "terminal-sessions",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "shell-wrapper",
+        "command-wrapper",
+        "shell-integration",
+        "flow-control"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|waar19.WindowsAIRemovalTool",
+      "domain": "system",
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "processes",
+        "filesystem",
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "uninstall-tool",
+        "feature-management",
+        "windows-customization"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wakdev.NFCTools",
+      "domain": "hardware",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "text",
+        "binaries"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "nfc-reader",
+        "nfc-writer",
+        "hardware-interface"
+      ],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wanderlp.MergeMate",
+      "domain": "dev",
+      "function": [
+        "diff-merge"
+      ],
+      "worksWith": [
+        "git",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "merge-conflict-resolution",
+        "git-merge-helper"
+      ],
+      "confidence": 0.4,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|wanou067.MazeLauncher",
       "domain": "gaming",
       "function": [
@@ -281000,6 +283700,107 @@
       "confidence": 0.65,
       "nothingFits": false,
       "signalSource": "docs",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|warmdev.ash",
+      "domain": "system",
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "sh",
+        "bash"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.75,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wezm.git-grab",
+      "domain": "dev",
+      "function": [
+        "vcs-client"
+      ],
+      "worksWith": [
+        "git"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "git"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.65,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|whyboris.Video-Hub-App.Demo",
+      "domain": "media",
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "media-browser",
+        "video-organizer",
+        "video-library"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wikimedia.mwcli",
+      "domain": "dev",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "curl",
+        "wget"
+      ],
+      "suggestedTerms": [
+        "mediawiki-client",
+        "api-client"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|willnewii.qiniuClient",
+      "domain": "cloud",
+      "function": [
+        "http-client"
+      ],
+      "worksWith": [
+        "http"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "object-storage-client",
+        "cloud-storage-cli"
+      ],
+      "confidence": 0.6,
+      "nothingFits": false,
+      "signalSource": "metadata",
       "model": "claude-haiku-4-5-20251001"
     },
     {
@@ -281078,6 +283879,27 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|wipedlifepotato.kekulen-i2p-chat",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "ssh-connections"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "chat-client",
+        "messaging-client",
+        "i2p-client"
+      ],
+      "confidence": 0.35,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|wkhtmltopdf.wkhtmltox",
       "domain": "productivity",
       "function": [
@@ -281098,6 +283920,74 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|wl-std.WLDownloader",
+      "domain": "productivity",
+      "function": [
+        "network-transfer"
+      ],
+      "worksWith": [
+        "network-ports"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "wget",
+        "curl"
+      ],
+      "suggestedTerms": [
+        "download-manager",
+        "batch-downloader"
+      ],
+      "confidence": 0.4,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wl-std.WLMusic",
+      "domain": "gaming",
+      "function": [
+        "terminal-multiplexer"
+      ],
+      "worksWith": [
+        "terminal-sessions"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "music-player",
+        "audio-player",
+        "streaming-client",
+        "playlist-manager"
+      ],
+      "confidence": 0.2,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wl-std.indi-necha",
+      "domain": "dev",
+      "function": [
+        "editor"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "editor",
+        "text-editor",
+        "code-editor",
+        "IDE"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|workman-layout.workman",
       "domain": "hardware",
       "function": [
@@ -281114,6 +284004,26 @@
       "nothingFits": true,
       "signalSource": "docs",
       "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|wpdos.PDFtoPrinter",
+      "domain": "productivity",
+      "function": [
+        "file-management"
+      ],
+      "worksWith": [
+        "pdf"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "lp",
+        "lpr"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
     },
     {
       "cacheKey": "pkg:winget|writage.writage",
@@ -281178,6 +284088,27 @@
       "model": "gpt-4o-mini"
     },
     {
+      "cacheKey": "pkg:winget|xd.batpad",
+      "domain": "text",
+      "function": [
+        "syntax-highlighter",
+        "file-viewing"
+      ],
+      "worksWith": [
+        "text",
+        "code"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "cat"
+      ],
+      "suggestedTerms": [],
+      "confidence": 0.95,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|xdpxi.sponge",
       "domain": "dev",
       "function": [
@@ -281214,6 +284145,70 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|xinpianchang.StudioTrans",
+      "domain": "text",
+      "function": [
+        "text-processing"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "chinese-text-tool",
+        "dictionary",
+        "language-tool",
+        "translation-tool"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|xkonglong.gongwen",
+      "domain": "text",
+      "function": [
+        "formatter"
+      ],
+      "worksWith": [
+        "text",
+        "markdown"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "document-formatter",
+        "official-document-tool",
+        "text-layout"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|xpack-dev-tools.openocd-xpack",
+      "domain": "hardware",
+      "function": [],
+      "worksWith": [
+        "binaries",
+        "processes"
+      ],
+      "interface": "cli",
+      "alternativeTo": [
+        "openocd"
+      ],
+      "suggestedTerms": [
+        "debugger"
+      ],
+      "confidence": 0.92,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|xpf0000.FlyEnv",
@@ -281266,6 +284261,44 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|xxanqw.mikusays",
+      "domain": "text",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "text-to-speech",
+        "voice-synthesis",
+        "audio-generator"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|ydkhatri.UnifiedLogReader",
+      "domain": "system",
+      "function": [
+        "log-viewer"
+      ],
+      "worksWith": [
+        "logs"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [],
+      "confidence": 0.8,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "gpt-4o-mini"
+    },
+    {
       "cacheKey": "pkg:winget|yetone.Alma",
       "domain": "cloud",
       "function": [
@@ -281305,6 +284338,52 @@
       "model": "claude-haiku-4-5-20251001"
     },
     {
+      "cacheKey": "pkg:winget|ykhwong.DOSBoxSVN-Daum",
+      "domain": "system",
+      "function": [
+        "system-info",
+        "process-monitor"
+      ],
+      "worksWith": [
+        "binaries",
+        "processes",
+        "filesystem"
+      ],
+      "interface": "gui",
+      "alternativeTo": [
+        "dosbox"
+      ],
+      "suggestedTerms": [
+        "emulator",
+        "dos-emulator",
+        "x86-emulator"
+      ],
+      "confidence": 0.7,
+      "nothingFits": false,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
+      "cacheKey": "pkg:winget|yomail.yomail",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "email-client",
+        "mail-client"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    {
       "cacheKey": "pkg:winget|yuccastream.tuna",
       "domain": "network",
       "function": [
@@ -281328,6 +284407,28 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|zenaconsult.zenasupport",
+      "domain": "productivity",
+      "function": [
+        "prompt"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "cli",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "ai-assistant",
+        "chatbot",
+        "support-tool",
+        "help-system"
+      ],
+      "confidence": 0.3,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|zig.zig",
@@ -281363,6 +284464,28 @@
       "nothingFits": false,
       "signalSource": "docs",
       "model": "gpt-4o-mini"
+    },
+    {
+      "cacheKey": "pkg:winget|zsyg.MoonViewer",
+      "domain": "science",
+      "function": [
+        "navigation"
+      ],
+      "worksWith": [
+        "images"
+      ],
+      "interface": "gui",
+      "alternativeTo": [],
+      "suggestedTerms": [
+        "astronomy-viewer",
+        "planetary-viewer",
+        "space-visualization",
+        "celestial-browser"
+      ],
+      "confidence": 0.4,
+      "nothingFits": true,
+      "signalSource": "metadata",
+      "model": "claude-haiku-4-5-20251001"
     },
     {
       "cacheKey": "pkg:winget|zyedidia.micro",
