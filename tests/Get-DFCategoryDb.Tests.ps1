@@ -2,6 +2,25 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Test-DFCategoryDbSchema.ps1"
     . "$PSScriptRoot/../Private/Get-DFCategoryDb.ps1"
 
+    # Get-DFCategoryDb's -Path override does NOT fully isolate from
+    # $Env:XDG_DATA_HOME by design (its own doc comment: "the refreshed-vs-
+    # shipped precedence check against $Env:XDG_DATA_HOME still runs normally
+    # against this override") -- -Path only substitutes for the SHIPPED side
+    # of that comparison. Every test below therefore silently assumed no real
+    # refreshed copy exists at $Env:XDG_DATA_HOME/dotforge/tool-categories.json
+    # on the machine running the suite. That assumption held by accident until
+    # a real one was ever written there (e.g. by
+    # build/Export-DFPackageUniversePreviewCategoryDb.ps1) -- with a real,
+    # always-"now"-dated file in place, its facet/name/id indexes (built from
+    # the full live package-universe, not the 4-tool fixture below) silently
+    # replaced the fixture's in every test that didn't already manage
+    # XDG_DATA_HOME itself, causing multi-second runs and assertion failures
+    # against real tool names instead of the fixture's ripgrep/fd/bat/micro.
+    # Isolating XDG_DATA_HOME for the whole file removes that dependency on
+    # the host machine's state.
+    $script:SavedXdgDataHomeForFile = $Env:XDG_DATA_HOME
+    $Env:XDG_DATA_HOME = $null
+
     function New-FixtureDbFile {
         param([string]$Path)
         @{
@@ -214,4 +233,8 @@ Describe 'Get-DFCategoryRelatedTools' {
         $related = Get-DFCategoryRelatedTools -Database $script:Db -Key 'micro'
         $related.Count | Should -BeLessOrEqual 6
     }
+}
+
+AfterAll {
+    $Env:XDG_DATA_HOME = $script:SavedXdgDataHomeForFile
 }

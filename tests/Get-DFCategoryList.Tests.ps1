@@ -4,6 +4,17 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Format-DFCategoryList.ps1"
     . "$PSScriptRoot/../Public/Get-DFCategoryList.ps1"
     $script:RealGetDFCategoryDb = Get-Command Get-DFCategoryDb -CommandType Function -ErrorAction SilentlyContinue
+
+    # See the matching comment in tests/Get-DFCategoryDb.Tests.ps1 -- -Path
+    # does not fully isolate Get-DFCategoryDb from $Env:XDG_DATA_HOME's
+    # refreshed-copy check, so a real refreshed file on the host machine
+    # (e.g. from build/Export-DFPackageUniversePreviewCategoryDb.ps1) would
+    # silently replace this fixture in every test below.
+    $script:SavedXdgDataHomeForFile = $Env:XDG_DATA_HOME
+    $Env:XDG_DATA_HOME = $null
+}
+AfterAll {
+    $Env:XDG_DATA_HOME = $script:SavedXdgDataHomeForFile
 }
 
 Describe 'Get-DFCategoryList' {

@@ -200,6 +200,38 @@ hand-curated inputs** — not from the package-universe pipeline above (yet):
   or `extras.jsonc` directly (then re-running `Build-DFCategoryDb.ps1`) is
   still how this file grows.
 
+## Browsing the live data through trifle (preview, not shipped)
+
+You don't have to wait for Plan 2's shipped-db promotion to actually *see*
+the classifications in the real `trifle` UI. `Get-DFCategoryDb` already has a
+built-in override: if `$Env:XDG_DATA_HOME/dotforge/tool-categories.json`
+exists and is newer than the shipped copy, it wins automatically (with
+fallback to shipped on any schema failure) — the same slot
+`Update-DFCategoryDb` writes a real published release into.
+`./build/Export-DFPackageUniversePreviewCategoryDb.ps1` writes the *live*
+package-universe classifications into that exact slot:
+```powershell
+./build/Export-DFPackageUniversePreviewCategoryDb.ps1
+# then, in a fresh shell (or Get-DFCategoryDb -Force):
+Get-DFCategoryList
+trifle -WorksWith uuid
+```
+This never touches the real shipped `data/tool-categories.json` — to go back
+to the small hand-curated seed, delete the written file. Only classifiable
+tools are included (valid `interface`, non-empty `function` — ~99% of the
+universe); colliding tool names (~1,500 distinct names shared by genuinely
+different real-world tools, e.g. "signal", "git") are disambiguated with a
+`(tool_id)` suffix rather than silently overwriting each other.
+
+**Known scale caveat:** `Find-DFPackage -Category`/`-WorksWith` resolves
+*every* matching tool through a real, sequential catalog query (per-tool, no
+batching) — fine for the shipped ~78-tool seed, but a category like
+`game-client` (293 tools in the full universe) can take minutes. Prefer
+`Get-DFCategoryList` for browsing counts/shape, and reach for `-Category`
+mostly on facets with a smaller live count until this gets a fast path (or a
+`-Limit`) for large result sets — a real Plan-2-adjacent follow-up, not
+something to work around per-query.
+
 ---
 
 ## Should you build a helper tool?

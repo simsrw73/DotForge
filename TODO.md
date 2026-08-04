@@ -105,6 +105,14 @@
     `data/tool-categories.json` export/promotion step that retires the
     hand-curated 72-tool seed — gated by an offline quality-eval harness
     (ground-truth set, precision/recall) that doesn't exist yet either.
+  - **`trifle -Category`/`-WorksWith` doesn't scale to the full universe** —
+    every matching tool is resolved through a real, sequential per-tool
+    catalog query (no batching), fine for the ~78-tool shipped seed but slow
+    (minutes) for a full-universe facet like `game-client` (293 tools). Needs
+    either a fast index-only path or a result-count limit. Found while
+    building `build/Export-DFPackageUniversePreviewCategoryDb.ps1` (see
+    `docs/package-universe-review-guide.md`'s "Browsing the live data through
+    trifle" section) — not a Plan 2 item exactly, but adjacent to it.
 - [ ] **Grow the tool-identity guide past the 29 curated seed tools** — v1's
   guide only links tools where `Tools/*.json` already provides multiple
   known catalog ids to compare (that's what makes automated repo/homepage
