@@ -7,7 +7,7 @@
   "dependsOn": [],
   "xdg": { "compliance": "none", "method": "default" },
   "settings": {
-    "editMode":            "Windows",
+    "editMode":            "Emacs",
     "predictionSource":    "HistoryAndPlugin",
     "predictionViewStyle": "InlineView",
     "bellStyle":           "None",

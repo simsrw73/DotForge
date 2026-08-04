@@ -93,6 +93,8 @@
   for not-yet-curated tools — e.g. a future crawl, or mining co-occurrences
   from live search results over time — deferred alongside the category
   database's own phase-2 pipeline (`docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md`).
+- [ ] **Add a man command ** — Add a man command that uses scoop:mandoc to render man pages in the terminal from `~/.local/share/man`.
+- [ ] **Search Installed Binaries ** — Like Scoop. If the user searches for `touch` it should show every thing named touch or including a file named touch. Flags to specifically search on binary names alone, package name alone, description, author, etc.
 
 ## Priority 4 — Improvements
 

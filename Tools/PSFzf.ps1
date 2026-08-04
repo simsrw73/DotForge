@@ -8,15 +8,23 @@ if (Get-Module -Name PSFzf) {
         -PSReadlineChordProvider 'Ctrl+t' `
         -PSReadlineChordReverseHistory 'Ctrl+r'
 
-    $commandOverride = [ScriptBlock] {
-        param($Location)
-        if (Get-Command -Name zoxide.exe -ErrorAction SilentlyContinue) {
-            z $Location
-        } else {
-            Set-Location $Location
+    $ZoxideAltCScriptBlock = [ScriptBlock]{
+        $selectedDir = zoxide query -l | Invoke-PoshFzfStartProcess -FileName "fzf" -Arguments @("--height=40%", "--layout=reverse") -HeightRowsOrPercent "40%"
+
+        if ($selectedDir) {
+            if (Get-Command "__zoxide_z" -ErrorAction SilentlyContinue) {
+                __zoxide_z $selectedDir
+            } else {
+                Set-Location $selectedDir
+            }
+
+            # Clear the current line and redraw prompt cleanly
+            [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
+            [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
         }
     }
-    Set-PsFzfOption -AltCCommand $commandOverride
+
+    Set-PsFzfOption -AltCCommand $ZoxideAltCScriptBlock
 
     Set-PsFzfOption -EnableAliasFuzzyScoop
     Set-PsFzfOption -TabExpansion
