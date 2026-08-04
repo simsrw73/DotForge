@@ -81,7 +81,30 @@
   debtags, crates.io/PyPI trove classifiers, Homebrew analytics, Repology
   identity resolution, GitHub topics, distro package-section mining. Also
   covers making `popularity` a live, periodically-refreshed metric instead of
-  a build-time editorial tier.
+  a build-time editorial tier. **Package-universe Phase D (below) is the
+  actual auto-populate answer** — an LLM classifier reading each tool's own
+  docs, not external-taxonomy mining — so this item and "Expand the trifle
+  category-db seed corpus" above should be revisited (probably retired) once
+  Phase D's classifications export to `data/tool-categories.json`.
+- [ ] **Package-universe Phase D — remaining work.** The categorization engine
+  is live and 23,530/25,460 tools (92%) are classified
+  (`docs/superpowers/specs/2026-07-17-package-universe-categorization-design.md`).
+  What's left:
+  - **Phase B identity-clustering review** — 4,983 candidate matches in the
+    review queue, completely unworked. Verdicts go in
+    `data/package-universe-curation.jsonc`. See
+    `docs/package-universe-review-guide.md`.
+  - **Phase D categorization review** — ~1,841 tools still `nothing_fits`.
+    Run `build/Invoke-DFPackageUniverseVocabReview.ps1` for further rounds;
+    a first large pass already folded the original backlog's near-synonym
+    noise into 93 new categories (see CHANGELOG).
+  - **Plan 2** (design spec's own next phase, not started as its own plan):
+    embeddings + `relatedTo` (nearest-neighbor related tools);
+    `alternativeTo` cleanup (occasionally malformed, e.g.
+    `"terraform-docs -> terraform-docs"`); and the shipped
+    `data/tool-categories.json` export/promotion step that retires the
+    hand-curated 72-tool seed — gated by an offline quality-eval harness
+    (ground-truth set, precision/recall) that doesn't exist yet either.
 - [ ] **Grow the tool-identity guide past the 29 curated seed tools** — v1's
   guide only links tools where `Tools/*.json` already provides multiple
   known catalog ids to compare (that's what makes automated repo/homepage
