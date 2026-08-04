@@ -45,6 +45,22 @@ Describe 'Build-DFCategoryDb' {
         $doc.updated | Should -Be ([datetime]::UtcNow.ToString('yyyy-MM-dd'))
     }
 
+    It 'skips domains.jsonc as a vocabulary file, not a tool fragment (regression: its domain/schemaVersion keys were being read as tool names)' {
+        @'
+{
+  // Phase D coarse domain axis -- NOT a tool-fragment file, lives in the same
+  // directory by convention but must never be walked as one.
+  "schemaVersion": 1,
+  "domain": ["dev", "system"]
+}
+'@ | Set-Content (Join-Path $script:CategoriesDir 'domains.jsonc')
+        & "$PSScriptRoot/../build/Build-DFCategoryDb.ps1" -CategoriesDir $script:CategoriesDir -OutPath $script:OutPath
+        $doc = Get-Content $script:OutPath -Raw | ConvertFrom-Json
+        $doc.tools.ripgrep.function | Should -Contain 'search'
+        $doc.tools.PSObject.Properties.Name | Should -Not -Contain 'domain'
+        $doc.tools.PSObject.Properties.Name | Should -Not -Contain 'schemaVersion'
+    }
+
     It 'throws on a duplicate tool key across fragment files' {
         @'
 { "ripgrep": { "function": ["search"], "interface": "cli" } }

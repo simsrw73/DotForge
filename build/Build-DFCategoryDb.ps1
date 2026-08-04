@@ -35,11 +35,18 @@ $fragmentFiles = Get-ChildItem $CategoriesDir -Filter '*.jsonc' | Sort-Object Na
 $taxonomyFile = $fragmentFiles | Where-Object Name -eq 'taxonomy.jsonc'
 if (-not $taxonomyFile) { throw "Build-DFCategoryDb: no taxonomy.jsonc found in $CategoriesDir" }
 
+# domains.jsonc is Phase D's coarse-domain vocabulary file (package-universe
+# categorization), not a tool-fragment -- it lives in the same directory by
+# convention but has no "tools" shape (top-level domain/schemaVersion keys),
+# so it must be excluded from the tool-fragment walk below the same way
+# taxonomy.jsonc is.
+$nonToolFragments = 'taxonomy.jsonc', 'domains.jsonc'
+
 $taxonomy = Read-DFCategoryFragment -Path $taxonomyFile.FullName
 $tools = [ordered]@{}
 $seenIn = @{}
 
-foreach ($file in ($fragmentFiles | Where-Object Name -ne 'taxonomy.jsonc')) {
+foreach ($file in ($fragmentFiles | Where-Object { $nonToolFragments -notcontains $_.Name })) {
     $fragment = Read-DFCategoryFragment -Path $file.FullName
     foreach ($prop in $fragment.PSObject.Properties) {
         if ($tools.Contains($prop.Name)) {
