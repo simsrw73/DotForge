@@ -16,6 +16,16 @@
     data/package-universe-vocab-clustering-history.jsonc).
 .PARAMETER DatabasePath
     Path to the shared SQLite working database.
+.PARAMETER ClassificationsPath
+    Path to the durable, version-controlled classification export (default:
+    data/package-universe-classifications.jsonc). Re-exported automatically
+    as this script's LAST step, reflecting the just-cleared rows -- this is
+    load-bearing, not cosmetic: Build-DFPackageUniverseCategories.ps1's own
+    opening step unconditionally re-imports whatever is in this file back
+    into the DB every time it runs. Skipping this export (as an earlier,
+    now-fixed version of this script did) means the very next Phase D run
+    silently restores the stale, just-cleared rows before its classify loop
+    ever starts, wasting the reclassification work entirely.
 .PARAMETER DecisionsPath
     Path to the durable vocab-gap decision log (default:
     data/package-universe-vocab-decisions.jsonc). Overwritten wholesale —
@@ -31,6 +41,7 @@
 param(
     [string]$HistoryPath = (Join-Path $PSScriptRoot '../data/package-universe-vocab-clustering-history.jsonc'),
     [string]$DatabasePath = (Join-Path $PSScriptRoot '.package-universe/universe.db'),
+    [string]$ClassificationsPath = (Join-Path $PSScriptRoot '../data/package-universe-classifications.jsonc'),
     [string]$DecisionsPath = (Join-Path $PSScriptRoot '../data/package-universe-vocab-decisions.jsonc'),
     [string]$DomainsPath = (Join-Path $PSScriptRoot 'categories/domains.jsonc'),
     [string]$TaxonomyPath = (Join-Path $PSScriptRoot 'categories/taxonomy.jsonc')
@@ -83,10 +94,14 @@ try {
 
 [pscustomobject]@{ schemaVersion = 1; decisions = $decisions } | ConvertTo-Json -Depth 6 | Set-Content -Path $DecisionsPath -Encoding utf8
 
+# Load-bearing, not cosmetic -- see the .PARAMETER ClassificationsPath comment above.
+Export-DFPackageUniverseClassifications -DatabasePath $DatabasePath -Path $ClassificationsPath
+
 Write-Host ''
 Write-Host 'Vocab clustering apply complete:'
 Write-Host "  categories added to vocab           : $categoriesAdded / $($history.finalCategories.Count)"
 Write-Host "  classification rows cleared         : $rowsCleared"
 Write-Host "  decisions recorded (promoted+reject): $($decisions.Count)"
+Write-Host "  classifications re-exported to      : $ClassificationsPath"
 
 [pscustomobject]@{ CategoriesAdded = $categoriesAdded; RowsCleared = $rowsCleared; DecisionsRecorded = $decisions.Count }
