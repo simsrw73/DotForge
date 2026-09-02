@@ -35,6 +35,12 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **posh-git, ripgrep, and oh-my-posh previews are now debounced.** After switching fzf's
+  preview shell from `cmd` (~80ms startup) to `pwsh` (~230ms), these three pickers updated
+  on every cursor move without debounce, adding perceptible lag to fast scrolling. Each
+  preview now includes `Start-Sleep -Milliseconds 1000;` before its command, matching the
+  debounce already applied to winget/scoop/choco pickers.
+
 - **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,
   `Install-DFTool`, `New-DFShim`, and both `$DFConfig` reads in `Tools/psreadline.ps1`
   guarded on the *variable's existence* (`Get-Variable -Name DFConfig`) before indexing

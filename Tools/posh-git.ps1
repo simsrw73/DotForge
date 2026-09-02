@@ -7,7 +7,7 @@ function global:Select-GitBranch {
     param()
     Invoke-DFPicker `
         -List          { git branch --all --color=always } `
-        -Preview       'git log --oneline --color=always {1}' `
+        -Preview       'Start-Sleep -Milliseconds 1000; git log --oneline --color=always {1}' `
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Header        'Select branch  [Enter to checkout]' `
@@ -21,7 +21,7 @@ function global:Select-GitLog {
     param()
     Invoke-DFPicker `
         -List          { git log --oneline --color=always } `
-        -Preview       'git show --color=always {1}' `
+        -Preview       'Start-Sleep -Milliseconds 1000; git show --color=always {1}' `
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Header        'Select commit  [Enter to show]' `
@@ -35,7 +35,7 @@ function global:Select-GitFile {
     param()
     $files = Invoke-DFPicker `
         -List          { git status --short } `
-        -Preview       'git diff --color=always {2}' `
+        -Preview       'Start-Sleep -Milliseconds 1000; git diff --color=always {2}' `
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Multi `
@@ -55,7 +55,7 @@ function global:Select-GitStash {
     param()
     Invoke-DFPicker `
         -List          { git stash list } `
-        -Preview       'git stash show -p {}' `
+        -Preview       'Start-Sleep -Milliseconds 1000; git stash show -p {}' `
         -PreviewWindow 'right:60%' `
         -Ansi `
         -Header        'Select stash  [Enter to apply]' `

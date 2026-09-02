@@ -12,7 +12,7 @@ function global:Select-RipgrepResult {
 
     Invoke-DFPicker `
         -List          { rg --line-number --no-heading --color=always $Pattern $Path 2>$null } `
-        -Preview       'bat --color=always --highlight-line {2} {1}' `
+        -Preview       'Start-Sleep -Milliseconds 1000; bat --color=always --highlight-line {2} {1}' `
         -PreviewWindow 'right:60%' `
         -Delimiter     ':' `
         -Ansi `

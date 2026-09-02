@@ -47,7 +47,7 @@ function global:Select-PoshTheme {
 
     Invoke-DFPicker `
         -List          { Get-ChildItem $themesPath -Filter '*.omp.json' | Select-Object -ExpandProperty Name } `
-        -Preview       "oh-my-posh print primary --config '$themesPath\{}' --shell pwsh" `
+        -Preview       "Start-Sleep -Milliseconds 1000; oh-my-posh print primary --config '$themesPath\{}' --shell pwsh" `
         -PreviewWindow 'bottom:5' `
         -Ansi `
         -Header        'Select oh-my-posh theme  [Enter to apply for this session]' `
