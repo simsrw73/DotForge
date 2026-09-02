@@ -62,4 +62,10 @@ Describe 'winget.preview.ps1' {
         $result = & $script:ScriptPath -Id 'Nonsense.Package'
         $result | Should -Be @('some unexpected output', 'that matches nothing')
     }
+
+    It 'does not throw and produces sane output when winget show produces no output at all' {
+        Mock -CommandName winget -MockWith { }
+        { $script:Result = & $script:ScriptPath -Id 'Empty.Package' } | Should -Not -Throw
+        $script:Result | Should -Not -BeNullOrEmpty
+    }
 }

@@ -14,6 +14,7 @@ param(
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'Private/Format-DFPreviewSummary.ps1')
 
 $lines = @(& winget show --id $Id 2>$null)
+if ($lines.Count -eq 0) { $lines = @('(winget show produced no output)') }
 
 function Get-Field {
     param([string]$Pattern)
