@@ -63,8 +63,16 @@ Describe 'winget.preview.ps1' {
         $result | Should -Be @('some unexpected output', 'that matches nothing')
     }
 
+    It 'does not throw and produces sane output when winget show yields a single null/empty line' {
+        # `@(& winget ...)` wraps a lone $null/'' pipeline value into a 1-element array —
+        # the actual crash shape (Format-DFPreviewSummary's -Body binds as an empty string).
+        Mock -CommandName winget -MockWith { $null }
+        { $script:Result = & $script:ScriptPath -Id 'Empty.Package' } | Should -Not -Throw
+        $script:Result | Should -Not -BeNullOrEmpty
+    }
+
     It 'does not throw and produces sane output when winget show produces no output at all' {
-        Mock -CommandName winget -MockWith { }
+        Mock -CommandName winget -MockWith { @() }
         { $script:Result = & $script:ScriptPath -Id 'Empty.Package' } | Should -Not -Throw
         $script:Result | Should -Not -BeNullOrEmpty
     }
