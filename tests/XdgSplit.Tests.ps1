@@ -50,6 +50,7 @@ Describe 'env-block relocation preserves the migrated values' {
             '--border'
             '--cycle'
             '--height 50%'
+            "--with-shell='pwsh -NoProfile -Command'"
         ) -join "`n"
         $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
         $j.env.FZF_CTRL_T_OPTS  | Should -Be '--preview "bat --color=always --line-range=:500 {}"'
