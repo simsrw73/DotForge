@@ -38,9 +38,11 @@ if (Get-Command scoop-search -ErrorAction Ignore) {
 #   install/uninstall/update actions come from the Scoop module (object output,
 #   no `scoop list` table scraping). fzf --bind execute() runs in a cmd subshell
 #   that cannot call cmdlets, so the in-place keys use the `scoop` CLI.
-#   Previews are prefixed with `ping -n 2 127.0.0.1 >nul &` — a ~1s cmd sleep
-#   that debounces the preview: fzf kills the running preview command when the
-#   cursor moves, so scrolling fast never spawns `scoop info` for skipped items.
+#   Previews run through scoop.preview.ps1 (a summary block above the full
+#   `scoop info` output — see docs/external-dependencies.md), prefixed with
+#   `Start-Sleep -Milliseconds 1000;` to debounce: fzf kills the running preview
+#   command when the cursor moves, so scrolling fast never spawns the real
+#   command for skipped items.
 
 # Guard: the pickers need the Scoop module (Get-ScoopApp + *-ScoopApp actions).
 function global:Assert-DFScoopModule {
@@ -78,7 +80,7 @@ function global:Select-ScoopPackage {
         -List          { $items }.GetNewClosure() `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\scoop.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'scoop search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -113,7 +115,7 @@ function global:Remove-ScoopPackage {
         } `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\scoop.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'scoop uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -151,7 +153,7 @@ function global:Invoke-ScoopUpdate {
         -Delimiter     "`t" `
         -WithNth       '1' `
         -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\scoop.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'scoop update  [Tab=mark | Enter=update marked | Alt-A=update all]' `
         -Parse         { ($_ -split "`t")[1] } `
