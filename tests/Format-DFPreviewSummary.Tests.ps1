@@ -32,4 +32,22 @@ Describe 'Format-DFPreviewSummary' {
         $result = Format-DFPreviewSummary -Fields $fields -Body @()
         $result | Should -BeNullOrEmpty
     }
+
+    It 'does not throw when -Body contains a $null element, and preserves surrounding lines' {
+        $fields = [ordered]@{ Name = $null }
+        { $script:result = Format-DFPreviewSummary -Fields $fields -Body @('a', $null, 'b') } | Should -Not -Throw
+        $script:result | Should -Be @('a', ' ', 'b')
+    }
+
+    It 'does not throw when -Body contains an empty-string element, and preserves surrounding lines' {
+        $fields = [ordered]@{ Name = $null }
+        { $script:result = Format-DFPreviewSummary -Fields $fields -Body @('a', '', 'b') } | Should -Not -Throw
+        $script:result | Should -Be @('a', ' ', 'b')
+    }
+
+    It 'does not throw when -Body itself is $null, and treats it as an empty body' {
+        $fields = [ordered]@{ Name = $null }
+        { $script:result = Format-DFPreviewSummary -Fields $fields -Body $null } | Should -Not -Throw
+        $script:result | Should -BeNullOrEmpty
+    }
 }
