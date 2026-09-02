@@ -12,9 +12,11 @@
 # elevation; they run through the configured sudo alias when it is available
 # (see Invoke-DFChocoElevated).
 #
-# Previews are prefixed with `ping -n 2 127.0.0.1 >nul &` — a ~1s cmd sleep that
-# debounces the preview: fzf kills the running preview command when the cursor
-# moves, so scrolling fast never spawns `choco info` for skipped items.
+# Previews run through choco.preview.ps1 (a summary block above the full
+# `choco info` output — see docs/external-dependencies.md), prefixed with
+# `Start-Sleep -Milliseconds 1000;` to debounce: fzf kills the running preview
+# command when the cursor moves, so scrolling fast never spawns the real
+# command for skipped items.
 
 # Guard: choco must be on PATH.
 function global:Assert-DFChoco {
@@ -52,7 +54,7 @@ function global:Select-ChocoPackage {
         -List          { $items }.GetNewClosure() `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\choco.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'choco search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -92,7 +94,7 @@ function global:Remove-ChocoPackage {
         -List          { $items }.GetNewClosure() `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\choco.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'choco uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -132,7 +134,7 @@ function global:Invoke-ChocoUpdate {
         -Delimiter     "`t" `
         -WithNth       '1' `
         -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\choco.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'choco upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
         -Parse         { ($_ -split "`t")[1] } `
