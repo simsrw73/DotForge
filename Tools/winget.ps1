@@ -10,10 +10,11 @@
 # scraping). fzf's --preview and --bind execute() run in a cmd subshell that
 # cannot call cmdlets, so those steps use the `winget` CLI for display only.
 #
-# Previews are prefixed with `ping -n 2 127.0.0.1 >nul &` — a ~1s cmd sleep that
-# debounces the preview: fzf kills the running preview command when the cursor
-# moves, so scrolling fast never spawns `winget show` for skipped items; it only
-# runs once the cursor rests on one for ~1s.
+# Previews run through winget.preview.ps1 (a summary block above the full
+# `winget show` output — see docs/external-dependencies.md), prefixed with
+# `Start-Sleep -Milliseconds 1000;` to debounce: fzf kills the running preview
+# command when the cursor moves, so scrolling fast never spawns the real
+# command for skipped items; it only runs once the cursor rests on one for ~1s.
 
 # Guard: the pickers need the Microsoft.WinGet.Client module. Documented
 # dependency, so warn clearly (not silently) when it is missing.
@@ -42,7 +43,7 @@ function global:Select-WingetPackage {
         -List          { $items }.GetNewClosure() `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\winget.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'winget search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -88,7 +89,7 @@ function global:Remove-WingetPackage {
         -List          { $items }.GetNewClosure() `
         -Delimiter     "`t" `
         -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\winget.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'winget uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
         -Parse         { ($_ -split "`t")[1] } `
@@ -125,7 +126,7 @@ function global:Invoke-WingetUpdate {
         -Delimiter     "`t" `
         -WithNth       '1' `
         -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
+        -Preview       "Start-Sleep -Milliseconds 1000; & '$PSScriptRoot\winget.preview.ps1' {2}" `
         -PreviewWindow 'right:60%' `
         -Header        'winget upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
         -Parse         { ($_ -split "`t")[1] } `
