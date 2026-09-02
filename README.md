@@ -587,7 +587,8 @@ carapace spec (`Tools/carapace/specs/mdv.yaml`).
 
 **winget** (`Tools/winget.ps1`)
 
-Fuzzy package pickers with a live `winget show` preview pane. Each item carries
+Fuzzy package pickers with a live preview pane — a Name/Description/Version/
+Publisher/License/Homepage summary above the full `winget show` output. Each item carries
 a hidden id field, so filtering matches on name **or** id. Requires the
 [`Microsoft.WinGet.Client`](https://learn.microsoft.com/windows/package-manager/winget/)
 module (`Install-Module Microsoft.WinGet.Client -Scope CurrentUser`); the
@@ -621,7 +622,8 @@ support these workflows.
 
 **scoop** (`Tools/scoop.ps1`)
 
-The same picker set for scoop, with a `scoop info` preview. Search uses
+The same picker set for scoop, with a summary-above-full-output preview built
+on `scoop info` (no Publisher line — scoop has no equivalent field). Search uses
 [`scoop-search`](https://github.com/shilangyu/scoop-search) when present (fast;
 matches names **and** binaries), else the module's `Find-ScoopApp`. Requires the
 [`Scoop`](https://www.powershellgallery.com/packages/Scoop) module
@@ -637,7 +639,8 @@ install/uninstall/update actions.
 **choco** (`Tools/choco.json` + `Tools/choco.ps1`)
 
 The same picker set for Chocolatey, driven by choco's machine-readable `-r`
-output (no module exists). `choco info` preview. Install/uninstall/upgrade need
+output (no module exists). Summary-above-full-output preview built on `choco
+info` (no Publisher line). Install/uninstall/upgrade need
 elevation and run through [`gsudo`](https://github.com/gerardog/gsudo) when it is
 on PATH; otherwise `Enter` on the search picker returns the command to run in an
 elevated shell.

@@ -115,6 +115,17 @@ Two categories, and the difference matters:
 
 ---
 
+### 11. winget/scoop/choco: `show`/`info` field layout, and fzf's default preview shell
+
+| | |
+|---|---|
+| **What** | `winget show`, `scoop info`, and `choco info` are undocumented, unstable plain-text CLI output — no flag on any of the three reorders or selects fields. DotForge extracts a handful of fields (Name, Description, Version, a best-effort "last updated" date, Publisher where the tool has one, License, Homepage) from each with independent, isolated regexes and renders them as a summary block above the tool's full unmodified output. Reaching this text at all also depends on fzf's own undocumented Windows default: `cmd /s/c` runs `--preview`/`--bind execute()` commands unless `--with-shell` says otherwise (verified against fzf 0.74.3's man page) — `Tools/fzf.json` sets `--with-shell='pwsh -NoProfile -Command'` in `FZF_DEFAULT_OPTS` so those commands run under PowerShell instead. |
+| **Where** | `Tools/winget.preview.ps1`, `Tools/scoop.preview.ps1`, `Tools/choco.preview.ps1`, `Private/Format-DFPreviewSummary.ps1`, `Tools/fzf.json` |
+| **Why** | Each field is pulled independently — rather than parsing the whole document generically — specifically because `choco info`'s layout is irregular enough to make generic parsing unsafe: every line carries a uniform one-space indent (no top-level-vs-continuation signal), some lines pack two fields on one line, and some lines contain a colon incidentally as part of an embedded URL with no real `Key:` prefix (`Package url https://...`) — a naive "split on first colon" parser would misread that as a field named "Package url https". |
+| **If it changes** | A single field's regex not matching just omits that field from the summary block — never a guess, never a misparse. If every field's regex misses (the tool changed its output format upstream), the affected preview script falls back to the tool's plain, unmodified output — no summary block, no error. If fzf's Windows default shell ever stops being `cmd` when `--with-shell`/`$SHELL` are unset, the explicit `--with-shell` setting in `FZF_DEFAULT_OPTS` is unaffected either way, since it never relies on that default. |
+
+---
+
 ## Documented but load-bearing
 
 These are public API. They are listed because DotForge visibly misbehaves if they change.

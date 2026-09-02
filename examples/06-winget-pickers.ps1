@@ -1,7 +1,8 @@
 # 06 — winget fuzzy pickers (wins / wrm / wup)
 #
 # Interactive winget workflows built on Invoke-DFPicker + fzf, with a live
-# `winget show` preview pane. Package data comes from the Microsoft.WinGet.Client
+# preview pane (Name/Description/Version/Publisher/License/Homepage summary
+# above the full `winget show` output). Package data comes from the Microsoft.WinGet.Client
 # module (objects, not scraped CLI tables), so filtering matches name OR id.
 #
 # Requires:
@@ -15,7 +16,7 @@ Initialize-DFEnvironment
 Register-DFTool -Name winget    # registers wins / wrm / wup (or use -All)
 
 # ── Search → install ────────────────────────────────────────────────────────
-# Each row shows Name / Id / Version; the preview pane runs `winget show`.
+# Each row shows Name / Id / Version; the preview pane summarizes then shows the full `winget show` output.
 #   Enter  → returns the install command string (review / edit / run / pipe it)
 #   Alt-R  → installs the selected package now
 #   Alt-I  → installs the highlighted package in place, WITHOUT leaving fzf,

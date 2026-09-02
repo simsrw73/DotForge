@@ -24,6 +24,14 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`wins`/`sins`/`cins` (and `wrm`/`srm`/`crm`, `wup`/`sup`/`cup`) fzf previews now
+  lead with a Name/Description/Version/Publisher/License/Homepage summary block**
+  (plus a best-effort last-updated date), above the tool's full `winget
+  show`/`scoop info`/`choco info` output — previously the raw CLI output, field
+  order dictated entirely by the tool itself. Also switches fzf's default preview
+  shell from `cmd` to `pwsh` (`Tools/fzf.json`'s `FZF_DEFAULT_OPTS`), which as a
+  side effect fixes a latent quoting bug in the `fpot` (oh-my-posh theme picker)
+  preview for theme paths containing spaces.
 - **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
   (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
   `Copy-DFToClipboard` needs to switch to `yank`.

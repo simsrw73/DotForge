@@ -1,7 +1,8 @@
 # 07 — scoop & choco fuzzy pickers
 #
 # The same picker workflow as the winget set (see 06-winget-pickers.ps1),
-# applied to scoop and Chocolatey. Each has a live `<pm> info` preview pane and
+# applied to scoop and Chocolatey. Each has a live preview pane (a summary
+# block above the full `<pm> info` output) and
 # the same keys: Enter (command / act), Alt-R install, Alt-I/Alt-X in place,
 # Alt-C command, Tab + Alt-A for bulk update.
 #
