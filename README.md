@@ -585,6 +585,14 @@ carapace spec (`Tools/carapace/specs/mdv.yaml`).
 | `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
 | `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
+`Tools/psreadline.json`'s `keyHandlers` array declares extra `Set-PSReadLineKeyHandler`
+bindings applied on top of the `editMode` default. Out of the box this adds
+home-row selection chords that Emacs mode doesn't bind by default — `Ctrl+Shift+F`/`B`
+(select char forward/backward) and `Ctrl+Shift+E`/`A` (select to end/start of line),
+mirroring the existing `Ctrl+F`/`B`/`E`/`A` movement chords the way `Alt+Shift+F`
+already mirrors `Alt+F` for word selection. Each entry is `{ "chord": "...", "function": "..." }`;
+an unresolvable `chord`/`function` pair warns and is skipped rather than failing registration.
+
 **winget** (`Tools/winget.ps1`)
 
 Fuzzy package pickers with a live preview pane — a Name/Description/Version/

@@ -171,4 +171,53 @@ Describe 'psreadline tool sidecar' {
         } else { $global:DFPSReadLineColors['Command'] }
         $colors | Should -Match '0;0;255'
     }
+
+    It 'applies the home-row selection key handlers declared in tool JSON' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $bound = Get-PSReadLineKeyHandler -Bound
+        ($bound | Where-Object { $_.Key -ceq 'Ctrl+F' }).Function | Should -Be 'SelectForwardChar'
+        ($bound | Where-Object { $_.Key -ceq 'Ctrl+B' }).Function | Should -Be 'SelectBackwardChar'
+        ($bound | Where-Object { $_.Key -ceq 'Ctrl+E' }).Function | Should -Be 'SelectLine'
+        ($bound | Where-Object { $_.Key -ceq 'Ctrl+A' }).Function | Should -Be 'SelectBackwardsLine'
+    }
+
+    It 'warns and continues on a keyHandlers entry missing chord or function' {
+        $tmpTools = Join-Path $TestDrive 'tools-badkeyhandler'
+        New-Item -ItemType Directory -Force -Path $tmpTools | Out-Null
+        @'
+{
+  "name": "psreadline",
+  "type": "module",
+  "executable": "PSReadLine",
+  "xdg": { "compliance": "none", "method": "default" },
+  "keyHandlers": [ { "chord": "Ctrl+Shift+q" } ],
+  "aliases": {}
+}
+'@ | Set-Content (Join-Path $tmpTools 'psreadline.json')
+        Copy-Item (Join-Path $script:RealTools 'psreadline.ps1') $tmpTools
+
+        $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $tmpTools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+        $warnings | Where-Object { $_ -match "missing 'chord' or 'function'" } | Should -Not -BeNullOrEmpty
+    }
+
+    It 'warns and continues when Set-PSReadLineKeyHandler rejects a keyHandlers entry' {
+        $tmpTools = Join-Path $TestDrive 'tools-invalidkeyhandler'
+        New-Item -ItemType Directory -Force -Path $tmpTools | Out-Null
+        @'
+{
+  "name": "psreadline",
+  "type": "module",
+  "executable": "PSReadLine",
+  "xdg": { "compliance": "none", "method": "default" },
+  "keyHandlers": [ { "chord": "Ctrl+Shift+q", "function": "NotARealFunction" } ],
+  "aliases": {}
+}
+'@ | Set-Content (Join-Path $tmpTools 'psreadline.json')
+        Copy-Item (Join-Path $script:RealTools 'psreadline.ps1') $tmpTools
+
+        $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $tmpTools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+        $warnings | Where-Object { $_ -match 'key handler' } | Should -Not -BeNullOrEmpty
+    }
 }

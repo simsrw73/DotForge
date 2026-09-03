@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Tools/psreadline.json` declarative `keyHandlers`.** A `{ "chord", "function" }` array
+  applied via `Set-PSReadLineKeyHandler` after the tool's `settings` (so it can extend or
+  override the `editMode` default); an entry with an unresolvable chord/function warns and
+  is skipped rather than failing registration. Ships with home-row selection chords Emacs
+  mode doesn't bind by default — `Ctrl+Shift+F`/`B` (select char forward/backward) and
+  `Ctrl+Shift+E`/`A` (select to end/start of line) — mirroring the existing `Ctrl+F`/`B`/`E`/`A`
+  movement chords the way `Alt+Shift+F` already mirrors `Alt+F` for word selection.
+
 - **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a
   `role` (e.g. `"listing"`); `$DFConfig.Defaults = @{ listing = 'eza' }` names the winner, and
   `Register-DFTool` suppresses only the alias keys a role LOSER shares with the winner — every

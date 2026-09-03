@@ -55,7 +55,25 @@ if ($_settings) {
     }
 }
 
-# 2. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
+# 2. Apply key handlers from tool JSON
+$_keyHandlers = $DFCurrentTool.PSObject.Properties['keyHandlers']?.Value
+if ($_keyHandlers) {
+    foreach ($_kh in $_keyHandlers) {
+        $_chord    = $_kh.PSObject.Properties['chord']?.Value
+        $_function = $_kh.PSObject.Properties['function']?.Value
+        if (-not $_chord -or -not $_function) {
+            Write-Warning "DotForge: psreadline keyHandlers entry missing 'chord' or 'function' — skipping"
+            continue
+        }
+        try {
+            Set-PSReadLineKeyHandler -Chord $_chord -Function $_function -ErrorAction Stop
+        } catch {
+            Write-Warning "DotForge: PSReadLine key handler '$_chord' -> '$_function' failed — $($_.Exception.Message)"
+        }
+    }
+}
+
+# 3. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
 
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
@@ -102,12 +120,12 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
+# 4. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'dark'
 $_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
-# 4. Register theme picker
+# 5. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({
     [CmdletBinding()]
     param()

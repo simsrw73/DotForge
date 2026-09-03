@@ -14,6 +14,12 @@
     "historyNoDuplicates": true,
     "historySaveStyle":    "SaveIncrementally"
   },
+  "keyHandlers": [
+    { "chord": "Ctrl+Shift+f", "function": "SelectForwardChar" },
+    { "chord": "Ctrl+Shift+b", "function": "SelectBackwardChar" },
+    { "chord": "Ctrl+Shift+e", "function": "SelectLine" },
+    { "chord": "Ctrl+Shift+a", "function": "SelectBackwardsLine" }
+  ],
   "aliases": {},
   "picker": "custom"
 }
