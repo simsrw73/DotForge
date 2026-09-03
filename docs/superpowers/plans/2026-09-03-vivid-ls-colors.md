@@ -480,13 +480,12 @@ Replace with:
 In `README.md`, find the boundary between the `psreadline` subsection and the `winget` header:
 
 ```markdown
-`Tools/psreadline.json`'s `keyHandlers` array declares extra `Set-PSReadLineKeyHandler`
-bindings applied on top of the `editMode` default. Out of the box this adds
-home-row selection chords that Emacs mode doesn't bind by default — `Ctrl+Shift+F`/`B`
-(select char forward/backward) and `Ctrl+Shift+E`/`A` (select to end/start of line),
-mirroring the existing `Ctrl+F`/`B`/`E`/`A` movement chords the way `Alt+Shift+F`
-already mirrors `Alt+F` for word selection. Each entry is `{ "chord": "...", "function": "..." }`;
-an unresolvable `chord`/`function` pair warns and is skipped rather than failing registration.
+**psreadline** (`Tools/psreadline.ps1`)
+
+| Function / Alias                              | Purpose                                          |
+| --------------------------------------------- | ------------------------------------------------ |
+| `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
+| `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
 **winget** (`Tools/winget.ps1`)
 ```
@@ -494,13 +493,12 @@ an unresolvable `chord`/`function` pair warns and is skipped rather than failing
 Insert a new subsection between them, so the result reads:
 
 ```markdown
-`Tools/psreadline.json`'s `keyHandlers` array declares extra `Set-PSReadLineKeyHandler`
-bindings applied on top of the `editMode` default. Out of the box this adds
-home-row selection chords that Emacs mode doesn't bind by default — `Ctrl+Shift+F`/`B`
-(select char forward/backward) and `Ctrl+Shift+E`/`A` (select to end/start of line),
-mirroring the existing `Ctrl+F`/`B`/`E`/`A` movement chords the way `Alt+Shift+F`
-already mirrors `Alt+F` for word selection. Each entry is `{ "chord": "...", "function": "..." }`;
-an unresolvable `chord`/`function` pair warns and is skipped rather than failing registration.
+**psreadline** (`Tools/psreadline.ps1`)
+
+| Function / Alias                              | Purpose                                          |
+| --------------------------------------------- | ------------------------------------------------ |
+| `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
+| `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
 
 **vivid** (`Tools/vivid.ps1`)
 
@@ -550,7 +548,7 @@ In `CHANGELOG.md`, find:
 
 ### Added
 
-- **`Tools/psreadline.json` declarative `keyHandlers`.**
+- **`$DFConfig.Defaults`-driven default-tool role resolution.**
 ```
 
 Replace with:
@@ -570,7 +568,7 @@ Replace with:
   Ships a live picker, `Select-LSColorsTheme` / `fls`, mirroring psreadline's
   `fprl`, with a `vivid preview {}` swatch per theme in the fzf preview pane.
 
-- **`Tools/psreadline.json` declarative `keyHandlers`.**
+- **`$DFConfig.Defaults`-driven default-tool role resolution.**
 ```
 
 - [ ] **Step 6: Run the full suite one more time**
