@@ -20,21 +20,29 @@ param(
 
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'Private/Format-DFPreviewSummary.ps1')
 
-$lines    = @(& choco info $Id 2>$null)
-# Format-DFPreviewSummary's -Body crashes on a degenerate single-null/empty-element
-# array (e.g. `choco info` returning $null, which `@(...)` wraps as @($null)) — guard
-# against that shape before any field extraction.
+# Wrapped in a function (rather than calling `& choco info $Id` inline) so tests
+# can mock it without requiring choco to actually be installed. Pester's Mock
+# needs the target command to already exist, so `Mock -CommandName choco` fails
+# with a CommandNotFoundException on a machine/CI runner without choco on PATH —
+# even though choco is a real .exe (CommandType Application) that Pester _can_
+# mock directly where it is installed. Mocking this wrapper instead works
+# everywhere, matching Tools/winget.preview.ps1's Invoke-DFWingetShow and
+# Tools/scoop.preview.ps1's Invoke-DFScoopInfo.
+function Invoke-DFChocoInfo {
+    param([string]$Id)
+    & choco info $Id 2>$null
+}
+
+$lines = @(Invoke-DFChocoInfo -Id $Id)
+# Guard against choco info returning nothing recognizable (e.g. $null, which
+# `@(...)` wraps as a single-element array) before any field extraction.
 if (-not ($lines -join '').Trim()) { $lines = @('(choco info produced no output)') }
-# Beyond that degenerate case, PowerShell's parameter binder also rejects a
-# *non*-degenerate array that merely contains a null/empty-string element anywhere
-# in it (Mandatory [string[]] treats any such element as "argument not provided"),
-# and real `choco info` output routinely includes blank lines (e.g. the separator
-# line before the trailing "N packages found." line). Normalize those to a single
-# space so the multi-element array can still bind to -Body below.
-$lines = $lines | ForEach-Object { if ([string]::IsNullOrEmpty($_)) { ' ' } else { $_ } }
 # Every real field line carries exactly one leading space; strip it so field
 # patterns can anchor at column 0. A no-op on lines that have no leading space
-# (the banner and header lines).
+# (the banner and header lines). Format-DFPreviewSummary normalizes any null/
+# empty-string element in $lines itself, so no local guard is needed here for
+# that shape (real `choco info` output routinely includes blank lines, e.g. the
+# separator before the trailing "N packages found." line).
 $stripped = $lines | ForEach-Object { $_ -replace '^ ', '' }
 
 function Get-Field {

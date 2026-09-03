@@ -1,5 +1,15 @@
 BeforeAll {
     $script:ScriptPath = Join-Path $PSScriptRoot '../Tools/choco.preview.ps1'
+    # Pester's Mock needs a command to already exist before it can attach an
+    # interception to it — Invoke-DFChocoInfo's real definition lives inside
+    # Tools/choco.preview.ps1 itself and is only defined when that standalone
+    # script actually runs. This throwaway stand-in exists purely so
+    # `Mock -CommandName Invoke-DFChocoInfo` below has something to grab onto;
+    # once Mock has intercepted the name, its replacement wins even inside the
+    # separately-`&`-invoked script, which defines its own "real"
+    # Invoke-DFChocoInfo locally when it runs. Same pattern as
+    # tests/scoop.preview.Tests.ps1's Invoke-DFScoopInfo stand-in.
+    function Invoke-DFChocoInfo { param([string]$Id) }
     # Real `choco info nodejs` output, captured during design (the leading
     # "Chocolatey vX.Y.Z" banner line is real — choco always prints it first).
     $script:NodeFixture = @(
@@ -34,7 +44,7 @@ Describe 'choco.preview.ps1' {
         # (confirmed during Task 3 — Pester 6.1.0 behavior). A local closure variable
         # works correctly.
         $fixture = $script:NodeFixture
-        Mock -CommandName choco -MockWith { $fixture }
+        Mock -CommandName Invoke-DFChocoInfo -MockWith { $fixture }
         $result = & $script:ScriptPath -Id 'nodejs'
 
         $result[0] | Should -Be 'Name: nodejs'
@@ -50,14 +60,14 @@ Describe 'choco.preview.ps1' {
 
     It 'skips the leading "Chocolatey vX.Y.Z" banner line and finds the real header' {
         $fixture = $script:NodeFixture
-        Mock -CommandName choco -MockWith { $fixture }
+        Mock -CommandName Invoke-DFChocoInfo -MockWith { $fixture }
         $result = & $script:ScriptPath -Id 'nodejs'
         ($result -join "`n") | Should -Not -Match 'Name: Chocolatey'
     }
 
     It 'does not misparse an embedded URL as a field ("Package url https://...")' {
         $fixture = $script:NodeFixture
-        Mock -CommandName choco -MockWith { $fixture }
+        Mock -CommandName Invoke-DFChocoInfo -MockWith { $fixture }
         $result = & $script:ScriptPath -Id 'nodejs'
         # Scoped to the summary block (indices 0-7: the six fields, the blank line,
         # and the separator) rather than the whole $result — the raw, unmodified
@@ -71,13 +81,13 @@ Describe 'choco.preview.ps1' {
     }
 
     It 'falls back to plain output when choco info returns nothing recognizable' {
-        Mock -CommandName choco -MockWith { @('some unexpected output') }
+        Mock -CommandName Invoke-DFChocoInfo -MockWith { @('some unexpected output') }
         $result = & $script:ScriptPath -Id 'nonsense'
         $result | Should -Be @('some unexpected output')
     }
 
     It 'does not throw and produces non-empty output when choco info returns $null' {
-        Mock -CommandName choco -MockWith { $null }
+        Mock -CommandName Invoke-DFChocoInfo -MockWith { $null }
         { $script:NullResult = & $script:ScriptPath -Id 'nonsense' } | Should -Not -Throw
         $script:NullResult | Should -Not -BeNullOrEmpty
     }

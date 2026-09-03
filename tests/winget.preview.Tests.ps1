@@ -1,5 +1,15 @@
 BeforeAll {
     $script:ScriptPath = Join-Path $PSScriptRoot '../Tools/winget.preview.ps1'
+    # Pester's Mock needs a command to already exist before it can attach an
+    # interception to it — Invoke-DFWingetShow's real definition lives inside
+    # Tools/winget.preview.ps1 itself and is only defined when that standalone
+    # script actually runs. This throwaway stand-in exists purely so
+    # `Mock -CommandName Invoke-DFWingetShow` below has something to grab onto;
+    # once Mock has intercepted the name, its replacement wins even inside the
+    # separately-`&`-invoked script, which defines its own "real"
+    # Invoke-DFWingetShow locally when it runs. Same pattern as
+    # tests/scoop.preview.Tests.ps1's Invoke-DFScoopInfo stand-in.
+    function Invoke-DFWingetShow { param([string]$Id) }
     # Real `winget show --id Git.Git` output, captured during design.
     $script:GitFixture = @(
         'Found Git [Git.Git]'
@@ -35,7 +45,7 @@ BeforeAll {
 Describe 'winget.preview.ps1' {
     It 'builds a Name/Description/Version/Last Updated/Publisher/License/Homepage summary above the full output' {
         $fixture = $script:GitFixture
-        Mock -CommandName winget -MockWith { $fixture }
+        Mock -CommandName Invoke-DFWingetShow -MockWith { $fixture }
         $result = & $script:ScriptPath -Id 'Git.Git'
 
         $result[0] | Should -Be 'Name: Git'
@@ -52,27 +62,27 @@ Describe 'winget.preview.ps1' {
 
     It 'omits Last Updated when no Release Date line is present' {
         $fixture = $script:GitFixture | Where-Object { $_ -notmatch 'Release Date' }
-        Mock -CommandName winget -MockWith { $fixture }
+        Mock -CommandName Invoke-DFWingetShow -MockWith { $fixture }
         $result = & $script:ScriptPath -Id 'Git.Git'
         ($result -join "`n") | Should -Not -Match 'Last Updated'
     }
 
     It 'falls back to plain output when winget show returns nothing recognizable' {
-        Mock -CommandName winget -MockWith { @('some unexpected output', 'that matches nothing') }
+        Mock -CommandName Invoke-DFWingetShow -MockWith { @('some unexpected output', 'that matches nothing') }
         $result = & $script:ScriptPath -Id 'Nonsense.Package'
         $result | Should -Be @('some unexpected output', 'that matches nothing')
     }
 
     It 'does not throw and produces sane output when winget show yields a single null/empty line' {
-        # `@(& winget ...)` wraps a lone $null/'' pipeline value into a 1-element array —
+        # `@(Invoke-DFWingetShow ...)` wraps a lone $null/'' pipeline value into a 1-element array —
         # the actual crash shape (Format-DFPreviewSummary's -Body binds as an empty string).
-        Mock -CommandName winget -MockWith { $null }
+        Mock -CommandName Invoke-DFWingetShow -MockWith { $null }
         { $script:Result = & $script:ScriptPath -Id 'Empty.Package' } | Should -Not -Throw
         $script:Result | Should -Not -BeNullOrEmpty
     }
 
     It 'does not throw and produces sane output when winget show produces no output at all' {
-        Mock -CommandName winget -MockWith { @() }
+        Mock -CommandName Invoke-DFWingetShow -MockWith { @() }
         { $script:Result = & $script:ScriptPath -Id 'Empty.Package' } | Should -Not -Throw
         $script:Result | Should -Not -BeNullOrEmpty
     }

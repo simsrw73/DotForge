@@ -13,7 +13,21 @@ param(
 
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'Private/Format-DFPreviewSummary.ps1')
 
-$lines = @(& winget show --id $Id 2>$null)
+# Wrapped in a function (rather than calling `& winget show --id $Id` inline) so
+# tests can mock it without requiring winget to actually be installed. Pester's
+# Mock needs the target command to already exist, so `Mock -CommandName winget`
+# fails with a CommandNotFoundException on a machine/CI runner without winget on
+# PATH — even though winget is a real .exe (CommandType Application) that Pester
+# _can_ mock directly where it is installed. Mocking this wrapper instead works
+# everywhere. Mirrors Tools/scoop.preview.ps1's Invoke-DFScoopInfo wrapper (that
+# one exists for a different reason — scoop is a .ps1 shim Pester cannot shadow
+# at all — but the fix is the same: never mock the bare external command).
+function Invoke-DFWingetShow {
+    param([string]$Id)
+    & winget show --id $Id 2>$null
+}
+
+$lines = @(Invoke-DFWingetShow -Id $Id)
 if (-not ($lines -join '').Trim()) { $lines = @('(winget show produced no output)') }
 
 function Get-Field {
