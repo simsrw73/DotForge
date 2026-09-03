@@ -26,11 +26,19 @@ Describe 'Tools/vivid.json' {
         $script:VividJson.xdg.method | Should -Be 'default'
     }
 
+    It 'declares scoop and winget package ids, and no choco' {
+        $script:VividJson.packages.scoop  | Should -Be 'vivid'
+        $script:VividJson.packages.winget | Should -Be 'sharkdp.vivid'
+        $script:VividJson.packages.PSObject.Properties.Name | Should -Not -Contain 'choco'
+    }
 
     It 'defaults the theme setting to catppuccin-mocha' {
         $script:VividJson.settings.theme | Should -Be 'catppuccin-mocha'
     }
 
+    It 'declares no picker yet (Task 2 adds the fls picker)' {
+        $script:VividJson.picker | Should -Be $null
+    }
 }
 
 Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ignore)) {
