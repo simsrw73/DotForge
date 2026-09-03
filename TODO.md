@@ -28,6 +28,13 @@
 
 ## Priority 2 — Review Follow-ups
 
+- [ ] **`Get-DFCategoryDb.Tests.ps1` fixture-isolation bug (found 2026-09-03)** — 9 of the
+  file's tests fail on a clean checkout (`docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`'s
+  baseline check): `Get-DFCategoryDb`'s module-level singleton cache appears to leak the real
+  shipped `data/tool-categories.json` (~25k tools, e.g. `RipGrep GNU`/`EverythingCmdPal` show up)
+  into a test expecting a small designated fixture (plain `ripgrep`, `fd`, a handful of facets).
+  Likely a `-Force`/cache-reset ordering gap between `Describe` blocks in that file. Unrelated to
+  any theming work; needs its own investigation.
 - [x] **Port `Initialize-DFCompletionStack.Tests.ps1` to Pester 6** — done 2026-07-24. Its 11 `Assert-MockCalled` calls (removed in Pester 6.0.1) are now `Should -Invoke`; the four "never called" checks use `-Times 0 -Exactly` so they stay meaningful under Pester 6 (plain `-Times 0` is "at least 0" there = vacuous). The full suite is now **899/0 under both Pester 5.8.0 and 6.0.1** — the `-RequiredVersion 5.8.0` pin is no longer needed.
 - [ ] **Path-normalization follow-ups** — from the `ConvertTo-DFPath` branch review (2026-07-24): (a) add a shared test bootstrap that dot-sources the `Private/` dependency graph so a new low-level dependency doesn't require adding its dot-source to every consumer-sourcing test file; (b) strengthen the `Register-DFTool` ToolsPath test to exercise a sidecar load via a `..`-bearing `-ToolsPath` (currently re-tests `ConvertTo-DFPath` directly); (c) resolve `$ToolsPath` once *before* `Import-DFToolDb` in `Register-DFTool` to remove the raw-vs-resolved asymmetry; (d) tests are Windows-only (`C:\` literals) — the macOS/Linux goal is unverified by CI though the runtime code is separator-agnostic.
 - [x] **Stop force-creating global aliases at import time** — done 2026-07-31: all 27 general-helper
