@@ -26,6 +26,9 @@
 **Files:**
 - Create: `Tools/vivid.json`
 - Create: `Tools/vivid.ps1`
+- Modify: `build/categories/dotforge-curated.jsonc` (adds a `vivid` entry)
+- Modify: `data/tool-categories.json` (regenerated via `build/Build-DFCategoryDb.ps1`, not hand-edited)
+- Modify: `data/tool-identities.json` (regenerated via `build/Build-DFToolIdentities.ps1`, not hand-edited)
 - Test: `tests/vivid.Tests.ps1`
 
 **Interfaces:**
@@ -75,8 +78,8 @@ Describe 'Tools/vivid.json' {
         $script:VividJson.settings.theme | Should -Be 'catppuccin-mocha'
     }
 
-    It 'declares a custom picker' {
-        $script:VividJson.picker | Should -Be 'custom'
+    It 'declares no picker yet (Task 2 adds the fls picker)' {
+        $script:VividJson.picker | Should -Be $null
     }
 }
 
@@ -189,9 +192,38 @@ Expected: FAIL — `Tools/vivid.json` does not exist yet, so the `Describe 'Tool
   "xdg": { "compliance": "none", "method": "default" },
   "settings": { "theme": "catppuccin-mocha" },
   "aliases": {},
-  "picker": "custom"
+  "picker": null
 }
 ```
+
+`picker` is `null`, not `"custom"`, because Task 1's sidecar doesn't build a picker yet — `tests/Tools.PickerDeclaration.Tests.ps1` enforces that `"custom"` is only declared once a sidecar actually calls `Invoke-DFPicker` (Task 2 flips this to `"custom"` when it adds the picker).
+
+- [ ] **Step 3b: Register vivid in the generated category/identity data files**
+
+Adding a curated tool with a `packages` block trips two existing consistency tests that check the shipped, generated data files against `Tools/*.json`:
+- `the shipped data/tool-categories.json.contains every tool curated in Tools/*.json`
+- `the shipped data/tool-identities.json.contains every tool that has a packages block in Tools/*.json`
+
+Add an entry to `build/categories/dotforge-curated.jsonc` (alphabetically, between `uv` and `wget`):
+
+```jsonc
+  "vivid": {
+    "function": ["shell-enhancement"], "worksWith": ["filesystem"], "interface": "cli",
+    "ids": { "scoop": "vivid", "winget": "sharkdp.vivid" },
+    "relatedTo": ["eza", "lsd"], "popularity": 1
+  },
+```
+
+(`shell-enhancement` matches `Terminal-Icons`'s categorization — the closest existing analog: both add visual richness to directory listings rather than managing files themselves. `"function"`/`"worksWith"` values must come from the closed vocabulary in `build/categories/taxonomy.jsonc`.)
+
+Then regenerate both generated files:
+
+```powershell
+./build/Build-DFCategoryDb.ps1
+./build/Build-DFToolIdentities.ps1
+```
+
+The second command does live network resolution for any tool not already cached (only `vivid` here) to verify its `packages` ids against its real repository — expect it to resolve `vivid` to `https://github.com/sharkdp/vivid` (`"linkedVia": "repo"`). Confirm both diffs are small and targeted (just the `"updated"` date bump plus the new `vivid` entry) before moving on — a much larger diff means something matched or regenerated unexpectedly.
 
 - [ ] **Step 4: Create `Tools/vivid.ps1`**
 
@@ -282,6 +314,7 @@ Claude-Session: https://claude.ai/code/session_01KjTXV8CBbqnMmRTZspmhfs"
 ### Task 2: Live picker — `Select-LSColorsTheme` / `fls`
 
 **Files:**
+- Modify: `Tools/vivid.json` (flips `"picker"` from `null` to `"custom"` — Task 1 shipped `null` since no sidecar picker existed yet; `tests/Tools.PickerDeclaration.Tests.ps1` requires the JSON and the sidecar to agree)
 - Modify: `Tools/vivid.ps1`
 - Test: `tests/vivid.Tests.ps1`
 
@@ -319,13 +352,25 @@ Add to the `Describe 'vivid tool sidecar'` block in `tests/vivid.Tests.ps1` (aft
 
 (This replaces the existing `AfterEach` block from Task 1 with the version above — the only change is the two added `Remove-Item`/`Remove-Alias` lines.)
 
+Also update the `Describe 'Tools/vivid.json'` block's picker test (Task 1 asserted `$null`; it's `"custom"` from this task on):
+
+```powershell
+    It 'declares a custom picker' {
+        $script:VividJson.picker | Should -Be 'custom'
+    }
+```
+
+(Replaces Task 1's `'declares no picker yet (Task 2 adds the fls picker)'` test.)
+
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run: `pwsh -NoProfile -Command "Invoke-Pester tests/vivid.Tests.ps1 -Output Detailed"`
 
-Expected: FAIL on the two new tests — `Select-LSColorsTheme` and `fls` don't exist yet.
+Expected: FAIL on three tests — the picker test (JSON still says `null`), and `Select-LSColorsTheme`/`fls` don't exist yet.
 
-- [ ] **Step 3: Add the picker to `Tools/vivid.ps1`**
+- [ ] **Step 3: Flip `Tools/vivid.json`'s picker field, and add the picker to `Tools/vivid.ps1`**
+
+In `Tools/vivid.json`, change `"picker": null` to `"picker": "custom"`.
 
 Append to the end of `Tools/vivid.ps1` (after the `Invoke-DFApplyLSColorsTheme -Name $_theme` line from Task 1):
 
