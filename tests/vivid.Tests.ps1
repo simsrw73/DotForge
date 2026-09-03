@@ -36,8 +36,8 @@ Describe 'Tools/vivid.json' {
         $script:VividJson.settings.theme | Should -Be 'catppuccin-mocha'
     }
 
-    It 'declares no picker yet (Task 2 adds the fls picker)' {
-        $script:VividJson.picker | Should -Be $null
+    It 'declares a custom picker' {
+        $script:VividJson.picker | Should -Be 'custom'
     }
 }
 
@@ -61,6 +61,8 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         [System.Environment]::SetEnvironmentVariable('LS_COLORS', $null, 'Process')
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Remove-Item 'function:global:Invoke-DFApplyLSColorsTheme' -ErrorAction Ignore
+        Remove-Item 'function:global:Select-LSColorsTheme' -ErrorAction Ignore
+        Remove-Alias fls -Scope Global -Force -ErrorAction Ignore
     }
 
     It 'sets LS_COLORS to vivid catppuccin-mocha output by default' {
@@ -72,6 +74,16 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
     It 'registers Invoke-DFApplyLSColorsTheme as a global function' {
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         Test-Path 'function:global:Invoke-DFApplyLSColorsTheme' | Should -BeTrue
+    }
+
+    It 'registers Select-LSColorsTheme as a global function' {
+        Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
+        Test-Path 'function:global:Select-LSColorsTheme' | Should -BeTrue
+    }
+
+    It 'registers fls as an alias for Select-LSColorsTheme' {
+        Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
+        Get-Alias fls -ErrorAction Ignore | Should -Not -BeNullOrEmpty
     }
 
     It 'caches the generated value and reuses it for a matching theme name' {

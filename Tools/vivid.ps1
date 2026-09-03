@@ -50,3 +50,22 @@ $_theme    = Get-DFConfiguredTheme -ToolKey 'VividTheme' -Default $_default
 $_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 
 Invoke-DFApplyLSColorsTheme -Name $_theme
+
+# Live picker: list vivid's own themes, preview each via `vivid preview`,
+# apply the chosen one immediately (same cache/apply path as registration).
+Set-Item -Path 'function:global:Select-LSColorsTheme' -Value ({
+    [CmdletBinding()]
+    param()
+
+    Invoke-DFPicker `
+        -List    { vivid themes } `
+        -Header  'Select LS_COLORS theme  [Enter to apply for this session]' `
+        -Preview 'vivid preview {}' `
+        -Ansi `
+        -Action  {
+            param($n)
+            Invoke-DFApplyLSColorsTheme -Name $n
+            Write-Host "Theme applied: $n  (to persist: set `$Global:DFConfig['VividTheme'] = '$n')" -ForegroundColor Green
+        }
+}.GetNewClosure())
+Set-Alias -Name fls -Value Select-LSColorsTheme -Scope Global -Force
