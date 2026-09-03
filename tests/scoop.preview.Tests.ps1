@@ -81,3 +81,35 @@ Describe 'scoop.preview.ps1' {
         $script:Result | Should -Not -BeNullOrEmpty
     }
 }
+
+Describe 'Invoke-DFScoopInfo (real, unmocked)' {
+    # This is the contract test the mock-the-wrapper pattern above needs: every
+    # other test in this file mocks Invoke-DFScoopInfo's return value directly,
+    # so nothing else in the suite ever exercises its actual body (`& scoop info
+    # $Name 2>$null | Out-String -Stream`). That real body is exactly what broke
+    # in production — `scoop` resolves to a .ps1 shim, and `& scoop info <name>`
+    # on its own returns a single [pscustomobject] rather than text lines, which
+    # silently stringifies to '' and made every real preview render as
+    # "(scoop info produced no output)". Out-String -Stream is the fix; this
+    # test asserts its actual, unmocked effect: every returned element is a
+    # real string, never a [pscustomobject] or any other type.
+    It 'returns string elements (not objects) for a real, installed package' -Skip:(-not (Get-Command scoop -ErrorAction Ignore)) {
+        # Dot-source the script's real Invoke-DFScoopInfo definition in isolation
+        # (rather than running the whole script, which would also need a real
+        # -Name that resolves to output). `scoop info` resolves against bucket
+        # manifests, not just installed apps, so a widely-available package name
+        # like 'git' (main bucket) works whether or not it's actually installed
+        # on this box.
+        $scriptText = Get-Content (Join-Path $PSScriptRoot '../Tools/scoop.preview.ps1') -Raw
+        if ($scriptText -notmatch '(?s)function Invoke-DFScoopInfo \{.*?\n\}') {
+            throw 'Could not locate Invoke-DFScoopInfo in Tools/scoop.preview.ps1 to extract for a real-execution test.'
+        }
+        . ([scriptblock]::Create($Matches[0]))
+
+        $realLines = @(Invoke-DFScoopInfo -Name 'git')
+        $realLines | Should -Not -BeNullOrEmpty
+        foreach ($line in $realLines) {
+            $line | Should -BeOfType ([string])
+        }
+    }
+}
