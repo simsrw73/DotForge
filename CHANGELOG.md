@@ -6,6 +6,16 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`vivid` LS_COLORS theming.** New `Tools/vivid.json`/`.ps1` plugin resolves
+  the shared theme (default `catppuccin-mocha`) via the existing
+  `Get-DFConfiguredTheme`/`Resolve-DFThemeName` chain and applies it as
+  `LS_COLORS`, cached under `$XDG_CACHE_HOME/dotforge` and regenerated only on
+  a theme change (`vivid generate` costs ~40ms). `eza` (this repo's
+  `listing`-role default) reads `LS_COLORS` directly, so this changes its
+  output once `vivid` is installed — it's a suggested, not required, tool.
+  Ships a live picker, `Select-LSColorsTheme` / `fls`, mirroring psreadline's
+  `fprl`, with a `vivid preview {}` swatch per theme in the fzf preview pane.
+
 - **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a
   `role` (e.g. `"listing"`); `$DFConfig.Defaults = @{ listing = 'eza' }` names the winner, and
   `Register-DFTool` suppresses only the alias keys a role LOSER shares with the winner — every
