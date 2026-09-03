@@ -24,6 +24,14 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`eza` picker aliases (`ll`/`la`/`tree`) now match `ls`'s flags.** `ll` and `la`
+  gain `--color=auto`/`--icons=auto`/`--group-directories-first`/`--git`; `la`
+  switches `--all` to `--almost-all` (drops `.`/`..`) and adds `--long`/`--header`.
+  Hyperlinks are dropped from all four aliases. `=auto` stays bound (not bare)
+  on every alias — eza's `--color`/`--icons` take an optional value, so a bare
+  occurrence swallows the next positional as its value and breaks `ll <path>`
+  (regression 4d29177, guarded by `tests/eza.Tests.ps1`).
+
 - **`wins`/`sins`/`cins` (and `wrm`/`srm`/`crm`, `wup`/`sup`/`cup`) fzf previews now
   lead with a Name/Description/Version/Publisher/License/Homepage summary block**
   (plus a best-effort last-updated date), above the tool's full `winget

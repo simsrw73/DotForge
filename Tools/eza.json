@@ -20,20 +20,20 @@
         "--color=auto",
         "--icons=auto",
         "--group-directories-first",
-        "--hyperlink=auto"
+        "--git"
       ]
     },
     "ll": {
       "command": "eza",
-      "args": ["--all", "--long", "--header", "--hyperlink=auto"]
+      "args": ["--long", "--header", "--color=auto", "--icons=auto", "--group-directories-first", "--git"]
     },
     "la": {
       "command": "eza",
-      "args": ["--all", "--group", "--hyperlink=auto"]
+      "args": ["--almost-all", "--long", "--header", "--color=auto", "--icons=auto", "--group-directories-first", "--git"]
     },
     "tree": {
       "command": "eza",
-      "args": ["--tree"]
+      "args": ["--tree", "--color=auto", "--icons=auto", "--group-directories-first"]
     }
   },
   "picker": {
