@@ -36,8 +36,11 @@ if (Get-Command scoop-search -ErrorAction Ignore) {
 #   Search uses scoop-search (fast; matches names AND binaries) when present,
 #   else the Scoop module's Find-ScoopApp wildcard. Installed list + typed
 #   install/uninstall/update actions come from the Scoop module (object output,
-#   no `scoop list` table scraping). fzf --bind execute() runs in a cmd subshell
-#   that cannot call cmdlets, so the in-place keys use the `scoop` CLI.
+#   no `scoop list` table scraping). fzf --bind execute() runs in a fresh
+#   `pwsh -NoProfile` process (Tools/fzf.json's --with-shell) with no DotForge
+#   module loaded and the Scoop module not imported, so the in-place keys use
+#   the `scoop` CLI directly rather than paying to import the module in a
+#   throwaway process per keystroke.
 #   Previews run through scoop.preview.ps1 (a summary block above the full
 #   `scoop info` output — see docs/external-dependencies.md), prefixed with
 #   `Start-Sleep -Milliseconds 1000;` to debounce: fzf kills the running preview

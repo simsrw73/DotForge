@@ -7,8 +7,11 @@
 # function/alias is declared `global:` so it survives Register-DFTool's scope.
 #
 # Data comes from the Microsoft.WinGet.Client module (objects, no table
-# scraping). fzf's --preview and --bind execute() run in a cmd subshell that
-# cannot call cmdlets, so those steps use the `winget` CLI for display only.
+# scraping). fzf's --preview and --bind execute() commands run in a fresh
+# `pwsh -NoProfile` process (Tools/fzf.json's --with-shell) with no DotForge
+# module loaded and Microsoft.WinGet.Client not imported, so those steps use
+# the `winget` CLI directly for display and in-place actions rather than
+# paying to import the module in a throwaway process per keystroke.
 #
 # Previews run through winget.preview.ps1 (a summary block above the full
 # `winget show` output — see docs/external-dependencies.md), prefixed with

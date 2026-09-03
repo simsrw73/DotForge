@@ -47,7 +47,9 @@ function global:Select-ChocoPackage {
         }
     )
 
-    # sudo-aware command for the in-place execute() key (runs in a cmd subshell).
+    # sudo-aware command for the in-place execute() key (runs in fzf's preview/
+    # execute shell — a fresh `pwsh -NoProfile` process per Tools/fzf.json's
+    # --with-shell, not cmd).
     $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
 
     $sel = Invoke-DFPicker `
