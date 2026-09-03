@@ -31,7 +31,12 @@ All notable changes to DotForge are documented here.
   order dictated entirely by the tool itself. Also switches fzf's default preview
   shell from `cmd` to `pwsh` (`Tools/fzf.json`'s `FZF_DEFAULT_OPTS`), which as a
   side effect fixes a latent quoting bug in the `fpot` (oh-my-posh theme picker)
-  preview for theme paths containing spaces.
+  preview for theme paths containing spaces. Because pwsh startup (~230ms) is
+  slower than cmd's (~80ms), every preview affected by the shell switch — winget/
+  scoop/choco, posh-git, ripgrep, oh-my-posh, the `ff`/`ffd`/`fzo` file/directory
+  pickers, and PSFzf's Ctrl-T/Alt-C bindings — now waits ~1s
+  (`Start-Sleep -Milliseconds 1000;`) before rendering, trading live-as-you-scroll
+  previews for lag-free scrolling everywhere.
 - **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
   (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
   `Copy-DFToClipboard` needs to switch to `yank`.
@@ -42,12 +47,6 @@ All notable changes to DotForge are documented here.
   unchanged; see `docs/superpowers/specs/2026-07-26-alias-ownership-design.md` for why).
 
 ### Fixed
-
-- **posh-git, ripgrep, and oh-my-posh previews are now debounced.** After switching fzf's
-  preview shell from `cmd` (~80ms startup) to `pwsh` (~230ms), these three pickers updated
-  on every cursor move without debounce, adding perceptible lag to fast scrolling. Each
-  preview now includes `Start-Sleep -Milliseconds 1000;` before its command, matching the
-  debounce already applied to winget/scoop/choco pickers.
 
 - **`$DFConfig = $null` in a profile crashed five code paths.** `Register-DFTool`,
   `Install-DFTool`, `New-DFShim`, and both `$DFConfig` reads in `Tools/psreadline.ps1`
