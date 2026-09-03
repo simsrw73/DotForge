@@ -53,7 +53,7 @@ Describe 'env-block relocation preserves the migrated values' {
             "--with-shell='pwsh -NoProfile -Command'"
         ) -join "`n"
         $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
-        $j.env.FZF_CTRL_T_OPTS  | Should -Be '--preview "bat --color=always --line-range=:500 {}"'
+        $j.env.FZF_CTRL_T_OPTS  | Should -Be '--preview "Start-Sleep -Milliseconds 1000; bat --color=always --line-range=:500 {}"'
     }
     It 'delta env carries GIT_PAGER (DELTA_FEATURES moved to the sidecar)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json

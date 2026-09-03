@@ -41,7 +41,7 @@
     "function": "Select-File",
     "list": "eza --icons -1 --color=always",
     "list_accepts_path": true,
-    "preview": "bat --color=always --line-range=:200 {}",
+    "preview": "Start-Sleep -Milliseconds 1000; bat --color=always --line-range=:200 {}",
     "preview_window": "right:60%",
     "ansi": true,
     "header": "Select file  [Enter to open]",

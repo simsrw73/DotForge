@@ -25,7 +25,7 @@
     "alias": "fzo",
     "function": "Select-Directory",
     "list": "zoxide query --list",
-    "preview": "eza --icons --color=always {}",
+    "preview": "Start-Sleep -Milliseconds 1000; eza --icons --color=always {}",
     "preview_window": "right:60%",
     "ansi": false,
     "header": "Select directory  [Enter to cd]",

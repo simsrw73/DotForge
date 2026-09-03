@@ -21,7 +21,7 @@
     "alias": "ffd",
     "function": "Select-FdResult",
     "list": "fd --color=always",
-    "preview": "bat --color=always --line-range=:100 {}",
+    "preview": "Start-Sleep -Milliseconds 1000; bat --color=always --line-range=:100 {}",
     "preview_window": "right:60%",
     "ansi": true,
     "header": "Select file  [Enter to open]",
