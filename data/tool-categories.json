@@ -1159,6 +1159,16 @@
       },
       "popularity": 2
     },
+    "vivid": {
+      "function": [
+        "syntax-highlighter"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "library",
+      "popularity": 0
+    },
     "watchexec": {
       "function": [
         "task-runner"
