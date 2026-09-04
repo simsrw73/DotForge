@@ -571,6 +571,7 @@ throw 'boom: setup deliberately fails'
         $Env:WINDIR          = $script:SavedWinDir
         Remove-Variable __DFTestSetupRunCount -Scope Global -ErrorAction Ignore
         Remove-Alias tsf -Force -Scope Global -ErrorAction Ignore
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
 
     It 'dot-sources <name>.setup.ps1 on first registration and records state' {
