@@ -10,6 +10,10 @@ function script:Import-DFToolDb {
     .PARAMETER ToolsPath
         Path to the tools directory. Defaults to the module's Tools/ folder.
         Pass an explicit path in tests to control which JSON files are loaded.
+        Supplying this parameter always forces a fresh, uncached read and never
+        populates the shared cache -- only calls using the default location
+        participate in caching, so a caller with its own directory never sees
+        (or clobbers) another caller's registry.
     .PARAMETER Force
         Clears the cache and reloads from disk.
     #>
@@ -20,7 +24,9 @@ function script:Import-DFToolDb {
         [switch]$Force
     )
 
-    if ($script:DFToolDb -and -not $Force) { return $script:DFToolDb }
+    $explicitToolsPath = $PSBoundParameters.ContainsKey('ToolsPath')
+
+    if (-not $explicitToolsPath -and -not $Force -and $script:DFToolDb) { return $script:DFToolDb }
 
     $db = @{}
 
@@ -41,6 +47,6 @@ function script:Import-DFToolDb {
             }
     }
 
-    $script:DFToolDb = $db
+    if (-not $explicitToolsPath) { $script:DFToolDb = $db }
     return $db
 }

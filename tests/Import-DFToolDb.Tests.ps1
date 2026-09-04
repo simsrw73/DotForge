@@ -23,13 +23,30 @@ Describe 'Import-DFToolDb' {
         $db.ContainsKey('mytool') | Should -BeTrue
     }
 
-    It 'returns cached result on second call without -Force' {
+    It 'always does a fresh read when -ToolsPath is given explicitly, even without -Force' {
+        # An explicit -ToolsPath must never trust the shared cache -- a caller
+        # who names their own directory (tests, a future sub-registry) always
+        # sees that directory's current contents.
         $db1 = Import-DFToolDb -ToolsPath $script:TmpTools
-        # Modify the tools dir — second call should NOT pick this up
         '{ "name": "extra", "executable": "extra.exe" }' |
             Set-Content (Join-Path $script:TmpTools 'extra.json')
         $db2 = Import-DFToolDb -ToolsPath $script:TmpTools
-        $db2.ContainsKey('extra') | Should -BeFalse
+        $db2.ContainsKey('extra') | Should -BeTrue
+    }
+
+    It 'caches the default-location result across calls with no -ToolsPath' {
+        # Seed the shared cache with a sentinel and call with NO -ToolsPath at
+        # all -- if the default-location branch is really cache-backed, the
+        # sentinel comes back untouched (no directory is ever scanned).
+        $script:DFToolDb = @{ sentinel = $true }
+        $db = Import-DFToolDb
+        $db.ContainsKey('sentinel') | Should -BeTrue
+    }
+
+    It 'never overwrites the shared cache when -ToolsPath is given explicitly' {
+        $script:DFToolDb = @{ sentinel = $true }
+        Import-DFToolDb -ToolsPath $script:TmpTools | Out-Null
+        $script:DFToolDb.ContainsKey('sentinel') | Should -BeTrue
     }
 
     It 'reloads when -Force is specified' {
