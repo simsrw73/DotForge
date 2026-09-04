@@ -42,6 +42,6 @@ Describe 'Get-DFToolSetupState' {
 
         $state = Get-DFToolSetupState
         $state.PSObject.Properties['delta'] | Should -Not -BeNullOrEmpty
-        [datetime]$state.delta.ranAt | Should -Be ([datetime]'2026-09-04T10:22:00Z')
+        ([datetime]$state.delta.ranAt).ToUniversalTime() | Should -Be ([datetime]'2026-09-04T10:22:00Z').ToUniversalTime()
     }
 }
