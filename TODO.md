@@ -63,6 +63,26 @@
   `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
   `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)
   confirmed to read plain `LS_COLORS` directly, so this closes eza's catppuccin gap.
+- [ ] **Audit theming mechanisms for silent-override risk against the user's own pre-existing
+  config (found 2026-09-04, during the delta catppuccin investigation)** — the governing
+  principle: the user must be able to easily *see* what DotForge changed and have an easy way
+  to *override* it; DotForge must never silently discard a preference the user already set,
+  even as a side effect of "just setting an env var." This is **not** a blanket rule (some
+  cases genuinely have no competing file-based config to clobber) — each tool needs its own
+  explicit weighing, case by case:
+  - **Already right:** `mdv`'s `config.yaml` is seeded only when absent, never overwritten.
+    `psreadline`'s `Set-PSReadLineOption -Colors` has no competing persistent-file mechanism
+    to silently override — it *is* the only way psreadline theme state is set in a live
+    session, so there's nothing to weigh here.
+  - **Needs weighing:** `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME`, and `vivid`'s `LS_COLORS`
+    all set an env var that — per each tool's own documented precedence — outranks that same
+    tool's file-based config. If a user had already hand-set a theme in `bat.conf`, or already
+    exported `LS_COLORS` themselves before DotForge runs, these currently override it with no
+    visibility into why and no easy per-tool opt-out beyond unregistering the whole tool.
+  - **Decided differently on purpose:** `delta`'s catppuccin wiring (this same investigation)
+    will use an `[include]` line in `~/.gitconfig` specifically *because* `--config <path>`
+    would have replaced delta's entire config resolution outright, not layered on top of it —
+    the more invasive-looking option was actually the more transparent, non-clobbering one here.
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
   own design/plan cycles (per user decision, not bundled into one workstream):
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
