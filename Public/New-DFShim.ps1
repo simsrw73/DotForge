@@ -4,12 +4,13 @@ function New-DFShim {
     <#
     .SYNOPSIS
         Creates a .cmd shim that forwards invocations to a target executable,
-        first changing the working directory to the executable's own directory.
+        preserving the caller's working directory and exit code.
     .DESCRIPTION
         Generates a Windows .cmd batch file in the shims directory that, when
-        invoked, changes to the executable's own directory then runs it with all
-        forwarded arguments and correctly propagates the exit code. Put the shims
-        directory on $PATH once and create shims as needed.
+        invoked, runs the target executable with all forwarded arguments from
+        the caller's own current directory -- so relative-path arguments
+        resolve the way the user expects -- and correctly propagates the exit
+        code. Put the shims directory on $PATH once and create shims as needed.
         Accepts a DotForge tool name (DB lookup) or an explicit -Target path.
     .PARAMETER Target
         Path to the target executable. Positional — can be passed without the
@@ -118,22 +119,21 @@ function New-DFShim {
         $resolvedTarget = $found.Source
     }
 
-    # 5. App directory (working dir for the shim)
-    $appDir = Split-Path -Parent $resolvedTarget
-
-    # 6. Shim existence check
+    # 5. Shim existence check
     $shimPath = Join-Path $shimsDir "$Name.cmd"
     if ((Test-Path $shimPath) -and -not $Force -and -not $WhatIfPreference) {
         Write-Error "DotForge: Shim '$shimPath' already exists. Use -Force to overwrite."
         return
     }
 
-    # 7. Write shim
+    # 6. Write shim
+    # No `cd` here: the shim must preserve the caller's own working directory
+    # so relative-path arguments resolve the way the user expects, not against
+    # the target executable's install directory.
     if ($PSCmdlet.ShouldProcess($shimPath, 'Create shim')) {
         $lines = @(
             '@echo off'
             'setlocal'
-            "cd /d `"$appDir`""
             "`"$resolvedTarget`" %*"
             'set "_exit=%ERRORLEVEL%"'
             'endlocal & exit /b %_exit%'

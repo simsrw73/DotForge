@@ -58,10 +58,10 @@ Describe 'New-DFShim' {
         $content | Should -Match ([regex]::Escape("`"$($script:FakeExe)`" %*"))
     }
 
-    It 'generated .cmd contains cd /d to the app directory' {
+    It 'does not change directory before invoking the target (preserves the caller''s cwd for relative-path arguments)' {
         New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir
         $content = Get-Content (Join-Path $script:ShimsDir 'myapp.cmd') -Raw
-        $content | Should -Match ([regex]::Escape("cd /d `"$($script:AppDir)`""))
+        $content | Should -Not -Match 'cd /d'
     }
 
     It 'generated .cmd uses endlocal & exit on one line to preserve exit code' {
