@@ -60,14 +60,15 @@ Describe 'psreadline tool sidecar' {
         (Get-PSReadLineOption).HistoryNoDuplicates | Should -BeTrue
     }
 
-    It 'applies the dark theme by default (Colors.Command is non-null)' {
+    It 'applies the catppuccin-mocha theme by default' {
         # NOTE: Get-PSReadLineOption.Colors returns $null when output is redirected
         # (PSReadLine disables color support without VT). The sidecar also stores the
         # applied colors in $global:DFPSReadLineColors for testability.
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
-        $commandColor | Should -Not -BeNullOrEmpty
+        # catppuccin-mocha Command color is #cba6f7 -> VT contains "203;166;247"
+        $commandColor | Should -Match '203;166;247'
     }
 
     It 'applies the theme named in $DFConfig[PSReadLineTheme]' {

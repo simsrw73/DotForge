@@ -102,8 +102,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'dark'.
-$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'dark'
+# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
+$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'catppuccin-mocha'
 $_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 

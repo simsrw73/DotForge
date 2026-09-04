@@ -4,6 +4,14 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`psreadline` now defaults to `catppuccin-mocha`**, matching `mdcat`/`mdv`/`glow`.
+  Previously its built-in default was `dark` — the only themed tool in this
+  codebase that didn't ship catppuccin out of the box. `Tools/psreadline/catppuccin-mocha.json`
+  already existed; this was a one-line default-value change
+  (`Tools/psreadline.ps1`'s `Get-DFConfiguredTheme -Default` argument).
+
 ### Added
 
 - **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a

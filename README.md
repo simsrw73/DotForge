@@ -580,6 +580,10 @@ carapace spec (`Tools/carapace/specs/mdv.yaml`).
 
 **psreadline** (`Tools/psreadline.ps1`)
 
+Defaults to catppuccin-mocha (matching `mdcat`/`mdv`/`glow`) — previously this
+was the only themed tool in this list that shipped with a neutral `dark`
+default instead. Set `$DFConfig['PSReadLineTheme']` to override.
+
 | Function / Alias                              | Purpose                                          |
 | --------------------------------------------- | ------------------------------------------------ |
 | `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
