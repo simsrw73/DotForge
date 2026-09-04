@@ -4,14 +4,6 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
-### Changed
-
-- **`psreadline` now defaults to `catppuccin-mocha`**, matching `mdcat`/`mdv`/`glow`.
-  Previously its built-in default was `dark` — the only themed tool in this
-  codebase that didn't ship catppuccin out of the box. `Tools/psreadline/catppuccin-mocha.json`
-  already existed; this was a one-line default-value change
-  (`Tools/psreadline.ps1`'s `Get-DFConfiguredTheme -Default` argument).
-
 ### Added
 
 - **`bat` theming via `BAT_THEME`.** `Tools/bat.json` now ships bat's native
@@ -39,6 +31,11 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`psreadline` now defaults to `catppuccin-mocha`**, matching `mdcat`/`mdv`/`glow`.
+  Previously its built-in default was `dark` — the only themed tool in this
+  codebase that didn't ship catppuccin out of the box. `Tools/psreadline/catppuccin-mocha.json`
+  already existed; this was a one-line default-value change
+  (`Tools/psreadline.ps1`'s `Get-DFConfiguredTheme -Default` argument).
 - **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
   (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
   `Copy-DFToClipboard` needs to switch to `yank`.

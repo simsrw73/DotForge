@@ -30,7 +30,7 @@ $DFConfig = @{
     # the bare 'catppuccin' — DotForge resolves each tool's own dialect from it,
     # e.g. mdv's native 'catppuccin'). Per-tool keys accept the canonical name
     # OR that tool's own native names:
-    #   Theme           = 'catppuccin-mocha'   # glow, mdcat, mdv, psreadline, delta
+    #   Theme           = 'catppuccin-mocha'   # glow, mdcat, mdv, psreadline, delta, bat
     #   MdcatTheme      = 'dracula'             # override just mdcat
     #   MdvTheme        = 'nord'                # override just mdv
     #   GlowTheme       = 'catppuccin-mocha'    # override just glow
