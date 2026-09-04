@@ -70,10 +70,14 @@
   even as a side effect of "just setting an env var." This is **not** a blanket rule (some
   cases genuinely have no competing file-based config to clobber) — each tool needs its own
   explicit weighing, case by case:
-  - **Already right:** `mdv`'s `config.yaml` is seeded only when absent, never overwritten.
-    `psreadline`'s `Set-PSReadLineOption -Colors` has no competing persistent-file mechanism
-    to silently override — it *is* the only way psreadline theme state is set in a live
-    session, so there's nothing to weigh here.
+  - **Already right:** `psreadline`'s `Set-PSReadLineOption -Colors` has no competing
+    persistent-file mechanism to silently override — it *is* the only way psreadline theme
+    state is set in a live session, so there's nothing to weigh here.
+  - **Found to be subtly wrong (2026-09-04, during the tool-setup-lifecycle design):**
+    `mdv`'s `config.yaml` is seeded only when *absent* — but "absent" can't be told apart from
+    "DotForge seeded it once, and the user deleted it on purpose." A user who removes the seeded
+    file to opt out gets it silently reseeded on the next `Register-DFTool` call. Fix is to
+    migrate this to the new primitive below rather than patch the presence check in place.
   - **Needs weighing:** `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME`, and `vivid`'s `LS_COLORS`
     all set an env var that — per each tool's own documented precedence — outranks that same
     tool's file-based config. If a user had already hand-set a theme in `bat.conf`, or already
@@ -83,6 +87,16 @@
     will use an `[include]` line in `~/.gitconfig` specifically *because* `--config <path>`
     would have replaced delta's entire config resolution outright, not layered on top of it —
     the more invasive-looking option was actually the more transparent, non-clobbering one here.
+- [ ] **One-time tool setup/teardown lifecycle primitive** — design done 2026-09-04:
+  `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`
+  (`Tools/<name>.setup.ps1` + `Complete-DFToolSetup` + `$XDG_STATE_HOME/dotforge/setup-state.json`,
+  run at most once ever per tool, tracked so a user's later edit/removal is never silently
+  reasserted). Delta is the first consumer (implement this before delta's Section 3). Follow-ups,
+  explicitly deferred out of the design's scope:
+  - Migrate `Tools/mdv.ps1`'s config-seeding to it (closes the presence-check bug noted above).
+  - A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
+    record back — needs its own spec once there's more than delta's single `actions` shape to
+    generalize a safe, scoped undo from.
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
   own design/plan cycles (per user decision, not bundled into one workstream):
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
@@ -91,6 +105,10 @@
   - `delta` — `DELTA_FEATURES=catppuccin-mocha` is a confirmed no-op (no matching git-config
     feature block exists anywhere). Catppuccin ships an actual delta theme/config at
     https://github.com/catppuccin/delta — wire that in so the feature name isn't a dead pointer.
+    Design: `docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md`. Its Section 3 (the
+    "add the include line once" logic) will be rewritten to use the new tool-setup-lifecycle
+    primitive below instead of its originally-drafted bespoke marker file, once that primitive
+    exists — delta is its first real consumer.
   - [x] `bat` — done 2026-09-04: `BAT_THEME` set to bat's native `Catppuccin Mocha` (already
     built in, no external config needed). `Tools/bat.json`/`.ps1`.
   - [x] `lsd` — closed 2026-09-04, no code needed: confirmed `lsd` reads `LS_COLORS` for
