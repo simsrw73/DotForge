@@ -18,6 +18,7 @@
         'Get-DFTool',
         'Find-DFTool',
         'Register-DFTool',
+        'Complete-DFToolSetup',
         # Layer 3 — Tool Operations
         'Initialize-DFEnvironment',
         'Install-DFTool',
