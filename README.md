@@ -80,6 +80,7 @@ $DFConfig = @{
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
+    VividTheme          = 'catppuccin-mocha'    # LS_COLORS theme (overrides Theme)
     Theme               = 'catppuccin-mocha'    # shared theme for all viewers (canonical name only; per-tool keys override)
     MdcatTheme          = 'catppuccin-mocha'    # mdcat theme (overrides Theme)
     MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme; mdv's own native name)
@@ -482,12 +483,12 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (35)
+## Included Tools (40)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
 | Completion       | carapace, inshellisense                            |
-| File/dir         | bat, eza, lsd, fd, ripgrep, broot                  |
+| File/dir         | bat, eza, lsd, fd, ripgrep, broot, vivid           |
 | Text/data        | jq, glow, mdcat, mdv                               |
 | System           | procs, winfetch, gsudo                             |
 | Network          | curl, wget                                         |
@@ -584,6 +585,25 @@ carapace spec (`Tools/carapace/specs/mdv.yaml`).
 | --------------------------------------------- | ------------------------------------------------ |
 | `Select-PSReadLineTheme` / `fprl`             | Live fzf theme picker for PSReadLine colors      |
 | `Invoke-DFApplyPSReadLineTheme -Name <theme>` | Apply a named or path-based PSReadLine theme     |
+
+**vivid** (`Tools/vivid.ps1`)
+
+vivid is a suggested, not required, tool — `Register-DFTool` already skips any
+tool whose executable isn't on PATH, so installing `vivid` is what turns this
+feature on. Theme comes from `$DFConfig['VividTheme']`, then the shared
+`$DFConfig['Theme']`, then `catppuccin-mocha`; no `themeMap` is needed since
+vivid's own theme names already match the canonical family names. The
+generated `LS_COLORS` value is cached under `$XDG_CACHE_HOME/dotforge/` and
+only regenerated when the resolved theme name changes (`vivid generate` takes
+~40ms — not free on every shell startup); pass `-Force` to bypass the cache
+and regenerate anyway, e.g. after a `vivid` upgrade that shifted a theme's
+palette. `eza` (this repo's `listing`-role default) reads `LS_COLORS`
+directly, so this changes its output once applied.
+
+| Function / Alias                                    | Purpose                                            |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| `Select-LSColorsTheme` / `fls`                       | Live fzf theme picker for LS_COLORS, with a `vivid preview` swatch per theme |
+| `Invoke-DFApplyLSColorsTheme -Name <theme> [-Force]` | Resolve/cache/apply LS_COLORS for a named vivid theme |
 
 **winget** (`Tools/winget.ps1`)
 

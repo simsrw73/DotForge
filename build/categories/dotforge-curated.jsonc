@@ -160,6 +160,11 @@
     "function": ["package-manager"], "worksWith": ["binaries", "filesystem"], "interface": "cli",
     "ids": { "scoop": "uv", "winget": "astral-sh.uv" }, "popularity": 2
   },
+  "vivid": {
+    "function": ["shell-enhancement"], "worksWith": ["filesystem"], "interface": "cli",
+    "ids": { "scoop": "vivid", "winget": "sharkdp.vivid" },
+    "relatedTo": ["eza", "lsd"], "popularity": 1
+  },
   "wget": {
     "function": ["network-transfer"], "worksWith": ["http", "filesystem"], "interface": "cli",
     "ids": { "scoop": "wget" },

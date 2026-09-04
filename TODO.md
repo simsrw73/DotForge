@@ -28,6 +28,13 @@
 
 ## Priority 2 — Review Follow-ups
 
+- [ ] **`Get-DFCategoryDb.Tests.ps1` fixture-isolation bug (found 2026-09-03)** — 9 of the
+  file's tests fail on a clean checkout (`docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`'s
+  baseline check): `Get-DFCategoryDb`'s module-level singleton cache appears to leak the real
+  shipped `data/tool-categories.json` (~25k tools, e.g. `RipGrep GNU`/`EverythingCmdPal` show up)
+  into a test expecting a small designated fixture (plain `ripgrep`, `fd`, a handful of facets).
+  Likely a `-Force`/cache-reset ordering gap between `Describe` blocks in that file. Unrelated to
+  any theming work; needs its own investigation.
 - [x] **Port `Initialize-DFCompletionStack.Tests.ps1` to Pester 6** — done 2026-07-24. Its 11 `Assert-MockCalled` calls (removed in Pester 6.0.1) are now `Should -Invoke`; the four "never called" checks use `-Times 0 -Exactly` so they stay meaningful under Pester 6 (plain `-Times 0` is "at least 0" there = vacuous). The full suite is now **899/0 under both Pester 5.8.0 and 6.0.1** — the `-RequiredVersion 5.8.0` pin is no longer needed.
 - [ ] **Path-normalization follow-ups** — from the `ConvertTo-DFPath` branch review (2026-07-24): (a) add a shared test bootstrap that dot-sources the `Private/` dependency graph so a new low-level dependency doesn't require adding its dot-source to every consumer-sourcing test file; (b) strengthen the `Register-DFTool` ToolsPath test to exercise a sidecar load via a `..`-bearing `-ToolsPath` (currently re-tests `ConvertTo-DFPath` directly); (c) resolve `$ToolsPath` once *before* `Import-DFToolDb` in `Register-DFTool` to remove the raw-vs-resolved asymmetry; (d) tests are Windows-only (`C:\` literals) — the macOS/Linux goal is unverified by CI though the runtime code is separator-agnostic.
 - [x] **Stop force-creating global aliases at import time** — done 2026-07-31: all 27 general-helper
@@ -52,7 +59,33 @@
 
 ## Priority 3 — Features
 
-- [ ] **Color theme system across all tools** — PSReadLine has per-tool theming; explore a unified palette that also applies to `bat`, `delta`, `glow`, and terminal colors so the whole environment shares one theme
+- [x] **`LS_COLORS` via `vivid`** — done 2026-09-03: `Tools/vivid.json`/`.ps1`, design
+  `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
+  `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)
+  confirmed to read plain `LS_COLORS` directly, so this closes eza's catppuccin gap.
+- [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
+  own design/plan cycles (per user decision, not bundled into one workstream):
+  - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
+  - `psreadline` — ships a bundled `catppuccin-mocha.json` theme but its own built-in default
+    is `'dark'`, not catppuccin (inconsistent with mdcat/mdv/glow); fix so it defaults to
+    catppuccin-mocha like the others.
+  - `delta` — `DELTA_FEATURES=catppuccin-mocha` is a confirmed no-op (no matching git-config
+    feature block exists anywhere). Catppuccin ships an actual delta theme/config at
+    https://github.com/catppuccin/delta — wire that in so the feature name isn't a dead pointer.
+  - `bat` — zero integration today, but the installed version (0.26.1) already ships
+    `Catppuccin Mocha` as a built-in `--list-themes` entry — cheapest gap to close, same shape
+    as `mdcat`'s wiring (just `BAT_THEME`/`--theme`, no external config authoring needed).
+  - `lsd` — zero integration; unconfirmed whether it reads `LS_COLORS` the way `eza` does
+    (needs verifying before deciding the approach — it's the non-winning `listing`-role tool).
+  - `lazygit`, `micro`, `procs` — zero integration; each needs its own investigation into how
+    it can be pointed at a catppuccin-mocha theme/config.
+  - `oh-my-posh` — theme is entirely the user's own profile (`$Env:POSH_THEME`), outside
+    `$DFConfig` — a real gap against the "one system-wide theme" goal, but changing it means
+    deciding how a prompt-engine theme fits the `$DFConfig.Theme` chain; needs its own design.
+  - `winfetch` — unrelated to theming, but flagged in the same pass: winfetch is abandoned
+    upstream. Replace the `Tools/winfetch.json` entry with `fastfetch` (its actively maintained
+    successor) — a tool-swap task, not a theming task; update `Tools/*.json`, README's Included
+    Tools table (currently lists `winfetch` under "System"), and any doc/example references.
 - [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
   whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can
   explicitly control global-namespace pollution instead of DotForge deciding
@@ -98,5 +131,4 @@
 
 - [ ] **Dynamic fzf preview sizing** — replace the hardcoded `right:60%` default with sizing derived from content length or terminal width
 - [ ] **PSGallery icon** — add `IconUri` to `PrivateData.PSData` in psd1 for a better gallery page presentation
-- [ ] **Themes via LS_COLORS** — use `vivid` to setup LS_COLORS
 - [ ] **$HOME vs $LOCALAPPDATA** — We could allow users to choose between `$HOME` and `$LOCALAPPDATA` for the root of XDG directories.

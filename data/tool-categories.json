@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-07-24",
+  "updated": "2026-09-03",
   "taxonomy": {
     "function": [
       "search",
@@ -1158,6 +1158,24 @@
         "winget": "astral-sh.uv"
       },
       "popularity": 2
+    },
+    "vivid": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "vivid",
+        "winget": "sharkdp.vivid"
+      },
+      "relatedTo": [
+        "eza",
+        "lsd"
+      ],
+      "popularity": 1
     },
     "watchexec": {
       "function": [

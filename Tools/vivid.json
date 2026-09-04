@@ -1,0 +1,14 @@
+{
+  "name": "vivid",
+  "description": "Themeable LS_COLORS generator",
+  "tags": ["color", "theme", "listing"],
+  "executable": "vivid.exe",
+  "packages": {
+    "scoop": "vivid",
+    "winget": "sharkdp.vivid"
+  },
+  "xdg": { "compliance": "none", "method": "default" },
+  "settings": { "theme": "catppuccin-mocha" },
+  "aliases": {},
+  "picker": "custom"
+}
