@@ -85,6 +85,7 @@ $DFConfig = @{
     MdvTheme            = 'catppuccin'          # mdv theme (overrides Theme; mdv's own native name)
     GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
     DeltaTheme          = 'catppuccin-mocha'    # delta features string (overrides Theme)
+    BatTheme            = 'catppuccin-mocha'    # bat syntax theme (canonical or bat's own native name)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
     SkipConflictCheck   = $false                # $true silences the shadowed-command check
@@ -509,6 +510,15 @@ dialect (e.g. mdv's native `catppuccin`). A per-tool override (`GlowTheme`,
 `MdvTheme`, …) accepts the canonical name **or** that tool's own native names; only
 the canonical value triggers translation, so a name that happens to be a *different*
 tool's dialect is never mistaken for it.
+
+**bat** (`Tools/bat.ps1`)
+
+bat ships a native `Catppuccin Mocha` theme, so `Tools/bat.json` sets
+`BAT_THEME` to that name directly (no translation needed for the default).
+Theme comes from `$DFConfig['BatTheme']`, then the shared `$DFConfig['Theme']`
+(translated via `themeMap`), then the JSON default. bat validates `BAT_THEME`
+itself — an unrecognized name warns and falls back to bat's own default
+rather than erroring, so no DotForge-side whitelist is needed.
 
 **delta** (`Tools/delta.ps1`)
 

@@ -195,7 +195,7 @@ per-tool overrides.
 ### 6.1 Resolution chain
 
 Theme resolution is `Private/Get-DFConfiguredTheme.ps1`: per-tool key (`GlowTheme`, `MdcatTheme`,
-`MdvTheme`, `PSReadLineTheme`, …) → shared `$DFConfig.Theme` → the tool's built-in default. Setting
+`MdvTheme`, `PSReadLineTheme`, `BatTheme`, …) → shared `$DFConfig.Theme` → the tool's built-in default. Setting
 `$DFConfig.Theme = 'catppuccin-mocha'` MUST theme every honoring tool; a per-tool key overrides just
 that tool.
 

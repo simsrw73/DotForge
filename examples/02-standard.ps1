@@ -37,6 +37,7 @@ $DFConfig = @{
     #   PSReadLineTheme = 'catppuccin-mocha'    # override just psreadline
     #   DeltaTheme      = 'catppuccin-mocha'    # override just delta (a delta
     #                                           #   config must define the feature)
+    #   BatTheme        = 'catppuccin-mocha'    # override just bat
 }
 
 Import-Module DotForge
