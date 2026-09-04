@@ -485,6 +485,11 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
+An optional `Tools/<name>.setup.ps1` runs at most once per tool, tracked in state,
+for persistent setup that makes non-idempotent user-visible changes (e.g. editing a
+config file). See CLAUDE.md's "Tool setup lifecycle" bullet for full detail, including
+the completion contract and the `$DFConfig['SkipSetup']` opt-out.
+
 ## Included Tools (40)
 
 | Group            | Tools                                              |
