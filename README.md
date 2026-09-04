@@ -76,6 +76,7 @@ Set `$DFConfig` in your profile **before** importing DotForge:
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')  # PM preference for Install-DFTool
     SkipTools           = @('lsd')              # excluded from Register-DFTool -All
+    SkipSetup           = @('delta')            # excluded from Tools/<name>.setup.ps1's one-time run
     Defaults            = @{ listing = 'eza' }  # role winner; loser's contested aliases suppressed
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
     PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys

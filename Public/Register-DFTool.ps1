@@ -60,6 +60,9 @@ function Register-DFTool {
     $skipTools = @(if ($null -ne $Global:DFConfig) {
         $Global:DFConfig['SkipTools']
     })
+    $skipSetup = @(if ($null -ne $Global:DFConfig) {
+        $Global:DFConfig['SkipSetup']
+    })
 
     $tools = if ($All) {
         $db.Values | Where-Object { $_.name -notin $skipTools }
@@ -293,6 +296,26 @@ function Register-DFTool {
         if (Test-Path $companion -PathType Leaf) {
             $DFCurrentTool = $tool
             . ($companion)
+            Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
+        }
+
+        # ── One-time setup ──────────────────────────────────────────────────
+        # Tools/<name>.setup.ps1 runs at most once ever per tool: it is
+        # responsible for calling Complete-DFToolSetup itself, as its own
+        # last line, only once its work has actually succeeded. If it throws
+        # first, nothing gets recorded, so the next Register-DFTool call
+        # retries from the top -- see
+        # docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
+        $setupCompanion = Join-Path $resolvedToolsPath "$($tool.name).setup.ps1"
+        if ((Test-Path $setupCompanion -PathType Leaf) -and
+            $tool.name -notin $skipSetup -and
+            -not (Get-DFToolSetupState).PSObject.Properties[$tool.name]) {
+            $DFCurrentTool = $tool
+            try {
+                . ($setupCompanion)
+            } catch {
+                Write-Warning "DotForge: $($tool.name) one-time setup failed: $($_.Exception.Message)"
+            }
             Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
         }
 

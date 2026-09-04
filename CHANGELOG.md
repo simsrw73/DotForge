@@ -6,6 +6,19 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Tool setup lifecycle.** A new optional `Tools/<name>.setup.ps1` companion
+  runs at most once ever per tool — for setup that makes a persistent,
+  user-visible change (e.g. adding an `[include]` line to the user's real git
+  config) that must never be silently reasserted after the user edits or
+  removes it. Tracked in `$XDG_STATE_HOME/dotforge/setup-state.json`
+  (`Private/Get-DFToolSetupState.ps1`); a tool's setup script records its own
+  success by calling the new `Complete-DFToolSetup -Name <tool> [-Actions
+  <object[]>]`, so a script that throws before reaching that call is retried
+  on the next `Register-DFTool` call rather than silently marked done. New
+  `$DFConfig['SkipSetup']` opts a tool out, mirroring `SkipTools`. No
+  consumer yet — `delta`'s catppuccin theming (tracked in `TODO.md`) will be
+  the first.
+
 - **`vivid` LS_COLORS theming.** New `Tools/vivid.json`/`.ps1` plugin resolves
   the shared theme (default `catppuccin-mocha`) via the existing
   `Get-DFConfiguredTheme`/`Resolve-DFThemeName` chain and applies it as

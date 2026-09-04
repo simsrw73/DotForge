@@ -13,6 +13,8 @@ BeforeAll {
     # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
     . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
+    . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
+    . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
@@ -511,6 +513,121 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             # just confirm no exception and the loser's non-contested alias exists.
             Test-Path 'function:global:rtonly' | Should -BeTrue
         }
+    }
+}
+
+Describe 'Register-DFTool one-time setup' {
+    BeforeEach {
+        $script:DFToolDb = $null
+        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        $script:SavedStateHome  = $Env:XDG_STATE_HOME
+        $script:SavedWinDir     = $Env:WINDIR
+        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
+        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
+        $Env:WINDIR = 'C:\Windows'
+        $Global:__DFTestSetupRunCount = 0
+
+        $script:TmpTools = Join-Path $TestDrive 'setup-tools'
+        New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
+
+        @'
+{
+  "name": "testsetup",
+  "executable": "testsetup.exe",
+  "xdg": { "compliance": "none", "method": "default" }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'testsetup.json')
+
+        @'
+$Global:__DFTestSetupRunCount++
+Complete-DFToolSetup -Name 'testsetup' -Actions @(@{ type = 'marker'; value = 'ran' })
+'@ | Set-Content (Join-Path $script:TmpTools 'testsetup.setup.ps1')
+
+        @'
+{
+  "name": "testsetupfail",
+  "executable": "testsetupfail.exe",
+  "xdg": { "compliance": "none", "method": "default" },
+  "aliases": { "tsf": { "command": "testsetupfail", "args": [] } }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'testsetupfail.json')
+
+        @'
+throw 'boom: setup deliberately fails'
+'@ | Set-Content (Join-Path $script:TmpTools 'testsetupfail.setup.ps1')
+    }
+
+    AfterEach {
+        # $TestDrive is not recreated between It blocks within a Describe, so the
+        # persisted setup-state.json from one test would otherwise leak into the
+        # next test's BeforeEach (same $TestDrive/state path every time).
+        Remove-Item (Join-Path $Env:XDG_STATE_HOME 'dotforge') -Recurse -Force -ErrorAction Ignore
+
+        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
+        $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
+        $Env:XDG_STATE_HOME  = $script:SavedStateHome
+        $Env:WINDIR          = $script:SavedWinDir
+        Remove-Variable __DFTestSetupRunCount -Scope Global -ErrorAction Ignore
+        Remove-Alias tsf -Force -Scope Global -ErrorAction Ignore
+    }
+
+    It 'dot-sources <name>.setup.ps1 on first registration and records state' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetup.exe' } }
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+
+        $Global:__DFTestSetupRunCount | Should -Be 1
+        $state = Get-DFToolSetupState
+        $state.PSObject.Properties['testsetup'] | Should -Not -BeNullOrEmpty
+        $state.testsetup.actions[0].type | Should -Be 'marker'
+    }
+
+    It 'does not run setup.ps1 again on a second registration' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetup.exe' } }
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+
+        $Global:__DFTestSetupRunCount | Should -Be 1
+    }
+
+    It 'runs setup.ps1 again if the state file is deleted' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetup.exe' } }
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+        $Global:__DFTestSetupRunCount | Should -Be 1
+
+        Remove-Item (Join-Path $Env:XDG_STATE_HOME 'dotforge' 'setup-state.json') -Force
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+
+        $Global:__DFTestSetupRunCount | Should -Be 2
+    }
+
+    It 'never dot-sources setup.ps1 when the tool is in $DFConfig.SkipSetup' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetup.exe' } }
+        $Global:DFConfig = @{ SkipSetup = @('testsetup') }
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+
+        $Global:__DFTestSetupRunCount | Should -Be 0
+        (Get-DFToolSetupState).PSObject.Properties['testsetup'] | Should -BeNullOrEmpty
+    }
+
+    It 'warns and records no state when setup.ps1 throws, but still finishes registering the tool normally' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetupfail.exe' } }
+        $warnings = Register-DFTool -Name 'testsetupfail' -ToolsPath $script:TmpTools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+
+        $warnings | Where-Object { $_ -match 'testsetupfail' } | Should -Not -BeNullOrEmpty
+        (Get-DFToolSetupState).PSObject.Properties['testsetupfail'] | Should -BeNullOrEmpty
+        # The tool's own declared alias still gets set -- one tool's setup
+        # failure must not break the rest of its own registration.
+        Get-Alias tsf -ErrorAction Ignore | Should -Not -BeNullOrEmpty
+    }
+
+    It 'never dot-sources setup.ps1 for a tool not found on PATH' {
+        Mock Get-Command { $null }
+        Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
+
+        $Global:__DFTestSetupRunCount | Should -Be 0
     }
 }
 
