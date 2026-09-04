@@ -60,14 +60,15 @@ Describe 'psreadline tool sidecar' {
         (Get-PSReadLineOption).HistoryNoDuplicates | Should -BeTrue
     }
 
-    It 'applies the dark theme by default (Colors.Command is non-null)' {
+    It 'applies the catppuccin-mocha theme by default' {
         # NOTE: Get-PSReadLineOption.Colors returns $null when output is redirected
         # (PSReadLine disables color support without VT). The sidecar also stores the
         # applied colors in $global:DFPSReadLineColors for testability.
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
-        $commandColor | Should -Not -BeNullOrEmpty
+        # catppuccin-mocha Command color is #cba6f7 -> VT contains "203;166;247"
+        $commandColor | Should -Match '203;166;247'
     }
 
     It 'applies the theme named in $DFConfig[PSReadLineTheme]' {
@@ -101,6 +102,11 @@ Describe 'psreadline tool sidecar' {
 
     It 'applies a theme from XDG user dir, overriding bundled name' {
         # NOTE: Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
+        # Force the theme name explicitly rather than relying on the sidecar's
+        # ambient default (now catppuccin-mocha, not dark) — this test is about
+        # XDG-user-dir-beats-bundled resolution for a *named* theme, independent
+        # of whatever the default happens to be.
+        $Global:DFConfig = @{ PSReadLineTheme = 'dark' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         @'

@@ -15,7 +15,13 @@ All notable changes to DotForge are documented here.
   output once `vivid` is installed — it's a suggested, not required, tool.
   Ships a live picker, `Select-LSColorsTheme` / `fls`, mirroring psreadline's
   `fprl`, with a `vivid preview {}` swatch per theme in the fzf preview pane.
-
+- **`bat` theming via `BAT_THEME`.** `Tools/bat.json` now ships bat's native
+  `Catppuccin Mocha` theme as the default (bat already had this theme built
+  in — no external config needed, unlike `delta`). A new `Tools/bat.ps1`
+  overrides it from `$DFConfig['BatTheme']`/`$DFConfig['Theme']` via the
+  standard `Get-DFConfiguredTheme`/`Resolve-DFThemeName` chain, same pattern
+  as `mdcat`. bat validates the theme name itself and degrades gracefully on
+  an unrecognized one, so no DotForge-side whitelist is needed.
 - **`$DFConfig.Defaults`-driven default-tool role resolution.** A tool optionally declares a
   `role` (e.g. `"listing"`); `$DFConfig.Defaults = @{ listing = 'eza' }` names the winner, and
   `Register-DFTool` suppresses only the alias keys a role LOSER shares with the winner — every
@@ -34,6 +40,11 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`psreadline` now defaults to `catppuccin-mocha`**, matching `mdcat`/`mdv`/`glow`.
+  Previously its built-in default was `dark` — the only themed tool in this
+  codebase that didn't ship catppuccin out of the box. `Tools/psreadline/catppuccin-mocha.json`
+  already existed; this was a one-line default-value change
+  (`Tools/psreadline.ps1`'s `Get-DFConfiguredTheme -Default` argument).
 - **The `copy` alias is renamed to `yank`.** It collided with PowerShell's builtin `copy` alias
   (`Copy-Item`, `AllScope`) — the only general-helper alias that did. Anyone using `copy` for
   `Copy-DFToClipboard` needs to switch to `yank`.

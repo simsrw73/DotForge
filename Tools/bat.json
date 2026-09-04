@@ -20,6 +20,12 @@
     },
     "dirs": []
   },
+  "env": {
+    "BAT_THEME": "Catppuccin Mocha"
+  },
+  "themeMap": {
+    "catppuccin-mocha": "Catppuccin Mocha"
+  },
   "aliases": {
     "cat": {
       "command": "bat",
