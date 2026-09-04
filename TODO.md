@@ -66,17 +66,21 @@
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
   own design/plan cycles (per user decision, not bundled into one workstream):
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
-  - `psreadline` — ships a bundled `catppuccin-mocha.json` theme but its own built-in default
-    is `'dark'`, not catppuccin (inconsistent with mdcat/mdv/glow); fix so it defaults to
-    catppuccin-mocha like the others.
+  - [x] `psreadline` — done 2026-09-04: defaulted to `catppuccin-mocha` (was the only themed
+    tool shipping a neutral `dark` default). `Tools/psreadline.ps1`.
   - `delta` — `DELTA_FEATURES=catppuccin-mocha` is a confirmed no-op (no matching git-config
     feature block exists anywhere). Catppuccin ships an actual delta theme/config at
     https://github.com/catppuccin/delta — wire that in so the feature name isn't a dead pointer.
-  - `bat` — zero integration today, but the installed version (0.26.1) already ships
-    `Catppuccin Mocha` as a built-in `--list-themes` entry — cheapest gap to close, same shape
-    as `mdcat`'s wiring (just `BAT_THEME`/`--theme`, no external config authoring needed).
-  - `lsd` — zero integration; unconfirmed whether it reads `LS_COLORS` the way `eza` does
-    (needs verifying before deciding the approach — it's the non-winning `listing`-role tool).
+  - [x] `bat` — done 2026-09-04: `BAT_THEME` set to bat's native `Catppuccin Mocha` (already
+    built in, no external config needed). `Tools/bat.json`/`.ps1`.
+  - [x] `lsd` — closed 2026-09-04, no code needed: confirmed `lsd` reads `LS_COLORS` for
+    filetype-extension coloring — both empirically (`di=` override test) and per its own
+    README FAQ ("How can I set custom color schemes for Windows?"), so it already gets
+    catppuccin-mocha coloring for free once `vivid` is registered, same as `eza`. Documented
+    in `README.md`'s vivid section and `docs/external-dependencies.md`. `lsd`'s *other* color
+    categories (permissions, size, date — its own separate theme system, blocked by the
+    existing `--config-file` panic-on-missing-path issue, see `Tools/lsd.json`) are unaffected
+    and remain a distinct, larger potential follow-up, not part of this item.
   - `lazygit`, `micro`, `procs` — zero integration; each needs its own investigation into how
     it can be pointed at a catppuccin-mocha theme/config.
   - `oh-my-posh` — theme is entirely the user's own profile (`$Env:POSH_THEME`), outside

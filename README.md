@@ -611,8 +611,14 @@ generated `LS_COLORS` value is cached under `$XDG_CACHE_HOME/dotforge/` and
 only regenerated when the resolved theme name changes (`vivid generate` takes
 ~40ms — not free on every shell startup); pass `-Force` to bypass the cache
 and regenerate anyway, e.g. after a `vivid` upgrade that shifted a theme's
-palette. `eza` (this repo's `listing`-role default) reads `LS_COLORS`
-directly, so this changes its output once applied.
+palette. `LS_COLORS` is a decades-old convention many independent directory
+tools read for filetype-extension coloring, each documenting it separately:
+`eza` (this repo's `listing`-role default, per `man eza_colors`) and `lsd`
+(per its README FAQ, which calls out `LS_COLORS` as the way to set a custom
+color scheme on Windows specifically) both pick it up automatically once
+`vivid` is registered — no per-tool code needed. Neither tool's *other*
+color categories (permissions, size, date, etc. for `lsd`) are affected;
+those stay each tool's own separate theme mechanism.
 
 | Function / Alias                                    | Purpose                                            |
 | ----------------------------------------------------- | --------------------------------------------------- |

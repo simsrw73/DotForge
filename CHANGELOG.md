@@ -11,10 +11,12 @@ All notable changes to DotForge are documented here.
   `Get-DFConfiguredTheme`/`Resolve-DFThemeName` chain and applies it as
   `LS_COLORS`, cached under `$XDG_CACHE_HOME/dotforge` and regenerated only on
   a theme change (`vivid generate` costs ~40ms). `eza` (this repo's
-  `listing`-role default) reads `LS_COLORS` directly, so this changes its
-  output once `vivid` is installed — it's a suggested, not required, tool.
-  Ships a live picker, `Select-LSColorsTheme` / `fls`, mirroring psreadline's
-  `fprl`, with a `vivid preview {}` swatch per theme in the fzf preview pane.
+  `listing`-role default, per `man eza_colors`) and `lsd` (per its README FAQ)
+  both read `LS_COLORS` directly for filetype-extension coloring — confirmed
+  documented behavior for both, not an assumption — so their output changes
+  once `vivid` is installed; it's a suggested, not required, tool. Ships a
+  live picker, `Select-LSColorsTheme` / `fls`, mirroring psreadline's `fprl`,
+  with a `vivid preview {}` swatch per theme in the fzf preview pane.
 - **`bat` theming via `BAT_THEME`.** `Tools/bat.json` now ships bat's native
   `Catppuccin Mocha` theme as the default (bat already had this theme built
   in — no external config needed, unlike `delta`). A new `Tools/bat.ps1`
