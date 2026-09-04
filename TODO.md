@@ -59,7 +59,7 @@
 
 ## Priority 3 — Features
 
-- [x] **`LS_COLORS` via `vivid`** — in progress 2026-09-03: `Tools/vivid.json`/`.ps1`, design
+- [x] **`LS_COLORS` via `vivid`** — done 2026-09-03: `Tools/vivid.json`/`.ps1`, design
   `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
   `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)
   confirmed to read plain `LS_COLORS` directly, so this closes eza's catppuccin gap.

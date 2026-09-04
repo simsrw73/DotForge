@@ -483,7 +483,7 @@ Optional:
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.
 
-## Included Tools (36)
+## Included Tools (40)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -595,13 +595,15 @@ feature on. Theme comes from `$DFConfig['VividTheme']`, then the shared
 vivid's own theme names already match the canonical family names. The
 generated `LS_COLORS` value is cached under `$XDG_CACHE_HOME/dotforge/` and
 only regenerated when the resolved theme name changes (`vivid generate` takes
-~40ms — not free on every shell startup). `eza` (this repo's `listing`-role
-default) reads `LS_COLORS` directly, so this changes its output once applied.
+~40ms — not free on every shell startup); pass `-Force` to bypass the cache
+and regenerate anyway, e.g. after a `vivid` upgrade that shifted a theme's
+palette. `eza` (this repo's `listing`-role default) reads `LS_COLORS`
+directly, so this changes its output once applied.
 
-| Function / Alias                          | Purpose                                            |
-| ------------------------------------------ | --------------------------------------------------- |
-| `Select-LSColorsTheme` / `fls`             | Live fzf theme picker for LS_COLORS, with a `vivid preview` swatch per theme |
-| `Invoke-DFApplyLSColorsTheme -Name <theme>` | Resolve/cache/apply LS_COLORS for a named vivid theme |
+| Function / Alias                                    | Purpose                                            |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| `Select-LSColorsTheme` / `fls`                       | Live fzf theme picker for LS_COLORS, with a `vivid preview` swatch per theme |
+| `Invoke-DFApplyLSColorsTheme -Name <theme> [-Force]` | Resolve/cache/apply LS_COLORS for a named vivid theme |
 
 **winget** (`Tools/winget.ps1`)
 

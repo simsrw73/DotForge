@@ -107,6 +107,17 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         $Env:LS_COLORS | Should -Not -BeNullOrEmpty
     }
 
+    It 'always regenerates when -Force is passed, even on a matching cache key' {
+        Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
+        $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.txt'
+        Set-Content -Path $cacheFile -Value 'SENTINEL-CACHED-VALUE' -Encoding UTF8
+
+        Invoke-DFApplyLSColorsTheme -Name 'catppuccin-mocha' -Force
+
+        $Env:LS_COLORS | Should -Not -Be 'SENTINEL-CACHED-VALUE'
+        $Env:LS_COLORS | Should -Match 'di=0;38;2;137;180;250'
+    }
+
     It 'warns and leaves LS_COLORS unchanged for an unrecognized theme name' {
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         [System.Environment]::SetEnvironmentVariable('LS_COLORS', 'PRE-EXISTING', 'Process')

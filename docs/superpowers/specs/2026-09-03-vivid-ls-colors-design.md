@@ -172,11 +172,27 @@ variable on their next invocation.
 Mirrors `tests/mdcat.Tests.ps1`'s precedent for a sidecar that shells out to
 an external binary at registration time: the sidecar `Describe` block is
 guarded with `-Skip:(-not (Get-Command vivid.exe -ErrorAction Ignore))` and
-runs against the **real** `vivid` binary — the existing suite has no
-external-process mocking seam (only `Invoke-DFFzf` is mockable), and
-`mdcat`/`delta`/`glow` establish that real-binary-when-present, skip-when-absent
-is the accepted pattern here, not a gap to fill. `vivid` is installed in this
-dev environment, so the block runs.
+runs against the **real** `vivid` binary.
+
+**Correction (found during implementation, not caught in this spec's own
+review):** the original text here claimed the suite has no external-process
+mocking seam besides `Invoke-DFFzf`. That's wrong — `Private/Invoke-DFCommandCapture.ps1`
+exists for exactly this and is already mocked in `tests/Resolve-DFCliHelpFlag.Tests.ps1`.
+The real reason it can't be used *here* is architectural, not a missing seam:
+`Invoke-DFApplyLSColorsTheme` is registered as a detached `function:global:`
+(required so it stays callable after `Register-DFTool` returns, and from the
+`fls` picker), and PowerShell's module-privacy boundary makes any Private
+module function — mockable or not — unreachable from inside a
+`function:global:` scriptblock's `.GetNewClosure()` body, regardless of
+dot-sourcing. Confirmed empirically: `.GetNewClosure()` created inside any
+function scope (which dot-sourcing a companion `.ps1` inside `Register-DFTool`
+always is) cannot resolve a dot-sourced function even when that dot-source
+happens in the same scope immediately beforehand. This applies to every
+sidecar-registered global "apply" function in this codebase
+(`Invoke-DFApplyPSReadLineTheme` included) — none of them could use the seam
+either, which is why real-binary-when-present, skip-when-absent (`mdcat`/`delta`/`glow`'s
+pattern) is the only viable approach for this class of function, not an
+accepted gap. `vivid` is installed in this dev environment, so the block runs.
 
 - Registering sets `$Env:LS_COLORS` to vivid's `catppuccin-mocha` output by
   default (real `vivid generate catppuccin-mocha` output, asserted e.g. by

@@ -4,14 +4,30 @@
 # fingerprint is just the resolved theme name, so a theme change invalidates
 # the cache and a stable theme reuses it without spawning vivid again
 # (~42ms measured locally — worth avoiding on every shell startup).
+#
+# Calls `vivid` via a raw `&`, not Private/Invoke-DFCommandCapture.ps1's
+# mockable seam: Invoke-DFApplyLSColorsTheme is registered as a detached
+# function:global: (so it's callable after Register-DFTool returns, and
+# from the fls picker), and PowerShell's module-privacy boundary makes
+# Private functions unreachable from a function:global: scriptblock's
+# .GetNewClosure() body regardless of dot-sourcing — confirmed empirically
+# (this is a hard scoping constraint, not a missed refactor). See
+# docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md Section 4.
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     <#
     .SYNOPSIS
         Resolves and applies an LS_COLORS value for the named vivid theme.
+    .PARAMETER Force
+        Bypass the cache and regenerate even when the theme name matches
+        what's cached — use after a vivid upgrade that may have shifted a
+        theme's palette.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Name)
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [switch]$Force
+    )
 
     if (-not $Env:XDG_CACHE_HOME) {
         Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Call Initialize-DFEnvironment first.'
@@ -22,7 +38,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     $cacheFile = Join-Path $cacheDir 'ls-colors.txt'
     $keyFile   = Join-Path $cacheDir 'ls-colors.key'
 
-    $cacheValid = (Test-Path $cacheFile) -and (Test-Path $keyFile) -and
+    $cacheValid = -not $Force -and (Test-Path $cacheFile) -and (Test-Path $keyFile) -and
                   ((Get-Content $keyFile -Raw).Trim() -eq $Name)
 
     if ($cacheValid) {
@@ -61,7 +77,6 @@ Set-Item -Path 'function:global:Select-LSColorsTheme' -Value ({
         -List    { vivid themes } `
         -Header  'Select LS_COLORS theme  [Enter to apply for this session]' `
         -Preview 'vivid preview {}' `
-        -Ansi `
         -Action  {
             param($n)
             Invoke-DFApplyLSColorsTheme -Name $n
