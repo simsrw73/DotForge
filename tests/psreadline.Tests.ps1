@@ -102,6 +102,11 @@ Describe 'psreadline tool sidecar' {
 
     It 'applies a theme from XDG user dir, overriding bundled name' {
         # NOTE: Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
+        # Force the theme name explicitly rather than relying on the sidecar's
+        # ambient default (now catppuccin-mocha, not dark) — this test is about
+        # XDG-user-dir-beats-bundled resolution for a *named* theme, independent
+        # of whatever the default happens to be.
+        $Global:DFConfig = @{ PSReadLineTheme = 'dark' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         @'
