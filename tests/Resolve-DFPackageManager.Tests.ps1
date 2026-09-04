@@ -42,4 +42,15 @@ Describe 'Resolve-DFPackageManager' {
         @($result)[1] | Should -Be 'scoop'
         @($result).Count | Should -Be 2
     }
+
+    It 'does not let a call with a custom -Priority read or overwrite the cached default-priority result' {
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
+        $default = Resolve-DFPackageManager   # caches the default order: scoop, winget, choco
+        $custom  = Resolve-DFPackageManager -Priority @('winget', 'scoop')
+        @($custom)[0] | Should -Be 'winget'
+        @($custom)[1] | Should -Be 'scoop'
+        # cache must still reflect the default-priority result, not the custom one
+        $cachedAgain = Resolve-DFPackageManager
+        @($cachedAgain)[0] | Should -Be $default[0]
+    }
 }

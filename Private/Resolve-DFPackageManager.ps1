@@ -9,7 +9,11 @@ function script:Resolve-DFPackageManager {
         Returns names in priority order. Result is cached; use -Force to reload.
     .PARAMETER Priority
         Ordered list of package manager names to check.
-        Defaults to scoop, winget, choco.
+        Defaults to scoop, winget, choco. Supplying this parameter always
+        forces a fresh, uncached probe and never populates the shared cache --
+        only calls using the default priority order participate in caching, so
+        a one-off custom-priority call never overwrites the cached default
+        result for later default-priority callers.
     .PARAMETER Force
         Clear cache and re-detect.
     #>
@@ -20,9 +24,13 @@ function script:Resolve-DFPackageManager {
         [switch]$Force
     )
 
-    if ($script:DFPackageManagers -and -not $Force) { return $script:DFPackageManagers }
+    $explicitPriority = $PSBoundParameters.ContainsKey('Priority')
 
-    $available = $Priority | Where-Object { Get-Command $_ -ErrorAction Ignore }
-    $script:DFPackageManagers = @($available)
-    return $script:DFPackageManagers
+    if (-not $explicitPriority -and -not $Force -and $script:DFPackageManagers) {
+        return $script:DFPackageManagers
+    }
+
+    $available = @($Priority | Where-Object { Get-Command $_ -ErrorAction Ignore })
+    if (-not $explicitPriority) { $script:DFPackageManagers = $available }
+    return $available
 }
