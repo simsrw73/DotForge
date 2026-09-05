@@ -115,6 +115,23 @@
     `Get-DFCachedCommandOutput` (`Private/Get-DFCachedCommandOutput.ps1`), fingerprinted on the
     resolved executable's own file identity. Measured ~200ms mean reduction in
     `Register-DFTool -All` on this machine (1451.4ms → 1245.9ms, `build/Measure-DFStartup.ps1`).
+  - [ ] **Real-profile follow-up (found 2026-09-05, analyzing the user's actual `profile.ps1`)**:
+    - Migrate the three PSReadLine lines at the bottom of `profile.ps1`
+      (`Set-PSReadLineOption -HistorySearchCursorMovesToEnd`, `Ctrl+p`/`Ctrl+n` history-search key
+      handlers — already marked `### TODO: Move this to DotForge::Initialize-DFEnvironment` in
+      that file) into `Initialize-DFEnvironment`, alongside the existing
+      `PSReadLineEditMode`/`PSReadLineTheme` config keys. Low-risk, ~13ms measured.
+    - Consider whether the async pre-warm mechanism this item builds should be a general
+      DotForge primitive (not private to `Register-DFTool`'s three module imports), so the
+      user's own `profile.ps1`/`Completers.ps1` could pre-warm its own extra module imports
+      (`powershell-yaml`, `Microsoft.PowerShell.SecretManagement`,
+      `Microsoft.WinGet.CommandNotFound` — measured 88ms + 128ms combined) and the cosmetic
+      `FastFetch` + `Clear-Host` banner (measured 222ms) the same way. Not committed to yet —
+      evaluate during the implementation plan below.
+    - Not itself a DotForge-scope item, but worth the user's own attention: `Start-Transcript`/
+      `Stop-Transcript` in `profile.ps1` cost ~132ms every session (not the recursive prune scan,
+      which is only ~50ms combined) — real, recurring, unconditional per-session cost outside
+      this repo's control.
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
   own design/plan cycles (per user decision, not bundled into one workstream):
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
