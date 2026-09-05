@@ -102,12 +102,7 @@ function Register-DFTool {
             }
             if (-not ($tools | Where-Object { $_.name -eq $winnerName })) { continue }
             $winnerType = $winnerTool.PSObject.Properties['type']?.Value ?? 'exe'
-            $winnerAvailable = if ($winnerType -eq 'module') {
-                Get-Module -Name $winnerTool.executable -ListAvailable -ErrorAction Ignore
-            } else {
-                Get-Command $winnerTool.executable -ErrorAction Ignore
-            }
-            if (-not $winnerAvailable) { continue }
+            if (-not (Test-DFToolAvailable -Executable $winnerTool.executable -Type $winnerType)) { continue }
             $winnerAliasesObj = $winnerTool.PSObject.Properties['aliases']?.Value
             $winnerAliasKeys  = if ($winnerAliasesObj) { @($winnerAliasesObj.PSObject.Properties.Name) } else { @() }
             $activeRoleWinners[$roleName] = @{ WinnerName = $winnerName; AliasKeys = $winnerAliasKeys }
@@ -118,12 +113,7 @@ function Register-DFTool {
     foreach ($tool in $tools) {
         # ── Guard: skip if not available ──────────────────────────────────
         $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
-        $isAvailable = if ($toolType -eq 'module') {
-            Get-Module -Name $tool.executable -ListAvailable -ErrorAction Ignore
-        } else {
-            Get-Command $tool.executable -ErrorAction Ignore
-        }
-        if (-not $isAvailable) {
+        if (-not (Test-DFToolAvailable -Executable $tool.executable -Type $toolType)) {
             Write-Verbose "DotForge: '$($tool.executable)' not available — skipping $($tool.name)"
             continue
         }

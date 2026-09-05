@@ -8,6 +8,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
     . "$PSScriptRoot/../Public/Get-DFTool.ps1"
     . "$PSScriptRoot/../Public/Find-DFTool.ps1"
     # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
@@ -22,6 +23,7 @@ BeforeAll {
 Describe 'Register-DFTool' {
     BeforeEach {
         $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
         $script:SavedPath       = $Env:Path
@@ -519,6 +521,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 Describe 'Register-DFTool one-time setup' {
     BeforeEach {
         $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
         $script:SavedStateHome  = $Env:XDG_STATE_HOME

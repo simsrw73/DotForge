@@ -7,6 +7,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
     . "$PSScriptRoot/../Public/Get-DFTool.ps1"
     . "$PSScriptRoot/../Public/Find-DFTool.ps1"
     # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
