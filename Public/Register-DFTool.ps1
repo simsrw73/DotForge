@@ -1,7 +1,6 @@
 #Requires -Version 7.0
 
 function Register-DFTool {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFToolDb')]
     <#
     .SYNOPSIS
         Configures one or more known CLI tools in the current session.
@@ -32,6 +31,7 @@ function Register-DFTool {
     .OUTPUTS
         None
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFToolDb')]
     [CmdletBinding(DefaultParameterSetName = 'ByName')]
     param(
         [Parameter(ParameterSetName = 'ByName')]

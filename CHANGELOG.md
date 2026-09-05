@@ -6,6 +6,12 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`Get-Help Register-DFTool -Full` never rendered its synopsis, description, or examples.**
+  A `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` sat before the comment-based
+  help block, and PowerShell only recognizes comment-based help as the very first token in a
+  function body. Moved the attribute after the help block — the same fix already applied to
+  `Invoke-DFToolCompanion` when the same issue was introduced there during the
+  `Register-DFTool` split. This predated that split entirely.
 - **`New-DFShim` changed directory before invoking the target.** The generated `.cmd` did
   `cd /d` into the target executable's own install directory before running it, so any
   relative-path argument the user passed resolved against that directory instead of the
