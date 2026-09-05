@@ -119,49 +119,7 @@ function Register-DFTool {
         }
 
         # ── XDG configuration ──────────────────────────────────────────────
-        $xdgProp   = $tool.PSObject.Properties['xdg']
-        $xdgMethod = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['method']?.Value } else { $null }
-        switch ($xdgMethod) {
-            'env' {
-                $xdg  = $tool.xdg
-                $vars = $xdg.PSObject.Properties['vars']?.Value
-                if ($vars) {
-                    $vars.PSObject.Properties | ForEach-Object {
-                        [System.Environment]::SetEnvironmentVariable(
-                            $_.Name,
-                            (Expand-DFXdgPath $_.Value),
-                            'Process'
-                        )
-                    }
-                }
-                $dirs = $xdg.PSObject.Properties['dirs']?.Value
-                if ($dirs) {
-                    @($dirs) | Where-Object { $_ } |
-                        ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
-                }
-            }
-            'manual' {
-                $instr = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['instructions']?.Value } else { $null }
-                Write-Warning "DotForge: $($tool.name) requires manual XDG configuration.$(if ($instr) { " $instr" })"
-            }
-            'config' {
-                $xdg = $tool.xdg
-                $rawConfigPath    = $xdg.PSObject.Properties['config_path']?.Value
-                $rawConfigContent = $xdg.PSObject.Properties['config_content']?.Value
-                if ($rawConfigPath) {
-                    $expandedPath = Expand-DFXdgPath $rawConfigPath
-                    New-DFDirectory (Split-Path $expandedPath)
-                    if (-not (Test-Path $expandedPath) -and $rawConfigContent) {
-                        Set-Content -Path $expandedPath -Value $rawConfigContent -Encoding UTF8
-                        Write-Verbose "DotForge: Created default config at $expandedPath"
-                    }
-                }
-            }
-            'wrapper' {
-                Write-Verbose "DotForge: $($tool.name) xdg.method 'wrapper' — handled by companion .ps1"
-            }
-            'default' { } # tool already follows XDG natively — no env config needed
-        }
+        Set-DFToolXdgConfig -Tool $tool
 
         # ── Non-XDG environment settings ───────────────────────────────────
         # Applied unconditionally (env vars are not tied to xdg.method). Values

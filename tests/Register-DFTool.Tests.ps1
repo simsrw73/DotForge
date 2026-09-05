@@ -16,6 +16,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
     . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
+    . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
