@@ -1,10 +1,6 @@
 #Requires -Version 7.0
 
 function Invoke-DFToolCompanion {
-    # $DFCurrentTool is set before dot-sourcing companions so sidecars can
-    # read it. PSScriptAnalyzer can't see the companion scope, so suppress
-    # the false positive.
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFCurrentTool')]
     <#
     .SYNOPSIS
         Dot-sources a tool's companion Tools/<name>.ps1 (if present) and its
@@ -34,6 +30,10 @@ function Invoke-DFToolCompanion {
     .OUTPUTS
         None
     #>
+    # $DFCurrentTool is set before dot-sourcing companions so sidecars can
+    # read it. PSScriptAnalyzer can't see the companion scope, so suppress
+    # the false positive.
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFCurrentTool')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
