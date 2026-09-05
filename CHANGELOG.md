@@ -31,7 +31,9 @@ All notable changes to DotForge are documented here.
   reduction in `Register-DFTool -All` wall-clock cost on a representative machine
   (`build/Measure-DFStartup.ps1`). `Install-DFTool` refreshes a tool's cached entry
   immediately after a successful install, so a `Register-DFTool` call right after
-  installing a tool still picks it up.
+  installing a tool picks it up, provided the install landed on the current session's
+  PATH already (true for scoop; not guaranteed for winget/choco installs that land
+  somewhere the running shell won't see until it restarts).
 
 ### Added
 

@@ -14,9 +14,12 @@ function script:Test-DFToolAvailable {
         times Register-DFTool runs or how many role-resolution checks
         reference it. Install-DFTool calls this with -Force immediately after
         a successful install, so a Register-DFTool call right after installing
-        a tool still picks it up. A tool made available by any other means
-        mid-session (e.g. a user manually editing PATH) is not detected until
-        -Force is passed or a new session starts.
+        a tool picks it up, provided the install landed on this session's PATH
+        already (true for scoop's shim directory; not guaranteed for winget/
+        choco installs that land somewhere the running shell won't see until
+        it restarts). A tool made available by any other means mid-session
+        (e.g. a user manually editing PATH) is not detected until -Force is
+        passed or a new session starts.
     .PARAMETER Executable
         The executable name (exe-type tools) or module name (module-type
         tools) to check.
