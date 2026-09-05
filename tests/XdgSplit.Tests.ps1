@@ -44,11 +44,9 @@ Describe 'env-block relocation preserves the migrated values' {
         $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
         $j.env.FZF_DEFAULT_COMMAND | Should -Be 'fd --type f --hidden --follow --exclude .git'
         # Exact full-value match so corruption anywhere in the multiline opts is caught
-        # (JSON \n decodes to LF, so compare against a `n-joined string).
+        # (JSON \n decodes to LF, so compare against a `n-joined string). Color flags
+        # moved to Tools/fzf/catppuccin-mocha.json + Tools/fzf.ps1 -- see fzf.Tests.ps1.
         $expectedFzfOpts = @(
-            '--color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8'
-            '--color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc'
-            '--color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8'
             '--exact'
             '--no-sort'
             '--layout=reverse'

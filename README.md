@@ -88,6 +88,7 @@ $DFConfig = @{
     GlowTheme           = 'catppuccin-mocha'    # glow markdown style (name or path)
     DeltaTheme          = 'catppuccin-mocha'    # delta features string (overrides Theme)
     BatTheme            = 'catppuccin-mocha'    # bat syntax theme (canonical or bat's own native name)
+    FzfTheme            = 'catppuccin-mocha'    # fzf --color theme (overrides Theme)
     ShimsPath           = "$HOME\.local\bin"    # shim output dir for New-DFShim (default: $HOME\.local\bin)
     IgnoreConflicts     = @('cat')              # keep coreutils' version of these; no warning
     SkipConflictCheck   = $false                # $true silences the shadowed-command check
@@ -630,6 +631,16 @@ those stay each tool's own separate theme mechanism.
 | ----------------------------------------------------- | --------------------------------------------------- |
 | `Select-LSColorsTheme` / `fls`                       | Live fzf theme picker for LS_COLORS, with a `vivid preview` swatch per theme |
 | `Invoke-DFApplyLSColorsTheme -Name <theme> [-Force]` | Resolve/cache/apply LS_COLORS for a named vivid theme |
+
+**fzf** (`Tools/fzf.ps1`)
+
+fzf's `--color` flag natively takes `key:hex` pairs, so no format translation is
+needed (unlike PSReadLine, which converts hex to ANSI escapes). Theme comes
+from `$DFConfig['FzfTheme']`, then the shared `$DFConfig['Theme']`, then
+`catppuccin-mocha`; no `themeMap` is needed since fzf has no native theme
+names of its own to translate to. `Tools/fzf.json`'s `FZF_DEFAULT_OPTS` holds
+only fzf's non-color flags (`--exact`, `--layout=reverse`, …) — the resolved
+`--color=…` string is appended to it by the sidecar, so both survive together.
 
 **winget** (`Tools/winget.ps1`)
 

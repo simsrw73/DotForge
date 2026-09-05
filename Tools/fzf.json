@@ -18,7 +18,7 @@
   },
   "env": {
     "FZF_DEFAULT_COMMAND": "fd --type f --hidden --follow --exclude .git",
-    "FZF_DEFAULT_OPTS": "--color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8\n--color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc\n--color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8\n--exact\n--no-sort\n--layout=reverse\n--border\n--cycle\n--height 50%",
+    "FZF_DEFAULT_OPTS": "--exact\n--no-sort\n--layout=reverse\n--border\n--cycle\n--height 50%",
     "FZF_ALT_C_COMMAND": "fd -H -L -E .git -t d",
     "FZF_ALT_C_OPTS": "--preview \"eza -a --icons --group-directories-first --color=always {}\"",
     "FZF_CTRL_T_COMMAND": "fd -H -L -E .git -t f",

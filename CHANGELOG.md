@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`fzf`'s color theme was hardcoded to catppuccin-mocha, ignoring `$DFConfig['Theme']`/`$DFConfig['FzfTheme']`.**
+  `Tools/fzf.json`'s `FZF_DEFAULT_OPTS` embedded a literal `--color=…` string, unlike every
+  other themed tool in this codebase, which resolves through `Get-DFConfiguredTheme`/
+  `Resolve-DFThemeName`. The color values move to a bundled `Tools/fzf/catppuccin-mocha.json`
+  (same shape as `Tools/psreadline/*.json`), resolved by a new `Tools/fzf.ps1` companion and
+  appended to `FZF_DEFAULT_OPTS` after `Register-DFTool` sets the non-color flags from
+  `fzf.json`'s `env` block — same default appearance as before, now theme-configurable and
+  overridable from `$XDG_CONFIG_HOME/fzf/themes/`.
 - **`Get-Help Register-DFTool -Full` never rendered its synopsis, description, or examples.**
   A `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` sat before the comment-based
   help block, and PowerShell only recognizes comment-based help as the very first token in a
