@@ -528,14 +528,32 @@ Theme comes from `$DFConfig['BatTheme']`, then the shared `$DFConfig['Theme']`
 itself — an unrecognized name warns and falls back to bat's own default
 rather than erroring, so no DotForge-side whitelist is needed.
 
-**delta** (`Tools/delta.ps1`)
+**delta** (`Tools/delta.ps1`, `Tools/delta.setup.ps1`)
 
 delta's `DELTA_FEATURES` is a plain env var with no auto-discovery, so DotForge sets
 it from the resolved theme (`$DFConfig['DeltaTheme']`, then the shared
-`$DFConfig['Theme']`, then `catppuccin-mocha`) — no wrapper, no built-in validation
-(delta silently ignores an unrecognized feature name). Rendering catppuccin still
-requires a delta config that defines the `catppuccin-mocha` feature; DotForge tracks
-the *value*, not the config.
+`$DFConfig['Theme']`, then `catppuccin-mocha`), prefixed with `+` so it *adds* to
+your own git-config `features` list instead of replacing it outright — delta
+silently ignores an unrecognized feature name, and there's no built-in list to
+validate against.
+
+Rendering catppuccin also requires a delta config that actually defines the
+`catppuccin-mocha` feature, so `Tools/delta.ps1` deploys the bundled
+[catppuccin/delta](https://github.com/catppuccin/delta) theme file (all four
+flavours) to `$XDG_CONFIG_HOME/delta/catppuccin.gitconfig` every time delta is
+registered — pure DotForge-shipped content, refreshed like `carapace`'s bundled
+completion specs.
+
+That file only takes effect once git is told to `[include]` it. `Tools/delta.setup.ps1`
+adds one `include.path` entry to your **real** global git config — additive, not a
+replacement of your own delta settings — the *first* time delta is ever registered
+on a machine, using the general one-time-setup mechanism (see
+[Tool Records](#tool-records) below). It prints the exact command to remove that
+line if you don't want it, and never re-adds it after you do — deleting the printed
+line sticks permanently, since DotForge checks a state record
+(`$XDG_STATE_HOME/dotforge/setup-state.json`), not the file's presence. Skip it
+entirely (while still keeping `DELTA_FEATURES`/`GIT_PAGER`) with
+`$DFConfig['SkipSetup'] = @('delta')`.
 
 **glow** (`Tools/glow.ps1`)
 

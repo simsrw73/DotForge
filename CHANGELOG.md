@@ -67,9 +67,25 @@ All notable changes to DotForge are documented here.
   success by calling the new `Complete-DFToolSetup -Name <tool> [-Actions
   <object[]>]`, so a script that throws before reaching that call is retried
   on the next `Register-DFTool` call rather than silently marked done. New
-  `$DFConfig['SkipSetup']` opts a tool out, mirroring `SkipTools`. No
-  consumer yet — `delta`'s catppuccin theming (tracked in `TODO.md`) will be
-  the first.
+  `$DFConfig['SkipSetup']` opts a tool out, mirroring `SkipTools`. First
+  consumer: `delta` (below).
+
+- **`delta` now actually renders catppuccin instead of silently no-opping.**
+  `DELTA_FEATURES=catppuccin-mocha` pointed at a feature that never existed in
+  any git config, anywhere — a confirmed no-op. Fixed two ways: `Tools/delta.ps1`
+  now bundles and deploys [catppuccin/delta](https://github.com/catppuccin/delta)'s
+  `catppuccin.gitconfig` (all four flavours) to
+  `$XDG_CONFIG_HOME/delta/catppuccin.gitconfig` every registration, and a new
+  `Tools/delta.setup.ps1` — the tool-setup-lifecycle primitive's first
+  consumer — adds one `include.path` entry pointing at it to the user's real
+  global git config, exactly once ever, printing the exact removal command and
+  never re-adding it after an explicit removal. Also fixed a related
+  already-shipped bug found along the way: `DELTA_FEATURES` was set bare,
+  which *replaces* the user's entire git-config `features` list rather than
+  layering on top of it (verified directly) — now prefixed with `+`, additive
+  like every other feature DotForge doesn't own. Opt out of the git-config
+  edit alone (keeping `DELTA_FEATURES`/`GIT_PAGER`) with
+  `$DFConfig['SkipSetup'] = @('delta')`.
 
 - **`vivid` LS_COLORS theming.** New `Tools/vivid.json`/`.ps1` plugin resolves
   the shared theme (default `catppuccin-mocha`) via the existing

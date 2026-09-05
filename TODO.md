@@ -87,14 +87,15 @@
     will use an `[include]` line in `~/.gitconfig` specifically *because* `--config <path>`
     would have replaced delta's entire config resolution outright, not layered on top of it —
     the more invasive-looking option was actually the more transparent, non-clobbering one here.
-- [ ] **One-time tool setup/teardown lifecycle primitive** — design done 2026-09-04:
+- [x] **One-time tool setup/teardown lifecycle primitive** — design done 2026-09-04, primitive
+  and its first consumer (delta) both done 2026-09-05:
   `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`
   (`Tools/<name>.setup.ps1` + `Complete-DFToolSetup` + `$XDG_STATE_HOME/dotforge/setup-state.json`,
   run at most once ever per tool, tracked so a user's later edit/removal is never silently
-  reasserted). Delta is the first consumer (implement this before delta's Section 3). Follow-ups,
-  explicitly deferred out of the design's scope:
-  - Migrate `Tools/mdv.ps1`'s config-seeding to it (closes the presence-check bug noted above).
-  - A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
+  reasserted). `Tools/delta.setup.ps1` is the first consumer. Follow-ups, explicitly deferred
+  out of the design's scope, still open:
+  - [ ] Migrate `Tools/mdv.ps1`'s config-seeding to it (closes the presence-check bug noted above).
+  - [ ] A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
     record back — needs its own spec once there's more than delta's single `actions` shape to
     generalize a safe, scoped undo from.
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
@@ -102,13 +103,13 @@
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
   - [x] `psreadline` — done 2026-09-04: defaulted to `catppuccin-mocha` (was the only themed
     tool shipping a neutral `dark` default). `Tools/psreadline.ps1`.
-  - `delta` — `DELTA_FEATURES=catppuccin-mocha` is a confirmed no-op (no matching git-config
-    feature block exists anywhere). Catppuccin ships an actual delta theme/config at
-    https://github.com/catppuccin/delta — wire that in so the feature name isn't a dead pointer.
-    Design: `docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md`. Its Section 3 (the
-    "add the include line once" logic) will be rewritten to use the new tool-setup-lifecycle
-    primitive below instead of its originally-drafted bespoke marker file, once that primitive
-    exists — delta is its first real consumer.
+  - [x] `delta` — done 2026-09-05: bundled and deployed catppuccin/delta's `catppuccin.gitconfig`
+    (`Tools/delta.ps1`), and `Tools/delta.setup.ps1` adds the one-time `include.path` entry via
+    the tool-setup-lifecycle primitive above. Also fixed `DELTA_FEATURES` to be `+`-prefixed
+    (additive) along the way — it previously discarded the user's entire `features` list.
+    Design: `docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md` (Section 3 rewritten
+    2026-09-05 to match the shipped primitive instead of its originally-drafted bespoke marker
+    file).
   - [x] `bat` — done 2026-09-04: `BAT_THEME` set to bat's native `Catppuccin Mocha` (already
     built in, no external config needed). `Tools/bat.json`/`.ps1`.
   - [x] `lsd` — closed 2026-09-04, no code needed: confirmed `lsd` reads `LS_COLORS` for

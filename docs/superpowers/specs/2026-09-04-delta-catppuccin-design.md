@@ -149,46 +149,62 @@ seed-only-when-absent one) to:
 $XDG_CONFIG_HOME/delta/catppuccin.gitconfig
 ```
 
-via `New-DFDirectory` + `Copy-Item`, from `Tools/delta.ps1`.
+via `New-DFDirectory`, from `Tools/delta.ps1`, skipping the write when the
+deployed copy is already byte-identical (a `Get-Content`/`Set-Content`
+comparison, not a raw `Copy-Item` — the same comparison `Tools/carapace.ps1`
+uses for its own bundled specs, referenced above).
 
 ## Section 3 — Manage the `include.path` entry, once, respecting removal
 
-**Why not "check `git config` every session, add if missing"** (the original
-design, before this revision): it spawns `git.exe` on every single shell
-startup just to check, and worse, it's not actually an override-respecting
-design — if the user removes the include line themselves, the very next
-session would see "not present" and silently re-add it. A real override has
-to *stay* overridden.
+**Revision note (2026-09-05):** this section originally drafted a bespoke
+`delta-gitconfig-include.done` marker file plus a delta-specific
+`$DFConfig['DeltaSkipGitConfig']` opt-out. The general one-time-setup
+primitive this design anticipated (`docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`)
+has since shipped — `Tools/<name>.setup.ps1` run via `Invoke-DFToolCompanion`,
+gated on `Get-DFToolSetupState`, recorded via `Complete-DFToolSetup`, opted
+out via the general `$DFConfig['SkipSetup']` array — so this section is
+rewritten to use that instead of inventing delta-specific machinery. Delta is
+that primitive's first real consumer, exactly as planned.
 
-**Design: a persisted marker separate from the file itself.**
+**Why not "check `git config` every session, add if missing"**: it spawns
+`git.exe` on every single shell startup just to check, and worse, it's not
+actually an override-respecting design — if the user removes the include
+line themselves, the very next session would see "not present" and silently
+re-add it. A real override has to *stay* overridden. The one-time-setup
+primitive's state file (`$XDG_STATE_HOME/dotforge/setup-state.json`) is
+exactly this "stays overridden" record, generalized across tools instead of
+reinvented per tool.
+
+**Design: `Tools/delta.setup.ps1`, run at most once ever per machine.**
 
 ```powershell
-$markerDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
-$markerFile = Join-Path $markerDir 'delta-gitconfig-include.done'
+# Tools/delta.setup.ps1
 $deployedPath = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'delta' 'catppuccin.gitconfig')
 
-if (-not (Test-Path $markerFile)) {
-    $existing = git config --global --get-all include.path 2>$null
-    if ($existing -notcontains $deployedPath) {
-        git config --global --add include.path $deployedPath
-        Write-Host "DotForge: added catppuccin theme include to your global git config — remove with: git config --global --unset-all include.path `"$deployedPath`"" -ForegroundColor Green
-    }
-    New-DFDirectory $markerDir
-    Set-Content -Path $markerFile -Value $deployedPath -Encoding UTF8
+$existing = git config --global --get-all include.path 2>$null
+if ($existing -notcontains $deployedPath) {
+    git config --global --add include.path $deployedPath
+    Write-Host "DotForge: added catppuccin theme include to your global git config — remove with: git config --global --unset-all include.path `"$deployedPath`"" -ForegroundColor Green
 }
+
+Complete-DFToolSetup -Name 'delta' -Actions @(
+    @{ type = 'gitConfigInclude'; path = $deployedPath }
+)
 ```
 
-- **Runs the `git config` check/add at most once, ever, per machine** — every
-  later `Register-DFTool` call sees the marker and does nothing, no process
-  spawn. This is the answer to "does it happen once and rechecked": once,
-  not rechecked on a fast path; the marker's mere existence *is* the "already
-  handled" record.
+- **Runs the `git config` check/add at most once, ever, per machine.**
+  `Invoke-DFToolCompanion` dot-sources `Tools/delta.setup.ps1` only when
+  `Get-DFToolSetupState` has no `delta` entry yet; once
+  `Complete-DFToolSetup -Name 'delta'` records that entry, every later
+  `Register-DFTool` call — this session or any future one — skips the file
+  entirely, no process spawn.
 - **Respects an explicit user removal.** If you delete the `include.path`
-  line yourself, the marker file still exists, so DotForge does not
+  line yourself, the state entry still exists, so DotForge does not
   re-examine or re-add it next session — your removal sticks. If you want
   DotForge to re-sync (e.g. after deliberately editing your git config),
-  delete the marker file (`$XDG_CACHE_HOME/dotforge/delta-gitconfig-include.done`)
-  and the check-and-add-if-missing runs again on the next registration.
+  delete delta's entry from `$XDG_STATE_HOME/dotforge/setup-state.json` (or
+  the whole file) and the check-and-add-if-missing runs again on the next
+  registration.
 - **Visible on the one time it actually adds something**: an explicit
   `Write-Host` naming the exact removal command, not a silent mutation
   discoverable only by chance.
@@ -199,12 +215,17 @@ if (-not (Test-Path $markerFile)) {
 - **`include.path` is additive by construction** (`--add`, confirmed) — an
   unrelated pre-existing `include.path` entry pointing at the user's own
   theme file is never touched, only ever added alongside.
-- **Opt-out**: `$DFConfig['DeltaSkipGitConfig'] = $true` skips this whole
-  block (including ever writing the marker) — the one part of this feature
-  that reaches outside DotForge's own XDG-scoped footprint, so it gets its
-  own explicit escape hatch beyond "just don't register delta" (registering
-  delta is still wanted for `DELTA_FEATURES`/`GIT_PAGER`; a user might want
-  that without the git-config edit).
+- **Idempotent on retry.** If the script throws before reaching
+  `Complete-DFToolSetup` (e.g. `git.exe` transiently unavailable), no state
+  entry is written, so the next `Register-DFTool` call retries the whole
+  script from the top per the primitive's own contract — the
+  `-notcontains`-gated `--add` above is what makes that retry safe rather
+  than appending a duplicate line.
+- **Opt-out**: `$DFConfig['SkipSetup'] = @('delta')` skips this whole
+  file — the general mechanism, not a delta-specific flag. Registering
+  delta is still wanted for `DELTA_FEATURES`/`GIT_PAGER` (set by
+  `Tools/delta.ps1`, which is unaffected by `SkipSetup`); a user can opt out
+  of the git-config edit without losing that.
 
 ## Section 4 — Testing
 
@@ -219,26 +240,28 @@ via `$TestDrive`.
   resolution tests in `tests/delta.Tests.ps1` (theme chain, `Resolve-DFThemeName`)
   are otherwise unchanged and still pass; only the literal env var *value*
   assertion needs the `+` added.
-- Registering delta with no marker file present (fresh `$XDG_CACHE_HOME`,
-  fresh `GIT_CONFIG_GLOBAL`, no prior entry) adds exactly one `include.path`
-  entry pointing at the deployed file, and creates the marker file.
-- Registering delta again (marker file now present) does **not** re-invoke
+- Registering delta with no setup-state entry present (fresh
+  `$XDG_STATE_HOME`, fresh `GIT_CONFIG_GLOBAL`, no prior entry) adds exactly
+  one `include.path` entry pointing at the deployed file, and records a
+  `delta` entry in `$XDG_STATE_HOME/dotforge/setup-state.json` via
+  `Complete-DFToolSetup`.
+- Registering delta again (state entry now present) does **not** re-invoke
   `git config` at all — assert this by removing the `include.path` entry
   from the test's scratch config after the first registration, registering
-  again, and confirming the entry is *not* re-added (proves the marker
-  actually short-circuits the check, not just that it happens not to
-  duplicate).
+  again, and confirming the entry is *not* re-added (proves the state check
+  actually short-circuits `Tools/delta.setup.ps1`, not just that it happens
+  not to duplicate).
 - The deployed file exists at the expected path and contains a
   `[delta "catppuccin-mocha"]` section.
-- `$DFConfig['DeltaSkipGitConfig'] = $true` registers delta (still sets
-  `DELTA_FEATURES`) without touching `include.path` and without writing the
-  marker file.
+- `$DFConfig['SkipSetup'] = @('delta')` registers delta (still sets
+  `DELTA_FEATURES`) without touching `include.path` and without writing a
+  `delta` setup-state entry.
 
 ## Section 5 — Documentation
 
 - **README.md**'s delta subsection: explain the `include.path` addition, the
   visible confirmation message, the removal command, and the
-  `DeltaSkipGitConfig` opt-out.
+  `$DFConfig['SkipSetup']` opt-out.
 - **`docs/external-dependencies.md`**: new entry — delta's config-resolution
   rules (follows standard `git-config` file rules, not a delta-specific
   lookup) and the `--config <path>`-replaces-vs-`include.path`-layers
@@ -254,19 +277,22 @@ via `$TestDrive`.
   unique to it) in the user's own git config survives alongside DotForge's
   theme, matching the verified `+`-prefix behavior in this spec.
 - `Tools/delta/catppuccin.gitconfig` exists, matches upstream.
-- Registering `delta` for the first time (no marker present) deploys the
-  file to `$XDG_CONFIG_HOME/delta/catppuccin.gitconfig`, adds exactly one
-  matching `include.path` entry in the user's real global git config
-  (verified via `git config --global --get-all include.path` in a real,
-  isolated test config — never the developer's actual config), and writes
-  the marker file.
-- Once the marker file exists, registering delta again does not invoke
-  `git config` at all — proven by an explicit removal-then-re-register test,
-  not merely "no duplicate."
-- Manually deleting the marker file (simulating "I want DotForge to
-  re-check") causes the next registration to re-run the check-and-add.
-- `$DFConfig['DeltaSkipGitConfig'] = $true` skips the git-config edit and the
-  marker entirely; `DELTA_FEATURES` still gets set (with the `+` prefix).
+- Registering `delta` for the first time (no setup-state entry present)
+  deploys the file to `$XDG_CONFIG_HOME/delta/catppuccin.gitconfig`, adds
+  exactly one matching `include.path` entry in the user's real global git
+  config (verified via `git config --global --get-all include.path` in a
+  real, isolated test config — never the developer's actual config), and
+  records the `delta` entry in the setup-state file.
+- Once the setup-state entry exists, registering delta again does not
+  invoke `Tools/delta.setup.ps1` (and therefore not `git config`) at all —
+  proven by an explicit removal-then-re-register test, not merely "no
+  duplicate."
+- Manually deleting the `delta` entry from the setup-state file (simulating
+  "I want DotForge to re-check") causes the next registration to re-run the
+  check-and-add.
+- `$DFConfig['SkipSetup'] = @('delta')` skips the git-config edit and the
+  state write entirely; `DELTA_FEATURES` still gets set (with the `+`
+  prefix), since that's set by `Tools/delta.ps1`, not `Tools/delta.setup.ps1`.
 - The first-time add prints a visible message naming the exact removal
   command.
 - `git diff` piped through `delta` with `DELTA_FEATURES=+catppuccin-mocha`

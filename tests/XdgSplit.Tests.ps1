@@ -19,6 +19,8 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
+    . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
+    . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -84,8 +86,15 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $script:SavedLess  = $Env:LESS
         $script:SavedState = $Env:XDG_STATE_HOME
         $script:SavedCfg   = $Env:XDG_CONFIG_HOME
+        $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
         $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
         $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
+        # Registering delta for real (below) dot-sources the real Tools/delta.setup.ps1,
+        # which calls `git config --global`. Redirect it explicitly rather than relying
+        # on XDG_CONFIG_HOME alone -- git only falls back to $XDG_CONFIG_HOME/git/config
+        # when no ~/.gitconfig exists, so a developer machine that has one would
+        # otherwise have this test write into its real global git config.
+        $Env:GIT_CONFIG_GLOBAL = Join-Path $TestDrive 'gitconfig'
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
     }
     AfterEach {
@@ -94,6 +103,7 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $Env:LESS             = $script:SavedLess
         $Env:XDG_STATE_HOME   = $script:SavedState
         $Env:XDG_CONFIG_HOME  = $script:SavedCfg
+        $Env:GIT_CONFIG_GLOBAL = $script:SavedGitConfigGlobal
     }
 
     It 'sets FZF_DEFAULT_OPTS from fzf.json env' {

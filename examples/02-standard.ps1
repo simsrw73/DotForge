@@ -35,8 +35,7 @@ $DFConfig = @{
     #   MdvTheme        = 'nord'                # override just mdv
     #   GlowTheme       = 'catppuccin-mocha'    # override just glow
     #   PSReadLineTheme = 'catppuccin-mocha'    # override just psreadline
-    #   DeltaTheme      = 'catppuccin-mocha'    # override just delta (a delta
-    #                                           #   config must define the feature)
+    #   DeltaTheme      = 'catppuccin-mocha'    # override just delta
     #   VividTheme      = 'catppuccin-mocha'    # override just vivid (LS_COLORS)
     #   BatTheme        = 'catppuccin-mocha'    # override just bat
 }
