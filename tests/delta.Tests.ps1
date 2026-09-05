@@ -19,6 +19,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
+    . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
 }

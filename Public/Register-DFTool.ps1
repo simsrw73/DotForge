@@ -1,9 +1,6 @@
 #Requires -Version 7.0
 
 function Register-DFTool {
-    # $DFCurrentTool is set before dot-sourcing companions so sidecars can read it.
-    # PSScriptAnalyzer can't see the companion scope, so suppress the false positive.
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFCurrentTool')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'DFToolDb')]
     <#
     .SYNOPSIS
@@ -144,33 +141,8 @@ function Register-DFTool {
         # ── Declarative picker ──────────────────────────────────────────────
         New-DFToolPickerFunction -Tool $tool
 
-        # ── Companion .ps1 ──────────────────────────────────────────────────
-        $companion = Join-Path $resolvedToolsPath "$($tool.name).ps1"
-        if (Test-Path $companion -PathType Leaf) {
-            $DFCurrentTool = $tool
-            . ($companion)
-            Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
-        }
-
-        # ── One-time setup ──────────────────────────────────────────────────
-        # Tools/<name>.setup.ps1 runs at most once ever per tool: it is
-        # responsible for calling Complete-DFToolSetup itself, as its own
-        # last line, only once its work has actually succeeded. If it throws
-        # first, nothing gets recorded, so the next Register-DFTool call
-        # retries from the top -- see
-        # docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
-        $setupCompanion = Join-Path $resolvedToolsPath "$($tool.name).setup.ps1"
-        if ((Test-Path $setupCompanion -PathType Leaf) -and
-            $tool.name -notin $skipSetup -and
-            -not (Get-DFToolSetupState).PSObject.Properties[$tool.name]) {
-            $DFCurrentTool = $tool
-            try {
-                . ($setupCompanion)
-            } catch {
-                Write-Warning "DotForge: $($tool.name) one-time setup failed: $($_.Exception.Message)"
-            }
-            Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
-        }
+        # ── Companion .ps1 + one-time setup ─────────────────────────────────
+        Invoke-DFToolCompanion -Tool $tool -ToolsPath $resolvedToolsPath -SkipSetup $skipSetup
 
         Write-Verbose "DotForge: $($tool.name) registered"
         $registeredTools.Add($tool.name)
