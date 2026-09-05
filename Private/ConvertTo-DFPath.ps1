@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:ConvertTo-DFPath {
+function ConvertTo-DFPath {
     <#
     .SYNOPSIS
         Canonicalizes an absolute path: native separators, no ./.., no trailing

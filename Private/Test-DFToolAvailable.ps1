@@ -2,7 +2,7 @@
 
 $script:DFToolAvailability = @{}
 
-function script:Test-DFToolAvailable {
+function Test-DFToolAvailable {
     <#
     .SYNOPSIS
         Checks whether a tool's executable or module is available, memoized

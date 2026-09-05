@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:Get-DFConfiguredTheme {
+function Get-DFConfiguredTheme {
     <#
     .SYNOPSIS
         Resolves a tool's theme name from $DFConfig, honoring a per-tool key,

@@ -2,7 +2,7 @@
 
 $script:DFToolDb = $null
 
-function script:Import-DFToolDb {
+function Import-DFToolDb {
     <#
     .SYNOPSIS
         Loads Tools/*.json files into a cached hashtable keyed by tool name.

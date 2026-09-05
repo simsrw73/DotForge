@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:Get-DFCoreutilsShadowSet {
+function Get-DFCoreutilsShadowSet {
     <#
     .SYNOPSIS
         Returns the command names the coreutils readline hook rewrites in this host,

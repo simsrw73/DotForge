@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:Resolve-DFThemeName {
+function Resolve-DFThemeName {
     <#
     .SYNOPSIS
         Translates a canonical theme family name to a tool's native dialect

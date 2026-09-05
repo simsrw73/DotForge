@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:Get-DFToolSetupState {
+function Get-DFToolSetupState {
     <#
     .SYNOPSIS
         Reads the persisted one-time tool-setup state, keyed by tool name.

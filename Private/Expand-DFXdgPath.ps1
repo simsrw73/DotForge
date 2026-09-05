@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 
-function script:Expand-DFXdgPath {
+function Expand-DFXdgPath {
     <#
     .SYNOPSIS
         Expands ${XDG_*} placeholder tokens in a template string to their

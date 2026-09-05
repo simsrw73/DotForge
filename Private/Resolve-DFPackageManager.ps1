@@ -2,7 +2,7 @@
 
 $script:DFPackageManagers = $null
 
-function script:Resolve-DFPackageManager {
+function Resolve-DFPackageManager {
     <#
     .SYNOPSIS
         Detects which package managers are available on PATH.
