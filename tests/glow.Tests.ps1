@@ -16,6 +16,8 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
+    . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
+    . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
     $script:GlowJson  = Get-Content "$PSScriptRoot/../Tools/glow.json" -Raw | ConvertFrom-Json

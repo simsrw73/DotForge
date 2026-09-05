@@ -139,42 +139,7 @@ function Register-DFTool {
         # ── Aliases ─────────────────────────────────────────────────────────
         $toolRole   = $tool.PSObject.Properties['role']?.Value
         $roleWinner = if ($toolRole) { $activeRoleWinners[$toolRole] } else { $null }
-
-        $aliases = $tool.PSObject.Properties['aliases']?.Value
-        if ($aliases) {
-            $aliases.PSObject.Properties | ForEach-Object {
-                $aliasName = $_.Name
-
-                if ($roleWinner -and $roleWinner.WinnerName -ne $tool.name -and $aliasName -in $roleWinner.AliasKeys) {
-                    Write-Verbose "DotForge: $($tool.name) alias '$aliasName' suppressed — '$($roleWinner.WinnerName)' won role '$toolRole'"
-                    return
-                }
-
-                $aliasCmd  = $_.Value.PSObject.Properties['command']?.Value
-                $rawArgs   = $_.Value.PSObject.Properties['args']?.Value
-                $aliasArgs = [object[]]@($rawArgs)
-
-                if (-not $aliasCmd) { return }
-
-                if ($aliasArgs.Count -eq 0) {
-                    Set-Alias -Name $aliasName -Value $aliasCmd -Scope Global -Force
-                } else {
-                    # A built-in alias (e.g. ls -> Get-ChildItem) outranks a
-                    # function of the same name in command resolution
-                    # (Alias > Function), so it would shadow the wrapper
-                    # function below. Remove the colliding global alias first.
-                    # -Force clears ReadOnly built-ins (cd, cp, rm, ...).
-                    if (Test-Path "Alias:\$aliasName") {
-                        Remove-Item "Alias:\$aliasName" -Force -ErrorAction SilentlyContinue
-                    }
-                    $capturedCmd  = $aliasCmd
-                    $capturedArgs = $aliasArgs
-                    Set-Item -Path "function:global:$aliasName" -Value {
-                        & $capturedCmd @capturedArgs @args
-                    }.GetNewClosure()
-                }
-            }
-        }
+        Register-DFToolAliases -Tool $tool -RoleWinner $roleWinner
 
         # ── Declarative picker ──────────────────────────────────────────────
         $picker = $tool.PSObject.Properties['picker']?.Value
