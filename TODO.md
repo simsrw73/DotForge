@@ -73,11 +73,11 @@
   - **Already right:** `psreadline`'s `Set-PSReadLineOption -Colors` has no competing
     persistent-file mechanism to silently override — it *is* the only way psreadline theme
     state is set in a live session, so there's nothing to weigh here.
-  - **Found to be subtly wrong (2026-09-04, during the tool-setup-lifecycle design):**
-    `mdv`'s `config.yaml` is seeded only when *absent* — but "absent" can't be told apart from
-    "DotForge seeded it once, and the user deleted it on purpose." A user who removes the seeded
-    file to opt out gets it silently reseeded on the next `Register-DFTool` call. Fix is to
-    migrate this to the new primitive below rather than patch the presence check in place.
+  - **Found to be subtly wrong (2026-09-04, during the tool-setup-lifecycle design), fixed
+    2026-09-05:** `mdv`'s `config.yaml` was seeded only when *absent* — but "absent" couldn't
+    be told apart from "DotForge seeded it once, and the user deleted it on purpose." Migrated
+    to the tool-setup-lifecycle primitive (`Tools/mdv.setup.ps1`) rather than patching the
+    presence check in place — see the coverage-audit list's `mdv` entry below.
   - **Needs weighing:** `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME`, and `vivid`'s `LS_COLORS`
     all set an env var that — per each tool's own documented precedence — outranks that same
     tool's file-based config. If a user had already hand-set a theme in `bat.conf`, or already
@@ -93,8 +93,10 @@
   (`Tools/<name>.setup.ps1` + `Complete-DFToolSetup` + `$XDG_STATE_HOME/dotforge/setup-state.json`,
   run at most once ever per tool, tracked so a user's later edit/removal is never silently
   reasserted). `Tools/delta.setup.ps1` is the first consumer. Follow-ups, explicitly deferred
-  out of the design's scope, still open:
-  - [ ] Migrate `Tools/mdv.ps1`'s config-seeding to it (closes the presence-check bug noted above).
+  out of the design's scope:
+  - [x] Migrate `Tools/mdv.ps1`'s config-seeding to it — done 2026-09-05: closes the
+    presence-check bug noted above. `Tools/mdv.ps1` retired (its whole job moved to
+    `Tools/mdv.setup.ps1`); directory creation was already handled declaratively.
   - [ ] A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
     record back — needs its own spec once there's more than delta's single `actions` shape to
     generalize a safe, scoped undo from.

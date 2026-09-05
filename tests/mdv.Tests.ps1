@@ -18,6 +18,8 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
+    . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
+    . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
@@ -48,12 +50,12 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
         $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedConfigPath = $Env:MDV_CONFIG_PATH
+        $script:SavedStateHome  = $Env:XDG_STATE_HOME
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
-        # Clean up mdv config from previous tests to ensure fresh state
-        $cfgDir = Join-Path $Env:XDG_CONFIG_HOME 'mdv'
-        if (Test-Path $cfgDir) {
-            Remove-Item -Recurse -Force $cfgDir
-        }
+        $Env:XDG_STATE_HOME     = Join-Path $TestDrive 'state'
+        # Clean up mdv config/state from previous tests to ensure fresh state
+        Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'mdv') -Recurse -Force -ErrorAction Ignore
+        Remove-Item $Env:XDG_STATE_HOME -Recurse -Force -ErrorAction Ignore
         $Env:MDV_CONFIG_PATH    = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -61,6 +63,7 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
     AfterEach {
         $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $Env:MDV_CONFIG_PATH = $script:SavedConfigPath
+        $Env:XDG_STATE_HOME  = $script:SavedStateHome
         $script:DFToolDb     = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
@@ -71,20 +74,45 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
         Test-Path $Env:MDV_CONFIG_PATH | Should -BeTrue
     }
 
-    It 'seeds config.yaml with the catppuccin theme when absent' {
+    It 'seeds config.yaml with the catppuccin theme on first registration' {
         Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
         $cfg = Join-Path $Env:XDG_CONFIG_HOME 'mdv' 'config.yaml'
         Test-Path $cfg | Should -BeTrue
         (Get-Content $cfg -Raw) | Should -Match 'theme:\s*"catppuccin"'
     }
 
-    It 'does not overwrite an existing config.yaml' {
+    It 'records setup state on first registration' {
+        Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
+        (Get-DFToolSetupState).PSObject.Properties['mdv'] | Should -Not -BeNullOrEmpty
+    }
+
+    It 'does not overwrite an existing config.yaml, but still records setup state' {
         $dir = Join-Path $Env:XDG_CONFIG_HOME 'mdv'
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
         $cfg = Join-Path $dir 'config.yaml'
         'theme: "nord"   # user edit' | Set-Content $cfg
         Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
         (Get-Content $cfg -Raw) | Should -Match 'user edit'
+        (Get-DFToolSetupState).PSObject.Properties['mdv'] | Should -Not -BeNullOrEmpty
+    }
+
+    It 'does not reseed config.yaml after the user deletes it post-setup (closes the presence-check bug)' {
+        Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
+        $cfg = Join-Path $Env:XDG_CONFIG_HOME 'mdv' 'config.yaml'
+        Test-Path $cfg | Should -BeTrue
+        Remove-Item $cfg -Force
+
+        Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
+
+        Test-Path $cfg | Should -BeFalse
+    }
+
+    It 'skips config seeding entirely when SkipSetup names mdv' {
+        $Global:DFConfig = @{ SkipSetup = @('mdv') }
+        Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
+        $cfg = Join-Path $Env:XDG_CONFIG_HOME 'mdv' 'config.yaml'
+        Test-Path $cfg | Should -BeFalse
+        (Get-DFToolSetupState).PSObject.Properties['mdv'] | Should -BeNullOrEmpty
     }
 
     It 'maps the catppuccin family down to mdv''s catppuccin theme' {

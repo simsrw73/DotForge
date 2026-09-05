@@ -237,7 +237,10 @@ Pester tests point `$Env:XDG_STATE_HOME` at `TestDrive:` for isolation
   but no such command is designed or built here — it deserves its own spec
   once there's more than one tool's worth of real `actions` shapes to
   generalize a safe, scoped undo from.
-- Migrating `Tools/mdv.ps1`'s config-seeding to this primitive.
+- Migrating `Tools/mdv.ps1`'s config-seeding to this primitive. **Done
+  2026-09-05** — `Tools/mdv.ps1` (whose entire job was theme resolution and
+  seeding) is retired; `Tools/mdv.setup.ps1` does both, once ever, via this
+  primitive.
 
 ## Acceptance Criteria
 

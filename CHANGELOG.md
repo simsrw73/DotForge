@@ -6,6 +6,15 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`mdv`'s seeded `config.yaml` was silently reasserted after a deliberate deletion.**
+  `Tools/mdv.ps1` checked `Test-Path config.yaml` every session and wrote the file
+  whenever absent — indistinguishable from "DotForge has never run here," so a user who
+  deleted the seeded file to opt out got it silently rewritten on the very next
+  `Register-DFTool` call. Migrated to the new tool-setup-lifecycle primitive: theme
+  resolution and seeding now live in `Tools/mdv.setup.ps1`, which runs at most once ever
+  (tracked in `$XDG_STATE_HOME/dotforge/setup-state.json`), so a later deletion sticks
+  permanently. `Tools/mdv.ps1` retired entirely — directory creation was already handled
+  declaratively by `xdg.dirs`, and seeding was its only other job.
 - **`Invoke-DFSqliteQuery` built queries by string concatenation, with manual escaping at its one
   call site that embeds free text.** `DFCatalog.Winget.ps1`'s search doubled embedded single
   quotes itself before building the SQL string — correct today, but a discipline that has to be
@@ -68,7 +77,8 @@ All notable changes to DotForge are documented here.
   <object[]>]`, so a script that throws before reaching that call is retried
   on the next `Register-DFTool` call rather than silently marked done. New
   `$DFConfig['SkipSetup']` opts a tool out, mirroring `SkipTools`. First
-  consumer: `delta` (below).
+  consumer: `delta` (below); `mdv`'s migration closes an already-shipped bug
+  (see Fixed).
 
 - **`delta` now actually renders catppuccin instead of silently no-opping.**
   `DELTA_FEATURES=catppuccin-mocha` pointed at a feature that never existed in

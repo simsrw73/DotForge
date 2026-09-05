@@ -588,16 +588,20 @@ shared `$DFConfig['Theme']`, then `catppuccin-mocha`. Built-ins: `catppuccin-moc
 `catppuccin-latte`, `dracula`, `nord`, `gruvbox-dark/-light`, `solarized-dark/-light`,
 `auto`, `dark`, `light`.
 
-**mdv** (`Tools/mdv.ps1`)
+**mdv** (`Tools/mdv.setup.ps1`)
 
 mdv has no config auto-discovery and no theme env var, so DotForge points
-`MDV_CONFIG_PATH` at `$XDG_CONFIG_HOME/mdv` and seeds `config.yaml` with the resolved
-theme **only when the file is absent** — your edits are never overwritten. Theme comes
-from `$DFConfig['MdvTheme']`, then the shared `$DFConfig['Theme']` (resolved to mdv's
-own `catppuccin` dialect), then `catppuccin-mocha` (resolved to `catppuccin`). Because the
-seed is write-when-absent, **changing the theme after first run means editing or
-deleting `config.yaml`** and re-registering. Completion is provided by a bundled
-carapace spec (`Tools/carapace/specs/mdv.yaml`).
+`MDV_CONFIG_PATH` at `$XDG_CONFIG_HOME/mdv` (declaratively, via `xdg.vars`/`xdg.dirs`)
+and seeds `config.yaml` with the resolved theme **the first time mdv is ever
+registered on a machine** — never re-checked or reasserted after that one time, so an
+edit or deletion of `config.yaml` sticks permanently rather than being silently
+reseeded on the next session. Theme comes from `$DFConfig['MdvTheme']`, then the
+shared `$DFConfig['Theme']` (resolved to mdv's own `catppuccin` dialect), then
+`catppuccin-mocha` (resolved to `catppuccin`). **Changing the theme after that first
+run** means either editing `config.yaml` directly, or clearing mdv's entry from
+`$XDG_STATE_HOME/dotforge/setup-state.json` and re-registering to reseed. Skip the
+one-time seed entirely with `$DFConfig['SkipSetup'] = @('mdv')`. Completion is
+provided by a bundled carapace spec (`Tools/carapace/specs/mdv.yaml`).
 
 **oh-my-posh** (`Tools/oh-my-posh.ps1`)
 
