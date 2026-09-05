@@ -6,6 +6,13 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`Invoke-DFSqliteQuery` built queries by string concatenation, with manual escaping at its one
+  call site that embeds free text.** `DFCatalog.Winget.ps1`'s search doubled embedded single
+  quotes itself before building the SQL string — correct today, but a discipline that has to be
+  re-applied at every future call site forever. Added real `sqlite3_bind_text` parameter binding
+  (a new `-Parameters` argument, bound to `?` placeholders); the winget search now binds its search
+  term instead of concatenating it, so this class of bug is structurally impossible there going
+  forward rather than dependent on remembering to escape.
 - **`fzf`'s color theme was hardcoded to catppuccin-mocha, ignoring `$DFConfig['Theme']`/`$DFConfig['FzfTheme']`.**
   `Tools/fzf.json`'s `FZF_DEFAULT_OPTS` embedded a literal `--color=…` string, unlike every
   other themed tool in this codebase, which resolves through `Get-DFConfiguredTheme`/

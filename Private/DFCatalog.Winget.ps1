@@ -210,15 +210,28 @@ function Search-DFCatalogWinget {
         # search result below is a real no-match, not a failure.
         $major = @(Invoke-DFSqliteQuery -Database $IndexPath -Query "SELECT value FROM metadata WHERE name = 'majorVersion'")
         if ($major -and $major[0].value -eq '2') {
-            $safe = $normalized -replace "'", "''"
-            $words = $safe -split ' '
-            $conditions = foreach ($word in $words) { "(lower(id) || ' ' || lower(name)) LIKE '%$word%'" }
+            $words = @($normalized -split ' ')
+            $conditions = foreach ($word in $words) { "(lower(id) || ' ' || lower(name)) LIKE ?" }
             $where = $conditions -join ' AND '
-            if ($words.Count -eq 1) { $where = "($where) OR lower(moniker) = '$safe'" }
+            # Bound once per LIKE placeholder above, in the same left-to-right order.
+            $bindParams = [System.Collections.Generic.List[string]]::new()
+            foreach ($word in $words) { $bindParams.Add("%$word%") }
 
-            $exact = "lower(id) = '$safe' OR lower(name) = '$safe' OR lower(moniker) = '$safe'"
+            if ($words.Count -eq 1) {
+                $where = "($where) OR lower(moniker) = ?"
+                $bindParams.Add($normalized)
+            }
+
+            # $normalized bound three times here -- once per placeholder -- rather
+            # than embedded in the SQL text, so it's never SQL, only data.
+            $exact = 'lower(id) = ? OR lower(name) = ? OR lower(moniker) = ?'
+            $bindParams.Add($normalized)
+            $bindParams.Add($normalized)
+            $bindParams.Add($normalized)
+
             $rows = @(Invoke-DFSqliteQuery -Database $IndexPath `
-                -Query "SELECT id, name, moniker, latest_version FROM packages WHERE $where ORDER BY CASE WHEN $exact THEN 0 ELSE 1 END, id LIMIT 25")
+                -Query "SELECT id, name, moniker, latest_version FROM packages WHERE $where ORDER BY CASE WHEN $exact THEN 0 ELSE 1 END, id LIMIT 25" `
+                -Parameters $bindParams.ToArray())
 
             $timestamp = [datetime]::UtcNow.AddMinutes(-$ageMinutes)
             foreach ($row in $rows) {
