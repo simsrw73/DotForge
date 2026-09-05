@@ -170,6 +170,17 @@ These are public API. They are listed because DotForge visibly misbehaves if the
   theme family→dialect mapping lives in each tool's own optional `themeMap`, read from the
   already-loaded tool record — no central `data/*.json` registry and no extra startup file-read.
   Adding a themed tool whose dialect matches the canonical needs no declaration at all.
+- **`Get-DFCachedCommandOutput`'s fingerprint needs a real file, not just a resolved command.**
+  It keys the cache on the resolved executable's path + `LastWriteTimeUtc` via `Get-Item
+  $cmd.Source` — but `Get-Command` can resolve a name to a function or alias instead of a file
+  (`.Source` is then empty or not a real path). Found via `tests/scoop.Tests.ps1`'s existing
+  `scoop-search` stand-in, which is a `function global:scoop-search { ... }`, not a real binary:
+  fingerprinting a function stand-in would throw, or silently key the cache on garbage. The
+  function falls back to always calling `-Generate`, uncached, whenever the resolved command has
+  no backing file — a stubbed/aliased/function-shadowed command degrades to "slower but correct"
+  rather than failing. This is why `tests/carapace.Tests.ps1`/`zoxide.Tests.ps1`'s caching tests
+  call the *real* binaries instead of stubbing them the way `scoop.Tests.ps1` stubs `scoop-search`
+  — a stub would make the cache path itself untestable.
 
 ## Keeping this honest
 

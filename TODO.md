@@ -100,6 +100,21 @@
   - [ ] A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
     record back — needs its own spec once there's more than delta's single `actions` shape to
     generalize a safe, scoped undo from.
+- [ ] **Startup-perf audit (2026-09-05) follow-up: async/deferred startup** — design done, not
+  yet implemented: `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. The audit's
+  caching half is done (below); this tracks the larger, riskier half — deferring
+  `Terminal-Icons`/`PSFzf`/`posh-git`'s module imports and `inshellisense`'s session check to a
+  background pre-warm job, confirmed empirically to cut `PSFzf`'s foreground import cost ~77%
+  (282ms → 65ms, reproduced 3/3). **Never** apply this to `oh-my-posh` or `fnm` — the audit
+  confirmed deferring `oh-my-posh`'s init reproduces the documented oh-my-posh/zoxide prompt-hook
+  bug (see "oh-my-posh + zoxide prompt hook ordering" above) on every session instead of only
+  after a manual theme switch. Needs its own implementation plan given the architectural risk
+  (per-user decision, not bundled into the caching work).
+  - [x] Caching half — done 2026-09-05: `carapace`/`zoxide`/`mdcat`/`scoop-search`'s
+    deterministic init/completion output no longer spawns a process every session. New
+    `Get-DFCachedCommandOutput` (`Private/Get-DFCachedCommandOutput.ps1`), fingerprinted on the
+    resolved executable's own file identity. Measured ~200ms mean reduction in
+    `Register-DFTool -All` on this machine (1451.4ms → 1245.9ms, `build/Measure-DFStartup.ps1`).
 - [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
   own design/plan cycles (per user decision, not bundled into one workstream):
   - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.

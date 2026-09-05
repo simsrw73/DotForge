@@ -18,7 +18,14 @@ if (Get-Command scoop-search -ErrorAction Ignore) {
     # returns — the hook never reaches the prompt. (zoxide avoids this because its
     # init emits global:-scoped functions.) Promote the hook's scoop function to
     # global scope so it survives.
-    $_scoopHook = & scoop-search --hook | Out-String
+    #
+    # The hook script is a pure function of scoop-search's own build (verified
+    # byte-identical across runs) -- cached keyed to the binary's own file
+    # identity so a scoop-search upgrade regenerates it. See
+    # docs/superpowers/specs/2026-09-05-startup-perf-audit.md.
+    $_scoopHook = Get-DFCachedCommandOutput -Name 'scoop-search-hook' -Executable 'scoop-search' -Generate {
+        & scoop-search --hook | Out-String
+    }
     # If scoop-search ever emits a global-scoped function itself (proposed
     # upstream), leave it untouched. Otherwise the Replace forces global scope;
     # it no-ops (leaving the function local, i.e. the pre-fix behavior) if the

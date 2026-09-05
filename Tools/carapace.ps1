@@ -48,7 +48,14 @@ if (Test-Path $_bundledSpecs) {
 # and no-ops (leaving the space intact, which MenuComplete needs for subcommand
 # chaining) if carapace ever changes that codegen. Catalogued in
 # docs/external-dependencies.md.
-$_carapaceInit = carapace _carapace powershell | Out-String
+#
+# The init script is a pure function of carapace's own build (verified
+# byte-identical across runs) -- cached keyed to the binary's own file
+# identity so a carapace upgrade regenerates it. See
+# docs/superpowers/specs/2026-09-05-startup-perf-audit.md.
+$_carapaceInit = Get-DFCachedCommandOutput -Name 'carapace-init' -Executable 'carapace' -Generate {
+    carapace _carapace powershell | Out-String
+}
 if (((Get-DFCompletionMode) -eq 'Native') -and (Get-Module -ListAvailable -Name PSFzf)) {
     $_carapaceInit = $_carapaceInit.Replace(
         '[CompletionResult]::new($_.CompletionText,',

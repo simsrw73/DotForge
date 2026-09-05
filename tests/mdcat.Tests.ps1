@@ -18,6 +18,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
+    . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 
@@ -42,14 +43,33 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
         $script:DFToolDb     = $null
         $script:DFToolAvailability = @{}
         $script:SavedTheme   = $Env:MDCAT_THEME
+        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
         $Env:MDCAT_THEME     = $null
+        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
     AfterEach {
         $Env:MDCAT_THEME = $script:SavedTheme
+        $Env:XDG_CACHE_HOME = $script:SavedCacheHome
         $script:DFToolDb = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+    }
+
+    It 'caches the real completion script, and does not regenerate it on a second registration' {
+        # Genuinely calls the real mdcat binary -- see carapace.Tests.ps1 for why
+        # a function/Mock stand-in would defeat this test (no fingerprintable
+        # .Source for Get-DFCachedCommandOutput to key the cache on).
+        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
+        $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'mdcat-completions.txt'
+        Test-Path $cacheFile | Should -BeTrue
+        $writtenAfterFirst = (Get-Item $cacheFile).LastWriteTimeUtc
+
+        Start-Sleep -Milliseconds 50
+        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
+
+        (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
     }
 
     It 'sets MDCAT_THEME to the JSON default when no $DFConfig theme is set' {

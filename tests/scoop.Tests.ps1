@@ -1,4 +1,7 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/scoop.ps1'
 }
 

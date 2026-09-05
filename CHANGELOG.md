@@ -64,6 +64,19 @@ All notable changes to DotForge are documented here.
   installing a tool picks it up, provided the install landed on the current session's
   PATH already (true for scoop; not guaranteed for winget/choco installs that land
   somewhere the running shell won't see until it restarts).
+- **`carapace`, `zoxide`, `mdcat`, and `scoop-search`'s init/completion scripts no longer spawn
+  their process every single session.** A startup-perf audit
+  (`docs/superpowers/specs/2026-09-05-startup-perf-audit.md`) found these four companions spawn
+  a real process every `Register-DFTool` call to produce output that is a pure, byte-identical
+  function of the tool's own build — a caching candidate exactly like `vivid`'s existing
+  `LS_COLORS` cache, just with no session-input theme name to key on. New
+  `Get-DFCachedCommandOutput` (`Private/Get-DFCachedCommandOutput.ps1`) fingerprints the resolved
+  executable's own file identity (path + `LastWriteTimeUtc`) instead — a file stat, not a process
+  spawn — so a tool upgrade correctly invalidates the cache with no version-check cost on the
+  common (cache-hit) path. Falls back to always regenerating, uncached, whenever the resolved
+  command has no real file behind it (a function/alias stand-in) so a stubbed or shadowed command
+  degrades to "slower but correct," never broken. Measured ~200ms mean reduction in
+  `Register-DFTool -All` on a representative machine (`build/Measure-DFStartup.ps1`).
 
 ### Added
 
