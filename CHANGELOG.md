@@ -77,6 +77,21 @@ All notable changes to DotForge are documented here.
   command has no real file behind it (a function/alias stand-in) so a stubbed or shadowed command
   degrades to "slower but correct," never broken. Measured ~200ms mean reduction in
   `Register-DFTool -All` on a representative machine (`build/Measure-DFStartup.ps1`).
+- **`type: module` tools now warm their `Import-Module` cost in the background before
+  `Register-DFTool`'s per-tool loop reaches them.** A new `Start-DFModulePrewarm`
+  (`Private/Start-DFModulePrewarm.ps1`) fires one background job that pre-imports every
+  `type: module` tool actually being registered this call (e.g. `Terminal-Icons`, `PSFzf`,
+  `posh-git`, `psreadline`) into a throwaway runspace, purely to warm OS/CLR-level caches
+  before the loop reaches that tool's own existing, unchanged `Import-Module` call — the
+  later, real import is then measured ~77% faster (282ms → 65ms on a representative
+  module, reproduced 3/3, per `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`
+  Part 2). Automatic for every `type: module` tool actually being registered, with no new
+  declarative opt-in field — see `Start-DFModulePrewarm`'s own doc comment for the one
+  assumption this relies on (no import-time side effects beyond session-local state).
+  Deliberately excludes `oh-my-posh`/`fnm` (neither is a `type: module` tool, and the audit
+  found deferring `oh-my-posh`'s init reproduces a documented prompt-hook bug) and
+  `inshellisense`'s session check (a separately-tracked, differently-shaped follow-up —
+  see `TODO.md`).
 
 ### Added
 
