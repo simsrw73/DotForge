@@ -142,67 +142,7 @@ function Register-DFTool {
         Register-DFToolAliases -Tool $tool -RoleWinner $roleWinner
 
         # ── Declarative picker ──────────────────────────────────────────────
-        $picker = $tool.PSObject.Properties['picker']?.Value
-        if ($picker -and $picker -is [PSCustomObject]) {
-            $pAlias    = $picker.PSObject.Properties['alias']?.Value
-            $pFunction = $picker.PSObject.Properties['function']?.Value
-            $pList     = $picker.PSObject.Properties['list']?.Value
-            $pPreview  = $picker.PSObject.Properties['preview']?.Value ?? ''
-            $pWindow   = $picker.PSObject.Properties['preview_window']?.Value ?? 'right:60%'
-            $pAnsi     = [bool]($picker.PSObject.Properties['ansi']?.Value)
-            $pHeader   = $picker.PSObject.Properties['header']?.Value ?? ''
-            $pAction   = $picker.PSObject.Properties['action']?.Value
-            $pParse    = $picker.PSObject.Properties['parse']?.Value
-            $pAccPath  = [bool]($picker.PSObject.Properties['list_accepts_path']?.Value)
-
-            if ($pFunction -and $pList) {
-                $capturedList    = $pList
-                $capturedPreview = $pPreview
-                $capturedWindow  = $pWindow
-                $capturedAnsi    = $pAnsi
-                $capturedHeader  = $pHeader
-                $capturedAction  = if ($pAction -and $pAction -ne 'output') {
-                    [scriptblock]::Create("param(`$v) " + $pAction.Replace('{}', '$v'))
-                } else { $null }
-                $capturedParse   = if ($pParse) {
-                    [scriptblock]::Create($pParse)
-                } else { $null }
-
-                $fn = if ($pAccPath) {
-                    $capturedParts = @($capturedList -split '\s+')
-                    {
-                        [CmdletBinding()]
-                        param([string]$Path = '.')
-                        Invoke-DFPicker `
-                            -List          { & $capturedParts[0] @($capturedParts[1..($capturedParts.Count - 1)]) $Path } `
-                            -Preview       $capturedPreview `
-                            -PreviewWindow $capturedWindow `
-                            -Ansi:$capturedAnsi `
-                            -Header        $capturedHeader `
-                            -Parse         $capturedParse `
-                            -Action        $capturedAction
-                    }.GetNewClosure()
-                } else {
-                    {
-                        [CmdletBinding()]
-                        param()
-                        Invoke-DFPicker `
-                            -List          ([scriptblock]::Create($capturedList)) `
-                            -Preview       $capturedPreview `
-                            -PreviewWindow $capturedWindow `
-                            -Ansi:$capturedAnsi `
-                            -Header        $capturedHeader `
-                            -Parse         $capturedParse `
-                            -Action        $capturedAction
-                    }.GetNewClosure()
-                }
-
-                Set-Item -Path "function:global:$pFunction" -Value $fn
-                if ($pAlias) {
-                    Set-Alias -Name $pAlias -Value $pFunction -Scope Global -Force
-                }
-            }
-        }
+        New-DFToolPickerFunction -Tool $tool
 
         # ── Companion .ps1 ──────────────────────────────────────────────────
         $companion = Join-Path $resolvedToolsPath "$($tool.name).ps1"

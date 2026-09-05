@@ -18,6 +18,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
+    . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
