@@ -36,6 +36,7 @@ Describe 'Tools/mdcat.json' {
 Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ignore)) {
     BeforeEach {
         $script:DFToolDb     = $null
+        $script:DFToolAvailability = @{}
         $script:SavedTheme   = $Env:MDCAT_THEME
         $Env:MDCAT_THEME     = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore

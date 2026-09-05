@@ -22,6 +22,7 @@ BeforeAll {
 Describe 'psreadline tool sidecar' {
     BeforeEach {
         $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
 

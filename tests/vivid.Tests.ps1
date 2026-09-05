@@ -45,6 +45,7 @@ Describe 'Tools/vivid.json' {
 Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ignore)) {
     BeforeEach {
         $script:DFToolDb       = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'

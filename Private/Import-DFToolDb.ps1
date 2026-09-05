@@ -15,7 +15,8 @@ function script:Import-DFToolDb {
         participate in caching, so a caller with its own directory never sees
         (or clobbers) another caller's registry.
     .PARAMETER Force
-        Clears the cache and reloads from disk.
+        Clears the cache and reloads from disk. Has no effect when -ToolsPath is also
+        supplied -- that call is always uncached regardless of -Force.
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]

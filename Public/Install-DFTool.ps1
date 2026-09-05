@@ -109,6 +109,8 @@ function Install-DFTool {
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host ' ✓' -ForegroundColor Green
                     $installedVia = $pm
+                    $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
+                    $null = Test-DFToolAvailable -Executable $tool.executable -Type $toolType -Force
                     break
                 } else {
                     Write-Host ' failed' -ForegroundColor Red

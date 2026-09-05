@@ -50,6 +50,7 @@ Describe 'Tools/glow.json' {
 Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Ignore)) {
     BeforeEach {
         $script:DFToolDb        = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedConfigDir  = $Env:GLOW_CONFIG_DIR
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'

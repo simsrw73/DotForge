@@ -41,6 +41,7 @@ Describe 'Tools/mdv.json' {
 Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore)) {
     BeforeEach {
         $script:DFToolDb        = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $script:SavedConfigPath = $Env:MDV_CONFIG_PATH
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'

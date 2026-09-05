@@ -51,6 +51,7 @@ Describe 'Resolve-DFPackageManager' {
         @($custom)[1] | Should -Be 'scoop'
         # cache must still reflect the default-priority result, not the custom one
         $cachedAgain = Resolve-DFPackageManager
+        @($cachedAgain).Count | Should -Be @($default).Count
         @($cachedAgain)[0] | Should -Be $default[0]
     }
 }

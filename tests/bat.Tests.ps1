@@ -33,6 +33,7 @@ Describe 'Tools/bat.json' {
 Describe 'bat tool sidecar' -Skip:(-not (Get-Command bat.exe -ErrorAction Ignore)) {
     BeforeEach {
         $script:DFToolDb       = $null
+        $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
         $script:RealTools       = Join-Path $PSScriptRoot '../Tools'

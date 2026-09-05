@@ -2,6 +2,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
     . "$PSScriptRoot/../Public/Install-DFTool.ps1"
 }
 
@@ -9,6 +10,7 @@ Describe 'Install-DFTool' {
     BeforeEach {
         $script:DFToolDb          = $null
         $script:DFPackageManagers = $null
+        $script:DFToolAvailability = @{}
         $script:TmpTools = Join-Path $TestDrive 'tools'
         New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
 

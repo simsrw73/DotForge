@@ -76,6 +76,7 @@ Describe 'env-block relocation preserves the migrated values' {
 
 Describe 'Register applies the migrated env settings (tools without a sidecar)' {
     BeforeEach {
+        $script:DFToolAvailability = @{}
         $script:SavedFzf   = $Env:FZF_DEFAULT_OPTS
         $script:SavedPager = $Env:GIT_PAGER
         $script:SavedLess  = $Env:LESS

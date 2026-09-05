@@ -31,6 +31,7 @@ Describe 'Tools/delta.json' {
 Describe 'delta tool sidecar' {
     BeforeEach {
         $script:DFToolDb   = $null
+        $script:DFToolAvailability = @{}
         $script:SavedFeat  = $Env:DELTA_FEATURES
         $Env:DELTA_FEATURES = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore

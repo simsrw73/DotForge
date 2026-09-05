@@ -23,6 +23,7 @@ BeforeAll {
 Describe 'eza/lsd share role: listing (real tool records)' {
     BeforeEach {
         $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Get-Command {
             param($Name)

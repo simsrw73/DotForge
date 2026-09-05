@@ -4,6 +4,35 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`New-DFShim` changed directory before invoking the target.** The generated `.cmd` did
+  `cd /d` into the target executable's own install directory before running it, so any
+  relative-path argument the user passed resolved against that directory instead of the
+  caller's actual working directory. The `cd` is removed — nothing needed it (Windows
+  already resolves an executable's own DLL dependencies relative to its own directory
+  regardless of `cwd`).
+- **`Import-DFToolDb` and `Resolve-DFPackageManager` could return a stale or
+  cross-contaminated result.** Both cached their result in a single unkeyed variable
+  regardless of whether the caller passed an explicit `-ToolsPath`/`-Priority`, so a
+  one-off call with a custom value could read another caller's cached answer, or silently
+  overwrite the shared cache for every later default-argument caller in the session. An
+  explicit override now always does a fresh, uncached read/write, mirroring the guard
+  `Get-DFCategoryDb` already used correctly for its own `-Path` override.
+
+### Changed
+
+- **`Register-DFTool -All` no longer re-probes the same tool's availability more than
+  once per session.** A new `Test-DFToolAvailable` (`Private/Test-DFToolAvailable.ps1`)
+  memoizes `Get-Command`/`Get-Module` results per `(type, executable)` — previously a
+  `$DFConfig.Defaults` role winner was probed twice per `Register-DFTool` call (once
+  during role resolution, once in the main loop), and every tool was re-probed from
+  scratch on any later `Register-DFTool` call in the same session. Measured ~44%
+  reduction in `Register-DFTool -All` wall-clock cost on a representative machine
+  (`build/Measure-DFStartup.ps1`). `Install-DFTool` refreshes a tool's cached entry
+  immediately after a successful install, so a `Register-DFTool` call right after
+  installing a tool still picks it up.
+
 ### Added
 
 - **Tool setup lifecycle.** A new optional `Tools/<name>.setup.ps1` companion

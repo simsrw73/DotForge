@@ -15,7 +15,8 @@ function script:Resolve-DFPackageManager {
         a one-off custom-priority call never overwrites the cached default
         result for later default-priority callers.
     .PARAMETER Force
-        Clear cache and re-detect.
+        Clear cache and re-detect. Has no effect when -Priority is also supplied -- that
+        call is always uncached regardless of -Force.
     #>
     [CmdletBinding()]
     [OutputType([string[]])]
