@@ -75,6 +75,29 @@ function Register-DFTool {
     # Topological sort respects dependsOn declarations
     $tools = Invoke-DFTopoSort -Tools @($tools)
 
+    # ── Module prewarm (perf) ───────────────────────────────────────────────
+    # Fire a background job that imports each type:module tool's module in its
+    # own throwaway runspace, purely to warm OS/CLR-level caches before this
+    # loop reaches that tool's own (unchanged) Import-Module call below --
+    # measured ~77% reduction on a representative module (Get-DFCachedCommandOutput's
+    # sibling optimization for exe-type tools; see
+    # docs/superpowers/specs/2026-09-05-startup-perf-audit.md Part 2 for this one).
+    # Automatic for every type:module tool actually being registered this call
+    # (not a new declarative opt-in) -- see Start-DFModulePrewarm's own doc
+    # comment for the one assumption this relies on.
+    $prewarmModules = @(
+        foreach ($t in $tools) {
+            $tType = $t.PSObject.Properties['type']?.Value ?? 'exe'
+            if ($tType -eq 'module' -and (Test-DFToolAvailable -Executable $t.executable -Type 'module')) {
+                $t.executable
+            }
+        }
+    )
+    # Skip the call entirely when there's nothing to prewarm rather than relying
+    # on Start-DFModulePrewarm's own empty-input $null return -- avoids spinning
+    # up (and then force-removing) a background job that would do no work.
+    $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules } else { $null }
+
     # ── Default-tool role resolution (§10) ─────────────────────────────────
     # For each role named in $DFConfig.Defaults, resolve whether the declared
     # winner is role-valid AND actually registering this call; if so, record
@@ -169,5 +192,15 @@ DotForge: coreutils shadows $($conflicts.Count) DotForge command(s) before Power
   Silence entirely: `$DFConfig.SkipConflictCheck = `$true
 "@
         }
+    }
+
+    # Fire-and-forget cleanup: remove the prewarm job whether or not it
+    # finished. Nothing downstream depends on its result (see
+    # Start-DFModulePrewarm's own doc comment) -- if it's still running,
+    # force-removing it is safe, since the only work it did was read/JIT
+    # already-shared OS/CLR state that persists regardless of how the job
+    # itself ends.
+    if ($prewarmJob) {
+        $prewarmJob | Remove-Job -Force -ErrorAction Ignore
     }
 }

@@ -20,6 +20,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
+    . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
 }
@@ -519,6 +520,88 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             # just confirm no exception and the loser's non-contested alias exists.
             Test-Path 'function:global:rtonly' | Should -BeTrue
         }
+    }
+
+    It 'fires a background prewarm job for every type:module tool being registered' {
+        @'
+{ "name": "moduletool", "type": "module", "executable": "ModuleToolExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'moduletool.json')
+        $script:DFToolDb = $null
+
+        Mock Get-Module { [PSCustomObject]@{ Name = 'ModuleToolExe' } }
+        Mock Start-DFModulePrewarm { $null } -Verifiable
+
+        Register-DFTool -Name 'moduletool' -ToolsPath $script:TmpTools
+
+        Should -Invoke Start-DFModulePrewarm -Times 1 -ParameterFilter {
+            @($ModuleNames) -contains 'ModuleToolExe'
+        }
+
+        Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'does not fire a prewarm job when no type:module tool is being registered' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Start-DFModulePrewarm { $null } -Verifiable
+
+        Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
+
+        Should -Invoke Start-DFModulePrewarm -Times 0
+    }
+
+    It 'excludes a type:module tool that Test-DFToolAvailable reports unavailable' {
+        @'
+{ "name": "unavailmodule", "type": "module", "executable": "UnavailModuleExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'unavailmodule.json')
+        @'
+{ "name": "moduletool", "type": "module", "executable": "ModuleToolExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'moduletool.json')
+        $script:DFToolDb = $null
+
+        # Two separate -ParameterFilter mocks, not one conditional scriptblock body --
+        # matches this file's own established pattern (see Find-DFPackage.Tests.ps1)
+        # rather than relying on which automatic variables Pester exposes inside a
+        # mock body that declares its own param() block.
+        Mock Get-Module { [PSCustomObject]@{ Name = 'ModuleToolExe' } } -ParameterFilter { $Name -eq 'ModuleToolExe' }
+        Mock Get-Module { $null } -ParameterFilter { $Name -eq 'UnavailModuleExe' }
+        Mock Start-DFModulePrewarm { $null } -Verifiable
+
+        Register-DFTool -Name 'moduletool', 'unavailmodule' -ToolsPath $script:TmpTools
+
+        Should -Invoke Start-DFModulePrewarm -Times 1 -ParameterFilter {
+            @($ModuleNames) -contains 'ModuleToolExe' -and
+            @($ModuleNames) -notcontains 'UnavailModuleExe'
+        }
+
+        Remove-Item (Join-Path $script:TmpTools 'unavailmodule.json') -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'cleans up the prewarm job after the per-tool loop, even if it has not finished' {
+        @'
+{ "name": "moduletool", "type": "module", "executable": "ModuleToolExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'moduletool.json')
+        $script:DFToolDb = $null
+
+        Mock Get-Module { [PSCustomObject]@{ Name = 'ModuleToolExe' } } -ParameterFilter { $Name -eq 'ModuleToolExe' }
+        # A real, still-sleeping job stands in for "prewarm not finished yet" --
+        # deliberately NOT mocking Remove-Job (that would make the assertion
+        # below vacuously true without proving anything, and would leak this
+        # real background job past the test, sleeping for 30s in the runner).
+        $fakeJob = Start-ThreadJob -ScriptBlock { Start-Sleep -Seconds 30 }
+        Mock Start-DFModulePrewarm { $fakeJob }
+
+        Register-DFTool -Name 'moduletool' -ToolsPath $script:TmpTools
+
+        # Register-DFTool force-removes the job whether or not it finished --
+        # proven by using a job that is still running when the function
+        # returns, then confirming it is really gone (not mocked away).
+        Get-Job -Id $fakeJob.Id -ErrorAction Ignore | Should -BeNullOrEmpty
+
+        Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
     }
 }
 

@@ -22,6 +22,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
+    . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
 }

@@ -20,6 +20,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
+    . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
