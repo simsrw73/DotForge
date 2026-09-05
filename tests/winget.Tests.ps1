@@ -2,6 +2,7 @@ BeforeAll {
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/winget.ps1'
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
+    . "$PSScriptRoot/../Private/Invoke-DFPackageManagerPicker.ps1"
 
     # A fzf stand-in: returns whatever lines the test sets in $script:FzfOut, after
     # recording the items the picker fed in. Mocked per-test via Set-Variable.

@@ -48,16 +48,12 @@ function global:Select-ChocoPackage {
     # sudo-aware command for the in-place execute() key (runs in a cmd subshell).
     $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'choco search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-r' `
-        -Bind          "alt-i:execute($run install {2} -y)"
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'choco info {2}' `
+        -Header         'choco search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
+        -ExpectKey      'alt-r' `
+        -Bind           "alt-i:execute($run install {2} -y)"
 
     if (-not $sel) { return }
     $id = @($sel.Selected)[0]
@@ -88,16 +84,12 @@ function global:Remove-ChocoPackage {
 
     $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'choco uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-c' `
-        -Bind          "alt-x:execute($run uninstall {2} -y)"
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'choco info {2}' `
+        -Header         'choco uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
+        -ExpectKey      'alt-c' `
+        -Bind           "alt-x:execute($run uninstall {2} -y)"
 
     if (-not $sel) { return }
     $id = @($sel.Selected)[0]
@@ -127,16 +119,12 @@ function global:Invoke-ChocoUpdate {
         }
     )
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & choco info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'choco upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-a'
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'choco info {2}' `
+        -Header         'choco upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
+        -ExpectKey      'alt-a' `
+        -Multi
 
     if (-not $sel) { return }
 

@@ -74,16 +74,12 @@ function global:Select-ScoopPackage {
         }
     )
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'scoop search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-r' `
-        -Bind          'alt-i:execute(scoop install {2})'
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'scoop info {2}' `
+        -Header         'scoop search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
+        -ExpectKey      'alt-r' `
+        -Bind           'alt-i:execute(scoop install {2})'
 
     if (-not $sel) { return }
     $name = @($sel.Selected)[0]
@@ -105,20 +101,16 @@ function global:Remove-ScoopPackage {
 
     if (-not (Assert-DFScoopModule)) { return }
 
-    $sel = Invoke-DFPicker `
-        -List {
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems {
             Get-ScoopApp 2>$null | ForEach-Object {
                 ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
             }
         } `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'scoop uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-c' `
-        -Bind          'alt-x:execute(scoop uninstall {2})'
+        -PreviewCommand 'scoop info {2}' `
+        -Header         'scoop uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
+        -ExpectKey      'alt-c' `
+        -Bind           'alt-x:execute(scoop uninstall {2})'
 
     if (-not $sel) { return }
     $name = @($sel.Selected)[0]
@@ -142,20 +134,16 @@ function global:Invoke-ScoopUpdate {
 
     # The Scoop module has no "outdated" query, so list all installed apps and
     # let the user mark which to update.
-    $sel = Invoke-DFPicker `
-        -List {
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems {
             Get-ScoopApp 2>$null | ForEach-Object {
                 ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
             }
         } `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & scoop info {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'scoop update  [Tab=mark | Enter=update marked | Alt-A=update all]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-a'
+        -PreviewCommand 'scoop info {2}' `
+        -Header         'scoop update  [Tab=mark | Enter=update marked | Alt-A=update all]' `
+        -ExpectKey      'alt-a' `
+        -Multi
 
     if (-not $sel) { return }
 

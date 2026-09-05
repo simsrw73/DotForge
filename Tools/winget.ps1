@@ -38,16 +38,12 @@ function global:Select-WingetPackage {
         }
     )
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'winget search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-r' `
-        -Bind          'alt-i:execute(winget install --id {2} --exact)'
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'winget show --id {2}' `
+        -Header         'winget search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
+        -ExpectKey      'alt-r' `
+        -Bind           'alt-i:execute(winget install --id {2} --exact)'
 
     if (-not $sel) { return }
     $id = @($sel.Selected)[0]
@@ -84,16 +80,12 @@ function global:Remove-WingetPackage {
             }
     )
 
-    $sel = Invoke-DFPicker `
-        -List          { $items }.GetNewClosure() `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'winget uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-c' `
-        -Bind          'alt-x:execute(winget uninstall --id {2})'
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems      { $items }.GetNewClosure() `
+        -PreviewCommand 'winget show --id {2}' `
+        -Header         'winget uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
+        -ExpectKey      'alt-c' `
+        -Bind           'alt-x:execute(winget uninstall --id {2})'
 
     if (-not $sel) { return }
     $id = @($sel.Selected)[0]
@@ -115,21 +107,17 @@ function global:Invoke-WingetUpdate {
 
     if (-not (Assert-DFWingetModule)) { return }
 
-    $sel = Invoke-DFPicker `
-        -List {
+    $sel = Invoke-DFPackageManagerPicker `
+        -ListItems {
             Get-WinGetPackage 2>$null | Where-Object IsUpdateAvailable | ForEach-Object {
                 $latest = @($_.AvailableVersions)[0]
                 ('{0,-36} {1,-30} {2} -> {3}' -f $_.Name, $_.Id, $_.InstalledVersion, $latest) + "`t" + $_.Id
             }
         } `
-        -Delimiter     "`t" `
-        -WithNth       '1' `
-        -Multi `
-        -Preview       'ping -n 2 127.0.0.1 >nul & winget show --id {2}' `
-        -PreviewWindow 'right:60%' `
-        -Header        'winget upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
-        -Parse         { ($_ -split "`t")[1] } `
-        -Expect        'alt-a'
+        -PreviewCommand 'winget show --id {2}' `
+        -Header         'winget upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
+        -ExpectKey      'alt-a' `
+        -Multi
 
     if (-not $sel) { return }
 

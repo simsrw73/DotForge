@@ -87,6 +87,7 @@ Describe 'scoop pickers' {
     BeforeAll {
         . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
         . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
+        . "$PSScriptRoot/../Private/Invoke-DFPackageManagerPicker.ps1"
         Import-Module Scoop -ErrorAction SilentlyContinue   # so *-ScoopApp exist to mock
         function script:SApp ($Name, $Version, $Source) {
             [pscustomobject]@{ Name = $Name; Version = $Version; Source = $Source }
