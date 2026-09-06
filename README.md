@@ -4,6 +4,8 @@
 
 **A PowerShell module to manage your command line tools, easily & consistently.**
 
+**[Install from the PowerShell Gallery](https://www.powershellgallery.com/packages/DotForge)** — `Install-PSResource -Name DotForge -Scope CurrentUser`
+
 > [!WARNING]
 > **Registering a tool that's already installed can make it lose track of its existing files.**
 > DotForge relocates many tools' config/data/cache to XDG-standard paths (e.g. `RUSTUP_HOME`/
@@ -48,17 +50,17 @@ cargo is tried as a last resort for tools that declare a `packages.cargo` entry.
 
 ## Installation
 
-### From GitHub (current)
+### From PSGallery
+
+```powershell
+Install-PSResource -Name DotForge -Scope CurrentUser
+```
+
+### From GitHub (latest `main`)
 
 ```powershell
 git clone https://github.com/simsrw73/DotForge.git
 Import-Module C:\path\to\DotForge\DotForge.psd1
-```
-
-### From PSGallery (coming soon)
-
-```powershell
-Install-PSResource -Name DotForge -Scope CurrentUser
 ```
 
 ## Quick Start
