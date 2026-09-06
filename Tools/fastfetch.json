@@ -1,0 +1,18 @@
+{
+  "name": "fastfetch",
+  "description": "Fast, actively-maintained neofetch-like system information tool",
+  "tags": ["system", "info"],
+  "executable": "fastfetch.exe",
+  "packages": {
+    "scoop": "fastfetch",
+    "winget": "Fastfetch-cli.Fastfetch"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "config",
+    "config_path": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc",
+    "config_content": "{\n  \"$schema\": \"https://github.com/fastfetch-cli/fastfetch/raw/2.68.1/doc/json_schema.json\",\n  \"logo\": { \"type\": \"none\" },\n  \"display\": { \"separator\": \"  \", \"color\": { \"keys\": \"#cba6f7\", \"output\": \"#cdd6f4\" } },\n  \"modules\": [\n    \"os\", \"host\", \"kernel\", \"uptime\", \"packages\", \"shell\", \"terminal\",\n    \"cpu\", \"gpu\", { \"type\": \"memory\", \"format\": \"{used} / {total} ({percentage})\" },\n    \"display\", { \"type\": \"localip\", \"format\": \"{ipv4} ({ifname})\" },\n    { \"type\": \"disk\", \"format\": \"{mountpoint} ({filesystem}): {size-used} / {size-total} ({size-percentage})\" },\n    { \"type\": \"physicaldisk\", \"hideVirtual\": true, \"hideUnused\": true, \"format\": \"{name} ({physical-type}, {interconnect}): {size}\" }\n  ]\n}\n"
+  },
+  "aliases": {},
+  "picker": null
+}

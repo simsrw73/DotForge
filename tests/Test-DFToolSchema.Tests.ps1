@@ -87,7 +87,7 @@ Describe 'Seed tool JSON files' {
 
     $seedFiles = @(
         'bat', 'eza', 'fzf', 'ripgrep', 'zoxide',
-        'fd', 'broot', 'jq', 'glow', 'procs', 'winfetch',
+        'fd', 'broot', 'jq', 'glow', 'procs', 'fastfetch',
         'curl', 'wget', 'docker', 'less', 'gh', 'delta',
         'lazygit', 'rustup', 'uv', 'chezmoi', 'micro',
         'bitwarden', 'npm', 'fnm', 'scoop', 'winget',
