@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.6.0-preview] - 2026-09-06
+
 ### Fixed
 
 - **`eza`'s `ll`/`la` aliases and `fzf`'s match mode/previews had drifted from the reference zsh
