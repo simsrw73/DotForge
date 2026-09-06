@@ -100,21 +100,30 @@
   - [ ] A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
     record back — needs its own spec once there's more than delta's single `actions` shape to
     generalize a safe, scoped undo from.
-- [ ] **Startup-perf audit (2026-09-05) follow-up: async/deferred startup** — design done, not
-  yet implemented: `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. The audit's
-  caching half is done (below); this tracks the larger, riskier half — deferring
-  `Terminal-Icons`/`PSFzf`/`posh-git`'s module imports and `inshellisense`'s session check to a
-  background pre-warm job, confirmed empirically to cut `PSFzf`'s foreground import cost ~77%
-  (282ms → 65ms, reproduced 3/3). **Never** apply this to `oh-my-posh` or `fnm` — the audit
-  confirmed deferring `oh-my-posh`'s init reproduces the documented oh-my-posh/zoxide prompt-hook
-  bug (see "oh-my-posh + zoxide prompt hook ordering" above) on every session instead of only
-  after a manual theme switch. Needs its own implementation plan given the architectural risk
-  (per-user decision, not bundled into the caching work).
+- [ ] **Startup-perf audit (2026-09-05) follow-up: async/deferred startup** — the module-import
+  half is now implemented (below); `inshellisense`'s session-check deferral remains, still
+  design-only: `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. **Never** apply this to
+  `oh-my-posh` or `fnm` — the audit confirmed deferring `oh-my-posh`'s init reproduces the
+  documented oh-my-posh/zoxide prompt-hook bug (see "oh-my-posh + zoxide prompt hook ordering"
+  above) on every session instead of only after a manual theme switch.
   - [x] Caching half — done 2026-09-05: `carapace`/`zoxide`/`mdcat`/`scoop-search`'s
     deterministic init/completion output no longer spawns a process every session. New
     `Get-DFCachedCommandOutput` (`Private/Get-DFCachedCommandOutput.ps1`), fingerprinted on the
     resolved executable's own file identity. Measured ~200ms mean reduction in
     `Register-DFTool -All` on this machine (1451.4ms → 1245.9ms, `build/Measure-DFStartup.ps1`).
+  - [x] Module-import half — done 2026-09-05: `Terminal-Icons`/`PSFzf`/`posh-git` now warm their
+    `Import-Module` cost in a background `Start-ThreadJob` (`Private/Start-DFModulePrewarm.ps1`)
+    before `Register-DFTool`'s per-tool loop reaches each one's own unchanged, synchronous
+    `Import-Module` call — measured ~77% faster on a representative module (282ms → 65ms,
+    reproduced 3/3). `psreadline` is deliberately excluded via a new `Tools/<name>.json`
+    `"prewarm": false` opt-out: its sidecar never re-imports PSReadLine (always pre-loaded by the
+    PS7 host), so prewarming it has no benefit, and it is the module most exposed to the
+    shared-process CLR statics `Start-ThreadJob` implies (PSReadLine's key-handler dispatch table
+    is a process-global static singleton that PSFzf's import touches).
+  - [ ] `inshellisense`'s `is -c` session-check deferral — still out of scope, not yet
+    implemented; a differently-shaped mechanism (a native command's exit code, consumed later
+    inside `Initialize-DFCompletionStack`, not a module import) that was explicitly excluded from
+    the module-import plan above.
   - [ ] **Real-profile follow-up (found 2026-09-05, analyzing the user's actual `profile.ps1`)**:
     - Migrate the three PSReadLine lines at the bottom of `profile.ps1`
       (`Set-PSReadLineOption -HistorySearchCursorMovesToEnd`, `Ctrl+p`/`Ctrl+n` history-search key

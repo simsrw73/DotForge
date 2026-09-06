@@ -5,6 +5,7 @@
   "tags": ["readline", "completion", "theme", "module"],
   "executable": "PSReadLine",
   "dependsOn": [],
+  "prewarm": false,
   "xdg": { "compliance": "none", "method": "default" },
   "settings": {
     "editMode":            "Windows",

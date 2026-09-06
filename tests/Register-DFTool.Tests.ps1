@@ -603,6 +603,59 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
         $script:DFToolDb = $null
     }
+
+    It 'excludes a type:module tool declaring "prewarm": false, even when available' {
+        @'
+{ "name": "noprewarmmodule", "type": "module", "executable": "NoPrewarmModuleExe", "prewarm": false }
+'@ | Set-Content (Join-Path $script:TmpTools 'noprewarmmodule.json')
+        @'
+{ "name": "moduletool", "type": "module", "executable": "ModuleToolExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'moduletool.json')
+        $script:DFToolDb = $null
+
+        Mock Get-Module { [PSCustomObject]@{ Name = 'ModuleToolExe' } } -ParameterFilter { $Name -eq 'ModuleToolExe' }
+        Mock Get-Module { [PSCustomObject]@{ Name = 'NoPrewarmModuleExe' } } -ParameterFilter { $Name -eq 'NoPrewarmModuleExe' }
+        Mock Start-DFModulePrewarm { $null } -Verifiable
+
+        Register-DFTool -Name 'moduletool', 'noprewarmmodule' -ToolsPath $script:TmpTools
+
+        Should -Invoke Start-DFModulePrewarm -Times 1 -ParameterFilter {
+            @($ModuleNames) -contains 'ModuleToolExe' -and
+            @($ModuleNames) -notcontains 'NoPrewarmModuleExe'
+        }
+
+        Remove-Item (Join-Path $script:TmpTools 'noprewarmmodule.json') -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
+
+    It 'still removes the prewarm job when a tool''s companion .ps1 throws during the per-tool loop' {
+        @'
+{ "name": "moduletool", "type": "module", "executable": "ModuleToolExe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'moduletool.json')
+        @'
+{ "name": "throwtool", "executable": "throwtool.exe" }
+'@ | Set-Content (Join-Path $script:TmpTools 'throwtool.json')
+        "throw 'boom'" | Set-Content (Join-Path $script:TmpTools 'throwtool.ps1')
+        $script:DFToolDb = $null
+
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\throwtool.exe' } } -ParameterFilter { $Name -eq 'throwtool.exe' }
+        Mock Get-Module { [PSCustomObject]@{ Name = 'ModuleToolExe' } } -ParameterFilter { $Name -eq 'ModuleToolExe' }
+        # A real, still-sleeping job stands in for "prewarm not finished yet" -- same
+        # pattern as the existing cleanup test above, so the throw below is proven to
+        # happen before the job would have finished on its own.
+        $fakeJob = Start-ThreadJob -ScriptBlock { Start-Sleep -Seconds 30 }
+        Mock Start-DFModulePrewarm { $fakeJob }
+
+        { Register-DFTool -Name 'moduletool', 'throwtool' -ToolsPath $script:TmpTools } | Should -Throw
+
+        Get-Job -Id $fakeJob.Id -ErrorAction Ignore | Should -BeNullOrEmpty
+
+        Remove-Item (Join-Path $script:TmpTools 'moduletool.json') -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'throwtool.json') -ErrorAction Ignore
+        Remove-Item (Join-Path $script:TmpTools 'throwtool.ps1') -ErrorAction Ignore
+        $script:DFToolDb = $null
+    }
 }
 
 Describe 'Register-DFTool one-time setup' {

@@ -482,6 +482,12 @@ Optional:
 - `aliases` — `{ "alias": { "command": "...", "args": [...] } }`
 - `picker` — declarative fzf spec or `"custom"` (companion `.ps1`)
 - `dependsOn` — array of tool names that must be registered first (e.g. `["psreadline"]` for PSFzf)
+- `prewarm` — `false` opts a `type: "module"` tool out of `Register-DFTool`'s background
+  `Import-Module` pre-warm (default: eligible). `Tools/psreadline.json` sets this — its
+  companion never re-imports PSReadLine (always pre-loaded by the PS7 host), so pre-warming
+  it has no benefit, and PSReadLine's process-global static key-handler dispatch table makes
+  it the module most exposed to the shared-process risk pre-warming's background thread job
+  implies.
 
 Companion `Tools/<name>.ps1` files are dot-sourced automatically on registration.
 Inside a companion, `$DFCurrentTool` holds the tool's parsed JSON object.

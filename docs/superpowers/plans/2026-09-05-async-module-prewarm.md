@@ -2,6 +2,19 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Revision note (2026-09-05, final whole-branch review):** The Architecture section below
+> originally stated this applies to "every `type: module` tool ... with no new declarative JSON
+> field." That was revised during the final review: `Tools/psreadline.json` now declares
+> `"prewarm": false` and is excluded from the prewarm-eligible set. Reasoning: `Start-ThreadJob`
+> shares the caller's *process* (only PowerShell-level session state is isolated per-runspace),
+> so a module whose import touches process-global .NET/CLR static state is a real, if narrow,
+> concurrency risk — PSReadLine keeps its key-handler dispatch table on exactly such a static
+> singleton, and PSFzf's import touches it. Compounding that risk, `psreadline` gets zero benefit
+> from prewarming anyway: `Tools/psreadline.ps1` never calls `Import-Module` (PSReadLine is
+> always pre-loaded by the PS7 host before any profile runs). The rest of this document is left
+> as originally written; treat any statement below that the mechanism is opt-out-free as
+> superseded by this note.
+
 **Goal:** Cut the real, per-session cost of importing `Terminal-Icons`, `PSFzf`, and `posh-git` (measured 352ms + 258ms + 288ms = 898ms cold, on a representative machine) by warming each module's OS/CLR-level caches in a background job before `Register-DFTool`'s own per-tool loop reaches that tool's existing, unchanged `Import-Module` call.
 
 **Architecture:** A new private helper, `Start-DFModulePrewarm`, fires one `Start-ThreadJob` that imports a list of module names inside its own throwaway runspace and discards the result — its only purpose is the side effect of warming caches. `Register-DFTool` collects every `type: module` tool actually being registered this call (post topo-sort, post `SkipTools` filtering, post `Test-DFToolAvailable`), fires the prewarm job for those module names right before the per-tool loop starts, lets the loop run exactly as it does today (each module-type tool's own companion still does the real, synchronous `Import-Module`), and cleans up the job afterward. No sidecar file changes. No new declarative JSON field — this applies automatically to every `type: module` tool, present or future, based on the field that already exists.

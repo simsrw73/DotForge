@@ -85,18 +85,34 @@ function Register-DFTool {
     # Automatic for every type:module tool actually being registered this call
     # (not a new declarative opt-in) -- see Start-DFModulePrewarm's own doc
     # comment for the one assumption this relies on.
-    $prewarmModules = @(
-        foreach ($t in $tools) {
-            $tType = $t.PSObject.Properties['type']?.Value ?? 'exe'
-            if ($tType -eq 'module' -and (Test-DFToolAvailable -Executable $t.executable -Type 'module')) {
-                $t.executable
+    # A tool opts out of prewarming with a top-level "prewarm": false (e.g.
+    # Tools/psreadline.json -- its sidecar never re-imports PSReadLine, so
+    # prewarming it has no benefit, and PSReadLine's process-global static
+    # key-handler dispatch table makes it the module most exposed to
+    # Start-ThreadJob's shared-process CLR statics; see Start-DFModulePrewarm's
+    # own doc comment). Absent/true means eligible.
+    #
+    # Everything from the prewarm job's creation through the end of this
+    # function runs inside a try/finally so the job is always cleaned up
+    # (Remove-Job below), even if a tool's companion .ps1 throws, the caller
+    # inherited $ErrorActionPreference = 'Stop', or registration is
+    # interrupted (e.g. Ctrl-C) -- otherwise the job leaks into the user's
+    # Get-Job table for the rest of the session.
+    $prewarmJob = $null
+    try {
+        $prewarmModules = @(
+            foreach ($t in $tools) {
+                $tType = $t.PSObject.Properties['type']?.Value ?? 'exe'
+                $tPrewarm = $t.PSObject.Properties['prewarm']?.Value ?? $true
+                if ($tType -eq 'module' -and $tPrewarm -and (Test-DFToolAvailable -Executable $t.executable -Type 'module')) {
+                    $t.executable
+                }
             }
-        }
-    )
-    # Skip the call entirely when there's nothing to prewarm rather than relying
-    # on Start-DFModulePrewarm's own empty-input $null return -- avoids spinning
-    # up (and then force-removing) a background job that would do no work.
-    $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules } else { $null }
+        )
+        # Skip the call entirely when there's nothing to prewarm rather than relying
+        # on Start-DFModulePrewarm's own empty-input $null return -- avoids spinning
+        # up (and then force-removing) a background job that would do no work.
+        $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules } else { $null }
 
     # ── Default-tool role resolution (§10) ─────────────────────────────────
     # For each role named in $DFConfig.Defaults, resolve whether the declared
@@ -193,14 +209,20 @@ DotForge: coreutils shadows $($conflicts.Count) DotForge command(s) before Power
 "@
         }
     }
-
-    # Fire-and-forget cleanup: remove the prewarm job whether or not it
-    # finished. Nothing downstream depends on its result (see
-    # Start-DFModulePrewarm's own doc comment) -- if it's still running,
-    # force-removing it is safe, since the only work it did was read/JIT
-    # already-shared OS/CLR state that persists regardless of how the job
-    # itself ends.
-    if ($prewarmJob) {
-        $prewarmJob | Remove-Job -Force -ErrorAction Ignore
+    } finally {
+        # Fire-and-forget cleanup: remove the prewarm job whether or not it
+        # finished, and whether or not the per-tool loop above completed
+        # normally. Nothing downstream depends on its result (see
+        # Start-DFModulePrewarm's own doc comment) -- if it's still running,
+        # force-removing it is safe, since the only work it did was read/JIT
+        # already-shared OS/CLR state that persists regardless of how the job
+        # itself ends. Using `finally` (rather than plain trailing code) means
+        # this still runs if a tool's companion .ps1 throws, the caller
+        # inherited $ErrorActionPreference = 'Stop', or registration is
+        # interrupted -- otherwise the job leaks into the user's Get-Job
+        # table for the rest of the session.
+        if ($prewarmJob) {
+            $prewarmJob | Remove-Job -Force -ErrorAction Ignore
+        }
     }
 }

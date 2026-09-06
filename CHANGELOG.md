@@ -80,14 +80,20 @@ All notable changes to DotForge are documented here.
 - **`type: module` tools now warm their `Import-Module` cost in the background before
   `Register-DFTool`'s per-tool loop reaches them.** A new `Start-DFModulePrewarm`
   (`Private/Start-DFModulePrewarm.ps1`) fires one background job that pre-imports every
-  `type: module` tool actually being registered this call (e.g. `Terminal-Icons`, `PSFzf`,
-  `posh-git`, `psreadline`) into a throwaway runspace, purely to warm OS/CLR-level caches
+  prewarm-eligible `type: module` tool actually being registered this call (`Terminal-Icons`,
+  `PSFzf`, `posh-git`) into a throwaway runspace, purely to warm OS/CLR-level caches
   before the loop reaches that tool's own existing, unchanged `Import-Module` call — the
   later, real import is then measured ~77% faster (282ms → 65ms on a representative
   module, reproduced 3/3, per `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`
-  Part 2). Automatic for every `type: module` tool actually being registered, with no new
-  declarative opt-in field — see `Start-DFModulePrewarm`'s own doc comment for the one
-  assumption this relies on (no import-time side effects beyond session-local state).
+  Part 2). Automatic for every prewarm-eligible `type: module` tool actually being
+  registered — see `Start-DFModulePrewarm`'s own doc comment for the one assumption this
+  relies on (no import-time side effects beyond session-local state). A tool opts out via a
+  new `Tools/<name>.json` `"prewarm": false` field; `psreadline` deliberately sets it and is
+  excluded — its sidecar (`Tools/psreadline.ps1`) never calls `Import-Module` (PSReadLine is
+  always pre-loaded by the PS7 host before any profile runs), so prewarming it has no
+  benefit, and it is the module most exposed to the shared-process CLR statics
+  `Start-ThreadJob` implies (PSReadLine keeps its key-handler dispatch table on a
+  process-global static singleton that PSFzf's import touches).
   Deliberately excludes `oh-my-posh`/`fnm` (neither is a `type: module` tool, and the audit
   found deferring `oh-my-posh`'s init reproduces a documented prompt-hook bug) and
   `inshellisense`'s session check (a separately-tracked, differently-shaped follow-up —

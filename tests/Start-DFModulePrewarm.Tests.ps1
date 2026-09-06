@@ -38,4 +38,10 @@ Describe 'Start-DFModulePrewarm' {
         $job.State | Should -Be 'Completed'
         $job | Remove-Job -Force
     }
+
+    It 'returns $null instead of throwing when Start-ThreadJob itself fails' {
+        Mock Start-ThreadJob { throw 'ThreadJob module unavailable' }
+        { Start-DFModulePrewarm -ModuleNames @('SomeModule') } | Should -Not -Throw
+        Start-DFModulePrewarm -ModuleNames @('SomeModule') | Should -BeNullOrEmpty
+    }
 }
