@@ -111,7 +111,12 @@ Publishing to the PowerShell Gallery follows this exact sequence. **The release 
 5. **Tag** the release commit: `git tag -a v<version> -m "DotForge <version>"` (tag format is `v` + the full prerelease string, e.g. `v0.3.0-preview`).
 6. **Push** `main` and the tag: `git push origin main && git push origin v<version>`.
 7. **GitHub Release**: `gh release create v<version> --title v<version> --prerelease --notes "<CHANGELOG section>"` (drop `--prerelease` for stable releases).
-8. **Publish to PSGallery**: read the API key from the gitignored `.env` (`PSGALLERY_API_KEY=...`) — never hardcode or commit it — and run `Publish-PSResource -Path . -Repository PSGallery -ApiKey $key`.
+8. **Publish to PSGallery**: read the API key from the gitignored `.env` (`PSGALLERY_API_KEY=...`) — never hardcode or commit it. **Do not run `Publish-PSResource -Path .` directly against the repo root** — `build/.package-universe/winget-pkgs/` (gitignored, but still on disk once `build/Build-DFPackageUniverseRaw.ps1` has run) is a full clone of the real `microsoft/winget-pkgs` repo, one of the largest repos on GitHub. `Publish-PSResource`/`Compress-PSResource` don't respect `.gitignore` — they copy the entire `-Path` tree to a staging temp dir before packing, so pointing either at `.` hangs for a very long time copying hundreds of thousands of files, with zero error output (confirmed 2026-09-06: reproduced 3× with no output ever, including via `Compress-PSResource` with no network involved at all — an `ESTABLISHED` TCP connection observed via `netstat` during the hang was a red herring, not the cause). Publish from a clean export of only tracked files instead — the exported directory name must equal the module name, since `Publish-PSResource` looks up `<dirname>.psd1`:
+   ```bash
+   rm -rf /tmp/DotForge && mkdir -p /tmp/DotForge
+   git archive v<version> | tar -x -C /tmp/DotForge
+   ```
+   Then: `Publish-PSResource -Path /tmp/DotForge -Repository PSGallery -ApiKey $key`.
 9. **Verify** via the Gallery API (the local `Find-PSResource` view normalizes away the prerelease suffix, so confirm against the source of truth): `Invoke-RestMethod "https://www.powershellgallery.com/api/v2/FindPackagesById()?id='DotForge'"` and check the new `Version` / `IsPrerelease`.
 
 ## Tool JSON Schema
