@@ -79,7 +79,7 @@ $DFConfig = @{
     SkipSetup           = @('delta')            # excluded from Tools/<name>.setup.ps1's one-time run
     Defaults            = @{ listing = 'eza' }  # role winner; loser's contested aliases suppressed
     CompletionMode      = 'Native'              # Native or Inshellisense completion behavior
-    PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys
+    PSReadLineEditMode  = 'Windows'             # Windows or Emacs editing keys (default: Emacs)
     PSReadLineTheme     = 'catppuccin-mocha'    # PSReadLine color theme (name or path)
     VividTheme          = 'catppuccin-mocha'    # LS_COLORS theme (overrides Theme)
     Theme               = 'catppuccin-mocha'    # shared theme for all viewers (canonical name only; per-tool keys override)
@@ -629,6 +629,12 @@ provided by a bundled carapace spec (`Tools/carapace/specs/mdv.yaml`).
 Defaults to catppuccin-mocha (matching `mdcat`/`mdv`/`glow`) — previously this
 was the only themed tool in this list that shipped with a neutral `dark`
 default instead. Set `$DFConfig['PSReadLineTheme']` to override.
+
+`EditMode` defaults to `Emacs` (override with `$DFConfig['PSReadLineEditMode']
+= 'Windows'`). Also binds `Ctrl+p`/`Ctrl+n` to history search filtered by
+what's already typed (`HistorySearchBackward`/`-Forward`), and turns on
+`HistorySearchCursorMovesToEnd` so a recalled command's cursor lands at the
+end rather than where it was when originally typed.
 
 | Function / Alias                              | Purpose                                          |
 | --------------------------------------------- | ------------------------------------------------ |

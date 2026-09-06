@@ -61,6 +61,13 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`psreadline`'s default `EditMode` is now `Emacs`, not `Windows`.** Override with
+  `$DFConfig['PSReadLineEditMode'] = 'Windows'` to keep the old default. Also folded in three
+  settings that previously lived in a personal `profile.ps1` (marked there as a
+  `### TODO: Move this to DotForge`): `HistorySearchCursorMovesToEnd` (new `settings` key in
+  `Tools/psreadline.json`), and `Ctrl+p`/`Ctrl+n` bound to `HistorySearchBackward`/`-Forward`
+  (`Tools/psreadline.ps1`) — history search filtered by what's already typed, cursor landing at
+  the end of the recalled line.
 - **`Register-DFTool -All` no longer re-probes the same tool's availability more than
   once per session.** A new `Test-DFToolAvailable` (`Private/Test-DFToolAvailable.ps1`)
   memoizes `Get-Command`/`Get-Module` results per `(type, executable)` — previously a

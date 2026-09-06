@@ -4,12 +4,13 @@
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
 if ($_settings) {
     $_settingsMap = @{
-        editMode            = 'EditMode'
-        predictionSource    = 'PredictionSource'
-        predictionViewStyle = 'PredictionViewStyle'
-        bellStyle           = 'BellStyle'
-        historyNoDuplicates = 'HistoryNoDuplicates'
-        historySaveStyle    = 'HistorySaveStyle'
+        editMode                       = 'EditMode'
+        predictionSource               = 'PredictionSource'
+        predictionViewStyle            = 'PredictionViewStyle'
+        bellStyle                      = 'BellStyle'
+        historyNoDuplicates            = 'HistoryNoDuplicates'
+        historySaveStyle               = 'HistorySaveStyle'
+        historySearchCursorMovesToEnd  = 'HistorySearchCursorMovesToEnd'
     }
     $_optionArgs = @{}
     $_settings.PSObject.Properties | ForEach-Object {
@@ -55,7 +56,12 @@ if ($_settings) {
     }
 }
 
-# 2. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
+# 2. History-search key handlers: Ctrl+p/Ctrl+n cycle history matching what's
+#    already typed (vs. the default Up/Down, which cycle the whole history).
+Set-PSReadLineKeyHandler -Key Ctrl+p -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
+
+# 3. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
 
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
@@ -102,12 +108,12 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 3. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
+# 4. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'catppuccin-mocha'
 $_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
-# 4. Register theme picker
+# 5. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({
     [CmdletBinding()]
     param()

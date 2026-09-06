@@ -63,8 +63,32 @@ Describe 'psreadline tool sidecar' {
 
     It 'applies PSReadLine settings from tool JSON' {
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
-        (Get-PSReadLineOption).BellStyle           | Should -Be 'None'
-        (Get-PSReadLineOption).HistoryNoDuplicates | Should -BeTrue
+        (Get-PSReadLineOption).BellStyle                    | Should -Be 'None'
+        (Get-PSReadLineOption).HistoryNoDuplicates          | Should -BeTrue
+        (Get-PSReadLineOption).HistorySearchCursorMovesToEnd | Should -BeTrue
+    }
+
+    It 'defaults EditMode to Emacs when $DFConfig[PSReadLineEditMode] is not set' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        (Get-PSReadLineOption).EditMode | Should -Be 'Emacs'
+    }
+
+    It 'lets $DFConfig[PSReadLineEditMode] override the default to Windows' {
+        $Global:DFConfig = @{ PSReadLineEditMode = 'Windows' }
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        (Get-PSReadLineOption).EditMode | Should -Be 'Windows'
+    }
+
+    It 'binds Ctrl+p to HistorySearchBackward' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $handler = Get-PSReadLineKeyHandler -Bound | Where-Object { $_.Key -eq 'Ctrl+p' }
+        $handler.Function | Should -Be 'HistorySearchBackward'
+    }
+
+    It 'binds Ctrl+n to HistorySearchForward' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        $handler = Get-PSReadLineKeyHandler -Bound | Where-Object { $_.Key -eq 'Ctrl+n' }
+        $handler.Function | Should -Be 'HistorySearchForward'
     }
 
     It 'applies the catppuccin-mocha theme by default' {

@@ -8,12 +8,13 @@
   "prewarm": false,
   "xdg": { "compliance": "none", "method": "default" },
   "settings": {
-    "editMode":            "Windows",
-    "predictionSource":    "HistoryAndPlugin",
-    "predictionViewStyle": "InlineView",
-    "bellStyle":           "None",
-    "historyNoDuplicates": true,
-    "historySaveStyle":    "SaveIncrementally"
+    "editMode":                    "Emacs",
+    "predictionSource":            "HistoryAndPlugin",
+    "predictionViewStyle":         "InlineView",
+    "bellStyle":                   "None",
+    "historyNoDuplicates":         true,
+    "historySaveStyle":            "SaveIncrementally",
+    "historySearchCursorMovesToEnd": true
   },
   "aliases": {},
   "picker": "custom"

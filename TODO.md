@@ -136,11 +136,14 @@
     inside `Initialize-DFCompletionStack`, not a module import) that was explicitly excluded from
     the module-import plan above.
   - [ ] **Real-profile follow-up (found 2026-09-05, analyzing the user's actual `profile.ps1`)**:
-    - Migrate the three PSReadLine lines at the bottom of `profile.ps1`
-      (`Set-PSReadLineOption -HistorySearchCursorMovesToEnd`, `Ctrl+p`/`Ctrl+n` history-search key
-      handlers — already marked `### TODO: Move this to DotForge::Initialize-DFEnvironment` in
-      that file) into `Initialize-DFEnvironment`, alongside the existing
-      `PSReadLineEditMode`/`PSReadLineTheme` config keys. Low-risk, ~13ms measured.
+    - [x] Migrate the three PSReadLine lines at the bottom of `profile.ps1` — done 2026-09-06:
+      landed in `Tools/psreadline.ps1`/`Tools/psreadline.json` (the tool's own sidecar), not
+      `Initialize-DFEnvironment` as originally sketched — consistent with this codebase's
+      convention that tool-specific settings live in that tool's own `Tools/<name>.ps1`, never
+      core. `HistorySearchCursorMovesToEnd` is a new `settings` key; `Ctrl+p`/`Ctrl+n` are bound
+      unconditionally, matching how the file's other opinionated defaults (e.g. `bellStyle`)
+      already work. Along the way, also changed the default `EditMode` from `Windows` to `Emacs`
+      (per-user decision) — override with `$DFConfig['PSReadLineEditMode'] = 'Windows'`.
     - Consider whether the async pre-warm mechanism this item builds should be a general
       DotForge primitive (not private to `Register-DFTool`'s three module imports), so the
       user's own `profile.ps1`/`Completers.ps1` could pre-warm its own extra module imports
