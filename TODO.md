@@ -72,19 +72,22 @@
 
 - [ ] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/
   `.zimrc`)** — the clear-cut drift (eza `ll`/`la`, fzf match-mode/previews) is already fixed
-  (see Fixed in `CHANGELOG.md`). These four remain open, pending whether the user actually wants
-  parity for each (unlike the aliases above, these aren't drift from a shared intent — zsh has
-  them and Windows genuinely never did):
+  (see Fixed in `CHANGELOG.md`). Three of the four "genuinely absent, not drift" gaps were
+  confirmed in scope 2026-09-06 (user: these "are exactly the point of DotForge") and are done
+  (see Added/Changed in `CHANGELOG.md`); only `direnv` remains, excluded by the user as a
+  differently-shaped problem (a shell hook, not XDG/env/theme/picker config):
   - [ ] **`direnv`** — no `Tools/direnv.json` exists; zsh's `eval "$(direnv hook zsh)"` has no
-    Windows-side counterpart at all.
-  - [ ] **Rust toolchain env** (`RUSTUP_HOME`, `CARGO_HOME` under XDG paths) — zsh's `.zshenv`
-    sets both under `$XDG_DATA_HOME`; absent anywhere on the Windows side.
-  - [ ] **vcpkg env** (`VCPKG_ROOT`, `VCPKG_DOWNLOADS`) — same, zsh has XDG-based paths, Windows
-    has none.
-  - [ ] **PSReadLine history isn't XDG-relocated.** zsh's is explicitly `~/.zsh_history`;
-    PowerShell's stays at its AppData default. Also, `Tools/psreadline.json` has no
-    `MaximumHistoryCount` setting (PSReadLine's own default is 4096 vs. zsh's explicit
-    `HISTSIZE=10000`).
+    Windows-side counterpart at all. Explicitly excluded from the 2026-09-06 batch.
+  - [x] **Rust toolchain env** (`RUSTUP_HOME`, `CARGO_HOME` under XDG paths) — done 2026-09-06:
+    `Tools/rustup.json` (`xdg.method: "env"`), `Tools/rustup.ps1` (new, adds `$CARGO_HOME/bin`
+    to PATH).
+  - [x] **vcpkg env** (`VCPKG_ROOT`, `VCPKG_DOWNLOADS`) — done 2026-09-06: new
+    `Tools/vcpkg.json`/`.ps1`, plus `build/categories/dotforge-curated.jsonc` and
+    `build/identities/`-derived `data/tool-categories.json`/`data/tool-identities.json`
+    regenerated for the new tool.
+  - [x] **PSReadLine history isn't XDG-relocated.** done 2026-09-06: `HistorySavePath` now
+    `$XDG_STATE_HOME/psreadline/history` (`Tools/psreadline.json` `xdg.dirs` +
+    `Tools/psreadline.ps1`), `MaximumHistoryCount` set to `10000` (new `settings` key).
 - [x] **`LS_COLORS` via `vivid`** — done 2026-09-03: `Tools/vivid.json`/`.ps1`, design
   `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
   `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)

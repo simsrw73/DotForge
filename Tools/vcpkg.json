@@ -1,0 +1,23 @@
+{
+  "name": "vcpkg",
+  "description": "C/C++ library package manager",
+  "tags": ["cpp", "dev", "package-manager"],
+  "executable": "vcpkg.exe",
+  "packages": {
+    "scoop": "vcpkg"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "VCPKG_ROOT": "${XDG_DATA_HOME}/vcpkg",
+      "VCPKG_DOWNLOADS": "${XDG_CACHE_HOME}/vcpkg/downloads"
+    },
+    "dirs": [
+      "${XDG_DATA_HOME}/vcpkg",
+      "${XDG_CACHE_HOME}/vcpkg/downloads"
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

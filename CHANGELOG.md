@@ -72,6 +72,14 @@ All notable changes to DotForge are documented here.
   explicit override now always does a fresh, uncached read/write, mirroring the guard
   `Get-DFCategoryDb` already used correctly for its own `-Path` override.
 
+### Added
+
+- **`vcpkg` (`Tools/vcpkg.json`/`.ps1`).** New tool, closing one of the four remaining
+  zsh-parity gaps tracked from the 2026-09-06 comparison. `VCPKG_ROOT` relocates under
+  `$XDG_DATA_HOME/vcpkg` and `VCPKG_DOWNLOADS` under `$XDG_CACHE_HOME/vcpkg/downloads`
+  (matching zsh's `.zshenv` exactly); the sidecar adds `$VCPKG_ROOT` itself to PATH since
+  `vcpkg.exe` has no `bin/` subfolder.
+
 ### Changed
 
 - **`psreadline`'s default `EditMode` is now `Emacs`, not `Windows`.** Override with
@@ -81,6 +89,15 @@ All notable changes to DotForge are documented here.
   `Tools/psreadline.json`), and `Ctrl+p`/`Ctrl+n` bound to `HistorySearchBackward`/`-Forward`
   (`Tools/psreadline.ps1`) — history search filtered by what's already typed, cursor landing at
   the end of the recalled line.
+- **`psreadline`'s history is now relocated and sized to match zsh** — another of the
+  2026-09-06 zsh-parity gaps. `HistorySavePath` moves to `$XDG_STATE_HOME/psreadline/history`
+  (was PowerShell's AppData default; the directory is created via a new `xdg.dirs` entry) and
+  `MaximumHistoryCount` is raised to `10000` (new `settings` key), matching zsh's explicit
+  `HISTSIZE=10000` instead of PSReadLine's own default of 4096.
+- **`rustup`'s `RUSTUP_HOME`/`CARGO_HOME` are now relocated under `$XDG_DATA_HOME`** — the
+  last of the four zsh-parity gaps (`Tools/rustup.json` gained `xdg.method: "env"`; a new
+  `Tools/rustup.ps1` adds `$CARGO_HOME/bin` to PATH, since core's env-var application never
+  touches PATH itself). Previously `rustup`/`cargo` used their un-relocated Windows defaults.
 - **`Register-DFTool -All` no longer re-probes the same tool's availability more than
   once per session.** A new `Test-DFToolAvailable` (`Private/Test-DFToolAvailable.ps1`)
   memoizes `Get-Command`/`Get-Module` results per `(type, executable)` — previously a

@@ -11,6 +11,7 @@ if ($_settings) {
         historyNoDuplicates            = 'HistoryNoDuplicates'
         historySaveStyle               = 'HistorySaveStyle'
         historySearchCursorMovesToEnd  = 'HistorySearchCursorMovesToEnd'
+        maximumHistoryCount            = 'MaximumHistoryCount'
     }
     $_optionArgs = @{}
     $_settings.PSObject.Properties | ForEach-Object {
@@ -56,12 +57,16 @@ if ($_settings) {
     }
 }
 
-# 2. History-search key handlers: Ctrl+p/Ctrl+n cycle history matching what's
+# 2. Relocate the history file under $XDG_STATE_HOME (PowerShell otherwise
+#    keeps it at its AppData default). xdg.dirs already created the directory.
+Set-PSReadLineOption -HistorySavePath (Join-Path $Env:XDG_STATE_HOME 'psreadline' 'history')
+
+# 3. History-search key handlers: Ctrl+p/Ctrl+n cycle history matching what's
 #    already typed (vs. the default Up/Down, which cycle the whole history).
 Set-PSReadLineKeyHandler -Key Ctrl+p -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
 
-# 3. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
+# 4. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
 
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
@@ -108,12 +113,12 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 4. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
+# 5. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'catppuccin-mocha'
 $_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
 Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
-# 5. Register theme picker
+# 6. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({
     [CmdletBinding()]
     param()

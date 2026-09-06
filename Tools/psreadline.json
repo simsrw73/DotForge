@@ -6,7 +6,11 @@
   "executable": "PSReadLine",
   "dependsOn": [],
   "prewarm": false,
-  "xdg": { "compliance": "none", "method": "default" },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "dirs": ["${XDG_STATE_HOME}/psreadline"]
+  },
   "settings": {
     "editMode":                    "Emacs",
     "predictionSource":            "HistoryAndPlugin",
@@ -14,7 +18,8 @@
     "bellStyle":                   "None",
     "historyNoDuplicates":         true,
     "historySaveStyle":            "SaveIncrementally",
-    "historySearchCursorMovesToEnd": true
+    "historySearchCursorMovesToEnd": true,
+    "maximumHistoryCount":         10000
   },
   "aliases": {},
   "picker": "custom"

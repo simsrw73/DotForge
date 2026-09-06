@@ -29,7 +29,9 @@ Describe 'psreadline tool sidecar' {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        $script:SavedStateHome  = $Env:XDG_STATE_HOME
         $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+        $Env:XDG_STATE_HOME     = Join-Path $TestDrive 'state'
 
         # Point at the real Tools directory
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -37,6 +39,7 @@ Describe 'psreadline tool sidecar' {
 
     AfterEach {
         $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
+        $Env:XDG_STATE_HOME  = $script:SavedStateHome
         $script:DFToolDb     = $null
 
         Remove-Variable DFConfig              -Scope Global -ErrorAction Ignore
@@ -66,6 +69,17 @@ Describe 'psreadline tool sidecar' {
         (Get-PSReadLineOption).BellStyle                    | Should -Be 'None'
         (Get-PSReadLineOption).HistoryNoDuplicates          | Should -BeTrue
         (Get-PSReadLineOption).HistorySearchCursorMovesToEnd | Should -BeTrue
+        (Get-PSReadLineOption).MaximumHistoryCount | Should -Be 10000
+    }
+
+    It 'relocates HistorySavePath under $XDG_STATE_HOME/psreadline' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        (Get-PSReadLineOption).HistorySavePath | Should -Be (Join-Path $Env:XDG_STATE_HOME 'psreadline' 'history')
+    }
+
+    It 'creates the $XDG_STATE_HOME/psreadline directory' {
+        Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
+        Test-Path (Join-Path $Env:XDG_STATE_HOME 'psreadline') | Should -BeTrue
     }
 
     It 'defaults EditMode to Emacs when $DFConfig[PSReadLineEditMode] is not set' {

@@ -497,7 +497,7 @@ for persistent setup that makes non-idempotent user-visible changes (e.g. editin
 config file). See CLAUDE.md's "Tool setup lifecycle" bullet for full detail, including
 the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 
-## Included Tools (40)
+## Included Tools (41)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -511,7 +511,7 @@ the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |
 | Package managers | scoop, winget, choco, npm                          |
-| Dev              | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv |
+| Dev              | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv, vcpkg |
 | PS modules       | posh-git, psreadline, PSFzf, Terminal-Icons, oh-my-posh |
 
 ## Tool-Specific Helpers
@@ -635,6 +635,10 @@ default instead. Set `$DFConfig['PSReadLineTheme']` to override.
 what's already typed (`HistorySearchBackward`/`-Forward`), and turns on
 `HistorySearchCursorMovesToEnd` so a recalled command's cursor lands at the
 end rather than where it was when originally typed.
+
+History is relocated to `$XDG_STATE_HOME/psreadline/history` (PowerShell's
+own default is an AppData path) with `MaximumHistoryCount` raised to 10000
+(PSReadLine's own default is 4096).
 
 | Function / Alias                              | Purpose                                          |
 | --------------------------------------------- | ------------------------------------------------ |

@@ -29,7 +29,8 @@ BeforeAll {
 
 Describe 'xdg.vars is path-templates-only after the split' {
     It 'tool <Name> has no non-XDG value in xdg.vars' -ForEach @(
-        @{ Name = 'fzf' }, @{ Name = 'delta' }, @{ Name = 'less' }, @{ Name = 'mdcat' }
+        @{ Name = 'fzf' }, @{ Name = 'delta' }, @{ Name = 'less' }, @{ Name = 'mdcat' },
+        @{ Name = 'rustup' }, @{ Name = 'vcpkg' }
     ) {
         $j = Get-Content (Join-Path $script:RealTools "$Name.json") -Raw | ConvertFrom-Json
         $vars = $j.xdg.PSObject.Properties['vars']?.Value

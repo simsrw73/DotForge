@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-09-03",
+  "updated": "2026-09-06",
   "taxonomy": {
     "function": [
       "search",
@@ -1156,6 +1156,19 @@
       "ids": {
         "scoop": "uv",
         "winget": "astral-sh.uv"
+      },
+      "popularity": 2
+    },
+    "vcpkg": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "vcpkg"
       },
       "popularity": 2
     },
