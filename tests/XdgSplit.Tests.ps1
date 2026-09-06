@@ -45,20 +45,20 @@ Describe 'xdg.vars is path-templates-only after the split' {
 Describe 'env-block relocation preserves the migrated values' {
     It 'fzf env carries the fuzzy-finder settings' {
         $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
-        $j.env.FZF_DEFAULT_COMMAND | Should -Be 'fd --type f --hidden --follow --exclude .git'
+        $j.env.FZF_DEFAULT_COMMAND | Should -Be 'fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
         # Exact full-value match so corruption anywhere in the multiline opts is caught
         # (JSON \n decodes to LF, so compare against a `n-joined string). Color flags
         # moved to Tools/fzf/catppuccin-mocha.json + Tools/fzf.ps1 -- see fzf.Tests.ps1.
+        # Matches the user's zsh config exactly (fuzzy match, not --exact/--no-sort/
+        # --cycle) -- see the 2026-09-06 zsh-parity investigation.
         $expectedFzfOpts = @(
-            '--exact'
-            '--no-sort'
             '--layout=reverse'
+            '--inline-info'
+            '--height=40%'
             '--border'
-            '--cycle'
-            '--height 50%'
         ) -join "`n"
         $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
-        $j.env.FZF_CTRL_T_OPTS  | Should -Be '--preview "bat --color=always --line-range=:500 {}"'
+        $j.env.FZF_CTRL_T_OPTS  | Should -Be "--preview `"bat -n --color=always {}`" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
     }
     It 'delta env carries GIT_PAGER (DELTA_FEATURES moved to the sidecar)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json

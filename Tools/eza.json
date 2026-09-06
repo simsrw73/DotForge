@@ -25,11 +25,11 @@
     },
     "ll": {
       "command": "eza",
-      "args": ["--all", "--long", "--header", "--hyperlink=auto"]
+      "args": ["--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--hyperlink=auto"]
     },
     "la": {
       "command": "eza",
-      "args": ["--all", "--group", "--hyperlink=auto"]
+      "args": ["--all", "--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--hyperlink=auto"]
     },
     "tree": {
       "command": "eza",

@@ -70,6 +70,21 @@
 
 ## Priority 3 — Features
 
+- [ ] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/
+  `.zimrc`)** — the clear-cut drift (eza `ll`/`la`, fzf match-mode/previews) is already fixed
+  (see Fixed in `CHANGELOG.md`). These four remain open, pending whether the user actually wants
+  parity for each (unlike the aliases above, these aren't drift from a shared intent — zsh has
+  them and Windows genuinely never did):
+  - [ ] **`direnv`** — no `Tools/direnv.json` exists; zsh's `eval "$(direnv hook zsh)"` has no
+    Windows-side counterpart at all.
+  - [ ] **Rust toolchain env** (`RUSTUP_HOME`, `CARGO_HOME` under XDG paths) — zsh's `.zshenv`
+    sets both under `$XDG_DATA_HOME`; absent anywhere on the Windows side.
+  - [ ] **vcpkg env** (`VCPKG_ROOT`, `VCPKG_DOWNLOADS`) — same, zsh has XDG-based paths, Windows
+    has none.
+  - [ ] **PSReadLine history isn't XDG-relocated.** zsh's is explicitly `~/.zsh_history`;
+    PowerShell's stays at its AppData default. Also, `Tools/psreadline.json` has no
+    `MaximumHistoryCount` setting (PSReadLine's own default is 4096 vs. zsh's explicit
+    `HISTSIZE=10000`).
 - [x] **`LS_COLORS` via `vivid`** — done 2026-09-03: `Tools/vivid.json`/`.ps1`, design
   `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
   `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)

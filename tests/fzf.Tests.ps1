@@ -51,7 +51,7 @@ Describe 'fzf tool sidecar' {
         $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
         $Env:FZF_DEFAULT_OPTS | Should -Match 'hl\+:#f38ba8'
         $Env:FZF_DEFAULT_OPTS | Should -Match '--layout=reverse'
-        $Env:FZF_DEFAULT_OPTS | Should -Match '--exact'
+        $Env:FZF_DEFAULT_OPTS | Should -Match '--inline-info'
     }
 
     It 'follows the shared $DFConfig[Theme] key' {

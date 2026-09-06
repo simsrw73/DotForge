@@ -6,6 +6,19 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`eza`'s `ll`/`la` aliases and `fzf`'s match mode/previews had drifted from the reference zsh
+  config they were meant to mirror.** Found during a 2026-09-06 zsh-parity comparison against the
+  user's `~/.zshrc`. `ll` (`Tools/eza.json`) showed hidden files and had no `--git`/icons/dirs-first
+  — now `--long --group-directories-first --icons=auto --color=auto --git` (plus DotForge's own
+  `--hyperlink=auto` addition). `la` wasn't even a long listing and used a stray `--group` (group/
+  owner column) instead of `--group-directories-first` — now matches `ll` with `--all` added.
+  `fzf`'s `FZF_DEFAULT_OPTS` (`Tools/fzf.json`) had `--exact --no-sort` — genuinely non-fuzzy
+  substring matching for a *fuzzy* finder — replaced with `--inline-info` to match zsh; also
+  dropped `--cycle` and matched the height (`40%`, was `50%`). `fd` calls across
+  `FZF_DEFAULT_COMMAND`/`ALT_C_COMMAND`/`CTRL_T_COMMAND` gained `--strip-cwd-prefix` to match zsh,
+  and `CTRL_T_COMMAND` is now identical to `FZF_DEFAULT_COMMAND` (zsh sets it that way explicitly).
+  Previews: Alt+C now shows an `eza --tree --level=2` tree (was a flat listing); Ctrl+T's `bat`
+  preview lost its 500-line cap and gained zsh's `ctrl-/` preview-window toggle bind.
 - **`Get-DFCategoryDb.Tests.ps1`/`Get-DFCategoryList.Tests.ps1` silently tested against a real,
   ambient `$Env:XDG_DATA_HOME/dotforge/tool-categories.json` instead of their own small fixture.**
   `Get-DFCategoryDb`'s refreshed-vs-shipped comparison runs unconditionally even when `-Path`

@@ -17,12 +17,12 @@
     "method": "default"
   },
   "env": {
-    "FZF_DEFAULT_COMMAND": "fd --type f --hidden --follow --exclude .git",
-    "FZF_DEFAULT_OPTS": "--exact\n--no-sort\n--layout=reverse\n--border\n--cycle\n--height 50%",
-    "FZF_ALT_C_COMMAND": "fd -H -L -E .git -t d",
-    "FZF_ALT_C_OPTS": "--preview \"eza -a --icons --group-directories-first --color=always {}\"",
-    "FZF_CTRL_T_COMMAND": "fd -H -L -E .git -t f",
-    "FZF_CTRL_T_OPTS": "--preview \"bat --color=always --line-range=:500 {}\""
+    "FZF_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+    "FZF_DEFAULT_OPTS": "--layout=reverse\n--inline-info\n--height=40%\n--border",
+    "FZF_ALT_C_COMMAND": "fd --type d --strip-cwd-prefix --hidden --follow --exclude .git",
+    "FZF_ALT_C_OPTS": "--preview \"eza --tree --level=2 --color=always {}\"",
+    "FZF_CTRL_T_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+    "FZF_CTRL_T_OPTS": "--preview \"bat -n --color=always {}\" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
   },
   "aliases": {},
   "picker": null
