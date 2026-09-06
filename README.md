@@ -512,7 +512,7 @@ the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 | Completion       | carapace, inshellisense                            |
 | File/dir         | bat, eza, lsd, fd, ripgrep, broot, vivid           |
 | Text/data        | jq, glow, mdcat, mdv                               |
-| System           | procs, winfetch, gsudo                             |
+| System           | procs, fastfetch, gsudo                            |
 | Network          | curl, wget                                         |
 | Container        | docker                                             |
 | Shell hooks      | direnv                                             |

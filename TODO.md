@@ -201,10 +201,10 @@
   - `oh-my-posh` — theme is entirely the user's own profile (`$Env:POSH_THEME`), outside
     `$DFConfig` — a real gap against the "one system-wide theme" goal, but changing it means
     deciding how a prompt-engine theme fits the `$DFConfig.Theme` chain; needs its own design.
-  - `winfetch` — unrelated to theming, but flagged in the same pass: winfetch is abandoned
-    upstream. Replace the `Tools/winfetch.json` entry with `fastfetch` (its actively maintained
-    successor) — a tool-swap task, not a theming task; update `Tools/*.json`, README's Included
-    Tools table (currently lists `winfetch` under "System"), and any doc/example references.
+  - [x] `fastfetch` — closed 2026-09-06: replaced `Tools/winfetch.json` with `Tools/fastfetch.json`
+    (winfetch is abandoned upstream). Ships a seeded catppuccin-mocha config via the existing
+    `xdg.method: "config"` path; `publicip` deliberately omitted (measured 2.87s cold-path spike).
+    See `docs/superpowers/specs/2026-09-06-fastfetch-tool-swap-design.md`.
 - [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
   whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can
   explicitly control global-namespace pollution instead of DotForge deciding

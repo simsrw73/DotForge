@@ -4,6 +4,15 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Replaced the abandoned `winfetch` plugin with `fastfetch`.** `winfetch` is unmaintained
+  upstream; `fastfetch` is its actively maintained, natively XDG-aware successor.
+  `Tools/fastfetch.json` seeds a catppuccin-mocha themed config at
+  `$XDG_CONFIG_HOME/fastfetch/config.jsonc` (only when absent) via the existing
+  `xdg.method: "config"` path. `publicip` is deliberately excluded from the seeded module list —
+  it measured a 2.87s cold-path network spike during design.
+
 ## [0.6.0-preview] - 2026-09-06
 
 ### Fixed
