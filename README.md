@@ -1,22 +1,17 @@
-# DotForge
+# DotForge (**Experimental**)
 
 <img src="assets/dotforge1.png" align="right" width="180" alt="DotForge logo">
 
-**A PowerShell module that turns CLI tool configuration into a one-time-write,
-zero-copy-paste operation — across every machine you set up.**
+**A PowerShell module to manage your command line tools, easily & consistently.**
 
-Every time you install a new tool like `bat`, `delta`, or `ripgrep`, there is a
-ritual: locate where it stores its config, set the right environment variables,
-maybe define a couple of aliases. Do this for thirty tools and you
-have a profile that works — on one machine. DotForge encodes that knowledge into a
-JSON database so `Register-DFTool -All` handles all of it in one shot, on every
-machine.
+The goal of this tool is to make it easy to use commonly useful command line tools with a consistent and out-of-the-box useful configuration. For each tool it does its best to enforce XDG style standard directories (yes, on Windows) as I find this makes it easier to manage my configurations (with chezmoi). It also sets sensible, common default options, applies a standard color theme across all output, provides useful pickers with fzf as well as useful aliases. It also wires in shell integrations and hooks trying to ensure that they don't overwrite each other (fzf, zoxide, direnv, carapace, inshellisense, etc.). And it provides command line completions through carapace and inshellisense with occasional manual additions added through carapace's extension mechanism.
+
+This is an experimental project developed out of my own PowerShell profile and generalized to hopefully be useful to others. It's also an experiment with AI development. I have a lifetime of development experience so it's not vibe coded slop. But it is currently the center of my learning experience with AI. I find it amazing at what the various AI tools (Claude, Codex, and Gemini are used here) are capable of. I also find it amazing at the things that they miss and get wrong, at bad design decisions, etc. The code is not yet fully reviewed, but I use this for my profile every day. Optimization is still a huge goal that we've not yet attained.
 
 ## What it does
 
 **XDG path compliance.** Most CLI tools support the [XDG Base Directory
-Specification](https://specifications.freedesktop.org/basedir-spec/latest/) — a
-standard that routes config to `~/.config`, data to `~/.local/share`, and cache to
+Specification](https://specifications.freedesktop.org/basedir-spec/latest/) — a standard that routes config to `~/.config`, data to `~/.local/share`, and cache to
 `~/.cache` rather than scattering dotfiles across your home directory. DotForge sets
 the right environment variable for each tool to opt it in. This is the feature that
 inspired the whole module: I use [chezmoi](https://www.chezmoi.io/) to manage my
@@ -35,7 +30,7 @@ cargo is tried as a last resort for tools that declare a `packages.cargo` entry.
 
 ## Requirements
 
-- PowerShell 7.0+
+- PowerShell 7.2+
 - Windows 11 (v0.1; macOS/Linux planned)
 - At least one package manager: [scoop](https://scoop.sh), [winget](https://learn.microsoft.com/windows/package-manager/winget/), or [choco](https://chocolatey.org/)
 - [fzf](https://github.com/junegunn/fzf) for picker functions (optional but recommended)
