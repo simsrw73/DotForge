@@ -4,6 +4,17 @@
 
 **A PowerShell module to manage your command line tools, easily & consistently.**
 
+> [!WARNING]
+> **Registering a tool that's already installed can make it lose track of its existing files.**
+> DotForge relocates many tools' config/data/cache to XDG-standard paths (e.g. `RUSTUP_HOME`/
+> `CARGO_HOME` for `rustup`, `VCPKG_ROOT` for `vcpkg`, PSReadLine's history file). If that tool
+> already has files at its old default location — an existing Rust toolchain, installed vcpkg
+> packages, prior command history — it won't find them once DotForge points it somewhere else.
+> There's no automated migration for this yet, and it's not clear one is feasible for every tool.
+> For now, plan on either manually moving the old files to the new location yourself, or
+> reinstalling the tool from scratch (including anything *it* manages — e.g. toolchains via
+> `rustup`, packages via `vcpkg`).
+
 The goal of this tool is to make it easy to use commonly useful command line tools with a consistent and out-of-the-box useful configuration. For each tool it does its best to enforce XDG style standard directories (yes, on Windows) as I find this makes it easier to manage my configurations (with chezmoi). It also sets sensible, common default options, applies a standard color theme across all output, provides useful pickers with fzf as well as useful aliases. It also wires in shell integrations and hooks trying to ensure that they don't overwrite each other (fzf, zoxide, direnv, carapace, inshellisense, etc.). And it provides command line completions through carapace and inshellisense with occasional manual additions added through carapace's extension mechanism.
 
 This is an experimental project developed out of my own PowerShell profile and generalized to hopefully be useful to others. It's also an experiment with AI development. I have a lifetime of development experience so it's not vibe coded slop. But it is currently the center of my learning experience with AI. I find it amazing at what the various AI tools (Claude, Codex, and Gemini are used here) are capable of. I also find it amazing at the things that they miss and get wrong, at bad design decisions, etc. The code is not yet fully reviewed, but I use this for my profile every day. Optimization is still a huge goal that we've not yet attained.
