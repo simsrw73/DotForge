@@ -57,6 +57,13 @@
       "linkedVia": "repo",
       "repo": "https://github.com/dandavison/delta"
     },
+    "direnv": {
+      "packages": {
+        "scoop": "direnv",
+        "winget": "direnv.direnv"
+      },
+      "linkedVia": "curated"
+    },
     "docker": {
       "packages": {
         "winget": "Docker.DockerDesktop"

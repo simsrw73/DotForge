@@ -47,6 +47,10 @@
     "ids": { "scoop": "delta", "winget": "dandavison.delta", "choco": "delta" },
     "relatedTo": ["bat", "lazygit"], "popularity": 2
   },
+  "direnv": {
+    "function": ["shell-enhancement"], "worksWith": ["environment-vars", "filesystem"],
+    "interface": "cli", "ids": { "scoop": "direnv", "winget": "direnv.direnv" }, "popularity": 1
+  },
   "docker": {
     "function": ["container-tooling"], "worksWith": ["containers"], "interface": "cli",
     "ids": { "winget": "Docker.DockerDesktop" }, "popularity": 3

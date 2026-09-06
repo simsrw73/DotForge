@@ -1,0 +1,16 @@
+{
+  "name": "direnv",
+  "description": "Loads and unloads environment variables per-directory from .envrc files",
+  "tags": ["environment-vars", "shell-enhancement", "dev"],
+  "executable": "direnv.exe",
+  "packages": {
+    "scoop": "direnv",
+    "winget": "direnv.direnv"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "default"
+  },
+  "aliases": {},
+  "picker": null
+}

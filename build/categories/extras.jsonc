@@ -3,10 +3,6 @@
     "function": ["prompt"], "worksWith": ["environment-vars", "git"], "interface": "cli",
     "relatedTo": ["oh-my-posh"], "popularity": 2
   },
-  "direnv": {
-    "function": ["shell-enhancement"], "worksWith": ["environment-vars", "filesystem"], "interface": "cli",
-    "popularity": 1
-  },
   "just": {
     "function": ["task-runner"], "worksWith": ["text", "code"], "interface": "cli", "popularity": 2
   },

@@ -70,14 +70,15 @@
 
 ## Priority 3 — Features
 
-- [ ] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/
-  `.zimrc`)** — the clear-cut drift (eza `ll`/`la`, fzf match-mode/previews) is already fixed
-  (see Fixed in `CHANGELOG.md`). Three of the four "genuinely absent, not drift" gaps were
-  confirmed in scope 2026-09-06 (user: these "are exactly the point of DotForge") and are done
-  (see Added/Changed in `CHANGELOG.md`); only `direnv` remains, excluded by the user as a
-  differently-shaped problem (a shell hook, not XDG/env/theme/picker config):
-  - [ ] **`direnv`** — no `Tools/direnv.json` exists; zsh's `eval "$(direnv hook zsh)"` has no
-    Windows-side counterpart at all. Explicitly excluded from the 2026-09-06 batch.
+- [x] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/
+  `.zimrc`)** — all closed. The clear-cut drift (eza `ll`/`la`, fzf match-mode/previews) and all
+  four "genuinely absent, not drift" gaps (see Added/Changed in `CHANGELOG.md`):
+  - [x] **`direnv`** — done 2026-09-06: new `Tools/direnv.json`/`.ps1`. Natively XDG-compliant
+    (no `xdg.vars` needed); hook uses `LocationChangedAction`, not `function:prompt`, so no
+    ordering dependency on oh-my-posh/zoxide. Initially excluded from the first batch pending a
+    checklist update (a pure shell-hook tool didn't fit the original four-item XDG/defaults/
+    theme/picker checklist); pulled in once the user extended the checklist to six items,
+    explicitly adding shell integrations/hooks and carapace completions.
   - [x] **Rust toolchain env** (`RUSTUP_HOME`, `CARGO_HOME` under XDG paths) — done 2026-09-06:
     `Tools/rustup.json` (`xdg.method: "env"`), `Tools/rustup.ps1` (new, adds `$CARGO_HOME/bin`
     to PATH).

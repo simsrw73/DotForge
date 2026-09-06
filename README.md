@@ -497,7 +497,7 @@ for persistent setup that makes non-idempotent user-visible changes (e.g. editin
 config file). See CLAUDE.md's "Tool setup lifecycle" bullet for full detail, including
 the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 
-## Included Tools (41)
+## Included Tools (42)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -507,6 +507,7 @@ the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 | System           | procs, winfetch, gsudo                             |
 | Network          | curl, wget                                         |
 | Container        | docker                                             |
+| Shell hooks      | direnv                                             |
 | Editors          | micro                                              |
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |

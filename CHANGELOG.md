@@ -79,6 +79,16 @@ All notable changes to DotForge are documented here.
   `$XDG_DATA_HOME/vcpkg` and `VCPKG_DOWNLOADS` under `$XDG_CACHE_HOME/vcpkg/downloads`
   (matching zsh's `.zshenv` exactly); the sidecar adds `$VCPKG_ROOT` itself to PATH since
   `vcpkg.exe` has no `bin/` subfolder.
+- **`direnv` (`Tools/direnv.json`/`.ps1`).** New tool, closing the last of the four
+  zsh-parity gaps. direnv is natively XDG-compliant (config at
+  `$XDG_CONFIG_HOME/direnv/direnv.toml`, allow-list at `$XDG_DATA_HOME/direnv/allow`) so
+  no `xdg.vars` were needed — `xdg.method: "default"`. The sidecar installs direnv's own
+  `hook pwsh` output (cached via `Get-DFCachedCommandOutput`, same pattern as
+  `Tools/zoxide.ps1`), which attaches to
+  `$ExecutionContext.SessionState.InvokeCommand.LocationChangedAction` rather than wrapping
+  `function:prompt` — so, unlike zoxide/oh-my-posh, it has no registration-order dependency
+  on either. The hook requires PowerShell 7.2+ and throws below that; the sidecar guards
+  this and degrades to a warning instead.
 
 ### Changed
 

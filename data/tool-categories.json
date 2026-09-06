@@ -325,6 +325,10 @@
         "filesystem"
       ],
       "interface": "cli",
+      "ids": {
+        "scoop": "direnv",
+        "winget": "direnv.direnv"
+      },
       "popularity": 1
     },
     "docker": {
