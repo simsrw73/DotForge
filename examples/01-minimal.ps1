@@ -8,3 +8,7 @@ Import-Module DotForge
 
 Initialize-DFEnvironment   # sets XDG dirs, detects package managers
 Register-DFTool -All       # configures every installed tool in one call
+
+# Optional lightweight system-info banner: see examples/02-standard.ps1's
+# "Optional: lightweight system-info banner" section.
+# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }

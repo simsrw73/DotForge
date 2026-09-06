@@ -42,6 +42,12 @@ $DFConfig = @{
 
 Import-Module DotForge
 
+# ── Optional: lightweight system-info banner ──────────────────────────────────
+# Uncomment to show a one-shot system summary at the top of every new shell.
+# The bundled fastfetch config has no logo and skips network-dependent
+# modules, so this stays fast even on a cold shell.
+# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }
+
 # ── First-run bootstrap ────────────────────────────────────────────────────────
 # Install core tools if any are missing. Only passes absent tools to
 # Install-DFTool — tools already on PATH are filtered out by $missing.
