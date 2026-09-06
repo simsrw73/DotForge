@@ -452,6 +452,10 @@
       "alternativeTo": [
         "neofetch"
       ],
+      "ids": {
+        "scoop": "fastfetch",
+        "winget": "Fastfetch-cli.Fastfetch"
+      },
       "relatedTo": [
         "winfetch"
       ],
@@ -1225,25 +1229,6 @@
         "rclone"
       ],
       "popularity": 2
-    },
-    "winfetch": {
-      "function": [
-        "system-info"
-      ],
-      "worksWith": [
-        "filesystem"
-      ],
-      "interface": "cli",
-      "alternativeTo": [
-        "neofetch"
-      ],
-      "ids": {
-        "scoop": "winfetch"
-      },
-      "relatedTo": [
-        "fastfetch"
-      ],
-      "popularity": 1
     },
     "winget": {
       "function": [

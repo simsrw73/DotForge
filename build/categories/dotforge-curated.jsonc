@@ -61,6 +61,12 @@
     "ids": { "scoop": "eza", "winget": "eza-community.eza", "choco": "eza" },
     "relatedTo": ["lsd", "broot"], "popularity": 3
   },
+  "fastfetch": {
+    "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
+    "alternativeTo": ["neofetch"],
+    "ids": { "scoop": "fastfetch", "winget": "Fastfetch-cli.Fastfetch" },
+    "relatedTo": ["winfetch"], "popularity": 1
+  },
   "fd": {
     "function": ["search", "file-management"], "worksWith": ["filesystem"], "interface": "cli",
     "alternativeTo": ["find"],
@@ -177,12 +183,6 @@
     "function": ["network-transfer"], "worksWith": ["http", "filesystem"], "interface": "cli",
     "ids": { "scoop": "wget" },
     "relatedTo": ["curl", "rclone"], "popularity": 2
-  },
-  "winfetch": {
-    "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
-    "alternativeTo": ["neofetch"],
-    "ids": { "scoop": "winfetch" },
-    "relatedTo": ["fastfetch"], "popularity": 1
   },
   "winget": {
     "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",

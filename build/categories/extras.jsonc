@@ -129,10 +129,6 @@
     "function": ["search"], "worksWith": ["text", "archives", "pdf"], "interface": "cli",
     "alternativeTo": ["grep"], "relatedTo": ["ripgrep"], "popularity": 1
   },
-  "fastfetch": {
-    "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
-    "alternativeTo": ["neofetch"], "relatedTo": ["winfetch"], "popularity": 1
-  },
   "pastel": {
     "function": ["text-processing"], "worksWith": ["text"], "interface": "cli", "popularity": 0
   },

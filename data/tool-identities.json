@@ -79,6 +79,14 @@
       "linkedVia": "repo",
       "repo": "https://github.com/eza-community/eza"
     },
+    "fastfetch": {
+      "packages": {
+        "scoop": "fastfetch",
+        "winget": "Fastfetch-cli.Fastfetch"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/fastfetch-cli/fastfetch"
+    },
     "fd": {
       "packages": {
         "scoop": "fd",
@@ -264,12 +272,6 @@
       "packages": {
         "scoop": "wget",
         "choco": "wget"
-      },
-      "linkedVia": "curated"
-    },
-    "winfetch": {
-      "packages": {
-        "scoop": "winfetch"
       },
       "linkedVia": "curated"
     },
