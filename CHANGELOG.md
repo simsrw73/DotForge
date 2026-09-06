@@ -6,6 +6,15 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`Get-DFCategoryDb.Tests.ps1`/`Get-DFCategoryList.Tests.ps1` silently tested against a real,
+  ambient `$Env:XDG_DATA_HOME/dotforge/tool-categories.json` instead of their own small fixture.**
+  `Get-DFCategoryDb`'s refreshed-vs-shipped comparison runs unconditionally even when `-Path`
+  overrides the "shipped" side (by design, so tests exercise the full resolution algorithm) — a
+  real, newer `tool-categories.json` from actual DotForge usage on the dev machine silently
+  outranked the fixture in every test that didn't isolate `$Env:XDG_DATA_HOME` itself. Isolated
+  it in all three `Get-DFCategoryDb.Tests.ps1` `Describe` blocks and in
+  `Get-DFCategoryList.Tests.ps1`'s `BeforeEach`, matching the pattern the file's own
+  "refreshed copy" tests already used correctly. No production code changed — test-only.
 - **`mdv`'s seeded `config.yaml` was silently reasserted after a deliberate deletion.**
   `Tools/mdv.ps1` checked `Test-Path config.yaml` every session and wrote the file
   whenever absent — indistinguishable from "DotForge has never run here," so a user who

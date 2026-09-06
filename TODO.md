@@ -28,13 +28,24 @@
 
 ## Priority 2 — Review Follow-ups
 
-- [ ] **`Get-DFCategoryDb.Tests.ps1` fixture-isolation bug (found 2026-09-03)** — 9 of the
-  file's tests fail on a clean checkout (`docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`'s
-  baseline check): `Get-DFCategoryDb`'s module-level singleton cache appears to leak the real
-  shipped `data/tool-categories.json` (~25k tools, e.g. `RipGrep GNU`/`EverythingCmdPal` show up)
-  into a test expecting a small designated fixture (plain `ripgrep`, `fd`, a handful of facets).
-  Likely a `-Force`/cache-reset ordering gap between `Describe` blocks in that file. Unrelated to
-  any theming work; needs its own investigation.
+- [x] **`Get-DFCategoryDb.Tests.ps1` fixture-isolation bug (found 2026-09-03)** — fixed
+  2026-09-06. Root cause was not the module-level singleton cache (the `-Force`/cache-reset
+  ordering hypothesis was wrong) — `Get-DFCategoryDb`'s refreshed-vs-shipped comparison against
+  `$Env:XDG_DATA_HOME` runs unconditionally even when `-Path` overrides the "shipped" side (by
+  design, per its own doc comment, so tests can exercise the full resolution algorithm). This
+  dev machine has a real `$Env:XDG_DATA_HOME/dotforge/tool-categories.json` from actual DotForge
+  usage, dated newer than the tests' fixed fixture date — so it silently outranked the fixture in
+  every test that didn't isolate `$Env:XDG_DATA_HOME` itself. Confirmed by reproducing standalone
+  (`Invoke-Pester tests/Get-DFCategoryDb.Tests.ps1` alone still failed 9/9 — ruling out cross-file
+  pollution) and by reading the real ambient file directly (`updated` newer than the fixture's
+  `2026-07-01`). Fixed by isolating `$Env:XDG_DATA_HOME` in all three `Describe` blocks in
+  `tests/Get-DFCategoryDb.Tests.ps1` and in `tests/Get-DFCategoryList.Tests.ps1`'s `BeforeEach`
+  (which mocks `Get-DFCategoryDb` but still calls through to the real implementation) — matching
+  the isolation pattern the file's own "refreshed copy" tests already used correctly. Full suite:
+  **1115/0** (previously 1105+/10, tolerated as baseline noise all session). Two of the file's
+  tests ("resolves via plain name as a last resort", "returns `$null` for an unmapped tool") had
+  been silently passing against the wrong (real) data by coincidence — worth knowing if this
+  class of bug recurs elsewhere, since a passing assertion doesn't always mean correct isolation.
 - [x] **Port `Initialize-DFCompletionStack.Tests.ps1` to Pester 6** — done 2026-07-24. Its 11 `Assert-MockCalled` calls (removed in Pester 6.0.1) are now `Should -Invoke`; the four "never called" checks use `-Times 0 -Exactly` so they stay meaningful under Pester 6 (plain `-Times 0` is "at least 0" there = vacuous). The full suite is now **899/0 under both Pester 5.8.0 and 6.0.1** — the `-RequiredVersion 5.8.0` pin is no longer needed.
 - [ ] **Path-normalization follow-ups** — from the `ConvertTo-DFPath` branch review (2026-07-24): (a) add a shared test bootstrap that dot-sources the `Private/` dependency graph so a new low-level dependency doesn't require adding its dot-source to every consumer-sourcing test file; (b) strengthen the `Register-DFTool` ToolsPath test to exercise a sidecar load via a `..`-bearing `-ToolsPath` (currently re-tests `ConvertTo-DFPath` directly); (c) resolve `$ToolsPath` once *before* `Import-DFToolDb` in `Register-DFTool` to remove the raw-vs-resolved asymmetry; (d) tests are Windows-only (`C:\` literals) — the macOS/Linux goal is unverified by CI though the runtime code is separator-agnostic.
 - [x] **Stop force-creating global aliases at import time** — done 2026-07-31: all 27 general-helper

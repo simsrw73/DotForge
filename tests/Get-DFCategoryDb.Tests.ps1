@@ -40,10 +40,20 @@ Describe 'Get-DFCategoryDb' {
         New-FixtureDbFile -Path $script:FixturePath
         $script:DFCategoryDb = $null
         $script:DFCategoryDbWarned = $false
+
+        # Get-DFCategoryDb's refreshed-vs-shipped comparison runs unconditionally,
+        # even when -Path overrides the "shipped" side (see its own doc comment).
+        # A real $XDG_DATA_HOME/dotforge/tool-categories.json on the dev machine
+        # (from actual DotForge usage) can be newer than this fixture's fixed
+        # 'updated' date and silently win -- isolate it here so every test in
+        # this Describe reads only the fixture, not ambient real-world state.
+        $script:SavedDataHome = $Env:XDG_DATA_HOME
+        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'xdg-data-home'
     }
     AfterEach {
         $script:DFCategoryDb = $null
         $script:DFCategoryDbWarned = $false
+        $Env:XDG_DATA_HOME = $script:SavedDataHome
     }
 
     It 'loads a valid fixture and exposes the raw taxonomy' {
@@ -157,8 +167,17 @@ Describe 'Get-DFCategoryDb' {
 }
 
 Describe 'Get-DFCategoryDbEntry' {
+    BeforeAll {
+        New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture.json')
+        # See 'Get-DFCategoryDb' Describe above: -Path does not skip the
+        # refreshed-vs-shipped comparison against $Env:XDG_DATA_HOME, so a
+        # real ambient dotforge/tool-categories.json can silently outrank
+        # this fixture without this isolation.
+        $script:SavedDataHomeEntry = $Env:XDG_DATA_HOME
+        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'xdg-data-home-entry'
+    }
+    AfterAll { $Env:XDG_DATA_HOME = $script:SavedDataHomeEntry }
     BeforeEach { $script:Db = Get-DFCategoryDb -Path (Join-Path $TestDrive 'fixture.json') }
-    BeforeAll { New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture.json') }
 
     It 'resolves via DFTool name' {
         $info = [pscustomobject]@{ DFTool = 'ripgrep'; Name = 'irrelevant'; Sources = @() }
@@ -194,9 +213,16 @@ Describe 'Get-DFCategoryDbEntry' {
 
 Describe 'Get-DFCategoryRelatedTools' {
     BeforeAll {
+        # See 'Get-DFCategoryDb' Describe above: -Path does not skip the
+        # refreshed-vs-shipped comparison against $Env:XDG_DATA_HOME, so a
+        # real ambient dotforge/tool-categories.json can silently outrank
+        # this fixture without this isolation.
+        $script:SavedDataHomeRelated = $Env:XDG_DATA_HOME
+        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'xdg-data-home-related'
         New-FixtureDbFile -Path (Join-Path $TestDrive 'fixture2.json')
         $script:Db = Get-DFCategoryDb -Path (Join-Path $TestDrive 'fixture2.json')
     }
+    AfterAll { $Env:XDG_DATA_HOME = $script:SavedDataHomeRelated }
 
     It 'lists curated relatedTo first' {
         (Get-DFCategoryRelatedTools -Database $script:Db -Key 'ripgrep') | Select-Object -First 1 | Should -Be 'fd'
