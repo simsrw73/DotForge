@@ -4,6 +4,13 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`eza` and `lsd` aliases no longer emit hyperlinks and no longer quote names with spaces.**
+  `ls`/`ll`/`la` in `Tools/eza.json` and `Tools/lsd.json` dropped `--hyperlink=auto`. eza's
+  `ls`/`ll`/`la`/`tree` and its `ff` picker list command gained `--no-quotes`; lsd's
+  `ls`/`ll`/`la`/`tree` gained its equivalent, `--literal`.
+
 ## [0.6.0-preview] - 2026-09-06
 
 ### Fixed

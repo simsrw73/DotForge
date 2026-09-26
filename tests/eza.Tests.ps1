@@ -26,4 +26,12 @@ Describe 'Tools/eza.json' {
         $trailing | Should -Match '^--[a-z-]+(=.+)?$' -Because 'trailing args must be a bound flag or a pure boolean'
         $script:OptionalValueFlags | Should -Not -Contain $trailing -Because "a trailing bare $trailing would capture the caller's path"
     }
+
+    It 'unquotes names with spaces in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
+        $script:EzaJson.aliases.$_.args | Should -Contain '--no-quotes'
+    }
+
+    It 'does not emit hyperlinks in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
+        $script:EzaJson.aliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
+    }
 }
