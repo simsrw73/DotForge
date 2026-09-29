@@ -78,8 +78,8 @@ Two categories, and the difference matters:
 | | |
 |---|---|
 | **What** | `zoxide init --hook pwd` wraps `function:prompt` (not `LocationChangedAction`), and guards against double-hooking with `$global:__zoxide_hooked = 1`. |
-| **Where** | `Tools/zoxide.ps1`; ordering rules in `CLAUDE.md` |
-| **Why** | It forces an ordering constraint: oh-my-posh must initialize **before** zoxide so zoxide wraps OMP's prompt. `Register-DFTool -All` gets this right alphabetically (`oh-my-posh` < `zoxide`). |
+| **Where** | `Tools/zoxide.ps1`, `Tools/zoxide.json` (`dependsOn`); ordering rules in `CLAUDE.md` |
+| **Why** | It forces an ordering constraint: the prompt engine (oh-my-posh or starship) must initialize **before** zoxide so zoxide wraps its prompt. `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]` so `Register-DFTool` topo-sorts the engine first. The order is not alphabetical: the tool DB is a hashtable. |
 | **If it changes** | **Known live limitation:** after a theme switch via `fpot`, OMP re-inits and replaces `function:prompt`, but zoxide's guard prevents re-hooking — so directory tracking stops until the next shell. No clean workaround. |
 
 ### 8. fnm: the `cd` hook shape (`Set-LocationWithFnm` / `Set-FnmOnLoad`)

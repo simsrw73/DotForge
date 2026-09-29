@@ -174,12 +174,14 @@ fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Proper
 - Scriptblocks passed to `Invoke-DFPicker -List` that capture local variables must use
   `.GetNewClosure()` (e.g., `{ $topics }.GetNewClosure()`). Without it, `& $List` inside
   `Invoke-DFPicker` silently sees nothing — the variable lookup happens in the wrong scope.
-- **oh-my-posh + zoxide prompt hook ordering**: zoxide's `--hook pwd` wraps
+- **Prompt engine + zoxide prompt hook ordering**: zoxide's `--hook pwd` wraps
   `function:prompt` (not `LocationChangedAction` — both hook modes use prompt wrapping;
-  `pwd` mode just skips `zoxide add` when the directory hasn't changed). oh-my-posh must
-  initialize _before_ zoxide so zoxide correctly wraps OMP's prompt. `Register-DFTool -All`
-  handles this automatically via alphabetical processing (`oh-my-posh` < `zoxide`). Selective
-  registration must explicitly register oh-my-posh before zoxide. After a theme switch via
+  `pwd` mode just skips `zoxide add` when the directory hasn't changed). The prompt engine
+  (oh-my-posh or starship) must initialize _before_ zoxide so zoxide wraps its prompt.
+  `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]`, so `Register-DFTool`
+  topo-sorts either engine ahead of zoxide whenever both are in the registration set. (The
+  tool DB is a plain hashtable, so without `dependsOn` the order is hash order, not
+  alphabetical.) After an oh-my-posh theme switch via
   `fpot`/`Select-PoshTheme`, OMP re-inits and replaces `function:prompt`; zoxide's
   `$global:__zoxide_hooked = 1` guard prevents re-hooking, so directory tracking stops
   until the next shell session. This is a known limitation with no clean workaround.

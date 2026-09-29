@@ -4,6 +4,21 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`starship` prompt tool.** `Tools/starship.json` points `STARSHIP_CONFIG` at
+  `$XDG_CONFIG_HOME/starship.toml` and `STARSHIP_CACHE` at `$XDG_CACHE_HOME/starship`.
+  `Tools/starship.ps1` initializes the prompt from cached `starship init powershell
+  --print-full-init` output, which is regenerated when starship is upgraded. To switch from
+  oh-my-posh, add `'oh-my-posh'` to `$DFConfig.SkipTools`.
+
+### Fixed
+
+- **zoxide could register before the prompt engine, which then replaced zoxide's prompt hook and
+  silently stopped directory tracking.** The docs said registration was alphabetical, but the tool
+  DB is a hashtable, so the order was hash order and varied between processes. `Tools/zoxide.json`
+  now declares `"dependsOn": ["oh-my-posh", "starship"]`.
+
 ### Changed
 
 - **`eza` and `lsd` aliases no longer emit hyperlinks and no longer quote names with spaces.**
