@@ -9,8 +9,9 @@ All notable changes to DotForge are documented here.
 - **`starship` prompt tool.** `Tools/starship.json` points `STARSHIP_CONFIG` at
   `$XDG_CONFIG_HOME/starship.toml` and `STARSHIP_CACHE` at `$XDG_CACHE_HOME/starship`.
   `Tools/starship.ps1` initializes the prompt from cached `starship init powershell
-  --print-full-init` output, which is regenerated when starship is upgraded. To switch from
-  oh-my-posh, add `'oh-my-posh'` to `$DFConfig.SkipTools`.
+  --print-full-init` output, which is regenerated when starship is upgraded. starship's
+  `Enable-TransientPrompt`/`Disable-TransientPrompt` are re-imported globally so a profile can
+  call them. To switch from oh-my-posh, add `'oh-my-posh'` to `$DFConfig.SkipTools`.
 
 ### Fixed
 

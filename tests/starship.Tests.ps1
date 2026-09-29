@@ -31,4 +31,37 @@ Describe 'starship companion' {
         $src | Should -Match "Get-DFCachedCommandOutput -Name 'starship-init' -Executable 'starship'"
         $src | Should -Match 'starship init powershell --print-full-init'
     }
+
+    Context 'transient prompt helpers' {
+        BeforeAll {
+            # Stand-in for starship's init: like the real script, it defines its
+            # helpers inside a dynamic module created with New-Module. Global so the
+            # companion can see it from inside the module scope below.
+            function global:Get-DFCachedCommandOutput {
+                param($Name, $Executable, $Generate)
+                '$null = New-Module starship { function Enable-TransientPrompt { ''enabled'' }; ' +
+                'function Disable-TransientPrompt { }; ' +
+                'Export-ModuleMember -Function Enable-TransientPrompt, Disable-TransientPrompt }'
+            }
+        }
+        AfterAll {
+            Remove-Item function:global:Get-DFCachedCommandOutput -ErrorAction Ignore
+            Remove-Module starship, DFCompanionHost -Force -ErrorAction Ignore
+        }
+
+        It 'exposes Enable-TransientPrompt globally when run from a module scope' {
+            # Register-DFTool dot-sources companions inside DotForge's module session
+            # state; without the global re-import the helpers stay stranded there.
+            $companion = (Resolve-Path "$PSScriptRoot/../Tools/starship.ps1").Path
+            $null = New-Module DFCompanionHost -ArgumentList $companion {
+                param($Path)
+                . $Path
+                # Like DotForge's manifest, export only the host's own functions
+                # (none) — so nothing leaks out except what the companion re-imports.
+                Export-ModuleMember -Function @()
+            }
+            (Get-Command Enable-TransientPrompt -ErrorAction Ignore)?.ModuleName | Should -Be 'starship'
+            Enable-TransientPrompt | Should -Be 'enabled'
+        }
+    }
 }
