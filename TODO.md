@@ -93,6 +93,18 @@
   `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
   `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)
   confirmed to read plain `LS_COLORS` directly, so this closes eza's catppuccin gap.
+- [ ] **Role-level behavior specs for competing tools (requested 2026-09-26)**: tools that share a
+  `role` (e.g. `listing`: eza, lsd) each hand-write their own `ls`/`ll`/`la`/`tree` args, so a
+  behavior change has to be repeated per tool in each tool's own flag spelling (2026-09-26: "no
+  hyperlinks, don't quote names" = eza `--no-quotes`, lsd `--literal`). The two tools' aliases
+  have also drifted apart in meaning: lsd's `ll` includes `--all` and its `la` isn't a long
+  listing, while eza's `ll`/`la` match the zsh reference. Goal: describe alias behavior once
+  per role (e.g. `ll` = long + dirs-first + icons + git + unquoted names) and let each tool
+  plugin map those behavior names to its own flags, so the behavior follows whichever tool
+  wins `$DFConfig.Defaults`. Must follow `docs/plugin-architecture.md`: no central tool-keyed
+  table and no `switch ($tool.name)`. Each tool's JSON declares its own behavior-to-flag map,
+  and the role spec lives outside any single tool (or is aggregated at build time). Brainstorm
+  and write a spec before building it.
 - [ ] **Audit theming mechanisms for silent-override risk against the user's own pre-existing
   config (found 2026-09-04, during the delta catppuccin investigation)** — the governing
   principle: the user must be able to easily *see* what DotForge changed and have an easy way

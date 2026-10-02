@@ -57,8 +57,21 @@ $_carapaceInit = Get-DFCachedCommandOutput -Name 'carapace-init' -Executable 'ca
     carapace _carapace powershell | Out-String
 }
 if (((Get-DFCompletionMode) -eq 'Native') -and (Get-Module -ListAvailable -Name PSFzf)) {
+    # Trimming could leave an empty CompletionText, which [CompletionResult]::new
+    # rejects -- drop whitespace-only items before they reach the constructor.
+    $_carapaceInit = $_carapaceInit.Replace(
+        'ConvertFrom-Json | ForEach-Object {',
+        'ConvertFrom-Json | Where-Object { ([string]$_.CompletionText).Trim() } | ForEach-Object {')
     $_carapaceInit = $_carapaceInit.Replace(
         '[CompletionResult]::new($_.CompletionText,',
         '[CompletionResult]::new(([string]$_.CompletionText).TrimEnd(),')
 }
+
+# When carapace has no completions it returns "" to suppress PowerShell's file
+# fallback. pwsh 7.6 turns that "" into [CompletionResult]::new(''), which throws;
+# PSFzf's Tab handler swallows the exception, so Tab silently does nothing (e.g.
+# `ls ..\<Tab>` -- carapace does not understand the backslash prefix). A bare
+# return lets PowerShell fall back to filesystem completion instead. No-ops if
+# carapace changes that codegen. Catalogued in docs/external-dependencies.md.
+$_carapaceInit = $_carapaceInit.Replace('return "" # prevent default file completion', 'return')
 Invoke-Expression $_carapaceInit

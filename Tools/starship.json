@@ -1,0 +1,26 @@
+{
+  "name": "starship",
+  "description": "Fast, minimal, cross-shell prompt configured with a single TOML file",
+  "tags": [
+    "prompt",
+    "theme",
+    "display"
+  ],
+  "executable": "starship.exe",
+  "packages": {
+    "scoop": "starship",
+    "winget": "Starship.Starship"
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "STARSHIP_CONFIG": "${XDG_CONFIG_HOME}/starship/starship.toml",
+      "STARSHIP_CACHE": "${XDG_CACHE_HOME}/starship"
+    },
+    "dirs": [
+      "${XDG_CACHE_HOME}/starship"
+    ]
+  },
+  "aliases": {}
+}

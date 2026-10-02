@@ -44,3 +44,77 @@ Describe 'carapace tool sidecar caching' -Skip:(-not (Get-Command carapace.exe -
         (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
     }
 }
+
+# carapace's completer returns "" to suppress file fallback when it has no
+# answer; pwsh 7.6 throws on that, and PSFzf swallows the throw so Tab does
+# nothing. The sidecar rewrites the sentinel to a bare return.
+Describe 'carapace init rewrites' {
+    BeforeAll {
+        # Minimal stand-in for the two codegen lines the sidecar rewrites.
+        $script:FakeInit = @'
+carapace x powershell | ConvertFrom-Json | ForEach-Object { [CompletionResult]::new($_.CompletionText, $_.ListItemText) }
+if ($completions.count -eq 0) {
+  return "" # prevent default file completion
+}
+'@
+    }
+    BeforeEach {
+        $script:SavedBridges = $Env:CARAPACE_BRIDGES
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        $script:Captured = $null
+        Mock Enable-DFCarapaceInshellisenseBridge { $false }
+        Mock Get-DFCachedCommandOutput { $script:FakeInit }
+        Mock Invoke-Expression { $script:Captured = $Command }
+    }
+    AfterEach {
+        $Env:CARAPACE_BRIDGES = $script:SavedBridges
+    }
+
+    It 'replaces the empty-string sentinel with a bare return when PSFzf is available' {
+        Mock Get-Module { [pscustomobject]@{ Name = 'PSFzf' } } -ParameterFilter { $Name -eq 'PSFzf' }
+        . $script:CompanionPath
+        $script:Captured | Should -Not -Match 'return ""'
+        $script:Captured | Should -Match '(?m)^\s*return\s*$'
+    }
+
+    It 'replaces the empty-string sentinel with a bare return when PSFzf is absent' {
+        Mock Get-Module { $null } -ParameterFilter { $Name -eq 'PSFzf' }
+        . $script:CompanionPath
+        $script:Captured | Should -Not -Match 'return ""'
+        $script:Captured | Should -Match '(?m)^\s*return\s*$'
+    }
+
+    It 'drops whitespace-only items before the trimmed constructor under PSFzf' {
+        Mock Get-Module { [pscustomobject]@{ Name = 'PSFzf' } } -ParameterFilter { $Name -eq 'PSFzf' }
+        . $script:CompanionPath
+        $script:Captured | Should -Match ([regex]::Escape('Where-Object { ([string]$_.CompletionText).Trim() } | ForEach-Object {'))
+        $script:Captured | Should -Match ([regex]::Escape('([string]$_.CompletionText).TrimEnd()'))
+    }
+}
+
+Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (Get-Command carapace.exe -ErrorAction Ignore)) {
+    BeforeEach {
+        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
+        $script:SavedBridges   = $Env:CARAPACE_BRIDGES
+        $Env:XDG_CACHE_HOME    = Join-Path $TestDrive 'cache'
+        $Env:CARAPACE_BRIDGES  = ''
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Mock Enable-DFCarapaceInshellisenseBridge { $false }
+        New-Item -ItemType Directory -Path (Join-Path $TestDrive 'work' 'sub') -Force | Out-Null
+        Set-Content -Path (Join-Path $TestDrive 'work' 'sibling.txt') -Value 'x'
+        Push-Location (Join-Path $TestDrive 'work' 'sub')
+    }
+    AfterEach {
+        Pop-Location
+        $Env:XDG_CACHE_HOME   = $script:SavedCacheHome
+        $Env:CARAPACE_BRIDGES = $script:SavedBridges
+    }
+
+    It 'does not throw on a backslash-relative path and falls back to filesystem completion' {
+        # Real regression: `bat ..\<Tab>` threw inside CompleteInput on pwsh 7.6.
+        . $script:CompanionPath
+        { $script:r = [System.Management.Automation.CommandCompletion]::CompleteInput('bat ..\', 7, @{}) } |
+            Should -Not -Throw
+        @($script:r.CompletionMatches.CompletionText) | Should -Contain '..\sibling.txt'
+    }
+}

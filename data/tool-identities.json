@@ -241,6 +241,13 @@
       },
       "linkedVia": "curated"
     },
+    "starship": {
+      "packages": {
+        "scoop": "starship",
+        "winget": "Starship.Starship"
+      },
+      "linkedVia": "curated"
+    },
     "Terminal-Icons": {
       "packages": {
         "psresource": "Terminal-Icons"

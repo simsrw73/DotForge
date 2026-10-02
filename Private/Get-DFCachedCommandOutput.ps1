@@ -61,7 +61,8 @@ function Get-DFCachedCommandOutput {
     $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
     $cacheFile = Join-Path $cacheDir "$Name.txt"
     $keyFile   = Join-Path $cacheDir "$Name.key"
-    $fingerprint = "$($cmd.Source)|$((Get-Item $cmd.Source).LastWriteTimeUtc.Ticks)"
+    $target = Resolve-DFExecutableTarget -Path $cmd.Source
+    $fingerprint = "$target|$((Get-Item $target).LastWriteTimeUtc.Ticks)"
 
     $cacheValid = -not $Force -and (Test-Path $cacheFile -PathType Leaf) -and (Test-Path $keyFile -PathType Leaf) -and
                   ((Get-Content $keyFile -Raw).Trim() -eq $fingerprint)
@@ -78,4 +79,49 @@ function Get-DFCachedCommandOutput {
         Set-Content -Path $cacheFile -Value $value        -Encoding UTF8
     }
     return $value
+}
+
+function Resolve-DFExecutableTarget {
+    <#
+    .SYNOPSIS
+        Resolves a launcher (scoop shim or filesystem link) to the real
+        executable it starts, so its file identity tracks tool upgrades.
+    .DESCRIPTION
+        A scoop shim (`shims\<name>.exe`) is a generic launcher that scoop
+        never rewrites on upgrade -- the tool's identity lives in the sibling
+        `<name>.shim` file's `path = "..."` line. Fingerprinting the shim
+        itself would leave Get-DFCachedCommandOutput's cache stale across
+        upgrades. Symlinks (e.g. winget's Links directory) are followed to
+        their final target. Any failure -- unreadable or malformed shim,
+        missing target -- degrades silently to the input path. Catalogued in
+        docs/external-dependencies.md.
+    .PARAMETER Path
+        Absolute path of the resolved command (Get-Command's .Source).
+    .EXAMPLE
+        Resolve-DFExecutableTarget -Path (Get-Command carapace).Source
+    .OUTPUTS
+        [string]
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Path)
+
+    try {
+        $shim = [IO.Path]::ChangeExtension($Path, '.shim')
+        if (Test-Path -LiteralPath $shim -PathType Leaf) {
+            foreach ($line in Get-Content -LiteralPath $shim) {
+                if ($line -match '^\s*path\s*=\s*"?(.+?)"?\s*$') {
+                    $target = ConvertTo-DFPath $Matches[1]
+                    if (Test-Path -LiteralPath $target -PathType Leaf) { return $target }
+                    break
+                }
+            }
+            return $Path
+        }
+        $link = [IO.File]::ResolveLinkTarget($Path, $true)
+        if ($link -and $link.Exists) { return $link.FullName }
+    } catch {
+        Write-Verbose "Resolve-DFExecutableTarget: falling back to '$Path': $_"
+    }
+    $Path
 }

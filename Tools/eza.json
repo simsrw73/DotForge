@@ -20,26 +20,26 @@
         "--color=auto",
         "--icons=auto",
         "--group-directories-first",
-        "--hyperlink=auto"
+        "--no-quotes"
       ]
     },
     "ll": {
       "command": "eza",
-      "args": ["--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--hyperlink=auto"]
+      "args": ["--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--no-quotes"]
     },
     "la": {
       "command": "eza",
-      "args": ["--all", "--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--hyperlink=auto"]
+      "args": ["--all", "--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--no-quotes"]
     },
     "tree": {
       "command": "eza",
-      "args": ["--tree"]
+      "args": ["--tree", "--no-quotes"]
     }
   },
   "picker": {
     "alias": "ff",
     "function": "Select-File",
-    "list": "eza --icons -1 --color=always",
+    "list": "eza --icons -1 --color=always --no-quotes",
     "list_accepts_path": true,
     "preview": "bat --color=always --line-range=:200 {}",
     "preview_window": "right:60%",

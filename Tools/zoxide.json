@@ -7,6 +7,10 @@
     "directory"
   ],
   "executable": "zoxide.exe",
+  "dependsOn": [
+    "oh-my-posh",
+    "starship"
+  ],
   "packages": {
     "scoop": "zoxide",
     "winget": "ajeetdsouza.zoxide",

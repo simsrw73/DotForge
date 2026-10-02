@@ -78,8 +78,8 @@ Two categories, and the difference matters:
 | | |
 |---|---|
 | **What** | `zoxide init --hook pwd` wraps `function:prompt` (not `LocationChangedAction`), and guards against double-hooking with `$global:__zoxide_hooked = 1`. |
-| **Where** | `Tools/zoxide.ps1`; ordering rules in `CLAUDE.md` |
-| **Why** | It forces an ordering constraint: oh-my-posh must initialize **before** zoxide so zoxide wraps OMP's prompt. `Register-DFTool -All` gets this right alphabetically (`oh-my-posh` < `zoxide`). |
+| **Where** | `Tools/zoxide.ps1`, `Tools/zoxide.json` (`dependsOn`); ordering rules in `CLAUDE.md` |
+| **Why** | It forces an ordering constraint: the prompt engine (oh-my-posh or starship) must initialize **before** zoxide so zoxide wraps its prompt. `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]` so `Register-DFTool` topo-sorts the engine first. The order is not alphabetical: the tool DB is a hashtable. |
 | **If it changes** | **Known live limitation:** after a theme switch via `fpot`, OMP re-inits and replaces `function:prompt`, but zoxide's guard prevents re-hooking — so directory tracking stops until the next shell. No clean workaround. |
 
 ### 8. fnm: the `cd` hook shape (`Set-LocationWithFnm` / `Set-FnmOnLoad`)
@@ -111,7 +111,16 @@ Two categories, and the difference matters:
 | **What** | `carapace _carapace powershell` emits a completer that appends a trailing space to each `CompletionText` ("token complete" convention) and builds results with the literal call `[CompletionResult]::new($_.CompletionText, …)`. When PSFzf owns Tab, its `FixCompletionResult` quotes any completion containing a space, so a fuzzy-picked `docker build` is inserted as `docker "build "`. |
 | **Where** | `Tools/carapace.ps1` |
 | **Why** | Only in Native mode with PSFzf available, `Tools/carapace.ps1` string-replaces that constructor call to wrap the first argument in `.TrimEnd()`, dropping the trailing space so PSFzf does not quote. PSFzf re-adds a single trailing space itself, so the picked value lands clean and unquoted. The space is left intact when PSFzf is not in play because PSReadLine's `MenuComplete` needs it to chain into subcommand completion. |
-| **If it changes** | If carapace renames the constructor call or drops the trailing space, the `.Replace` matches nothing and no-ops — completions still work; at worst the old `"build "` quoting reappears in the PSFzf path (cosmetic, self-evident at the prompt). The transform touches only the `CompletionText` argument, never `ListItemText`/`ToolTip`, so styling and the `--ansi` path are unaffected. |
+| **If it changes** | If carapace renames the constructor call or drops the trailing space, the `.Replace` matches nothing and no-ops — completions still work; at worst the old `"build "` quoting reappears in the PSFzf path (cosmetic, self-evident at the prompt). The transform touches only the `CompletionText` argument, never `ListItemText`/`ToolTip`, so styling and the `--ansi` path are unaffected. Because trimming could turn a whitespace-only `CompletionText` into `""` (which the constructor rejects — see #11), the same PSFzf-only path also inserts a `Where-Object` filter on the `ConvertFrom-Json \| ForEach-Object {` anchor that drops such items; if that anchor changes, the filter no-ops. |
+
+### 11. carapace: the `return ""` empty-result sentinel
+
+| | |
+|---|---|
+| **What** | When carapace has no completions, its generated completer ends with `return "" # prevent default file completion` to stop PowerShell falling back to filesystem completion. pwsh 7.6 turns that `""` into `[CompletionResult]::new('')`, which throws ("value of argument completionText is null"). PSFzf's Tab handler wraps `CompleteInput` in `try { } catch { return $false }`, so Tab silently does nothing. Triggered in practice by any input carapace cannot parse — e.g. the Windows-style `..\` prefix (`bat ..\<Tab>`), which carapace 1.8 answers with `[]` while handling `../` fine. |
+| **Where** | `Tools/carapace.ps1` |
+| **Why** | The sidecar string-replaces that exact line with a bare `return` in every mode, so an empty carapace answer falls through to PowerShell's built-in filesystem completion — the desired result for path arguments. Regression test: `tests/carapace.Tests.ps1` (`bat ..\` via `CompleteInput`). |
+| **If it changes** | If carapace rewords the line, the `.Replace` no-ops and the throw returns on pwsh 7.6+ (Tab dead only for inputs carapace can't complete; the regression test catches it). If carapace drops the sentinel itself, the replace no-ops harmlessly. Reported upstream as [carapace#1301](https://github.com/carapace-sh/carapace/issues/1301) (sentinel) and [carapace#1300](https://github.com/carapace-sh/carapace/issues/1300) (backslash paths); revisit this rewrite once #1301 is fixed. |
 
 ---
 
@@ -121,9 +130,11 @@ These are public API. They are listed because DotForge visibly misbehaves if the
 
 | Dependency | Where | Notes |
 |---|---|---|
+| scoop shim format: `shims\<name>.exe` + sibling `<name>.shim` containing `path = "<real exe>"` | `Private/Get-DFCachedCommandOutput.ps1` (`Resolve-DFExecutableTarget`) | Scoop never rewrites the shim `.exe` on upgrade, so the init-output cache fingerprints the `.shim`'s target instead. If the format changes or the target is missing, it degrades silently to fingerprinting the shim — the cache then goes stale across upgrades until `$XDG_CACHE_HOME/dotforge/<name>.*` is deleted. Symlinks (winget Links) are followed via `[IO.File]::ResolveLinkTarget`. |
 | `carapace _carapace powershell` emits the init script | `Tools/carapace.ps1` | Underscore-prefixed but listed in `carapace --help`. Carapace registers argument completers and does not bind Tab; this observed behavior lets the coordinator choose the final binding. |
 | Carapace Native completion and `CARAPACE_BRIDGES` | `Private/Initialize-DFCompletionStack.ps1`, `Tools/carapace.ps1` | In a Carapace-only Native session, the coordinator binds Tab to `MenuComplete` for styled results. It merges `inshellisense` into `CARAPACE_BRIDGES` only in Native mode and only when `is` (or `inshellisense`) is available, preserving user bridge entries. If Carapace changes its Tab behavior or bridge contract, completion may lose this composition but remains usable. |
 | PSFzf's Tab completion | `Private/Initialize-DFCompletionStack.ps1`, `Tools/PSFzf.ps1` | PSFzf configures Tab expansion but does not bind Tab itself. After PSReadLine's edit mode is applied, the coordinator alone binds Tab to `Invoke-FzfTabCompletion` when PSFzf registered; this takes precedence over Carapace's `MenuComplete`. |
+| starship's `Enable-TransientPrompt` / `Disable-TransientPrompt`, defined inside a dynamic module (`New-Module starship`) in the init script | `Tools/starship.ps1` | The functions are documented; that they live in a dynamic module is not. `New-Module` imports into the calling scope, which for a companion is DotForge's module session state, so the sidecar re-imports the module globally via `(Get-Command Enable-TransientPrompt).Module`. If starship renames or drops the function, the lookup returns nothing and the re-import is skipped: the prompt still works, only the transient helpers are unavailable. Regression test: `tests/starship.Tests.ps1`. |
 | inshellisense direct session | `Private/Initialize-DFCompletionStack.ps1`, `Tools/inshellisense.ps1` | Direct `CompletionMode = 'Inshellisense'` requires the `is` command and starts last, after tool registration. `Start-DFInshellisense` first runs `is -c`; a zero exit code leaves the existing session alone, otherwise `is init pwsh` is evaluated. If `is` is unavailable, DotForge warns and uses Native completion. |
 | carapace's init prepends `$XDG_CONFIG_HOME/carapace/bin` to `PATH` itself | `Tools/carapace.ps1` | A deviation from DotForge's rule that all PATH edits go through `Add-DFToPath`. The line is emitted by carapace and cannot be rerouted. |
 | `zoxide init` emits `Set-Alias -Name cd -Option AllScope -Force` | `Tools/zoxide.ps1` | Replaces the built-in `cd` alias in place, so no function-shadowing is needed. Verified against zoxide's emitted init. |

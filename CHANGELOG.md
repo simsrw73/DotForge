@@ -4,6 +4,32 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`starship` prompt tool.** `Tools/starship.json` points `STARSHIP_CONFIG` at
+  `$XDG_CONFIG_HOME/starship.toml` and `STARSHIP_CACHE` at `$XDG_CACHE_HOME/starship`.
+  `Tools/starship.ps1` initializes the prompt from cached `starship init powershell
+  --print-full-init` output, which is regenerated when starship is upgraded. starship's
+  `Enable-TransientPrompt`/`Disable-TransientPrompt` are re-imported globally so a profile can
+  call them. To switch from oh-my-posh, add `'oh-my-posh'` to `$DFConfig.SkipTools`.
+
+### Fixed
+
+- **zoxide could register before the prompt engine, which then replaced zoxide's prompt hook and
+  silently stopped directory tracking.** The docs said registration was alphabetical, but the tool
+  DB is a hashtable, so the order was hash order and varied between processes. `Tools/zoxide.json`
+  now declares `"dependsOn": ["oh-my-posh", "starship"]`.
+- **Tab completion did nothing for carapace-covered commands (`ls`, `bat`, `eza`, …) on paths
+  carapace can't parse, such as `bat ..\<Tab>`.** carapace answers `[]` for a backslash `..\`
+  prefix, and its completer then returns `""` to suppress file fallback. pwsh 7.6 throws on that
+  empty result, and PSFzf's Tab handler swallows the exception. `Tools/carapace.ps1` now rewrites
+  the sentinel to a bare `return`, so PowerShell falls back to filesystem completion; the PSFzf
+  `.TrimEnd()` rewrite also drops whitespace-only items that would trim to `""`.
+- **Cached tool init output (carapace, zoxide, mdcat, scoop-search) went stale across scoop
+  upgrades.** `Get-DFCachedCommandOutput` fingerprinted the scoop shim, which scoop never rewrites;
+  it now fingerprints the shim's real target (read from the sibling `.shim` file) and follows
+  symlinks. Existing caches regenerate once automatically.
+
 ### Changed
 
 - **Replaced the abandoned `winfetch` plugin with `fastfetch`.** `winfetch` is unmaintained
@@ -13,6 +39,10 @@ All notable changes to DotForge are documented here.
   config at `$XDG_CONFIG_HOME/fastfetch/config.jsonc` (only when absent) and passing it via
   an explicit `--config` flag on every invocation. `publicip` is deliberately excluded from
   the seeded module list — it measured a 2.87s cold-path network spike during design.
+- **`eza` and `lsd` aliases no longer emit hyperlinks and no longer quote names with spaces.**
+  `ls`/`ll`/`la` in `Tools/eza.json` and `Tools/lsd.json` dropped `--hyperlink=auto`. eza's
+  `ls`/`ll`/`la`/`tree` and its `ff` picker list command gained `--no-quotes`; lsd's
+  `ls`/`ll`/`la`/`tree` gained its equivalent, `--literal`.
 
 ## [0.6.0-preview] - 2026-09-06
 

@@ -7,7 +7,7 @@ function Set-DFToolXdgConfig {
         a seeded config file, or a manual-instructions warning.
     .DESCRIPTION
         Reads $Tool.xdg.method and dispatches accordingly: 'env' sets env
-        vars from xdg.vars and creates xdg.dirs; 'config' seeds a default
+        vars from xdg.vars that aren't already set and creates xdg.dirs; 'config' seeds a default
         config file only when absent (never overwrites a user's edits);
         'manual' warns with any instructions; 'wrapper' and 'default' are
         no-ops here (handled by a companion .ps1, or not needed at all).
@@ -31,7 +31,14 @@ function Set-DFToolXdgConfig {
             $xdg  = $Tool.xdg
             $vars = $xdg.PSObject.Properties['vars']?.Value
             if ($vars) {
+                # A tool's vars are defaults: a variable the user already set (in
+                # their profile, or system-wide) is never overwritten.
                 $vars.PSObject.Properties | ForEach-Object {
+                    $current = [System.Environment]::GetEnvironmentVariable($_.Name, 'Process')
+                    if ($current) {
+                        Write-Verbose "DotForge: $($Tool.name) keeps $($_.Name) as already set ($current)"
+                        return
+                    }
                     [System.Environment]::SetEnvironmentVariable(
                         $_.Name,
                         (Expand-DFXdgPath $_.Value),

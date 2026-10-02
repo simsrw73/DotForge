@@ -86,6 +86,10 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $script:SavedFzf   = $Env:FZF_DEFAULT_OPTS
         $script:SavedPager = $Env:GIT_PAGER
         $script:SavedLess  = $Env:LESS
+        $script:SavedLessHist = $Env:LESSHISTFILE
+        # tool xdg.vars never overwrite a variable that is already set, so start
+        # from none (the developer's own profile may have set it)
+        Remove-Item Env:\LESSHISTFILE -ErrorAction Ignore
         $script:SavedState = $Env:XDG_STATE_HOME
         $script:SavedCfg   = $Env:XDG_CONFIG_HOME
         $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
@@ -103,6 +107,7 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $Env:FZF_DEFAULT_OPTS = $script:SavedFzf
         $Env:GIT_PAGER        = $script:SavedPager
         $Env:LESS             = $script:SavedLess
+        $Env:LESSHISTFILE     = $script:SavedLessHist
         $Env:XDG_STATE_HOME   = $script:SavedState
         $Env:XDG_CONFIG_HOME  = $script:SavedCfg
         $Env:GIT_CONFIG_GLOBAL = $script:SavedGitConfigGlobal

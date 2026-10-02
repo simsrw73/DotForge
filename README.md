@@ -505,7 +505,7 @@ for persistent setup that makes non-idempotent user-visible changes (e.g. editin
 config file). See CLAUDE.md's "Tool setup lifecycle" bullet for full detail, including
 the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 
-## Included Tools (42)
+## Included Tools (43)
 
 | Group            | Tools                                              |
 | ---------------- | -------------------------------------------------- |
@@ -516,6 +516,7 @@ the completion contract and the `$DFConfig['SkipSetup']` opt-out.
 | Network          | curl, wget                                         |
 | Container        | docker                                             |
 | Shell hooks      | direnv                                             |
+| Prompt           | starship                                           |
 | Editors          | micro                                              |
 | Fuzzy/nav        | fzf, zoxide                                        |
 | Pagers           | less                                               |
@@ -767,6 +768,16 @@ Type a search term, press the chord, pick in fzf — the term is replaced by e.g
 Edit if you like, then press Enter. (The bindings use the current line as the
 query and no-op on an empty line. Pressing `Alt-R` inside the picker installs
 immediately instead of prefilling.)
+
+## Related
+
+DotForge grew out of my own PowerShell profile. These are the projects around it:
+
+- **[dotfiles-windows](https://github.com/simsrw73/dotfiles-windows)**: My whole Windows setup, managed with chezmoi: `~/.config`, the PowerShell profile, apps, keys and secrets. The other projects here are either used by it or published from it.
+- **[w11dwm-config](https://github.com/simsrw73/w11dwm-config)**: The keyboard-driven tiling desktop (komorebi, AutoHotkey, yasb, Flow Launcher, wpm), copied out of dotfiles-windows to share and discuss. Its key bindings, app launcher and window switcher are built on Legend.ahk.
+- **[Legend.ahk](https://github.com/simsrw73/Legend.ahk)**: An AutoHotkey v2 library: an Alt+/ overlay of the shortcuts for the app you're in, which-key style chord menus, pickers and a window switcher. It runs the keys in w11dwm-config and dotfiles-windows.
+- **[starship-p9cat](https://github.com/simsrw73/starship-p9cat)**: A Starship prompt in the powerlevel9k style, in Catppuccin colors. It's the prompt in dotfiles-windows, and a port of the CatPow theme from poshcat.omp.
+- **[poshcat.omp](https://github.com/simsrw73/poshcat.omp)**: Catppuccin themes for Oh My Posh, including CatPow, a powerlevel10k-style theme. It was my prompt before Starship; starship-p9cat carries CatPow over.
 
 ## License
 

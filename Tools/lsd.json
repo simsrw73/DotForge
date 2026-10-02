@@ -15,10 +15,10 @@
   },
   "role": "listing",
   "aliases": {
-    "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--hyperlink=auto"] },
-    "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--hyperlink=auto"] },
-    "la":   { "command": "lsd", "args": ["--all", "--hyperlink=auto"] },
-    "tree": { "command": "lsd", "args": ["--tree"] }
+    "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--literal"] },
+    "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--literal"] },
+    "la":   { "command": "lsd", "args": ["--all", "--literal"] },
+    "tree": { "command": "lsd", "args": ["--tree", "--literal"] }
   },
   "picker": null
 }
