@@ -65,3 +65,9 @@ Describe 'starship companion' {
         }
     }
 }
+
+Describe 'starship XDG defaults' {
+    It 'keeps its config in its own folder under XDG_CONFIG_HOME' {
+        $script:Db['starship'].xdg.vars.STARSHIP_CONFIG | Should -Be '${XDG_CONFIG_HOME}/starship/starship.toml'
+    }
+}
