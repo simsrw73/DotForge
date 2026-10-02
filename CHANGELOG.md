@@ -19,6 +19,16 @@ All notable changes to DotForge are documented here.
   silently stopped directory tracking.** The docs said registration was alphabetical, but the tool
   DB is a hashtable, so the order was hash order and varied between processes. `Tools/zoxide.json`
   now declares `"dependsOn": ["oh-my-posh", "starship"]`.
+- **Tab completion did nothing for carapace-covered commands (`ls`, `bat`, `eza`, …) on paths
+  carapace can't parse, such as `bat ..\<Tab>`.** carapace answers `[]` for a backslash `..\`
+  prefix, and its completer then returns `""` to suppress file fallback. pwsh 7.6 throws on that
+  empty result, and PSFzf's Tab handler swallows the exception. `Tools/carapace.ps1` now rewrites
+  the sentinel to a bare `return`, so PowerShell falls back to filesystem completion; the PSFzf
+  `.TrimEnd()` rewrite also drops whitespace-only items that would trim to `""`.
+- **Cached tool init output (carapace, zoxide, mdcat, scoop-search) went stale across scoop
+  upgrades.** `Get-DFCachedCommandOutput` fingerprinted the scoop shim, which scoop never rewrites;
+  it now fingerprints the shim's real target (read from the sibling `.shim` file) and follows
+  symlinks. Existing caches regenerate once automatically.
 
 ### Changed
 

@@ -105,6 +105,51 @@ Describe 'Get-DFCachedCommandOutput' {
         $script:calls | Should -Be 2
     }
 
+    Context 'scoop shims' {
+        BeforeEach {
+            # Scoop never rewrites shims\<name>.exe on upgrade; the sibling
+            # <name>.shim names the real binary, whose file identity changes.
+            $script:ShimTarget = Join-Path $TestDrive 'apps' 'real-tool.exe'
+            New-Item -ItemType Directory -Path (Split-Path $script:ShimTarget) -Force | Out-Null
+            Set-Content -Path $script:ShimTarget -Value 'real-binary-v1' -Encoding UTF8
+            Set-Content -Path ([IO.Path]::ChangeExtension($script:FakeExe, '.shim')) `
+                -Value "path = `"$script:ShimTarget`"" -Encoding UTF8
+        }
+        AfterEach {
+            Remove-Item ([IO.Path]::ChangeExtension($script:FakeExe, '.shim')) -ErrorAction Ignore
+        }
+
+        It 'regenerates when the shim target is upgraded, even though the shim itself is untouched' {
+            Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'v1-init' } | Out-Null
+
+            Start-Sleep -Milliseconds 50
+            Set-Content -Path $script:ShimTarget -Value 'real-binary-v2' -Encoding UTF8
+
+            Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'v2-init' } |
+                Should -Be 'v2-init'
+        }
+
+        It 'fingerprints the shim target path, not the shim' {
+            Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'x' } | Out-Null
+            (Get-Content (Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'test-tool.key') -Raw) |
+                Should -BeLike "$script:ShimTarget|*"
+        }
+
+        It 'falls back to fingerprinting the shim when the .shim file is malformed' {
+            Set-Content -Path ([IO.Path]::ChangeExtension($script:FakeExe, '.shim')) -Value 'garbage' -Encoding UTF8
+            { Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'x' } } | Should -Not -Throw
+            (Get-Content (Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'test-tool.key') -Raw) |
+                Should -BeLike "$script:FakeExe|*"
+        }
+
+        It 'falls back to fingerprinting the shim when the shim target is missing' {
+            Remove-Item $script:ShimTarget
+            { Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'x' } } | Should -Not -Throw
+            (Get-Content (Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'test-tool.key') -Raw) |
+                Should -BeLike "$script:FakeExe|*"
+        }
+    }
+
     It 'keeps separate cache entries for different -Name values' {
         Get-DFCachedCommandOutput -Name 'tool-a' -Executable 'test-tool' -Generate { 'output-a' } | Out-Null
         Get-DFCachedCommandOutput -Name 'tool-b' -Executable 'test-tool' -Generate { 'output-b' } | Out-Null
