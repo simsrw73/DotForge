@@ -37,6 +37,25 @@ Describe 'Set-DFToolXdgConfig' {
         Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'envtool') | Should -BeTrue
     }
 
+    It 'method env: never overwrites a variable the user already set' {
+        $Env:TESTXDG_CONFIG = 'C:\user\chose\this.conf'
+        $tool = @'
+{
+  "name": "envtool",
+  "xdg": {
+    "method": "env",
+    "vars": {
+      "TESTXDG_CONFIG": "${XDG_CONFIG_HOME}/envtool/config.conf",
+      "TESTXDG_HIST": "${XDG_STATE_HOME}/envtool/history"
+    }
+  }
+}
+'@ | ConvertFrom-Json
+        Set-DFToolXdgConfig -Tool $tool
+        $Env:TESTXDG_CONFIG | Should -Be 'C:\user\chose\this.conf'
+        $Env:TESTXDG_HIST | Should -Be (Join-Path $Env:XDG_STATE_HOME 'envtool' 'history') -Because 'unset variables still get the default'
+    }
+
     It 'method manual: warns, including instructions when present' {
         $tool = @'
 {
