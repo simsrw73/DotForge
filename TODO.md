@@ -202,8 +202,12 @@
     `$DFConfig` — a real gap against the "one system-wide theme" goal, but changing it means
     deciding how a prompt-engine theme fits the `$DFConfig.Theme` chain; needs its own design.
   - [x] `fastfetch` — closed 2026-09-06: replaced `Tools/winfetch.json` with `Tools/fastfetch.json`
-    (winfetch is abandoned upstream). Ships a seeded catppuccin-mocha config via the existing
-    `xdg.method: "config"` path; `publicip` deliberately omitted (measured 2.87s cold-path spike).
+    (winfetch is abandoned upstream). Wraps the executable (`xdg.method: "wrapper"`, like `glow`)
+    since fastfetch ignores `XDG_CONFIG_HOME` on Windows; seeds a catppuccin-mocha config and
+    passes it via explicit `--config`. `publicip` deliberately omitted (measured 2.87s cold-path
+    spike). Theming is hardcoded hex in the seeded config, not resolved through
+    `$DFConfig.Theme`/`Resolve-DFThemeName` (static seeded file, not a per-session runtime
+    resolution) — a residual gap if live theme-switching for fastfetch is wanted later.
     See `docs/superpowers/specs/2026-09-06-fastfetch-tool-swap-design.md`.
 - [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
   whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can

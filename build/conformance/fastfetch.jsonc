@@ -1,0 +1,15 @@
+{
+  // fastfetch -- Windows config auto-discovery ignores XDG_CONFIG_HOME entirely
+  // (hardcoded Win32 known-folder search list). See Tools/fastfetch.ps1 and
+  // docs/external-dependencies.md.
+  "tool": "fastfetch",
+  "claims": [
+    {
+      "id": "fastfetch/honors-env:XDG_CONFIG_HOME",
+      "probe": {
+        "kind": "manual",
+        "retest": "set XDG_CONFIG_HOME to a probe directory and run `fastfetch --list-config-paths`; confirm whether the probe path now appears in the printed search list (verified fastfetch 2.68.1: it does not -- the list is an unchanged, hardcoded set of Win32 known-folder paths)"
+      }
+    }
+  ]
+}

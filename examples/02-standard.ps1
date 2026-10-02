@@ -42,12 +42,6 @@ $DFConfig = @{
 
 Import-Module DotForge
 
-# ── Optional: lightweight system-info banner ──────────────────────────────────
-# Uncomment to show a one-shot system summary at the top of every new shell.
-# The bundled fastfetch config has no logo and skips network-dependent
-# modules, so this stays fast even on a cold shell.
-# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }
-
 # ── First-run bootstrap ────────────────────────────────────────────────────────
 # Install core tools if any are missing. Only passes absent tools to
 # Install-DFTool — tools already on PATH are filtered out by $missing.
@@ -65,6 +59,12 @@ if ($missing) {
 # Use fpot in-session to preview and switch themes (note: theme switch breaks zoxide
 # directory tracking for the rest of that session — known limitation).
 Register-DFTool -All
+
+# ── Optional: lightweight system-info banner ──────────────────────────────────
+# Uncomment to show a one-shot system summary at the top of every new shell.
+# The bundled fastfetch config has no logo and skips network-dependent
+# modules, so this stays fast even on a cold shell.
+# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }
 
 # ── General helpers now available ─────────────────────────────────────────────
 # Importing DotForge also exposes helper aliases, e.g.:

@@ -23,6 +23,19 @@
       }
     ]
   },
+  "fastfetch": {
+    "versionTested": "2.68.1",
+    "probedAt": "2026-09-06",
+    "claims": [
+      {
+        "id": "fastfetch/honors-env:XDG_CONFIG_HOME",
+        "verdict": "manual",
+        "kind": "manual",
+        "evidence": "human-verified; see retest",
+        "retest": "set XDG_CONFIG_HOME to a probe directory and run `fastfetch --list-config-paths`; confirm whether the probe path now appears in the printed search list (verified fastfetch 2.68.1: it does not -- the list is an unchanged, hardcoded set of Win32 known-folder paths)"
+      }
+    ]
+  },
   "glow": {
     "versionTested": "2.1.2",
     "probedAt": "2026-07-24",

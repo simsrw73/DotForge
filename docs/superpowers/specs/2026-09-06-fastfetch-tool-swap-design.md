@@ -86,6 +86,19 @@ need, and no other consumer to justify the added surface — YAGNI per
 
 ## Section 1 — `Tools/fastfetch.json`
 
+**Revision note (2026-09-06, post-review):** this section originally specified
+`xdg.compliance: "full"` and `xdg.method: "config"`, on the claim that "fastfetch
+reads `$XDG_CONFIG_HOME` natively." That claim is wrong on Windows: `fastfetch
+--list-config-paths` with `XDG_CONFIG_HOME` pointed at a probe directory returns an
+unchanged, hardcoded list of Win32 known-folder paths -- the env var is never
+consulted. The seeded config was only discoverable because
+`Initialize-DFEnvironment.ps1`'s default `XDG_CONFIG_HOME` (`$HOME\.config`)
+coincidentally matches fastfetch's own first hardcoded search path. Corrected to
+`xdg.compliance: "none"` / `xdg.method: "wrapper"`, mirroring `Tools/glow.json`'s
+identical fix for the same class of problem: `Tools/fastfetch.ps1` now wraps the
+executable and passes `--config <path>` explicitly, so discovery is correct
+regardless of where `XDG_CONFIG_HOME` is relocated to.
+
 ```json
 {
   "name": "fastfetch",

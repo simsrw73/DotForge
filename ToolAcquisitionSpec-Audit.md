@@ -86,7 +86,7 @@ validate and apply the result but must not contain their own family-to-dialect
 mapping.~~
 
 Initial candidates requiring a theme decision are bat, delta, fzf, glow,
-lazygit, less, micro, oh-my-posh, procs, psreadline, and winfetch. A decision
+lazygit, less, micro, oh-my-posh, procs, psreadline, and fastfetch. A decision
 may be "not configurable"; it still requires a conformance record.
 
 ### 5. Resolve alias ownership
@@ -107,7 +107,7 @@ Adding names to the manifest alone would not fix ownership.
 
 | Tools | Required work |
 |---|---|
-| bat, chezmoi, curl, docker, glow, lazygit, micro, uv, wget, winfetch | Probe the declared environment variable and actual config content; record versioned claims. Ensure parent directories and config creation are explicit. Bat also needs a pager/theme decision. |
+| bat, chezmoi, curl, docker, glow, lazygit, micro, uv, wget, fastfetch | Probe the declared environment variable and actual config content; record versioned claims. Ensure parent directories and config creation are explicit. Bat also needs a pager/theme decision. |
 | broot | Re-probe whether it is truly XDG-native. `full` plus `env` with no variables is contradictory; it should become `default` or a justified directory-only integration. |
 | zoxide | Create the configured data directory, probe `_ZO_DATA_DIR`, and ledger-link the prompt-hook adapter. |
 | npm | Probe npmrc and REPL-history behavior; create the data parent for `NODE_REPL_HISTORY`, not only the npm config directory. |
