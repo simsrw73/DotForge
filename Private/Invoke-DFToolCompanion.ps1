@@ -25,6 +25,12 @@ function Invoke-DFToolCompanion {
     .PARAMETER SkipSetup
         Tool names ($DFConfig['SkipSetup']) whose one-time setup companion
         must never run.
+    .PARAMETER WonRoles
+        Roles this tool won: { Role; Hook; HookRequired }. After the companion
+        runs, each role's hook function, if the companion itself defined it,
+        is dot-sourced with -Tool and -Role. A throwing hook warns; a missing
+        hook warns when HookRequired. Roles the tool lost are never passed, so
+        their hooks never run.
     .OUTPUTS
         None
     #>
@@ -40,15 +46,38 @@ function Invoke-DFToolCompanion {
         [Parameter(Mandatory)]
         [string]$ToolsPath,
 
-        [string[]]$SkipSetup = @()
+        [string[]]$SkipSetup = @(),
+
+        [AllowEmptyCollection()]
+        [object[]]$WonRoles = @()
     )
 
     $companion = Join-Path $ToolsPath "$($Tool.name).ps1"
-    if (Test-Path $companion -PathType Leaf) {
+    $hasCompanion = Test-Path $companion -PathType Leaf
+    if ($hasCompanion) {
         $DFCurrentTool = $Tool
         . ($companion)
-        Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
     }
+
+    # Role hooks: plain functions the companion defined in this scope. Only a
+    # definition from this tool's own companion file counts, so a stray global
+    # of the same name is never mistaken for the hook. Dot-sourced so init
+    # scripts run in the same scope the companion body did.
+    foreach ($won in $WonRoles) {
+        $hook = if ($hasCompanion) { Get-Item -LiteralPath "function:$($won.Hook)" -ErrorAction Ignore }
+        if ($hook -and $hook.ScriptBlock.File -and
+            [System.IO.Path]::GetFullPath($hook.ScriptBlock.File) -eq [System.IO.Path]::GetFullPath($companion)) {
+            $DFCurrentTool = $Tool
+            try {
+                . $hook.ScriptBlock -Tool $Tool -Role $won.Role
+            } catch {
+                Write-Warning "DotForge: $($Tool.name) failed to activate as the $($won.Role) tool: $($_.Exception.Message)"
+            }
+        } elseif ($won.HookRequired) {
+            Write-Warning "DotForge: $($Tool.name) declares the $($won.Role) role but its companion defines no $($won.Hook) — role not activated."
+        }
+    }
+    Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
 
     $setupCompanion = Join-Path $ToolsPath "$($Tool.name).setup.ps1"
     if ((Test-Path $setupCompanion -PathType Leaf) -and

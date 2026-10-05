@@ -1,0 +1,74 @@
+{
+  "prompt": {
+    "kind": "single",
+    "exclusive": true,
+    "hook": "Initialize-DFRolePrompt",
+    "reserved": { "env": [], "aliases": [], "code": ["Invoke-Expression", "iex", "function:prompt"] },
+    "description": "Draws the shell prompt. Only one prompt engine may own the prompt function."
+  },
+  "project-env": {
+    "kind": "single",
+    "exclusive": true,
+    "hook": "Initialize-DFRoleProjectEnv",
+    "reserved": { "env": [], "aliases": [], "code": ["Invoke-Expression", "iex", "LocationChangedAction"] },
+    "description": "Loads per-directory environment variables. Two active hooks would fight over the same variables."
+  },
+  "navigation": {
+    "kind": "single",
+    "exclusive": true,
+    "hook": "Initialize-DFRoleNavigation",
+    "reserved": { "env": [], "aliases": [], "code": ["Invoke-Expression", "iex"] },
+    "description": "Jumps to frequently used directories. Hooks the prompt to track directory changes."
+  },
+  "listing": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleListing",
+    "reserved": { "env": [], "aliases": ["ls", "ll", "la", "tree"], "code": [] },
+    "description": "Lists directory contents. The winner defines ls, ll, la and tree."
+  },
+  "pager": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRolePager",
+    "reserved": { "env": ["PAGER"], "aliases": [], "code": [] },
+    "description": "Pages long output. The winner sets PAGER, which DotForge's own pager also reads."
+  },
+  "diff": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleDiff",
+    "reserved": { "env": ["GIT_PAGER"], "aliases": [], "code": [] },
+    "description": "Displays git diffs. The winner sets GIT_PAGER."
+  },
+  "picker": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRolePicker",
+    "requires": "Accepts fzf's command-line options and reads candidates on stdin.",
+    "reserved": { "env": ["Picker"], "aliases": [], "code": [] },
+    "description": "Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker runs."
+  },
+  "editor": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleEditor",
+    "reserved": { "env": ["EDITOR", "VISUAL"], "aliases": [], "code": [] },
+    "description": "Edits text files. The winner sets EDITOR and VISUAL."
+  },
+  "package-manager": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRolePackageManager",
+    "emptyMembership": true,
+    "reserved": { "env": [], "aliases": [], "code": [] },
+    "description": "Installs tools. Install-DFTool tries the winner first, then the others by priority."
+  },
+  "markdown-viewer": { "kind": "category", "description": "Renders Markdown in the terminal." },
+  "completion":      { "kind": "category", "description": "Adds or improves Tab completion." },
+  "grep":            { "kind": "category", "description": "Searches file contents." },
+  "file-search":     { "kind": "category", "description": "Finds files by name." },
+  "system-info":     { "kind": "category", "description": "Shows system information." },
+  "url-fetch":       { "kind": "category", "description": "Downloads files and calls HTTP APIs." },
+  "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." }
+}

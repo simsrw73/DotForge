@@ -11,10 +11,13 @@ function Register-DFTool {
           1. Applies its XDG configuration: sets the env vars in xdg.vars and
              creates the directories in xdg.dirs.
           2. Sets the non-XDG env vars in its "env" block (e.g. FZF_DEFAULT_OPTS,
-             GIT_PAGER) for the current process.
+             LESS) for the current process.
           3. Defines its aliases and wrapper functions.
           4. Builds its declarative fzf picker function, if it declares one.
-          5. Dot-sources its companion Tools/<name>.ps1, if one exists, and runs
+          5. For each role it wins (see Get-DFRole), applies that role's
+             variables and aliases. Roles it loses are skipped entirely.
+          6. Dot-sources its companion Tools/<name>.ps1, if one exists, then
+             runs the companion's hook for each role it won, and runs
              Tools/<name>.setup.ps1 once ever per machine (tracked in
              $XDG_STATE_HOME\dotforge\setup-state.json).
 
@@ -28,8 +31,11 @@ function Register-DFTool {
         $DFConfig keys read:
             SkipTools          tool names excluded from -All
             SkipSetup          tool names whose one-time setup script never runs
-            Defaults           role -> winning tool, e.g. @{ listing = 'eza' };
-                               the loser's overlapping aliases are not defined
+            Defaults           role -> tool, e.g. @{ prompt = 'starship'; pager = 'bat' };
+                               picks the winner of each role. Without it the
+                               highest-priority installed tool wins (with a
+                               one-time warning for prompt, project-env and
+                               navigation)
             CompletionMode     'Native' (default) or 'Inshellisense'
             SkipConflictCheck  $true disables the coreutils shadowing warning
             IgnoreConflicts    command names left out of that warning
@@ -62,12 +68,13 @@ function Register-DFTool {
 
         Configures only psreadline and PSFzf (in dependency order).
     .EXAMPLE
-        $DFConfig = @{ SkipTools = @('lsd'); Defaults = @{ listing = 'eza' } }
+        $DFConfig = @{ Defaults = @{ listing = 'eza'; prompt = 'starship' } }
         Import-Module DotForge
         Register-DFTool -All -Verbose
 
-        Configures all tools except lsd, gives ls/ll/la/tree to eza, and prints
-        which tools were registered or skipped.
+        Gives ls/ll/la/tree to eza and the prompt to starship (lsd and
+        oh-my-posh stay usable by name), and prints which tools were
+        registered or skipped.
     .OUTPUTS
         None. Changes the current session and may write the files listed above.
     .LINK
@@ -95,7 +102,9 @@ function Register-DFTool {
     $resolvedToolsPath = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath } else { Join-Path $PSScriptRoot '../Tools' })
 
     $tools       = Invoke-DFTopoSort -Tools @(Get-DFRegistrationSet -ToolDb $db -Name $Name -All:$All)
-    $roleWinners = Get-DFRoleWinners -ToolDb $db -Tools $tools
+    $roleDb      = Get-DFRoleDb
+    $roleWinners = Get-DFRoleWinners -ToolDb $db -Tools $tools -RoleDb $roleDb
+    Write-DFRoleNotice -RoleWinners $roleWinners -RoleDb $roleDb
     $skipSetup   = @(Get-DFConfig SkipSetup)
 
     # Pre-import the module tools in a background thread so their real import
@@ -112,7 +121,7 @@ function Register-DFTool {
                 Write-Verbose "DotForge: '$($tool.executable)' not available — skipping $($tool.name)"
                 continue
             }
-            Invoke-DFToolRegistration -Tool $tool -RoleWinners $roleWinners -ToolsPath $resolvedToolsPath -SkipSetup $skipSetup
+            Invoke-DFToolRegistration -Tool $tool -RoleWinners $roleWinners -ToolsPath $resolvedToolsPath -SkipSetup $skipSetup -RoleDb $roleDb
             Write-Verbose "DotForge: $($tool.name) registered"
             $registered.Add($tool.name)
         }

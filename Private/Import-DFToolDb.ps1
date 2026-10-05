@@ -65,8 +65,13 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), dependsOn @(), prewarm $true,
-            packages / xdg / env / aliases / picker / role / themeMap /
-            settings $null
+            packages / xdg / env / aliases / picker / themeMap /
+            settings $null, roles an empty object
+
+        roles is an object keyed by role name; each value is { priority
+        (default 0); aliases (same shape as top-level aliases, or $null); env;
+        legacy }. A legacy "role": "x" string becomes roles.x with priority 0
+        and legacy $true.
 
         Nested shapes are normalized too: xdg always has method, vars, dirs,
         config_path, config_content and instructions; each alias is
@@ -104,10 +109,11 @@ function ConvertTo-DFToolRecord {
         }
     }
 
-    $aliases = & $get $Tool 'aliases' $null
-    if ($aliases) {
+    $normalizeAliases = {
+        param($raw)
+        if (-not $raw) { return $null }
         $normalized = [ordered]@{}
-        foreach ($a in $aliases.PSObject.Properties) {
+        foreach ($a in $raw.PSObject.Properties) {
             $rawArgs = & $get $a.Value 'args' $null
             $normalized[$a.Name] = [pscustomobject]@{
                 command = & $get $a.Value 'command' $null
@@ -116,7 +122,28 @@ function ConvertTo-DFToolRecord {
                 args    = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
             }
         }
-        $aliases = [pscustomobject]$normalized
+        [pscustomobject]$normalized
+    }
+    $aliases = & $normalizeAliases (& $get $Tool 'aliases' $null)
+
+    $roles = [ordered]@{}
+    $rawRoles = & $get $Tool 'roles' $null
+    if ($rawRoles) {
+        foreach ($r in $rawRoles.PSObject.Properties) {
+            $roles[$r.Name] = [pscustomobject]@{
+                priority = [int](& $get $r.Value 'priority' 0)
+                aliases  = & $normalizeAliases (& $get $r.Value 'aliases' $null)
+                env      = & $get $r.Value 'env' $null
+                legacy   = $false
+            }
+        }
+    }
+    # Role v1 declared a single "role" string; read it as a priority-0 membership.
+    # legacy marks it so registration keeps v1 behavior: no hook expected, and a
+    # loser's top-level aliases that the role reserves are left out.
+    $legacyRole = & $get $Tool 'role' $null
+    if ($legacyRole -and -not $roles.Contains($legacyRole)) {
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; aliases = $null; env = $null; legacy = $true }
     }
 
     $picker = & $get $Tool 'picker' $null
@@ -147,14 +174,14 @@ function ConvertTo-DFToolRecord {
         aliases     = $aliases
         picker      = $picker
         dependsOn   = [object[]]@(& $get $Tool 'dependsOn' @())
-        role        = & $get $Tool 'role' $null
+        roles       = [pscustomobject]$roles
         themeMap    = & $get $Tool 'themeMap' $null
         settings    = & $get $Tool 'settings' $null
         prewarm     = [bool](& $get $Tool 'prewarm' $true)
     }
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.
     foreach ($p in $Tool.PSObject.Properties) {
-        if (-not $record.Contains($p.Name)) { $record[$p.Name] = $p.Value }
+        if (-not $record.Contains($p.Name) -and $p.Name -ne 'role') { $record[$p.Name] = $p.Value }
     }
     [pscustomobject]$record
 }

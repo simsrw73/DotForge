@@ -51,6 +51,17 @@ Describe 'Get-DFCommandConflict' {
         $c.Command | Should -Contain 'cat'
     }
 
+    It 'reports a role alias (declared in a roles block) that coreutils shadows' {
+        @'
+{ "name": "listtool", "executable": "listtool.exe",
+  "roles": { "listing": { "aliases": { "ls": { "command": "listtool", "args": ["-l"] } } } } }
+'@ | Set-Content (Join-Path $script:TmpTools 'listtool.json')
+        Mock Get-DFCoreutilsShadowSet { [string[]]@('cat', 'touch', 'ls') }
+        $c = @(Get-DFCommandConflict -ToolsPath $script:TmpTools)
+        $c.Command | Should -Contain 'ls'
+        Remove-Item (Join-Path $script:TmpTools 'listtool.json')
+    }
+
     It 'does not report DotForge commands coreutils leaves alone' {
         Mock Get-DFCoreutilsShadowSet { [string[]]@('cat', 'touch', 'ls') }
         $c = @(Get-DFCommandConflict -ToolsPath $script:TmpTools)

@@ -31,6 +31,25 @@ Describe 'Invoke-DFToolCompanion' {
         $global:CompanionSawCurrentTool | Should -Be 'companiontool'
     }
 
+    It 'calls a won role hook from the companion with -Tool and -Role, and not a lost one' {
+        @'
+function Initialize-DFRoleWon  { param($Tool, $Role) $global:HookSaw = "$($Tool.name):$Role" }
+function Initialize-DFRoleLost { param($Tool, $Role) $global:HookSaw = 'lost' }
+'@ | Set-Content (Join-Path $script:TmpTools 'hooktool.ps1')
+        $tool = '{ "name": "hooktool" }' | ConvertFrom-Json
+        $won = [pscustomobject]@{ Role = 'won'; Hook = 'Initialize-DFRoleWon'; HookRequired = $true }
+        Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:TmpTools -WonRoles @($won)
+        $global:HookSaw | Should -Be 'hooktool:won'
+        Remove-Variable HookSaw -Scope Global
+    }
+
+    It 'leaves hook functions out of every scope after it returns' {
+        'function Initialize-DFRoleWon { }' | Set-Content (Join-Path $script:TmpTools 'hooktool.ps1')
+        $tool = '{ "name": "hooktool" }' | ConvertFrom-Json
+        Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:TmpTools -WonRoles @()
+        Test-Path function:Initialize-DFRoleWon | Should -BeFalse
+    }
+
     It 'does not leak $DFCurrentTool beyond Invoke-DFToolCompanion''s own scope' {
         # PowerShell tears down a function's local scope automatically on return,
         # so this holds regardless of whether Remove-Variable executes -- confirmed

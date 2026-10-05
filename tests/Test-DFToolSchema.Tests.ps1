@@ -84,6 +84,25 @@ Describe 'Test-DFToolSchema' {
             $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
+        It 'rejects roles that is not an object' {
+            $t = '{ "name": "t", "executable": "t.exe", "roles": ["listing"] }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
+            "$errs" | Should -Match 'roles'
+        }
+
+        It 'rejects a non-integer role priority' {
+            $t = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "priority": "high" } } }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
+            "$errs" | Should -Match 'priority'
+        }
+
+        It 'accepts an integer role priority and an empty role block' {
+            $t = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "priority": 10 }, "grep": {} } }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeTrue
+        }
     }
 }
 

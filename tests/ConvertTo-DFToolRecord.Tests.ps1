@@ -19,22 +19,50 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.tags).Count      | Should -Be 0
         @($r.dependsOn).Count | Should -Be 0
         $r.prewarm     | Should -BeTrue
-        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'role', 'themeMap', 'settings') {
+        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'settings') {
             $r.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "$p must exist"
             $r.$p | Should -BeNullOrEmpty
         }
     }
 
     It 'keeps every value the record sets, including fields it does not know' {
-        $raw = '{ "name": "t", "executable": "t.exe", "type": "module", "prewarm": false, "role": "listing",
+        $raw = '{ "name": "t", "executable": "t.exe", "type": "module", "prewarm": false,
                   "tags": ["a"], "dependsOn": ["x"], "customField": 42 }' | ConvertFrom-Json
         $r = ConvertTo-DFToolRecord $raw
         $r.type | Should -Be 'module'
         $r.prewarm | Should -BeFalse
-        $r.role | Should -Be 'listing'
         $r.tags | Should -Be @('a')
         $r.dependsOn | Should -Be @('x')
         $r.customField | Should -Be 42
+    }
+
+    It 'defaults roles to an empty object' {
+        $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe" }' | ConvertFrom-Json)
+        @($r.roles.PSObject.Properties).Count | Should -Be 0
+    }
+
+    It 'normalizes each role block: priority defaults to 0, aliases get the alias shape' {
+        $raw = '{ "name": "t", "executable": "t.exe", "roles": {
+                    "listing": { "priority": 20, "aliases": { "ls": { "command": "t" } } },
+                    "grep": {} } }' | ConvertFrom-Json
+        $r = ConvertTo-DFToolRecord $raw
+        $r.roles.listing.priority | Should -Be 20
+        $r.roles.listing.aliases.ls.command | Should -Be 't'
+        @($r.roles.listing.aliases.ls.args).Count | Should -Be 0
+        $r.roles.grep.priority | Should -Be 0
+        $r.roles.grep.aliases | Should -BeNullOrEmpty
+        $r.roles.grep.env | Should -BeNullOrEmpty
+    }
+
+    It 'converts the legacy role string to a roles entry and drops role' {
+        $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe", "role": "listing" }' | ConvertFrom-Json)
+        $r.roles.listing.priority | Should -Be 0
+        $r.PSObject.Properties['role'] | Should -BeNullOrEmpty
+    }
+
+    It 'prefers an explicit roles entry over the legacy string for the same role' {
+        $raw = '{ "name": "t", "executable": "t.exe", "role": "listing", "roles": { "listing": { "priority": 5 } } }' | ConvertFrom-Json
+        (ConvertTo-DFToolRecord $raw).roles.listing.priority | Should -Be 5
     }
 
     It 'normalizes xdg so every xdg field exists' {
@@ -74,7 +102,7 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
         $fields = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env',
-                  'aliases', 'picker', 'dependsOn', 'role', 'themeMap', 'settings', 'prewarm'
+                  'aliases', 'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'prewarm'
         foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '..' 'Tools') -Filter '*.json') {
             $r = ConvertTo-DFToolRecord (Get-Content $file.FullName -Raw | ConvertFrom-Json)
             {

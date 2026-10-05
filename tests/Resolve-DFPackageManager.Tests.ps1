@@ -6,6 +6,9 @@ BeforeAll {
     . "$PSScriptRoot/../Private/DFReleaseData.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
+    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
 }
 
@@ -60,5 +63,39 @@ Describe 'Resolve-DFPackageManager' {
         $cachedAgain = Resolve-DFPackageManager
         @($cachedAgain).Count | Should -Be @($default).Count
         @($cachedAgain)[0] | Should -Be $default[0]
+    }
+}
+
+Describe 'Get-DFPackageManagerOrder' {
+    BeforeEach {
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        $mk = { param($n, $p) ConvertTo-DFToolRecord ([pscustomobject]@{ name = $n; executable = "$n.exe"; roles = [pscustomobject]@{ 'package-manager' = [pscustomobject]@{ priority = $p } } }) }
+        $script:Db = @{ scoop = (& $mk 'scoop' 30); winget = (& $mk 'winget' 20); choco = (& $mk 'choco' 10) }
+    }
+    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+
+    It 'orders members by priority' {
+        Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
+    }
+
+    It 'puts the Defaults choice first' {
+        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'choco' } }
+        Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('choco', 'scoop', 'winget')
+    }
+
+    It 'ignores a Defaults value that is not a member' {
+        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'apt' } }
+        Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
+    }
+
+    It 'falls back to the built-in order when the role has no members' {
+        Get-DFPackageManagerOrder -ToolDb @{} | Should -Be @('scoop', 'winget', 'choco')
+    }
+
+    It 'drives Resolve-DFPackageManager''s default order' {
+        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'choco' } }
+        Mock Get-DFPackageManagerOrder { 'choco', 'scoop' }
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
+        Resolve-DFPackageManager -Force | Should -Be @('choco', 'scoop')
     }
 }

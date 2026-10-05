@@ -26,6 +26,9 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
+    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
+    . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
+    . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 

@@ -17,7 +17,7 @@ Describe 'Register-DFToolAliases with no args key' {
         # @($null).Count is 1, so a missing args key used to look like one argument
         # and produced a wrapper function instead of an alias.
         $tool = '{ "name": "t", "aliases": { "testalias": { "command": "notepad" } } }' | ConvertFrom-Json
-        Register-DFToolAliases -Tool $tool -RoleWinner $null
+        Register-DFToolAliases -Tool $tool
         (Get-Alias testalias -ErrorAction Ignore).Definition | Should -Be 'notepad'
         Test-Path 'function:global:testalias' | Should -BeFalse
     }
@@ -33,39 +33,34 @@ Describe 'Register-DFToolAliases' {
 
     It 'creates a zero-arg alias with Set-Alias' {
         $tool = '{ "name": "t", "aliases": { "testalias": { "command": "notepad", "args": [] } } }' | ConvertFrom-Json
-        Register-DFToolAliases -Tool $tool -RoleWinner $null
+        Register-DFToolAliases -Tool $tool
         (Get-Alias testalias).Definition | Should -Be 'notepad'
     }
 
     It 'creates a wrapper function for an alias with args, removing a colliding builtin alias first' {
         $tool = '{ "name": "t", "aliases": { "ls": { "command": "eza", "args": ["--icons"] } } }' | ConvertFrom-Json
-        Register-DFToolAliases -Tool $tool -RoleWinner $null
+        Register-DFToolAliases -Tool $tool
         Test-Path 'Alias:\ls' | Should -BeFalse
         Test-Path 'function:global:ls' | Should -BeTrue
     }
 
-    It 'skips an alias whose key is suppressed by a different role winner' {
-        $tool = '{ "name": "lsd", "role": "listing", "aliases": { "ls": { "command": "lsd", "args": [] } } }' | ConvertFrom-Json
-        $roleWinner = @{ WinnerName = 'eza'; AliasKeys = @('ls') }
-        Register-DFToolAliases -Tool $tool -RoleWinner $roleWinner
-        (Get-Alias ls -ErrorAction Ignore) | Should -BeNullOrEmpty
-    }
-
-    It 'still applies the role winner''s own aliases (WinnerName matches Tool.name)' {
-        $tool = '{ "name": "eza", "role": "listing", "aliases": { "ls": { "command": "eza", "args": [] } } }' | ConvertFrom-Json
-        $roleWinner = @{ WinnerName = 'eza'; AliasKeys = @('ls') }
-        Register-DFToolAliases -Tool $tool -RoleWinner $roleWinner
-        (Get-Alias ls).Definition | Should -Be 'eza'
+    It 'registers the aliases passed in -Aliases instead of the tool''s own' {
+        $tool = '{ "name": "rt", "aliases": { "own": { "command": "rt", "args": [] } } }' | ConvertFrom-Json
+        $roleAliases = '{ "fromrole": { "command": "rt", "args": [] } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool -Aliases $roleAliases
+        (Get-Alias fromrole -ErrorAction Ignore).Definition | Should -Be 'rt'
+        Get-Alias own -ErrorAction Ignore | Should -BeNullOrEmpty
+        Remove-DFTestGlobal -Alias fromrole
     }
 
     It 'does nothing when Tool has no aliases property' {
         $tool = '{ "name": "noaliastool" }' | ConvertFrom-Json
-        { Register-DFToolAliases -Tool $tool -RoleWinner $null } | Should -Not -Throw
+        { Register-DFToolAliases -Tool $tool } | Should -Not -Throw
     }
 
     It 'skips an alias entry with no command' {
         $tool = '{ "name": "t", "aliases": { "testalias": { "args": [] } } }' | ConvertFrom-Json
-        { Register-DFToolAliases -Tool $tool -RoleWinner $null } | Should -Not -Throw
+        { Register-DFToolAliases -Tool $tool } | Should -Not -Throw
         (Get-Alias testalias -ErrorAction Ignore) | Should -BeNullOrEmpty
     }
 }

@@ -14,7 +14,10 @@ function Find-DFTool {
         Find-DFPackage. Read-only; changes nothing.
     .PARAMETER Pattern
         Text or wildcard pattern to match (e.g. 'rip', 'grep*', 'mark?own').
-        Matched as '*<Pattern>*'.
+        Matched as '*<Pattern>*'. Optional when -Role is given.
+    .PARAMETER Role
+        Only tools that declare this role (see Get-DFRole), e.g. pager or
+        listing. Combine with -Pattern to narrow further.
     .PARAMETER ToolsPath
         Read tool records from this directory instead of the module's Tools
         folder. Intended for tests.
@@ -26,6 +29,10 @@ function Find-DFTool {
         Find-DFTool '*pager*' | Select-Object name
 
         Lists tool names that relate to paging.
+    .EXAMPLE
+        Find-DFTool -Role pager
+
+        Lists every tool that can be the pager.
     .OUTPUTS
         PSCustomObject — matching tool registry records.
     .LINK
@@ -34,16 +41,24 @@ function Find-DFTool {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)][string]$Pattern,
+        [Parameter(Position = 0)][string]$Pattern,
+        [string]$Role,
         [string]$ToolsPath
     )
+
+    if (-not $Pattern -and -not $Role) {
+        Write-Error 'Specify -Pattern, -Role, or both.' -ErrorAction Stop
+        return
+    }
 
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
 
     $db.Values | Where-Object {
-        $_.name -like "*$Pattern*" -or
-        ($_.description -like "*$Pattern*") -or
-        (@($_.tags) | Where-Object { $_ -like "*$Pattern*" })
+        (-not $Role -or $_.roles.PSObject.Properties[$Role]) -and
+        (-not $Pattern -or
+            $_.name -like "*$Pattern*" -or
+            ($_.description -like "*$Pattern*") -or
+            (@($_.tags) | Where-Object { $_ -like "*$Pattern*" }))
     }
 }

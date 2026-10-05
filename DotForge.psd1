@@ -17,6 +17,7 @@
         # Layer 2 — Tool Registry
         'Get-DFTool',
         'Find-DFTool',
+        'Get-DFRole',
         'Register-DFTool',
         'Complete-DFToolSetup',
         # Layer 3 — Tool Operations

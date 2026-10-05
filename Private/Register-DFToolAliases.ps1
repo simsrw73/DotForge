@@ -4,22 +4,18 @@ function Register-DFToolAliases {
     <#
     .SYNOPSIS
         Creates one tool's declared aliases (or wrapper functions, for
-        aliases that carry arguments), honoring role-loser alias suppression.
+        aliases that carry arguments).
     .DESCRIPTION
-        For each alias in $Tool.aliases: if $RoleWinner names a different
-        tool that won this alias's role, the alias is skipped (Write-Verbose
-        only -- every other alias, XDG config, and picker $Tool declares
-        still applies elsewhere in Register-DFTool). Otherwise, a zero-
-        argument alias becomes a plain Set-Alias; an alias with args becomes
-        a global wrapper function, removing any colliding built-in alias
-        first (Alias outranks Function in command resolution, so a built-in
-        like `cd` would otherwise shadow the wrapper).
+        For each alias in -Aliases (by default the tool's own top-level
+        aliases): a zero-argument alias becomes a plain Set-Alias; an alias
+        with args becomes a global wrapper function, removing any colliding
+        built-in alias first (Alias outranks Function in command resolution,
+        so a built-in like `cd` would otherwise shadow the wrapper).
     .PARAMETER Tool
         The tool record declaring the aliases.
-    .PARAMETER RoleWinner
-        $null, or a hashtable @{ WinnerName; AliasKeys } naming the tool that
-        won $Tool's role and which of its own alias keys are suppressed on
-        every other tool sharing that role.
+    .PARAMETER Aliases
+        The aliases to create. Defaults to the tool's own top-level aliases;
+        Invoke-DFToolRegistration passes a won role's aliases here.
     .OUTPUTS
         None
     #>
@@ -28,18 +24,14 @@ function Register-DFToolAliases {
         [Parameter(Mandatory)]
         [PSCustomObject]$Tool,
 
-        [object]$RoleWinner
+        [AllowNull()]
+        [object]$Aliases = $Tool.aliases
     )
 
-    if (-not $Tool.aliases) { return }
+    if (-not $Aliases) { return }
 
-    $Tool.aliases.PSObject.Properties | ForEach-Object {
+    $Aliases.PSObject.Properties | ForEach-Object {
         $aliasName = $_.Name
-
-        if ($RoleWinner -and $RoleWinner.WinnerName -ne $Tool.name -and $aliasName -in $RoleWinner.AliasKeys) {
-            Write-Verbose "DotForge: $($Tool.name) alias '$aliasName' suppressed — '$($RoleWinner.WinnerName)' won role '$($Tool.role)'"
-            return
-        }
 
         # ConvertTo-DFToolRecord guarantees { command; args[] } per alias.
         $aliasCmd  = $_.Value.command

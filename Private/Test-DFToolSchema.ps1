@@ -58,6 +58,21 @@ function Test-DFToolSchema {
         $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
     }
 
+    # roles: an object keyed by role name; each priority, when present, is an integer.
+    $roles = PSProp $Tool 'roles'
+    if ($null -ne $roles) {
+        if ($roles -isnot [pscustomobject]) {
+            $errs.Add('roles must be an object keyed by role name')
+        } else {
+            foreach ($r in $roles.PSObject.Properties) {
+                $priority = PSProp $r.Value 'priority'
+                if ($null -ne $priority -and $priority -isnot [int] -and $priority -isnot [long]) {
+                    $errs.Add("roles.$($r.Name).priority must be an integer")
+                }
+            }
+        }
+    }
+
     if ($Errors) { $Errors.Value = $errs.ToArray() }
     return $errs.Count -eq 0
 }

@@ -15,7 +15,7 @@ function Get-DFCommandConflict {
         invisible to normal probing.
 
         This function compares the command names DotForge creates (its own helper
-        aliases plus every alias and picker alias declared in the tool database)
+        aliases plus every alias, role alias and picker alias declared in the tool database)
         against the set the coreutils hook will rewrite, and returns one object per
         conflict along with the command that resolves it.
 
@@ -102,6 +102,13 @@ function Get-DFCommandConflict {
     foreach ($tool in @($db.Values)) {
         if ($tool.aliases) {
             $owned.AddRange([string[]]@($tool.aliases.PSObject.Properties.Name))
+        }
+        # A role's aliases (ls, ll, ...) are defined only by the role's winner,
+        # but any member may win, so all of them can be shadowed.
+        foreach ($role in $tool.roles.PSObject.Properties) {
+            if ($role.Value.aliases) {
+                $owned.AddRange([string[]]@($role.Value.aliases.PSObject.Properties.Name))
+            }
         }
         if ($tool.picker -is [PSCustomObject] -and $tool.picker.alias) {
             $owned.Add([string]$tool.picker.alias)
