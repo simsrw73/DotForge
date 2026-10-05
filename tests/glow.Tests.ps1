@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -87,8 +88,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
 
         Remove-Variable DFConfig    -Scope Global -ErrorAction Ignore
         Remove-Variable DFGlowStyle -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:glow'                -ErrorAction Ignore
-        Remove-Item 'function:global:Resolve-DFGlowStyle' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'glow', 'Resolve-DFGlowStyle'
     }
 
     It 'wraps glow as a global function' {

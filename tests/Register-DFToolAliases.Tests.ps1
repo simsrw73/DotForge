@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -10,7 +11,7 @@ BeforeAll {
 }
 
 Describe 'Register-DFToolAliases with no args key' {
-    AfterEach { Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore; Remove-Item 'function:global:testalias' -ErrorAction Ignore }
+    AfterEach { Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore; Remove-DFTestGlobal -Function 'testalias' }
 
     It 'creates a plain alias when the record omits "args"' {
         # @($null).Count is 1, so a missing args key used to look like one argument
@@ -25,9 +26,9 @@ Describe 'Register-DFToolAliases with no args key' {
 Describe 'Register-DFToolAliases' {
     AfterEach {
         Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:testalias-v' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'testalias-v'
         Remove-Alias ls -Force -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:ls' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'ls'
     }
 
     It 'creates a zero-arg alias with Set-Alias' {

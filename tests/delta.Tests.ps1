@@ -49,6 +49,12 @@ Describe 'Tools/delta/catppuccin.gitconfig' {
 }
 
 Describe 'delta tool sidecar' {
+    BeforeAll {
+        # These tests run the real git against a private GIT_CONFIG_GLOBAL. A git
+        # function or alias left by another test file would swallow those calls.
+        $shadow = Get-Command git -CommandType Function, Alias -ErrorAction Ignore
+        if ($shadow) { throw "A '$($shadow.CommandType)' named git shadows git.exe; an earlier test did not clean it up (use Remove-DFTestGlobal)." }
+    }
     BeforeEach {
         $script:DFToolDb   = $null
         $script:DFToolAvailability = @{}

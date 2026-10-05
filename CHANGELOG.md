@@ -76,6 +76,11 @@ All notable changes to DotForge are documented here.
 - **Cache and state files could be left half-written.** The catalog caches, seen-query list,
   `setup-state.json` and downloaded release data are all written to a temporary file and renamed
   into place (`Write-DFFileAtomic`).
+- **The delta setup test failed whenever the scoop tests ran first.** Test cleanup used
+  `Remove-Item function:global:<name>`, which silently removes nothing, so the scoop tests' empty
+  `git` stub (and 15 other files' stubs) outlived their tests and swallowed delta's real `git config`
+  calls. Cleanup now goes through `Remove-DFTestGlobal` (`tests/TestSupport.ps1`), a test rejects the
+  no-op form, and the delta tests fail with a clear message if `git` is shadowed.
 - **The docs-example tests intermittently hung on `glow`**, because child processes inherited the
   test run's stdin. They now get a closed stdin.
 

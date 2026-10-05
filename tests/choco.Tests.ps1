@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -23,12 +24,10 @@ Describe 'choco pickers' {
         }
     }
     AfterEach {
-        'Select-ChocoPackage', 'Remove-ChocoPackage', 'Invoke-ChocoUpdate',
-        'Assert-DFChoco', 'Invoke-DFChocoElevated' |
-            ForEach-Object { Remove-Item "function:global:$_" -ErrorAction Ignore }
-        'cins', 'crm', 'cup' | ForEach-Object { Remove-Item "alias:global:$_" -ErrorAction Ignore }
+        Remove-DFTestGlobal -Function 'Select-ChocoPackage', 'Remove-ChocoPackage', 'Invoke-ChocoUpdate', 'Assert-DFChoco', 'Invoke-DFChocoElevated'
+        Remove-DFTestGlobal -Alias 'cins', 'crm', 'cup'
         Remove-Alias sudo -Scope Global -Force -ErrorAction Ignore
-        Remove-Item 'function:global:gsudo' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'gsudo'
         Remove-PSReadLineKeyHandler -Chord 'Ctrl+g,c' -ErrorAction Ignore
     }
 

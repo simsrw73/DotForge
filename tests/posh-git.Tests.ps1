@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -20,9 +21,8 @@ Describe 'posh-git pickers' {
         }
     }
     AfterEach {
-        'Select-GitBranch', 'Select-GitLog', 'Select-GitFile', 'Select-GitStash' |
-            ForEach-Object { Remove-Item "function:global:$_" -ErrorAction Ignore }
-        'fco', 'flog', 'fga', 'fstash' | ForEach-Object { Remove-Item "alias:global:$_" -ErrorAction Ignore }
+        Remove-DFTestGlobal -Function 'Select-GitBranch', 'Select-GitLog', 'Select-GitFile', 'Select-GitStash'
+        Remove-DFTestGlobal -Alias 'fco', 'flog', 'fga', 'fstash'
     }
 
     It 'defines fco/flog/fga/fstash globally' {

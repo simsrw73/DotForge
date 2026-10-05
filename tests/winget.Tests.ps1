@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -27,10 +28,8 @@ Describe 'winget companion' {
         . $script:CompanionPath
     }
     AfterEach {
-        'Select-WingetPackage', 'Remove-WingetPackage', 'Invoke-WingetUpdate', 'Assert-DFWingetModule' |
-            ForEach-Object { Remove-Item "function:global:$_" -ErrorAction Ignore }
-        'wins', 'wrm', 'wup' |
-            ForEach-Object { Remove-Item "alias:global:$_" -ErrorAction Ignore }
+        Remove-DFTestGlobal -Function 'Select-WingetPackage', 'Remove-WingetPackage', 'Invoke-WingetUpdate', 'Assert-DFWingetModule'
+        Remove-DFTestGlobal -Alias 'wins', 'wrm', 'wup'
         Remove-PSReadLineKeyHandler -Chord 'Ctrl+g,w' -ErrorAction Ignore
     }
 

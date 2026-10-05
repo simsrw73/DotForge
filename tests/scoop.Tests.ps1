@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -13,21 +14,13 @@ BeforeAll {
 
 Describe 'scoop companion' {
     AfterEach {
-        Remove-Item 'function:global:scoop'        -ErrorAction Ignore
-        Remove-Item 'function:global:scoop-search' -ErrorAction Ignore
-        Remove-Item 'function:global:git'          -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'scoop', 'scoop-search', 'git'
     }
 
-    # NOTE: This test runs FIRST on purpose. Defining then removing a global
-    # `scoop-search` function (as the two tests below do) leaves a stale
-    # Function-typed entry in PowerShell's command-resolution cache that survives
-    # PATH clearing — so the absent-scoop-search scenario must be exercised before
-    # any test introduces that ghost. Pester runs It blocks in file order.
     It 'does nothing and does not throw when scoop-search is absent' {
         function global:git { }
         # Make scoop-search unresolvable even on a machine where it is really on
-        # PATH: it is an Application (a shim), so an empty PATH hides it. (Real exe
-        # lookups are not cached across a PATH change; only function ghosts are.)
+        # PATH: it is an Application (a shim), so an empty PATH hides it.
         # Restore PATH afterward regardless of outcome.
         $savedPath = $env:PATH
         try {
@@ -116,10 +109,8 @@ Describe 'scoop pickers' {
         . $script:CompanionPath
     }
     AfterEach {
-        'Select-ScoopPackage', 'Remove-ScoopPackage', 'Invoke-ScoopUpdate',
-        'Assert-DFScoopModule', 'scoop-search', 'git', 'scoop' |
-            ForEach-Object { Remove-Item "function:global:$_" -ErrorAction Ignore }
-        'sins', 'srm', 'sup' | ForEach-Object { Remove-Item "alias:global:$_" -ErrorAction Ignore }
+        Remove-DFTestGlobal -Function 'Select-ScoopPackage', 'Remove-ScoopPackage', 'Invoke-ScoopUpdate', 'Assert-DFScoopModule', 'scoop-search', 'git', 'scoop'
+        Remove-DFTestGlobal -Alias 'sins', 'srm', 'sup'
         Remove-PSReadLineKeyHandler -Chord 'Ctrl+g,s' -ErrorAction Ignore
     }
 

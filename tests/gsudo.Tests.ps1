@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -30,7 +31,7 @@ Describe 'gsudo companion' {
         $Env:Path = $script:SavedPath
         $Env:WINDIR = $script:SavedWinDir
         Remove-Alias sudo -Scope Global -Force -ErrorAction Ignore
-        Remove-Item 'function:global:please' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'please'
     }
 
     It 'moves the gsudo shim ahead of Windows sudo and wires the sudo alias' {

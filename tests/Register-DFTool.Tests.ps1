@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -80,8 +81,7 @@ Describe 'Register-DFTool' {
         $Env:WINDIR           = $script:SavedWinDir
         Remove-Item Env:\TESTTOOL_CONFIG -ErrorAction Ignore
         Remove-Alias tt -Force -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:tt-v'            -ErrorAction Ignore
-        Remove-Item 'function:global:Select-TestTool' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'tt-v', 'Select-TestTool'
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
         Remove-Alias sudo -Force -Scope Global -ErrorAction Ignore
     }
@@ -172,7 +172,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             & 'tt-v' 'somepath'
             $global:TTCaptured | Should -Be @('--verbose', 'somepath')
         } finally {
-            Remove-Item 'function:global:testtool' -ErrorAction Ignore
+            Remove-DFTestGlobal -Function 'testtool'
             Remove-Variable -Name TTCaptured -Scope Global -ErrorAction Ignore
         }
     }
@@ -286,7 +286,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 { Register-DFTool -Name 'pathtool' -ToolsPath $script:TmpTools } | Should -Not -Throw
         Test-Path 'function:global:Select-PathTool' | Should -BeTrue
 
-        Remove-Item 'function:global:Select-PathTool' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Select-PathTool'
         Remove-Alias fpt -Scope Global -Force -ErrorAction Ignore
         Remove-Item (Join-Path $script:TmpTools 'pathtool.json') -ErrorAction Ignore
         $script:DFToolDb = $null

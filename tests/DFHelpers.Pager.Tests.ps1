@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -84,7 +85,7 @@ Describe 'Invoke-DFPagerExe' {
         }
     }
     AfterAll {
-        Remove-Item function:global:dftest_pager -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'dftest_pager'
         Remove-Variable -Name DFTestPagerArgs, DFTestPagerInput -Scope Global -ErrorAction Ignore
     }
     AfterEach {

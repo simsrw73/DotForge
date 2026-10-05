@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -25,8 +26,7 @@ Describe 'psreadline completion configuration' {
     AfterEach {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Remove-Variable DFCurrentTool -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:Select-PSReadLineTheme' -ErrorAction Ignore
-        Remove-Item 'function:global:Invoke-DFApplyPSReadLineTheme' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Select-PSReadLineTheme', 'Invoke-DFApplyPSReadLineTheme'
         Remove-Alias fprl -Scope Global -Force -ErrorAction Ignore
         Set-PSReadLineOption -EditMode $script:OriginalEditMode
     }

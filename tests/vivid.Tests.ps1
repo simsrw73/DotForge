@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -72,8 +73,7 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
 
         [System.Environment]::SetEnvironmentVariable('LS_COLORS', $null, 'Process')
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:Invoke-DFApplyLSColorsTheme' -ErrorAction Ignore
-        Remove-Item 'function:global:Select-LSColorsTheme' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Invoke-DFApplyLSColorsTheme', 'Select-LSColorsTheme'
         Remove-Alias fls -Scope Global -Force -ErrorAction Ignore
     }
 

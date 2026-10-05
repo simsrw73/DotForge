@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -74,7 +75,7 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
         $script:DFToolDb     = $null
 
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:fastfetch' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'fastfetch'
     }
 
     It 'wraps fastfetch as a global function' {

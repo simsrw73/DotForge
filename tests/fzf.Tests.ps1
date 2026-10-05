@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
@@ -48,7 +49,7 @@ Describe 'fzf tool sidecar' {
         $script:DFToolDb      = $null
 
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:Invoke-DFApplyFzfTheme' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Invoke-DFApplyFzfTheme'
     }
 
     It 'applies the catppuccin-mocha theme by default, preserving the existing non-color options' {

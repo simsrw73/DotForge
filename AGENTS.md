@@ -23,7 +23,7 @@ Use four-space indentation in PowerShell files and keep functions focused. Publi
 
 ## Testing Guidelines
 
-Tests use Pester 6 (Pester 5 is not supported) and follow `*.Tests.ps1` naming. Add or update tests with behavior changes, new cmdlets, tool schema changes, or sidecar logic. Mock external tools where possible; avoid spawning interactive processes such as `fzf` in tests.
+Tests use Pester 6 (Pester 5 is not supported) and follow `*.Tests.ps1` naming. Add or update tests with behavior changes, new cmdlets, tool schema changes, or sidecar logic. Mock external tools where possible; avoid spawning interactive processes such as `fzf` in tests. Remove globals a test defines with `Remove-DFTestGlobal` from `tests/TestSupport.ps1`; `Remove-Item function:global:<name>` silently removes nothing.
 
 ## Commit & Pull Request Guidelines
 

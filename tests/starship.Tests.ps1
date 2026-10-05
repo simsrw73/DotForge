@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -52,7 +53,7 @@ Describe 'starship companion' {
             }
         }
         AfterAll {
-            Remove-Item function:global:Get-DFCachedCommandOutput -ErrorAction Ignore
+            Remove-DFTestGlobal -Function 'Get-DFCachedCommandOutput'
             Remove-Module starship, DFCompanionHost -Force -ErrorAction Ignore
         }
 

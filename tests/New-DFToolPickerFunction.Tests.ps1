@@ -1,4 +1,5 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
@@ -13,9 +14,9 @@ BeforeAll {
 
 Describe 'New-DFToolPickerFunction' {
     AfterEach {
-        Remove-Item 'function:global:Select-TestThing' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Select-TestThing'
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
-        Remove-Item 'function:global:Select-TestPathThing' -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'Select-TestPathThing'
     }
 
     It 'installs a global function and alias for a simple picker' {
