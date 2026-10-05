@@ -90,6 +90,20 @@ Describe 'delta tool sidecar' {
         (Get-Content $deployed -Raw) | Should -Match '\[delta "catppuccin-mocha"\]'
     }
 
+    It 'deploys a byte-identical copy and leaves it untouched on a second registration' {
+        # Set-Content appends a newline, so a copy written without -NoNewline never
+        # compares equal to the bundled file and was rewritten on every start.
+        Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
+        $deployed = Join-Path $Env:XDG_CONFIG_HOME 'delta' 'catppuccin.gitconfig'
+        $bundled  = Join-Path $script:RealTools 'delta' 'catppuccin.gitconfig'
+        (Get-Content $deployed -Raw) | Should -BeExactly (Get-Content $bundled -Raw)
+        $first = (Get-Item $deployed).LastWriteTimeUtc
+
+        Start-Sleep -Milliseconds 50
+        Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
+        (Get-Item $deployed).LastWriteTimeUtc | Should -Be $first
+    }
+
     It 'adds exactly one include.path entry and records setup state on first registration' {
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
         $deployed = Join-Path $Env:XDG_CONFIG_HOME 'delta' 'catppuccin.gitconfig'

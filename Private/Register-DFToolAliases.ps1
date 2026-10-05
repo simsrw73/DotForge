@@ -46,7 +46,11 @@ function Register-DFToolAliases {
 
         $aliasCmd  = $_.Value.PSObject.Properties['command']?.Value
         $rawArgs   = $_.Value.PSObject.Properties['args']?.Value
-        $aliasArgs = [object[]]@($rawArgs)
+        # A record without "args" means none: @($null) would count as one argument
+        # and turn a plain alias into a wrapper function. The @() goes around the
+        # whole if: assigning an if-expression unwraps a one-element array to a bare
+        # string, which @capturedArgs would then splat character by character.
+        $aliasArgs = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
 
         if (-not $aliasCmd) { return }
 

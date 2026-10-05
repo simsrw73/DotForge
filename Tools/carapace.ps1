@@ -45,7 +45,7 @@ if (Test-Path $_bundledSpecs) {
         $_dest = Join-Path $_specDir $_.Name
         $_new = Get-Content $_.FullName -Raw
         if (-not (Test-Path $_dest) -or (Get-Content $_dest -Raw) -ne $_new) {
-            Set-Content -Path $_dest -Value $_new -Encoding UTF8
+            Set-Content -Path $_dest -Value $_new -Encoding UTF8 -NoNewline   # byte-identical, so the compare above matches next time
         }
     }
 }
@@ -64,7 +64,14 @@ if (Test-Path $_bundledSpecs) {
 # byte-identical across runs) -- cached keyed to the binary's own file
 # identity so a carapace upgrade regenerates it. See
 # docs/superpowers/specs/2026-09-05-startup-perf-audit.md.
-$_carapaceInit = Get-DFCachedCommandOutput -Name 'carapace-init' -Executable 'carapace' -Generate {
+# carapace registers a completer per command it knows, including commands that
+# only have a user spec in the specs folder, so the folder's contents are part of
+# the cache key: adding, removing or editing a spec regenerates the init script.
+$_specKey = if ($_specDir -and (Test-Path $_specDir)) {
+    (Get-ChildItem $_specDir -Filter '*.yaml' -File | Sort-Object Name |
+        ForEach-Object { "$($_.Name):$($_.LastWriteTimeUtc.Ticks)" }) -join ','
+}
+$_carapaceInit = Get-DFCachedCommandOutput -Name 'carapace-init' -Executable 'carapace' -ExtraKey $_specKey -Generate {
     carapace _carapace powershell | Out-String
 }
 if (((Get-DFCompletionMode) -eq 'Native') -and (Get-Module -ListAvailable -Name PSFzf)) {

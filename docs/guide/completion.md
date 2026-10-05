@@ -119,17 +119,9 @@ deploy.yaml
 
 DotForge's own `scoop.yaml` and `mdv.yaml` appear there too once Carapace has been registered.
 
-1. Carapace registers a PowerShell completer for each command it knows when its init script runs. DotForge caches that script in `$XDG_CACHE_HOME\dotforge\carapace-init.txt` and only regenerates it when Carapace itself is upgraded.
-2. So after adding a spec for a new command, delete the cached script and open a new shell:
-
-   ```powershell
-   Import-Module DotForge
-   Initialize-DFEnvironment
-   Remove-Item (Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'carapace-init.*') -ErrorAction Ignore
-   ```
-
-3. Run `carapace --help` for the spec format, or see the [carapace-spec documentation](https://carapace-sh.github.io/carapace-spec/).
-4. Don't edit `scoop.yaml` or `mdv.yaml`: DotForge rewrites them whenever its bundled copy changes.
+1. Open a new shell to use the spec. Carapace registers a completer for each command it knows when its init script runs; DotForge caches that script and regenerates it whenever a file in the specs folder is added, removed or changed, or Carapace is upgraded.
+2. Run `carapace --help` for the spec format, or see the [carapace-spec documentation](https://carapace-sh.github.io/carapace-spec/).
+3. Don't edit `scoop.yaml` or `mdv.yaml`: DotForge rewrites them whenever its bundled copy changes.
 
 ## Troubleshooting
 
@@ -139,6 +131,6 @@ DotForge's own `scoop.yaml` and `mdv.yaml` appear there too once Carapace has be
 | The fuzzy picker shows `[0m`-style codes | `FZF_DEFAULT_OPTS` was replaced after registration, dropping `--ansi` | Append to `FZF_DEFAULT_OPTS` instead of overwriting it. |
 | `Inshellisense completion requested but its executable or starter was not found` | `CompletionMode = 'Inshellisense'` without `is` on `PATH` | Install inshellisense (`npm install -g @microsoft/inshellisense`) and make sure fnm is registered. |
 | `CompletionMode '<x>' is invalid; using Native.` | a typo in `CompletionMode` | Use `Native` or `Inshellisense`. |
-| A command you added a Carapace spec for doesn't complete | the cached Carapace init predates the spec | Delete `$XDG_CACHE_HOME\dotforge\carapace-init.*` and open a new shell. |
+| A command you added a Carapace spec for doesn't complete | the spec was added after this shell started | Open a new shell. Check the spec with `carapace --help`'s spec format. |
 
 More on the [troubleshooting page](troubleshooting.md).

@@ -2,6 +2,19 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
 }
 
+Describe 'Register-DFToolAliases with no args key' {
+    AfterEach { Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore; Remove-Item 'function:global:testalias' -ErrorAction Ignore }
+
+    It 'creates a plain alias when the record omits "args"' {
+        # @($null).Count is 1, so a missing args key used to look like one argument
+        # and produced a wrapper function instead of an alias.
+        $tool = '{ "name": "t", "aliases": { "testalias": { "command": "notepad" } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool -RoleWinner $null
+        (Get-Alias testalias -ErrorAction Ignore).Definition | Should -Be 'notepad'
+        Test-Path 'function:global:testalias' | Should -BeFalse
+    }
+}
+
 Describe 'Register-DFToolAliases' {
     AfterEach {
         Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore

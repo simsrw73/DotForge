@@ -61,6 +61,17 @@ Describe 'Get-DFCachedCommandOutput' {
         $result | Should -Be 'from-new-path'
     }
 
+    It 'regenerates when -ExtraKey changes, even though the executable is untouched' {
+        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -ExtraKey 'specs:a' -Generate { 'old' } | Out-Null
+
+        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -ExtraKey 'specs:a' -Generate {
+            throw '-Generate should not run while -ExtraKey is unchanged'
+        } | Should -Be 'old'
+
+        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -ExtraKey 'specs:a,b' -Generate { 'new' } |
+            Should -Be 'new'
+    }
+
     It 'bypasses a valid cache when -Force is passed' {
         Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'first' } | Out-Null
 

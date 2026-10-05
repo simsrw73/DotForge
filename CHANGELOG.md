@@ -42,6 +42,16 @@ All notable changes to DotForge are documented here.
   missing. **`examples/04-vscode-fastpath.ps1`** said its VS Code path skipped oh-my-posh but
   registered it anyway.
 - **The `ff` and `ffd` pickers said "Enter to open"** but output the path; the headers now say so.
+- **carapace's specs and delta's theme file were rewritten on every shell start.** The "only when
+  changed" check compared against a copy `Set-Content` had written with an extra trailing newline,
+  so it never matched; the copies are now byte-identical and left alone.
+- **A Carapace spec added for a new command never took effect**, because the cached init script was
+  keyed only to the carapace executable. `Get-DFCachedCommandOutput` takes an optional `-ExtraKey`,
+  and the carapace companion passes its specs folder's file names and times, so adding, removing or
+  editing a spec regenerates the cache.
+- **A tool alias whose record omitted `"args"` became a wrapper function instead of an alias.**
+  A missing `args` now means none.
+- **The carapace tests wrote into the real `~\.config\carapace\specs`**; they now use a test folder.
 - **Help and documentation errors:** `$Env:Picker = 'skim'` (skim's executable is `sk`),
   `Get-DFCategoryList -Counts:$false` described as a bare list, non-runnable `Invoke-DFPicker`
   examples, `POSH_THEMES_PATH` described as set by the oh-my-posh installer, and registry examples

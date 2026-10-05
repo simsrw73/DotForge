@@ -12,14 +12,18 @@ BeforeAll {
 # no pre-existing coverage and is out of scope here.
 Describe 'carapace tool sidecar caching' -Skip:(-not (Get-Command carapace.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
-        $script:SavedBridges   = $Env:CARAPACE_BRIDGES
-        $Env:XDG_CACHE_HOME    = Join-Path $TestDrive 'cache'
-        Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
+        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        $script:SavedBridges    = $Env:CARAPACE_BRIDGES
+        $Env:XDG_CACHE_HOME     = Join-Path $TestDrive 'cache'
+        # The companion deploys specs under XDG_CONFIG_HOME; never the user's real one.
+        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+        Remove-Item $Env:XDG_CACHE_HOME, $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
     AfterEach {
         $Env:XDG_CACHE_HOME    = $script:SavedCacheHome
+        $Env:XDG_CONFIG_HOME   = $script:SavedConfigHome
         $Env:CARAPACE_BRIDGES  = $script:SavedBridges
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
@@ -42,6 +46,33 @@ Describe 'carapace tool sidecar caching' -Skip:(-not (Get-Command carapace.exe -
         # If the second load had regenerated (cache miss), Set-Content would have
         # touched the file again -- unchanged mtime proves it did not.
         (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
+    }
+
+    It 'deploys byte-identical specs and leaves them untouched on a second load' {
+        . $script:CompanionPath
+        $specDir = Join-Path $Env:XDG_CONFIG_HOME 'carapace' 'specs'
+        $bundled = Join-Path $PSScriptRoot '..' 'Tools' 'carapace' 'specs'
+        $times = @{}
+        foreach ($f in Get-ChildItem $bundled -Filter '*.yaml') {
+            $dest = Join-Path $specDir $f.Name
+            (Get-Content $dest -Raw) | Should -BeExactly (Get-Content $f.FullName -Raw)
+            $times[$f.Name] = (Get-Item $dest).LastWriteTimeUtc
+        }
+        Start-Sleep -Milliseconds 50
+        . $script:CompanionPath
+        foreach ($name in $times.Keys) {
+            (Get-Item (Join-Path $specDir $name)).LastWriteTimeUtc | Should -Be $times[$name]
+        }
+    }
+
+    It 'regenerates the cached init when a user adds a spec' {
+        . $script:CompanionPath
+        $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'carapace-init.txt'
+        $before = (Get-Item $cacheFile).LastWriteTimeUtc
+        Start-Sleep -Milliseconds 50
+        Set-Content (Join-Path $Env:XDG_CONFIG_HOME 'carapace' 'specs' 'dfdemo.yaml') -Value 'name: dfdemo'
+        . $script:CompanionPath
+        (Get-Item $cacheFile).LastWriteTimeUtc | Should -BeGreaterThan $before
     }
 }
 

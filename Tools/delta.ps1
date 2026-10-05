@@ -30,6 +30,6 @@ if (Test-Path $_bundledTheme -PathType Leaf) {
     $_dest = Join-Path $_themeDir 'catppuccin.gitconfig'
     $_new  = Get-Content $_bundledTheme -Raw
     if (-not (Test-Path $_dest) -or (Get-Content $_dest -Raw) -ne $_new) {
-        Set-Content -Path $_dest -Value $_new -Encoding UTF8
+        Set-Content -Path $_dest -Value $_new -Encoding UTF8 -NoNewline   # byte-identical, so the compare above matches next time
     }
 }

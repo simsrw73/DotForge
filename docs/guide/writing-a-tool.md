@@ -23,7 +23,7 @@ New-DFDirectory $tools
   "tags": ["search", "demo"],
   "xdg": { "method": "default" },
   "env": { "WHEREEXE_DEMO": "on" },
-  "aliases": { "wh": { "command": "where.exe", "args": [] } }
+  "aliases": { "wh": { "command": "where.exe" } }
 }
 '@ | Set-Content (Join-Path $tools 'whereexe.json')
 
@@ -40,7 +40,7 @@ where.exe
 
 1. DotForge finds `where.exe` on `PATH`, so the tool counts as installed.
 2. The `env` block sets `WHEREEXE_DEMO` for the session.
-3. The `aliases` block defines `wh`. With `"args": []` it's a plain alias; with arguments it becomes a small function that adds them. Always include `args`: a record that leaves it out gets a function, not an alias.
+3. The `aliases` block defines `wh`. Without `args` (or with `"args": []`) it's a plain alias; with arguments it becomes a small function that adds them.
 
 To add the tool to DotForge for real, put the file in the repository's `Tools\` folder and run the tests (see [Check your work](#check-your-work)).
 
@@ -56,7 +56,7 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `packages` | | Install ids per manager: `scoop`, `winget`, `choco`, `psresource`, `cargo`. |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
 | `env` | | Other environment variables to set every session (flags, themes, `GIT_PAGER`). Values may use `${XDG_*}`. |
-| `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; use `"args": []` for none. |
+| `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. |
 | `picker` | | A declarative fzf picker; see below. |
 | `dependsOn` | | Tools that must be registered first, when both are being registered. |
 | `role` | | An equivalence group for `$DFConfig.Defaults` (e.g. `listing`). |

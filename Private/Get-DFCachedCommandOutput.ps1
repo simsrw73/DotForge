@@ -35,6 +35,11 @@ function Get-DFCachedCommandOutput {
         The command name to resolve and fingerprint (e.g. 'carapace').
     .PARAMETER Generate
         Scriptblock producing the real output on a cache miss.
+    .PARAMETER ExtraKey
+        Optional text folded into the fingerprint, for output that also depends
+        on something besides the executable (carapace's init also depends on the
+        spec files in its specs folder). When it changes, the cache regenerates.
+        Keep it cheap to compute: it runs on every call.
     .PARAMETER Force
         Bypass the cache and regenerate unconditionally.
     .EXAMPLE
@@ -50,6 +55,7 @@ function Get-DFCachedCommandOutput {
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$Executable,
         [Parameter(Mandatory)][scriptblock]$Generate,
+        [string]$ExtraKey,
         [switch]$Force
     )
 
@@ -63,6 +69,7 @@ function Get-DFCachedCommandOutput {
     $keyFile   = Join-Path $cacheDir "$Name.key"
     $target = Resolve-DFExecutableTarget -Path $cmd.Source
     $fingerprint = "$target|$((Get-Item $target).LastWriteTimeUtc.Ticks)"
+    if ($ExtraKey) { $fingerprint += "|$ExtraKey" }
 
     $cacheValid = -not $Force -and (Test-Path $cacheFile -PathType Leaf) -and (Test-Path $keyFile -PathType Leaf) -and
                   ((Get-Content $keyFile -Raw).Trim() -eq $fingerprint)
