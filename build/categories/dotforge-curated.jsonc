@@ -129,6 +129,11 @@
     "function": ["editor"], "worksWith": ["text", "code"], "interface": "tui",
     "ids": { "scoop": "micro" }, "popularity": 1
   },
+  "mise": {
+    "function": ["shell-enhancement", "task-runner", "package-manager"], "worksWith": ["environment-vars", "binaries"],
+    "interface": "cli", "ids": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
+    "relatedTo": ["direnv", "ps-dotenv", "fnm", "uv"], "popularity": 3
+  },
   "npm": {
     "function": ["package-manager"], "worksWith": ["filesystem"], "interface": "cli",
     "popularity": 3
@@ -148,6 +153,11 @@
     "alternativeTo": ["ps"],
     "ids": { "scoop": "procs", "choco": "procs" },
     "relatedTo": ["bottom", "glances"], "popularity": 1
+  },
+  "ps-dotenv": {
+    "function": ["shell-enhancement"], "worksWith": ["environment-vars"], "interface": "cli",
+    "ids": { "scoop": "ps-dotenv" },
+    "relatedTo": ["direnv", "mise"], "popularity": 1
   },
   "psreadline": {
     "function": ["shell-enhancement"], "worksWith": ["text"], "interface": "cli", "popularity": 2

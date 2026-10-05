@@ -16,7 +16,9 @@ function Install-DFTool {
         that declares packages.cargo, unless -PackageManager pins a manager.
 
         Commands run, per manager:
-            scoop       scoop install <id>
+            scoop       scoop install <id>; for a tool that declares scoopBucket,
+                        scoop bucket add <name> <url> (when missing), then
+                        scoop install <name>/<id>
             winget      winget install --id <id> --silent --accept-source-agreements --accept-package-agreements
             choco       choco install <id> -y        (needs an elevated shell)
             cargo       cargo install <id>
@@ -117,7 +119,7 @@ function Install-DFTool {
                     -ForegroundColor DarkGray -NoNewline
 
                 $null = switch ($pm) {
-                    'scoop'      { scoop  install $pkgId 2>&1 }
+                    'scoop'      { Invoke-DFScoopInstall -Id $pkgId -Bucket $tool.scoopBucket }
                     'winget'     { winget install --id $pkgId --silent `
                                        --accept-source-agreements `
                                        --accept-package-agreements 2>&1 }

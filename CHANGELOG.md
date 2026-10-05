@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **ps-dotenv and mise join the `project-env` role.** ps-dotenv (the default winner) loads `.env`
+  files as you change folders, with safe mode on: only folders in `$DFConfig.DotenvApprovedDirs` load
+  (`DotenvSafeMode = $false` loads all). mise activates when it's the `project-env` tool, and its
+  shims stay on PATH either way. Tool records can declare a third-party `scoopBucket`, which
+  `Install-DFTool` adds before installing, so `Install-DFTool ps-dotenv` works.
+- **direnv works without setup.** When `DIRENV_BASH` is unset, DotForge points it at Git for
+  Windows' bash (`direnv.toml`'s `bash_path` still wins), and warns while the installed direnv
+  (2.37.1 or older) has the Windows bug that unloads unrelated variables (direnv#1488).
 - **Tool roles.** `data/roles.json` defines roles such as `prompt`, `pager`, `editor`, `picker`,
   `diff`, `listing`, `project-env`, `navigation` and `package-manager`, plus grouping-only
   categories (`grep`, `markdown-viewer`, …). Only the winning tool for a role

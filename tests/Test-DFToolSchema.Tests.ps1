@@ -84,6 +84,13 @@ Describe 'Test-DFToolSchema' {
             $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
+        It 'rejects a scoopBucket without both name and url' {
+            $t = '{ "name": "t", "executable": "t.exe", "scoopBucket": { "name": "x" } }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
+            "$errs" | Should -Match 'scoopBucket'
+        }
+
         It 'rejects roles that is not an object' {
             $t = '{ "name": "t", "executable": "t.exe", "roles": ["listing"] }' | ConvertFrom-Json
             $errs = @()

@@ -40,6 +40,8 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
 | `BatTheme`, `DeltaTheme`, `FzfTheme`, `GlowTheme`, `MdcatTheme`, `MdvTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
+| `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
+| `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
 | `IgnoreConflicts` | string[] | none | Commands left out of the coreutils warning. See [Coreutils conflicts](coreutils-conflicts.md). |
 | `SkipConflictCheck` | bool | `$false` | `$true` turns the coreutils check off. |
 

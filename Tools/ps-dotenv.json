@@ -1,0 +1,14 @@
+{
+  "name": "ps-dotenv",
+  "type": "module",
+  "executable": "Dotenv",
+  "description": "Loads .env files as you change folders (PowerShell-native direnv alternative)",
+  "tags": ["environment-vars", "shell-enhancement", "dev"],
+  "packages": { "scoop": "ps-dotenv" },
+  "scoopBucket": { "name": "insomnia", "url": "https://github.com/insomnimus/scoop-bucket" },
+  "xdg": { "compliance": "full", "method": "default" },
+  "prewarm": false,
+  "roles": { "project-env": { "priority": 30 } },
+  "aliases": {},
+  "picker": null
+}

@@ -10,6 +10,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
+    . "$PSScriptRoot/../Private/Invoke-DFScoopInstall.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
     . "$PSScriptRoot/../Public/Install-DFTool.ps1"
 }
@@ -147,5 +148,57 @@ Describe 'Install-DFTool' {
 
         Remove-Item (Join-Path $script:TmpTools 'psmod.json') -ErrorAction Ignore
         $script:DFToolDb = $null
+    }
+}
+
+Describe 'Install-DFTool with a scoop bucket' {
+    BeforeEach {
+        $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
+        $script:TmpTools = Join-Path $TestDrive "tools-$([guid]::NewGuid())"
+        New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
+        @'
+{ "name": "bucktool", "executable": "bucktool.exe", "packages": { "scoop": "bucktool" },
+  "scoopBucket": { "name": "testbucket", "url": "https://example.invalid/bucket" } }
+'@ | Set-Content (Join-Path $script:TmpTools 'bucktool.json')
+        $script:ScoopCalls = [System.Collections.Generic.List[string]]::new()
+        $script:Buckets = @('main')
+        $script:BucketAddExit = 0
+        function script:scoop {
+            $script:ScoopCalls.Add(($args -join ' '))
+            if ($args[0] -eq 'bucket' -and $args[1] -eq 'list') { $script:Buckets | ForEach-Object { [pscustomobject]@{ Name = $_ } }; $global:LASTEXITCODE = 0; return }
+            if ($args[0] -eq 'bucket' -and $args[1] -eq 'add') { $global:LASTEXITCODE = $script:BucketAddExit; return }
+            $global:LASTEXITCODE = 0
+        }
+        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+    }
+    AfterEach { Remove-Item function:scoop -ErrorAction Ignore }
+
+    It 'adds a missing bucket, then installs the bucket-qualified package' {
+        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
+        $script:ScoopCalls | Should -Contain 'bucket add testbucket https://example.invalid/bucket'
+        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
+    }
+
+    It 'skips the add when the bucket is already there' {
+        $script:Buckets = @('main', 'testbucket')
+        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
+        @($script:ScoopCalls | Where-Object { $_ -like 'bucket add*' }).Count | Should -Be 0
+        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
+    }
+
+    It 'warns and does not install when the bucket cannot be added' {
+        $script:BucketAddExit = 1
+        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools -WarningVariable w -WarningAction SilentlyContinue 6>$null
+        "$w" | Should -Match "testbucket"
+        @($script:ScoopCalls | Where-Object { $_ -like 'install*' }).Count | Should -Be 0
+    }
+
+    It 'installs an unqualified id when the tool declares no bucket' {
+        '{ "name": "plain", "executable": "plain.exe", "packages": { "scoop": "plain" } }' | Set-Content (Join-Path $script:TmpTools 'plain.json')
+        Install-DFTool -Name plain -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
+        $script:ScoopCalls | Should -Contain 'install plain'
+        @($script:ScoopCalls | Where-Object { $_ -like 'bucket*' }).Count | Should -Be 0
     }
 }

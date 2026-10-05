@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-09-06",
+  "updated": "2026-10-05",
   "taxonomy": {
     "function": [
       "search",
@@ -853,6 +853,30 @@
       },
       "popularity": 1
     },
+    "mise": {
+      "function": [
+        "shell-enhancement",
+        "task-runner",
+        "package-manager"
+      ],
+      "worksWith": [
+        "environment-vars",
+        "binaries"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "mise",
+        "winget": "jdx.mise",
+        "choco": "mise"
+      },
+      "relatedTo": [
+        "direnv",
+        "ps-dotenv",
+        "fnm",
+        "uv"
+      ],
+      "popularity": 3
+    },
     "navi": {
       "function": [
         "documentation"
@@ -956,6 +980,23 @@
       "relatedTo": [
         "bottom",
         "glances"
+      ],
+      "popularity": 1
+    },
+    "ps-dotenv": {
+      "function": [
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "environment-vars"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "ps-dotenv"
+      },
+      "relatedTo": [
+        "direnv",
+        "mise"
       ],
       "popularity": 1
     },

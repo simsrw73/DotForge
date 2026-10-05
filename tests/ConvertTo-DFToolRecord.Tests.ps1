@@ -19,7 +19,7 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.tags).Count      | Should -Be 0
         @($r.dependsOn).Count | Should -Be 0
         $r.prewarm     | Should -BeTrue
-        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'settings') {
+        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'settings', 'scoopBucket') {
             $r.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "$p must exist"
             $r.$p | Should -BeNullOrEmpty
         }
@@ -102,7 +102,7 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
         $fields = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env',
-                  'aliases', 'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'prewarm'
+                  'aliases', 'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'prewarm', 'scoopBucket'
         foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '..' 'Tools') -Filter '*.json') {
             $r = ConvertTo-DFToolRecord (Get-Content $file.FullName -Raw | ConvertFrom-Json)
             {

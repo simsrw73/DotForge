@@ -115,7 +115,7 @@
   - picker: skim; television doesn't take fzf's command line, so it needs its own adapter or a
     different role
   - file-manager (new role): yazi, superfile, broot
-  - project-env: ps-dotenv (needs a declarative scoop-bucket field), mise (also version-manager)
+  - project-env: ps-dotenv, mise — done 2026-10-05
   - system-info: winfetch
   - url-fetch: httpie, xh, curlie, aria2
   - suggested new roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs,
@@ -125,7 +125,7 @@
   - promote `markdown-viewer` from category to single once something in DotForge consumes a winner
   - retire `$DFConfig.PackageManagerOrder` in favor of `Defaults['package-manager']`, or keep both
     deliberately (today `PackageManagerOrder` wins)
-- [ ] **Per-directory environment tools: alternatives to `direnv`, each zero-config (requested
+- [x] **Per-directory environment tools: alternatives to `direnv`, each zero-config** — done 2026-10-05: ps-dotenv (with `scoopBucket`), mise, and direnv's bash path + bug warning (`docs/superpowers/specs/2026-10-05-project-env-tools-design.md`). Still open: survey other Windows-capable alternatives. Original note (requested
   2026-10-05)** — `direnv` (`Tools/direnv.json`/`.ps1`) is not usable as shipped on Windows: it
   needs a `direnv.toml` pointing at Git Bash (`bash_path`), which DotForge never writes, and it
   is buggy on Windows (it unloads variables it should leave alone). Add competing plugins that

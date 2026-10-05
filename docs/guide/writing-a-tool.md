@@ -54,6 +54,7 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `description` | | One line; shown by `Get-DFTool` and `Find-DFTool`. |
 | `tags` | | Words for `Get-DFTool -Tag` and `Find-DFTool`. |
 | `packages` | | Install ids per manager: `scoop`, `winget`, `choco`, `psresource`, `cargo`. |
+| `scoopBucket` | | `{ "name": "...", "url": "..." }` for a package in a third-party scoop bucket; `Install-DFTool` adds the bucket if needed, then installs `<name>/<id>`. |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
 | `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |

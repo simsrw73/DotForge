@@ -66,7 +66,7 @@ function ConvertTo-DFToolRecord {
 
             type 'exe', description '', tags @(), dependsOn @(), prewarm $true,
             packages / xdg / env / aliases / picker / themeMap /
-            settings $null, roles an empty object
+            settings / scoopBucket $null, roles an empty object
 
         roles is an object keyed by role name; each value is { priority
         (default 0); aliases (same shape as top-level aliases, or $null); env;
@@ -177,6 +177,7 @@ function ConvertTo-DFToolRecord {
         roles       = [pscustomobject]$roles
         themeMap    = & $get $Tool 'themeMap' $null
         settings    = & $get $Tool 'settings' $null
+        scoopBucket = & $get $Tool 'scoopBucket' $null
         prewarm     = [bool](& $get $Tool 'prewarm' $true)
     }
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.

@@ -144,3 +144,68 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         "$w" | Should -Not -Match 'prompt role'
     }
 }
+
+Describe 'ps-dotenv/mise/direnv share role: project-env (real tool records and sidecars)' {
+    BeforeAll {
+        . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
+        $fakeDir = Join-Path $TestDrive 'fake-dotenv\Dotenv'
+        New-Item -ItemType Directory -Force $fakeDir | Out-Null
+        $script:FakeDotenv = Join-Path $fakeDir 'Dotenv.psm1'
+        @'
+$Dotenv = [pscustomobject]@{ Enabled = $false; SafeMode = $false; Async = $true }
+function Enable-Dotenv { $Dotenv.Enabled = $true }
+function Approve-DotenvDir { param([Parameter(Mandatory)][string]$Path) }
+function Update-Dotenv { $global:ProjectEnvInits += 'ps-dotenv' }
+Export-ModuleMember -Function * -Variable Dotenv
+'@ | Set-Content $script:FakeDotenv
+    }
+    BeforeEach {
+        $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
+        $script:DFRoleDb = $null
+        $global:DFRoleEnvState = $null
+        Remove-Variable DFConfig, DFDotenvLocationHook -Scope Global -ErrorAction Ignore
+        $script:SavedXdg = @{}
+        foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
+            $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
+            [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", (Join-Path $TestDrive "$($v.ToLower())-$([guid]::NewGuid())"))
+        }
+        $script:SavedPath = $Env:Path
+        $script:SavedLca = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
+        $global:ProjectEnvInits = @()
+        Mock Get-Command {
+            param($Name)
+            if ($Name -in 'direnv.exe', 'mise.exe') { [PSCustomObject]@{ Path = "C:\fake\$Name" } }
+        }
+        Mock Get-Module { [pscustomobject]@{ Name = 'Dotenv'; Path = $script:FakeDotenv } } -ParameterFilter { $ListAvailable }
+        Mock Write-DFConflictNotice { }
+        Mock Initialize-DFCompletionStack { }
+        Mock Get-DFCachedCommandOutput { '$global:ProjectEnvInits += "direnv"' } -ParameterFilter { $Name -eq 'direnv-hook' }
+        Mock Get-DFCachedCommandOutput { '2.38.0' } -ParameterFilter { $Name -eq 'direnv-version' }
+        function global:mise { '$global:ProjectEnvInits += "mise"' }
+    }
+    AfterEach {
+        $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = $script:SavedLca
+        $Env:Path = $script:SavedPath
+        foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
+            [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
+        }
+        Remove-Module Dotenv -Force -ErrorAction Ignore
+        Remove-Variable DFConfig, DFDotenvLocationHook, ProjectEnvInits, Dotenv, DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Remove-Item Env:DIRENV_BASH -ErrorAction Ignore
+        Remove-DFTestGlobal -Function mise
+    }
+
+    It 'activates only ps-dotenv by priority, warns once, and keeps mise''s shims on PATH' {
+        Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningVariable w -WarningAction SilentlyContinue
+        $global:ProjectEnvInits | Should -Be @('ps-dotenv')
+        "$w" | Should -Match 'project-env role; using ps-dotenv'
+        ($Env:Path -split ';') | Should -Contain (Join-Path $Env:XDG_DATA_HOME 'mise\shims')
+    }
+
+    It 'activates only mise when Defaults.project-env = mise' {
+        $Global:DFConfig = @{ Defaults = @{ 'project-env' = 'mise' } }
+        Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+        $global:ProjectEnvInits | Should -Be @('mise')
+    }
+}

@@ -93,7 +93,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -455,7 +455,9 @@ The preference list is, in order of precedence: -PackageManager, then $DFConfig[
 
 ```text
 Commands run, per manager:
-    scoop       scoop install <id>
+    scoop       scoop install <id>; for a tool that declares scoopBucket,
+                scoop bucket add <name> <url> (when missing), then
+                scoop install <name>/<id>
     winget      winget install --id <id> --silent --accept-source-agreements --accept-package-agreements
     choco       choco install <id> -y        (needs an elevated shell)
     cargo       cargo install <id>
@@ -2064,7 +2066,7 @@ Loads per-directory environment variables. Two active hooks would fight over the
 | | |
 | --- | --- |
 | Kind | single, exclusive |
-| Members | [direnv](#direnv-tool) |
+| Members | [direnv](#direnv-tool), [mise](#mise-tool), [ps-dotenv](#ps-dotenv-tool) |
 
 ### prompt role
 
@@ -2100,7 +2102,7 @@ Installs and switches language runtime versions.
 | | |
 | --- | --- |
 | Kind | category |
-| Members | [fnm](#fnm-tool), [rustup](#rustup-tool), [uv](#uv-tool) |
+| Members | [fnm](#fnm-tool), [mise](#mise-tool), [rustup](#rustup-tool), [uv](#uv-tool) |
 
 ## Tool records
 
@@ -2459,6 +2461,20 @@ Modern and intuitive terminal-based text editor
 | Roles | [`editor`](#editor-role) |
 | Sets, as the editor tool | `EDITOR` = `micro`<br>`VISUAL` = `micro` |
 
+### mise tool
+
+Dev tool versions, environment variables and tasks per project
+
+| | |
+| --- | --- |
+| Detected by | `mise.exe` |
+| Tags | `version-manager`, `environment-vars`, `dev` |
+| Install ids | scoop: `mise`<br>winget: `jdx.mise`<br>choco: `mise` |
+| XDG method | `default` |
+| Registers after | `oh-my-posh`, `starship` |
+| Roles | [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
+| Companion | `Tools/mise.ps1` |
+
 ### npm tool
 
 Node.js package manager
@@ -2510,6 +2526,19 @@ Modern replacement for ps
 | Install ids | scoop: `procs`<br>choco: `procs` |
 | XDG method | `default` |
 | Companion | [`Tools/procs.ps1`](#procs-companion) |
+
+### ps-dotenv tool
+
+Loads .env files as you change folders (PowerShell-native direnv alternative)
+
+| | |
+| --- | --- |
+| Detected by | module `Dotenv` |
+| Tags | `environment-vars`, `shell-enhancement`, `dev` |
+| Install ids | scoop: `ps-dotenv` |
+| XDG method | `default` |
+| Roles | [`project-env`](#project-env-role) |
+| Companion | `Tools/ps-dotenv.ps1` |
 
 ### PSFzf tool
 

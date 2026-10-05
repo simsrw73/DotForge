@@ -122,6 +122,33 @@ Two categories, and the difference matters:
 | **Why** | The sidecar string-replaces that exact line with a bare `return` in every mode, so an empty carapace answer falls through to PowerShell's built-in filesystem completion — the desired result for path arguments. Regression test: `tests/carapace.Tests.ps1` (`bat ..\` via `CompleteInput`). |
 | **If it changes** | If carapace rewords the line, the `.Replace` no-ops and the throw returns on pwsh 7.6+ (Tab dead only for inputs carapace can't complete; the regression test catches it). If carapace drops the sentinel itself, the replace no-ops harmlessly. Reported upstream as [carapace#1301](https://github.com/carapace-sh/carapace/issues/1301) (sentinel) and [carapace#1300](https://github.com/carapace-sh/carapace/issues/1300) (backslash paths); revisit this rewrite once #1301 is fixed. |
 
+### 12. direnv: the Windows variable-unloading bug, and `DIRENV_BASH`
+
+| | |
+|---|---|
+| **What** | direnv 2.37.1 (latest as of 2026-10) on Windows unloads variables it never set (`ComSpec`, `ProgramFiles`, …) on each `cd` in and out of a project ([direnv#1488](https://github.com/direnv/direnv/issues/1488), [#1274](https://github.com/direnv/direnv/issues/1274)). direnv also needs bash, found as `bash_path` in `direnv.toml`, then the `DIRENV_BASH` variable, then `bash` on PATH (`internal/cmd/config.go`). |
+| **Where** | `Tools/direnv.ps1` (`$DFDirenvLastBuggyVersion`, `Find-DFGitBash`) |
+| **Why** | While direnv is the `project-env` tool, DotForge warns when `direnv version` is at or below `$DFDirenvLastBuggyVersion`, and sets `DIRENV_BASH` (when unset) to the first `bin\bash.exe` above `git.exe` (a scoop shim is first followed to the real `git.exe`), so it never writes `direnv.toml`. |
+| **If it changes** | A fixed release silences the warning automatically; if a newer release still has the bug, raise the constant. An unparsable `direnv version` warns nothing. If Git's layout changes, the lookup finds nothing and warns, and a `bash_path` in `direnv.toml` still works. |
+
+### 13. ps-dotenv: nested scoop install, shipped defaults, session-only approvals
+
+| | |
+|---|---|
+| **What** | scoop's `ps-dotenv` install puts the manifest at `modules\Dotenv\Dotenv\Dotenv.psd1`, one level deeper than PowerShell expects: `Get-Module -ListAvailable Dotenv` finds it, `Import-Module Dotenv` by name fails. Module 1.1.0 ships with `SafeMode = True` and `Async = True` (the README calls safe mode opt-in). Approvals live in memory only. |
+| **Where** | `Tools/ps-dotenv.ps1`, `Tools/ps-dotenv.json` (`prewarm: false`) |
+| **Why** | The hook imports by the discovered `.Path`, sets `SafeMode` and `Async` explicitly (`Async` off so a script's `cd` sees the `.env` loaded), and re-applies `$DFConfig.DotenvApprovedDirs` each session. Prewarm is off because it imports by name. |
+| **If it changes** | A fixed install layout still imports by path. If the `$Dotenv` object loses `SafeMode`/`Async`, setting them throws and registration warns that ps-dotenv failed to activate. |
+
+### 14. mise: activation embeds the current PATH
+
+| | |
+|---|---|
+| **What** | `mise activate pwsh` output contains the session's PATH as literal text (`__MISE_ORIG_PATH`, `PATH`), wraps `function:prompt`, chains onto `LocationChangedAction`, and defines some top-level functions without `global:` (its `mise` wrapper, which `mise shell`/`deactivate` need). |
+| **Where** | `Tools/mise.ps1`, `Tools/mise.json` (`dependsOn` the prompt engines) |
+| **Why** | The hook generates activation live each session (~73 ms, only when mise is the `project-env` tool); caching it like zoxide's would restore a stale PATH. Before running it, the hook rewrites line-leading `function <name>` to `function global:<name>`, because the hook runs inside a DotForge function whose locals vanish on return. It registers after oh-my-posh/starship so it wraps their prompt. |
+| **If it changes** | If mise stops embedding PATH, caching becomes possible as a startup optimization. If mise indents or renames those definitions, the rewrite no-ops: env loading still works (its hooks are already global), but `mise shell` is unavailable until the rewrite is updated (`tests/mise.Tests.ps1` pins the behavior). |
+
 ---
 
 ## Documented but load-bearing

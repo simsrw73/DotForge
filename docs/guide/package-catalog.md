@@ -98,7 +98,7 @@ tcats -Facet worksWith | Select-Object -First 4
 ```text
 WorksWith
   archives (1)
-  binaries (8)
+  binaries (9)
   clipboard (1)
 ```
 

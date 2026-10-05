@@ -196,6 +196,14 @@
       },
       "linkedVia": "curated"
     },
+    "mise": {
+      "packages": {
+        "scoop": "mise",
+        "winget": "jdx.mise",
+        "choco": "mise"
+      },
+      "linkedVia": "curated"
+    },
     "oh-my-posh": {
       "packages": {
         "scoop": "oh-my-posh",
@@ -217,6 +225,12 @@
       },
       "linkedVia": "repo",
       "repo": "https://github.com/dalance/procs"
+    },
+    "ps-dotenv": {
+      "packages": {
+        "scoop": "ps-dotenv"
+      },
+      "linkedVia": "curated"
     },
     "PSFzf": {
       "packages": {

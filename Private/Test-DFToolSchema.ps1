@@ -58,6 +58,12 @@ function Test-DFToolSchema {
         $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
     }
 
+    # scoopBucket: { name; url } naming a third-party scoop bucket.
+    $bucket = PSProp $Tool 'scoopBucket'
+    if ($null -ne $bucket -and (-not (PSProp $bucket 'name') -or -not (PSProp $bucket 'url'))) {
+        $errs.Add('scoopBucket must be an object with non-empty name and url')
+    }
+
     # roles: an object keyed by role name; each priority, when present, is an integer.
     $roles = PSProp $Tool 'roles'
     if ($null -ne $roles) {
