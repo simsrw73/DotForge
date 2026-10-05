@@ -6,6 +6,7 @@
     "text"
   ],
   "executable": "micro.exe",
+  "roles": { "editor": { "priority": 10, "env": { "EDITOR": "micro", "VISUAL": "micro" } } },
   "packages": {
     "scoop": "micro",
     "choco": "micro"

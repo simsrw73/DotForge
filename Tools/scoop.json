@@ -6,6 +6,7 @@
     "windows"
   ],
   "executable": "scoop.cmd",
+  "roles": { "package-manager": { "priority": 30 } },
   "packages": {},
   "xdg": {
     "compliance": "none",

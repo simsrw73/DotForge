@@ -12,7 +12,7 @@ Describe 'Tools/eza.json' {
     It 'binds a value to every optional-value flag in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
         # Regression (4d29177): appending a bare `--hyperlink` to each alias
         # made `ll .` fail with "invalid value '.' for '--hyperlink [<WHEN>]'".
-        $aliasArgs = $script:EzaJson.aliases.$_.args
+        $aliasArgs = $script:EzaJson.roles.listing.aliases.$_.args
         foreach ($flag in $script:OptionalValueFlags) {
             $aliasArgs | Should -Not -Contain $flag -Because "$flag must be written as ${flag}=<when> so it cannot consume a path"
         }
@@ -21,17 +21,17 @@ Describe 'Tools/eza.json' {
     It 'passes a path through as a positional for alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
         # Guards the whole arg list, not just the known optional-value flags:
         # no arg may be left able to absorb the trailing path.
-        $aliasArgs = @($script:EzaJson.aliases.$_.args)
+        $aliasArgs = @($script:EzaJson.roles.listing.aliases.$_.args)
         $trailing = $aliasArgs[-1]
         $trailing | Should -Match '^--[a-z-]+(=.+)?$' -Because 'trailing args must be a bound flag or a pure boolean'
         $script:OptionalValueFlags | Should -Not -Contain $trailing -Because "a trailing bare $trailing would capture the caller's path"
     }
 
     It 'unquotes names with spaces in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
-        $script:EzaJson.aliases.$_.args | Should -Contain '--no-quotes'
+        $script:EzaJson.roles.listing.aliases.$_.args | Should -Contain '--no-quotes'
     }
 
     It 'does not emit hyperlinks in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
-        $script:EzaJson.aliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
+        $script:EzaJson.roles.listing.aliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
     }
 }

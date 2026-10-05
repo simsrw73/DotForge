@@ -63,6 +63,7 @@ Describe 'Get-DFTool' {
 }
 
 Describe 'Find-DFTool' {
+    BeforeAll { $script:RealTools = Join-Path $PSScriptRoot '../Tools' }
     BeforeEach { $script:DFToolDb = $null }
 
     It 'finds tools by name pattern' {
@@ -86,5 +87,17 @@ Describe 'Find-DFTool' {
     It 'returns empty when pattern matches nothing' {
         $results = Find-DFTool -Pattern 'zzznomatch' -ToolsPath $script:TmpTools
         @($results).Count | Should -Be 0
+    }
+
+    It 'filters by role membership' {
+        (Find-DFTool -Role listing -ToolsPath $script:RealTools).name | Sort-Object | Should -Be @('eza', 'lsd')
+    }
+
+    It 'combines -Role with -Pattern' {
+        (Find-DFTool 'eza' -Role listing -ToolsPath $script:RealTools).name | Should -Be @('eza')
+    }
+
+    It 'requires -Pattern or -Role' {
+        { Find-DFTool -ToolsPath $script:RealTools } | Should -Throw '*Specify -Pattern, -Role, or both*'
     }
 }

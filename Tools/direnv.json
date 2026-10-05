@@ -3,6 +3,7 @@
   "description": "Loads and unloads environment variables per-directory from .envrc files",
   "tags": ["environment-vars", "shell-enhancement", "dev"],
   "executable": "direnv.exe",
+  "roles": { "project-env": { "priority": 10 } },
   "packages": {
     "scoop": "direnv",
     "winget": "direnv.direnv"

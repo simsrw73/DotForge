@@ -14,6 +14,10 @@ param()
 # byte-identical across runs) -- cached keyed to the binary's own file
 # identity so a zoxide upgrade regenerates it. See
 # docs/superpowers/specs/2026-09-05-startup-perf-audit.md.
-Invoke-Expression (Get-DFCachedCommandOutput -Name 'zoxide-init' -Executable 'zoxide' -Generate {
-    zoxide init --hook pwd --cmd cd powershell | Out-String
-})
+function Initialize-DFRoleNavigation {
+    # Called by DotForge only when zoxide wins the navigation role.
+    param([PSCustomObject]$Tool, [string]$Role)
+    Invoke-Expression (Get-DFCachedCommandOutput -Name 'zoxide-init' -Executable 'zoxide' -Generate {
+        zoxide init --hook pwd --cmd cd powershell | Out-String
+    })
+}

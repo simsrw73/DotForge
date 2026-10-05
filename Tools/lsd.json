@@ -13,12 +13,17 @@
     "method": "manual",
     "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config."
   },
-  "role": "listing",
-  "aliases": {
-    "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--literal"] },
-    "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--literal"] },
-    "la":   { "command": "lsd", "args": ["--all", "--literal"] },
-    "tree": { "command": "lsd", "args": ["--tree", "--literal"] }
+  "roles": {
+    "listing": {
+      "priority": 10,
+      "aliases": {
+        "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--literal"] },
+        "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--literal"] },
+        "la":   { "command": "lsd", "args": ["--all", "--literal"] },
+        "tree": { "command": "lsd", "args": ["--tree", "--literal"] }
+      }
+    }
   },
+  "aliases": {},
   "picker": null
 }

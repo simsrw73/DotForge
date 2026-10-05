@@ -63,7 +63,7 @@ Describe 'starship companion' {
             $companion = (Resolve-Path "$PSScriptRoot/../Tools/starship.ps1").Path
             $null = New-Module DFCompanionHost -ArgumentList $companion {
                 param($Path)
-                . $Path
+                . $Path; . Initialize-DFRolePrompt -Role prompt
                 # Like DotForge's manifest, export only the host's own functions
                 # (none) — so nothing leaks out except what the companion re-imports.
                 Export-ModuleMember -Function @()
@@ -77,5 +77,15 @@ Describe 'starship companion' {
 Describe 'starship XDG defaults' {
     It 'keeps its config in its own folder under XDG_CONFIG_HOME' {
         $script:Db['starship'].xdg.vars.STARSHIP_CONFIG | Should -Be '${XDG_CONFIG_HOME}/starship/starship.toml'
+    }
+}
+
+Describe 'starship companion contract' {
+    AfterEach { Remove-DFTestGlobal -Function 'Get-DFCachedCommandOutput' }
+
+    It 'only defines its hook when dot-sourced; the prompt init runs only through the hook' {
+        function global:Get-DFCachedCommandOutput { throw 'init ran outside the hook' }
+        $definedHook = & { . "$PSScriptRoot/../Tools/starship.ps1"; Test-Path function:Initialize-DFRolePrompt }
+        $definedHook | Should -BeTrue
     }
 }

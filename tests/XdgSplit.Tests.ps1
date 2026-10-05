@@ -27,6 +27,9 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
+    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
+    . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
+    . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -66,10 +69,10 @@ Describe 'env-block relocation preserves the migrated values' {
         $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
         $j.env.FZF_CTRL_T_OPTS  | Should -Be "--preview `"bat -n --color=always {}`" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
     }
-    It 'delta env carries GIT_PAGER (DELTA_FEATURES moved to the sidecar)' {
+    It 'delta carries GIT_PAGER in its diff role block (DELTA_FEATURES moved to the sidecar)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json
-        $j.env.GIT_PAGER | Should -Be 'delta'
-        $j.env.PSObject.Properties['DELTA_FEATURES'] | Should -BeNullOrEmpty
+        $j.roles.diff.env.GIT_PAGER | Should -Be 'delta'
+        $j.PSObject.Properties['env'] | Should -BeNullOrEmpty
     }
     It 'less keeps its XDG paths and moves LESS to env' {
         $j = Get-Content (Join-Path $script:RealTools 'less.json') -Raw | ConvertFrom-Json

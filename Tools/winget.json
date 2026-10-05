@@ -6,6 +6,7 @@
     "windows"
   ],
   "executable": "winget.exe",
+  "roles": { "package-manager": { "priority": 20 } },
   "packages": {},
   "xdg": {
     "compliance": "none",

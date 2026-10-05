@@ -35,7 +35,7 @@ Describe 'DotForge module owns its general-helper aliases' {
 }
 
 Describe 'General-helper and tool/picker alias names never collide' {
-    It 'no name in AliasesToExport is also declared by a Tools/*.json alias or picker' {
+    It 'no name in AliasesToExport is also declared by a Tools/*.json alias, role alias or picker' {
         $toolAliasNames = [System.Collections.Generic.HashSet[string]]::new(
             [System.StringComparer]::OrdinalIgnoreCase)
         Get-ChildItem "$PSScriptRoot/../Tools" -Filter '*.json' | ForEach-Object {
@@ -43,6 +43,15 @@ Describe 'General-helper and tool/picker alias names never collide' {
             $aliases = $tool.PSObject.Properties['aliases']?.Value
             if ($aliases) {
                 foreach ($n in $aliases.PSObject.Properties.Name) { [void]$toolAliasNames.Add($n) }
+            }
+            $roles = $tool.PSObject.Properties['roles']?.Value
+            if ($roles) {
+                foreach ($block in $roles.PSObject.Properties.Value) {
+                    $roleAliases = $block.PSObject.Properties['aliases']?.Value
+                    if ($roleAliases) {
+                        foreach ($n in $roleAliases.PSObject.Properties.Name) { [void]$toolAliasNames.Add($n) }
+                    }
+                }
             }
             $picker = $tool.PSObject.Properties['picker']?.Value
             if ($picker -is [PSCustomObject]) {

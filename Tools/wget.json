@@ -6,6 +6,7 @@
     "download"
   ],
   "executable": "wget.exe",
+  "roles": { "url-fetch": {} },
   "packages": {
     "scoop": "wget",
     "choco": "wget"

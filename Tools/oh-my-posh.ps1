@@ -4,82 +4,87 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
-# 1. posh-git integration — must run before oh-my-posh init so OMP sees POSH_GIT_ENABLED
-if (Get-Module -ListAvailable posh-git -ErrorAction Ignore) {
-    Import-Module posh-git -ErrorAction Ignore
-    $Env:POSH_GIT_ENABLED = $true
-}
+function Initialize-DFRolePrompt {
+    # Called by DotForge only when oh-my-posh wins the prompt role. Everything
+    # here is prompt behavior: posh-git, init, and the fpot theme picker.
+    param([PSCustomObject]$Tool, [string]$Role)
+    # 1. posh-git integration — must run before oh-my-posh init so OMP sees POSH_GIT_ENABLED
+    if (Get-Module -ListAvailable posh-git -ErrorAction Ignore) {
+        Import-Module posh-git -ErrorAction Ignore
+        $Env:POSH_GIT_ENABLED = $true
+    }
 
-# 2. Resolve config path: $Env:POSH_THEME → XDG discovery → warn
-$ompConfig = $null
-if ($Env:POSH_THEME -and (Test-Path $Env:POSH_THEME)) {
-    $ompConfig = $Env:POSH_THEME
-} else {
-    $ompDir = Join-Path (Get-DFXdgPath Config) 'oh-my-posh'
-    $candidates = @(Get-ChildItem $ompDir -Filter '*.omp.*' -ErrorAction Ignore | Sort-Object Name)
-    if ($candidates.Count -eq 0) {
-        Write-Warning 'DotForge: no oh-my-posh config found. Set $Env:POSH_THEME or place *.omp.* in $XDG_CONFIG_HOME/oh-my-posh/.'
-    } elseif ($candidates.Count -eq 1) {
-        $ompConfig = $candidates[0].FullName
+    # 2. Resolve config path: $Env:POSH_THEME → XDG discovery → warn
+    $ompConfig = $null
+    if ($Env:POSH_THEME -and (Test-Path $Env:POSH_THEME)) {
+        $ompConfig = $Env:POSH_THEME
     } else {
-        $ompConfig = $candidates[0].FullName
-        Write-Warning "DotForge: multiple oh-my-posh configs found; using '$($candidates[0].Name)'. Set `$Env:POSH_THEME to be explicit."
-    }
-}
-
-# 3. Initialize prompt engine
-if ($ompConfig) {
-    oh-my-posh init pwsh --config $ompConfig | Invoke-Expression
-}
-
-# --- Theme picker (fpot) ---
-function global:Select-PoshTheme {
-    <#
-    .SYNOPSIS
-        Fuzzy-picks an oh-my-posh theme with a live prompt preview and applies it to this session.
-    .DESCRIPTION
-        Lists the *.omp.json themes in $Env:POSH_THEMES_PATH in fzf, previewing
-        each one's rendered prompt. DotForge sets POSH_THEMES_PATH to
-        $XDG_DATA_HOME\oh-my-posh\themes, so copy the themes you want to browse
-        there.
-        Enter re-initializes oh-my-posh with that theme for the current session
-        only. To keep it, point $Env:POSH_THEME at the theme file, or copy it to
-        $XDG_CONFIG_HOME\oh-my-posh\, before DotForge loads. Warns and does
-        nothing when POSH_THEMES_PATH is missing.
-
-        Re-initializing replaces the prompt function, so zoxide's directory
-        tracking stops until the next session (a known limitation).
-
-        Defined by DotForge's oh-my-posh companion; requires fzf (or
-        $Env:Picker).
-    .EXAMPLE
-        fpot
-
-        Opens the theme picker; Enter applies the highlighted theme.
-    .OUTPUTS
-        None. Writes a confirmation line to the host.
-    .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
-    #>
-    [CmdletBinding()]
-    param()
-
-    $themesPath = $Env:POSH_THEMES_PATH
-    if (-not $themesPath -or -not (Test-Path $themesPath)) {
-        Write-Warning 'DotForge: POSH_THEMES_PATH not set or directory not found'
-        return
-    }
-
-    Invoke-DFPicker `
-        -List          { Get-ChildItem $themesPath -Filter '*.omp.json' | Select-Object -ExpandProperty Name } `
-        -Preview       "oh-my-posh print primary --config '$themesPath\{}' --shell pwsh" `
-        -PreviewWindow 'bottom:5' `
-        -Ansi `
-        -Header        'Select oh-my-posh theme  [Enter to apply for this session]' `
-        -Action        {
-            param($theme)
-            oh-my-posh init pwsh --config "$themesPath\$theme" | Invoke-Expression
-            Write-Host "Theme applied: $theme  (to persist: update oh-my-posh config path)" -ForegroundColor Green
+        $ompDir = Join-Path (Get-DFXdgPath Config) 'oh-my-posh'
+        $candidates = @(Get-ChildItem $ompDir -Filter '*.omp.*' -ErrorAction Ignore | Sort-Object Name)
+        if ($candidates.Count -eq 0) {
+            Write-Warning 'DotForge: no oh-my-posh config found. Set $Env:POSH_THEME or place *.omp.* in $XDG_CONFIG_HOME/oh-my-posh/.'
+        } elseif ($candidates.Count -eq 1) {
+            $ompConfig = $candidates[0].FullName
+        } else {
+            $ompConfig = $candidates[0].FullName
+            Write-Warning "DotForge: multiple oh-my-posh configs found; using '$($candidates[0].Name)'. Set `$Env:POSH_THEME to be explicit."
         }
+    }
+
+    # 3. Initialize prompt engine
+    if ($ompConfig) {
+        oh-my-posh init pwsh --config $ompConfig | Invoke-Expression
+    }
+
+    # --- Theme picker (fpot) ---
+    function global:Select-PoshTheme {
+        <#
+        .SYNOPSIS
+            Fuzzy-picks an oh-my-posh theme with a live prompt preview and applies it to this session.
+        .DESCRIPTION
+            Lists the *.omp.json themes in $Env:POSH_THEMES_PATH in fzf, previewing
+            each one's rendered prompt. DotForge sets POSH_THEMES_PATH to
+            $XDG_DATA_HOME\oh-my-posh\themes, so copy the themes you want to browse
+            there.
+            Enter re-initializes oh-my-posh with that theme for the current session
+            only. To keep it, point $Env:POSH_THEME at the theme file, or copy it to
+            $XDG_CONFIG_HOME\oh-my-posh\, before DotForge loads. Warns and does
+            nothing when POSH_THEMES_PATH is missing.
+
+            Re-initializing replaces the prompt function, so zoxide's directory
+            tracking stops until the next session (a known limitation).
+
+            Defined by DotForge's oh-my-posh companion; requires fzf (or
+            $Env:Picker).
+        .EXAMPLE
+            fpot
+
+            Opens the theme picker; Enter applies the highlighted theme.
+        .OUTPUTS
+            None. Writes a confirmation line to the host.
+        .LINK
+            https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+        #>
+        [CmdletBinding()]
+        param()
+
+        $themesPath = $Env:POSH_THEMES_PATH
+        if (-not $themesPath -or -not (Test-Path $themesPath)) {
+            Write-Warning 'DotForge: POSH_THEMES_PATH not set or directory not found'
+            return
+        }
+
+        Invoke-DFPicker `
+            -List          { Get-ChildItem $themesPath -Filter '*.omp.json' | Select-Object -ExpandProperty Name } `
+            -Preview       "oh-my-posh print primary --config '$themesPath\{}' --shell pwsh" `
+            -PreviewWindow 'bottom:5' `
+            -Ansi `
+            -Header        'Select oh-my-posh theme  [Enter to apply for this session]' `
+            -Action        {
+                param($theme)
+                oh-my-posh init pwsh --config "$themesPath\$theme" | Invoke-Expression
+                Write-Host "Theme applied: $theme  (to persist: update oh-my-posh config path)" -ForegroundColor Green
+            }
+    }
+    Set-Alias -Name fpot -Value Select-PoshTheme -Scope Global -Force
 }
-Set-Alias -Name fpot -Value Select-PoshTheme -Scope Global -Force

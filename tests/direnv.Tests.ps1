@@ -31,13 +31,13 @@ Describe 'direnv tool sidecar caching' -Skip:(-not (Get-Command direnv.exe -Erro
     It 'caches the real hook script, and does not regenerate it on a second load' {
         # Genuinely calls the real direnv binary -- see carapace.Tests.ps1 for why
         # a function stand-in would defeat this test (no fingerprintable .Source).
-        . $script:CompanionPath
+        . $script:CompanionPath; . Initialize-DFRoleProjectEnv -Role project-env
         $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'direnv-hook.txt'
         Test-Path $cacheFile | Should -BeTrue
         $writtenAfterFirst = (Get-Item $cacheFile).LastWriteTimeUtc
 
         Start-Sleep -Milliseconds 50
-        . $script:CompanionPath
+        . $script:CompanionPath; . Initialize-DFRoleProjectEnv -Role project-env
 
         (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
     }

@@ -4,6 +4,7 @@
   "description": "Enhanced command-line editing and syntax highlighting for PowerShell",
   "tags": ["readline", "completion", "theme", "module"],
   "executable": "PSReadLine",
+  "roles": { "completion": {} },
   "dependsOn": [],
   "prewarm": false,
   "xdg": {

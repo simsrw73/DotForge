@@ -10,15 +10,19 @@ param()
 # runtime inside the script), so it is cached keyed to the binary's identity
 # and a starship upgrade regenerates it. starship must init before zoxide,
 # which wraps the prompt function — zoxide.json's dependsOn enforces the order.
-Invoke-Expression (Get-DFCachedCommandOutput -Name 'starship-init' -Executable 'starship' -Generate {
-    starship init powershell --print-full-init | Out-String
-})
-# The init script wraps its helpers in a dynamic module ('starship', exporting
-# Enable-/Disable-TransientPrompt). New-Module imports into the calling scope,
-# which here is DotForge's module scope, so the user could never call them.
-# Re-import it globally via the command's own module (a dynamic module that was
-# never Import-Module'd is not listed by Get-Module). prompt itself is declared
-# global: and is unaffected. Missing command = older/newer starship: skip quietly.
-$starshipModule = (Get-Command Enable-TransientPrompt -ErrorAction Ignore)?.Module
-if ($starshipModule) { Import-Module -ModuleInfo $starshipModule -Global }
-Remove-Variable starshipModule
+function Initialize-DFRolePrompt {
+    # Called by DotForge only when starship wins the prompt role.
+    param([PSCustomObject]$Tool, [string]$Role)
+    Invoke-Expression (Get-DFCachedCommandOutput -Name 'starship-init' -Executable 'starship' -Generate {
+        starship init powershell --print-full-init | Out-String
+    })
+    # The init script wraps its helpers in a dynamic module ('starship', exporting
+    # Enable-/Disable-TransientPrompt). New-Module imports into the calling scope,
+    # which here is DotForge's module scope, so the user could never call them.
+    # Re-import it globally via the command's own module (a dynamic module that was
+    # never Import-Module'd is not listed by Get-Module). prompt itself is declared
+    # global: and is unaffected. Missing command = older/newer starship: skip quietly.
+    $starshipModule = (Get-Command Enable-TransientPrompt -ErrorAction Ignore)?.Module
+    if ($starshipModule) { Import-Module -ModuleInfo $starshipModule -Global }
+    Remove-Variable starshipModule
+}

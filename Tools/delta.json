@@ -7,6 +7,7 @@
     "pager"
   ],
   "executable": "delta.exe",
+  "roles": { "diff": { "priority": 10, "env": { "GIT_PAGER": "delta" } } },
   "packages": {
     "scoop": "delta",
     "winget": "dandavison.delta",
@@ -15,9 +16,6 @@
   "xdg": {
     "compliance": "none",
     "method": "default"
-  },
-  "env": {
-    "GIT_PAGER": "delta"
   },
   "aliases": {},
   "picker": null

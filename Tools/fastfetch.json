@@ -3,6 +3,7 @@
   "description": "Fast, actively-maintained neofetch-like system information tool",
   "tags": ["system", "info"],
   "executable": "fastfetch.exe",
+  "roles": { "system-info": {} },
   "packages": {
     "scoop": "fastfetch",
     "winget": "Fastfetch-cli.Fastfetch"

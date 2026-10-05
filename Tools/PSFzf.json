@@ -8,6 +8,7 @@
     "module"
   ],
   "executable": "PSFzf",
+  "roles": { "completion": {} },
   "dependsOn": ["psreadline"],
   "packages": {
     "psresource": "PSFzf",

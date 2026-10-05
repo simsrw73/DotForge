@@ -7,6 +7,7 @@
     "text"
   ],
   "executable": "mdcat.exe",
+  "roles": { "markdown-viewer": {} },
   "packages": {
     "scoop": "mdcat",
     "cargo": "mdcat"

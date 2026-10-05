@@ -7,6 +7,7 @@
     "download"
   ],
   "executable": "curl.exe",
+  "roles": { "url-fetch": {} },
   "packages": {
     "scoop": "curl",
     "winget": "cURL.cURL",

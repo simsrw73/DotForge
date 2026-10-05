@@ -18,10 +18,14 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
-if ($PSVersionTable.PSVersion -ge [version]'7.2') {
-    Invoke-Expression (Get-DFCachedCommandOutput -Name 'direnv-hook' -Executable 'direnv' -Generate {
-        direnv hook pwsh | Out-String
-    })
-} else {
-    Write-Warning "DotForge: direnv requires PowerShell 7.2+ (found $($PSVersionTable.PSVersion)) — hook not installed."
+function Initialize-DFRoleProjectEnv {
+    # Called by DotForge only when direnv wins the project-env role.
+    param([PSCustomObject]$Tool, [string]$Role)
+    if ($PSVersionTable.PSVersion -ge [version]'7.2') {
+        Invoke-Expression (Get-DFCachedCommandOutput -Name 'direnv-hook' -Executable 'direnv' -Generate {
+            direnv hook pwsh | Out-String
+        })
+    } else {
+        Write-Warning "DotForge: direnv requires PowerShell 7.2+ (found $($PSVersionTable.PSVersion)) — hook not installed."
+    }
 }

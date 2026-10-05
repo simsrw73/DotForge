@@ -6,6 +6,7 @@
     "windows"
   ],
   "executable": "choco.exe",
+  "roles": { "package-manager": { "priority": 10 } },
   "packages": {},
   "xdg": {
     "compliance": "none",

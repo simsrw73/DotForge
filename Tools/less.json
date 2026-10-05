@@ -6,6 +6,7 @@
     "viewer"
   ],
   "executable": "less.exe",
+  "roles": { "pager": { "priority": 20, "env": { "PAGER": "less" } } },
   "packages": {
     "scoop": "less",
     "choco": "less"

@@ -22,8 +22,8 @@ BeforeAll {
     # deliberate act, with a reason.
     $script:AcceptedCollisions = @{
         'cat'   = 'bat.json aliases cat -> bat. Deliberate: bat is a cat replacement.'
-        'ls'    = 'eza.json aliases ls -> eza. Deliberate: eza is an ls replacement.'
-        'la'    = 'eza.json aliases la -> eza. Not a coreutils utility itself; the installer synthesizes it while ls is enabled.'
+        'ls'    = 'The listing role winner (eza or lsd) aliases ls. Deliberate: both are ls replacements.'
+        'la'    = 'The listing role winner aliases la. Not a coreutils utility itself; the installer synthesizes it while ls is enabled.'
         'touch' = 'DFHelpers.FileSystem.ps1 aliases touch -> New-DFFile.'
         'env'   = 'DFHelpers.Environment.ps1 aliases env -> Get-DFEnv.'
         'paste' = 'DFHelpers.Clipboard.ps1 aliases paste -> Get-DFFromClipboard.'
@@ -32,7 +32,7 @@ BeforeAll {
     # Every command name DotForge creates, from the two places it creates them:
     # the manifest's AliasesToExport (helper aliases, created at import with
     # -Scope Global, so the module never owns them and ExportedAliases is empty),
-    # and the tool database (tool aliases + picker aliases).
+    # and the tool database (tool aliases, role aliases and picker aliases).
     $script:OwnedNames = [System.Collections.Generic.List[string]]::new()
 
     $manifestData = Import-PowerShellDataFile "$PSScriptRoot/../DotForge.psd1"
@@ -44,6 +44,13 @@ BeforeAll {
     foreach ($tool in $db.Values) {
         $aliases = $tool.PSObject.Properties['aliases']?.Value
         if ($aliases) { $script:OwnedNames.AddRange([string[]]@($aliases.PSObject.Properties.Name)) }
+        $roles = $tool.PSObject.Properties['roles']?.Value
+        if ($roles) {
+            foreach ($block in $roles.PSObject.Properties.Value) {
+                $roleAliases = $block.PSObject.Properties['aliases']?.Value
+                if ($roleAliases) { $script:OwnedNames.AddRange([string[]]@($roleAliases.PSObject.Properties.Name)) }
+            }
+        }
         $picker = $tool.PSObject.Properties['picker']?.Value
         if ($picker -is [PSCustomObject]) {
             $pAlias = $picker.PSObject.Properties['alias']?.Value

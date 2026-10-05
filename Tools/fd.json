@@ -7,6 +7,7 @@
     "find"
   ],
   "executable": "fd.exe",
+  "roles": { "file-search": {} },
   "packages": {
     "scoop": "fd",
     "winget": "sharkdp.fd",

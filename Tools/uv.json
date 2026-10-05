@@ -7,6 +7,7 @@
     "package-manager"
   ],
   "executable": "uv.exe",
+  "roles": { "version-manager": {} },
   "packages": {
     "scoop": "uv",
     "winget": "astral-sh.uv"

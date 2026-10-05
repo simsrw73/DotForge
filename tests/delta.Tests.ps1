@@ -27,16 +27,19 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
+    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
+    . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
+    . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
 }
 
 Describe 'Tools/delta.json' {
-    It 'no longer carries DELTA_FEATURES in its env block' {
+    It 'sets GIT_PAGER only as the diff role winner, and carries no top-level env (no DELTA_FEATURES)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json
-        $j.env.PSObject.Properties['DELTA_FEATURES'] | Should -BeNullOrEmpty
-        $j.env.GIT_PAGER | Should -Be 'delta'
+        $j.PSObject.Properties['env'] | Should -BeNullOrEmpty
+        $j.roles.diff.env.GIT_PAGER | Should -Be 'delta'
     }
 }
 
