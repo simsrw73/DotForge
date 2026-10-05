@@ -6,7 +6,7 @@
 
 $DFConfig = @{
     PackageManagerOrder = @('scoop', 'winget')
-    Defaults            = @{ listing = 'eza' }  # eza wins ls/ll/la/tree over lsd
+    Defaults            = @{ listing = 'eza' }  # eza fills the listing role (ls/ll/la/tree)
 }
 
 Import-Module DotForge

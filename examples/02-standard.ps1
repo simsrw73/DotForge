@@ -9,10 +9,10 @@ $DFConfig = @{
     # Package manager priority for Install-DFTool
     PackageManagerOrder = @('scoop', 'winget')
 
-    # eza and lsd both declare role: 'listing' and compete for ls/ll/la/tree.
-    # Defaults names the winner; the loser keeps everything else it declares
-    # (XDG config, other aliases) -- only the contested alias keys are suppressed.
-    Defaults = @{ listing = 'eza' }
+    # Defaults picks the tool for each role (see Get-DFRole). eza and lsd both
+    # fill 'listing' (ls/ll/la/tree); oh-my-posh and starship both fill 'prompt'.
+    # Only the winner applies the role; the others stay usable by name.
+    Defaults = @{ listing = 'eza'; prompt = 'oh-my-posh' }
 
     # If Coreutils for Windows is installed, its readline hook rewrites command
     # names before PowerShell resolves them, so DotForge aliases sharing a name

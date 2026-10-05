@@ -23,6 +23,7 @@ This is an experimental project developed out of my own PowerShell profile and g
 ## What it does
 
 - **Configures 43 command-line tools** (bat, eza, fzf, ripgrep, zoxide, delta, starship, …) with XDG folders, sensible defaults and one shared color theme, from a JSON record per tool.
+- **Lets you pick one tool per job**: prompt, pager, editor, `ls` replacement and more. Only the tool you choose (or the best installed one) hooks into the shell; see [roles](docs/guide/configuration.md#choose-a-tool-for-each-role).
 - **Adds fuzzy pickers and short commands**: change folders, check out git branches, browse help, install packages, all through fzf.
 - **Sets up completion** for hundreds of commands through Carapace, PSFzf and inshellisense, without them fighting over the Tab key.
 - **Installs tools** with one command through scoop, winget or Chocolatey, and searches every package catalog at once with `trifle`.

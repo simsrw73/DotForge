@@ -64,14 +64,14 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | bat | `cat` → `bat -pp` |
 | chezmoi | `cz` |
 | choco | `cins`, `crm`, `cup` pickers; `Ctrl+G` `C` |
-| eza | `ls`, `ll`, `la`, `tree`; `ff` file picker |
+| eza | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role); `ff` file picker |
 | fd | `ffd` file picker |
 | fnm | `cd` also switches Node versions |
 | gsudo | `sudo` → gsudo; `please` re-runs the last command elevated |
 | lazygit | `lg` |
-| lsd | `ls`, `ll`, `la`, `tree` (see [competing tools](configuration.md#choose-between-competing-tools)) |
+| lsd | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role; see [roles](configuration.md#choose-a-tool-for-each-role)) |
 | npm | `nls` → `npm list -g --depth=0` |
-| oh-my-posh | `fpot` prompt theme picker |
+| oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |
 | procs | `fkill` process picker |
 | PSFzf | `Ctrl+T` (insert a path), `Ctrl+R` (history), `Alt+C` (change folder), fuzzy Tab |
@@ -121,7 +121,7 @@ Requirements:
 
 ### delta
 
-delta becomes git's pager (`GIT_PAGER=delta`). Its theme comes from `DELTA_FEATURES`, which adds a theme to the `features` in your git config rather than replacing them. The theme definitions are written to `$XDG_CONFIG_HOME\delta\catppuccin.gitconfig` on each registration.
+delta becomes git's pager (`GIT_PAGER=delta`) when it wins the `diff` role. Its theme comes from `DELTA_FEATURES`, which adds a theme to the `features` in your git config rather than replacing them. The theme definitions are written to `$XDG_CONFIG_HOME\delta\catppuccin.gitconfig` on each registration.
 
 The first time delta is registered on a machine, DotForge adds one line to your **global git config** so git can find that file:
 

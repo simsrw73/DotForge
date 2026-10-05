@@ -1,7 +1,7 @@
 # Default-Tool Roles — Design
 
 **Date:** 2026-07-25
-**Status:** Approved design; ready for implementation planning.
+**Status:** Superseded by `2026-10-05-roles-v2-design.md`.
 **Parent standard:** `ToolAcquisitionSpec.md` §10 (Default Tool Selection); audit
 `ToolAcquisitionSpec-Audit.md` platform gap #3.
 **Governed by:** `docs/plugin-architecture.md` (core invariant — adding a tool

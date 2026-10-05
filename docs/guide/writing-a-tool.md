@@ -55,11 +55,11 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `tags` | | Words for `Get-DFTool -Tag` and `Find-DFTool`. |
 | `packages` | | Install ids per manager: `scoop`, `winget`, `choco`, `psresource`, `cargo`. |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
-| `env` | | Other environment variables to set every session (flags, themes, `GIT_PAGER`). Values may use `${XDG_*}`. |
-| `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. |
+| `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
+| `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker; see below. |
 | `dependsOn` | | Tools that must be registered first, when both are being registered. |
-| `role` | | An equivalence group for `$DFConfig.Defaults` (e.g. `listing`). |
+| `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
 | `themeMap` | | Shared theme name → this tool's own spelling, e.g. `{ "catppuccin-mocha": "Catppuccin Mocha" }`. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |
 | `prewarm` | | `false` stops DotForge pre-loading a module tool in the background. |
@@ -101,6 +101,40 @@ When JSON isn't enough, add `Tools/<name>.ps1`. `Register-DFTool` dot-sources it
 - Give every global function complete comment-based help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each parameter, `.EXAMPLE`, `.OUTPUTS`). `tests/Docs.Help.Tests.ps1` enforces it.
 - Read themes with `Get-DFConfiguredTheme -ToolKey '<Tool>Theme'`, then `Resolve-DFThemeName` with your `themeMap`.
 - Anything that depends on another tool's undocumented behavior must fail quietly and be listed in [docs/external-dependencies.md](../external-dependencies.md).
+
+## Joining a role
+
+A role is a job several tools can do, such as `prompt` or `pager`. The roles and what each one reserves are defined in `data/roles.json`; `Get-DFRole` lists them. A tool joins in its own record:
+
+```json
+"roles": {
+  "listing": {
+    "priority": 20,
+    "aliases": { "ls": { "command": "eza", "args": ["--group-directories-first"] } }
+  }
+}
+```
+
+- `priority` decides the winner when the user hasn't chosen one in `$DFConfig.Defaults`; higher wins.
+- `env` and `aliases` in the role block are applied **only when your tool wins** the role. A role's reserved variables and aliases may appear only here, never in the top-level `env`/`aliases`.
+- For behavior that needs code, define a plain function with the role's hook name in your companion: `Initialize-DFRolePrompt` for `prompt`, `Initialize-DFRoleProjectEnv` for `project-env`, and so on. DotForge calls it with `-Tool` and `-Role`, only when your tool wins, right after running the companion. Never make it `global:`, and don't set a role's reserved variables in it.
+- Code a role reserves (for example `Invoke-Expression` for prompt engines) may run only inside that hook.
+- A *category* role (such as `grep`) takes an empty block: `"grep": {}`.
+
+starship's companion is a complete example:
+
+<!-- fragment -->
+
+```powershell
+function Initialize-DFRolePrompt {
+    param([PSCustomObject]$Tool, [string]$Role)
+    Invoke-Expression (Get-DFCachedCommandOutput -Name 'starship-init' -Executable 'starship' -Generate {
+        starship init powershell --print-full-init | Out-String
+    })
+}
+```
+
+`tests/Roles.Contract.Tests.ps1` checks every rule above for every tool.
 
 ## One-time setup scripts
 

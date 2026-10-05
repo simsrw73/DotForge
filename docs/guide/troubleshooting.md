@@ -62,8 +62,11 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | Message or symptom | Cause | Fix |
 | --- | --- | --- |
 | A `$DFConfig` setting has no effect | set after `Register-DFTool`, or the key is misspelled (no warning) | Set it before `Import-Module`; check the [settings table](configuration.md#all-settings). |
-| `$DFConfig.Defaults['<role>'] names unknown tool '<tool>'` | misspelled tool | Use `eza` or `lsd` for `listing`. |
-| `$DFConfig.Defaults['<role>'] names '<tool>', which declares role '<other>'` | that tool isn't in the role | Name a tool with that role. |
+| `$DFConfig.Defaults['<role>'] names an unknown role` | misspelled role name | Run `Get-DFRole` for the list. |
+| `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
+| `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and you haven't chosen | Add the `Defaults` line the warning shows. |
+| `<VAR> was '<value>' but $DFConfig.Defaults.<role> is '<tool>'` | you set the variable yourself and also chose a different tool | Remove one of the two settings. |
+| `<tool> declares the <role> role but its companion defines no Initialize-DFRole…` | a tool record or companion is incomplete | Report it; the tool works, but not as that role's winner. |
 | `CompletionMode '<x>' is invalid; using Native.` | typo | `Native` or `Inshellisense`. |
 | `invalid PSReadLineEditMode '<x>'` | typo | `Emacs` or `Windows`. |
 | `fzf theme '<name>' not found`, `PSReadLine theme '<name>' not found` | the theme isn't bundled or in your themes folder | Use `catppuccin-mocha`, or add a theme file; see [themes](configuration.md#themes). |

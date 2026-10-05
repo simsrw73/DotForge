@@ -103,8 +103,28 @@
   plugin map those behavior names to its own flags, so the behavior follows whichever tool
   wins `$DFConfig.Defaults`. Must follow `docs/plugin-architecture.md`: no central tool-keyed
   table and no `switch ($tool.name)`. Each tool's JSON declares its own behavior-to-flag map,
-  and the role spec lives outside any single tool (or is aggregated at build time). Brainstorm
-  and write a spec before building it.
+  and the role spec lives outside any single tool (or is aggregated at build time). Since roles v2
+  (2026-10-05) the role's aliases live in each tool's `roles.listing.aliases` and the role itself
+  in `data/roles.json`, which is where per-role behavior names would land. Brainstorm and write a
+  spec before building it.
+- [ ] **Onboard more tools into roles (roles v2 follow-ups, requested 2026-10-05)** — the role
+  framework (`docs/superpowers/specs/2026-10-05-roles-v2-design.md`) shipped with only the tools
+  DotForge already had. Each batch is its own small spec or plan:
+  - pager: moar, ov
+  - editor: nano, vim
+  - picker: skim; television doesn't take fzf's command line, so it needs its own adapter or a
+    different role
+  - file-manager (new role): yazi, superfile, broot
+  - project-env: ps-dotenv (needs a declarative scoop-bucket field), mise (also version-manager)
+  - system-info: winfetch
+  - url-fetch: httpie, xh, curlie, aria2
+  - suggested new roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs,
+    btop, bottom), disk-usage (dust, dua, gdu), json (jq, jaq, fx, jless), cat (bat), elevation
+    (gsudo), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd),
+    watch (watchexec), code-stats (tokei, scc)
+  - promote `markdown-viewer` from category to single once something in DotForge consumes a winner
+  - retire `$DFConfig.PackageManagerOrder` in favor of `Defaults['package-manager']`, or keep both
+    deliberately (today `PackageManagerOrder` wins)
 - [ ] **Per-directory environment tools: alternatives to `direnv`, each zero-config (requested
   2026-10-05)** — `direnv` (`Tools/direnv.json`/`.ps1`) is not usable as shipped on Windows: it
   needs a `direnv.toml` pointing at Git Bash (`bash_path`), which DotForge never writes, and it
@@ -120,10 +140,8 @@
   - **`direnv`** — fix or document it: write the Git Bash `bash_path` config (via the
     setup-lifecycle primitive if it touches a user-owned file), and record the variable-unloading
     bug in `docs/external-dependencies.md` / the conformance ledger.
-  - **Mutual exclusion**: give all of them a shared `role` (e.g. `"project-env"`), so only the
-    `$DFConfig.Defaults` winner registers its hook. Two active hooks would fight over the same
-    variables. Confirm the `role` mechanism actually suppresses losers' hooks (today it is used
-    only for `listing`: eza/lsd aliases), not just their aliases.
+  - [x] **Mutual exclusion** — done 2026-10-05 via roles v2: `project-env` is an exclusive role;
+    each plugin puts its hook in `Initialize-DFRoleProjectEnv`, which only the winner runs.
   - Brainstorm and write a spec before building it.
 - [ ] **Audit theming mechanisms for silent-override risk against the user's own pre-existing
   config (found 2026-09-04, during the delta catppuccin investigation)** — the governing

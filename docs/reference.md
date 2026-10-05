@@ -17,6 +17,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Complete-DFToolSetup](#complete-dftoolsetup) |  | Records that a tool's one-time setup has completed successfully. |
 | [Find-DFTool](#find-dftool) |  | Searches the DotForge tool registry by wildcard pattern across name, description, and tags. |
 | [Get-DFCommandConflict](#get-dfcommandconflict) |  | Reports DotForge commands that another tool shadows before PowerShell can resolve them. |
+| [Get-DFRole](#get-dfrole) |  | Lists DotForge's tool roles, which tools fill each, and which one is active. |
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Initialize-DFEnvironment](#initialize-dfenvironment) |  | Sets the XDG base-directory variables, creates the directories, and reports the available package managers. |
 | [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
@@ -93,6 +94,10 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 **Tool records**
 
 [bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+
+**Roles**
+
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -215,14 +220,15 @@ Records that mdv's setup ran, with no actions to report.
 Searches the DotForge tool registry by wildcard pattern across name, description, and tags.
 
 ```text
-Find-DFTool [-Pattern] <string> [[-ToolsPath] <string>] [<CommonParameters>]
+Find-DFTool [[-Pattern] <string>] [-Role <string>] [-ToolsPath <string>] [<CommonParameters>]
 ```
 
 Performs a case-insensitive wildcard search across each tool's name, description, and tags, and returns every record with at least one match. The pattern is wrapped in '\*...\*', so a plain word matches anywhere. Useful for discovering tools in the registry by keyword. Searches only DotForge's own tool records; to search package-manager catalogs, use Find-DFPackage. Read-only; changes nothing.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Pattern` | string |  | yes |  | Text or wildcard pattern to match (e.g. 'rip', 'grep\*', 'mark?own'). Matched as '\*&lt;Pattern&gt;\*'. |
+| `-Pattern` | string |  |  |  | Text or wildcard pattern to match (e.g. 'rip', 'grep\*', 'mark?own'). Matched as '\*&lt;Pattern&gt;\*'. Optional when -Role is given. |
+| `-Role` | string |  |  |  | Only tools that declare this role (see Get-DFRole), e.g. pager or listing. Combine with -Pattern to narrow further. |
 | `-ToolsPath` | string |  |  |  | Read tool records from this directory instead of the module's Tools folder. Intended for tests. |
 
 **Outputs:** PSCustomObject — matching tool registry records.
@@ -243,6 +249,14 @@ Find-DFTool '*pager*' | Select-Object name
 
 Lists tool names that relate to paging.
 
+**Example 3**
+
+```powershell
+Find-DFTool -Role pager
+```
+
+Lists every tool that can be the pager.
+
 **See also:** [tools](guide/tools.md)
 
 ### Get-DFCommandConflict
@@ -255,7 +269,7 @@ Get-DFCommandConflict [[-ToolsPath] <string>] [-IncludeIgnored] [<CommonParamete
 
 Coreutils for Windows installs a PSConsoleHostReadLine hook that rewrites command names to '&lt;name&gt;.cmd' before PowerShell resolves them. Any DotForge alias sharing a name with an enabled coreutils utility is therefore unreachable at the prompt — and because the rewrite happens above command resolution, Get-Command still reports DotForge's version, so the conflict is invisible to normal probing.
 
-This function compares the command names DotForge creates (its own helper aliases plus every alias and picker alias declared in the tool database) against the set the coreutils hook will rewrite, and returns one object per conflict along with the command that resolves it.
+This function compares the command names DotForge creates (its own helper aliases plus every alias, role alias and picker alias declared in the tool database) against the set the coreutils hook will rewrite, and returns one object per conflict along with the command that resolves it.
 
 The check is host-accurate: the coreutils hook is injected only into the ConsoleHost profile, so hosts that never load it (such as the VS Code integrated terminal) correctly report no conflicts. Nothing is spawned and no registry is read. When coreutils is not installed, or its hook is not loaded in this host, this returns nothing.
 
@@ -294,6 +308,43 @@ Get-DFCommandConflict
 Reports conflicts while accepting coreutils' cat over DotForge's bat alias.
 
 **See also:** [coreutils-conflicts](guide/coreutils-conflicts.md)
+
+### Get-DFRole
+
+Lists DotForge's tool roles, which tools fill each, and which one is active.
+
+```text
+Get-DFRole [[-Name] <string[]>] [-ToolsPath <string>] [<CommonParameters>]
+```
+
+A role is a job several tools can do, such as pager or prompt. For a single role, one installed tool wins: the one named in $DFConfig.Defaults, otherwise the highest-priority installed tool. Only the winner sets the role's variables and aliases and installs its shell hooks. A category role only groups tools; every member works as usual.
+
+Winners are computed the way Register-DFTool -All would compute them now: from installed tools, minus $DFConfig.SkipTools. Overridden lists role variables whose current value is not the winner's, such as a PAGER you set yourself, which DotForge keeps unless you also name a tool in $DFConfig.Defaults. Read-only; changes nothing.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  |  |  | Role names to show. All roles when omitted. |
+| `-ToolsPath` | string |  |  |  | Read tool records from this directory instead of the module's Tools folder. Intended for tests. |
+
+**Outputs:** DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Overridden.
+
+**Example 1**
+
+```powershell
+Get-DFRole | Format-Table Name, Kind, Winner, Reason, Candidates
+```
+
+Shows every role and the tool that fills it on this machine.
+
+**Example 2**
+
+```powershell
+Get-DFRole pager | Select-Object -ExpandProperty Overridden
+```
+
+Shows whether a pager variable you set outside DotForge is overriding the pager role's winner.
+
+**See also:** [configuration](guide/configuration.md)
 
 ### Get-DFTool
 
@@ -623,10 +674,13 @@ For each requested tool that is installed (its executable is on PATH, or for a "
   1. Applies its XDG configuration: sets the env vars in xdg.vars and
      creates the directories in xdg.dirs.
   2. Sets the non-XDG env vars in its "env" block (e.g. FZF_DEFAULT_OPTS,
-     GIT_PAGER) for the current process.
+     LESS) for the current process.
   3. Defines its aliases and wrapper functions.
   4. Builds its declarative fzf picker function, if it declares one.
-  5. Dot-sources its companion Tools/<name>.ps1, if one exists, and runs
+  5. For each role it wins (see Get-DFRole), applies that role's
+     variables and aliases. Roles it loses are skipped entirely.
+  6. Dot-sources its companion Tools/<name>.ps1, if one exists, then
+     runs the companion's hook for each role it won, and runs
      Tools/<name>.setup.ps1 once ever per machine (tracked in
      $XDG_STATE_HOME\dotforge\setup-state.json).
 ```
@@ -639,8 +693,11 @@ After the loop it installs the completion stack (Carapace, PSFzf or inshellisens
 $DFConfig keys read:
     SkipTools          tool names excluded from -All
     SkipSetup          tool names whose one-time setup script never runs
-    Defaults           role -> winning tool, e.g. @{ listing = 'eza' };
-                       the loser's overlapping aliases are not defined
+    Defaults           role -> tool, e.g. @{ prompt = 'starship'; pager = 'bat' };
+                       picks the winner of each role. Without it the
+                       highest-priority installed tool wins (with a
+                       one-time warning for prompt, project-env and
+                       navigation)
     CompletionMode     'Native' (default) or 'Inshellisense'
     SkipConflictCheck  $true disables the coreutils shadowing warning
     IgnoreConflicts    command names left out of that warning
@@ -677,12 +734,12 @@ Configures only psreadline and PSFzf (in dependency order).
 **Example 3**
 
 ```powershell
-$DFConfig = @{ SkipTools = @('lsd'); Defaults = @{ listing = 'eza' } }
+$DFConfig = @{ Defaults = @{ listing = 'eza'; prompt = 'starship' } }
 Import-Module DotForge
 Register-DFTool -All -Verbose
 ```
 
-Configures all tools except lsd, gives ls/ll/la/tree to eza, and prints which tools were registered or skipped.
+Gives ls/ll/la/tree to eza and the prompt to starship (lsd and oh-my-posh stay usable by name), and prints which tools were registered or skipped.
 
 **See also:** [configuration](guide/configuration.md), [safety](guide/safety.md)
 
@@ -1891,6 +1948,160 @@ Shows what would be written without touching disk.
 
 **See also:** [package-catalog](guide/package-catalog.md)
 
+## Roles
+
+A role is a job several tools can do. For a *single* role, one installed tool wins (`$DFConfig.Defaults`, else the highest priority) and only it sets the role's variables and aliases and installs its hooks. A *category* only groups tools. Run `Get-DFRole` to see the winners on your machine.
+
+### completion role
+
+Adds or improves Tab completion.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [carapace](#carapace-tool), [inshellisense](#inshellisense-tool), [PSFzf](#psfzf-tool), [psreadline](#psreadline-tool) |
+
+### diff role
+
+Displays git diffs. The winner sets GIT_PAGER.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [delta](#delta-tool) |
+| Only the winner sets | `GIT_PAGER` |
+
+### editor role
+
+Edits text files. The winner sets EDITOR and VISUAL.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [micro](#micro-tool) |
+| Only the winner sets | `EDITOR`, `VISUAL` |
+
+### file-search role
+
+Finds files by name.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fd](#fd-tool) |
+
+### grep role
+
+Searches file contents.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [ripgrep](#ripgrep-tool) |
+
+### listing role
+
+Lists directory contents. The winner defines ls, ll, la and tree.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [eza](#eza-tool), [lsd](#lsd-tool) |
+| Only the winner sets | `ls`, `ll`, `la`, `tree` |
+
+### markdown-viewer role
+
+Renders Markdown in the terminal.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [glow](#glow-tool), [mdcat](#mdcat-tool), [mdv](#mdv-tool) |
+
+### navigation role
+
+Jumps to frequently used directories. Hooks the prompt to track directory changes.
+
+| | |
+| --- | --- |
+| Kind | single, exclusive |
+| Members | [zoxide](#zoxide-tool) |
+
+### package-manager role
+
+Installs tools. Install-DFTool tries the winner first, then the others by priority.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [choco](#choco-tool), [scoop](#scoop-tool), [winget](#winget-tool) |
+
+### pager role
+
+Pages long output. The winner sets PAGER, which DotForge's own pager also reads.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [bat](#bat-tool), [less](#less-tool) |
+| Only the winner sets | `PAGER` |
+
+### picker role
+
+Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker runs.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [fzf](#fzf-tool) |
+| Only the winner sets | `Picker` |
+| Requires | Accepts fzf's command-line options and reads candidates on stdin. |
+
+### project-env role
+
+Loads per-directory environment variables. Two active hooks would fight over the same variables.
+
+| | |
+| --- | --- |
+| Kind | single, exclusive |
+| Members | [direnv](#direnv-tool) |
+
+### prompt role
+
+Draws the shell prompt. Only one prompt engine may own the prompt function.
+
+| | |
+| --- | --- |
+| Kind | single, exclusive |
+| Members | [oh-my-posh](#oh-my-posh-tool), [starship](#starship-tool) |
+
+### system-info role
+
+Shows system information.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fastfetch](#fastfetch-tool) |
+
+### url-fetch role
+
+Downloads files and calls HTTP APIs.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [curl](#curl-tool), [wget](#wget-tool) |
+
+### version-manager role
+
+Installs and switches language runtime versions.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fnm](#fnm-tool), [rustup](#rustup-tool), [uv](#uv-tool) |
+
 ## Tool records
 
 What `Register-DFTool` does for each tool, read from its `Tools/<name>.json` record. A tool is configured only when it is detected: its executable is on `PATH`, or for a module, the module is installed. For the record format, see [Writing a tool record](guide/writing-a-tool.md).
@@ -1908,6 +2119,8 @@ Modern cat replacement with syntax highlighting and Git integration
 | XDG variables | `BAT_CONFIG_PATH` = `${XDG_CONFIG_HOME}/bat/bat.conf` |
 | Environment | `BAT_THEME` = `Catppuccin Mocha` |
 | Aliases | `cat` → `bat -pp` |
+| Roles | [`pager`](#pager-role) |
+| Sets, as the pager tool | `PAGER` = `bat --paging=always --style=plain` |
 | Companion | `Tools/bat.ps1` |
 
 ### bitwarden tool
@@ -1944,6 +2157,7 @@ Multi-shell completion engine — argument completers for 500+ CLI tools
 | Install ids | scoop: `carapace-bin`<br>winget: `rsteube.Carapace` |
 | XDG method | `default` |
 | Registers after | `fnm` |
+| Roles | [`completion`](#completion-role) |
 | Companion | `Tools/carapace.ps1` |
 
 ### chezmoi tool
@@ -1970,6 +2184,7 @@ Chocolatey — Windows package manager
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
 | Registers after | `gsudo` |
+| Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/choco.ps1`](#choco-companion) |
 
 ### curl tool
@@ -1984,6 +2199,7 @@ Transfer data with URLs
 | XDG method | `env` |
 | XDG variables | `CURL_HOME` = `${XDG_CONFIG_HOME}/curl` |
 | Creates | `${XDG_CONFIG_HOME}/curl` |
+| Roles | [`url-fetch`](#url-fetch-role) |
 
 ### delta tool
 
@@ -1995,7 +2211,8 @@ Syntax-highlighting pager for git diff output
 | Tags | `git`, `diff`, `pager` |
 | Install ids | scoop: `delta`<br>winget: `dandavison.delta`<br>choco: `delta` |
 | XDG method | `default` |
-| Environment | `GIT_PAGER` = `delta` |
+| Roles | [`diff`](#diff-role) |
+| Sets, as the diff tool | `GIT_PAGER` = `delta` |
 | Companion | `Tools/delta.ps1`, one-time `Tools/delta.setup.ps1` |
 
 ### direnv tool
@@ -2008,6 +2225,7 @@ Loads and unloads environment variables per-directory from .envrc files
 | Tags | `environment-vars`, `shell-enhancement`, `dev` |
 | Install ids | scoop: `direnv`<br>winget: `direnv.direnv` |
 | XDG method | `default` |
+| Roles | [`project-env`](#project-env-role) |
 | Companion | `Tools/direnv.ps1` |
 
 ### docker tool
@@ -2033,9 +2251,9 @@ Modern ls replacement with icons, Git integration, and color
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `eza`<br>winget: `eza-community.eza`<br>choco: `eza` |
 | XDG method | `default` |
-| Aliases | `ls` → `eza --color=auto --icons=auto --group-directories-first --no-quotes`<br>`ll` → `eza --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`la` → `eza --all --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`tree` → `eza --tree --no-quotes` |
 | Picker | `ff` (Select-File): lists `eza --icons -1 --color=always --no-quotes`; Enter outputs the selection |
-| Role | `listing` |
+| Roles | [`listing`](#listing-role) |
+| Aliases, as the listing tool | `ls` → `eza --color=auto --icons=auto --group-directories-first --no-quotes`<br>`ll` → `eza --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`la` → `eza --all --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`tree` → `eza --tree --no-quotes` |
 
 ### fastfetch tool
 
@@ -2047,6 +2265,7 @@ Fast, actively-maintained neofetch-like system information tool
 | Tags | `system`, `info` |
 | Install ids | scoop: `fastfetch`<br>winget: `Fastfetch-cli.Fastfetch` |
 | XDG method | `wrapper` |
+| Roles | [`system-info`](#system-info-role) |
 | Companion | [`Tools/fastfetch.ps1`](#fastfetch-companion) |
 
 ### fd tool
@@ -2060,6 +2279,7 @@ Fast and user-friendly alternative to find
 | Install ids | scoop: `fd`<br>winget: `sharkdp.fd`<br>choco: `fd` |
 | XDG method | `default` |
 | Picker | `ffd` (Select-FdResult): lists `fd --color=always`; Enter outputs the selection |
+| Roles | [`file-search`](#file-search-role) |
 
 ### fnm tool
 
@@ -2074,6 +2294,7 @@ Fast Node.js version manager with automatic per-directory switching
 | XDG variables | `FNM_DIR` = `${XDG_DATA_HOME}/fnm` |
 | Creates | `${XDG_DATA_HOME}/fnm` |
 | Registers after | `zoxide` |
+| Roles | [`version-manager`](#version-manager-role) |
 | Companion | [`Tools/fnm.ps1`](#fnm-companion) |
 
 ### fzf tool
@@ -2087,6 +2308,8 @@ General-purpose command-line fuzzy finder
 | Install ids | scoop: `fzf`<br>winget: `junegunn.fzf`<br>choco: `fzf` |
 | XDG method | `default` |
 | Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_DEFAULT_OPTS` = `--layout=reverse --inline-info --height=40% --border`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
+| Roles | [`picker`](#picker-role) |
+| Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
 
 ### gh tool
@@ -2110,6 +2333,7 @@ Render Markdown on the CLI
 | Tags | `markdown`, `viewer`, `text` |
 | Install ids | scoop: `glow`<br>choco: `glow` |
 | XDG method | `wrapper` |
+| Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | [`Tools/glow.ps1`](#glow-companion) |
 
 ### gsudo tool
@@ -2134,6 +2358,7 @@ AI-powered terminal completion engine
 | Tags | `completion`, `shell`, `productivity` |
 | Install ids | npm: `@microsoft/inshellisense` |
 | XDG method | `default` |
+| Roles | [`completion`](#completion-role) |
 | Companion | [`Tools/inshellisense.ps1`](#inshellisense-companion) |
 
 ### jq tool
@@ -2174,6 +2399,8 @@ Opposite of more — terminal pager
 | XDG variables | `LESSHISTFILE` = `${XDG_STATE_HOME}/less/history`<br>`LESSKEY` = `${XDG_CONFIG_HOME}/less/lesskey` |
 | Creates | `${XDG_STATE_HOME}/less`<br>`${XDG_CONFIG_HOME}/less` |
 | Environment | `LESS` = `--RAW-CONTROL-CHARS --quit-if-one-screen --no-init` |
+| Roles | [`pager`](#pager-role) |
+| Sets, as the pager tool | `PAGER` = `less` |
 
 ### lsd tool
 
@@ -2185,8 +2412,8 @@ Modern ls replacement with colors, icons, and tree view
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `lsd`<br>winget: `lsd-rs.lsd`<br>choco: `lsd` |
 | XDG method | `manual` |
-| Aliases | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --all --long --header --literal`<br>`la` → `lsd --all --literal`<br>`tree` → `lsd --tree --literal` |
-| Role | `listing` |
+| Roles | [`listing`](#listing-role) |
+| Aliases, as the listing tool | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --all --long --header --literal`<br>`la` → `lsd --all --literal`<br>`tree` → `lsd --tree --literal` |
 
 ### mdcat tool
 
@@ -2199,6 +2426,7 @@ cat for markdown — render CommonMark in the terminal
 | Install ids | scoop: `mdcat`<br>cargo: `mdcat` |
 | XDG method | `default` |
 | Environment | `MDCAT_THEME` = `catppuccin-mocha` |
+| Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | `Tools/mdcat.ps1` |
 
 ### mdv tool
@@ -2213,6 +2441,7 @@ Terminal markdown viewer with themes and syntax highlighting
 | XDG method | `env` |
 | XDG variables | `MDV_CONFIG_PATH` = `${XDG_CONFIG_HOME}/mdv` |
 | Creates | `${XDG_CONFIG_HOME}/mdv` |
+| Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | one-time `Tools/mdv.setup.ps1` |
 
 ### micro tool
@@ -2227,6 +2456,8 @@ Modern and intuitive terminal-based text editor
 | XDG method | `env` |
 | XDG variables | `MICRO_CONF_DIR` = `${XDG_CONFIG_HOME}/micro` |
 | Creates | `${XDG_CONFIG_HOME}/micro` |
+| Roles | [`editor`](#editor-role) |
+| Sets, as the editor tool | `EDITOR` = `micro`<br>`VISUAL` = `micro` |
 
 ### npm tool
 
@@ -2253,6 +2484,7 @@ Cross-shell prompt theme engine with hundreds of built-in themes
 | XDG method | `env` |
 | XDG variables | `POSH_THEMES_PATH` = `${XDG_DATA_HOME}/oh-my-posh/themes` |
 | Creates | `${XDG_DATA_HOME}/oh-my-posh/themes`<br>`${XDG_CONFIG_HOME}/oh-my-posh` |
+| Roles | [`prompt`](#prompt-role) |
 | Companion | [`Tools/oh-my-posh.ps1`](#oh-my-posh-companion) |
 
 ### posh-git tool
@@ -2290,6 +2522,7 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | Install ids | psresource: `PSFzf`<br>scoop: `psfzf` |
 | XDG method | `default` |
 | Registers after | `psreadline` |
+| Roles | [`completion`](#completion-role) |
 | Companion | `Tools/PSFzf.ps1` |
 
 ### psreadline tool
@@ -2302,6 +2535,7 @@ Enhanced command-line editing and syntax highlighting for PowerShell
 | Tags | `readline`, `completion`, `theme`, `module` |
 | XDG method | `env` |
 | Creates | `${XDG_STATE_HOME}/psreadline` |
+| Roles | [`completion`](#completion-role) |
 | Companion | [`Tools/psreadline.ps1`](#psreadline-companion) |
 
 ### ripgrep tool
@@ -2316,6 +2550,7 @@ Recursively search directories for a regex pattern, respecting gitignore
 | XDG method | `env` |
 | XDG variables | `RIPGREP_CONFIG_PATH` = `${XDG_CONFIG_HOME}/ripgrep/ripgreprc` |
 | Creates | `${XDG_CONFIG_HOME}/ripgrep` |
+| Roles | [`grep`](#grep-role) |
 | Companion | [`Tools/ripgrep.ps1`](#ripgrep-companion) |
 
 ### rustup tool
@@ -2330,6 +2565,7 @@ Rust toolchain installer and version manager
 | XDG method | `env` |
 | XDG variables | `RUSTUP_HOME` = `${XDG_DATA_HOME}/rustup`<br>`CARGO_HOME` = `${XDG_DATA_HOME}/cargo` |
 | Creates | `${XDG_DATA_HOME}/rustup`<br>`${XDG_DATA_HOME}/cargo` |
+| Roles | [`version-manager`](#version-manager-role) |
 | Companion | `Tools/rustup.ps1` |
 
 ### scoop tool
@@ -2341,6 +2577,7 @@ Windows command-line installer
 | Detected by | `scoop.cmd` |
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
+| Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/scoop.ps1`](#scoop-companion) |
 
 ### starship tool
@@ -2355,6 +2592,7 @@ Fast, minimal, cross-shell prompt configured with a single TOML file
 | XDG method | `env` |
 | XDG variables | `STARSHIP_CONFIG` = `${XDG_CONFIG_HOME}/starship/starship.toml`<br>`STARSHIP_CACHE` = `${XDG_CACHE_HOME}/starship` |
 | Creates | `${XDG_CACHE_HOME}/starship` |
+| Roles | [`prompt`](#prompt-role) |
 | Companion | `Tools/starship.ps1` |
 
 ### Terminal-Icons tool
@@ -2381,6 +2619,7 @@ Extremely fast Python package and project manager
 | XDG method | `env` |
 | XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv`<br>`UV_DATA_DIR` = `${XDG_DATA_HOME}/uv` |
 | Creates | `${XDG_CACHE_HOME}/uv`<br>`${XDG_DATA_HOME}/uv` |
+| Roles | [`version-manager`](#version-manager-role) |
 
 ### vcpkg tool
 
@@ -2420,6 +2659,7 @@ Non-interactive network downloader
 | XDG method | `env` |
 | XDG variables | `WGETRC` = `${XDG_CONFIG_HOME}/wget/wgetrc` |
 | Creates | `${XDG_CONFIG_HOME}/wget` |
+| Roles | [`url-fetch`](#url-fetch-role) |
 
 ### winget tool
 
@@ -2430,6 +2670,7 @@ Windows Package Manager — install, upgrade, and configure applications
 | Detected by | `winget.exe` |
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
+| Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/winget.ps1`](#winget-companion) |
 
 ### zoxide tool
@@ -2445,6 +2686,7 @@ Smarter cd that learns your most-used directories
 | XDG variables | `_ZO_DATA_DIR` = `${XDG_DATA_HOME}/zoxide` |
 | Picker | `fzo` (Select-Directory): lists `zoxide query --list`; Enter runs `Set-Location {}` |
 | Registers after | `oh-my-posh`, `starship` |
+| Roles | [`navigation`](#navigation-role) |
 | Companion | `Tools/zoxide.ps1` |
 
 ## Tool companion functions

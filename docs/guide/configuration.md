@@ -1,7 +1,7 @@
 # Configuration
 
 **Audience:** DotForge users who want to change its defaults.  
-**Topic:** the `$DFConfig` settings, themes, choosing between competing tools, and the environment variables DotForge reads.  
+**Topic:** the `$DFConfig` settings, themes, choosing which tool fills each role, and the environment variables DotForge reads.  
 **Goal:** a `$DFConfig` block in your profile that sets your theme, your package manager and the tools you want.
 
 ## Quick start
@@ -31,10 +31,10 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `PackageManagerOrder` | string[] | `scoop`, `winget`, `choco` | Order `Install-DFTool` tries package managers in. Only managers on `PATH` are used. |
+| `PackageManagerOrder` | string[] | the `package-manager` role's order | Order `Install-DFTool` tries package managers in. Only managers on `PATH` are used. Overrides `Defaults['package-manager']`. |
 | `SkipTools` | string[] | none | Tools `Register-DFTool -All` leaves alone. Naming a tool with `-Name` still registers it. |
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
-| `Defaults` | hashtable | none | Role → winning tool. The only role today is `listing` (`eza` or `lsd`). |
+| `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `CompletionMode` | string | `Native` | `Native` or `Inshellisense`. See [Completion](completion.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
@@ -123,9 +123,20 @@ Register-DFTool -Name psreadline
 2. A PSReadLine theme maps [PSReadLine color names](https://learn.microsoft.com/powershell/module/psreadline/set-psreadlineoption) (`Command`, `String`, `Comment`, …) to `#RRGGBB` colors.
 3. An fzf theme has the same shape, with fzf's `--color` names (`bg`, `fg`, `hl`, …) as keys.
 
-## Choose between competing tools
+## Choose a tool for each role
 
-Some tools compete for the same command names. eza and lsd both have the `listing` role and both want `ls`, `ll`, `la` and `tree`. `Defaults` names the winner. The other tool is still configured; it just doesn't define those four names.
+A role is a job several tools can do: drawing the prompt, paging output, listing files. DotForge has two kinds:
+
+- A **single** role has one winner. Only the winner sets the role's variables and aliases and installs its shell hooks. The others are still configured and you can run them by name. Examples: `prompt` (oh-my-posh, starship), `pager` (less, bat), `listing` (eza, lsd), `editor`, `picker`, `diff`, `project-env`, `navigation`, `package-manager`.
+- A **category** only groups tools, such as `grep` or `markdown-viewer`. Every member works as usual.
+
+`Get-DFRole` lists the roles, which of your tools can fill each one, and which tool won:
+
+```powershell
+Get-DFRole | Format-Table Name, Kind, Winner, Reason, Candidates
+```
+
+`Defaults` picks the winner. Here eza gets `ls`, `ll`, `la` and `tree`, and lsd doesn't define them:
 
 ```powershell
 $DFConfig = @{ Defaults = @{ listing = 'eza' } }
@@ -140,7 +151,13 @@ ls --version | Select-Object -First 1
 eza - A modern, maintained replacement for ls
 ```
 
-Without `Defaults`, whichever of the two registers last owns the names, and that order isn't predictable, so set `Defaults` whenever you have both installed. A tool name that doesn't exist, or doesn't have that role, writes a warning and is ignored.
+Without a `Defaults` entry, the installed tool with the highest priority wins (eza over lsd, oh-my-posh over starship, less over bat). For `prompt`, `project-env` and `navigation`, where two active tools would break each other, DotForge also warns once, naming its pick and the line that changes it. A tool name that isn't in that role writes a warning, and priority decides.
+
+### Your own variables win, unless you pick a tool
+
+A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
+
+`PackageManagerOrder`, when set, overrides the `package-manager` role entirely.
 
 ## Skip a tool
 
@@ -204,13 +221,13 @@ Set these in your profile, before or after importing DotForge:
 
 | Variable | Used by | Example |
 | --- | --- | --- |
-| `EDITOR` | `ep` (edit profile), `frg` (open a search result) | `$Env:EDITOR = 'code'` |
-| `Pager` | `pg`, `hm`, `clhp`: output goes through it when set | `$Env:Pager = 'less -R'` |
-| `Picker` | every picker; the fzf-compatible program to run | `$Env:Picker = 'sk'` (skim) |
+| `EDITOR` | `ep` (edit profile), `frg` (open a search result); set by the `editor` role's winner when you haven't set it | `$Env:EDITOR = 'code'` |
+| `PAGER` | `pg`, `hm`, `clhp`: output goes through it when set; set by the `pager` role's winner when you haven't set it | `$Env:PAGER = 'less -R'` |
+| `Picker` | every picker; the fzf-compatible program to run; set by the `picker` role's winner when you haven't set it | `$Env:Picker = 'sk'` (skim) |
 | `NO_COLOR` | `hm`, `clh`, `env`: any value turns colors off | `$Env:NO_COLOR = '1'` |
 | `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | everything; set them yourself to move the folders | `$Env:XDG_CONFIG_HOME = 'D:\dotfiles\config'` |
 
-`EDITOR` must be a single command or path; arguments such as `code -w` aren't supported. `Pager` takes arguments, but not quoted ones: use `bat --paging=always`, not `bat --paging "always"`.
+`EDITOR` must be a single command or path; arguments such as `code -w` aren't supported. `PAGER` takes arguments, but not quoted ones: use `bat --paging=always`, not `bat --paging "always"`.
 
 ## Troubleshooting
 
@@ -218,7 +235,9 @@ Set these in your profile, before or after importing DotForge:
 | --- | --- | --- |
 | A setting has no effect | `$DFConfig` set after `Register-DFTool`, or the key is misspelled | Set it before importing DotForge; check the key against [All settings](#all-settings). |
 | `fzf theme '<name>' not found` or `PSReadLine theme '<name>' not found` | the shared `Theme` names a theme those tools don't ship | Set `FzfTheme`/`PSReadLineTheme` to `catppuccin-mocha`, or add a theme file. |
-| `$DFConfig.Defaults['listing'] names unknown tool` | misspelled tool name | Use `eza` or `lsd`. |
+| `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
+| `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |
+| `PAGER was '<value>' but $DFConfig.Defaults.pager is '<tool>'` | you set the variable and also chose a different tool | Remove one of the two settings. |
 | Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after `Register-DFTool` | Use `PSReadLineEditMode` in `$DFConfig`. |
 
 More on the [troubleshooting page](troubleshooting.md).

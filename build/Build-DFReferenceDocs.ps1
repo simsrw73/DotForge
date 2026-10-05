@@ -256,7 +256,22 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
     }
     $deps = & $prop $Tool 'dependsOn'
     if ($deps) { & $add 'Registers after' ((@($deps) | ForEach-Object { & $code $_ }) -join ', ') }
-    & $add 'Role' $(if (& $prop $Tool 'role') { & $code (& $prop $Tool 'role') })
+    $roles = & $prop $Tool 'roles'
+    $roleNames = @(if ($roles) { $roles.PSObject.Properties.Name })
+    if (& $prop $Tool 'role') { $roleNames += & $prop $Tool 'role' }
+    & $add 'Roles' ((@($roleNames | Where-Object { $_ } | Sort-Object -Unique) | ForEach-Object { "[$(& $code $_)](#$(Get-Slug "$_ role"))" }) -join ', ')
+    if ($roles) {
+        foreach ($r in $roles.PSObject.Properties) {
+            $renv = & $prop $r.Value 'env'
+            if ($renv) { & $add "Sets, as the $($r.Name) tool" (($renv.PSObject.Properties | ForEach-Object { "$(& $code $_.Name) = $(& $code $_.Value)" }) -join '<br>') }
+            $ral = & $prop $r.Value 'aliases'
+            if ($ral -and @($ral.PSObject.Properties).Count) {
+                & $add "Aliases, as the $($r.Name) tool" (($ral.PSObject.Properties | ForEach-Object {
+                    $cmd = (@($_.Value.command) + @($_.Value.PSObject.Properties['args']?.Value) | Where-Object { $_ }) -join ' '
+                    "$(& $code $_.Name) → $(& $code $cmd)" }) -join '<br>')
+            }
+        }
+    }
     $companion = Test-Path (Join-Path $ToolsDir "$($Tool.name).ps1")
     $setup = Test-Path (Join-Path $ToolsDir "$($Tool.name).setup.ps1")
     & $add 'Companion' (@(
@@ -302,6 +317,10 @@ foreach ($section in $sectionOrder) {
 }
 $null = $md.AppendLine('**Tool records**').AppendLine()
 $null = $md.AppendLine(($toolRecords | ForEach-Object { "[$($_.name)](#$(Get-Slug "$($_.name) tool"))" }) -join ' · ').AppendLine()
+$roleDefs = Get-Content (Join-Path $repo 'data' 'roles.json') -Raw | ConvertFrom-Json
+$roleNamesSorted = @($roleDefs.PSObject.Properties.Name | Sort-Object)
+$null = $md.AppendLine('**Roles**').AppendLine()
+$null = $md.AppendLine(($roleNamesSorted | ForEach-Object { "[$_](#$(Get-Slug "$_ role"))" }) -join ' · ').AppendLine()
 $null = $md.AppendLine('**Tool companion functions**').AppendLine()
 $null = $md.AppendLine('| Command | Alias | Tool | Summary |').AppendLine('| --- | --- | --- | --- |')
 foreach ($f in $sidecar | Sort-Object Tool, Name) {
@@ -317,6 +336,27 @@ foreach ($section in $sectionOrder) {
     foreach ($f in $inSection) {
         $null = $md.Append((Get-FunctionMarkdown -Name $f.Name -Body $f.Body -Aliases $f.Aliases -Syntax $f.Syntax -HeadingLevel '###'))
     }
+}
+
+$null = $md.AppendLine('## Roles').AppendLine()
+$null = $md.AppendLine('A role is a job several tools can do. For a *single* role, one installed tool wins (`$DFConfig.Defaults`, else the highest priority) and only it sets the role''s variables and aliases and installs its hooks. A *category* only groups tools. Run `Get-DFRole` to see the winners on your machine.').AppendLine()
+foreach ($roleName in $roleNamesSorted) {
+    $def = $roleDefs.$roleName
+    $members = @($toolRecords | Where-Object {
+        $tr = $_.PSObject.Properties['roles']?.Value
+        ($tr -and $tr.PSObject.Properties[$roleName]) -or $_.PSObject.Properties['role']?.Value -eq $roleName
+    } | ForEach-Object { "[$($_.name)](#$(Get-Slug "$($_.name) tool"))" })
+    $kind = if ($def.kind -eq 'single') { if ($def.PSObject.Properties['exclusive']?.Value) { 'single, exclusive' } else { 'single' } } else { 'category' }
+    $null = $md.AppendLine("### $roleName role").AppendLine()
+    $null = $md.AppendLine((ConvertTo-MdInline $def.description)).AppendLine()
+    $null = $md.AppendLine('| | |').AppendLine('| --- | --- |')
+    $null = $md.AppendLine("| Kind | $kind |")
+    $null = $md.AppendLine("| Members | $($members -join ', ') |")
+    $res = $def.PSObject.Properties['reserved']?.Value
+    $resNames = @(@(if ($res) { @($res.env) + @($res.aliases) }) | Where-Object { $_ } | ForEach-Object { "``$_``" })
+    if ($resNames) { $null = $md.AppendLine("| Only the winner sets | $($resNames -join ', ') |") }
+    if ($def.PSObject.Properties['requires']) { $null = $md.AppendLine("| Requires | $(ConvertTo-MdInline $def.requires) |") }
+    $null = $md.AppendLine()
 }
 
 $null = $md.AppendLine('## Tool records').AppendLine()

@@ -68,7 +68,7 @@ Path templating: `xdg.vars`/`xdg.dirs`/`config_path` values MAY use the tokens `
 `${XDG_DATA_HOME}`, `${XDG_STATE_HOME}`, `${XDG_CACHE_HOME}`, expanded by
 `Private/Expand-DFXdgPath.ps1` (case-sensitive `-creplace`; exact `${…}` form only). `XDG_BIN_HOME` is
 **not** a supported token. **`xdg.vars` values are `${XDG_*}` path templates only.** Non-path
-environment variables (flag strings, tool options, `GIT_PAGER`, theme names, …) belong in the
+environment variables (flag strings, tool options, `LESS`, theme names, …) belong in the
 tool's top-level **`env`** block, applied unconditionally by `Register-DFTool` (also via
 `Expand-DFXdgPath`, so an `env` value that references `${XDG_*}` still expands).
 
@@ -178,12 +178,14 @@ editors**.
   (`honors-env:PAGER`, etc.) rather than assume it.
 - Where a tool honors them, DotForge relies on them and adds nothing.
 - Where a tool does not, configure the behavior per the §3 ladder and record the adapter.
-- DotForge MAY set sensible defaults for `PAGER`/`EDITOR`/`VISUAL` **only when unset**, and MUST NOT
-  clobber a value the user already set.
+- DotForge sets `PAGER`, `EDITOR`/`VISUAL`, `Picker` and `GIT_PAGER` through the winners of the
+  `pager`, `editor`, `picker` and `diff` roles (§10). Precedence: an explicit `$DFConfig.Defaults`
+  choice, then a value the user set outside DotForge, then the auto-picked winner. A `Defaults` choice
+  that replaces a different user value warns. See
+  `docs/superpowers/specs/2026-10-05-roles-v2-design.md` §4.
 
-Implementation note / cleanup: the pager helper reads `$Env:Pager` (`Public/DFHelpers.Pager.ps1`,
-`Private/Invoke-DFPagerExe.ps1`) while the README documents `$Env:PAGER`. Windows env vars are
-case-insensitive so both work, but the standard name is `PAGER`; align docs and code on it.
+Windows env var names are case-insensitive, so the pager helper's `$Env:Pager` and the standard
+`PAGER` are the same variable.
 
 ---
 
@@ -321,41 +323,18 @@ adding any alias in either category, check it against a PowerShell builtin per
 When several tools do the same job (eza vs lsd; multiple pagers; multiple markdown viewers), the user
 picks a **winner**, and the winner receives the standard aliases for that role.
 
-### 10.1 Mechanism — declarative
+### 10.1 Mechanism — roles v2
 
-Selection is declared in `$DFConfig.Defaults`, a role→tool map the user sets in their profile before
-`Import-Module DotForge`:
+Implemented by roles v2; the full design is `docs/superpowers/specs/2026-10-05-roles-v2-design.md`.
 
-```powershell
-$DFConfig = @{
-    Defaults = @{ listing = 'eza'; pager = 'bat'; 'markdown-renderer' = 'glow' }
-}
-```
-
-- **Roles are equivalence groups a tool declares itself into** via the per-tool `role` field (§10.1a)
-  — NOT derived from the category taxonomy's `function` field (`data/tool-categories.json`). That
-  field is deliberately broad and multi-valued (e.g. `eza`, `broot`, and `fd` all carry
-  `file-management`, though only `eza` is a genuine `ls` replacement) and `Register-DFTool` never
-  reads it for role resolution; using it directly would wrongly group unrelated tools.
-- The **winner** for a role receives that role's **standard aliases** (e.g. `listing`'s winner gets
-  `ls`, `ll`, `tree`).
-- **Contested aliases are computed, not declared.** A role's winner's own `aliases` block IS
-  the set of aliases it claims. A **loser** (a tool sharing the same `role` but not named as the
-  winner) has ONLY the alias keys it shares with the winner suppressed — every other alias it
-  declares, its XDG config, picker, and companion `.ps1` still apply. This is computed live from
-  each tool's own declared `aliases`; there is no separate contested-alias list.
-- No startup prompt. Selection is purely declarative (consistent with `$DFConfig` being a plain
-  user-authored hashtable read defensively).
-
-### 10.1a The `role` field
-
-A tool optionally declares a top-level `role` string in its own JSON (e.g. `"role": "listing"`) to
-say "I compete in this equivalence group." Per `docs/plugin-architecture.md`, this is NOT a central
-registry — a role name is just a string a tool declares and the user references as a key in
-`$DFConfig.Defaults`. `Register-DFTool` resolves the named winner for each `Defaults` entry,
-validating that the winner exists, declares that same role, and is actually available/registering
-this call before recording its alias keys; any of those checks failing degrades to no suppression
-for that role, never a thrown error.
+- Roles are defined in `data/roles.json`, keyed by role: `single` (one winner) or `category`
+  (grouping only). They are NOT derived from the category taxonomy's `function` field
+  (`data/tool-categories.json`), which is deliberately broad and multi-valued.
+- A tool joins with a per-tool `roles` block (priority, and the `env`/`aliases` only the winner gets)
+  and, for code, a fixed-name hook `Initialize-DFRole<Role>` in its companion.
+- `$DFConfig.Defaults` (role → tool) picks the winner; otherwise the highest-priority installed
+  candidate wins, with a one-time warning for exclusive roles. No startup prompt.
+- Only the winner's role block and hook run. A loser keeps everything else it declares.
 
 ### 10.2 Interaction with conflict detection
 

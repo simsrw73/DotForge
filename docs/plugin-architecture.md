@@ -91,6 +91,11 @@ regenerable indexes — never hand-edited core logic.**
 
 ## Worked examples
 
+- **Good:** roles (2026-10). `data/roles.json` is keyed by role, never by tool.
+  A tool joins a role by declaring `roles` in its own JSON and, for code, a
+  fixed-name hook (`Initialize-DFRole<Role>`) in its companion. The core picks
+  one winner per role and calls only the winner's role block and hook, so a
+  plugin can't make itself active in a role the user gave another tool.
 - **Good (already shipped):** the top-level `env` block (workstream B). A tool
   declares non-XDG env vars; `Register-DFTool` applies any tool's `env` block
   generically; a tool without one is unaffected. Adding such a tool touches no

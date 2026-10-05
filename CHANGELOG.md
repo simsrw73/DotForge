@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Tool roles.** `data/roles.json` defines roles such as `prompt`, `pager`, `editor`, `picker`,
+  `diff`, `listing`, `project-env`, `navigation` and `package-manager`, plus grouping-only
+  categories (`grep`, `markdown-viewer`, …). Only the winning tool for a role
+  (`$DFConfig.Defaults`, else the highest-priority installed tool) sets that role's variables and
+  aliases and installs its shell hooks; the others stay configured and usable by name. When two
+  tools could fill `prompt`, `project-env` or `navigation` and you haven't chosen, DotForge warns
+  once and names its pick. New `Get-DFRole` lists roles, candidates and winners; `Find-DFTool -Role`
+  filters by role.
 - **User documentation, rewritten and tested.** The 785-line README is now a short landing page
   linking to task-based guides in `docs/guide/` (getting started, configuration, tools, pickers
   and helpers, completion, package catalog, coreutils conflicts, troubleshooting, safety, writing
@@ -86,6 +94,18 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **One prompt engine, one per-directory env hook.** With both oh-my-posh and starship installed,
+  only one now initializes. Prompt, zoxide and direnv init moved into role hooks
+  (`Initialize-DFRole<Role>` in each companion).
+- **`PAGER`, `EDITOR`/`VISUAL` and `Picker` are set by the pager, editor and picker winners** when
+  you haven't set them, so `pg`, `hm` and `ep` work out of the box. A value you set is kept,
+  unless `$DFConfig.Defaults` names a different tool: then the `Defaults` choice wins and DotForge
+  warns until you remove one of the two settings. delta's `GIT_PAGER` is now the `diff` role's.
+- **Tool records declare `roles`** (an object: priority, plus the `env`/`aliases` only the winner
+  gets) instead of the `role` string, which still loads. eza's and lsd's `ls`/`ll`/`la`/`tree`
+  moved into their `listing` role blocks; without `Defaults`, eza wins by priority.
+- **`Install-DFTool` orders package managers by the `package-manager` role** (`Defaults` choice
+  first, then scoop, winget, choco). `PackageManagerOrder` still overrides it.
 - **Replaced the abandoned `winfetch` plugin with `fastfetch`.** `winfetch` is unmaintained
   upstream; `fastfetch` is its actively maintained successor. `Tools/fastfetch.json` uses the
   `wrapper` xdg method (like `glow`) since fastfetch does not honor `$XDG_CONFIG_HOME` on
@@ -119,6 +139,11 @@ All notable changes to DotForge are documented here.
     color (`Test-DFColorOutput`, `Get-DFAnsiPalette`).
   - `tests/ModuleState.Tests.ps1` fails when two module files initialize the same `$script:`
     variable.
+
+### Removed
+
+- **Role v1 alias suppression.** Losers no longer declare role aliases, so there is nothing to
+  suppress.
 
 ## [0.6.0-preview] - 2026-09-06
 

@@ -142,7 +142,7 @@ Each `Tools/*.json` must have at minimum:
 - `xdg.method`: one of `default | env | config | wrapper | manual`
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
-  settings (fzf options, `GIT_PAGER`, `LESS`, theme names, …). Applied unconditionally by
+  settings (fzf options, `LESS`, theme names, …). Applied unconditionally by
   `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through
   `Expand-DFXdgPath` (flag strings pass through; `${XDG_*}` still expands). Keep `xdg.vars`
   for `${XDG_*}` path templates only.
@@ -152,9 +152,14 @@ Each `Tools/*.json` must have at minimum:
   configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
   this map), then validate against their own built-in list. Shared `$DFConfig.Theme` is
   canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
-- `role` (optional): a string naming the equivalence group this tool competes in for
-  `$DFConfig.Defaults` resolution (e.g. `"listing"`). No central registry — see
-  `ToolAcquisitionSpec.md` §10.1a and `docs/plugin-architecture.md`.
+- `roles` (optional): the roles this tool joins, an object keyed by role name; each value is
+  `{ priority, env, aliases }` (`"grep": {}` for a category). Roles are defined in `data/roles.json`
+  (keyed by role, never by tool). Only the role's winner (`$DFConfig.Defaults`, else highest priority)
+  gets the block's `env`/`aliases` and its hook: a plain `function Initialize-DFRole<Role>` in the
+  sidecar, called by `Invoke-DFToolCompanion`. A role's reserved env vars and aliases may appear only
+  in role blocks, and its reserved code only in the hook; `tests/Roles.Contract.Tests.ps1` enforces
+  it. The legacy `role` string still loads. Read `docs/superpowers/specs/2026-10-05-roles-v2-design.md`
+  before adding a role.
 
 ## External Dependencies
 

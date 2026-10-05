@@ -167,7 +167,7 @@ Register-DFTool -Name ripgrep
 
 ## Next steps
 
-- [Configuration](configuration.md): every `$DFConfig` setting, themes, and choosing between competing tools.
+- [Configuration](configuration.md): every `$DFConfig` setting, themes, and choosing which tool fills each role.
 - [Tools](tools.md): the 43 tools DotForge configures, and the commands each one adds.
 - [Pickers and helpers](pickers-and-helpers.md): the fuzzy pickers and general commands you get from importing the module.
 - [Package catalog](package-catalog.md): `trifle`, which searches every package catalog at once.
