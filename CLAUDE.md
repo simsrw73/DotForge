@@ -39,7 +39,7 @@ DotForge/
 ├── Tools/           # Per-tool JSON + optional .ps1
 ├── docs/            # Specs and implementation plans
 ├── examples/        # Profile usage examples
-└── tests/           # Pester 5 tests
+└── tests/           # Pester 6 tests
 ```
 
 ## Conventions
@@ -82,7 +82,7 @@ Load module for development:
 Import-Module ./DotForge.psd1 -Force
 ```
 
-Pester 5 or 6 (the suite passes under both Pester 5.8 and 6.0.1). Run all tests:
+Pester 6 (verified with 6.2.0). Pester 5 is no longer supported or tested. Run all tests:
 
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference

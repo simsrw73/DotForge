@@ -15,7 +15,7 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 ./Publish-DotForge.ps1
 ```
 
-`Import-Module` reloads the local module for development. `Invoke-Pester tests/` runs the full Pester 5 suite; use a single test file while iterating. Run tests from `pwsh -NoProfile` when profile state could affect results. `Publish-DotForge.ps1` is the release helper; do not run it unless preparing a publish.
+`Import-Module` reloads the local module for development. `Invoke-Pester tests/` runs the full Pester 6 suite; use a single test file while iterating. Run tests from `pwsh -NoProfile` when profile state could affect results. `Publish-DotForge.ps1` is the release helper; do not run it unless preparing a publish.
 
 ## Coding Style & Naming Conventions
 
@@ -23,7 +23,7 @@ Use four-space indentation in PowerShell files and keep functions focused. Publi
 
 ## Testing Guidelines
 
-Tests use Pester 5 and follow `*.Tests.ps1` naming. Add or update tests with behavior changes, new cmdlets, tool schema changes, or sidecar logic. Mock external tools where possible; avoid spawning interactive processes such as `fzf` in tests.
+Tests use Pester 6 (Pester 5 is not supported) and follow `*.Tests.ps1` naming. Add or update tests with behavior changes, new cmdlets, tool schema changes, or sidecar logic. Mock external tools where possible; avoid spawning interactive processes such as `fzf` in tests.
 
 ## Commit & Pull Request Guidelines
 
