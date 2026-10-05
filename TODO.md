@@ -105,6 +105,26 @@
   table and no `switch ($tool.name)`. Each tool's JSON declares its own behavior-to-flag map,
   and the role spec lives outside any single tool (or is aggregated at build time). Brainstorm
   and write a spec before building it.
+- [ ] **Per-directory environment tools: alternatives to `direnv`, each zero-config (requested
+  2026-10-05)** — `direnv` (`Tools/direnv.json`/`.ps1`) is not usable as shipped on Windows: it
+  needs a `direnv.toml` pointing at Git Bash (`bash_path`), which DotForge never writes, and it
+  is buggy on Windows (it unloads variables it should leave alone). Add competing plugins that
+  each work with no further user config:
+  - **`ps-dotenv`** — the likely pick for the user's own config. It ships from a third-party
+    scoop bucket (`scoop bucket add insomnia https://github.com/insomnimus/scoop-bucket`), and
+    the tool schema/`Install-DFTool` has no way to declare a bucket yet. That needs a
+    declarative per-tool field (plugin invariant: no tool-name special-casing in core).
+  - **`mise`** — covers this job plus much more (tool versions, tasks). Decide how much of mise
+    DotForge configures beyond its env/hook role.
+  - **Others** — survey for more Windows-capable alternatives.
+  - **`direnv`** — fix or document it: write the Git Bash `bash_path` config (via the
+    setup-lifecycle primitive if it touches a user-owned file), and record the variable-unloading
+    bug in `docs/external-dependencies.md` / the conformance ledger.
+  - **Mutual exclusion**: give all of them a shared `role` (e.g. `"project-env"`), so only the
+    `$DFConfig.Defaults` winner registers its hook. Two active hooks would fight over the same
+    variables. Confirm the `role` mechanism actually suppresses losers' hooks (today it is used
+    only for `listing`: eza/lsd aliases), not just their aliases.
+  - Brainstorm and write a spec before building it.
 - [ ] **Audit theming mechanisms for silent-override risk against the user's own pre-existing
   config (found 2026-09-04, during the delta catppuccin investigation)** — the governing
   principle: the user must be able to easily *see* what DotForge changed and have an easy way
