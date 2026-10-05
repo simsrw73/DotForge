@@ -96,9 +96,10 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 
 ## Before Commiting
 
-- Update README.md with any changes.
-- Update .\examples with any changes.
-- **Every public function must have complete comment-based help**: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each param, at least one `.EXAMPLE`, and `.OUTPUTS`. When adding or modifying a public function, verify its help block is complete before committing. Run `Get-Help <FunctionName> -Full` to confirm `Get-Help` renders all sections correctly.
+- Update the user docs with any changes: the relevant page in `docs/guide/` (README.md is a short landing page; keep it that way), and `.\examples`.
+- **Regenerate the reference**: `./build/Build-DFReferenceDocs.ps1` rewrites `docs/reference.md` from comment-based help and `Tools/*.json`. Never edit `docs/reference.md` by hand; `tests/Docs.Reference.Tests.ps1` fails when it is stale.
+- **Every public function, and every global function a `Tools/*.ps1` companion defines, must have complete comment-based help**: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each param, at least one `.EXAMPLE` (code, then a blank line, then prose), and `.OUTPUTS`. `tests/Docs.Help.Tests.ps1` enforces this. Run `Get-Help <FunctionName> -Full` to confirm `Get-Help` renders all sections correctly.
+- **Doc code blocks run.** `tests/Docs.Examples.Tests.ps1` runs every ```` ```powershell ```` block in README.md, `examples/README.md` and `docs/guide/*.md` in a sandbox and compares a following ```` ```text ```` block with the real output. Mark blocks that need a person (`<!-- interactive -->`), the network (`<!-- network -->`, read-only lookups), or change the machine outside the sandbox — installs, elevation, scheduled tasks, global git config, clipboard (`<!-- system -->`). **Never leave a state-changing block unmarked**: unmarked blocks are executed. Rules for markers and output wildcards are at the top of `build/DFDocExamples.ps1`.
 
 ## Releasing
 

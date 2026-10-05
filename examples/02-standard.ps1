@@ -42,13 +42,18 @@ $DFConfig = @{
 
 Import-Module DotForge
 
+# Always first: sets the XDG variables every tool companion relies on.
+Initialize-DFEnvironment
+
 # ── First-run bootstrap ────────────────────────────────────────────────────────
-# Install core tools if any are missing. Only passes absent tools to
-# Install-DFTool — tools already on PATH are filtered out by $missing.
+# Install core tools if any are missing. Each tool's record knows its real
+# executable name (ripgrep's is rg.exe), so check that rather than "<name>.exe";
+# only absent tools are passed to Install-DFTool.
 $coreTools = @('eza', 'bat', 'fzf', 'ripgrep', 'zoxide', 'fd', 'delta', 'gh')
-$missing = $coreTools | Where-Object { -not (Get-Command "$_.exe" -ErrorAction Ignore) }
+$missing = $coreTools | Where-Object {
+    -not (Get-Command (Get-DFTool -Name $_).executable -ErrorAction Ignore)
+}
 if ($missing) {
-    Initialize-DFEnvironment
     Install-DFTool -Name $missing
 }
 

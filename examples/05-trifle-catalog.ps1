@@ -1,4 +1,5 @@
 # 05 — Package catalog info (trifle)
+# docs-test: parse-only (interactive and network; see docs/guide/package-catalog.md)
 #
 # Find-DFPackage (alias: trifle) answers "what is this tool, is it installed,
 # where from, and what do the catalogs carry?" across scoop, winget, choco,

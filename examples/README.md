@@ -1,48 +1,59 @@
-# DotForge Profile Examples
+# DotForge profile examples
 
-Copy one of these as your `$PROFILE` starting point, or use them as reference
-when integrating DotForge into an existing profile.
+**Audience:** DotForge users setting up or reorganizing their PowerShell profile.  
+**Topic:** complete example profiles to copy, and what each one is for.  
+**Goal:** pick the example closest to what you want and use it as your `$PROFILE`.
+
+Copy one of these files as your `$PROFILE` starting point, or borrow parts of them. Examples 01–04 are complete profiles that the test suite runs in a sandbox; 05–07 are walkthroughs of interactive commands.
 
 | File | When to use |
-|------|-------------|
-| `01-minimal.ps1` | Getting started, CI, shared machines — zero config |
-| `02-standard.ps1` | Typical developer setup with $DFConfig and first-run bootstrap |
-| `03-selective.ps1` | Lean startup — register tools by group, not all at once |
-| `04-vscode-fastpath.ps1` | Full profile with VS Code terminal detection and early return |
-| `05-trifle-catalog.ps1` | Package catalog info (`trifle`) usage + scheduled cache refresh |
-| `06-winget-pickers.ps1` | winget fuzzy pickers (`wins`/`wrm`/`wup`) with preview + keybindings |
-| `07-scoop-choco-pickers.ps1` | scoop (`sins`/`srm`/`sup`) and choco (`cins`/`crm`/`cup`) fuzzy pickers |
+| --- | --- |
+| `01-minimal.ps1` | Getting started, CI, shared machines: no configuration |
+| `02-standard.ps1` | A typical setup: `$DFConfig`, plus installing missing core tools on first run |
+| `03-selective.ps1` | A lean startup: register tools in groups instead of all at once |
+| `04-vscode-fastpath.ps1` | A full profile with a lighter path for VS Code's terminal |
+| `05-trifle-catalog.ps1` | Package catalog lookups (`trifle`) and a scheduled cache refresh |
+| `06-winget-pickers.ps1` | winget pickers (`wins`, `wrm`, `wup`) and their keys |
+| `07-scoop-choco-pickers.ps1` | scoop (`sins`, `srm`, `sup`) and Chocolatey (`cins`, `crm`, `cup`) pickers |
+
+## Quick start
+
+The smallest useful profile, the same as `01-minimal.ps1`:
+
+```powershell
+Import-Module DotForge
+Initialize-DFEnvironment
+Register-DFTool -All
+```
 
 ## Common patterns
 
-### First-run bootstrap
+### Install missing tools on first run
+
+Each tool record knows its real executable (ripgrep's is `rg.exe`), so check that instead of guessing:
 
 ```powershell
-$missing = @('eza', 'bat', 'fzf', 'ripgrep') |
-    Where-Object { -not (Get-Command "$_.exe" -ErrorAction Ignore) }
-if ($missing) { Install-DFTool -Name $missing }
+Import-Module DotForge
+Initialize-DFEnvironment
+$missing = @('eza', 'bat', 'fzf', 'ripgrep') | Where-Object {
+    -not (Get-Command (Get-DFTool -Name $_).executable -ErrorAction Ignore)
+}
+if ($missing) { Install-DFTool -Name $missing -WhatIf }
 ```
 
-### Pick a winner between competing tools
-
-`eza` and `lsd` both declare `role: 'listing'` and compete for `ls`/`ll`/`la`/`tree`.
-`Defaults` names the winner; the loser keeps everything else it declares (XDG
-config, other aliases) — only the contested alias keys are suppressed.
-
-```powershell
-$DFConfig = @{ Defaults = @{ listing = 'eza' } }
-```
-
-### Skip a tool entirely
-
-```powershell
-$DFConfig = @{ SkipTools = @('lsd') }  # don't register lsd at all
-```
+Remove `-WhatIf` to install for real.
 
 ### Query the registry
 
 ```powershell
-Get-DFTool -Tag pager          # → less, moor, delta
-Find-DFTool -Pattern 'rust'    # → rustup, cargo
-Get-DFTool -Name ripgrep       # → full record with packages, xdg, completions
+Import-Module DotForge
+Get-DFTool -Tag pager | Sort-Object name | Select-Object -ExpandProperty name
 ```
+
+```text
+bat
+delta
+less
+```
+
+For themes, choosing between eza and lsd, and skipping tools, see the [configuration guide](../docs/guide/configuration.md). For everything else, start at the [documentation index](../README.md#documentation).

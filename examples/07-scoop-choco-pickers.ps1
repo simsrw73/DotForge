@@ -1,11 +1,12 @@
 # 07 — scoop & choco fuzzy pickers
+# docs-test: parse-only (interactive; see docs/guide/tools.md)
 #
 # The same picker workflow as the winget set (see 06-winget-pickers.ps1),
 # applied to scoop and Chocolatey. Each has a live `<pm> info` preview pane and
 # the same keys: Enter (command / act), Alt-R install, Alt-I/Alt-X in place,
 # Alt-C command, Tab + Alt-A for bulk update.
 #
-# Requires fzf on PATH (or $Env:Picker = 'skim').
+# Requires fzf on PATH (or $Env:Picker = 'sk' for skim).
 
 Import-Module DotForge
 Initialize-DFEnvironment
@@ -23,8 +24,9 @@ sup                # installed apps → Tab-mark several → Enter updates them
 
 # ── choco (cins / crm / cup) ────────────────────────────────────────────────
 # No object module exists, so these use choco's machine-readable `-r` output.
-# install/uninstall/upgrade need elevation: they run via gsudo when it is on
-# PATH, otherwise Enter on the search picker returns the command to run elevated.
+# install/uninstall/upgrade need elevation: they run via gsudo when gsudo is
+# registered (DotForge's sudo alias), otherwise choco fails without admin rights;
+# Enter on the search picker returns the command to run in an elevated shell.
 cins ripgrep       # search → Enter prints `choco install ripgrep -y`; Alt-R installs (gsudo)
 crm                # installed packages → uninstall
 cup                # outdated packages → Tab-mark → Enter upgrades; Alt-A upgrades all

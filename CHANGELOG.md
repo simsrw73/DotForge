@@ -6,8 +6,20 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **User documentation, rewritten and tested.** The 785-line README is now a short landing page
+  linking to task-based guides in `docs/guide/` (getting started, configuration, tools, pickers
+  and helpers, completion, package catalog, coreutils conflicts, troubleshooting, safety, writing
+  a tool record). `docs/reference.md` is generated from comment-based help and the tool records by
+  `build/Build-DFReferenceDocs.ps1`; `tests/Docs.Reference.Tests.ps1` fails when it is stale.
+  `tests/Docs.Examples.Tests.ps1` runs every documentation code block and example profile in a
+  sandbox (throwaway home, no XDG or tool variables, private git config) and compares shown
+  output; blocks marked `interactive`, `network` or `system` are parse-checked only.
+  `tests/Docs.Links.Tests.ps1` checks every relative link and anchor.
+- **Complete comment-based help for every companion function** (`fco`, `wins`, `glow`, `fprl`,
+  …): `Get-Help <name> -Full` now works for all of them, and `tests/Docs.Help.Tests.ps1` enforces
+  complete help for exported and companion functions alike.
 - **`starship` prompt tool.** `Tools/starship.json` points `STARSHIP_CONFIG` at
-  `$XDG_CONFIG_HOME/starship.toml` and `STARSHIP_CACHE` at `$XDG_CACHE_HOME/starship`.
+  `$XDG_CONFIG_HOME/starship/starship.toml` and `STARSHIP_CACHE` at `$XDG_CACHE_HOME/starship`.
   `Tools/starship.ps1` initializes the prompt from cached `starship init powershell
   --print-full-init` output, which is regenerated when starship is upgraded. starship's
   `Enable-TransientPrompt`/`Disable-TransientPrompt` are re-imported globally so a profile can
@@ -15,6 +27,25 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`open <url>` failed with "Cannot find drive 'https'".** `Open-DFItem` passed URLs to
+  `Invoke-Item`; anything with a `scheme://` now goes through `Start-Process`.
+- **`reload` dropped the profile's functions, aliases and variables.** `Invoke-DFProfileReload`
+  dot-sourced `$PROFILE` inside the module function, so only environment variables survived; it
+  now runs the profile in the caller's session state.
+- **`fga` staged the wrong path for unstaged changes and renames.** It split `git status --short`
+  lines on whitespace, so ` M file` became `M file`; it now reads the fixed `XY PATH` layout and
+  stages the new path of a rename.
+- **`which` returned every match on `PATH`, and `-All` did nothing.** It now returns the first
+  match (the one that runs) and lists all of them only with `-All`.
+- **`examples/02-standard.ps1` reinstalled ripgrep on every shell start**, because it checked for
+  `ripgrep.exe` instead of `rg.exe`, and skipped `Initialize-DFEnvironment` once nothing was
+  missing. **`examples/04-vscode-fastpath.ps1`** said its VS Code path skipped oh-my-posh but
+  registered it anyway.
+- **The `ff` and `ffd` pickers said "Enter to open"** but output the path; the headers now say so.
+- **Help and documentation errors:** `$Env:Picker = 'skim'` (skim's executable is `sk`),
+  `Get-DFCategoryList -Counts:$false` described as a bare list, non-runnable `Invoke-DFPicker`
+  examples, `POSH_THEMES_PATH` described as set by the oh-my-posh installer, and registry examples
+  naming tools that don't exist.
 - **zoxide could register before the prompt engine, which then replaced zoxide's prompt hook and
   silently stopped directory tracking.** The docs said registration was alphabetical, but the tool
   DB is a hashtable, so the order was hash order and varied between processes. `Tools/zoxide.json`

@@ -1,11 +1,12 @@
 # 06 — winget fuzzy pickers (wins / wrm / wup)
+# docs-test: parse-only (interactive; see docs/guide/tools.md)
 #
 # Interactive winget workflows built on Invoke-DFPicker + fzf, with a live
 # `winget show` preview pane. Package data comes from the Microsoft.WinGet.Client
 # module (objects, not scraped CLI tables), so filtering matches name OR id.
 #
 # Requires:
-#   - fzf on PATH (or set $Env:Picker = 'skim')
+#   - fzf on PATH (or set $Env:Picker = 'sk' for skim)
 #   - the Microsoft.WinGet.Client module:
 #       Install-Module Microsoft.WinGet.Client -Scope CurrentUser
 #     (the pickers warn and no-op if it is missing)
