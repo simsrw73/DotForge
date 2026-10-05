@@ -44,7 +44,7 @@
     "preview": "bat --color=always --line-range=:200 {}",
     "preview_window": "right:60%",
     "ansi": true,
-    "header": "Select file  [Enter to open]",
+    "header": "Select file  [Enter to output path]",
     "action": "output"
   }
 }

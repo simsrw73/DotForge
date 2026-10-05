@@ -11,6 +11,11 @@
 # Only the --config and -s flags work reliably, hence this wrapper.
 # adapter for glow/honors-env:GLOW_CONFIG_DIR
 # See docs/external-dependencies.md.
+#
+# Reads: $DFConfig.GlowTheme, then $DFConfig.Theme, then settings.theme in glow.json;
+# settings.configFile (default ${XDG_CONFIG_HOME}/glow/glow.yml).
+# Defines: glow (wrapper), Resolve-DFGlowStyle, $global:DFGlowStyle.
+# Writes: creates the config file's directory only; glow.yml itself is yours.
 
 # 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
@@ -29,6 +34,26 @@ Set-Item -Path 'function:global:Resolve-DFGlowStyle' -Value ({
     <#
     .SYNOPSIS
         Resolves a glow style name to the value handed to glow's -s flag.
+    .DESCRIPTION
+        Tries, in order: -Name as a full path to an existing file; then
+        $XDG_CONFIG_HOME\glow\themes\<Name>.json; then DotForge's bundled
+        Tools\glow\<Name>.json (catppuccin-mocha ships there); then glow's own
+        built-in styles (auto, dark, light, dracula, pink, notty, ascii,
+        tokyo-night), returned as the bare name. Anything else warns and
+        returns 'auto', because glow exits with an error on an unknown style.
+
+        Defined by DotForge's glow companion. To switch the style for the rest
+        of the session, assign the result to $global:DFGlowStyle.
+    .PARAMETER Name
+        A style name or the full path to a glamour style JSON file.
+    .EXAMPLE
+        $global:DFGlowStyle = Resolve-DFGlowStyle -Name dracula
+
+        Switches every later glow call in this session to the dracula style.
+    .OUTPUTS
+        System.String. A style file path or a glow built-in style name.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -65,6 +90,30 @@ $global:DFGlowStyle = Resolve-DFGlowStyle -Name $_theme
 #    a piped `'# Hi' | glow` hangs, because a function with no process block swallows
 #    the pipeline and glow.exe then blocks on the inherited console stdin.
 Set-Item -Path 'function:global:glow' -Value ({
+    <#
+    .SYNOPSIS
+        Runs glow with DotForge's config file and the current session style.
+    .DESCRIPTION
+        Wraps glow.exe and always passes --config <glow.yml> and -s <style>,
+        because glow ignores its environment variables on Windows. The style is
+        read from $global:DFGlowStyle on every call, so assigning to it switches
+        the theme immediately; when it is empty, 'auto' is used. Other
+        arguments, glow's subcommands and piped input pass through unchanged.
+
+        Defined by DotForge's glow companion.
+    .EXAMPLE
+        glow README.md
+
+        Renders a Markdown file with the configured style.
+    .EXAMPLE
+        Get-Content notes.md | glow
+
+        Renders piped Markdown.
+    .OUTPUTS
+        System.String. The rendered Markdown.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     $_s = if ($global:DFGlowStyle) { $global:DFGlowStyle } else { 'auto' }
     if ($MyInvocation.ExpectingInput) {
         $input | & glow.exe --config $_cfg -s $_s @args

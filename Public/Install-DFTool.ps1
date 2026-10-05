@@ -5,32 +5,61 @@ function Install-DFTool {
     .SYNOPSIS
         Installs one or more known CLI tools via the first available package manager
         that has a package entry for each tool.
-    .PARAMETER Name
-        One or more tool names to install (must exist in the tool registry).
-    .PARAMETER PackageManager
-        Override the package manager for this call (scoop | winget | choco | psresource | cargo).
-    .PARAMETER ToolsPath
-        Override the tools directory (used in tests).
     .DESCRIPTION
-        Looks up each tool in the JSON registry, determines which package managers
-        are available, and installs via the first compatible one. Package manager
-        preference order uses -PackageManager override, then $DFConfig['PackageManagerOrder'],
-        then auto-detected order. cargo is tried as a per-tool last resort when a tool
-        declares a packages.cargo entry. Supports -WhatIf.
+        Looks up each tool in the JSON registry (Tools/<name>.json) and walks a
+        package-manager preference list, installing through the first manager
+        that is on PATH and has a package id in the tool's "packages" map.
+
+        The preference list is, in order of precedence: -PackageManager, then
+        $DFConfig['PackageManagerOrder'], then the auto-detected order
+        (scoop, winget, choco). cargo is appended as a last resort for any tool
+        that declares packages.cargo, unless -PackageManager pins a manager.
+
+        Commands run, per manager:
+            scoop       scoop install <id>
+            winget      winget install --id <id> --silent --accept-source-agreements --accept-package-agreements
+            choco       choco install <id> -y        (needs an elevated shell)
+            cargo       cargo install <id>
+            psresource  Install-PSResource -Name <id> -Scope CurrentUser
+
+        The package manager's own output is discarded; each attempt prints one
+        progress line ("Installing <tool> via <pm> (<id>)… ✓" or "failed"). A
+        failure moves on to the next manager. An unknown tool name, or a tool no
+        available manager can install, writes a warning and continues with the
+        next name. Supports -WhatIf and -Confirm.
+
+        Installing does not configure the tool. Run Register-DFTool -Name <tool>
+        (or start a new session) afterwards.
+    .PARAMETER Name
+        One or more tool names to install. Each must match a Tools/<name>.json
+        record; list them with Get-DFTool.
+    .PARAMETER PackageManager
+        Use only this package manager for the call: scoop, winget, choco,
+        psresource, or cargo. Default: the preference list described above.
+    .PARAMETER ToolsPath
+        Read tool records from this directory instead of the module's Tools
+        folder. Intended for tests.
     .EXAMPLE
         Install-DFTool -Name ripgrep
+
         Installs ripgrep via scoop, winget, or choco — whichever is available first.
     .EXAMPLE
         Install-DFTool -Name ripgrep, bat, eza
+
         Installs multiple tools in one call.
     .EXAMPLE
         Install-DFTool -Name ripgrep -PackageManager winget
+
         Forces installation via winget regardless of preference order.
     .EXAMPLE
         Install-DFTool -Name ripgrep -WhatIf
+
         Shows what would be installed without executing.
     .OUTPUTS
-        None
+        None. Writes progress to the host and installs software through the
+        chosen package manager.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]

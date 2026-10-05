@@ -7,18 +7,25 @@ function Invoke-DFHelp {
     .PARAMETER Name
         The name of the command, function, or alias to look up.
     .DESCRIPTION
-        Fetches full help via Get-Help, optionally applies ANSI yellow highlighting
-        to section headings (when the terminal supports VT sequences and NO_COLOR is
-        not set), then sends the result through Invoke-DFWithPager for scrollable
-        output.
+        Fetches full help via Get-Help -Full, highlights the section headings
+        (NAME, SYNTAX, PARAMETERS, …) in bold yellow when the terminal supports
+        VT sequences and $Env:NO_COLOR is not set, then sends the result through
+        Invoke-DFWithPager, so it is paged when $Env:Pager is set and printed
+        otherwise. For an external program's --help output, use Show-DFCliHelp
+        (clh) instead.
     .EXAMPLE
         Invoke-DFHelp Get-ChildItem
+
         Shows full colorized help for Get-ChildItem in the configured pager.
     .EXAMPLE
-        hm git
-        Shows help for the git command using the hm alias.
+        hm about_Splatting
+
+        Shows a conceptual help topic using the hm alias.
     .OUTPUTS
-        None
+        System.String when $Env:Pager is unset; otherwise none (output goes to
+        the pager).
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -43,19 +50,24 @@ function Select-DFCommand {
     .SYNOPSIS
         Fuzzy-searches all available commands and returns the selected command name.
     .PARAMETER Module
-        Optional module name to restrict the command list.
+        Restrict the list to commands from this module. Default: all commands.
     .DESCRIPTION
         Lists all commands (or those from a specific module) in fzf with a preview
         pane showing Get-Help output. Returns the selected command name so it can
-        be used in further expressions or passed to Invoke-DFHelp.
+        be used in further expressions or passed to Invoke-DFHelp. Returns
+        nothing when you press Esc. Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFCommand
+
         Opens fzf over all available commands; returns the selected command name.
     .EXAMPLE
         fcmd -Module DotForge
+
         Restricts the command list to DotForge functions using the fcmd alias.
     .OUTPUTS
         System.String — the name of the selected command.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -80,15 +92,20 @@ function Select-DFVerb {
     .DESCRIPTION
         Presents all approved PowerShell verbs with their group (Lifecycle, Data,
         etc.) in fzf for quick lookup when naming new functions. Returns the verb
-        string so it can be used directly in a function name.
+        string so it can be used directly in a function name, or nothing when you
+        press Esc. Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFVerb
+
         Opens fzf over approved verbs; outputs the selected verb name.
     .EXAMPLE
         fverb
+
         Same as above using the fverb alias.
     .OUTPUTS
         System.String — the selected PowerShell verb.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param()
@@ -106,15 +123,20 @@ function Select-DFModule {
     .DESCRIPTION
         Lists all modules available via Get-Module -ListAvailable in fzf, displaying
         name, version, and description. Returns the selected module name so it can
-        be passed to Import-Module or inspected further.
+        be passed to Import-Module or inspected further, or nothing when you press
+        Esc. Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFModule
+
         Opens fzf over all available modules; outputs the selected module name.
     .EXAMPLE
         fmod
+
         Same as above using the fmod alias.
     .OUTPUTS
         System.String — the name of the selected module.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param()
@@ -131,26 +153,37 @@ function Select-DFHelpTopic {
     .SYNOPSIS
         Fuzzy-searches all available PS help topics and opens the selected topic in Invoke-DFHelp.
     .PARAMETER Category
-        Optional. Filters topics by Get-Help category (Cmdlet, Function, HelpFile, Module, etc.).
-        No ValidateSet — accepts any string so future PS categories work without a code change.
+        Show only topics in this Get-Help category: Cmdlet, Function, Alias,
+        HelpFile (conceptual about_* topics), and so on. Any string is accepted;
+        an unknown category shows an empty list. Default: all categories.
     .PARAMETER Force
-        Bypass the topic list cache and regenerate from Get-Help *.
+        Ignore the cached topic list and rebuild it from Get-Help *.
     .DESCRIPTION
-        Builds (and caches) the full list of Get-Help topics, presents them in fzf
-        with a live preview pane, and opens the selected topic through Invoke-DFHelp.
-        Requires $Env:XDG_CACHE_HOME to be set for the topic list cache to persist
-        between sessions.
+        Builds the full list of Get-Help topics, presents them in fzf with a live
+        preview pane, and opens the selected topic through Invoke-DFHelp.
+
+        Building the list runs Get-Help *, which takes several seconds, so it is
+        cached in $XDG_CACHE_HOME\dotforge\help-topics.txt and rebuilt
+        automatically when the set of installed modules changes. -Force rebuilds
+        it anyway. $Env:XDG_CACHE_HOME must be set (Initialize-DFEnvironment
+        sets it); otherwise the function warns and shows an empty list.
+        Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFHelpTopic
+
         Opens fzf over all help topics; selecting one displays it in the pager.
     .EXAMPLE
         fh -Category HelpFile
+
         Filters to conceptual about_* help files before opening fzf.
     .EXAMPLE
         fh -Force
+
         Rebuilds the topic cache from Get-Help * before showing fzf.
     .OUTPUTS
         None
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -184,6 +217,12 @@ function Show-DFCliHelp {
         flag is auto-detected (and cached) via Resolve-DFCliHelpFlag. Colorization is
         suppressed when $Env:NO_COLOR is set or the terminal lacks VT support. With -Paged
         the result is sent through Invoke-DFWithPager.
+
+        Auto-detection tries --help, -help, -?, help, and -h, and caches the flag
+        that worked per command in $XDG_CACHE_HOME\dotforge\cli-help-flags.json.
+        Warns and returns nothing when the command isn't found or no flag works.
+        Side effects: runs the command with the help flag (possibly several times
+        while detecting).
     .PARAMETER Name
         The external command to show help for (e.g. git, eza, docker).
     .PARAMETER Flag
@@ -194,15 +233,20 @@ function Show-DFCliHelp {
         Re-detect the help flag, ignoring and overwriting any cached value.
     .EXAMPLE
         Show-DFCliHelp eza
+
         Detects eza's help flag, colorizes the help, prints it to the terminal.
     .EXAMPLE
-        clh git -Flag --tree
+        clh git -Flag --help
+
         Uses the clh alias with an explicit flag instead of auto-detection.
     .EXAMPLE
         clhp docker
+
         Shows colorized docker help through the pager.
     .OUTPUTS
         System.String — the colorized help text (unless -Paged, which writes to the pager).
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -256,12 +300,16 @@ function Show-DFCliHelpPaged {
         Re-detect the help flag, ignoring any cached value.
     .EXAMPLE
         Show-DFCliHelpPaged eza
+
         Shows colorized eza help through the configured pager.
     .EXAMPLE
         clhp git
+
         Same as above using the clhp alias.
     .OUTPUTS
         None. Output is written to the pager.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(

@@ -5,6 +5,17 @@ function Expand-DFXdgPath {
     .SYNOPSIS
         Expands ${XDG_*} placeholder tokens in a template string to their
         actual environment variable values.
+    .DESCRIPTION
+        Replaces ${XDG_CONFIG_HOME}, ${XDG_DATA_HOME}, ${XDG_STATE_HOME} and
+        ${XDG_CACHE_HOME} (case-sensitive) with the current env var values.
+        A template that contained a token is a path, so the result is
+        canonicalized with ConvertTo-DFPath. A template with no token (flag
+        strings like LESS or FZF_DEFAULT_OPTS) is returned byte-for-byte.
+        Used for every value in a tool's xdg.vars and env blocks.
+    .PARAMETER Template
+        The string to expand, e.g. '${XDG_CONFIG_HOME}/bat'.
+    .OUTPUTS
+        System.String.
     #>
     [CmdletBinding()]
     [OutputType([string])]

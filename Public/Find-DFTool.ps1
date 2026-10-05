@@ -5,21 +5,31 @@ function Find-DFTool {
     .SYNOPSIS
         Searches the DotForge tool registry by wildcard pattern across name,
         description, and tags.
-    .PARAMETER Pattern
-        Wildcard pattern to match (e.g. 'rip', 'grep*', '*viewer*').
-    .PARAMETER ToolsPath
-        Override the tools directory (used in tests).
     .DESCRIPTION
-        Performs a wildcard search across each tool's name, description, and tags.
-        Useful for discovering tools in the registry by keyword.
+        Performs a case-insensitive wildcard search across each tool's name,
+        description, and tags, and returns every record with at least one match.
+        The pattern is wrapped in '*...*', so a plain word matches anywhere.
+        Useful for discovering tools in the registry by keyword. Searches only
+        DotForge's own tool records; to search package-manager catalogs, use
+        Find-DFPackage. Read-only; changes nothing.
+    .PARAMETER Pattern
+        Text or wildcard pattern to match (e.g. 'rip', 'grep*', 'mark?own').
+        Matched as '*<Pattern>*'.
+    .PARAMETER ToolsPath
+        Read tool records from this directory instead of the module's Tools
+        folder. Intended for tests.
     .EXAMPLE
         Find-DFTool 'grep'
+
         Returns all tools whose name, description, or tags contain 'grep'.
     .EXAMPLE
         Find-DFTool '*pager*' | Select-Object name
+
         Lists tool names that relate to paging.
     .OUTPUTS
         PSCustomObject — matching tool registry records.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]

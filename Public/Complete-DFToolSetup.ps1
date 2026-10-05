@@ -29,12 +29,18 @@ function Complete-DFToolSetup {
         Complete-DFToolSetup -Name 'delta' -Actions @(
             @{ type = 'gitConfigInclude'; path = $resolvedIncludePath }
         )
+
         Records that delta's setup ran, and what it changed.
     .EXAMPLE
         Complete-DFToolSetup -Name 'mdv'
+
         Records that mdv's setup ran, with no actions to report.
     .OUTPUTS
-        None
+        None. Writes $XDG_STATE_HOME\dotforge\setup-state.json (atomically,
+        through a temp file). Warns and does nothing when XDG_STATE_HOME is
+        not set.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/writing-a-tool.md
     #>
     [CmdletBinding()]
     param(

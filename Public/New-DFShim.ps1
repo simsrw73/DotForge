@@ -13,8 +13,8 @@ function New-DFShim {
         code. Put the shims directory on $PATH once and create shims as needed.
         Accepts a DotForge tool name (DB lookup) or an explicit -Target path.
     .PARAMETER Target
-        Path to the target executable. Positional — can be passed without the
-        parameter name. Bypasses tool DB lookup. When -Name is omitted, the shim
+        Path to the target executable; must be an existing file. Bypasses the
+        tool registry lookup. When -Name is omitted, the shim
         name is derived from the target's basename (without extension).
     .PARAMETER Name
         Shim filename (without .cmd extension). When -Target is omitted, also
@@ -29,22 +29,33 @@ function New-DFShim {
         Override the tools directory (used in tests).
     .EXAMPLE
         New-DFShim 'C:\tools\grep\grep.exe'
+
         Creates $HOME\.local\bin\grep.cmd; name derived from the executable basename.
     .EXAMPLE
         New-DFShim -Name ripgrep
+
         Creates $HOME\.local\bin\ripgrep.cmd pointing at the ripgrep executable
         found via the DotForge tool registry. Warns if $HOME\.local\bin is not on PATH.
     .EXAMPLE
         New-DFShim 'C:\tools\myapp\myapp.exe' -Name myapp
+
         Creates a shim with an explicit name, bypassing name derivation.
     .EXAMPLE
         New-DFShim 'C:\tools\myapp\myapp.exe' -Force
+
         Overwrites an existing shim.
     .EXAMPLE
         New-DFShim -Name ripgrep -WhatIf
+
         Shows what would be created without writing any file.
     .OUTPUTS
-        None
+        None. Writes <ShimsPath>\<Name>.cmd, creating the directory if needed.
+        Errors (non-terminating) when neither -Target nor -Name is given, the
+        target doesn't exist, the tool is unknown or not installed, or the shim
+        already exists without -Force. Warns when the shims directory is not on
+        PATH.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([void])]

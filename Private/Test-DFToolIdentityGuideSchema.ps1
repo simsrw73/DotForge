@@ -28,6 +28,14 @@ function Test-DFToolIdentityGuideSchema {
     $errs = [System.Collections.Generic.List[string]]::new()
 
     function PSProp ([PSCustomObject]$obj, [string]$key) {
+        <#
+        .SYNOPSIS
+            StrictMode-safe property read: $obj.<key>, or $null when $obj or the property is absent.
+        .PARAMETER obj
+            The object to read from; may be $null.
+        .PARAMETER key
+            The property name.
+        #>
         if ($null -eq $obj) { return $null }
         $p = $obj.PSObject.Properties[$key]
         if ($p) { return $p.Value } else { return $null }

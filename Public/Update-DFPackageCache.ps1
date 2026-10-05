@@ -18,18 +18,25 @@ function Update-DFPackageCache {
         run while an interactive session is open — all cache writes are atomic
         renames, so last writer wins and both stay valid.
     .PARAMETER Source
-        Restrict the refresh to these catalogs.
+        Restrict the refresh to these catalogs: scoop, winget, choco, npm, pypi,
+        crates, psgallery. Default: all seven.
     .PARAMETER Quiet
         Suppress progress output (Task Scheduler mode); warnings still flow.
     .EXAMPLE
         Update-DFPackageCache
+
         Full refresh with progress messages.
     .EXAMPLE
         pwsh -NoProfile -Command "winget source update; Import-Module DotForge; Update-DFPackageCache -Quiet"
+
         The Task Scheduler action for a nightly catalog refresh. `winget source
         update` runs first — see NOTES for why.
     .OUTPUTS
-        None.
+        None. Writes cache files under $XDG_CACHE_HOME\dotforge\catalogs and
+        makes the same network requests as Find-DFPackage, once per cached
+        query and detail entry.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/package-catalog.md
     .NOTES
         Winget caveat: the winget catalog is read from the source.msix that
         winget itself downloads, and winget only refreshes that file when

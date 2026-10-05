@@ -5,7 +5,8 @@ function Invoke-DFPicker {
     .SYNOPSIS
         Generalized fzf picker. Handles list -> fzf -> parse -> action skeleton.
     .PARAMETER List
-        Scriptblock that produces the items to display in fzf.
+        Scriptblock that produces the items to display in fzf, one per line.
+        Objects are converted to strings. Required.
     .PARAMETER Header
         Header text shown at the top of the fzf window.
     .PARAMETER Preview
@@ -15,7 +16,8 @@ function Invoke-DFPicker {
     .PARAMETER Ansi
         Pass --ansi to fzf (for ANSI-colored input).
     .PARAMETER Multi
-        Pass --multi to fzf; Action is called once per selected item.
+        Pass --multi to fzf so Tab marks several items; -Action is called once
+        per selected item (or each is returned).
     .PARAMETER Delimiter
         fzf --delimiter value.
     .PARAMETER WithNth
@@ -42,24 +44,48 @@ function Invoke-DFPicker {
         Extra fzf arguments passed through verbatim (appended last). Escape hatch
         for fzf flags this function does not model directly.
     .DESCRIPTION
-        Invokes fzf with the provided list, optional preview, header, and flags.
-        The selected item is optionally transformed by -Parse, then passed to
-        -Action or returned on the output stream. Uses the private Invoke-DFFzf
-        wrapper so callers can mock fzf in tests without spawning a real process.
+        Runs the list -> fzf -> parse -> action skeleton that every DotForge
+        picker is built on: evaluates -List, pipes the items to fzf with the
+        given flags, optionally transforms each selected line with -Parse, then
+        passes it to -Action or returns it on the output stream. Pressing Esc in
+        fzf returns nothing and runs no action.
+
+        The picker executable is fzf, or the one named by $Env:Picker (any
+        fzf-compatible picker, e.g. 'sk' for skim). If it is not on PATH, the
+        call throws a terminating error.
+
+        A -List scriptblock that uses local variables from the caller must be
+        bound with .GetNewClosure() (e.g. { $topics }.GetNewClosure()); without
+        it the variables resolve in the wrong scope and the list is empty.
+
+        Uses the private Invoke-DFFzf wrapper so tests can mock fzf without
+        spawning a real process. Side effects: starts the picker process, plus
+        whatever -Action, -Preview and -Bind commands do.
     .EXAMPLE
-        Invoke-DFPicker -List { git branch } -Header 'Select branch' -Action { param($b) git checkout $b }
-        Fuzzy-selects a git branch and checks it out.
+        Invoke-DFPicker -List { git branch } -Header 'Select branch' -Parse { $_.TrimStart('*').Trim() } -Action { param($b) git checkout $b }
+
+        Fuzzy-selects a git branch and checks it out. -Parse strips the '* '
+        marker and indentation that git branch prints.
     .EXAMPLE
-        $file = Invoke-DFPicker -List { Get-ChildItem -Name } -Preview 'cat {}'
-        Fuzzy-selects a file from the current directory; returns the selected name.
+        $file = Invoke-DFPicker -List { Get-ChildItem -Name } -Preview 'type {}'
+
+        Fuzzy-selects a file from the current directory, previewing it with
+        cmd.exe's type (fzf runs preview commands through cmd.exe on Windows),
+        and returns the selected name (nothing if you press Esc).
     .EXAMPLE
-        $r = Invoke-DFPicker -List { winget-lines } -Expect 'alt-r' -Parse { ($_ -split "`t")[1] }
-        if ($r.Key -eq 'alt-r') { Install $r.Selected } else { "install $($r.Selected)" }
-        Uses --expect so Enter and Alt-R select the same item but drive different actions.
+        $r = Invoke-DFPicker -List { Get-Process | ForEach-Object { "$($_.Name)`t$($_.Id)" } } `
+            -Delimiter "`t" -WithNth 1 -Expect 'alt-k' -Parse { ($_ -split "`t")[1] }
+        if ($r.Key -eq 'alt-k') { Stop-Process -Id $r.Selected -WhatIf } else { Get-Process -Id $r.Selected }
+
+        Shows process names while carrying the id in a hidden field. Enter shows
+        the process; Alt-K previews stopping it. -Expect makes both keys select
+        the same item but drive different actions.
     .OUTPUTS
         System.String — selected (and optionally parsed) item when -Action is omitted.
         None — when -Action is provided (side-effect only).
         System.Management.Automation.PSCustomObject — { Key; Selected } when -Expect is used.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(

@@ -1,13 +1,21 @@
 # Companion for carapace — registers native argument completers for ~519 commands.
+# Reads: $DFConfig.CompletionMode (via Get-DFCompletionMode).
+# Writes: bundled specs to $XDG_CONFIG_HOME\carapace\specs\*.yaml, and the cached
+# init script under $XDG_CACHE_HOME\dotforge\ (Get-DFCachedCommandOutput).
+# Sets: CARAPACE_BRIDGES (adds 'inshellisense', see below); carapace's own init
+# prepends $XDG_CONFIG_HOME\carapace\bin to PATH.
 # Invoke-Expression is required by carapace's init pattern — no alternative exists.
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
 # carapace's init emits Register-ArgumentCompleter calls only — it never binds Tab
-# and never overrides TabExpansion. That is why it composes with PSFzf rather than
-# fighting it: PSFzf owns the Tab key (Tools/PSFzf.ps1) and routes through
-# TabExpansion2, which consults these completers. Registration order is irrelevant,
-# so no dependsOn is declared.
+# and never overrides TabExpansion. Tab itself is bound once, after every tool has
+# registered, by Initialize-DFCompletionStack (PSFzf's fuzzy Tab when PSFzf is
+# registered, otherwise PSReadLine's MenuComplete); both route through
+# TabExpansion2, which consults these completers. Registration order is
+# irrelevant, so no dependsOn on PSFzf is declared. (carapace.json does declare
+# "dependsOn": ["fnm"] so fnm puts the Node-hosted `is` on PATH before the bridge
+# check below.)
 #
 # Argument completers are registered session-wide by the engine regardless of the
 # scope Invoke-Expression runs in, so dot-sourcing from Register-DFTool is safe.
@@ -16,8 +24,11 @@ param()
 # to PATH itself (the bridge-shim directory) instead of going through Add-DFToPath.
 # That line is emitted by carapace, not DotForge, and cannot be rerouted.
 #
-# CARAPACE_BRIDGES is deliberately left unset. Bridging (zsh/fish/bash/inshellisense)
-# shells out per completion, and of those only bash is present on this machine.
+# Bridges: in Native completion mode, when inshellisense (`is`) is on PATH,
+# 'inshellisense' is appended to CARAPACE_BRIDGES so commands carapace has no
+# completer for fall back to inshellisense's specs. Bridge entries the user set
+# are kept. Other bridges (zsh/fish/bash) are left to the user: each shells out
+# once per completion.
 Enable-DFCarapaceInshellisenseBridge | Out-Null
 
 # Deploy bundled specs (e.g. scoop, which carapace ships no completer for) into

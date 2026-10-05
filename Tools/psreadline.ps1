@@ -1,4 +1,14 @@
 # Companion for psreadline — apply settings, theme, and register theme picker (fprl)
+#
+# Reads: settings in psreadline.json; $DFConfig.PSReadLineEditMode ('Emacs' default,
+# or 'Windows'); $DFConfig.PSReadLineTheme, then $DFConfig.Theme, then
+# 'catppuccin-mocha'. Theme files: $XDG_CONFIG_HOME\psreadline\themes\<name>.json,
+# else bundled Tools\psreadline\.
+# Changes: PSReadLine options for this session, including HistorySavePath, which
+# moves to $XDG_STATE_HOME\psreadline\history; earlier history in PowerShell's
+# default AppData file is not copied over. Binds Ctrl+p / Ctrl+n.
+# Do not change EditMode after Register-DFTool: Set-PSReadLineOption -EditMode
+# resets the Tab binding the completion stack installed.
 
 # 1. Apply settings from tool JSON
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
@@ -70,6 +80,37 @@ Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
 $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
 
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
+    <#
+    .SYNOPSIS
+        Applies a PSReadLine syntax-color theme to this session.
+    .DESCRIPTION
+        Resolves -Name to a theme file: an absolute path is used as is,
+        otherwise $XDG_CONFIG_HOME\psreadline\themes\<Name>.json, then
+        DotForge's bundled Tools\psreadline\<Name>.json. The file holds a
+        "colors" object mapping PSReadLine color names (Command, Parameter,
+        String, Comment, …; see Set-PSReadLineOption -Colors) to #RRGGBB hex
+        values, which are converted to 24-bit ANSI colors and applied with
+        Set-PSReadLineOption -Colors. Invalid colors are skipped with a
+        warning; an unknown theme warns and changes nothing.
+
+        Defined by DotForge's psreadline companion, which calls it at startup
+        with $DFConfig.PSReadLineTheme, then $DFConfig.Theme, then
+        catppuccin-mocha.
+    .PARAMETER Name
+        A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file.
+    .EXAMPLE
+        Invoke-DFApplyPSReadLineTheme -Name catppuccin-mocha
+
+        Applies the bundled Catppuccin Mocha colors to the command line.
+    .EXAMPLE
+        Invoke-DFApplyPSReadLineTheme -Name "$HOME\dotfiles\prl-theme.json"
+
+        Applies a theme file you wrote, e.g. { "colors": { "Command": "#89b4fa", "String": "#a6e3a1" } }.
+    .OUTPUTS
+        None. Changes PSReadLine colors for the current session.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
 
@@ -120,6 +161,27 @@ Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
 # 6. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({
+    <#
+    .SYNOPSIS
+        Fuzzy-picks a PSReadLine color theme and applies it to this session.
+    .DESCRIPTION
+        Lists your themes in $XDG_CONFIG_HOME\psreadline\themes followed by
+        DotForge's bundled ones (a user theme hides a bundled theme of the
+        same name) in fzf. Enter applies the selection with
+        Invoke-DFApplyPSReadLineTheme for the current session only, and prints
+        how to keep it: set $DFConfig['PSReadLineTheme'] in your profile.
+
+        Defined by DotForge's psreadline companion; requires fzf (or
+        $Env:Picker).
+    .EXAMPLE
+        fprl
+
+        Opens the theme picker; Enter applies the highlighted theme.
+    .OUTPUTS
+        None. Writes a confirmation line to the host.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param()
 

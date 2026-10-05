@@ -36,6 +36,33 @@ if ($ompConfig) {
 
 # --- Theme picker (fpot) ---
 function global:Select-PoshTheme {
+    <#
+    .SYNOPSIS
+        Fuzzy-picks an oh-my-posh theme with a live prompt preview and applies it to this session.
+    .DESCRIPTION
+        Lists the *.omp.json themes in $Env:POSH_THEMES_PATH in fzf, previewing
+        each one's rendered prompt. DotForge sets POSH_THEMES_PATH to
+        $XDG_DATA_HOME\oh-my-posh\themes, so copy the themes you want to browse
+        there.
+        Enter re-initializes oh-my-posh with that theme for the current session
+        only. To keep it, point $Env:POSH_THEME at the theme file, or copy it to
+        $XDG_CONFIG_HOME\oh-my-posh\, before DotForge loads. Warns and does
+        nothing when POSH_THEMES_PATH is missing.
+
+        Re-initializing replaces the prompt function, so zoxide's directory
+        tracking stops until the next session (a known limitation).
+
+        Defined by DotForge's oh-my-posh companion; requires fzf (or
+        $Env:Picker).
+    .EXAMPLE
+        fpot
+
+        Opens the theme picker; Enter applies the highlighted theme.
+    .OUTPUTS
+        None. Writes a confirmation line to the host.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param()
 

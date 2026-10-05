@@ -58,6 +58,9 @@ function Get-DFCommandConflict {
     .OUTPUTS
         [PSCustomObject] with Command, ShadowedBy, WouldResolveTo, Ignored,
         DisableWith, and Fix properties. Returns nothing when no conflict exists.
+
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/coreutils-conflicts.md
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]

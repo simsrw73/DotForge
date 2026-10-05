@@ -12,12 +12,16 @@ function Set-DFLocationUp {
         commands when navigating out of deeply nested directories.
     .EXAMPLE
         Set-DFLocationUp
+
         Moves up one directory level (equivalent to cd ..).
     .EXAMPLE
         up 3
+
         Moves up three directory levels at once using the up alias.
     .OUTPUTS
         None
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -42,12 +46,16 @@ function New-DFDirectoryAndSet {
         needed before changing into the final path.
     .EXAMPLE
         New-DFDirectoryAndSet src/lib
+
         Creates the src/lib directory tree (if needed) and changes into it.
     .EXAMPLE
         mkcd ~/projects/newrepo
+
         Creates and enters a new project directory using the mkcd alias.
     .OUTPUTS
         None
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -70,12 +78,16 @@ function Select-DFLocation {
         installed.
     .EXAMPLE
         Select-DFLocation
+
         Opens fzf over all subdirectories; selecting one changes into it.
     .EXAMPLE
         fcd
+
         Same as above using the fcd alias.
     .OUTPUTS
         None
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param()

@@ -39,6 +39,27 @@ fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
 #    touch the alias. Forward @args (not fnm's single $path) so zoxide's multi-
 #    keyword queries (`cd foo bar`) and `cd -`/`cd +` survive intact.
 function global:Set-LocationWithFnm {
+    <#
+    .SYNOPSIS
+        Changes directory (through zoxide when it is registered) and switches Node versions for the new directory.
+    .DESCRIPTION
+        DotForge's replacement for the function fnm env --use-on-cd defines.
+        The cd alias points here. It forwards all arguments to whatever owned
+        cd before fnm registered (zoxide's smart cd, or Set-Location), then
+        runs fnm's Set-FnmOnLoad, which switches to the Node version named by a
+        .node-version or .nvmrc file in the new directory.
+
+        Defined by DotForge's fnm companion. You normally call it as cd.
+    .EXAMPLE
+        cd ~/projects/web-app
+
+        Changes directory, then fnm activates the Node version that the
+        project's .nvmrc names.
+    .OUTPUTS
+        None.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     if ($args.Count -eq 0) { & $global:cdBeforeFnm } else { & $global:cdBeforeFnm @args }
     Set-FnmOnLoad
 }

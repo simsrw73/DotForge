@@ -5,19 +5,26 @@ function Select-DFProcess {
     .SYNOPSIS
         Fuzzy-searches running processes and returns the selected process object(s).
     .PARAMETER Multi
-        Allow selecting multiple processes at once.
+        Allow selecting multiple processes at once (Tab marks each one).
     .DESCRIPTION
-        Lists all running processes sorted by CPU descending in fzf with a preview
-        pane showing Format-List details. Returns the full process object(s) so
-        results can be piped to Stop-Process, Get-Process, or other cmdlets.
+        Lists all running processes in fzf, highest total CPU time first, as
+        name, PID, CPU seconds and working set in MB, with a preview pane showing
+        Format-List details. Returns the full process object(s) so results can
+        be piped to Stop-Process or other cmdlets. Returns nothing when you press
+        Esc, or for a process that exited while the picker was open. Read-only:
+        it never stops anything itself. Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFProcess
+
         Opens fzf over running processes; returns the selected process object.
     .EXAMPLE
         fps -Multi | Stop-Process
+
         Selects multiple processes in fzf and stops them all using the fps alias.
     .OUTPUTS
         System.Diagnostics.Process — the selected process object(s).
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(
@@ -45,17 +52,22 @@ function Get-DFTopProcess {
     .PARAMETER Count
         Number of processes to display. Defaults to 20.
     .DESCRIPTION
-        Provides a quick snapshot of resource-consuming processes similar to the
-        Unix top command. Outputs a table with name, PID, CPU seconds, and memory
-        in MB for easy scanning without opening Task Manager.
+        Provides a one-shot snapshot of resource-consuming processes similar to
+        the Unix top command (it does not refresh). Outputs objects with Name,
+        Id, CPU(s) (total processor time since start, not current usage) and
+        Mem(MB) (working set), which PowerShell formats as a table.
     .EXAMPLE
         Get-DFTopProcess
+
         Lists the top 20 processes by CPU usage.
     .EXAMPLE
         top -By Memory -Count 10
+
         Lists the top 10 processes by memory consumption using the top alias.
     .OUTPUTS
         PSCustomObject — process records with Name, Id, CPU(s), and Mem(MB) columns.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding()]
     param(

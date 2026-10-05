@@ -16,6 +16,10 @@ function Select-DFPackage {
         cached web queries, the installed snapshot) so the list opens
         instantly — run Update-DFPackageCache (or any first trifle query) to
         populate it.
+
+        Requires fzf (or $Env:Picker). Query mode writes preview files to a
+        per-process folder under the system temp directory and removes it when
+        the picker closes. Network use is the same as Find-DFPackage.
     .PARAMETER Query
         Search terms. When present, the list is live search results with a
         detail-card pipeline; when absent, the local-cache browser.
@@ -30,24 +34,30 @@ function Select-DFPackage {
         flow as -Query. Set internally when -Categories recurses into a
         picked works-with row; also usable directly.
     .PARAMETER Source
-        Restrict to packages known to these catalogs.
+        Restrict to packages known to these catalogs: scoop, winget, choco, npm,
+        pypi, crates, psgallery. Default: all seven.
     .PARAMETER Readme
         After selection, also fetch and page the package readme.
     .PARAMETER GitInfo
         After selection, include GitHub stars/release/activity on the card.
     .EXAMPLE
         ftrifle zed
+
         Search all catalogs for 'zed', preview cards while scrolling, Enter
         shows the full detail card.
     .EXAMPLE
         ftrifle
+
         Browse all locally known packages; Enter renders the info card.
     .EXAMPLE
         ftrifle -Categories
+
         Pick a category or works-with value from the full vocabulary; Enter drills
         into that facet's tools with the same preview/selection flow as a query.
     .OUTPUTS
         None — the selection is rendered via Find-DFPackage.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/package-catalog.md
     #>
     [CmdletBinding()]
     param(

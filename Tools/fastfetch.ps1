@@ -22,6 +22,32 @@ if (-not (Test-Path $_cfg)) {
 }
 
 Set-Item -Path 'function:global:fastfetch' -Value ({
+    <#
+    .SYNOPSIS
+        Runs fastfetch with DotForge's config file.
+    .DESCRIPTION
+        Wraps fastfetch.exe and always passes --config <path>, because fastfetch
+        ignores XDG_CONFIG_HOME on Windows. The path comes from
+        settings.configPath in fastfetch.json (default
+        $XDG_CONFIG_HOME\fastfetch\config.jsonc). On first registration the
+        companion seeds that file from settings.configContent if it doesn't
+        exist; after that the file is yours to edit and is never overwritten.
+
+        All other arguments, and piped input, are passed to fastfetch unchanged.
+        Defined by DotForge's fastfetch companion.
+    .EXAMPLE
+        fastfetch
+
+        Prints the system-info banner using DotForge's config.
+    .EXAMPLE
+        fastfetch --logo none
+
+        Passes an extra fastfetch option through.
+    .OUTPUTS
+        System.String. fastfetch's output.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     if ($MyInvocation.ExpectingInput) {
         $input | & fastfetch.exe --config $_cfg @args
     } else {

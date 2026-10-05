@@ -6,6 +6,11 @@ function Invoke-DFTopoSort {
         Topological sort of tool objects using Kahn's algorithm.
         Tools whose dependsOn deps are not in the input set are processed normally.
         Cycles emit a warning and fall back to original order.
+    .PARAMETER Tools
+        Tool records (parsed Tools/*.json objects) to order; each may carry a
+        dependsOn array of tool names. Names compare case-insensitively.
+    .OUTPUTS
+        System.Object[]. The same records, dependencies first.
     #>
     [CmdletBinding()]
     param(
@@ -31,6 +36,8 @@ function Invoke-DFTopoSort {
         $deps = $t.PSObject.Properties['dependsOn']?.Value
         if (-not $deps) { continue }
         foreach ($dep in @($deps)) {
+            # A dependency outside this call's set (not installed, skipped, or
+            # not requested) imposes no order, so it adds no edge.
             if ($toolNames.Contains($dep)) {
                 $successors[$dep].Add($t.name)
                 $inDegree[$t.name]++
@@ -57,6 +64,9 @@ function Invoke-DFTopoSort {
         }
     }
 
+    # Tools on a cycle never reach in-degree 0, so they never leave the queue
+    # stage; any shortfall means a cycle. Registering in the caller's order is
+    # safer than dropping those tools.
     if ($sorted.Count -ne $Tools.Count) {
         Write-Warning 'DotForge: circular dependency detected in tool dependsOn — falling back to original order'
         return $Tools

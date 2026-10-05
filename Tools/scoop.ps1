@@ -51,12 +51,59 @@ if (Get-Command scoop-search -ErrorAction Ignore) {
 
 # Guard: the pickers need the Scoop module (Get-ScoopApp + *-ScoopApp actions).
 function global:Assert-DFScoopModule {
+    <#
+    .SYNOPSIS
+        Returns $true when the Scoop PowerShell module is available; otherwise warns and returns $false.
+    .DESCRIPTION
+        Guard used by the scoop pickers (sins, srm, sup). The warning includes
+        the command that installs the module. Defined by DotForge's scoop
+        companion.
+    .EXAMPLE
+        if (Assert-DFScoopModule) { Get-ScoopApp }
+
+        Runs a Scoop module cmdlet only when the module is present.
+    .OUTPUTS
+        System.Boolean.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     if (Get-Command Get-ScoopApp -ErrorAction Ignore) { return $true }
     Write-Warning "DotForge: the 'Scoop' module is required for the scoop pickers (sins/srm/sup). Install it with: Install-Module Scoop -Scope CurrentUser"
     return $false
 }
 
 function global:Select-ScoopPackage {
+    <#
+    .SYNOPSIS
+        Searches scoop buckets, fuzzy-picks an app, and returns or runs its install command.
+    .DESCRIPTION
+        Searches with scoop-search when it is installed (fast, and matches
+        binary names as well as app names), otherwise with the Scoop module's
+        Find-ScoopApp, and lists the results in fzf with a scoop info preview.
+        Only buckets you have added are searched.
+
+        Keys:
+          Enter   return the command 'scoop install <name>' (nothing is installed)
+          Alt-R   close the picker and install the selection now
+          Alt-I   install the highlighted app without closing the picker
+
+        Bound to Ctrl+G, S when PSReadLine is loaded: type a search term, press
+        the chord, pick an app, and the install command replaces the line.
+
+        Defined by DotForge's scoop companion. Requires the Scoop PowerShell
+        module (Install-Module Scoop -Scope CurrentUser; warns and does
+        nothing without it) and fzf (or $Env:Picker).
+    .PARAMETER Query
+        Search terms. When omitted, you are prompted.
+    .EXAMPLE
+        sins ripgrep
+
+        Pick ripgrep and press Enter to get: scoop install ripgrep
+    .OUTPUTS
+        System.String (the install command) on Enter; otherwise none.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param([string]$Query = '')
 
@@ -103,6 +150,29 @@ function global:Select-ScoopPackage {
 Set-Alias -Name sins -Value Select-ScoopPackage -Scope Global -Force
 
 function global:Remove-ScoopPackage {
+    <#
+    .SYNOPSIS
+        Fuzzy-picks an installed scoop app and uninstalls it.
+    .DESCRIPTION
+        Lists installed apps (Get-ScoopApp) in fzf with a scoop info preview.
+
+        Keys:
+          Enter   uninstall the selection (Uninstall-ScoopApp)
+          Alt-X   uninstall the highlighted app without closing the picker
+          Alt-C   return the command 'scoop uninstall <name>' instead
+
+        Defined by DotForge's scoop companion. Requires the Scoop PowerShell
+        module (Install-Module Scoop -Scope CurrentUser; warns and does
+        nothing without it) and fzf (or $Env:Picker).
+    .EXAMPLE
+        srm
+
+        Pick an installed app and press Enter to uninstall it.
+    .OUTPUTS
+        System.String (the uninstall command) on Alt-C; otherwise none.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param()
 
@@ -134,6 +204,31 @@ function global:Remove-ScoopPackage {
 Set-Alias -Name srm -Value Remove-ScoopPackage -Scope Global -Force
 
 function global:Invoke-ScoopUpdate {
+    <#
+    .SYNOPSIS
+        Fuzzy-picks installed scoop apps and updates them.
+    .DESCRIPTION
+        Lists every installed app (the Scoop module cannot list only outdated
+        ones) in fzf with a scoop info preview. Updating an app that is
+        already current does nothing.
+
+        Keys:
+          Tab     mark an app (repeat for several)
+          Enter   update the marked apps, or the highlighted one
+          Alt-A   run scoop update '*' (every app)
+
+        Defined by DotForge's scoop companion. Requires the Scoop PowerShell
+        module (Install-Module Scoop -Scope CurrentUser; warns and does
+        nothing without it) and fzf (or $Env:Picker).
+    .EXAMPLE
+        sup
+
+        Mark apps with Tab, then press Enter to update them.
+    .OUTPUTS
+        None. scoop writes its own progress.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param()
 

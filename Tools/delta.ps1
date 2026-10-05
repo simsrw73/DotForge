@@ -5,6 +5,11 @@
 # validate against; an unknown feature is silently ignored by delta. See
 # docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md and
 # docs/external-dependencies.md.
+#
+# Reads: $DFConfig.DeltaTheme, then $DFConfig.Theme, then 'catppuccin-mocha'.
+# Sets: DELTA_FEATURES. Writes: $XDG_CONFIG_HOME\delta\catppuccin.gitconfig
+# (rewritten whenever the bundled copy changes, so don't edit it in place). The
+# git-config include that activates it is added once by delta.setup.ps1.
 
 $_theme  = Get-DFConfiguredTheme -ToolKey 'DeltaTheme' -Default 'catppuccin-mocha'
 $_native = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)

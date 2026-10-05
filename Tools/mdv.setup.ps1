@@ -11,6 +11,12 @@
 # one-time-setup primitive fixes that: the presence check below only ever
 # runs on this script's one guaranteed execution, so a later deletion sticks.
 # See docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
+#
+# Reads: $DFConfig.MdvTheme, then $DFConfig.Theme, then settings.theme in mdv.json.
+# Writes: $MDV_CONFIG_PATH\config.yaml (default $XDG_CONFIG_HOME\mdv\config.yaml),
+# only if it doesn't exist. To change the theme later, edit that file. To reseed
+# it, delete it and remove the "mdv" entry from
+# $XDG_STATE_HOME\dotforge\setup-state.json. To skip: $DFConfig.SkipSetup = @('mdv').
 
 $_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'

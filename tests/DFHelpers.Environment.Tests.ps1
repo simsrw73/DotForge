@@ -148,4 +148,22 @@ Describe 'Invoke-DFProfileReload' {
     It 'does not throw even when $PROFILE does not exist' {
         { reload } | Should -Not -Throw
     }
+
+    It 'leaves the profile''s functions, aliases and variables in the caller''s scope' {
+        # A plain `. $PROFILE` inside a module function scopes the profile's
+        # definitions to that call, so only env vars survived. Run in a child pwsh
+        # against the real module, since that bug only exists across the module
+        # boundary (this file dot-sources the helpers directly).
+        $profilePath = Join-Path $TestDrive 'profile.ps1'
+        Set-Content -Path $profilePath -Value @'
+function Test-ReloadFn { 'fn' }
+Set-Alias -Name trl -Value Test-ReloadFn
+$reloadVar = 'var'
+'@
+        $manifest = Join-Path $PSScriptRoot '..' 'DotForge.psd1'
+        $probe = "Import-Module '$manifest' -Force 3>`$null; `$PROFILE = '$profilePath'; reload; " +
+                 "'{0}|{1}|{2}' -f [bool](Get-Command Test-ReloadFn -EA Ignore), [bool](Get-Alias trl -EA Ignore), `$reloadVar"
+        $result = pwsh -NoProfile -NonInteractive -Command $probe
+        $result | Select-Object -Last 1 | Should -Be 'True|True|var'
+    }
 }

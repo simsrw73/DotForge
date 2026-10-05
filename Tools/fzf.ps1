@@ -4,10 +4,48 @@
 # Register-DFTool's env-block step already (re)sets $Env:FZF_DEFAULT_OPTS from
 # fzf.json's non-color flags on every call, before this companion runs, so
 # appending the resolved --color=... string here is always idempotent.
+#
+# Reads: $DFConfig.FzfTheme, then $DFConfig.Theme, then 'catppuccin-mocha'.
+# Theme files: $XDG_CONFIG_HOME\fzf\themes\<name>.json, else bundled Tools\fzf\.
+# Sets: FZF_DEFAULT_OPTS. Writes no files.
 
 $_bundledDir = Join-Path $PSScriptRoot 'fzf'
 
 Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
+    <#
+    .SYNOPSIS
+        Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS.
+    .DESCRIPTION
+        Resolves -Name to a theme file: an absolute path is used as is,
+        otherwise $XDG_CONFIG_HOME\fzf\themes\<Name>.json, then DotForge's
+        bundled Tools\fzf\<Name>.json. The file's "colors" object of fzf color
+        names and values becomes one --color=name:value,... option appended to
+        $Env:FZF_DEFAULT_OPTS, so it applies to every later fzf call in the
+        session. Each call appends another --color option; fzf applies them in
+        order, so the last theme applied wins.
+
+        Every entry is checked against fzf's --color grammar (hex like #1e1e2e,
+        -1, 0-255, default, or a color name, each optionally followed by
+        :bold, :underline and similar), and invalid entries are skipped with a
+        warning. An unknown theme name warns and changes nothing.
+
+        Defined by DotForge's fzf companion, which calls it at startup with
+        $DFConfig.FzfTheme, then $DFConfig.Theme, then catppuccin-mocha.
+    .PARAMETER Name
+        A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file.
+    .EXAMPLE
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha
+
+        Applies the bundled Catppuccin Mocha colors to fzf for this session.
+    .EXAMPLE
+        Invoke-DFApplyFzfTheme -Name "$HOME\dotfiles\fzf-gruvbox.json"
+
+        Applies a theme file you wrote, e.g. { "colors": { "bg": "#282828", "fg": "#ebdbb2" } }.
+    .OUTPUTS
+        None. Changes $Env:FZF_DEFAULT_OPTS for the current session.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
 

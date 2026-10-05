@@ -48,6 +48,33 @@ Describe 'Get-DFWhich' {
         $results = which pwsh -All
         $results | Should -Not -BeNullOrEmpty
     }
+
+    Context 'with the same command in two PATH folders' {
+        BeforeAll {
+            # Get-Command -CommandType Application lists every PATH match even
+            # without -All, so which has to pick the first one itself.
+            $script:savedPath = $Env:PATH
+            $script:first  = Join-Path $TestDrive 'first'
+            $script:second = Join-Path $TestDrive 'second'
+            foreach ($d in $script:first, $script:second) {
+                New-Item -ItemType Directory -Path $d -Force | Out-Null
+                Set-Content -Path (Join-Path $d 'dfwhichprobe.cmd') -Value '@echo off'
+            }
+            $Env:PATH = $script:first + [IO.Path]::PathSeparator + $script:second +
+                        [IO.Path]::PathSeparator + $Env:PATH
+        }
+        AfterAll { $Env:PATH = $script:savedPath }
+
+        It 'returns only the first match, the one that runs' {
+            @(which dfwhichprobe) | Should -Be @(Join-Path $script:first 'dfwhichprobe.cmd')
+        }
+
+        It 'returns every match in PATH order with -All' {
+            @(which dfwhichprobe -All) | Should -Be @(
+                (Join-Path $script:first 'dfwhichprobe.cmd'),
+                (Join-Path $script:second 'dfwhichprobe.cmd'))
+        }
+    }
 }
 
 Describe 'Open-DFItem' {
@@ -61,5 +88,14 @@ Describe 'Open-DFItem' {
         Mock Invoke-Item { }
         open 'a.txt' 'b.txt'
         Should -Invoke Invoke-Item -Times 2
+    }
+
+    It 'opens a URL with Start-Process, not Invoke-Item' {
+        # Invoke-Item treats 'https:' as a PowerShell drive and fails.
+        Mock Invoke-Item { }
+        Mock Start-Process { }
+        open 'https://example.com'
+        Should -Invoke Start-Process -Times 1 -ParameterFilter { $FilePath -eq 'https://example.com' }
+        Should -Invoke Invoke-Item -Times 0
     }
 }

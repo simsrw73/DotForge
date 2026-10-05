@@ -33,21 +33,28 @@ function New-DFUuid {
         self-documenting preset. Cannot be combined with the formatting switches.
     .EXAMPLE
         New-DFUuid
+
         Outputs a new lowercase, hyphenated v4 UUID string (e.g. f47ac10b-...-c3d479).
     .EXAMPLE
         New-DFUuid -UpperCase -Braces
+
         Outputs the registry/COM form, e.g. {F47AC10B-58CC-4372-A567-0E02B2C3D479}.
     .EXAMPLE
         New-DFUuid -NoHyphens
+
         Outputs 32 contiguous lowercase hex digits with no separators.
     .EXAMPLE
         New-DFUuid -Sdk
+
         Outputs the Windows SDK uuidgen default format (lowercase, hyphens, no braces).
     .EXAMPLE
         uuidgen
+
         The uuidgen alias always resolves here, yielding Unix-style output.
     .OUTPUTS
         System.String — a version-4 UUID formatted per the supplied switches.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
     #>
     [CmdletBinding(DefaultParameterSetName = 'Custom')]
     [OutputType([string])]

@@ -18,12 +18,60 @@
 # Guard: the pickers need the Microsoft.WinGet.Client module. Documented
 # dependency, so warn clearly (not silently) when it is missing.
 function global:Assert-DFWingetModule {
+    <#
+    .SYNOPSIS
+        Returns $true when the Microsoft.WinGet.Client module is available; otherwise warns and returns $false.
+    .DESCRIPTION
+        Guard used by the winget pickers (wins, wrm, wup). The warning includes
+        the command that installs the module. Defined by DotForge's winget
+        companion.
+    .EXAMPLE
+        if (Assert-DFWingetModule) { Get-WinGetPackage }
+
+        Runs a WinGet.Client cmdlet only when the module is present.
+    .OUTPUTS
+        System.Boolean.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     if (Get-Command Find-WinGetPackage -ErrorAction Ignore) { return $true }
     Write-Warning "DotForge: the 'Microsoft.WinGet.Client' module is required for the winget pickers (wins/wrm/wup). Install it with: Install-Module Microsoft.WinGet.Client -Scope CurrentUser"
     return $false
 }
 
 function global:Select-WingetPackage {
+    <#
+    .SYNOPSIS
+        Searches winget, fuzzy-picks a package, and returns or runs its install command.
+    .DESCRIPTION
+        Runs Find-WinGetPackage for -Query and lists the results (name, id,
+        version) in fzf. The preview pane shows winget show for the
+        highlighted package after the cursor rests on it for about a second.
+
+        Keys:
+          Enter   return the command 'winget install --id <id> --exact' (nothing
+                  is installed; review it, pipe it, or run it)
+          Alt-R   close the picker and install the selection now
+          Alt-I   install the highlighted package without closing the picker
+
+        Bound to Ctrl+G, W when PSReadLine is loaded: type a search term, press
+        the chord, pick a package, and the install command replaces the line.
+
+        Defined by DotForge's winget companion. Requires the
+        Microsoft.WinGet.Client module (warns and does nothing without it) and
+        fzf (or $Env:Picker).
+    .PARAMETER Query
+        Search terms passed to Find-WinGetPackage. When omitted, you are prompted.
+    .EXAMPLE
+        wins ripgrep
+
+        Pick ripgrep and press Enter to get:
+        winget install --id BurntSushi.ripgrep.MSVC --exact
+    .OUTPUTS
+        System.String (the install command) on Enter; otherwise none.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param([string]$Query = '')
 
@@ -61,6 +109,33 @@ function global:Select-WingetPackage {
 Set-Alias -Name wins -Value Select-WingetPackage -Scope Global -Force
 
 function global:Remove-WingetPackage {
+    <#
+    .SYNOPSIS
+        Fuzzy-picks an installed package and uninstalls it with winget.
+    .DESCRIPTION
+        Lists installed packages (Get-WinGetPackage) in fzf with a winget show
+        preview.
+
+        Keys:
+          Enter   uninstall the selection (Uninstall-WinGetPackage)
+          Alt-X   uninstall the highlighted package without closing the picker
+          Alt-C   return the command 'winget uninstall --id <id>' instead
+
+        Defined by DotForge's winget companion. Requires the
+        Microsoft.WinGet.Client module and fzf (or $Env:Picker).
+    .PARAMETER Source
+        Show only packages from this installed-package source (e.g. winget),
+        hiding apps winget only knows from the Windows Apps & Features list.
+        Default: all.
+    .EXAMPLE
+        wrm -Source winget
+
+        Lists only winget-installed packages; Enter uninstalls the selection.
+    .OUTPUTS
+        System.String (the uninstall command) on Alt-C; otherwise none.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param(
         # Optionally restrict the list to one installed-package source
@@ -102,6 +177,29 @@ function global:Remove-WingetPackage {
 Set-Alias -Name wrm -Value Remove-WingetPackage -Scope Global -Force
 
 function global:Invoke-WingetUpdate {
+    <#
+    .SYNOPSIS
+        Fuzzy-picks packages with available upgrades and updates them with winget.
+    .DESCRIPTION
+        Lists installed packages that have an update (installed -> latest
+        version) in fzf with a winget show preview.
+
+        Keys:
+          Tab     mark a package (repeat for several)
+          Enter   update the marked packages, or the highlighted one
+          Alt-A   run winget upgrade --all
+
+        Defined by DotForge's winget companion. Requires the
+        Microsoft.WinGet.Client module and fzf (or $Env:Picker).
+    .EXAMPLE
+        wup
+
+        Mark packages with Tab, then press Enter to update them.
+    .OUTPUTS
+        None. winget writes its own progress.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
     [CmdletBinding()]
     param()
 

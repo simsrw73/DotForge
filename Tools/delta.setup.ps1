@@ -7,6 +7,11 @@
 # retries the whole script from scratch next time, so every step below must
 # stay safe to re-run. See
 # docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md Section 3.
+#
+# Writes: one include.path entry in the user's global git config (git config
+# --global). To undo: git config --global --unset-all include.path "<path printed
+# at setup>". Because the setup-state record persists, the line is never re-added
+# after you remove it. To skip this script entirely: $DFConfig.SkipSetup = @('delta').
 
 $_deployedPath = Expand-DFXdgPath '${XDG_CONFIG_HOME}/delta/catppuccin.gitconfig'
 

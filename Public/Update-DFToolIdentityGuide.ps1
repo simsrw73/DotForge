@@ -14,14 +14,22 @@ function Update-DFToolIdentityGuide {
         mechanism regardless of guide state). Validates the download before
         writing; a failed download or a failed validation leaves any existing
         refreshed copy untouched and warns instead of throwing.
-    .EXAMPLE
+
+        Downloads tool-identities.json from the latest DotForge GitHub release
+        and writes $XDG_DATA_HOME\dotforge\tool-identities.json (atomically,
+        through a temp file). Delete that file to go back to the shipped copy.
+        Needs $Env:XDG_DATA_HOME (set by Initialize-DFEnvironment). Supports
+        -WhatIf and -Confirm.
         Update-DFToolIdentityGuide
         Fetches and installs the latest published tool-identity guide.
     .EXAMPLE
         Update-DFToolIdentityGuide -WhatIf
+
         Shows what would be written without touching disk.
     .OUTPUTS
-        None.
+        None. Writes one line to the host on success.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/package-catalog.md
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param()

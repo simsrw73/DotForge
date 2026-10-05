@@ -16,11 +16,23 @@ function Find-DFPackage {
         ambiguous keyword searches render a compact table. When output is piped
         or redirected (or with -AsObject), raw DotForge.ToolInfo objects are
         emitted instead — pipeline-safe, no ANSI.
+
+        Network: queries go to the npm registry, PyPI, crates.io, the
+        Chocolatey community feed and the PowerShell Gallery (scoop and winget
+        are read from local files). -GitInfo and -Readme also call GitHub,
+        through the gh CLI when it is installed and authenticated, otherwise the
+        anonymous REST API. Only package names and search words are sent.
+        Installed status is read from each manager's local files (scoop apps,
+        winget's installed.db, choco's lib folder, npm's global node_modules,
+        cargo's .crates2.json, installed modules); only pipx is run (pipx list).
+        Caches live in $XDG_CACHE_HOME\dotforge\catalogs; without
+        XDG_CACHE_HOME, caching is disabled with a warning.
     .PARAMETER Query
         Command name or keywords. Multiple words may be passed unquoted:
         trifle static site generator
     .PARAMETER Source
-        Restrict the search to these catalogs.
+        Restrict the search to these catalogs: scoop, winget, choco, npm, pypi,
+        crates, psgallery. Default: all seven.
     .PARAMETER Fresh
         Block on live catalog fetches instead of serving cached data.
     .PARAMETER AsObject
@@ -50,19 +62,24 @@ function Find-DFPackage {
         Requires the detail path, like -Readme.
     .EXAMPLE
         trifle ripgrep
+
         Renders an info card: installed status, catalogs carrying it, versions.
     .EXAMPLE
         trifle json parser -Source scoop,winget
+
         Keyword search limited to two catalogs; renders a match table.
     .EXAMPLE
         Find-DFPackage ripgrep -AsObject | Select-Object Name, InstalledVia
+
         Pipeline-friendly object output.
     .EXAMPLE
         trifle winget:Zed.Zed
+
         Qualified source:id query — zeroes in on one package in one catalog
         and renders its detail card, bypassing keyword ranking entirely.
     .EXAMPLE
         trifle -Category search -WorksWith filesystem
+
         Facet search: every seed-db tool tagged 'search' AND 'filesystem', resolved
         through live catalog search (accurate installed state), rendered as a table.
     .OUTPUTS
@@ -71,6 +88,8 @@ function Find-DFPackage {
     .NOTES
         Assigning without -AsObject captures rendered strings — pipeline
         position cannot distinguish assignment from a terminal.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/package-catalog.md
     #>
     [CmdletBinding(DefaultParameterSetName = 'Query')]
     [OutputType([PSCustomObject])]
