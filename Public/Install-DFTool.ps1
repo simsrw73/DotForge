@@ -115,11 +115,18 @@ function Install-DFTool {
             if (-not $pkgId) { continue }
 
             if ($PSCmdlet.ShouldProcess("$toolName via $pm ($pkgId)", 'Install')) {
-                Write-Host "  Installing $toolName via $pm ($pkgId)…" `
+                # A third-party bucket is added first, so its message (or warning)
+                # gets its own line rather than splitting the progress line below.
+                $installId = $pkgId
+                if ($pm -eq 'scoop' -and $tool.scoopBucket) {
+                    if (-not (Add-DFScoopBucket -Bucket $tool.scoopBucket)) { continue }
+                    $installId = "$($tool.scoopBucket.name)/$pkgId"
+                }
+                Write-Host "  Installing $toolName via $pm ($installId)…" `
                     -ForegroundColor DarkGray -NoNewline
 
                 $null = switch ($pm) {
-                    'scoop'      { Invoke-DFScoopInstall -Id $pkgId -Bucket $tool.scoopBucket }
+                    'scoop'      { scoop  install $installId 2>&1 }
                     'winget'     { winget install --id $pkgId --silent `
                                        --accept-source-agreements `
                                        --accept-package-agreements 2>&1 }

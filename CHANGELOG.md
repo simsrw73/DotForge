@@ -43,6 +43,12 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Exclusive-role notice suggests the right alternative.** When two or more tools could fill
+  `prompt`, `project-env` or `navigation`, the one-time warning now suggests the runner-up by
+  priority (mise, not the alphabetically first direnv).
+- **Scoop bucket installs read cleanly and recover.** The "added scoop bucket" message (or its
+  warning) prints on its own line before the install progress line, and a failed `bucket add` checks
+  the bucket list again before giving up, so an already-added bucket no longer fails the install.
 - **Role edge cases.** A role-variable conflict warns once per session, even when `. $PROFILE`
   re-runs your own assignment. DotForge remembers which values it wrote across `Import-Module -Force`,
   and `Get-DFRole` labels a value left by an earlier winner as `DotForge (earlier winner)`. A

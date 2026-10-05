@@ -138,7 +138,7 @@ Two categories, and the difference matters:
 | **What** | scoop's `ps-dotenv` install puts the manifest at `modules\Dotenv\Dotenv\Dotenv.psd1`, one level deeper than PowerShell expects: `Get-Module -ListAvailable Dotenv` finds it, `Import-Module Dotenv` by name fails. Module 1.1.0 ships with `SafeMode = True` and `Async = True` (the README calls safe mode opt-in). Approvals live in memory only. |
 | **Where** | `Tools/ps-dotenv.ps1`, `Tools/ps-dotenv.json` (`prewarm: false`) |
 | **Why** | The hook imports by the discovered `.Path`, sets `SafeMode` and `Async` explicitly (`Async` off so a script's `cd` sees the `.env` loaded), and re-applies `$DFConfig.DotenvApprovedDirs` each session. Prewarm is off because it imports by name. |
-| **If it changes** | A fixed install layout still imports by path. If the `$Dotenv` object loses `SafeMode`/`Async`, setting them throws and registration warns that ps-dotenv failed to activate. |
+| **If it changes** | A fixed install layout still imports by path. If the `$Dotenv` object loses `SafeMode`/`Async`, setting them throws and registration warns that ps-dotenv failed to activate. Reported upstream as [ps-dotenv#10](https://github.com/insomnimus/ps-dotenv/issues/10) (fix: `"extract_dir": "Dotenv"` in the bucket manifest; see also #5); once fixed, importing by name would work, but importing by path keeps working either way. |
 
 ### 14. mise: activation embeds the current PATH
 

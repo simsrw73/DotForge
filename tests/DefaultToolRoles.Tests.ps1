@@ -199,7 +199,9 @@ Export-ModuleMember -Function * -Variable Dotenv
     It 'activates only ps-dotenv by priority, warns once, and keeps mise''s shims on PATH' {
         Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningVariable w -WarningAction SilentlyContinue
         $global:ProjectEnvInits | Should -Be @('ps-dotenv')
+        @($w | Where-Object { "$_" -match 'can each fill the project-env role' }).Count | Should -Be 1
         "$w" | Should -Match 'project-env role; using ps-dotenv'
+        "$w" | Should -Match "'project-env' = 'mise'" -Because 'the notice suggests the runner-up by priority'
         ($Env:Path -split ';') | Should -Contain (Join-Path $Env:XDG_DATA_HOME 'mise\shims')
     }
 

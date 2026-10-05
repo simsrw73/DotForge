@@ -39,7 +39,9 @@ function Write-DFRoleNotice {
     foreach ($w in $guessed | Sort-Object Role) {
         $key = $w.Candidates -join ','
         if ($state[$w.Role] -eq $key) { continue }
-        $other = $w.Candidates | Where-Object { $_ -ne $w.Winner } | Select-Object -First 1
+        # Suggest the runner-up by priority (Ranked), not the alphabetically first.
+        $order = if ($w.PSObject.Properties['Ranked'] -and $w.Ranked) { $w.Ranked } else { $w.Candidates }
+        $other = $order | Where-Object { $_ -ne $w.Winner } | Select-Object -First 1
         Write-Warning ("DotForge: $($w.Candidates -join ', ') can each fill the $($w.Role) role; using $($w.Winner). " +
             "Choose with `$DFConfig.Defaults = @{ '$($w.Role)' = '$other' }")
         $state[$w.Role] = $key

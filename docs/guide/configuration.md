@@ -155,6 +155,15 @@ eza - A modern, maintained replacement for ls
 
 Without a `Defaults` entry, the installed tool with the highest priority wins (eza over lsd, oh-my-posh over starship, less over bat). For `prompt`, `project-env` and `navigation`, where two active tools would break each other, DotForge also warns once, naming its pick and the line that changes it. A tool name that isn't in that role writes a warning, and priority decides.
 
+For per-folder environment variables, `project-env` holds ps-dotenv (the default), mise or direnv; see [Tools](tools.md#per-folder-environments-ps-dotenv-mise-direnv). In your `$DFConfig` block, name your pick and the folders ps-dotenv may load `.env` files from:
+
+```powershell
+$DFConfig = @{
+    Defaults           = @{ 'project-env' = 'ps-dotenv' }
+    DotenvApprovedDirs = @('~\projects')
+}
+```
+
 ### Your own variables win, unless you pick a tool
 
 A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.

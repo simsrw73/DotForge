@@ -10,7 +10,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFPackageManager.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFScoopInstall.ps1"
+    . "$PSScriptRoot/../Private/Add-DFScoopBucket.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
     . "$PSScriptRoot/../Public/Install-DFTool.ps1"
 }
@@ -164,9 +164,15 @@ Describe 'Install-DFTool with a scoop bucket' {
         $script:ScoopCalls = [System.Collections.Generic.List[string]]::new()
         $script:Buckets = @('main')
         $script:BucketAddExit = 0
+        $script:ListCalls = 0
+        $script:ListFailures = 0
         function script:scoop {
             $script:ScoopCalls.Add(($args -join ' '))
-            if ($args[0] -eq 'bucket' -and $args[1] -eq 'list') { $script:Buckets | ForEach-Object { [pscustomobject]@{ Name = $_ } }; $global:LASTEXITCODE = 0; return }
+            if ($args[0] -eq 'bucket' -and $args[1] -eq 'list') {
+                $script:ListCalls++
+                if ($script:ListCalls -le $script:ListFailures) { $global:LASTEXITCODE = 1; return }
+                $script:Buckets | ForEach-Object { [pscustomobject]@{ Name = $_ } }; $global:LASTEXITCODE = 0; return
+            }
             if ($args[0] -eq 'bucket' -and $args[1] -eq 'add') { $global:LASTEXITCODE = $script:BucketAddExit; return }
             $global:LASTEXITCODE = 0
         }
@@ -193,6 +199,23 @@ Describe 'Install-DFTool with a scoop bucket' {
         Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools -WarningVariable w -WarningAction SilentlyContinue 6>$null
         "$w" | Should -Match "testbucket"
         @($script:ScoopCalls | Where-Object { $_ -like 'install*' }).Count | Should -Be 0
+    }
+
+    It 'prints the bucket message on its own line, before the install progress line' {
+        $info = @(Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>&1 | ForEach-Object { "$_" })
+        $added = [array]::FindIndex([string[]]$info, [Predicate[string]] { param($l) $l -match 'added scoop bucket' })
+        $installing = [array]::FindIndex([string[]]$info, [Predicate[string]] { param($l) $l -match 'Installing bucktool' })
+        $added | Should -BeGreaterOrEqual 0
+        $added | Should -BeLessThan $installing
+    }
+
+    It 'installs when a failed add turns out to be a bucket that was already there' {
+        $script:ListFailures = 1          # the first list errors, so the bucket looks missing
+        $script:Buckets = @('main', 'testbucket')
+        $script:BucketAddExit = 1         # scoop refuses: it already exists
+        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools -WarningVariable w -WarningAction SilentlyContinue 6>$null
+        $w | Should -BeNullOrEmpty
+        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
     }
 
     It 'installs an unqualified id when the tool declares no bucket' {

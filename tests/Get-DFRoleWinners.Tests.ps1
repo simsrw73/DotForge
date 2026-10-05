@@ -105,6 +105,14 @@ Describe 'Get-DFRoleWinners' {
         "$warn" | Should -Match "'grep' is a category"
     }
 
+    It 'lists candidates by priority in Ranked, winner first' {
+        $script:Installed += 'aaa.exe'
+        $low = New-RoleTool 'aaa' @{ prompt = [pscustomobject]@{ priority = 1 } }
+        $w = Get-DFRoleWinners -ToolDb ($script:Db + @{ aaa = $low }) -Tools ($script:All + $low) -RoleDb $script:RoleDb
+        $w['prompt'].Ranked | Should -Be @('omp', 'star', 'aaa')
+        $w['prompt'].Candidates | Should -Be @('aaa', 'omp', 'star')
+    }
+
     It 'considers only the tools being registered (subset registration)' {
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools @($script:Db.star) -RoleDb $script:RoleDb
         $w['prompt'].Winner | Should -Be 'star'
@@ -145,6 +153,13 @@ Describe 'Write-DFRoleNotice' {
         "$w1" | Should -Match "Defaults = @\{ 'prompt' = 'star' \}"
         Write-DFRoleNotice -RoleWinners $script:Unresolved -RoleDb $script:RoleDb -WarningVariable w2
         $w2 | Should -BeNullOrEmpty
+    }
+
+    It 'suggests the next candidate by priority, not alphabetically' {
+        $ranked = @{ prompt = [pscustomobject]@{ Role = 'prompt'; Winner = 'omp'; Reason = 'priority'
+                                                 Candidates = [string[]]@('aaa', 'omp', 'star'); Ranked = [string[]]@('omp', 'star', 'aaa') } }
+        Write-DFRoleNotice -RoleWinners $ranked -RoleDb $script:RoleDb -WarningVariable w -WarningAction SilentlyContinue
+        "$w" | Should -Match "Defaults = @\{ 'prompt' = 'star' \}"
     }
 
     It 'warns again when the candidate set changes' {

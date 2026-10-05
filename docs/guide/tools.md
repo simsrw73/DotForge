@@ -132,15 +132,16 @@ The first time delta is registered on a machine, DotForge adds one line to your 
 
 It prints the command to remove the line, and never adds it again after you remove it. To skip this step, set `$DFConfig.SkipSetup = @('delta')` before delta is first registered.
 
-
 ### Per-folder environments: ps-dotenv, mise, direnv
 
 These fill the `project-env` role, so only one is active: your `$DFConfig.Defaults['project-env']` choice, otherwise ps-dotenv, then mise, then direnv.
 
-- **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load:
+- **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load. Add the folders to your `$DFConfig` block:
 
   ```powershell
-  $DFConfig = @{ DotenvApprovedDirs = @('~\projects') }
+  $DFConfig = @{
+      DotenvApprovedDirs = @('~\projects')
+  }
   ```
 
   Set `DotenvSafeMode = $false` to load every `.env` without approval. Install it with `Install-DFTool ps-dotenv`, which adds its scoop bucket first.

@@ -59,7 +59,7 @@ function Get-DFRoleWinners {
     .PARAMETER RoleDb
         Role definitions (Get-DFRoleDb).
     .OUTPUTS
-        System.Collections.Hashtable. Role name -> @{ Role; Winner; Reason; Candidates }.
+        System.Collections.Hashtable. Role name -> @{ Role; Winner; Reason; Candidates (by name); Ranked (by priority) }.
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -120,15 +120,22 @@ function Get-DFRoleWinners {
             }
         }
         if ($candidates.Count -eq 0) { continue }
-        if (-not $winner) {
-            $top = $null
-            foreach ($c in $candidates) {
-                if ($null -eq $top) { $top = $c; continue }
+        # Rank by priority (highest first), ties by name. An insertion sort over
+        # the usual one to three candidates; no pipeline, since this runs at startup.
+        $ranked = [System.Collections.Generic.List[object]]::new()
+        foreach ($c in $candidates) {
+            $i = 0
+            while ($i -lt $ranked.Count) {
+                $o = $ranked[$i]
                 $cp = $c.roles.$roleName.priority
-                $tp = $top.roles.$roleName.priority
-                if ($cp -gt $tp -or ($cp -eq $tp -and [string]::Compare($c.name, $top.name, [System.StringComparison]::OrdinalIgnoreCase) -lt 0)) { $top = $c }
+                $op = $o.roles.$roleName.priority
+                if ($cp -gt $op -or ($cp -eq $op -and [string]::Compare($c.name, $o.name, [System.StringComparison]::OrdinalIgnoreCase) -lt 0)) { break }
+                $i++
             }
-            $winner = $top.name
+            $ranked.Insert($i, $c)
+        }
+        if (-not $winner) {
+            $winner = $ranked[0].name
             $reason = if ($candidates.Count -eq 1) { 'sole' } else { 'priority' }
         }
         $names = [string[]]@(foreach ($c in $candidates) { $c.name })
@@ -138,6 +145,7 @@ function Get-DFRoleWinners {
             Winner     = $winner
             Reason     = $reason
             Candidates = $names
+            Ranked     = [string[]]@(foreach ($c in $ranked) { $c.name })
         }
     }
     $winners
