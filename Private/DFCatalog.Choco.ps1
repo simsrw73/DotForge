@@ -230,13 +230,4 @@ function Get-DFCatalogChocoDetail {
         -Fetch { param($id) Invoke-DFCatalogChocoDetailFetch -PackageId $id }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['choco'] = @{
-    Name         = 'choco'
-    Kind         = 'query-cache'
-    Test         = { $true }
-    Search       = { param($Query, $Fresh) Search-DFCatalogChoco -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogChocoInstalled }
-    Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogChoco -Query $Query -Fresh } }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogChocoDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+Register-DFCatalogProvider -Name choco -Kind query-cache -Order 3 -SourceFile $PSCommandPath

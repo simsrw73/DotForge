@@ -141,13 +141,5 @@ function Get-DFCatalogCratesDetail {
         -Fetch { param($id) Invoke-DFCatalogCratesDetailFetch -PackageId $id }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['crates'] = @{
-    Name         = 'crates'
-    Kind         = 'query-cache'
-    Test         = { $true }   # pure web registry — searchable without a local toolchain
-    Search       = { param($Query, $Fresh) Search-DFCatalogCrates -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogCratesInstalled }
-    Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogCrates -Query $Query -Fresh } }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogCratesDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+# A pure web registry: searchable without a local toolchain, so always available.
+Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile $PSCommandPath

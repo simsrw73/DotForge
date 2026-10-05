@@ -10,6 +10,9 @@
 # Sets: FZF_DEFAULT_OPTS. Writes no files.
 
 $_bundledDir = Join-Path $PSScriptRoot 'fzf'
+# Private helpers can't be called by name from a function:global: closure, but a
+# captured scriptblock keeps its module binding, so capture them here.
+$_resolveThemeFile = ${function:Resolve-DFThemeFile}
 
 Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     <#
@@ -49,20 +52,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
 
-    # Resolve path: absolute path passthrough, XDG user dir, then bundled
-    $path = $null
-    if ([System.IO.Path]::IsPathRooted($Name)) {
-        $path = $Name
-    } else {
-        if ($Env:XDG_CONFIG_HOME) {
-            $p = Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'themes' "$Name.json"
-            if (Test-Path $p) { $path = $p }
-        }
-        if (-not $path) {
-            $p = Join-Path $_bundledDir "$Name.json"
-            if (Test-Path $p) { $path = $p }
-        }
-    }
+    $path = & $_resolveThemeFile -Tool 'fzf' -Name $Name -BundledDir $_bundledDir
     if (-not $path) {
         Write-Warning "DotForge: fzf theme '$Name' not found"
         return
@@ -97,5 +87,5 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
 
 # Apply initial theme: per-tool FzfTheme -> shared Theme -> 'catppuccin-mocha'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'FzfTheme' -Default 'catppuccin-mocha'
-$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap $DFCurrentTool.themeMap
 Invoke-DFApplyFzfTheme -Name $_themeSetting

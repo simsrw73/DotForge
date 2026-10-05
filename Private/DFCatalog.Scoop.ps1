@@ -16,8 +16,7 @@ function Get-DFCatalogScoopRoot {
 
     if ($Env:SCOOP) { return $Env:SCOOP }
 
-    $configHome = $Env:XDG_CONFIG_HOME ? $Env:XDG_CONFIG_HOME : (Join-Path $HOME '.config')
-    $config = Join-Path $configHome 'scoop/config.json'
+    $config = Join-Path (Get-DFXdgPath Config) 'scoop/config.json'
     if (Test-Path $config) {
         try {
             $rootPath = (Get-Content $config -Raw | ConvertFrom-Json).root_path
@@ -378,13 +377,7 @@ function Get-DFCatalogScoopDetail {
         -Extra $extra
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['scoop'] = @{
-    Name         = 'scoop'
-    Kind         = 'snapshot'
-    Test         = { [bool](Get-Command scoop -ErrorAction Ignore) -or (Test-Path (Join-Path (Get-DFCatalogScoopRoot) 'buckets')) }
-    Search       = { param($Query, $Fresh) Search-DFCatalogScoop -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogScoopInstalled }
-    Refresh      = { param($Query) Update-DFCatalogScoopIndex }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogScoopDetail -PackageId $PackageId }
-}
+Register-DFCatalogProvider -Name scoop -Kind snapshot -Order 1 -SourceFile $PSCommandPath `
+    -Test    { [bool](Get-Command scoop -ErrorAction Ignore) -or (Test-Path (Join-Path (Get-DFCatalogScoopRoot) 'buckets')) } `
+    -Refresh { param($Query) Update-DFCatalogScoopIndex } `
+    -Detail  { param($PackageId, $Fresh) Get-DFCatalogScoopDetail -PackageId $PackageId }   # local manifests: no -Fresh

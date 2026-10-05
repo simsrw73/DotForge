@@ -23,9 +23,12 @@ function Initialize-DFEnvironment {
         listing them, or a warning when none is found. Install-DFTool needs at
         least one.
 
-        Designed to run once near the top of a profile, before Register-DFTool.
-        Safe to call again (idempotent). Variables are set for the current
-        process only; nothing is written to the registry.
+        DotForge's own commands use the same defaults whether or not this has
+        run (see Get-DFXdgPath); run it so the variables are also exported to
+        the tools you start, which read them themselves. Designed to run once
+        near the top of a profile. Safe to call again (idempotent). Variables
+        are set for the current process only; nothing is written to the
+        registry.
     .EXAMPLE
         Initialize-DFEnvironment
 
@@ -45,22 +48,13 @@ function Initialize-DFEnvironment {
     [CmdletBinding()]
     param()
 
-    if (-not $Env:XDG_CONFIG_HOME) { $Env:XDG_CONFIG_HOME = Join-Path $home '.config' }
-    if (-not $Env:XDG_DATA_HOME)   { $Env:XDG_DATA_HOME   = Join-Path $home '.local' 'share' }
-    if (-not $Env:XDG_STATE_HOME)  { $Env:XDG_STATE_HOME  = Join-Path $home '.local' 'state' }
-    if (-not $Env:XDG_CACHE_HOME)  { $Env:XDG_CACHE_HOME  = Join-Path $home '.cache' }
-    # The variable is not part of the XDG spec, but the location is, so this is useful
-    if (-not $Env:XDG_BIN_HOME)  { $Env:XDG_BIN_HOME  = Join-Path $home '.local' 'bin' }
-
-    # Canonicalize each root (expands a user-supplied ~, collapses .., native seps)
-    # so every downstream Expand-DFXdgPath substitution starts from a clean path.
-    foreach ($_var in 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_BIN_HOME') {
-        $_val = [System.Environment]::GetEnvironmentVariable($_var)
-        if ($_val) { Set-Item -Path "Env:$_var" -Value (ConvertTo-DFPath $_val) }
+    # Export each folder (a value you set is kept, canonicalized; an unset one
+    # gets its XDG default from Get-DFXdgPath) so other programs see it too.
+    foreach ($kind in 'Config', 'Data', 'State', 'Cache', 'Bin') {
+        $path = Get-DFXdgPath $kind
+        Set-Item -Path "Env:XDG_$($kind.ToUpperInvariant())_HOME" -Value $path
+        New-DFDirectory $path
     }
-
-    @($Env:XDG_CONFIG_HOME, $Env:XDG_DATA_HOME, $Env:XDG_STATE_HOME, $Env:XDG_CACHE_HOME, $Env:XDG_BIN_HOME) |
-        ForEach-Object { New-DFDirectory $_ }
 
     $pms = @(Resolve-DFPackageManager -Force | Where-Object { $_ })
 

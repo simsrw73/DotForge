@@ -1,6 +1,15 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     Import-Module PSSQLite
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Choco.ps1"
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Db.ps1"
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Choco.ps1"

@@ -72,12 +72,10 @@ function Install-DFTool {
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
 
-    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
-    # variable defined, and indexing into it throws "Cannot index into a null array".
     $pmOrder = if ($PackageManager) {
         @($PackageManager)
-    } elseif ($null -ne $Global:DFConfig -and $Global:DFConfig['PackageManagerOrder']) {
-        @($Global:DFConfig['PackageManagerOrder'])
+    } elseif (Get-DFConfig PackageManagerOrder) {
+        @(Get-DFConfig PackageManagerOrder)
     } else {
         Resolve-DFPackageManager
     }
@@ -89,7 +87,7 @@ function Install-DFTool {
         }
 
         $tool     = $db[$toolName]
-        $packages = $tool.PSObject.Properties['packages']?.Value
+        $packages = $tool.packages
         $installedVia = $null
 
         # cargo is not in the auto-detect priority; append it as a last resort when
@@ -138,8 +136,7 @@ function Install-DFTool {
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host ' ✓' -ForegroundColor Green
                     $installedVia = $pm
-                    $toolType = $tool.PSObject.Properties['type']?.Value ?? 'exe'
-                    $null = Test-DFToolAvailable -Executable $tool.executable -Type $toolType -Force
+                    $null = Test-DFToolAvailable -Executable $tool.executable -Type $tool.type -Force
                     break
                 } else {
                     Write-Host ' failed' -ForegroundColor Red

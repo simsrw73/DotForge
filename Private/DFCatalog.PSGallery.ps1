@@ -112,13 +112,4 @@ function Get-DFCatalogPSGalleryDetail {
         -Fetch { param($id) Invoke-DFCatalogPSGalleryDetailFetch -PackageId $id }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['psgallery'] = @{
-    Name         = 'psgallery'
-    Kind         = 'query-cache'
-    Test         = { $true }
-    Search       = { param($Query, $Fresh) Search-DFCatalogPSGallery -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogPSGalleryInstalled }
-    Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogPSGallery -Query $Query -Fresh } }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogPSGalleryDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+Register-DFCatalogProvider -Name psgallery -Kind query-cache -Order 7 -SourceFile $PSCommandPath

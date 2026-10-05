@@ -6,18 +6,15 @@ function New-DFToolPickerFunction {
         Builds and installs one tool's declarative fzf picker as a global
         function (and alias, if declared).
     .DESCRIPTION
-        Reads $Tool.picker (list/preview/header/action/parse/etc., all plain
-        strings per the JSON schema) and assembles an Invoke-DFPicker call as
-        a global function via [scriptblock]::Create and .GetNewClosure(). When
-        picker.list_accepts_path is true, the generated function instead
-        takes a -Path parameter and splits the list command on whitespace to
-        append it (existing behavior, including its known limitation with
-        quoted arguments -- unchanged by this extraction; see TODO.md). No-ops
-        when $Tool has no picker, or the picker lacks a function/list pair.
-        Extracted verbatim from Register-DFTool's per-tool loop -- no
-        behavior change from the prior inline version.
+        Reads $Tool.picker (a normalized record from ConvertTo-DFToolRecord)
+        and defines a global function that calls Invoke-DFPicker with it.
+        When picker.list_accepts_path is true, the function takes a -Path
+        parameter (default '.') appended to the list command, which is split on
+        whitespace (so quoted arguments in the list command are not supported;
+        see TODO.md). No-ops when $Tool has no object picker, or the picker
+        lacks a function/list pair.
     .PARAMETER Tool
-        The tool record declaring the picker.
+        The normalized tool record declaring the picker.
     .OUTPUTS
         None
     #>
@@ -27,65 +24,39 @@ function New-DFToolPickerFunction {
         [PSCustomObject]$Tool
     )
 
-    $picker = $Tool.PSObject.Properties['picker']?.Value
-    if (-not $picker -or $picker -isnot [PSCustomObject]) { return }
+    $picker = $Tool.picker
+    if ($picker -isnot [PSCustomObject] -or -not ($picker.function -and $picker.list)) { return }
 
-    $pAlias    = $picker.PSObject.Properties['alias']?.Value
-    $pFunction = $picker.PSObject.Properties['function']?.Value
-    $pList     = $picker.PSObject.Properties['list']?.Value
-    $pPreview  = $picker.PSObject.Properties['preview']?.Value ?? ''
-    $pWindow   = $picker.PSObject.Properties['preview_window']?.Value ?? 'right:60%'
-    $pAnsi     = [bool]($picker.PSObject.Properties['ansi']?.Value)
-    $pHeader   = $picker.PSObject.Properties['header']?.Value ?? ''
-    $pAction   = $picker.PSObject.Properties['action']?.Value
-    $pParse    = $picker.PSObject.Properties['parse']?.Value
-    $pAccPath  = [bool]($picker.PSObject.Properties['list_accepts_path']?.Value)
+    # Everything except the list source is the same for both shapes, so the
+    # Invoke-DFPicker call is built once. GetNewClosure captures these locals.
+    $action = if ($picker.action -and $picker.action -ne 'output') {
+        [scriptblock]::Create("param(`$v) " + $picker.action.Replace('{}', '$v'))
+    }
+    $parse = if ($picker.parse) { [scriptblock]::Create($picker.parse) }
+    $show = {
+        param([scriptblock]$List)
+        Invoke-DFPicker -List $List -Preview $picker.preview -PreviewWindow $picker.preview_window `
+            -Ansi:$picker.ansi -Header $picker.header -Parse $parse -Action $action
+    }.GetNewClosure()
 
-    if (-not ($pFunction -and $pList)) { return }
-
-    $capturedList    = $pList
-    $capturedPreview = $pPreview
-    $capturedWindow  = $pWindow
-    $capturedAnsi    = $pAnsi
-    $capturedHeader  = $pHeader
-    $capturedAction  = if ($pAction -and $pAction -ne 'output') {
-        [scriptblock]::Create("param(`$v) " + $pAction.Replace('{}', '$v'))
-    } else { $null }
-    $capturedParse   = if ($pParse) {
-        [scriptblock]::Create($pParse)
-    } else { $null }
-
-    $fn = if ($pAccPath) {
-        $capturedParts = @($capturedList -split '\s+')
+    $fn = if ($picker.list_accepts_path) {
+        $listParts = @($picker.list -split '\s+')
         {
             [CmdletBinding()]
             param([string]$Path = '.')
-            Invoke-DFPicker `
-                -List          { & $capturedParts[0] @($capturedParts[1..($capturedParts.Count - 1)]) $Path } `
-                -Preview       $capturedPreview `
-                -PreviewWindow $capturedWindow `
-                -Ansi:$capturedAnsi `
-                -Header        $capturedHeader `
-                -Parse         $capturedParse `
-                -Action        $capturedAction
+            & $show { & $listParts[0] @($listParts[1..($listParts.Count - 1)]) $Path }.GetNewClosure()
         }.GetNewClosure()
     } else {
+        $list = [scriptblock]::Create($picker.list)
         {
             [CmdletBinding()]
             param()
-            Invoke-DFPicker `
-                -List          ([scriptblock]::Create($capturedList)) `
-                -Preview       $capturedPreview `
-                -PreviewWindow $capturedWindow `
-                -Ansi:$capturedAnsi `
-                -Header        $capturedHeader `
-                -Parse         $capturedParse `
-                -Action        $capturedAction
+            & $show $list
         }.GetNewClosure()
     }
 
-    Set-Item -Path "function:global:$pFunction" -Value $fn
-    if ($pAlias) {
-        Set-Alias -Name $pAlias -Value $pFunction -Scope Global -Force
+    Set-Item -Path "function:global:$($picker.function)" -Value $fn
+    if ($picker.alias) {
+        Set-Alias -Name $picker.alias -Value $picker.function -Scope Global -Force
     }
 }

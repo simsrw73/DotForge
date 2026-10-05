@@ -1,9 +1,17 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
+    # Catalogs exist because their provider files register; load the real ones.
+    Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
+        ForEach-Object { . $_.FullName }
 }
 
 Describe 'Get-DFCatalogInstalled' {
@@ -72,33 +80,35 @@ function Get-FakeEmptyInstalled {
     }
 
     It 'aggregates items across multiple providers' {
-        $deps = @{ good = @('FakeGood.ps1'); empty = @('FakeEmpty.ps1') }
-        $fnNames = @{ good = 'Get-FakeGoodInstalled'; empty = 'Get-FakeEmptyInstalled' }
-        $r = @(Invoke-DFCatalogInstalledFetch -Deps $deps -FnNames $fnNames -PrivateRoot $script:FakeRoot)
+        $providers = @(
+            @{ Name = 'good';  Files = @('FakeGood.ps1');  InstalledFunction = 'Get-FakeGoodInstalled' }
+            @{ Name = 'empty'; Files = @('FakeEmpty.ps1'); InstalledFunction = 'Get-FakeEmptyInstalled' })
+        $r = @(Invoke-DFCatalogInstalledFetch -Providers $providers -PrivateRoot $script:FakeRoot)
         $r.Count | Should -Be 1
         $r[0].Name | Should -Be 'thing'
     }
 
     It 'isolates one provider''s failure from the others' {
-        $deps = @{ good = @('FakeGood.ps1'); bad = @('FakeBad.ps1') }
-        $fnNames = @{ good = 'Get-FakeGoodInstalled'; bad = 'Get-FakeBadInstalled' }
-        $r = @(Invoke-DFCatalogInstalledFetch -Deps $deps -FnNames $fnNames -PrivateRoot $script:FakeRoot)
+        $providers = @(
+            @{ Name = 'good'; Files = @('FakeGood.ps1'); InstalledFunction = 'Get-FakeGoodInstalled' }
+            @{ Name = 'bad';  Files = @('FakeBad.ps1');  InstalledFunction = 'Get-FakeBadInstalled' })
+        $r = @(Invoke-DFCatalogInstalledFetch -Providers $providers -PrivateRoot $script:FakeRoot)
         $r.Count | Should -Be 1
         $r[0].Source | Should -Be 'good'
     }
 
     It 'returns nothing but does not throw when every provider fails' {
-        $deps = @{ bad = @('FakeBad.ps1') }
-        $fnNames = @{ bad = 'Get-FakeBadInstalled' }
-        { $script:r = @(Invoke-DFCatalogInstalledFetch -Deps $deps -FnNames $fnNames -PrivateRoot $script:FakeRoot) } |
+        $providers = @(@{ Name = 'bad'; Files = @('FakeBad.ps1'); InstalledFunction = 'Get-FakeBadInstalled' })
+        { $script:r = @(Invoke-DFCatalogInstalledFetch -Providers $providers -PrivateRoot $script:FakeRoot) } |
             Should -Not -Throw
         $script:r.Count | Should -Be 0
     }
 
-    It 'every real provider resolves and runs without error (drift detection against the shipped dependency map)' {
+    It 'every registered provider loads and runs in a fresh runspace (its Files list is complete)' {
         $privateRoot = "$PSScriptRoot/../Private"
-        $verboseRecords = Invoke-DFCatalogInstalledFetch -Deps $script:DFCatalogInstalledDeps `
-            -FnNames $script:DFCatalogInstalledFn -PrivateRoot $privateRoot -Verbose 4>&1 |
+        @($script:DFCatalogProviders.Values).Count | Should -Be 7
+        $verboseRecords = Invoke-DFCatalogInstalledFetch -Providers @($script:DFCatalogProviders.Values) `
+            -PrivateRoot $privateRoot -Verbose 4>&1 |
             Where-Object { $_ -is [System.Management.Automation.VerboseRecord] }
         $failures = @($verboseRecords | Where-Object Message -match "installed enumeration for '.*' failed")
         $failures | Should -BeNullOrEmpty -Because (($failures.Message) -join '; ')

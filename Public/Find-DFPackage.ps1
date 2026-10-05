@@ -25,8 +25,8 @@ function Find-DFPackage {
         Installed status is read from each manager's local files (scoop apps,
         winget's installed.db, choco's lib folder, npm's global node_modules,
         cargo's .crates2.json, installed modules); only pipx is run (pipx list).
-        Caches live in $XDG_CACHE_HOME\dotforge\catalogs; without
-        XDG_CACHE_HOME, caching is disabled with a warning.
+        Caches live in $XDG_CACHE_HOME\dotforge\catalogs (default
+        $HOME\.cache\dotforge\catalogs).
     .PARAMETER Query
         Command name or keywords. Multiple words may be passed unquoted:
         trifle static site generator
@@ -103,7 +103,9 @@ function Find-DFPackage {
         [Parameter(ParameterSetName = 'Category')]
         [string[]]$WorksWith,
 
-        [ValidateSet('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 'psgallery')]
+        # The catalog list comes from the provider registry (Get-DFCatalogName).
+        [ValidateScript({ if ($_ -in (Get-DFCatalogName)) { $true } else { throw "Unknown catalog '$_'. Known catalogs: $((Get-DFCatalogName) -join ', ')." } })]
+        [ArgumentCompleter({ param($c, $p, $word) Get-DFCatalogName | Where-Object { $_ -like "$word*" } })]
         [string[]]$Source,
 
         [switch]$Fresh,
@@ -128,53 +130,7 @@ function Find-DFPackage {
             return 'Category database unavailable — run Update-DFCategoryDb or check the module install.'
         }
 
-        $validateFacet = {
-            param($Values, $FacetName, $Vocab)
-            $bad = @($Values | Where-Object { $_ -notin $Vocab })
-            if ($bad) {
-                Write-Error "DotForge: unknown $FacetName value(s): $($bad -join ', '). Run Get-DFCategoryList -Facet $FacetName to see valid terms." -ErrorAction Stop
-            }
-        }
-        if ($Category) { & $validateFacet $Category 'function' @($db.Raw.taxonomy.function) }
-        if ($WorksWith) { & $validateFacet $WorksWith 'worksWith' @($db.Raw.taxonomy.worksWith) }
-
-        $unionFacet = {
-            param($Values, $Prefix)
-            if (-not $Values) { return $null }
-            $union = [System.Collections.Generic.HashSet[string]]::new()
-            foreach ($v in $Values) { foreach ($k in @($db.FacetIndex["${Prefix}:$v"])) { $null = $union.Add($k) } }
-            $union
-        }
-        $catMatch = & $unionFacet $Category 'function'
-        $wwMatch = & $unionFacet $WorksWith 'worksWith'
-        $matchedKeys =
-            if ($catMatch -and $wwMatch) { @($catMatch | Where-Object { $wwMatch.Contains($_) }) }
-            elseif ($catMatch) { @($catMatch) }
-            else { @($wwMatch) }
-
-        $canonicalOrder = @('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 'psgallery')
-        $allowedSources = $Source ? $Source : $canonicalOrder
-
-        $merged = [System.Collections.Generic.List[object]]::new()
-        foreach ($key in ($matchedKeys | Sort-Object -Unique)) {
-            $entry = $db.Raw.tools.$key
-            $probeQueryText = $key
-            $probeSource = $Source
-            if ($entry.ids) {
-                foreach ($src in $canonicalOrder) {
-                    if ($src -notin $allowedSources) { continue }
-                    $idProp = $entry.ids.PSObject.Properties[$src]
-                    if ($idProp) { $probeQueryText = $idProp.Value; $probeSource = @($src); break }
-                }
-            }
-
-            # A db entry whose ids no longer resolve against any live catalog
-            # (renamed/removed upstream) is silently skipped — stale seed
-            # data, not a search failure.
-            $hits = @(Resolve-DFCatalogQueryMerge -QueryText $probeQueryText -Source $probeSource -Fresh:$Fresh -RecordSeenQuery $false)
-            if ($hits) { $merged.Add($hits[0]) }
-        }
-        $merged = @($merged | Sort-Object Name)
+        $merged = @(Find-DFCatalogFacet -Database $db -Category $Category -WorksWith $WorksWith -Source $Source -Fresh:$Fresh)
         $qualified = $null
         $detailMode = $false
         $queryText = "-Category $($Category -join ',') -WorksWith $($WorksWith -join ',')".Trim()
@@ -184,7 +140,7 @@ function Find-DFPackage {
         # Qualified id (source:packageId, from the -All table) → zero in on one
         # package in one catalog. Unknown prefixes stay ordinary keyword queries.
         $qualified = $null
-        if ($queryText -match '^(?<src>scoop|winget|choco|npm|pypi|crates|psgallery):(?<id>.+)$') {
+        if ($queryText -match "^(?<src>$((Get-DFCatalogName) -join '|')):(?<id>.+)$") {
             $qualified = @{ Source = $Matches.src.ToLowerInvariant(); Id = $Matches.id.Trim() }
             # Cross-catalog searches use the bare trailing segment ONLY for scoop
             # ids, which are bucket-qualified (bucket/name). Other catalogs' ids
@@ -248,16 +204,11 @@ function Find-DFPackage {
         return "No packages found matching '$queryText'."
     }
 
-    $color = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
+    $color = Test-DFColorOutput
 
     if ($detailMode -and $merged.Count -gt 0) {
-        $card = [System.Collections.Generic.List[string]](Format-DFToolDetailCard -Info $merged[0] -Color $color `
-            -MoreMatches ($merged.Count - 1) -QueryText $queryText)
-        if ($GitInfo -and -not $merged[0].GitHub) {
-            $faintOn = $color ? "`e[2m" : ''
-            $faintOff = $color ? "`e[0m" : ''
-            $card.Add("${faintOn}GitHub — no repository resolved${faintOff}")
-        }
+        $card = Format-DFToolDetailCard -Info $merged[0] -Color $color `
+            -MoreMatches ($merged.Count - 1) -QueryText $queryText -GitHubRequested:$GitInfo
         if ($Readme) {
             $readmeLines = Get-DFPackageReadme -Info $merged[0] -Fresh:$Fresh
             if ($readmeLines) {

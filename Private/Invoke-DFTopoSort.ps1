@@ -33,9 +33,7 @@ function Invoke-DFTopoSort {
     }
 
     foreach ($t in $Tools) {
-        $deps = $t.PSObject.Properties['dependsOn']?.Value
-        if (-not $deps) { continue }
-        foreach ($dep in @($deps)) {
+        foreach ($dep in @($t.dependsOn)) {
             # A dependency outside this call's set (not installed, skipped, or
             # not requested) imposes no order, so it adds no edge.
             if ($toolNames.Contains($dep)) {

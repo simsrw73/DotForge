@@ -1,4 +1,8 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
@@ -20,6 +24,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
+    . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
 }
 
@@ -148,12 +153,5 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         $keyFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.key'
         (Get-Content $keyFile -Raw).Trim() | Should -Be 'catppuccin-mocha'
-    }
-
-    It 'warns and no-ops when $Env:XDG_CACHE_HOME is not set' {
-        $Env:XDG_CACHE_HOME = $null
-        $warnings = Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools 3>&1 |
-            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
-        $warnings | Where-Object { $_ -match 'XDG_CACHE_HOME' } | Should -Not -BeNullOrEmpty
     }
 }

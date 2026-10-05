@@ -53,10 +53,7 @@ function Get-DFTool {
     switch ($PSCmdlet.ParameterSetName) {
         'ByName' { $results = $results | Where-Object { $_.name -eq $Name } }
         'ByTag'  {
-            $results = $results | Where-Object {
-                $tags = $_.PSObject.Properties['tags']?.Value
-                $tags -and ($tags -contains $Tag)
-            }
+            $results = $results | Where-Object { $_.tags -contains $Tag }
         }
     }
 

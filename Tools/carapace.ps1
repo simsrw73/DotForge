@@ -39,7 +39,7 @@ Enable-DFCarapaceInshellisenseBridge | Out-Null
 # when the bundled content changes.
 $_bundledSpecs = Join-Path $PSScriptRoot 'carapace' 'specs'
 if (Test-Path $_bundledSpecs) {
-    $_specDir = Join-Path ($Env:XDG_CONFIG_HOME ?? (Join-Path $HOME '.config')) 'carapace' 'specs'
+    $_specDir = Join-Path (Get-DFXdgPath Config) 'carapace' 'specs'
     New-DFDirectory $_specDir | Out-Null
     Get-ChildItem $_bundledSpecs -Filter '*.yaml' | ForEach-Object {
         $_dest = Join-Path $_specDir $_.Name

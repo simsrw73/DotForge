@@ -11,7 +11,7 @@
 # resets the Tab binding the completion stack installed.
 
 # 1. Apply settings from tool JSON
-$_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
+$_settings = $DFCurrentTool.settings
 if ($_settings) {
     $_settingsMap = @{
         editMode                       = 'EditMode'
@@ -32,12 +32,7 @@ if ($_settings) {
             Write-Warning "DotForge: unknown PSReadLine setting '$($_.Name)' — skipping"
         }
     }
-    $_editModeSetting = $null
-    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
-    # variable defined, and indexing into it throws "Cannot index into a null array".
-    if ($null -ne $Global:DFConfig) {
-        $_editModeSetting = $Global:DFConfig['PSReadLineEditMode']
-    }
+    $_editModeSetting = Get-DFConfig PSReadLineEditMode
     if ($null -ne $_editModeSetting) {
         if ($_editModeSetting -ieq 'Windows') {
             $_optionArgs['EditMode'] = 'Windows'
@@ -69,7 +64,7 @@ if ($_settings) {
 
 # 2. Relocate the history file under $XDG_STATE_HOME (PowerShell otherwise
 #    keeps it at its AppData default). xdg.dirs already created the directory.
-Set-PSReadLineOption -HistorySavePath (Join-Path $Env:XDG_STATE_HOME 'psreadline' 'history')
+Set-PSReadLineOption -HistorySavePath (Join-Path (Get-DFXdgPath State) 'psreadline' 'history')
 
 # 3. History-search key handlers: Ctrl+p/Ctrl+n cycle history matching what's
 #    already typed (vs. the default Up/Down, which cycle the whole history).
@@ -78,6 +73,10 @@ Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
 
 # 4. Register Invoke-DFApplyPSReadLineTheme (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'psreadline'
+# Private helpers can't be called by name from a function:global: closure, but a
+# captured scriptblock keeps its module binding, so capture them here.
+$_resolveThemeFile = ${function:Resolve-DFThemeFile}
+$_xdgPath = ${function:Get-DFXdgPath}
 
 Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     <#
@@ -114,20 +113,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
 
-    # Resolve path: absolute path passthrough, XDG user dir, then bundled
-    $path = $null
-    if ([System.IO.Path]::IsPathRooted($Name)) {
-        $path = $Name
-    } else {
-        if ($Env:XDG_CONFIG_HOME) {
-            $p = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes' "$Name.json"
-            if (Test-Path $p) { $path = $p }
-        }
-        if (-not $path) {
-            $p = Join-Path $_bundledDir "$Name.json"
-            if (Test-Path $p) { $path = $p }
-        }
-    }
+    $path = & $_resolveThemeFile -Tool 'psreadline' -Name $Name -BundledDir $_bundledDir
     if (-not $path) {
         Write-Warning "DotForge: PSReadLine theme '$Name' not found"
         return
@@ -156,7 +142,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
 
 # 5. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'catppuccin-mocha'
-$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap $DFCurrentTool.themeMap
 Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
 
 # 6. Register theme picker
@@ -189,12 +175,10 @@ Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({
     $seen   = [System.Collections.Generic.HashSet[string]]::new(
                   [System.StringComparer]::OrdinalIgnoreCase)
 
-    if ($Env:XDG_CONFIG_HOME) {
-        $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
-        if (Test-Path $userDir) {
-            Get-ChildItem $userDir -Filter '*.json' | Sort-Object Name | ForEach-Object {
-                if ($seen.Add($_.BaseName)) { $themes.Add($_.BaseName) }
-            }
+    $userDir = Join-Path (& $_xdgPath Config) 'psreadline' 'themes'
+    if (Test-Path $userDir) {
+        Get-ChildItem $userDir -Filter '*.json' | Sort-Object Name | ForEach-Object {
+            if ($seen.Add($_.BaseName)) { $themes.Add($_.BaseName) }
         }
     }
     if (Test-Path $_bundledDir) {

@@ -83,10 +83,8 @@ function New-DFShim {
     # 1. Resolve shims directory
     $shimsDir = if ($ShimsPath) {
         $ShimsPath
-    # Test the value, not the variable's existence: `$DFConfig = $null` leaves the
-    # variable defined, and indexing into it throws "Cannot index into a null array".
-    } elseif ($null -ne $Global:DFConfig -and $Global:DFConfig['ShimsPath']) {
-        $Global:DFConfig['ShimsPath']
+    } elseif (Get-DFConfig ShimsPath) {
+        Get-DFConfig ShimsPath
     } else {
         Join-Path $HOME '.local' 'bin'
     }

@@ -44,3 +44,43 @@ function ConvertTo-DFPath {
     }
     $full
 }
+
+function Get-DFXdgPath {
+    <#
+    .SYNOPSIS
+        Returns one XDG base folder: the environment variable if set, otherwise the XDG default under $HOME.
+    .DESCRIPTION
+        The single place DotForge decides where its config, data, state, cache
+        and bin folders are, so "the variable isn't set" is never a special case
+        anywhere else. Defaults follow the XDG Base Directory spec:
+
+            Config  $HOME\.config         Data   $HOME\.local\share
+            State   $HOME\.local\state    Cache  $HOME\.cache
+            Bin     $HOME\.local\bin      (XDG_BIN_HOME is not in the spec; the location is)
+
+        The result is canonical (ConvertTo-DFPath). Reading never sets the
+        variable; Initialize-DFEnvironment exports them for other programs.
+    .PARAMETER Kind
+        Config, Data, State, Cache or Bin.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [ValidateSet('Config', 'Data', 'State', 'Cache', 'Bin')]
+        [string]$Kind
+    )
+    $value = [Environment]::GetEnvironmentVariable("XDG_$($Kind.ToUpperInvariant())_HOME")
+    if (-not $value) {
+        $value = switch ($Kind) {
+            'Config' { Join-Path $HOME '.config' }
+            'Data'   { Join-Path $HOME '.local' 'share' }
+            'State'  { Join-Path $HOME '.local' 'state' }
+            'Cache'  { Join-Path $HOME '.cache' }
+            'Bin'    { Join-Path $HOME '.local' 'bin' }
+        }
+    }
+    ConvertTo-DFPath $value
+}

@@ -47,7 +47,6 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 
 | Message or symptom | Cause | Fix |
 | --- | --- | --- |
-| `$Env:XDG_STATE_HOME is not set. Call Initialize-DFEnvironment first.` (or `XDG_CACHE_HOME`, `XDG_DATA_HOME`), or an error from a companion during `Register-DFTool` | `Register-DFTool` ran before `Initialize-DFEnvironment` | Call `Initialize-DFEnvironment` first in your profile. |
 | `No supported package managers found (scoop, winget, choco)` | none of them is on `PATH` | Install one. Everything except `Install-DFTool` still works. |
 | `Unknown tool '<name>'` | not a DotForge tool name | `Get-DFTool \| Select-Object name` lists valid names. |
 | `Could not install '<tool>'. No compatible package manager from: <list>` | no installed manager has a package id for the tool, or every attempt failed | Install another manager, or install the tool yourself. |
@@ -109,7 +108,6 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 
 | Message or symptom | Cause | Fix |
 | --- | --- | --- |
-| `Catalog caching is disabled` | `XDG_CACHE_HOME` isn't set | `Initialize-DFEnvironment`. |
 | `-Readme/-GitInfo need an exact match — showing the match table instead.` | the query matched several packages | Use a qualified `source:id` query. |
 | `No package '<id>' found in <source>` | the qualified id doesn't exist there | Check the `Id` column of `trifle <name> -All`. |
 | `unknown -Category value(s)` | not a taxonomy term | `tcats` lists them. |

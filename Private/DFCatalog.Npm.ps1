@@ -185,13 +185,4 @@ function Get-DFCatalogNpmDetail {
         -Fetch { param($id) Invoke-DFCatalogNpmDetailFetch -PackageId $id }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['npm'] = @{
-    Name         = 'npm'
-    Kind         = 'query-cache'
-    Test         = { $true }
-    Search       = { param($Query, $Fresh) Search-DFCatalogNpm -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogNpmInstalled }
-    Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogNpm -Query $Query -Fresh } }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogNpmDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+Register-DFCatalogProvider -Name npm -Kind query-cache -Order 4 -SourceFile $PSCommandPath

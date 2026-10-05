@@ -1,4 +1,11 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Test-DFCategoryDbSchema.ps1"
     . "$PSScriptRoot/../Private/Get-DFCategoryDb.ps1"
 
@@ -39,7 +46,7 @@ Describe 'Get-DFCategoryDb' {
         $script:FixturePath = Join-Path $TestDrive 'tool-categories.json'
         New-FixtureDbFile -Path $script:FixturePath
         $script:DFCategoryDb = $null
-        $script:DFCategoryDbWarned = $false
+        $script:DFReleaseDataWarned = @{}
 
         # Get-DFCategoryDb's refreshed-vs-shipped comparison runs unconditionally,
         # even when -Path overrides the "shipped" side (see its own doc comment).
@@ -52,7 +59,7 @@ Describe 'Get-DFCategoryDb' {
     }
     AfterEach {
         $script:DFCategoryDb = $null
-        $script:DFCategoryDbWarned = $false
+        $script:DFReleaseDataWarned = @{}
         $Env:XDG_DATA_HOME = $script:SavedDataHome
     }
 

@@ -11,8 +11,6 @@ function Set-DFToolXdgConfig {
         config file only when absent (never overwrites a user's edits);
         'manual' warns with any instructions; 'wrapper' and 'default' are
         no-ops here (handled by a companion .ps1, or not needed at all).
-        Extracted verbatim from Register-DFTool's per-tool loop -- no
-        behavior change from the prior inline version.
     .PARAMETER Tool
         The tool record (from the tool JSON database) to configure.
     .OUTPUTS
@@ -24,12 +22,11 @@ function Set-DFToolXdgConfig {
         [PSCustomObject]$Tool
     )
 
-    $xdgProp   = $Tool.PSObject.Properties['xdg']
-    $xdgMethod = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['method']?.Value } else { $null }
-    switch ($xdgMethod) {
+    $xdg = $Tool.xdg
+    if (-not $xdg) { return }
+    switch ($xdg.method) {
         'env' {
-            $xdg  = $Tool.xdg
-            $vars = $xdg.PSObject.Properties['vars']?.Value
+            $vars = $xdg.vars
             if ($vars) {
                 # A tool's vars are defaults: a variable the user already set (in
                 # their profile, or system-wide) is never overwritten.
@@ -46,25 +43,18 @@ function Set-DFToolXdgConfig {
                     )
                 }
             }
-            $dirs = $xdg.PSObject.Properties['dirs']?.Value
-            if ($dirs) {
-                @($dirs) | Where-Object { $_ } |
-                    ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
-            }
+            $xdg.dirs | Where-Object { $_ } |
+                ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
         }
         'manual' {
-            $instr = if ($xdgProp) { $xdgProp.Value.PSObject.Properties['instructions']?.Value } else { $null }
-            Write-Warning "DotForge: $($Tool.name) requires manual XDG configuration.$(if ($instr) { " $instr" })"
+            Write-Warning "DotForge: $($Tool.name) requires manual XDG configuration.$(if ($xdg.instructions) { " $($xdg.instructions)" })"
         }
         'config' {
-            $xdg = $Tool.xdg
-            $rawConfigPath    = $xdg.PSObject.Properties['config_path']?.Value
-            $rawConfigContent = $xdg.PSObject.Properties['config_content']?.Value
-            if ($rawConfigPath) {
-                $expandedPath = Expand-DFXdgPath $rawConfigPath
+            if ($xdg.config_path) {
+                $expandedPath = Expand-DFXdgPath $xdg.config_path
                 New-DFDirectory (Split-Path $expandedPath)
-                if (-not (Test-Path $expandedPath) -and $rawConfigContent) {
-                    Set-Content -Path $expandedPath -Value $rawConfigContent -Encoding UTF8
+                if (-not (Test-Path $expandedPath) -and $xdg.config_content) {
+                    Set-Content -Path $expandedPath -Value $xdg.config_content -Encoding UTF8
                     Write-Verbose "DotForge: Created default config at $expandedPath"
                 }
             }

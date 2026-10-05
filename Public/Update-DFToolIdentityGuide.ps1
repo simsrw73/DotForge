@@ -18,9 +18,10 @@ function Update-DFToolIdentityGuide {
         Downloads tool-identities.json from the latest DotForge GitHub release
         and writes $XDG_DATA_HOME\dotforge\tool-identities.json (atomically,
         through a temp file). Delete that file to go back to the shipped copy.
-        Needs $Env:XDG_DATA_HOME (set by Initialize-DFEnvironment). Supports
-        -WhatIf and -Confirm.
+        Supports -WhatIf and -Confirm.
+    .EXAMPLE
         Update-DFToolIdentityGuide
+
         Fetches and installs the latest published tool-identity guide.
     .EXAMPLE
         Update-DFToolIdentityGuide -WhatIf
@@ -34,34 +35,6 @@ function Update-DFToolIdentityGuide {
     [CmdletBinding(SupportsShouldProcess)]
     param()
 
-    $uri = 'https://github.com/simsrw73/DotForge/releases/latest/download/tool-identities.json'
-    try {
-        $doc = Invoke-DFToolIdentityGuideDownload -Uri $uri
-    } catch {
-        Write-Warning "DotForge: failed to download tool-identity guide: $_"
-        return
-    }
-
-    $errs = $null
-    if (-not (Test-DFToolIdentityGuideSchema -Database $doc -Errors ([ref]$errs))) {
-        Write-Warning "DotForge: downloaded tool-identity guide failed validation, keeping the existing copy: $($errs -join '; ')"
-        return
-    }
-
-    if (-not $Env:XDG_DATA_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_DATA_HOME is not set. Call Initialize-DFEnvironment first.'
-        return
-    }
-
-    $destDir = Join-Path $Env:XDG_DATA_HOME 'dotforge'
-    $destPath = Join-Path $destDir 'tool-identities.json'
-
-    if ($PSCmdlet.ShouldProcess($destPath, 'Update tool-identity guide')) {
-        New-DFDirectory $destDir
-        $tmp = "$destPath.tmp.$PID"
-        $doc | ConvertTo-Json -Depth 8 | Set-Content -Path $tmp -Encoding UTF8
-        Move-Item -Path $tmp -Destination $destPath -Force
-        $toolCount = @($doc.tools.PSObject.Properties.Name).Count
-        Write-Host "Updated tool-identity guide at $destPath ($toolCount tools)."
-    }
+    Update-DFReleaseData -FileName 'tool-identities.json' -Validator 'Test-DFToolIdentityGuideSchema' `
+        -Label 'tool-identity guide' -Cmdlet $PSCmdlet
 }

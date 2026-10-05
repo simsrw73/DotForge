@@ -24,6 +24,13 @@ function Resolve-DFCatalogQueryMerge {
         Find-DFPackage's existing single-query behavior. Facet-search callers
         pass $false to avoid polluting the LRU with N synthetic per-tool
         lookups for one facet search.
+    .PARAMETER InstalledInfo
+        A Get-DFCatalogInstalled result to annotate hits with. Default: take a
+        fresh snapshot. A caller merging several queries (facet search) takes
+        one snapshot and passes it to each, since a snapshot enumerates every
+        catalog's installed packages in parallel runspaces.
+    .PARAMETER IdentityGuide
+        A Get-DFToolIdentityGuide result. Default: load it (cached per session).
     .OUTPUTS
         [object[]] — sorted DotForge.ToolInfo array, PATH fallback applied.
     #>
@@ -37,17 +44,21 @@ function Resolve-DFCatalogQueryMerge {
 
         [switch]$Fresh,
 
-        [bool]$RecordSeenQuery = $true
+        [bool]$RecordSeenQuery = $true,
+
+        [hashtable]$InstalledInfo,
+
+        [object]$IdentityGuide
     )
 
     $normalized = (ConvertTo-DFCatalogQueryKey -Query $QueryText).Normalized
     $providers = @(Get-DFCatalogProvider -Source $Source)
 
     # Fan out across catalogs (canonical order), then overlay installed state
-    # from the cached unified snapshot (15-min TTL — avoids re-enumerating slow
-    # sources like Get-Module -ListAvailable on every query). First runs can
-    # spend a while on index builds and live fetches, so keep the user informed
-    # via the progress stream (renders as a status line; never pollutes stdout).
+    # from a live installed snapshot (taken here unless the caller passed one).
+    # First runs can spend a while on index builds and live fetches, so keep the
+    # user informed via the progress stream (renders as a status line; never
+    # pollutes stdout).
     $progressId = 47
     try {
         $hits = [System.Collections.Generic.List[object]]::new()
@@ -64,7 +75,8 @@ function Resolve-DFCatalogQueryMerge {
         Write-Progress -Id $progressId -Activity 'trifle' `
             -Status 'Reading installed packages…' `
             -PercentComplete ([int](100 * $providers.Count / ($providers.Count + 1)))
-        $installedInfo = Get-DFCatalogInstalled
+        if (-not $InstalledInfo) { $InstalledInfo = Get-DFCatalogInstalled }
+        $installedInfo = $InstalledInfo
     } finally {
         Write-Progress -Id $progressId -Activity 'trifle' -Completed
     }
@@ -100,24 +112,13 @@ function Resolve-DFCatalogQueryMerge {
     # unlinked same-named hits from different sources render as separate
     # rows, on purpose: a shared display name is not proof of shared
     # identity (see docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md).
-    $identityGuide = Get-DFToolIdentityGuide
+    $identityGuide = $IdentityGuide ?? (Get-DFToolIdentityGuide)
 
     $resolveDFTool = {
         param($Hit)
-        $id = $Hit.PackageId.ToLowerInvariant()
-        $lookup = "$($Hit.Source):$id"
-        $name = $installedInfo.IdentityMap[$lookup]
-        if (-not $name -and $id.Contains('/')) {
-            # scoop ids are bucket-qualified; the packages map holds bare names
-            $name = $installedInfo.IdentityMap["$($Hit.Source):$(($id -split '/')[-1])"]
-        }
-        if (-not $name) {
-            $name = $identityGuide.IdIndex[$lookup]
-            if (-not $name -and $id.Contains('/')) {
-                $name = $identityGuide.IdIndex["$($Hit.Source):$(($id -split '/')[-1])"]
-            }
-        }
-        $name
+        $keys = @(Get-DFIdentityKeys -Source $Hit.Source -PackageId $Hit.PackageId)
+        foreach ($k in $keys) { if ($installedInfo.IdentityMap[$k]) { return $installedInfo.IdentityMap[$k] } }
+        foreach ($k in $keys) { if ($identityGuide.IdIndex[$k]) { return $identityGuide.IdIndex[$k] } }
     }
 
     $groups = [ordered]@{}
@@ -181,4 +182,91 @@ function Resolve-DFCatalogQueryMerge {
     }
 
     $merged
+}
+
+function Find-DFCatalogFacet {
+    <#
+    .SYNOPSIS
+        Resolves a category search (Find-DFPackage -Category/-WorksWith) to merged, live catalog rows.
+    .DESCRIPTION
+        Validates the terms against the category database's taxonomy (an
+        unknown term is a terminating error), ORs values within a facet, ANDs
+        -Category with -WorksWith, then resolves each matching tool through the
+        normal search-and-merge path, so installed state and versions are live.
+        A tool whose database ids no longer resolve in any catalog is skipped.
+        One installed snapshot and identity guide serve the whole search.
+    .PARAMETER Database
+        Get-DFCategoryDb result (must have Raw).
+    .PARAMETER Category
+        Function-facet terms.
+    .PARAMETER WorksWith
+        Works-with-facet terms.
+    .PARAMETER Source
+        Restrict to these catalogs.
+    .PARAMETER Fresh
+        Block on live catalog fetches.
+    .OUTPUTS
+        DotForge.ToolInfo[], sorted by name.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Database,
+        [string[]]$Category,
+        [string[]]$WorksWith,
+        [string[]]$Source,
+        [switch]$Fresh
+    )
+    $db = $Database
+        $validateFacet = {
+            param($Values, $FacetName, $Vocab)
+            $bad = @($Values | Where-Object { $_ -notin $Vocab })
+            if ($bad) {
+                Write-Error "DotForge: unknown $FacetName value(s): $($bad -join ', '). Run Get-DFCategoryList -Facet $FacetName to see valid terms." -ErrorAction Stop
+            }
+        }
+        if ($Category) { & $validateFacet $Category 'function' @($db.Raw.taxonomy.function) }
+        if ($WorksWith) { & $validateFacet $WorksWith 'worksWith' @($db.Raw.taxonomy.worksWith) }
+
+        $unionFacet = {
+            param($Values, $Prefix)
+            if (-not $Values) { return $null }
+            $union = [System.Collections.Generic.HashSet[string]]::new()
+            foreach ($v in $Values) { foreach ($k in @($db.FacetIndex["${Prefix}:$v"])) { $null = $union.Add($k) } }
+            $union
+        }
+        $catMatch = & $unionFacet $Category 'function'
+        $wwMatch = & $unionFacet $WorksWith 'worksWith'
+        $matchedKeys =
+            if ($catMatch -and $wwMatch) { @($catMatch | Where-Object { $wwMatch.Contains($_) }) }
+            elseif ($catMatch) { @($catMatch) }
+            else { @($wwMatch) }
+
+        $canonicalOrder = Get-DFCatalogName
+        $allowedSources = $Source ? $Source : $canonicalOrder
+
+        # One installed snapshot and identity guide for the whole facet search,
+        # not one per matched tool.
+        $installedInfo = Get-DFCatalogInstalled
+        $identityGuide = Get-DFToolIdentityGuide
+        $merged = [System.Collections.Generic.List[object]]::new()
+        foreach ($key in ($matchedKeys | Sort-Object -Unique)) {
+            $entry = $db.Raw.tools.$key
+            $probeQueryText = $key
+            $probeSource = $Source
+            if ($entry.ids) {
+                foreach ($src in $canonicalOrder) {
+                    if ($src -notin $allowedSources) { continue }
+                    $idProp = $entry.ids.PSObject.Properties[$src]
+                    if ($idProp) { $probeQueryText = $idProp.Value; $probeSource = @($src); break }
+                }
+            }
+
+            # A db entry whose ids no longer resolve against any live catalog
+            # (renamed/removed upstream) is silently skipped — stale seed
+            # data, not a search failure.
+            $hits = @(Resolve-DFCatalogQueryMerge -QueryText $probeQueryText -Source $probeSource -Fresh:$Fresh -RecordSeenQuery $false `
+                -InstalledInfo $installedInfo -IdentityGuide $identityGuide)
+            if ($hits) { $merged.Add($hits[0]) }
+        }
+    @($merged | Sort-Object Name)
 }

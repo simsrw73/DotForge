@@ -16,9 +16,10 @@ function Update-DFCategoryDb {
         Downloads tool-categories.json from the latest DotForge GitHub release
         and writes $XDG_DATA_HOME\dotforge\tool-categories.json (atomically,
         through a temp file). Delete that file to go back to the shipped copy.
-        Needs $Env:XDG_DATA_HOME (set by Initialize-DFEnvironment). Supports
-        -WhatIf and -Confirm.
+        Supports -WhatIf and -Confirm.
+    .EXAMPLE
         Update-DFCategoryDb
+
         Fetches and installs the latest published category database.
     .EXAMPLE
         Update-DFCategoryDb -WhatIf
@@ -32,34 +33,6 @@ function Update-DFCategoryDb {
     [CmdletBinding(SupportsShouldProcess)]
     param()
 
-    $uri = 'https://github.com/simsrw73/DotForge/releases/latest/download/tool-categories.json'
-    try {
-        $doc = Invoke-DFCategoryDbDownload -Uri $uri
-    } catch {
-        Write-Warning "DotForge: failed to download category database: $_"
-        return
-    }
-
-    $errs = $null
-    if (-not (Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs))) {
-        Write-Warning "DotForge: downloaded category database failed validation, keeping the existing copy: $($errs -join '; ')"
-        return
-    }
-
-    if (-not $Env:XDG_DATA_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_DATA_HOME is not set. Call Initialize-DFEnvironment first.'
-        return
-    }
-
-    $destDir = Join-Path $Env:XDG_DATA_HOME 'dotforge'
-    $destPath = Join-Path $destDir 'tool-categories.json'
-
-    if ($PSCmdlet.ShouldProcess($destPath, 'Update category database')) {
-        New-DFDirectory $destDir
-        $tmp = "$destPath.tmp.$PID"
-        $doc | ConvertTo-Json -Depth 8 | Set-Content -Path $tmp -Encoding UTF8
-        Move-Item -Path $tmp -Destination $destPath -Force
-        $toolCount = @($doc.tools.PSObject.Properties.Name).Count
-        Write-Host "Updated category database at $destPath ($toolCount tools)."
-    }
+    Update-DFReleaseData -FileName 'tool-categories.json' -Validator 'Test-DFCategoryDbSchema' `
+        -Label 'category database' -Cmdlet $PSCmdlet
 }

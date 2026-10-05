@@ -1,7 +1,14 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
 }
 
 Describe 'Get-DFCatalogCacheRoot' {
@@ -11,13 +18,6 @@ Describe 'Get-DFCatalogCacheRoot' {
     It 'returns catalogs dir under XDG_CACHE_HOME/dotforge' {
         $Env:XDG_CACHE_HOME = $TestDrive
         Get-DFCatalogCacheRoot | Should -Be (Join-Path $TestDrive 'dotforge/catalogs')
-    }
-
-    It 'warns and returns $null when XDG_CACHE_HOME is unset' {
-        $Env:XDG_CACHE_HOME = $null
-        $result = Get-DFCatalogCacheRoot -WarningVariable warnings -WarningAction SilentlyContinue
-        $result | Should -BeNullOrEmpty
-        $warnings | Should -Not -BeNullOrEmpty
     }
 }
 
@@ -131,14 +131,14 @@ Describe 'Get-DFCatalogProvider' {
         $global:DFTestProbeCount = 0
 
         $script:DFCatalogProviders['crates'] = @{
-            Name = 'crates'; Kind = 'query-cache'; Test = { $true }
+            Name = 'crates'; Kind = 'query-cache'; Order = 6; Test = { $true }
         }
         $script:DFCatalogProviders['scoop'] = @{
-            Name = 'scoop'; Kind = 'snapshot'
+            Name = 'scoop'; Kind = 'snapshot'; Order = 1
             Test = { $global:DFTestProbeCount++; $true }
         }
         $script:DFCatalogProviders['npm'] = @{
-            Name = 'npm'; Kind = 'query-cache'; Test = { $false }
+            Name = 'npm'; Kind = 'query-cache'; Order = 4; Test = { $false }
         }
     }
     AfterEach {
@@ -189,10 +189,5 @@ Describe 'Add-DFCatalogSeenQuery' {
         @($seen).Count | Should -Be 50
         @($seen)[0].query | Should -Be 'q55'
         @($seen).query | Should -Not -Contain 'q1'
-    }
-
-    It 'is a no-op without XDG_CACHE_HOME' {
-        $Env:XDG_CACHE_HOME = $null
-        { Add-DFCatalogSeenQuery -Query 'x' -WarningAction SilentlyContinue } | Should -Not -Throw
     }
 }

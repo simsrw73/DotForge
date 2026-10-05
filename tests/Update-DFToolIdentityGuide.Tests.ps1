@@ -1,8 +1,12 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolIdentityGuideSchema.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFToolIdentityGuideDownload.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
     . "$PSScriptRoot/../Public/Update-DFToolIdentityGuide.ps1"
 
     function New-FakeGuideDoc {
@@ -29,7 +33,7 @@ Describe 'Update-DFToolIdentityGuide' {
     AfterEach { $Env:XDG_DATA_HOME = $script:SavedDataHome }
 
     It 'downloads, validates, and atomically writes the destination' {
-        Mock Invoke-DFToolIdentityGuideDownload { New-FakeGuideDoc }
+        Mock Invoke-DFReleaseAssetDownload { New-FakeGuideDoc }
         Update-DFToolIdentityGuide -Confirm:$false
         Test-Path $script:DestPath | Should -BeTrue
         (Get-Content $script:DestPath -Raw | ConvertFrom-Json).tools.ripgrep.linkedVia | Should -Be 'curated'
@@ -37,13 +41,13 @@ Describe 'Update-DFToolIdentityGuide' {
     }
 
     It 'leaves no file behind on -WhatIf' {
-        Mock Invoke-DFToolIdentityGuideDownload { New-FakeGuideDoc }
+        Mock Invoke-DFReleaseAssetDownload { New-FakeGuideDoc }
         Update-DFToolIdentityGuide -WhatIf
         Test-Path $script:DestPath | Should -BeFalse
     }
 
     It 'warns and writes nothing when the download fails' {
-        Mock Invoke-DFToolIdentityGuideDownload { throw 'network down' }
+        Mock Invoke-DFReleaseAssetDownload { throw 'network down' }
         $w = $null
         Update-DFToolIdentityGuide -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
         "$w" | Should -Match 'failed to download'
@@ -53,7 +57,7 @@ Describe 'Update-DFToolIdentityGuide' {
     It 'warns and leaves the existing copy untouched when validation fails' {
         New-DFDirectory (Split-Path $script:DestPath)
         'existing-good-content' | Set-Content $script:DestPath -NoNewline
-        Mock Invoke-DFToolIdentityGuideDownload {
+        Mock Invoke-DFReleaseAssetDownload {
             # A tool entry missing both packages and linkedVia is what actually
             # fails Test-DFToolIdentityGuideSchema (an empty tools object alone
             # passes — there's no "must be non-empty" check at that level).
@@ -63,13 +67,5 @@ Describe 'Update-DFToolIdentityGuide' {
         Update-DFToolIdentityGuide -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
         "$w" | Should -Match 'validation'
         Get-Content $script:DestPath -Raw | Should -Be 'existing-good-content'
-    }
-
-    It 'warns when XDG_DATA_HOME is unset' {
-        $Env:XDG_DATA_HOME = $null
-        Mock Invoke-DFToolIdentityGuideDownload { New-FakeGuideDoc }
-        $w = $null
-        Update-DFToolIdentityGuide -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
-        "$w" | Should -Match 'XDG_DATA_HOME'
     }
 }

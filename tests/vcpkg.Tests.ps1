@@ -1,4 +1,10 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     $script:RealTools    = Join-Path $PSScriptRoot '../Tools'
     $script:CompanionPath = Join-Path $script:RealTools 'vcpkg.ps1'
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"

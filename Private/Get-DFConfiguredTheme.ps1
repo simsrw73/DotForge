@@ -28,11 +28,73 @@ function Get-DFConfiguredTheme {
         [string]$Default
     )
 
-    if ($null -ne $Global:DFConfig) {
-        $perTool = $Global:DFConfig[$ToolKey]
-        if ($perTool) { return $perTool }
-        $shared = $Global:DFConfig['Theme']
-        if ($shared) { return $shared }
+    $perTool = Get-DFConfig $ToolKey
+    if ($perTool) { return $perTool }
+    $shared = Get-DFConfig Theme
+    if ($shared) { return $shared }
+    $Default
+}
+
+function Get-DFConfig {
+    <#
+    .SYNOPSIS
+        Reads one $DFConfig setting, or returns -Default when it isn't set.
+    .DESCRIPTION
+        The single null-safe read of the user's $Global:DFConfig hashtable.
+        $DFConfig may be missing, $null, or lack the key; all three return
+        -Default. A configured $false is returned as is. Like any PowerShell
+        command, an array value is written to the pipeline element by element,
+        so read list settings with @(Get-DFConfig SkipTools).
+    .PARAMETER Key
+        The setting name, e.g. 'SkipTools'.
+    .PARAMETER Default
+        Returned when the setting isn't configured. Default: $null.
+    .OUTPUTS
+        System.Object.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position = 0)][string]$Key,
+        [Parameter(Position = 1)]$Default = $null
+    )
+    $config = Get-Variable -Name DFConfig -Scope Global -ValueOnly -ErrorAction Ignore
+    if ($config -is [System.Collections.IDictionary] -and $config.Contains($Key) -and $null -ne $config[$Key]) {
+        return $config[$Key]
     }
     $Default
+}
+
+function Resolve-DFThemeFile {
+    <#
+    .SYNOPSIS
+        Finds a tool's theme file: an absolute path, the user's themes folder, or the bundled copy.
+    .DESCRIPTION
+        Looks, in order, for -Name as an existing absolute file path; then
+        <XDG config>\<Tool>\themes\<Name>.json; then <BundledDir>\<Name>.json.
+        Returns the first that exists, or $null. Used by the fzf, psreadline and
+        glow companions, which capture it with ${function:Resolve-DFThemeFile}
+        so their global functions can call it.
+    .PARAMETER Tool
+        The tool's folder name under XDG config (e.g. 'fzf').
+    .PARAMETER Name
+        A theme name or an absolute path to a theme file.
+    .PARAMETER BundledDir
+        The companion's bundled themes folder (e.g. Tools\fzf).
+    .OUTPUTS
+        System.String, or $null when nothing is found.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][string]$Tool,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$BundledDir
+    )
+    if ([System.IO.Path]::IsPathRooted($Name)) {
+        return (Test-Path $Name -PathType Leaf) ? $Name : $null
+    }
+    foreach ($candidate in (Join-Path (Get-DFXdgPath Config) $Tool 'themes' "$Name.json"), (Join-Path $BundledDir "$Name.json")) {
+        if (Test-Path $candidate -PathType Leaf) { return $candidate }
+    }
+    $null
 }

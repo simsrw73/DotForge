@@ -1,7 +1,14 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.Scoop.ps1"
 
     function New-FakeScoopRoot {
@@ -134,12 +141,6 @@ Describe 'DFCatalog.Scoop' {
 
             @(Search-DFCatalogScoop -Query 'sneaky' -ScoopRoot $script:ScoopRoot) |
                 Should -BeNullOrEmpty
-        }
-
-        It 'works without XDG_CACHE_HOME by building in memory' {
-            $Env:XDG_CACHE_HOME = $null
-            $r = @(Search-DFCatalogScoop -Query 'ripgrep' -ScoopRoot $script:ScoopRoot -WarningAction SilentlyContinue)
-            $r.Count | Should -Be 1
         }
     }
 

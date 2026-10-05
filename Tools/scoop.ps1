@@ -72,6 +72,48 @@ function global:Assert-DFScoopModule {
     return $false
 }
 
+# What differs about scoop; the shared flow is Invoke-DFPackageManagerAction.
+$script:DFPackageManagerSpecs['scoop'] = @{
+    Name             = 'scoop'
+    Require          = { Assert-DFScoopModule }
+    SearchPrompt     = 'Search scoop apps'
+    Preview          = 'scoop info {2}'
+    # Prefer scoop-search (fast, matches binaries); fall back to the module.
+    Search           = { param($Query)
+        if (Get-Command scoop-search -ErrorAction Ignore) {
+            $bucket = ''
+            & scoop-search $Query 2>$null | ForEach-Object {
+                if ($_ -match "^'([^']+)' bucket:") { $bucket = $Matches[1]; return }
+                if ($_ -match '^\s+(\S+)\s+\(([^)]+)\)') {
+                    ('{0,-34} {1,-14} {2}' -f $Matches[1], $Matches[2], $bucket) + "`t" + $Matches[1]
+                }
+            }
+        } else {
+            Find-ScoopApp -Name "*$Query*" 2>$null | ForEach-Object {
+                ('{0,-34} {1,-14} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
+            }
+        } }
+    Installed        = { param($Source)
+        Get-ScoopApp 2>$null | ForEach-Object {
+            ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
+        } }
+    # The Scoop module has no "outdated" query, so offer every installed app.
+    Outdated         = {
+        Get-ScoopApp 2>$null | ForEach-Object {
+            ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
+        } }
+    InstallCommand   = 'scoop install {0}'
+    UninstallCommand = 'scoop uninstall {0}'
+    InPlace          = { param($command) $command }
+    Install          = { param($Id) Install-ScoopApp -Name $Id }
+    Uninstall        = { param($Id) Uninstall-ScoopApp -Name $Id }
+    Update           = { param($Id) Update-ScoopApp -Name $Id }
+    UpdateAll        = { scoop update '*' }
+    UpdateWord       = 'update'
+    UpdatingWord     = 'Updating'
+    AllMessage       = 'Updating all apps…'
+}
+
 function global:Select-ScoopPackage {
     <#
     .SYNOPSIS
@@ -106,46 +148,7 @@ function global:Select-ScoopPackage {
     #>
     [CmdletBinding()]
     param([string]$Query = '')
-
-    if (-not (Assert-DFScoopModule)) { return }
-    if (-not $Query) { $Query = Read-Host 'Search scoop apps' }
-
-    # Prefer scoop-search (fast, matches binaries); fall back to the module.
-    $items = @(
-        if (Get-Command scoop-search -ErrorAction Ignore) {
-            $bucket = ''
-            & scoop-search $Query 2>$null | ForEach-Object {
-                if ($_ -match "^'([^']+)' bucket:") { $bucket = $Matches[1]; return }
-                if ($_ -match '^\s+(\S+)\s+\(([^)]+)\)') {
-                    ('{0,-34} {1,-14} {2}' -f $Matches[1], $Matches[2], $bucket) + "`t" + $Matches[1]
-                }
-            }
-        }
-        else {
-            Find-ScoopApp -Name "*$Query*" 2>$null | ForEach-Object {
-                ('{0,-34} {1,-14} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
-            }
-        }
-    )
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'scoop info {2}' `
-        -Header         'scoop search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -ExpectKey      'alt-r' `
-        -Bind           'alt-i:execute(scoop install {2})'
-
-    if (-not $sel) { return }
-    $name = @($sel.Selected)[0]
-    if (-not $name) { return }
-
-    if ($sel.Key -eq 'alt-r') {
-        Write-Host "⚙  Installing $name…" -ForegroundColor Cyan
-        Install-ScoopApp -Name $name
-    }
-    else {
-        "scoop install $name"
-    }
+    Invoke-DFPackageManagerAction -Manager scoop -Action Install -Query $Query
 }
 Set-Alias -Name sins -Value Select-ScoopPackage -Scope Global -Force
 
@@ -175,31 +178,7 @@ function global:Remove-ScoopPackage {
     #>
     [CmdletBinding()]
     param()
-
-    if (-not (Assert-DFScoopModule)) { return }
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems {
-            Get-ScoopApp 2>$null | ForEach-Object {
-                ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
-            }
-        } `
-        -PreviewCommand 'scoop info {2}' `
-        -Header         'scoop uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -ExpectKey      'alt-c' `
-        -Bind           'alt-x:execute(scoop uninstall {2})'
-
-    if (-not $sel) { return }
-    $name = @($sel.Selected)[0]
-    if (-not $name) { return }
-
-    if ($sel.Key -eq 'alt-c') {
-        "scoop uninstall $name"
-    }
-    else {
-        Write-Host "⚙  Uninstalling $name…" -ForegroundColor DarkYellow
-        Uninstall-ScoopApp -Name $name
-    }
+    Invoke-DFPackageManagerAction -Manager scoop -Action Uninstall
 }
 Set-Alias -Name srm -Value Remove-ScoopPackage -Scope Global -Force
 
@@ -231,36 +210,7 @@ function global:Invoke-ScoopUpdate {
     #>
     [CmdletBinding()]
     param()
-
-    if (-not (Assert-DFScoopModule)) { return }
-
-    # The Scoop module has no "outdated" query, so list all installed apps and
-    # let the user mark which to update.
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems {
-            Get-ScoopApp 2>$null | ForEach-Object {
-                ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
-            }
-        } `
-        -PreviewCommand 'scoop info {2}' `
-        -Header         'scoop update  [Tab=mark | Enter=update marked | Alt-A=update all]' `
-        -ExpectKey      'alt-a' `
-        -Multi
-
-    if (-not $sel) { return }
-
-    if ($sel.Key -eq 'alt-a') {
-        Write-Host '⚙  Updating all apps…' -ForegroundColor Green
-        scoop update '*'
-        return
-    }
-
-    foreach ($name in $sel.Selected) {
-        if ($name) {
-            Write-Host "⚙  Updating $name…" -ForegroundColor Green
-            Update-ScoopApp -Name $name
-        }
-    }
+    Invoke-DFPackageManagerAction -Manager scoop -Action Update
 }
 Set-Alias -Name sup -Value Invoke-ScoopUpdate -Scope Global -Force
 
@@ -268,17 +218,5 @@ Set-Alias -Name sup -Value Invoke-ScoopUpdate -Scope Global -Force
 # Type a search term, press Ctrl+G then S: pick in fzf, and the install command
 # lands on the command line (editable — press Enter to run). Uses the current
 # line as the query. Guarded so it is a no-op when PSReadLine is unavailable.
-if (Get-Command Set-PSReadLineKeyHandler -ErrorAction Ignore) {
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,s' `
-        -Description 'DotForge: scoop search → install command onto the line' `
-        -ScriptBlock {
-            $line = $null; $cursor = $null
-            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-            if ([string]::IsNullOrWhiteSpace($line)) { return }
-            $cmd = Select-ScoopPackage -Query $line
-            if ($cmd -is [string] -and $cmd.Trim()) {
-                [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
-                [Microsoft.PowerShell.PSConsoleReadLine]::Insert($cmd)
-            }
-        }
-}
+Register-DFPrefillChord -Chord 'Ctrl+g,s' -Picker 'Select-ScoopPackage' `
+    -Description 'DotForge: scoop search → install command onto the line'

@@ -42,7 +42,7 @@ function Get-DFCatalogLocalPackages {
         }
     }
 
-    foreach ($provider in $script:DFCatalogOrder) {
+    foreach ($provider in Get-DFCatalogName) {
         $queriesDir = Join-Path $cacheRoot "$provider/queries"
         if (-not (Test-Path $queriesDir)) { continue }
         foreach ($file in Get-ChildItem $queriesDir -Filter '*.json' -File) {

@@ -1,4 +1,9 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
@@ -105,14 +110,6 @@ Describe 'Get-DFCachedCommandOutput' {
         $script:calls = 0
         Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'missing-tool' -Generate { $script:calls++; 'x' } | Out-Null
         Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'missing-tool' -Generate { $script:calls++; 'x' } | Out-Null
-        $script:calls | Should -Be 2
-    }
-
-    It 'falls back to always calling -Generate, uncached, when XDG_CACHE_HOME is unset' {
-        $Env:XDG_CACHE_HOME = $null
-        $script:calls = 0
-        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { $script:calls++; 'x' } | Out-Null
-        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { $script:calls++; 'x' } | Out-Null
         $script:calls | Should -Be 2
     }
 

@@ -65,6 +65,43 @@ function global:Invoke-DFChocoElevated {
     else { choco @ChocoArgs }
 }
 
+# What differs about Chocolatey; the shared flow is Invoke-DFPackageManagerAction.
+# choco's machine-readable -r output is 'name|version|...', no object module exists.
+$script:DFPackageManagerSpecs['choco'] = @{
+    Name             = 'choco'
+    Require          = { Assert-DFChoco }
+    SearchPrompt     = 'Search choco packages'
+    Preview          = 'choco info {2}'
+    Search           = { param($Query)
+        choco search $Query -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
+            $parts = $_ -split '\|'
+            ('{0,-38} {1}' -f $parts[0], $parts[1]) + "`t" + $parts[0]
+        } }
+    Installed        = { param($Source)
+        choco list -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
+            $parts = $_ -split '\|'
+            ('{0,-38} {1}' -f $parts[0], $parts[1]) + "`t" + $parts[0]
+        } }
+    # `choco outdated -r` → name|current|available|pinned
+    Outdated         = {
+        choco outdated -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
+            $parts = $_ -split '\|'
+            ('{0,-34} {1} -> {2}' -f $parts[0], $parts[1], $parts[2]) + "`t" + $parts[0]
+        } }
+    InstallCommand   = 'choco install {0} -y'
+    UninstallCommand = 'choco uninstall {0} -y'
+    # fzf's execute() keys run in a cmd subshell: elevate through gsudo when it's set up.
+    InPlace          = { param($command)
+        if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { "sudo $command" } else { $command } }
+    Install          = { param($Id) Invoke-DFChocoElevated install $Id -y }
+    Uninstall        = { param($Id) Invoke-DFChocoElevated uninstall $Id -y }
+    Update           = { param($Id) Invoke-DFChocoElevated upgrade $Id -y }
+    UpdateAll        = { Invoke-DFChocoElevated upgrade all -y }
+    UpdateWord       = 'upgrade'
+    UpdatingWord     = 'Upgrading'
+    AllMessage       = 'Upgrading all packages…'
+}
+
 function global:Select-ChocoPackage {
     <#
     .SYNOPSIS
@@ -100,38 +137,7 @@ function global:Select-ChocoPackage {
     #>
     [CmdletBinding()]
     param([string]$Query = '')
-
-    if (-not (Assert-DFChoco)) { return }
-    if (-not $Query) { $Query = Read-Host 'Search choco packages' }
-
-    $items = @(
-        choco search $Query -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
-            $parts = $_ -split '\|'
-            ('{0,-38} {1}' -f $parts[0], $parts[1]) + "`t" + $parts[0]
-        }
-    )
-
-    # sudo-aware command for the in-place execute() key (runs in a cmd subshell).
-    $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'choco info {2}' `
-        -Header         'choco search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -ExpectKey      'alt-r' `
-        -Bind           "alt-i:execute($run install {2} -y)"
-
-    if (-not $sel) { return }
-    $id = @($sel.Selected)[0]
-    if (-not $id) { return }
-
-    if ($sel.Key -eq 'alt-r') {
-        Write-Host "⚙  Installing $id…" -ForegroundColor Cyan
-        Invoke-DFChocoElevated install $id -y
-    }
-    else {
-        "choco install $id -y"
-    }
+    Invoke-DFPackageManagerAction -Manager choco -Action Install -Query $Query
 }
 Set-Alias -Name cins -Value Select-ChocoPackage -Scope Global -Force
 
@@ -162,36 +168,7 @@ function global:Remove-ChocoPackage {
     #>
     [CmdletBinding()]
     param()
-
-    if (-not (Assert-DFChoco)) { return }
-
-    $items = @(
-        choco list -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
-            $parts = $_ -split '\|'
-            ('{0,-38} {1}' -f $parts[0], $parts[1]) + "`t" + $parts[0]
-        }
-    )
-
-    $run = if ((Get-Alias sudo -ErrorAction Ignore)?.Definition -eq 'gsudo') { 'sudo choco' } else { 'choco' }
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'choco info {2}' `
-        -Header         'choco uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -ExpectKey      'alt-c' `
-        -Bind           "alt-x:execute($run uninstall {2} -y)"
-
-    if (-not $sel) { return }
-    $id = @($sel.Selected)[0]
-    if (-not $id) { return }
-
-    if ($sel.Key -eq 'alt-c') {
-        "choco uninstall $id -y"
-    }
-    else {
-        Write-Host "⚙  Uninstalling $id…" -ForegroundColor DarkYellow
-        Invoke-DFChocoElevated uninstall $id -y
-    }
+    Invoke-DFPackageManagerAction -Manager choco -Action Uninstall
 }
 Set-Alias -Name crm -Value Remove-ChocoPackage -Scope Global -Force
 
@@ -223,38 +200,7 @@ function global:Invoke-ChocoUpdate {
     #>
     [CmdletBinding()]
     param()
-
-    if (-not (Assert-DFChoco)) { return }
-
-    # `choco outdated -r` → name|current|available|pinned
-    $items = @(
-        choco outdated -r 2>$null | Where-Object { $_ -match '\|' } | ForEach-Object {
-            $parts = $_ -split '\|'
-            ('{0,-34} {1} -> {2}' -f $parts[0], $parts[1], $parts[2]) + "`t" + $parts[0]
-        }
-    )
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'choco info {2}' `
-        -Header         'choco upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
-        -ExpectKey      'alt-a' `
-        -Multi
-
-    if (-not $sel) { return }
-
-    if ($sel.Key -eq 'alt-a') {
-        Write-Host '⚙  Upgrading all packages…' -ForegroundColor Green
-        Invoke-DFChocoElevated upgrade all -y
-        return
-    }
-
-    foreach ($id in $sel.Selected) {
-        if ($id) {
-            Write-Host "⚙  Upgrading $id…" -ForegroundColor Green
-            Invoke-DFChocoElevated upgrade $id -y
-        }
-    }
+    Invoke-DFPackageManagerAction -Manager choco -Action Update
 }
 Set-Alias -Name cup -Value Invoke-ChocoUpdate -Scope Global -Force
 
@@ -262,17 +208,5 @@ Set-Alias -Name cup -Value Invoke-ChocoUpdate -Scope Global -Force
 # Type a search term, press Ctrl+G then C: pick in fzf, and the install command
 # lands on the command line (editable — press Enter to run). Uses the current
 # line as the query. Guarded so it is a no-op when PSReadLine is unavailable.
-if (Get-Command Set-PSReadLineKeyHandler -ErrorAction Ignore) {
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,c' `
-        -Description 'DotForge: choco search → install command onto the line' `
-        -ScriptBlock {
-            $line = $null; $cursor = $null
-            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-            if ([string]::IsNullOrWhiteSpace($line)) { return }
-            $cmd = Select-ChocoPackage -Query $line
-            if ($cmd -is [string] -and $cmd.Trim()) {
-                [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
-                [Microsoft.PowerShell.PSConsoleReadLine]::Insert($cmd)
-            }
-        }
-}
+Register-DFPrefillChord -Chord 'Ctrl+g,c' -Picker 'Select-ChocoPackage' `
+    -Description 'DotForge: choco search → install command onto the line'

@@ -401,13 +401,7 @@ function Get-DFCatalogWingetDetail {
     }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['winget'] = @{
-    Name         = 'winget'
-    Kind         = 'snapshot'
-    Test         = { (Test-Path (Get-DFCatalogWingetMsixPath)) -or [bool](Get-Command winget -ErrorAction Ignore) }
-    Search       = { param($Query, $Fresh) Search-DFCatalogWinget -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogWingetInstalled }
-    Refresh      = { param($Query) Update-DFCatalogWingetIndex -Force }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogWingetDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+Register-DFCatalogProvider -Name winget -Kind snapshot -Order 2 -SourceFile $PSCommandPath `
+    -ExtraFiles 'Invoke-DFSqliteQuery.ps1' `
+    -Test    { (Test-Path (Get-DFCatalogWingetMsixPath)) -or [bool](Get-Command winget -ErrorAction Ignore) } `
+    -Refresh { param($Query) Update-DFCatalogWingetIndex -Force }

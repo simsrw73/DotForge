@@ -1,4 +1,9 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
@@ -91,6 +96,9 @@ if ($completions.count -eq 0) {
     }
     BeforeEach {
         $script:SavedBridges = $Env:CARAPACE_BRIDGES
+        # The companion deploys specs under XDG config; keep it off the real one.
+        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:Captured = $null
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
@@ -99,6 +107,7 @@ if ($completions.count -eq 0) {
     }
     AfterEach {
         $Env:CARAPACE_BRIDGES = $script:SavedBridges
+        $Env:XDG_CONFIG_HOME  = $script:SavedConfigHome
     }
 
     It 'replaces the empty-string sentinel with a bare return when PSFzf is available' {
@@ -125,10 +134,12 @@ if ($completions.count -eq 0) {
 
 Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (Get-Command carapace.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
-        $script:SavedBridges   = $Env:CARAPACE_BRIDGES
-        $Env:XDG_CACHE_HOME    = Join-Path $TestDrive 'cache'
-        $Env:CARAPACE_BRIDGES  = ''
+        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        $script:SavedBridges    = $Env:CARAPACE_BRIDGES
+        $Env:XDG_CACHE_HOME     = Join-Path $TestDrive 'cache'
+        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+        $Env:CARAPACE_BRIDGES   = ''
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
         New-Item -ItemType Directory -Path (Join-Path $TestDrive 'work' 'sub') -Force | Out-Null
@@ -138,6 +149,7 @@ Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (
     AfterEach {
         Pop-Location
         $Env:XDG_CACHE_HOME   = $script:SavedCacheHome
+        $Env:XDG_CONFIG_HOME  = $script:SavedConfigHome
         $Env:CARAPACE_BRIDGES = $script:SavedBridges
     }
 

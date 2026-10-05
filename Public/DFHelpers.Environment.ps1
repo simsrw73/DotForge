@@ -133,14 +133,10 @@ function Get-DFEnv {
         [string]$Pattern = '*'
     )
 
-    $useColor = (-not (Test-DFOutputPiped -Invocation $MyInvocation)) -and
-                (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
-    if ($useColor) {
-        $name  = "`e[1;36m"   # bold cyan   — the variable name stands out
-        $eq    = "`e[1;33m"   # bold yellow — the '=' divider is unmistakable
-        $value = "`e[2m"      # faint       — recedes behind the name, theme-adaptive
-        $reset = "`e[0m"
-    }
+    $useColor = Test-DFColorOutput -Invocation $MyInvocation
+    # Name stands out, '=' is unmistakable, the value recedes (faint adapts to the theme).
+    $p = Get-DFAnsiPalette -Color $useColor
+    $name, $eq, $value, $reset = $p.Title, $p.Accent, $p.Faint, $p.Reset
 
     Get-ChildItem Env: |
         Where-Object Name -like $Pattern |

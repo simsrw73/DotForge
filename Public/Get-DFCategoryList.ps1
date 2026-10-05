@@ -47,7 +47,7 @@ function Get-DFCategoryList {
         [switch]$Counts = $true
     )
 
-    $color = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
+    $color = Test-DFColorOutput
     Format-DFCategoryList -Database (Get-DFCategoryDb) -Facet $Facet -Counts $Counts.IsPresent -Color $color
 }
 

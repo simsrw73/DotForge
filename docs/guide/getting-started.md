@@ -54,7 +54,7 @@ DotForge: Environment ready. Package managers: scoop, winget, choco
 What each line does:
 
 1. `Import-Module DotForge` loads the module and defines the general helpers (`which`, `touch`, `up`, `mkcd`, …). Nothing else changes yet.
-2. `Initialize-DFEnvironment` sets the XDG base-directory variables (`XDG_CONFIG_HOME` and the rest), creates the folders, and reports which package managers it found. Always run it before `Register-DFTool`.
+2. `Initialize-DFEnvironment` sets the XDG base-directory variables (`XDG_CONFIG_HOME` and the rest), creates the folders, and reports which package managers it found. It also exports the variables, so the tools themselves use the same folders.
 3. `Register-DFTool -All` configures every tool DotForge knows that is installed: environment variables, aliases, pickers, completions, prompt and theme. Tools you don't have are skipped silently.
 
 You may also see a few lines from individual tools, such as a note that delta added a theme include to your git config. The [troubleshooting page](troubleshooting.md) explains each warning.
@@ -178,7 +178,6 @@ Register-DFTool -Name ripgrep
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `Install-PSResource` is not recognized | Windows PowerShell 5.1, or PowerShell 7 older than 7.4 without PSResourceGet | Run `pwsh`, or use `Install-Module DotForge -Scope CurrentUser`. |
-| An error from a tool companion when your profile runs | `Register-DFTool` ran before `Initialize-DFEnvironment` | Call `Initialize-DFEnvironment` first, as in step 4. |
 | `No supported package managers found` | none of scoop, winget or choco is on `PATH` | Install one; `Register-DFTool` still works without one. |
 
 More symptoms and fixes are on the [troubleshooting page](troubleshooting.md).

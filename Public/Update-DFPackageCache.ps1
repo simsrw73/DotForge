@@ -48,7 +48,9 @@ function Update-DFPackageCache {
     #>
     [CmdletBinding()]
     param(
-        [ValidateSet('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 'psgallery')]
+        # The catalog list comes from the provider registry (Get-DFCatalogName).
+        [ValidateScript({ if ($_ -in (Get-DFCatalogName)) { $true } else { throw "Unknown catalog '$_'. Known catalogs: $((Get-DFCatalogName) -join ', ')." } })]
+        [ArgumentCompleter({ param($c, $p, $word) Get-DFCatalogName | Where-Object { $_ -like "$word*" } })]
         [string[]]$Source,
 
         [switch]$Quiet

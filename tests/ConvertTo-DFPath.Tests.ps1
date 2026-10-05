@@ -1,4 +1,10 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
 }
 
@@ -39,5 +45,36 @@ Describe 'ConvertTo-DFPath' {
     }
     It 'canonicalizes a non-existent path without error' {
         ConvertTo-DFPath 'C:\no\such\x\..\y' | Should -Be 'C:\no\such\y'
+    }
+}
+
+Describe 'Get-DFXdgPath' {
+    BeforeEach { $script:saved = $Env:XDG_CACHE_HOME }
+    AfterEach  { $Env:XDG_CACHE_HOME = $script:saved }
+
+    It 'returns the environment value, canonicalized, when set' {
+        $Env:XDG_CACHE_HOME = 'C:\x\.\cache\'
+        Get-DFXdgPath -Kind Cache | Should -Be 'C:\x\cache'
+    }
+
+    It 'returns the XDG default under $HOME when unset, without setting the variable' {
+        $Env:XDG_CACHE_HOME = $null
+        Get-DFXdgPath -Kind Cache | Should -Be (ConvertTo-DFPath (Join-Path $HOME '.cache'))
+        $Env:XDG_CACHE_HOME | Should -BeNullOrEmpty
+    }
+
+    It 'knows every kind' -ForEach @(
+        @{ Kind = 'Config'; Tail = '.config' }
+        @{ Kind = 'Data';   Tail = '.local\share' }
+        @{ Kind = 'State';  Tail = '.local\state' }
+        @{ Kind = 'Cache';  Tail = '.cache' }
+        @{ Kind = 'Bin';    Tail = '.local\bin' }
+    ) {
+        $var = "XDG_$($Kind.ToUpperInvariant())_HOME"
+        $saved = [Environment]::GetEnvironmentVariable($var)
+        try {
+            [Environment]::SetEnvironmentVariable($var, $null)
+            Get-DFXdgPath -Kind $Kind | Should -Be (ConvertTo-DFPath (Join-Path $HOME $Tail))
+        } finally { [Environment]::SetEnvironmentVariable($var, $saved) }
     }
 }

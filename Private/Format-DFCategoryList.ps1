@@ -36,8 +36,8 @@ function Format-DFCategoryList {
         return "Category database unavailable — run Update-DFCategoryDb or check the module install."
     }
 
-    $bold = $Color ? "`e[1;36m" : ''
-    $reset = $Color ? "`e[0m" : ''
+    $p = Get-DFAnsiPalette -Color $Color
+    $bold, $reset = $p.Title, $p.Reset
 
     $facets = $Facet ? @($Facet) : @('function', 'worksWith')
     $lines = [System.Collections.Generic.List[string]]::new()

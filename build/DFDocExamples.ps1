@@ -130,8 +130,9 @@ function Invoke-DFDocExample {
         every XDG default land there), no XDG_* variables and none of the
         -RemoveVariable names (pass Get-DFDocToolVariable), GIT_CONFIG_GLOBAL
         pointing at an empty file in that folder (so nothing can touch your real
-        git config), NO_COLOR=1, no Pager, and the module copy first on
-        PSModulePath. The working directory is the sandbox's 'work' folder.
+        git config), NO_COLOR=1, no Pager, an already-closed stdin, and the
+        module copy first on PSModulePath. The working directory is the
+        sandbox's 'work' folder.
     .PARAMETER Code
         The PowerShell source to run.
     .PARAMETER ModulesRoot
@@ -166,6 +167,9 @@ function Invoke-DFDocExample {
     $psi.WorkingDirectory = $work
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
+    # A closed stdin, so nothing in an example can block reading the test run's
+    # own stdin (an inherited pipe that never closes made glow hang).
+    $psi.RedirectStandardInput = $true
     $psi.UseShellExecute = $false
     $psi.StandardOutputEncoding = [Text.Encoding]::UTF8
     $psi.StandardErrorEncoding = [Text.Encoding]::UTF8
@@ -179,6 +183,7 @@ function Invoke-DFDocExample {
     $psi.Environment['PSModulePath'] = $ModulesRoot + [IO.Path]::PathSeparator + $psi.Environment['PSModulePath']
 
     $proc = [System.Diagnostics.Process]::Start($psi)
+    $proc.StandardInput.Close()
     $out = $proc.StandardOutput.ReadToEndAsync()
     $err = $proc.StandardError.ReadToEndAsync()
     $timedOut = -not $proc.WaitForExit($TimeoutSeconds * 1000)

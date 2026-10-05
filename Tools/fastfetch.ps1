@@ -8,7 +8,7 @@
 # adapter for fastfetch/honors-env:XDG_CONFIG_HOME
 # See docs/external-dependencies.md.
 
-$_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
+$_settings = $DFCurrentTool.settings
 $_cfgRaw   = $_settings.PSObject.Properties['configPath']?.Value ?? '${XDG_CONFIG_HOME}/fastfetch/config.jsonc'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
 

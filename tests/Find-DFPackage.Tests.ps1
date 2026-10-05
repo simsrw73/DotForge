@@ -1,10 +1,16 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
     . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
@@ -416,6 +422,12 @@ Describe 'Find-DFPackage' {
         It 'ORs multiple -Category values' {
             $r = @(Find-DFPackage -Category search,editor)
             @($r.Name) | Sort-Object | Should -Be @('micro', 'ripgrep')
+        }
+
+        It 'takes one installed snapshot for the whole facet search, not one per matched tool' {
+            Mock Get-DFCatalogInstalled { @{ Items = @(); IdentityMap = @{} } }
+            $null = @(Find-DFPackage -Category search,editor -AsObject)
+            Should -Invoke Get-DFCatalogInstalled -Times 1 -Exactly
         }
 
         It 'ANDs -Category and -WorksWith together' {

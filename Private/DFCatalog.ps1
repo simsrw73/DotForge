@@ -2,96 +2,14 @@
 
 # Core plumbing for the catalog provider system (trifle / Find-DFPackage).
 #
-# Providers self-register into $script:DFCatalogProviders from their own
-# Private/DFCatalog.<Provider>.ps1 files. Because DotForge.psm1 dot-sources
-# Private/*.ps1 alphabetically, provider files (e.g. DFCatalog.Choco.ps1) load
-# BEFORE this file — every file that touches the table must guard-init it and
-# never assume this file ran first. Canonical ordering lives here, not in
-# registration order.
+# The provider registry, Register-DFCatalogProvider and the canonical order
+# (Get-DFCatalogName) live in DFCatalog.Base.ps1, which loads before the
+# provider files.
 
 # Guard-init via Get-Variable, not `if (-not $script:X)`: reading a variable to
 # test whether it exists is itself a strict-mode violation, so the bare-read
 # idiom throws under Set-StrictMode (build/ tooling runs strict).
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
 if (-not (Get-Variable -Name DFCatalogAvailability -Scope Script -ErrorAction Ignore)) { $script:DFCatalogAvailability = @{} }
-
-$script:DFCatalogOrder = @('scoop', 'winget', 'choco', 'npm', 'pypi', 'crates', 'psgallery')
-
-function Get-DFXmlMember {
-    <#
-    .SYNOPSIS
-        Strict-safe read of a member (child element / attribute) on an XML node.
-    .DESCRIPTION
-        Returns $null when the member is absent, instead of throwing the way a
-        bare $node.Member does under Set-StrictMode.
-
-        Absent members are NORMAL in the NuGet v2 / OData feeds these providers
-        parse: the schema marks Id/Authors/LastUpdated/Summary with
-        m:FC_KeepInContent="false" ("feed customization"), which remaps them onto
-        the Atom-standard <title>/<author>/<updated> elements and omits them from
-        <m:properties> entirely. Callers must therefore be able to probe for a
-        property and fall back — but under strict mode the probe itself is the
-        violation, so the probe has to go through here.
-
-        This is deliberately NOT a suppression of strict mode. A genuinely-absent
-        feed property returns $null (expected, handled), while a typo'd or
-        wrong-cased name also returns $null rather than throwing — the tradeoff
-        is contained to feed parsing, where "absent" is data, not a defect.
-    .PARAMETER Element
-        The XML node to read from. $null yields $null.
-    .PARAMETER Name
-        The member name.
-    .OUTPUTS
-        The member's value, or $null when absent.
-    #>
-    [CmdletBinding()]
-    param(
-        [AllowNull()]
-        [object]$Element,
-
-        [Parameter(Mandatory)]
-        [string]$Name
-    )
-
-    if ($null -eq $Element) { return $null }
-    $property = $Element.PSObject.Properties[$Name]
-    if (-not $property) { return $null }
-    return $property.Value
-}
-
-function Get-DFXmlText {
-    <#
-    .SYNOPSIS
-        Strict-safe read of an XML member's text value.
-    .DESCRIPTION
-        Wraps Get-DFXmlMember and normalizes the two shapes PowerShell's XML
-        adapter produces: a text-only element surfaces as a [string], while an
-        element carrying attributes (e.g. <d:Published m:type="Edm.DateTime">)
-        surfaces as an XmlElement holding its value in '#text'.
-    .PARAMETER Element
-        The XML node to read from. $null yields $null.
-    .PARAMETER Name
-        The member name.
-    .OUTPUTS
-        [string] the member's text, or $null when absent/empty.
-    #>
-    [CmdletBinding()]
-    param(
-        [AllowNull()]
-        [object]$Element,
-
-        [Parameter(Mandatory)]
-        [string]$Name
-    )
-
-    $value = Get-DFXmlMember -Element $Element -Name $Name
-    if ($null -eq $value) { return $null }
-    if ($value -is [string]) { return $value }
-
-    $inner = $value.PSObject.Properties['#text']
-    if ($inner) { return [string]$inner.Value }
-    return $null
-}
 
 # TTLs are test-overridable; choco gets a long TTL because the community OData
 # API is slow and aggressively rate-limited.
@@ -105,18 +23,13 @@ $script:DFCatalogSeenQueryLimit = 50
 function Get-DFCatalogCacheRoot {
     <#
     .SYNOPSIS
-        Returns the catalog cache root ($XDG_CACHE_HOME/dotforge/catalogs),
-        or $null with a warning when XDG_CACHE_HOME is unset.
+        Returns the catalog cache root (<XDG cache>\dotforge\catalogs).
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param()
 
-    if (-not $Env:XDG_CACHE_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Catalog caching is disabled; call Initialize-DFEnvironment first.'
-        return $null
-    }
-    Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs'
+    Join-Path (Get-DFXdgPath Cache) 'dotforge/catalogs'
 }
 
 function ConvertTo-DFCatalogQueryKey {
@@ -182,17 +95,13 @@ function Write-DFCatalogCacheFile {
         [object[]]$Results
     )
 
-    New-DFDirectory (Split-Path $Path -Parent)
-
     $envelope = [ordered]@{
         timestamp = [datetime]::UtcNow.ToString('o')
         query     = $Query
         results   = @($Results)
     }
 
-    $tmp = "$Path.tmp.$PID"
-    $envelope | ConvertTo-Json -Depth 6 | Set-Content -Path $tmp -Encoding UTF8
-    Move-Item -Path $tmp -Destination $Path -Force
+    Write-DFFileAtomic -Path $Path -Value ($envelope | ConvertTo-Json -Depth 6)
 }
 
 function Read-DFCatalogCacheFile {
@@ -243,241 +152,84 @@ function Read-DFCatalogCacheFile {
     }
 }
 
-function New-DFToolSourceInfo {
+function Get-DFCatalogTtl {
     <#
     .SYNOPSIS
-        Constructs a DotForge.ToolSourceInfo — one catalog's view of a package.
-    .DESCRIPTION
-        Each parameter becomes the property of the same name.
-    .PARAMETER Source
-        Catalog name: scoop, winget, choco, npm, pypi, crates or psgallery.
-    .PARAMETER PackageId
-        The package's id in that catalog (e.g. BurntSushi.ripgrep.MSVC).
-    .PARAMETER Name
-        Display name.
-    .PARAMETER Description
-        One-line description, when the catalog has one.
-    .PARAMETER LatestVersion
-        Newest version the catalog offers.
-    .PARAMETER InstalledVersion
-        Version installed through this catalog, if any.
-    .PARAMETER Installed
-        Set when the package is installed through this catalog.
-    .PARAMETER Homepage
-        Project homepage URL.
-    .PARAMETER License
-        License name or SPDX id.
-    .PARAMETER PublishedAt
-        When the latest version was published, when known.
-    .PARAMETER MatchKind
-        How the query matched: exact-id, exact-name or keyword.
-    .PARAMETER CacheTimestamp
-        When this row was fetched; $null for live data.
-    .PARAMETER CacheAgeMinutes
-        Age of the cached row in minutes.
+        Returns a provider's cache TTL: its own entry in $script:DFCatalogTtl, or the default.
+    .PARAMETER Provider
+        Provider name.
     .OUTPUTS
-        PSCustomObject (DotForge.ToolSourceInfo).
+        System.TimeSpan.
     #>
     [CmdletBinding()]
-    [OutputType([PSCustomObject])]
-    param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$PackageId,
-        [Parameter(Mandatory)][string]$Name,
-        [string]$Description,
-        [string]$LatestVersion,
-        [string]$InstalledVersion,
-        [switch]$Installed,
-        [string]$Homepage,
-        [string]$License,
-        [nullable[datetime]]$PublishedAt,
-        [Parameter(Mandatory)]
-        [ValidateSet('exact-id', 'exact-name', 'keyword')]
-        [string]$MatchKind,
-        [nullable[datetime]]$CacheTimestamp,
-        [int]$CacheAgeMinutes
-    )
-
-    [pscustomobject]@{
-        PSTypeName       = 'DotForge.ToolSourceInfo'
-        Source           = $Source
-        PackageId        = $PackageId
-        Name             = $Name
-        Description      = $Description
-        LatestVersion    = $LatestVersion
-        InstalledVersion = $InstalledVersion
-        Installed        = [bool]$Installed
-        Homepage         = $Homepage
-        License          = $License
-        PublishedAt      = $PublishedAt
-        MatchKind        = $MatchKind
-        CacheTimestamp   = $CacheTimestamp
-        CacheAgeMinutes  = $CacheAgeMinutes
-    }
+    [OutputType([timespan])]
+    param([Parameter(Mandatory)][string]$Provider)
+    $script:DFCatalogTtl.ContainsKey($Provider) ? $script:DFCatalogTtl[$Provider] : $script:DFCatalogTtl.default
 }
 
-function New-DFToolInfo {
+function Invoke-DFCacheFirst {
     <#
     .SYNOPSIS
-        Constructs a DotForge.ToolInfo — the merged, cross-catalog view emitted
-        by Find-DFPackage.
+        The cache-first algorithm shared by catalog searches and detail lookups.
     .DESCRIPTION
-        Each parameter becomes the property of the same name. This is the
-        object trifle -AsObject returns.
-    .PARAMETER Name
-        Display name of the merged tool.
-    .PARAMETER Description
-        First non-empty description across sources.
-    .PARAMETER Installed
-        Set when any catalog reports it installed.
-    .PARAMETER InstalledVia
-        Catalogs it is installed through, or 'PATH' when an exact match is on PATH but in no catalog.
-    .PARAMETER InstalledVersion
-        Installed version (from the first installing catalog).
-    .PARAMETER Sources
-        One DotForge.ToolSourceInfo per catalog that carries the tool.
-    .PARAMETER Latest
-        Catalog name -> latest version, in display order.
-    .PARAMETER Homepage
-        Project homepage URL.
-    .PARAMETER License
-        License name or SPDX id.
-    .PARAMETER DFTool
-        Name of the matching Tools/*.json record, when DotForge knows the tool.
-    .PARAMETER MatchKind
-        Strongest match kind across sources: exact-id, exact-name or keyword.
-    .PARAMETER CacheAge
-        Age in minutes of the oldest cached source row.
-    .PARAMETER Details
-        Catalog name -> DotForge.ToolSourceDetail, filled in on the detail path.
-    .PARAMETER GitHub
-        GitHub stars/release/activity, filled in by -GitInfo.
-    .PARAMETER Category
-        Taxonomy entry (categories, related tools) from the category database.
+        Fresh cache hit: served from the cache. Stale hit: served from the
+        cache while -OnStale schedules a background refresh, unless
+        -StaleIsMiss, in which case it is treated as a miss. Miss or -Fresh:
+        -Fetch runs inline; if it throws, any cached copy is served instead.
+        A successful result is written back to the cache, except an empty one
+        when -SkipEmpty (so a transient "nothing found" never poisons it).
+        With no -Path (caching unavailable) every call fetches.
+    .PARAMETER Path
+        The cache file, or $null.
+    .PARAMETER Ttl
+        Age after which a cached entry is stale.
+    .PARAMETER Query
+        Stored in the cache envelope, so Update-DFPackageCache can re-warm it.
+    .PARAMETER Fetch
+        Scriptblock that returns the live result.
+    .PARAMETER Rehydrate
+        Scriptblock turning a Read-DFCatalogCacheFile result back into result objects.
+    .PARAMETER OnStale
+        Scriptblock run when a stale entry is served.
+    .PARAMETER Label
+        Used in the verbose message when -Fetch fails, e.g. "npm fetch for 'bat'".
+    .PARAMETER Fresh
+        Skip the cache and fetch.
+    .PARAMETER StaleIsMiss
+        Treat a stale entry as a miss.
+    .PARAMETER SkipEmpty
+        Don't cache, and return nothing for, a $null result.
     .OUTPUTS
-        PSCustomObject (DotForge.ToolInfo).
+        Whatever -Fetch or -Rehydrate return.
     #>
     [CmdletBinding()]
-    [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)][string]$Name,
-        [string]$Description,
-        [switch]$Installed,
-        [string[]]$InstalledVia = @(),
-        [string]$InstalledVersion,
-        [Parameter(Mandatory)]
-        [AllowEmptyCollection()]
-        [object[]]$Sources,
-        [System.Collections.Specialized.OrderedDictionary]$Latest,
-        [string]$Homepage,
-        [string]$License,
-        [string]$DFTool,
-        [string]$MatchKind,
-        [int]$CacheAge,
-        [System.Collections.Specialized.OrderedDictionary]$Details,
-        [object]$GitHub,
-        [object]$Category
+        [AllowNull()][AllowEmptyString()][string]$Path,
+        [Parameter(Mandatory)][timespan]$Ttl,
+        [Parameter(Mandatory)][string]$Query,
+        [Parameter(Mandatory)][scriptblock]$Fetch,
+        [Parameter(Mandatory)][scriptblock]$Rehydrate,
+        [scriptblock]$OnStale = {},
+        [string]$Label = 'fetch',
+        [switch]$Fresh,
+        [switch]$StaleIsMiss,
+        [switch]$SkipEmpty
     )
-
-    [pscustomobject]@{
-        PSTypeName       = 'DotForge.ToolInfo'
-        Name             = $Name
-        Description      = $Description
-        Installed        = [bool]$Installed
-        InstalledVia     = $InstalledVia
-        InstalledVersion = $InstalledVersion
-        Sources          = @($Sources)
-        Latest           = $Latest
-        Homepage         = $Homepage
-        License          = $License
-        DFTool           = $DFTool
-        MatchKind        = $MatchKind
-        CacheAge         = $CacheAge
-        Details          = $Details
-        GitHub           = $GitHub
-        Category         = $Category
+    $cached = $Path ? (Read-DFCatalogCacheFile -Path $Path -Ttl $Ttl) : $null
+    if (-not $Fresh -and $cached -and -not ($cached.Stale -and $StaleIsMiss)) {
+        if ($cached.Stale) { & $OnStale }
+        return & $Rehydrate $cached
     }
-}
-
-function New-DFToolSourceDetail {
-    <#
-    .SYNOPSIS
-        Constructs a DotForge.ToolSourceDetail — one catalog's deep view of a
-        package (detail-endpoint data, beyond what search returns).
-    .DESCRIPTION
-        Each parameter becomes the property of the same name. Fields a catalog
-        doesn't provide stay empty.
-    .PARAMETER Source
-        Catalog name.
-    .PARAMETER PackageId
-        The package's id in that catalog.
-    .PARAMETER Publisher
-        Publisher or author.
-    .PARAMETER Maintainers
-        Maintainer names.
-    .PARAMETER Dependencies
-        Declared dependency ids.
-    .PARAMETER Tags
-        Catalog tags or keywords.
-    .PARAMETER Downloads
-        Download count, when the catalog reports one.
-    .PARAMETER ReleaseNotes
-        Release notes text.
-    .PARAMETER ReleaseNotesUrl
-        Release notes URL.
-    .PARAMETER RepositoryUrl
-        Source repository URL.
-    .PARAMETER DocsUrl
-        Documentation URL.
-    .PARAMETER InstallHint
-        Catalog-specific install command or note.
-    .PARAMETER Notes
-        Free-form notes (e.g. scoop manifest notes).
-    .PARAMETER Readme
-        Readme text, filled in by -Readme.
-    .PARAMETER Extra
-        Other catalog-specific fields, name -> value.
-    .OUTPUTS
-        PSCustomObject (DotForge.ToolSourceDetail).
-    #>
-    [CmdletBinding()]
-    [OutputType([PSCustomObject])]
-    param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$PackageId,
-        [string]$Publisher,
-        [string[]]$Maintainers = @(),
-        [string[]]$Dependencies = @(),
-        [string[]]$Tags = @(),
-        [nullable[long]]$Downloads,
-        [string]$ReleaseNotes,
-        [string]$ReleaseNotesUrl,
-        [string]$RepositoryUrl,
-        [string]$DocsUrl,
-        [string]$InstallHint,
-        [string]$Notes,
-        [string]$Readme,
-        [System.Collections.Specialized.OrderedDictionary]$Extra
-    )
-
-    [pscustomobject]@{
-        PSTypeName      = 'DotForge.ToolSourceDetail'
-        Source          = $Source
-        PackageId       = $PackageId
-        Publisher       = $Publisher
-        Maintainers     = $Maintainers
-        Dependencies    = $Dependencies
-        Tags            = $Tags
-        Downloads       = $Downloads
-        ReleaseNotes    = $ReleaseNotes
-        ReleaseNotesUrl = $ReleaseNotesUrl
-        RepositoryUrl   = $RepositoryUrl
-        DocsUrl         = $DocsUrl
-        InstallHint     = $InstallHint
-        Notes           = $Notes
-        Readme          = $Readme
-        Extra           = $Extra
+    try {
+        $result = & $Fetch
+    } catch {
+        Write-Verbose "DotForge: live $Label failed: $_"
+        if ($cached) { return & $Rehydrate $cached }
+        return
     }
+    if ($SkipEmpty -and $null -eq $result) { return }
+    if ($Path) { Write-DFCatalogCacheFile -Path $Path -Query $Query -Results @($result) }
+    $result
 }
 
 function Get-DFCatalogDetailCache {
@@ -525,43 +277,20 @@ function Get-DFCatalogDetailCache {
         [switch]$Fresh
     )
 
-    $keyInfo = ConvertTo-DFCatalogQueryKey -Query $PackageId
-    $ttl = $script:DFCatalogTtl.ContainsKey($Provider) ? $script:DFCatalogTtl[$Provider] : $script:DFCatalogTtl.default
-
     $cacheRoot = Get-DFCatalogCacheRoot
-    $file = $cacheRoot ? (Join-Path $cacheRoot "$Provider/details/$($keyInfo.Key).json") : $null
-    $cached = $file ? (Read-DFCatalogCacheFile -Path $file -Ttl $ttl) : $null
-
-    $treatAsMiss = $false
-    if (-not $Fresh -and $cached) {
-        if ($cached.Stale) {
-            if ($script:DFCatalogProviders.ContainsKey($Provider)) {
-                Start-DFCatalogRefreshJob -Provider $Provider -Query $PackageId -Kind detail
-            } else {
-                # No registered provider can re-warm this entry in the background
-                # (github / github-readme pseudo-providers) — refresh inline instead.
-                # $cached is kept around (not nulled) so the fetch-failure path below
-                # can still fall back to the stale copy.
-                $treatAsMiss = $true
-            }
-        }
-        if (-not $treatAsMiss) { return @($cached.Data) | Select-Object -First 1 }
-    }
-
-    try {
-        $result = & $Fetch $PackageId
-    } catch {
-        Write-Verbose "DotForge: live $Provider detail fetch for '$PackageId' failed: $_"
-        if ($cached) { return @($cached.Data) | Select-Object -First 1 }
-        return $null
-    }
-
-    if ($null -eq $result) { return $null }
-
-    if ($file) {
-        Write-DFCatalogCacheFile -Path $file -Query $PackageId -Results @($result)
-    }
-    $result
+    $keyInfo = ConvertTo-DFCatalogQueryKey -Query $PackageId
+    # A stale pseudo-provider entry ('github', ...) has no registered provider
+    # to re-warm it in the background, so it is refetched inline instead.
+    $refreshable = $script:DFCatalogProviders.ContainsKey($Provider)
+    # Renamed so the blocks below, which run inside Invoke-DFCacheFirst, don't
+    # resolve $Fetch to that function's own -Fetch parameter.
+    $fetchDetail = $Fetch
+    Invoke-DFCacheFirst -Path (Join-Path $cacheRoot "$Provider/details/$($keyInfo.Key).json") `
+        -Ttl (Get-DFCatalogTtl $Provider) -Query $PackageId -Label "$Provider detail fetch for '$PackageId'" `
+        -Fetch { & $fetchDetail $PackageId } `
+        -Rehydrate { param($c) @($c.Data) | Select-Object -First 1 } `
+        -OnStale { Start-DFCatalogRefreshJob -Provider $Provider -Query $PackageId -Kind detail } `
+        -Fresh:$Fresh -StaleIsMiss:(-not $refreshable) -SkipEmpty
 }
 
 function Get-DFCatalogDetail {
@@ -642,8 +371,7 @@ function Get-DFCatalogProvider {
         [string[]]$Source
     )
 
-    foreach ($name in $script:DFCatalogOrder) {
-        if (-not $script:DFCatalogProviders.ContainsKey($name)) { continue }
+    foreach ($name in Get-DFCatalogName) {
         if ($Source -and $name -notin $Source) { continue }
 
         if (-not $script:DFCatalogAvailability.ContainsKey($name)) {
@@ -727,32 +455,18 @@ function Search-DFCatalogQueryCache {
         [switch]$Fresh
     )
 
-    $keyInfo = ConvertTo-DFCatalogQueryKey -Query $Query
-    $ttl = $script:DFCatalogTtl.ContainsKey($Provider) ? $script:DFCatalogTtl[$Provider] : $script:DFCatalogTtl.default
-
     $cacheRoot = Get-DFCatalogCacheRoot
-    $file = $cacheRoot ? (Join-Path $cacheRoot "$Provider/queries/$($keyInfo.Key).json") : $null
-    $cached = $file ? (Read-DFCatalogCacheFile -Path $file -Ttl $ttl) : $null
-
-    if (-not $Fresh -and $cached) {
-        if ($cached.Stale) {
-            Start-DFCatalogRefreshJob -Provider $Provider -Query $keyInfo.Normalized
-        }
-        return ConvertTo-DFToolSourceInfoFromCache -Provider $Provider -Cached $cached
-    }
-
-    try {
-        $results = @(& $Fetch $keyInfo.Normalized)
-    } catch {
-        Write-Verbose "DotForge: live $Provider fetch for '$($keyInfo.Normalized)' failed: $_"
-        if ($cached) { return ConvertTo-DFToolSourceInfoFromCache -Provider $Provider -Cached $cached }
-        return
-    }
-
-    if ($file) {
-        Write-DFCatalogCacheFile -Path $file -Query $keyInfo.Normalized -Results $results
-    }
-    $results
+    $keyInfo = ConvertTo-DFCatalogQueryKey -Query $Query
+    $normalized = $keyInfo.Normalized
+    # Renamed so the block below, which runs inside Invoke-DFCacheFirst, doesn't
+    # resolve $Fetch to that function's own -Fetch parameter.
+    $fetchQuery = $Fetch
+    Invoke-DFCacheFirst -Path (Join-Path $cacheRoot "$Provider/queries/$($keyInfo.Key).json") `
+        -Ttl (Get-DFCatalogTtl $Provider) -Query $normalized -Label "$Provider fetch for '$normalized'" `
+        -Fetch { @(& $fetchQuery $normalized) } `
+        -Rehydrate { param($c) ConvertTo-DFToolSourceInfoFromCache -Provider $Provider -Cached $c } `
+        -OnStale { Start-DFCatalogRefreshJob -Provider $Provider -Query $normalized } `
+        -Fresh:$Fresh
 }
 
 function Add-DFCatalogSeenQuery {
@@ -786,10 +500,7 @@ function Add-DFCatalogSeenQuery {
         $seen = $seen[0..($script:DFCatalogSeenQueryLimit - 1)]
     }
 
-    New-DFDirectory $root
-    $tmp = "$file.tmp.$PID"
     # -InputObject (not pipeline/-AsArray) so the array serializes as ONE array
     # instead of being wrapped in another level on every write.
-    ConvertTo-Json -InputObject @($seen) -Depth 3 | Set-Content -Path $tmp -Encoding UTF8
-    Move-Item -Path $tmp -Destination $file -Force
+    Write-DFFileAtomic -Path $file -Value (ConvertTo-Json -InputObject @($seen) -Depth 3)
 }

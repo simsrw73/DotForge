@@ -70,6 +70,14 @@ All notable changes to DotForge are documented here.
   upgrades.** `Get-DFCachedCommandOutput` fingerprinted the scoop shim, which scoop never rewrites;
   it now fingerprints the shim's real target (read from the sibling `.shim` file) and follows
   symlinks. Existing caches regenerate once automatically.
+- **A scoped npm package could merge into an unrelated tool's row in `trifle` results.** Identity
+  lookup stripped everything before `/` for every catalog, so `@scope/zed` matched the tool `zed`.
+  Only scoop's bucket-qualified ids (`main/fd`) are stripped now.
+- **Cache and state files could be left half-written.** The catalog caches, seen-query list,
+  `setup-state.json` and downloaded release data are all written to a temporary file and renamed
+  into place (`Write-DFFileAtomic`).
+- **The docs-example tests intermittently hung on `glow`**, because child processes inherited the
+  test run's stdin. They now get a closed stdin.
 
 ### Changed
 
@@ -84,6 +92,28 @@ All notable changes to DotForge are documented here.
   `ls`/`ll`/`la` in `Tools/eza.json` and `Tools/lsd.json` dropped `--hyperlink=auto`. eza's
   `ls`/`ll`/`la`/`tree` and its `ff` picker list command gained `--no-quotes`; lsd's
   `ls`/`ll`/`la`/`tree` gained its equivalent, `--literal`.
+- **DotForge's commands no longer need `Initialize-DFEnvironment` first.** An unset
+  `XDG_*_HOME` now means the XDG default under `$HOME` everywhere (`Get-DFXdgPath`); the
+  "XDG_CACHE_HOME is not set" warnings and disabled caches are gone. `Initialize-DFEnvironment` still
+  exports all five variables for the tools themselves.
+- **Code-quality pass (`audit.thermonuclear.md`).** No user-visible behavior changes beyond those
+  listed here; for contributors:
+  - Tool records are normalized once at load (`ConvertTo-DFToolRecord`), so every field exists
+    and code reads them directly.
+  - Catalogs register themselves (`Register-DFCatalogProvider` in `DFCatalog.Base.ps1`); adding one
+    is one new file, and `-Source` validation and completion follow automatically.
+  - The category database and identity guide share one loader and updater (`DFReleaseData.ps1`).
+  - One cache-first engine (`Invoke-DFCacheFirst`) serves catalog detail and query caches;
+    `DFCatalog.ps1` was split into `DFXml.ps1`, `DFCatalog.Records.ps1` and the cache core.
+  - A category search takes one installed-package snapshot instead of one per matching tool
+    (`Find-DFCatalogFacet`).
+  - The winget, scoop and choco pickers run on one engine (`Invoke-DFPackageManagerAction`) from a
+    spec per manager.
+  - `Register-DFTool` is split into named steps (`Register-DFToolSteps.ps1`).
+  - Shared helpers for `$DFConfig` (`Get-DFConfig`), theme files (`Resolve-DFThemeFile`) and
+    color (`Test-DFColorOutput`, `Get-DFAnsiPalette`).
+  - `tests/ModuleState.Tests.ps1` fails when two module files initialize the same `$script:`
+    variable.
 
 ## [0.6.0-preview] - 2026-09-06
 

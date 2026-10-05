@@ -43,10 +43,8 @@ function Format-DFToolInfoCard {
         [bool]$Color
     )
 
-    $bold   = $Color ? "`e[1;36m" : ''
-    $faint  = $Color ? "`e[2m"    : ''
-    $green  = $Color ? "`e[32m"   : ''
-    $reset  = $Color ? "`e[0m"    : ''
+    $p = Get-DFAnsiPalette -Color $Color
+    $bold, $faint, $green, $reset = $p.Title, $p.Faint, $p.Green, $p.Reset
 
     $label = { param($text) "$faint$($text.PadRight(9))$reset  " }
 
@@ -129,6 +127,9 @@ function Format-DFToolDetailCard {
         Count of suppressed keyword matches (renders the -All footer when > 0).
     .PARAMETER QueryText
         The original query, for the footer's suggested command.
+    .PARAMETER GitHubRequested
+        -GitInfo was asked for: when no repository was found, say so on the
+        GitHub line instead of leaving it out.
     #>
     [CmdletBinding()]
     [OutputType([string[]])]
@@ -141,12 +142,14 @@ function Format-DFToolDetailCard {
 
         [int]$MoreMatches = 0,
 
-        [string]$QueryText = ''
+        [string]$QueryText = '',
+
+        [switch]$GitHubRequested
     )
 
-    $faint = $Color ? "`e[2m" : ''
-    $reset = $Color ? "`e[0m" : ''
-    $label = { param($text) ($Color ? "`e[2m" : '') + $text.PadRight(9) + ($Color ? "`e[0m" : '') + '  ' }
+    $p = Get-DFAnsiPalette -Color $Color
+    $faint, $reset = $p.Faint, $p.Reset
+    $label = { param($text) $faint + $text.PadRight(9) + $reset + '  ' }
     $indent = ' ' * 11
 
     $lines = [System.Collections.Generic.List[string]]::new()
@@ -220,6 +223,8 @@ function Format-DFToolDetailCard {
         if ($gh.Archived) { $parts.Add('ARCHIVED') }
         $lines.Add((& $label 'GitHub') + ($parts -join ' · '))
         if ($gh.Description) { $lines.Add($indent + "$faint$($gh.Description)$reset") }
+    } elseif ($GitHubRequested) {
+        $lines.Add((& $label 'GitHub') + "${faint}no repository resolved$reset")
     }
 
     if ($failed) {
@@ -258,9 +263,8 @@ function Format-DFToolInfoTable {
         [int]$Width = 120
     )
 
-    $faint = $Color ? "`e[2m" : ''
-    $green = $Color ? "`e[32m" : ''
-    $reset = $Color ? "`e[0m" : ''
+    $p = Get-DFAnsiPalette -Color $Color
+    $faint, $green, $reset = $p.Faint, $p.Green, $p.Reset
 
     $nameW = [math]::Min(25, [math]::Max(4, (@($Infos.Name) + 'Name' | Measure-Object Length -Maximum).Maximum))
     $idStrings = @($Infos | ForEach-Object {

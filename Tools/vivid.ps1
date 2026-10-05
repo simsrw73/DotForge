@@ -5,18 +5,17 @@
 # the cache and a stable theme reuses it without spawning vivid again
 # (~42ms measured locally — worth avoiding on every shell startup).
 #
-# Calls `vivid` via a raw `&`, not Private/Invoke-DFCommandCapture.ps1's
-# mockable seam: Invoke-DFApplyLSColorsTheme is registered as a detached
-# function:global: (so it's callable after Register-DFTool returns, and
-# from the fls picker), and PowerShell's module-privacy boundary makes
-# Private functions unreachable from a function:global: scriptblock's
-# .GetNewClosure() body regardless of dot-sourcing — confirmed empirically
-# (this is a hard scoping constraint, not a missed refactor). See
-# docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md Section 4.
+# Invoke-DFApplyLSColorsTheme is a function:global: (callable after
+# Register-DFTool returns, and from the fls picker). Private functions can't be
+# called *by name* from such a closure, but a scriptblock captured here keeps
+# its module binding, so $_xdgPath below works. (An earlier note here called
+# this a hard constraint; capturing the scriptblock is the way around it.)
 #
 # Reads: $DFConfig.VividTheme, then $DFConfig.Theme, then settings.theme in vivid.json.
 # Sets: LS_COLORS (read by eza, lsd and other listing tools).
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
+
+$_xdgPath = ${function:Get-DFXdgPath}
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     <#
@@ -27,8 +26,6 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         The generated value is cached in $XDG_CACHE_HOME\dotforge\ls-colors.txt,
         keyed by theme name, so later sessions with the same theme skip
         running vivid. A theme vivid doesn't know warns and changes nothing.
-        Needs $Env:XDG_CACHE_HOME (set by Initialize-DFEnvironment); warns
-        and does nothing without it.
 
         Defined by DotForge's vivid companion, which calls it at startup with
         $DFConfig.VividTheme, then $DFConfig.Theme, then catppuccin-mocha.
@@ -57,12 +54,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         [switch]$Force
     )
 
-    if (-not $Env:XDG_CACHE_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Call Initialize-DFEnvironment first.'
-        return
-    }
-
-    $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
+    $cacheDir  = Join-Path (& $_xdgPath Cache) 'dotforge'
     $cacheFile = Join-Path $cacheDir 'ls-colors.txt'
     $keyFile   = Join-Path $cacheDir 'ls-colors.key'
 
@@ -88,10 +80,10 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
 }.GetNewClosure())
 
 # Resolve: per-tool VividTheme -> shared Theme -> tool JSON default.
-$_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
+$_settings = $DFCurrentTool.settings
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_theme    = Get-DFConfiguredTheme -ToolKey 'VividTheme' -Default $_default
-$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
 
 Invoke-DFApplyLSColorsTheme -Name $_theme
 

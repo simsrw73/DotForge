@@ -31,49 +31,14 @@ function Get-DFToolIdentityGuide {
         return $script:DFToolIdentityGuide
     }
 
-    $shippedPath = $Path ? $Path : (Join-Path $PSScriptRoot '../data/tool-identities.json')
-    $resolvedPath = $shippedPath
-
-    if ($Env:XDG_DATA_HOME) {
-        $refreshedPath = Join-Path $Env:XDG_DATA_HOME 'dotforge/tool-identities.json'
-        if (Test-Path $refreshedPath) {
-            try {
-                $shippedUpdated = (Test-Path $shippedPath) ? (Get-Content $shippedPath -Raw | ConvertFrom-Json).updated : $null
-                $refreshedUpdated = (Get-Content $refreshedPath -Raw | ConvertFrom-Json).updated
-                if (-not $shippedUpdated -or [datetime]$refreshedUpdated -gt [datetime]$shippedUpdated) {
-                    $resolvedPath = $refreshedPath
-                }
-            } catch {
-                Write-Verbose "DotForge: unreadable refreshed tool-identity guide '$refreshedPath', using shipped: $_"
-            }
-        }
+    $readArgs = @{
+        FileName           = 'tool-identities.json'
+        Validator          = 'Test-DFToolIdentityGuideSchema'
+        Label              = 'tool-identity guide'
+        UnavailableMessage = 'tool-identity guide is unavailable — cross-catalog identity resolution falls back to Tools/*.json only.'
     }
-
-    $tryLoadGuide = {
-        param($p)
-        if (-not (Test-Path $p)) { return $null }
-        try {
-            $doc = Get-Content $p -Raw | ConvertFrom-Json
-            $errs = $null
-            if (Test-DFToolIdentityGuideSchema -Database $doc -Errors ([ref]$errs)) { return $doc }
-            Write-Verbose "DotForge: tool-identity guide at '$p' failed schema validation: $($errs -join '; ')"
-            return $null
-        } catch {
-            Write-Verbose "DotForge: unreadable tool-identity guide '$p': $_"
-            return $null
-        }
-    }
-
-    $usedRefreshed = ($resolvedPath -ne $shippedPath)
-    $raw = & $tryLoadGuide $resolvedPath
-    if (-not $raw -and $usedRefreshed) {
-        $raw = & $tryLoadGuide $shippedPath
-    }
-
-    if (-not $raw -and -not $script:DFToolIdentityGuideWarned) {
-        Write-Warning 'DotForge: tool-identity guide is unavailable — cross-catalog identity resolution falls back to Tools/*.json only.'
-        $script:DFToolIdentityGuideWarned = $true
-    }
+    if ($Path) { $readArgs.ShippedPath = $Path }
+    $raw = Read-DFReleaseData @readArgs
 
     $idIndex = @{}
     if ($raw) {

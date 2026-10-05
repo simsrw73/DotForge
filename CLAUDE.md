@@ -57,7 +57,9 @@ DotForge/
   expanded by `ConvertTo-DFPath`. A relative path is returned unchanged with a warning, never bound to
   CWD. New path boundaries must route through it.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
-- **`$XDG_CACHE_HOME` must be set** for General Helpers cache (help topics) to work. Set it in your profile: `$Env:XDG_CACHE_HOME = "$Env:USERPROFILE\.cache"`.
+- **XDG folders come from `Get-DFXdgPath`** (`Private/ConvertTo-DFPath.ps1`): the `XDG_*_HOME` variable if set, else the XDG default under `$HOME`. Never read `$Env:XDG_*` directly or treat an unset one as "disabled". A `function:global:` closure (sidecar wrappers) reaches it, or any private helper, through a captured scriptblock: `$_xdgPath = ${function:Get-DFXdgPath}`, then `& $_xdgPath Cache`.
+- **`$DFConfig` is read through `Get-DFConfig -Key -Default`** (`Private/Get-DFConfiguredTheme.ps1`), never indexed directly. Read list settings with `@(Get-DFConfig SkipTools)`.
+- **Tool records are normalized at load** (`ConvertTo-DFToolRecord` in `Private/Import-DFToolDb.ps1`): every known field exists, so read `$tool.type`, `$tool.aliases`, … directly. Only the free-form `settings` object needs defensive reads.
 - **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.
 
 ## Architecture (3 layers)
@@ -87,6 +89,11 @@ Pester 6 (verified with 6.2.0). Pester 5 is no longer supported or tested. Run a
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference
 ```
+
+**Isolate every XDG folder a test can write to.** An unset `XDG_*` variable means the real default
+folder under `$HOME` (`Get-DFXdgPath`), not "disabled", so a test that registers a tool or calls a
+cache/state writer must point the relevant `XDG_*_HOME` at `$TestDrive` and restore it afterwards.
+Never unset one to test "no folder" behavior; that path writes to the developer's real folders.
 
 Run a single file:
 

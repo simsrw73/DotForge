@@ -1,4 +1,10 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Resolve-DFThemeName.ps1"
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/psreadline.ps1'
@@ -39,7 +45,8 @@ Describe 'psreadline completion configuration' {
         $warnings = . $script:CompanionPath 3>&1 |
             Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
 
-        $warnings | Should -Match 'PSReadLineEditMode'
+        # Test-Path is mocked to $false here, so a theme-not-found warning can appear too.
+        @($warnings | Where-Object { $_ -match 'PSReadLineEditMode' }) | Should -Not -BeNullOrEmpty
         (Get-PSReadLineOption).EditMode | Should -Be 'Windows'
     }
 }

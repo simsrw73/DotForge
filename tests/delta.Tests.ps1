@@ -1,4 +1,8 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
     . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
@@ -23,6 +27,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
     . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
+    . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
 }

@@ -100,21 +100,15 @@ function Get-DFCommandConflict {
     # Import-DFToolDb returns a hashtable keyed by tool name, not a list.
     $db = Import-DFToolDb @dbParams -ErrorAction Ignore
     foreach ($tool in @($db.Values)) {
-        $aliases = $tool.PSObject.Properties['aliases']?.Value
-        if ($aliases) {
-            $owned.AddRange([string[]]@($aliases.PSObject.Properties.Name))
+        if ($tool.aliases) {
+            $owned.AddRange([string[]]@($tool.aliases.PSObject.Properties.Name))
         }
-        $picker = $tool.PSObject.Properties['picker']?.Value
-        if ($picker -is [PSCustomObject]) {
-            $pAlias = $picker.PSObject.Properties['alias']?.Value
-            if ($pAlias) { $owned.Add([string]$pAlias) }
+        if ($tool.picker -is [PSCustomObject] -and $tool.picker.alias) {
+            $owned.Add([string]$tool.picker.alias)
         }
     }
 
-    $ignored = @()
-    if ($Global:DFConfig -and $Global:DFConfig['IgnoreConflicts']) {
-        $ignored = [string[]]@($Global:DFConfig['IgnoreConflicts'])
-    }
+    $ignored = [string[]]@(Get-DFConfig IgnoreConflicts)
 
     foreach ($name in ($owned | Sort-Object -Unique)) {
         if ($shadowed -notcontains $name) { continue }

@@ -1,4 +1,11 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     $completionStackPath = Join-Path $PSScriptRoot '..' 'Private' 'Initialize-DFCompletionStack.ps1'
     if (Test-Path $completionStackPath) { . $completionStackPath }
 }

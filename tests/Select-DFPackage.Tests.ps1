@@ -1,14 +1,24 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFSqliteQuery.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
     . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogLocalPackages.ps1"
+    # Catalogs exist because their provider files register; load the real ones.
+    Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
+        ForEach-Object { . $_.FullName }
     . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
     . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
     . "$PSScriptRoot/../Public/Select-DFPackage.ps1"
@@ -50,11 +60,6 @@ Describe 'Get-DFCatalogLocalPackages' {
         $rg.Sources | Should -Match 'crates'
         $rg.Description | Should -Be 'regex search'
         ($packages | Where-Object Name -eq 'prettier').Sources | Should -Match 'npm'
-    }
-
-    It 'returns nothing when no cache root is configured' {
-        $Env:XDG_CACHE_HOME = $null
-        @(Get-DFCatalogLocalPackages -WarningAction SilentlyContinue) | Should -BeNullOrEmpty
     }
 }
 

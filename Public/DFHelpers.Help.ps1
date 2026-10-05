@@ -34,10 +34,9 @@ function Invoke-DFHelp {
     )
     $helpText = Get-Help $Name -Full | Out-String
 
-    $useColor = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
-    if ($useColor) {
-        $yellow = "`e[1;33m"
-        $reset = "`e[0m"
+    if (Test-DFColorOutput) {
+        $p = Get-DFAnsiPalette -Color $true
+        $yellow, $reset = $p.Accent, $p.Reset
         $helpText = $helpText -creplace '(?m)^([A-Z]{2,}(?: [A-Z]+)*)\r?$', "$yellow`$1$reset"
     }
 
@@ -165,8 +164,7 @@ function Select-DFHelpTopic {
         Building the list runs Get-Help *, which takes several seconds, so it is
         cached in $XDG_CACHE_HOME\dotforge\help-topics.txt and rebuilt
         automatically when the set of installed modules changes. -Force rebuilds
-        it anyway. $Env:XDG_CACHE_HOME must be set (Initialize-DFEnvironment
-        sets it); otherwise the function warns and shows an empty list.
+        it anyway.
         Requires fzf (or $Env:Picker).
     .EXAMPLE
         Select-DFHelpTopic
@@ -278,8 +276,7 @@ function Show-DFCliHelp {
     }
 
     $raw = (Invoke-DFCommandCapture -Name $Name -Arguments @($useFlag)).Text
-    $color = (-not $Env:NO_COLOR) -and $Host.UI.SupportsVirtualTerminal
-    $out = Format-DFCliHelpText -Text $raw -Color $color
+    $out = Format-DFCliHelpText -Text $raw -Color (Test-DFColorOutput)
 
     if ($Paged) { $out | Invoke-DFWithPager } else { $out }
 }

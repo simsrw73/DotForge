@@ -7,7 +7,7 @@ function Get-DFToolSetupState {
     .DESCRIPTION
         Backs Register-DFTool's "has this tool's Tools/<name>.setup.ps1 already
         run?" check and Complete-DFToolSetup's read-modify-write. Never throws:
-        a missing file, an unset $Env:XDG_STATE_HOME, or corrupt JSON all
+        a missing file or corrupt JSON both
         return an empty object, treated the same as "no tool has ever run
         setup" -- see docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
     .OUTPUTS
@@ -19,11 +19,7 @@ function Get-DFToolSetupState {
     [OutputType([PSCustomObject])]
     param()
 
-    if (-not $Env:XDG_STATE_HOME) {
-        return [PSCustomObject]@{}
-    }
-
-    $stateFile = Join-Path $Env:XDG_STATE_HOME 'dotforge' 'setup-state.json'
+    $stateFile = Join-Path (Get-DFXdgPath State) 'dotforge' 'setup-state.json'
     if (-not (Test-Path $stateFile -PathType Leaf)) {
         return [PSCustomObject]@{}
     }

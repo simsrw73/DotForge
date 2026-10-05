@@ -12,7 +12,7 @@
 # git-config include that activates it is added once by delta.setup.ps1.
 
 $_theme  = Get-DFConfiguredTheme -ToolKey 'DeltaTheme' -Default 'catppuccin-mocha'
-$_native = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_native = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
 # Leading '+' makes this additive: DELTA_FEATURES without it *replaces* the
 # user's entire git-config `features` list rather than layering on top of it
 # (verified directly — see the design spec's Section 0).

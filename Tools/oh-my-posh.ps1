@@ -14,8 +14,8 @@ if (Get-Module -ListAvailable posh-git -ErrorAction Ignore) {
 $ompConfig = $null
 if ($Env:POSH_THEME -and (Test-Path $Env:POSH_THEME)) {
     $ompConfig = $Env:POSH_THEME
-} elseif ($Env:XDG_CONFIG_HOME) {
-    $ompDir = Join-Path $Env:XDG_CONFIG_HOME 'oh-my-posh'
+} else {
+    $ompDir = Join-Path (Get-DFXdgPath Config) 'oh-my-posh'
     $candidates = @(Get-ChildItem $ompDir -Filter '*.omp.*' -ErrorAction Ignore | Sort-Object Name)
     if ($candidates.Count -eq 0) {
         Write-Warning 'DotForge: no oh-my-posh config found. Set $Env:POSH_THEME or place *.omp.* in $XDG_CONFIG_HOME/oh-my-posh/.'
@@ -25,8 +25,6 @@ if ($Env:POSH_THEME -and (Test-Path $Env:POSH_THEME)) {
         $ompConfig = $candidates[0].FullName
         Write-Warning "DotForge: multiple oh-my-posh configs found; using '$($candidates[0].Name)'. Set `$Env:POSH_THEME to be explicit."
     }
-} else {
-    Write-Warning 'DotForge: $XDG_CONFIG_HOME not set — cannot locate oh-my-posh config.'
 }
 
 # 3. Initialize prompt engine

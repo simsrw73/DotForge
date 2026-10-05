@@ -164,13 +164,4 @@ function Get-DFCatalogPypiDetail {
         -Fetch { param($id) Invoke-DFCatalogPypiDetailFetch -PackageId $id }
 }
 
-if (-not (Get-Variable -Name DFCatalogProviders -Scope Script -ErrorAction Ignore)) { $script:DFCatalogProviders = @{} }
-$script:DFCatalogProviders['pypi'] = @{
-    Name         = 'pypi'
-    Kind         = 'query-cache'
-    Test         = { $true }
-    Search       = { param($Query, $Fresh) Search-DFCatalogPypi -Query $Query -Fresh:$Fresh }
-    GetInstalled = { Get-DFCatalogPypiInstalled }
-    Refresh      = { param($Query) if ($Query) { $null = Search-DFCatalogPypi -Query $Query -Fresh } }
-    Detail       = { param($PackageId, $Fresh) Get-DFCatalogPypiDetail -PackageId $PackageId -Fresh:$Fresh }
-}
+Register-DFCatalogProvider -Name pypi -Kind query-cache -Order 5 -SourceFile $PSCommandPath

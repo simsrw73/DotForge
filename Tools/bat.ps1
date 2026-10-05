@@ -6,6 +6,6 @@
 
 $_name = Get-DFConfiguredTheme -ToolKey 'BatTheme'
 if ($_name) {
-    $_name = Resolve-DFThemeName -Name $_name -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+    $_name = Resolve-DFThemeName -Name $_name -ThemeMap $DFCurrentTool.themeMap
     [System.Environment]::SetEnvironmentVariable('BAT_THEME', $_name, 'Process')
 }

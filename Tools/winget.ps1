@@ -39,6 +39,39 @@ function global:Assert-DFWingetModule {
     return $false
 }
 
+# What differs about winget; the shared flow is Invoke-DFPackageManagerAction.
+$script:DFPackageManagerSpecs['winget'] = @{
+    Name             = 'winget'
+    Require          = { Assert-DFWingetModule }
+    SearchPrompt     = 'Search winget packages'
+    Preview          = 'winget show --id {2}'
+    Search           = { param($Query)
+        Find-WinGetPackage $Query 2>$null | ForEach-Object {
+            ('{0,-40} {1,-34} {2}' -f $_.Name, $_.Id, $_.Version) + "`t" + $_.Id
+        } }
+    # Get-WinGetPackage -Source does not actually filter the returned set, so
+    # filter on the Source property here (blank = ARP/registry-only entries).
+    Installed        = { param($Source)
+        Get-WinGetPackage 2>$null | Where-Object { -not $Source -or $_.Source -eq $Source } | ForEach-Object {
+            ('{0,-40} {1,-34} {2}' -f $_.Name, $_.Id, $_.InstalledVersion) + "`t" + $_.Id
+        } }
+    Outdated         = {
+        Get-WinGetPackage 2>$null | Where-Object IsUpdateAvailable | ForEach-Object {
+            $latest = @($_.AvailableVersions)[0]
+            ('{0,-36} {1,-30} {2} -> {3}' -f $_.Name, $_.Id, $_.InstalledVersion, $latest) + "`t" + $_.Id
+        } }
+    InstallCommand   = 'winget install --id {0} --exact'
+    UninstallCommand = 'winget uninstall --id {0}'
+    InPlace          = { param($command) $command }
+    Install          = { param($Id) Install-WinGetPackage -Id $Id -MatchOption Equals }
+    Uninstall        = { param($Id) Uninstall-WinGetPackage -Id $Id -MatchOption Equals }
+    Update           = { param($Id) Update-WinGetPackage -Id $Id -MatchOption Equals }
+    UpdateAll        = { winget upgrade --all }
+    UpdateWord       = 'upgrade'
+    UpdatingWord     = 'Upgrading'
+    AllMessage       = 'Upgrading all packages…'
+}
+
 function global:Select-WingetPackage {
     <#
     .SYNOPSIS
@@ -74,37 +107,7 @@ function global:Select-WingetPackage {
     #>
     [CmdletBinding()]
     param([string]$Query = '')
-
-    if (-not (Assert-DFWingetModule)) { return }
-    if (-not $Query) { $Query = Read-Host 'Search winget packages' }
-
-    # Build the display lines up front so $Query is resolved here (not in the
-    # picker's scope) and close over the resulting plain array.
-    $items = @(
-        Find-WinGetPackage $Query 2>$null | ForEach-Object {
-            ('{0,-40} {1,-34} {2}' -f $_.Name, $_.Id, $_.Version) + "`t" + $_.Id
-        }
-    )
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'winget show --id {2}' `
-        -Header         'winget search  [Enter=command | Alt-R=install | Alt-I=install in place]' `
-        -ExpectKey      'alt-r' `
-        -Bind           'alt-i:execute(winget install --id {2} --exact)'
-
-    if (-not $sel) { return }
-    $id = @($sel.Selected)[0]
-    if (-not $id) { return }   # only the in-place Alt-I bind ran; nothing chosen on exit
-
-    if ($sel.Key -eq 'alt-r') {
-        Write-Host "⚙  Installing $id…" -ForegroundColor Cyan
-        Install-WinGetPackage -Id $id -MatchOption Equals
-    }
-    else {
-        # Enter → return the install command for review / piping / running.
-        "winget install --id $id --exact"
-    }
+    Invoke-DFPackageManagerAction -Manager winget -Action Install -Query $Query
 }
 Set-Alias -Name wins -Value Select-WingetPackage -Scope Global -Force
 
@@ -137,42 +140,8 @@ function global:Remove-WingetPackage {
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
-    param(
-        # Optionally restrict the list to one installed-package source
-        # (e.g. -Source winget) to hide ARP/registry-only entries.
-        [string]$Source = ''
-    )
-
-    if (-not (Assert-DFWingetModule)) { return }
-
-    # Get-WinGetPackage -Source does not actually filter the returned set, so
-    # filter on the Source property here (blank = ARP/registry-only entries).
-    $items = @(
-        Get-WinGetPackage 2>$null |
-            Where-Object { -not $Source -or $_.Source -eq $Source } |
-            ForEach-Object {
-                ('{0,-40} {1,-34} {2}' -f $_.Name, $_.Id, $_.InstalledVersion) + "`t" + $_.Id
-            }
-    )
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems      { $items }.GetNewClosure() `
-        -PreviewCommand 'winget show --id {2}' `
-        -Header         'winget uninstall  [Enter=uninstall | Alt-X=uninstall in place | Alt-C=command]' `
-        -ExpectKey      'alt-c' `
-        -Bind           'alt-x:execute(winget uninstall --id {2})'
-
-    if (-not $sel) { return }
-    $id = @($sel.Selected)[0]
-    if (-not $id) { return }
-
-    if ($sel.Key -eq 'alt-c') {
-        "winget uninstall --id $id"
-    }
-    else {
-        Write-Host "⚙  Uninstalling $id…" -ForegroundColor DarkYellow
-        Uninstall-WinGetPackage -Id $id -MatchOption Equals
-    }
+    param([string]$Source = '')
+    Invoke-DFPackageManagerAction -Manager winget -Action Uninstall -Source $Source
 }
 Set-Alias -Name wrm -Value Remove-WingetPackage -Scope Global -Force
 
@@ -202,35 +171,7 @@ function global:Invoke-WingetUpdate {
     #>
     [CmdletBinding()]
     param()
-
-    if (-not (Assert-DFWingetModule)) { return }
-
-    $sel = Invoke-DFPackageManagerPicker `
-        -ListItems {
-            Get-WinGetPackage 2>$null | Where-Object IsUpdateAvailable | ForEach-Object {
-                $latest = @($_.AvailableVersions)[0]
-                ('{0,-36} {1,-30} {2} -> {3}' -f $_.Name, $_.Id, $_.InstalledVersion, $latest) + "`t" + $_.Id
-            }
-        } `
-        -PreviewCommand 'winget show --id {2}' `
-        -Header         'winget upgrade  [Tab=mark | Enter=upgrade marked | Alt-A=upgrade all]' `
-        -ExpectKey      'alt-a' `
-        -Multi
-
-    if (-not $sel) { return }
-
-    if ($sel.Key -eq 'alt-a') {
-        Write-Host '⚙  Upgrading all packages…' -ForegroundColor Green
-        winget upgrade --all
-        return
-    }
-
-    foreach ($id in $sel.Selected) {
-        if ($id) {
-            Write-Host "⚙  Upgrading $id…" -ForegroundColor Green
-            Update-WinGetPackage -Id $id -MatchOption Equals
-        }
-    }
+    Invoke-DFPackageManagerAction -Manager winget -Action Update
 }
 Set-Alias -Name wup -Value Invoke-WingetUpdate -Scope Global -Force
 
@@ -238,17 +179,5 @@ Set-Alias -Name wup -Value Invoke-WingetUpdate -Scope Global -Force
 # Type a search term, press Ctrl+G then W: pick in fzf, and the install command
 # lands on the command line (editable — press Enter to run). Uses the current
 # line as the query. Guarded so it is a no-op when PSReadLine is unavailable.
-if (Get-Command Set-PSReadLineKeyHandler -ErrorAction Ignore) {
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,w' `
-        -Description 'DotForge: winget search → install command onto the line' `
-        -ScriptBlock {
-            $line = $null; $cursor = $null
-            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-            if ([string]::IsNullOrWhiteSpace($line)) { return }
-            $cmd = Select-WingetPackage -Query $line
-            if ($cmd -is [string] -and $cmd.Trim()) {
-                [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
-                [Microsoft.PowerShell.PSConsoleReadLine]::Insert($cmd)
-            }
-        }
-}
+Register-DFPrefillChord -Chord 'Ctrl+g,w' -Picker 'Select-WingetPackage' `
+    -Description 'DotForge: winget search → install command onto the line'

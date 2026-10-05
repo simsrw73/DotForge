@@ -22,10 +22,10 @@ function Expand-DFXdgPath {
     param([Parameter(Mandatory)][string]$Template)
 
     $expanded = $Template `
-        -creplace '\$\{XDG_CONFIG_HOME\}', $Env:XDG_CONFIG_HOME `
-        -creplace '\$\{XDG_DATA_HOME\}',   $Env:XDG_DATA_HOME `
-        -creplace '\$\{XDG_STATE_HOME\}',  $Env:XDG_STATE_HOME `
-        -creplace '\$\{XDG_CACHE_HOME\}',  $Env:XDG_CACHE_HOME
+        -creplace '\$\{XDG_CONFIG_HOME\}', { Get-DFXdgPath Config } `
+        -creplace '\$\{XDG_DATA_HOME\}',   { Get-DFXdgPath Data } `
+        -creplace '\$\{XDG_STATE_HOME\}',  { Get-DFXdgPath State } `
+        -creplace '\$\{XDG_CACHE_HOME\}',  { Get-DFXdgPath Cache }
 
     # Normalize ONLY when an XDG token was present: a token-bearing value is always a
     # filesystem path. Token-less values are literal flag strings (LESS, FZF_*, ...)

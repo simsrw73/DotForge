@@ -188,7 +188,7 @@ Register-DFTool checks this state before dot-sourcing a tool's Tools/&lt;name&gt
 | `-Name` | string |  | yes |  | The tool name this setup record belongs to (matches the "name" field in the tool's Tools/&lt;name&gt;.json). |
 | `-Actions` | object[] | `@()` |  |  | Free-form objects describing what the setup did, e.g. @{ type = 'gitConfigInclude'; path = '...' }. Opaque to DotForge core -- recorded verbatim for a future teardown command to read back. Defaults to an empty array. |
 
-**Outputs:** None. Writes $XDG_STATE_HOME\\dotforge\\setup-state.json (atomically, through a temp file). Warns and does nothing when XDG_STATE_HOME is not set.
+**Outputs:** None. Writes $XDG_STATE_HOME\\dotforge\\setup-state.json (atomically, through a temp file).
 
 **Example 1**
 
@@ -367,7 +367,7 @@ Every value, including one you set yourself, is then canonicalized with ConvertT
 
 Finally it re-detects which package managers are on PATH (scoop, winget, choco) and writes one line to the host: a green "Environment ready" line listing them, or a warning when none is found. Install-DFTool needs at least one.
 
-Designed to run once near the top of a profile, before Register-DFTool. Safe to call again (idempotent). Variables are set for the current process only; nothing is written to the registry.
+DotForge's own commands use the same defaults whether or not this has run (see Get-DFXdgPath); run it so the variables are also exported to the tools you start, which read them themselves. Designed to run once near the top of a profile. Safe to call again (idempotent). Variables are set for the current process only; nothing is written to the registry.
 
 **Outputs:** None. Sets session environment variables, creates directories, and writes a status line to the host.
 
@@ -772,7 +772,7 @@ Select-DFHelpTopic [[-Category] <string>] [-Force] [<CommonParameters>]
 
 Builds the full list of Get-Help topics, presents them in fzf with a live preview pane, and opens the selected topic through Invoke-DFHelp.
 
-Building the list runs Get-Help \*, which takes several seconds, so it is cached in $XDG_CACHE_HOME\\dotforge\\help-topics.txt and rebuilt automatically when the set of installed modules changes. -Force rebuilds it anyway. $Env:XDG_CACHE_HOME must be set (Initialize-DFEnvironment sets it); otherwise the function warns and shows an empty list. Requires fzf (or $Env:Picker).
+Building the list runs Get-Help \*, which takes several seconds, so it is cached in $XDG_CACHE_HOME\\dotforge\\help-topics.txt and rebuilt automatically when the set of installed modules changes. -Force rebuilds it anyway. Requires fzf (or $Env:Picker).
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -1633,14 +1633,14 @@ Cache-first for speed: answers come from local catalog caches instantly; stale o
 
 Interactively, a confident single match renders a rich info card and ambiguous keyword searches render a compact table. When output is piped or redirected (or with -AsObject), raw DotForge.ToolInfo objects are emitted instead — pipeline-safe, no ANSI.
 
-Network: queries go to the npm registry, PyPI, crates.io, the Chocolatey community feed and the PowerShell Gallery (scoop and winget are read from local files). -GitInfo and -Readme also call GitHub, through the gh CLI when it is installed and authenticated, otherwise the anonymous REST API. Only package names and search words are sent. Installed status is read from each manager's local files (scoop apps, winget's installed.db, choco's lib folder, npm's global node_modules, cargo's .crates2.json, installed modules); only pipx is run (pipx list). Caches live in $XDG_CACHE_HOME\\dotforge\\catalogs; without XDG_CACHE_HOME, caching is disabled with a warning.
+Network: queries go to the npm registry, PyPI, crates.io, the Chocolatey community feed and the PowerShell Gallery (scoop and winget are read from local files). -GitInfo and -Readme also call GitHub, through the gh CLI when it is installed and authenticated, otherwise the anonymous REST API. Only package names and search words are sent. Installed status is read from each manager's local files (scoop apps, winget's installed.db, choco's lib folder, npm's global node_modules, cargo's .crates2.json, installed modules); only pipx is run (pipx list). Caches live in $XDG_CACHE_HOME\\dotforge\\catalogs (default $HOME\\.cache\\dotforge\\catalogs).
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
 | `-Query` | string[] |  | yes | remaining args | Command name or keywords. Multiple words may be passed unquoted: trifle static site generator |
 | `-Category` | string[] |  |  |  | Filter by function category — see Get-DFCategoryList for valid values. Renders the match table (never the detail card); combine with -WorksWith to AND the two facets. |
 | `-WorksWith` | string[] |  |  |  | Filter by what the tool works with — see Get-DFCategoryList for valid values. |
-| `-Source` | string[] |  |  |  | Restrict the search to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. Allowed: scoop, winget, choco, npm, pypi, crates, psgallery. |
+| `-Source` | string[] |  |  |  | Restrict the search to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. |
 | `-Fresh` | switch |  |  |  | Block on live catalog fetches instead of serving cached data. |
 | `-AsObject` | switch |  |  |  | Emit DotForge.ToolInfo objects even at an interactive terminal. Use this when capturing: $x = trifle rg -AsObject (assignment looks interactive to pipeline-position detection, so the default would be rendered strings). |
 | `-All` | switch |  |  |  | Always render the full match table, never the detail card — even on an otherwise-exact match. The table's Id column shows values usable as a qualified query: trifle &lt;source&gt;:&lt;id&gt;. |
@@ -1760,7 +1760,7 @@ Requires fzf (or $Env:Picker). Query mode writes preview files to a per-process 
 | `-Categories` | switch |  |  |  | Browse the full taxonomy vocabulary (every function/works-with value, live tool counts); Enter drills into the picked facet. |
 | `-Category` | string |  |  |  | Search this specific function value directly — same preview/selection flow as -Query. |
 | `-WorksWith` | string |  |  |  | Search this specific works-with value directly — same preview/selection flow as -Query. Set internally when -Categories recurses into a picked works-with row; also usable directly. |
-| `-Source` | string[] |  |  |  | Restrict to packages known to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. Allowed: scoop, winget, choco, npm, pypi, crates, psgallery. |
+| `-Source` | string[] |  |  |  | Restrict to packages known to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. |
 | `-Readme` | switch |  |  |  | After selection, also fetch and page the package readme. |
 | `-GitInfo` | switch |  |  |  | After selection, include GitHub stars/release/activity on the card. |
 
@@ -1802,11 +1802,19 @@ Update-DFCategoryDb [-WhatIf] [-Confirm] [<CommonParameters>]
 
 Purely opt-in — never runs implicitly, not part of Update-DFPackageCache, not triggered by any trifle/ftrifle call. Discovery stays fully usable offline with the shipped seed data by default. Validates the download before writing; a failed download or a failed validation leaves any existing refreshed copy untouched and warns instead of throwing.
 
-Downloads tool-categories.json from the latest DotForge GitHub release and writes $XDG_DATA_HOME\\dotforge\\tool-categories.json (atomically, through a temp file). Delete that file to go back to the shipped copy. Needs $Env:XDG_DATA_HOME (set by Initialize-DFEnvironment). Supports -WhatIf and -Confirm. Update-DFCategoryDb Fetches and installs the latest published category database.
+Downloads tool-categories.json from the latest DotForge GitHub release and writes $XDG_DATA_HOME\\dotforge\\tool-categories.json (atomically, through a temp file). Delete that file to go back to the shipped copy. Supports -WhatIf and -Confirm.
 
 **Outputs:** None. Writes one line to the host on success.
 
 **Example 1**
+
+```powershell
+Update-DFCategoryDb
+```
+
+Fetches and installs the latest published category database.
+
+**Example 2**
 
 ```powershell
 Update-DFCategoryDb -WhatIf
@@ -1828,7 +1836,7 @@ Runs synchronously and sequentially (it IS the background work): rebuilds snapsh
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Source` | string[] |  |  |  | Restrict the refresh to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. Allowed: scoop, winget, choco, npm, pypi, crates, psgallery. |
+| `-Source` | string[] |  |  |  | Restrict the refresh to these catalogs: scoop, winget, choco, npm, pypi, crates, psgallery. Default: all seven. |
 | `-Quiet` | switch |  |  |  | Suppress progress output (Task Scheduler mode); warnings still flow. |
 
 **Outputs:** None. Writes cache files under $XDG_CACHE_HOME\\dotforge\\catalogs and makes the same network requests as Find-DFPackage, once per cached query and detail entry.
@@ -1861,11 +1869,19 @@ Update-DFToolIdentityGuide [-WhatIf] [-Confirm] [<CommonParameters>]
 
 Purely opt-in — never runs implicitly, not part of Update-DFPackageCache, not triggered by any trifle/ftrifle call. Cross-catalog identity resolution stays fully usable offline with the shipped seed guide by default (and always falls back further to the live Tools/\*.json mechanism regardless of guide state). Validates the download before writing; a failed download or a failed validation leaves any existing refreshed copy untouched and warns instead of throwing.
 
-Downloads tool-identities.json from the latest DotForge GitHub release and writes $XDG_DATA_HOME\\dotforge\\tool-identities.json (atomically, through a temp file). Delete that file to go back to the shipped copy. Needs $Env:XDG_DATA_HOME (set by Initialize-DFEnvironment). Supports -WhatIf and -Confirm. Update-DFToolIdentityGuide Fetches and installs the latest published tool-identity guide.
+Downloads tool-identities.json from the latest DotForge GitHub release and writes $XDG_DATA_HOME\\dotforge\\tool-identities.json (atomically, through a temp file). Delete that file to go back to the shipped copy. Supports -WhatIf and -Confirm.
 
 **Outputs:** None. Writes one line to the host on success.
 
 **Example 1**
+
+```powershell
+Update-DFToolIdentityGuide
+```
+
+Fetches and installs the latest published tool-identity guide.
+
+**Example 2**
 
 ```powershell
 Update-DFToolIdentityGuide -WhatIf
@@ -3112,7 +3128,7 @@ Pick ripgrep and press Enter to get: scoop install ripgrep
 
 Resolves and applies an LS_COLORS value for the named vivid theme.
 
-Sets $Env:LS_COLORS for the current session from vivid generate &lt;Name&gt;. The generated value is cached in $XDG_CACHE_HOME\\dotforge\\ls-colors.txt, keyed by theme name, so later sessions with the same theme skip running vivid. A theme vivid doesn't know warns and changes nothing. Needs $Env:XDG_CACHE_HOME (set by Initialize-DFEnvironment); warns and does nothing without it.
+Sets $Env:LS_COLORS for the current session from vivid generate &lt;Name&gt;. The generated value is cached in $XDG_CACHE_HOME\\dotforge\\ls-colors.txt, keyed by theme name, so later sessions with the same theme skip running vivid. A theme vivid doesn't know warns and changes nothing.
 
 Defined by DotForge's vivid companion, which calls it at startup with $DFConfig.VividTheme, then $DFConfig.Theme, then catppuccin-mocha.
 

@@ -10,7 +10,7 @@ param()
 # 1. Theme: override the JSON default only when $DFConfig specifies one.
 $_name = Get-DFConfiguredTheme -ToolKey 'MdcatTheme'
 if ($_name) {
-    $_name = Resolve-DFThemeName -Name $_name -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+    $_name = Resolve-DFThemeName -Name $_name -ThemeMap $DFCurrentTool.themeMap
 
     $_builtin = @(
         'auto', 'dark', 'light',

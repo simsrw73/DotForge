@@ -10,7 +10,7 @@ function Get-DFCompletionMode {
     #>
     [CmdletBinding()]
     param()
-    $mode = if (Test-Path Variable:Global:DFConfig) { [string]$Global:DFConfig.CompletionMode }
+    $mode = [string](Get-DFConfig CompletionMode)
     if (-not $mode -or $mode -ieq 'Native') { return 'Native' }
     if ($mode -ieq 'Inshellisense') { return 'Inshellisense' }
     Write-Warning "DotForge: CompletionMode '$mode' is invalid; using Native."

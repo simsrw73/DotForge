@@ -13,9 +13,7 @@ function Register-DFToolAliases {
         argument alias becomes a plain Set-Alias; an alias with args becomes
         a global wrapper function, removing any colliding built-in alias
         first (Alias outranks Function in command resolution, so a built-in
-        like `cd` would otherwise shadow the wrapper). Extracted verbatim
-        from Register-DFTool's per-tool loop -- no behavior change from the
-        prior inline version.
+        like `cd` would otherwise shadow the wrapper).
     .PARAMETER Tool
         The tool record declaring the aliases.
     .PARAMETER RoleWinner
@@ -33,24 +31,19 @@ function Register-DFToolAliases {
         [object]$RoleWinner
     )
 
-    $aliases = $Tool.PSObject.Properties['aliases']?.Value
-    if (-not $aliases) { return }
+    if (-not $Tool.aliases) { return }
 
-    $aliases.PSObject.Properties | ForEach-Object {
+    $Tool.aliases.PSObject.Properties | ForEach-Object {
         $aliasName = $_.Name
 
         if ($RoleWinner -and $RoleWinner.WinnerName -ne $Tool.name -and $aliasName -in $RoleWinner.AliasKeys) {
-            Write-Verbose "DotForge: $($Tool.name) alias '$aliasName' suppressed — '$($RoleWinner.WinnerName)' won role '$($Tool.PSObject.Properties['role']?.Value)'"
+            Write-Verbose "DotForge: $($Tool.name) alias '$aliasName' suppressed — '$($RoleWinner.WinnerName)' won role '$($Tool.role)'"
             return
         }
 
-        $aliasCmd  = $_.Value.PSObject.Properties['command']?.Value
-        $rawArgs   = $_.Value.PSObject.Properties['args']?.Value
-        # A record without "args" means none: @($null) would count as one argument
-        # and turn a plain alias into a wrapper function. The @() goes around the
-        # whole if: assigning an if-expression unwraps a one-element array to a bare
-        # string, which @capturedArgs would then splat character by character.
-        $aliasArgs = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
+        # ConvertTo-DFToolRecord guarantees { command; args[] } per alias.
+        $aliasCmd  = $_.Value.command
+        $aliasArgs = $_.Value.args
 
         if (-not $aliasCmd) { return }
 

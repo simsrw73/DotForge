@@ -1,8 +1,14 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Private/DFCatalog.ps1"
+    . "$PSScriptRoot/../Private/DFXml.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
     . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolIdentityGuideSchema.ps1"
     . "$PSScriptRoot/../Private/Get-DFToolIdentityGuide.ps1"
@@ -76,6 +82,25 @@ Describe 'Resolve-DFCatalogQueryMerge identity resolution' {
         $r = @(Resolve-DFCatalogQueryMerge -QueryText zed)
         $r.Count | Should -Be 1
         $r[0].Sources.Count | Should -Be 2
+    }
+
+    It 'does not strip a scoped npm package to its bare name when looking up identity' {
+        # Only scoop ids are bucket-qualified; '@scope/zed' is a different package from 'zed'.
+        $script:DFCatalogProviders['npm'] = @{
+            Name = 'npm'; Kind = 'query-cache'; Order = 4; Test = { $true }
+            Search = { param($Query, $Fresh)
+                if ($Query -eq 'zed') {
+                    New-DFToolSourceInfo -Source npm -PackageId '@scope/zed' -Name '@scope/zed' -MatchKind keyword
+                }
+            }
+            GetInstalled = { }; Refresh = { }
+        }
+        Mock Get-DFCatalogInstalled {
+            @{ Items = @(); IdentityMap = @{ 'npm:zed' = 'zed'; 'choco:zed' = 'zed' } }
+        }
+        $r = @(Resolve-DFCatalogQueryMerge -QueryText zed)
+        ($r | Where-Object Name -EQ 'zed').Sources.Source | Should -Not -Contain 'npm'
+        @($r | Where-Object Name -EQ '@scope/zed').Count | Should -Be 1
     }
 
     It 'resolves a scoop bucket-qualified id against the guide''s bare-name entry' {

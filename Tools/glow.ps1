@@ -18,10 +18,10 @@
 # Writes: creates the config file's directory only; glow.yml itself is yours.
 
 # 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.
-$_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
+$_settings = $DFCurrentTool.settings
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_theme    = Get-DFConfiguredTheme -ToolKey 'GlowTheme' -Default $_default
-$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
 $_cfgRaw   = $_settings.PSObject.Properties['configFile']?.Value ?? '${XDG_CONFIG_HOME}/glow/glow.yml'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
 
@@ -29,6 +29,9 @@ New-DFDirectory (Split-Path $_cfg) | Out-Null
 
 # 2. Register Resolve-DFGlowStyle (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'glow'
+# Private helpers can't be called by name from a function:global: closure, but a
+# captured scriptblock keeps its module binding, so capture them here.
+$_resolveThemeFile = ${function:Resolve-DFThemeFile}
 
 Set-Item -Path 'function:global:Resolve-DFGlowStyle' -Value ({
     <#
@@ -62,17 +65,9 @@ Set-Item -Path 'function:global:Resolve-DFGlowStyle' -Value ({
     # glow's own style names — passed through verbatim when no file matches.
     $builtin = @('auto', 'dark', 'light', 'dracula', 'pink', 'notty', 'ascii', 'tokyo-night')
 
-    if ([System.IO.Path]::IsPathRooted($Name)) {
-        if (Test-Path $Name -PathType Leaf) { return $Name }
-    } else {
-        if ($Env:XDG_CONFIG_HOME) {
-            $p = Join-Path $Env:XDG_CONFIG_HOME 'glow' 'themes' "$Name.json"
-            if (Test-Path $p -PathType Leaf) { return $p }
-        }
-        $p = Join-Path $_bundledDir "$Name.json"
-        if (Test-Path $p -PathType Leaf) { return $p }
-        if ($Name -in $builtin) { return $Name }
-    }
+    $file = & $_resolveThemeFile -Tool 'glow' -Name $Name -BundledDir $_bundledDir
+    if ($file) { return $file }
+    if ($Name -in $builtin) { return $Name }
 
     # Never return an unresolved path: glow exits 1 with "specified style does not
     # exist" rather than degrading, which would break the command outright.

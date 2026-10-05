@@ -17,9 +17,7 @@ function Invoke-DFToolCompanion {
         $DFCurrentTool set here immediately before each dot-source is what
         the companion sees -- the sidecar contract only requires "set
         immediately before, cleared immediately after," not that it happen
-        inside Register-DFTool specifically. Extracted verbatim from
-        Register-DFTool's per-tool loop -- no behavior change from the prior
-        inline version.
+        inside Register-DFTool specifically.
     .PARAMETER Tool
         The tool record whose companion(s) to run.
     .PARAMETER ToolsPath

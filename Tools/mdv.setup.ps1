@@ -18,10 +18,10 @@
 # it, delete it and remove the "mdv" entry from
 # $XDG_STATE_HOME\dotforge\setup-state.json. To skip: $DFConfig.SkipSetup = @('mdv').
 
-$_settings = $DFCurrentTool.PSObject.Properties['settings']?.Value
+$_settings = $DFCurrentTool.settings
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_name     = Get-DFConfiguredTheme -ToolKey 'MdvTheme' -Default $_default
-$_name     = Resolve-DFThemeName -Name $_name -ThemeMap ($DFCurrentTool.PSObject.Properties['themeMap']?.Value)
+$_name     = Resolve-DFThemeName -Name $_name -ThemeMap $DFCurrentTool.themeMap
 
 $_valid = @(
     'terminal', 'solarized-dark', 'nord', 'tokyonight',

@@ -1,4 +1,9 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
     . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
@@ -54,12 +59,5 @@ Describe 'Complete-DFToolSetup' {
         $ranAtUtc = ([datetime]$state.delta.ranAt).ToUniversalTime()
         $ranAtUtc | Should -BeGreaterThan ([datetime]::UtcNow.AddMinutes(-5))
         $ranAtUtc | Should -BeLessThan ([datetime]::UtcNow.AddMinutes(1))
-    }
-
-    It 'warns and no-ops when $Env:XDG_STATE_HOME is not set' {
-        $Env:XDG_STATE_HOME = $null
-        $warnings = Complete-DFToolSetup -Name 'delta' 3>&1 |
-            Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
-        $warnings | Where-Object { $_ -match 'XDG_STATE_HOME' } | Should -Not -BeNullOrEmpty
     }
 }

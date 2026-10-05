@@ -24,8 +24,8 @@ function Resolve-DFCliHelpFlag {
         [switch]$Force
     )
 
-    $cacheDir  = if ($Env:XDG_CACHE_HOME) { Join-Path $Env:XDG_CACHE_HOME 'dotforge' } else { $null }
-    $cacheFile = if ($cacheDir) { Join-Path $cacheDir 'cli-help-flags.json' } else { $null }
+    $cacheDir  = Join-Path (Get-DFXdgPath Cache) 'dotforge'
+    $cacheFile = Join-Path $cacheDir 'cli-help-flags.json'
 
     $cache = @{}
     if ($cacheFile -and (Test-Path $cacheFile)) {

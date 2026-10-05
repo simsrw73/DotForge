@@ -1,4 +1,11 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Test-DFToolIdentityGuideSchema.ps1"
     . "$PSScriptRoot/../Private/Get-DFToolIdentityGuide.ps1"
 
@@ -27,11 +34,11 @@ Describe 'Get-DFToolIdentityGuide' {
         $script:FixturePath = Join-Path $TestDrive 'tool-identities.json'
         New-FixtureGuideFile -Path $script:FixturePath
         $script:DFToolIdentityGuide = $null
-        $script:DFToolIdentityGuideWarned = $false
+        $script:DFReleaseDataWarned = @{}
     }
     AfterEach {
         $script:DFToolIdentityGuide = $null
-        $script:DFToolIdentityGuideWarned = $false
+        $script:DFReleaseDataWarned = @{}
     }
 
     It 'loads a valid fixture' {

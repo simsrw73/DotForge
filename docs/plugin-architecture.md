@@ -102,3 +102,26 @@ regenerable indexes — never hand-edited core logic.**
   dialect matches the canonical needs no declaration at all.
 - **Forbidden:** any `switch ($tool.name)` / `if ($tool.name -eq …)` branch in
   core code. Encode the difference as a field the tool declares instead.
+- **Good:** catalog providers (2026-10). Each `Private/DFCatalog.<Stem>.ps1`
+  registers itself with `Register-DFCatalogProvider` (name, kind, order); its
+  hooks bind by naming convention. Parameter validation, tab completion, the
+  `source:id` syntax and the installed-package fetch all read the registry
+  (`Get-DFCatalogName`), so adding a catalog is one new file. The same shape
+  applies inside `Tools/`: the winget, scoop and choco companions each register
+  a spec in `$script:DFPackageManagerSpecs`, and one engine
+  (`Invoke-DFPackageManagerAction`) runs every picker.
+
+## Shared conventions for core code
+
+- **Process-scoped caches.** `Import-DFToolDb`, `Resolve-DFPackageManager` and
+  `Test-DFToolAvailable` each cache in a `$script:` variable, unless the caller
+  passes an explicit argument (a test path, a custom priority), in which case
+  the call is uncached and never populates the cache. New caches follow the
+  same rule.
+- **One owner per `$script:` variable.** All module files share one script
+  scope, so two files initializing the same name clobber each other.
+  `tests/ModuleState.Tests.ps1` enforces this.
+- **Cross-cutting decisions live in one helper:** XDG folders
+  (`Get-DFXdgPath`), `$DFConfig` (`Get-DFConfig`), tool records
+  (`ConvertTo-DFToolRecord`), color (`Test-DFColorOutput`, `Get-DFAnsiPalette`),
+  atomic writes (`Write-DFFileAtomic`), release data (`Read-DFReleaseData`).

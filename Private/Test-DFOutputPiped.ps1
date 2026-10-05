@@ -35,3 +35,44 @@ function Test-DFOutputPiped {
     ($Invocation.PipelinePosition -lt $Invocation.PipelineLength) -or
         [Console]::IsOutputRedirected
 }
+
+function Test-DFColorOutput {
+    <#
+    .SYNOPSIS
+        Decides whether a display command should emit ANSI color.
+    .DESCRIPTION
+        Color is used only when $Env:NO_COLOR is unset, the host supports
+        virtual-terminal sequences, and (when -Invocation is given) the
+        caller's output isn't being piped or redirected. The one place every
+        colorizing command makes this decision.
+    .PARAMETER Invocation
+        The caller's $MyInvocation, to also turn color off when output is piped.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([System.Management.Automation.InvocationInfo]$Invocation)
+    if ($Env:NO_COLOR -or -not $Host.UI.SupportsVirtualTerminal) { return $false }
+    -not ($Invocation -and (Test-DFOutputPiped -Invocation $Invocation))
+}
+
+function Get-DFAnsiPalette {
+    <#
+    .SYNOPSIS
+        Returns DotForge's ANSI styles, or empty strings for every style when color is off.
+    .DESCRIPTION
+        Formatters interpolate these unconditionally, so plain output needs no
+        separate code path. Title is bold cyan, Accent bold yellow, Faint dim
+        (it adapts to the terminal's theme), Green green, Reset resets.
+    .PARAMETER Color
+        Whether to return real escape sequences (usually Test-DFColorOutput).
+    .OUTPUTS
+        System.Collections.Hashtable.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param([Parameter(Mandatory)][bool]$Color)
+    if (-not $Color) { return @{ Title = ''; Accent = ''; Faint = ''; Green = ''; Reset = '' } }
+    @{ Title = "`e[1;36m"; Accent = "`e[1;33m"; Faint = "`e[2m"; Green = "`e[32m"; Reset = "`e[0m" }
+}

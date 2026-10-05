@@ -1,4 +1,11 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
 }
 
@@ -13,13 +20,6 @@ Describe 'Get-DFToolSetupState' {
     }
 
     It 'returns an empty object when the state file does not exist' {
-        $state = Get-DFToolSetupState
-        @($state.PSObject.Properties).Count | Should -Be 0
-    }
-
-    It 'returns an empty object when $Env:XDG_STATE_HOME is not set' {
-        $Env:XDG_STATE_HOME = $null
-        { Get-DFToolSetupState } | Should -Not -Throw
         $state = Get-DFToolSetupState
         @($state.PSObject.Properties).Count | Should -Be 0
     }

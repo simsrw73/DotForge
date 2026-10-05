@@ -18,7 +18,7 @@ function Get-DFCachedCommandOutput {
         binary both correctly invalidate the cache.
 
         Falls back to always calling -Generate, uncached, when
-        $Env:XDG_CACHE_HOME is unset, -Executable does not resolve, or it
+        -Executable does not resolve, or it
         resolves to something with no backing file (a function or alias
         stand-in, e.g. how tests/scoop.Tests.ps1 stubs scoop-search --
         Get-Command's .Source on a function is not a usable file path) --
@@ -60,11 +60,11 @@ function Get-DFCachedCommandOutput {
     )
 
     $cmd = Get-Command $Executable -ErrorAction Ignore
-    if (-not $Env:XDG_CACHE_HOME -or -not $cmd -or -not $cmd.Source -or -not (Test-Path $cmd.Source -PathType Leaf)) {
+    if (-not $cmd -or -not $cmd.Source -or -not (Test-Path $cmd.Source -PathType Leaf)) {
         return & $Generate
     }
 
-    $cacheDir  = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
+    $cacheDir  = Join-Path (Get-DFXdgPath Cache) 'dotforge'
     $cacheFile = Join-Path $cacheDir "$Name.txt"
     $keyFile   = Join-Path $cacheDir "$Name.key"
     $target = Resolve-DFExecutableTarget -Path $cmd.Source

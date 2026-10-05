@@ -37,8 +37,7 @@ function Complete-DFToolSetup {
         Records that mdv's setup ran, with no actions to report.
     .OUTPUTS
         None. Writes $XDG_STATE_HOME\dotforge\setup-state.json (atomically,
-        through a temp file). Warns and does nothing when XDG_STATE_HOME is
-        not set.
+        through a temp file).
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/writing-a-tool.md
     #>
@@ -48,11 +47,6 @@ function Complete-DFToolSetup {
         [object[]]$Actions = @()
     )
 
-    if (-not $Env:XDG_STATE_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_STATE_HOME is not set. Call Initialize-DFEnvironment first.'
-        return
-    }
-
     $state = Get-DFToolSetupState
     $entry = [PSCustomObject]@{
         ranAt   = (Get-Date).ToUniversalTime().ToString('o')
@@ -60,11 +54,6 @@ function Complete-DFToolSetup {
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
-    $stateDir  = Join-Path $Env:XDG_STATE_HOME 'dotforge'
-    $stateFile = Join-Path $stateDir 'setup-state.json'
-    New-DFDirectory $stateDir
-
-    $tmp = "$stateFile.tmp.$PID"
-    $state | ConvertTo-Json -Depth 10 | Set-Content -Path $tmp -Encoding UTF8
-    Move-Item -Path $tmp -Destination $stateFile -Force
+    $stateFile = Join-Path (Get-DFXdgPath State) 'dotforge' 'setup-state.json'
+    Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
 }

@@ -1,4 +1,10 @@
 BeforeAll {
+    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
+    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
+    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
+    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
+    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
+    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
     . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
     . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
     . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"

@@ -196,7 +196,6 @@ Both validate the download before writing it to `$XDG_DATA_HOME\dotforge\`, and 
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `Catalog caching is disabled` | `XDG_CACHE_HOME` isn't set | Call `Initialize-DFEnvironment` first. |
 | The card's `Cache` line shows winget data days old | winget hasn't refreshed its catalog file | Run `winget source update`, or add it to the scheduled task as above. |
 | `-GitInfo` adds nothing to the card | no GitHub repository found for the package, or GitHub's anonymous API limit (60 requests an hour) was reached | Install the `gh` CLI and run `gh auth login`. |
 | `$x = trifle rg` gives text, not objects | an assignment looks like a terminal | Add `-AsObject`. |

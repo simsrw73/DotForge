@@ -35,56 +35,14 @@ function Get-DFCategoryDb {
         return $script:DFCategoryDb
     }
 
-    $shippedPath = $Path ? $Path : (Join-Path $PSScriptRoot '../data/tool-categories.json')
-    $resolvedPath = $shippedPath
-
-    if ($Env:XDG_DATA_HOME) {
-        $refreshedPath = Join-Path $Env:XDG_DATA_HOME 'dotforge/tool-categories.json'
-        if (Test-Path $refreshedPath) {
-            try {
-                $shippedUpdated = (Test-Path $shippedPath) ? (Get-Content $shippedPath -Raw | ConvertFrom-Json).updated : $null
-                $refreshedUpdated = (Get-Content $refreshedPath -Raw | ConvertFrom-Json).updated
-                if (-not $shippedUpdated -or [datetime]$refreshedUpdated -gt [datetime]$shippedUpdated) {
-                    $resolvedPath = $refreshedPath
-                }
-            } catch {
-                Write-Verbose "DotForge: unreadable refreshed category db '$refreshedPath', using shipped: $_"
-            }
-        }
+    $readArgs = @{
+        FileName           = 'tool-categories.json'
+        Validator          = 'Test-DFCategoryDbSchema'
+        Label              = 'category db'
+        UnavailableMessage = 'category database is unavailable — -Category/-WorksWith search and card discovery sections will be empty.'
     }
-
-    # Two-tier fallback: a resolved refreshed copy that turns out corrupt —
-    # whether unparseable JSON or merely schema-invalid — always falls back
-    # to the shipped copy before giving up. (An unparseable refreshed file
-    # that fails even the earlier date-comparison read never gets selected
-    # as $resolvedPath in the first place, so it's already excluded here;
-    # this covers the remaining case: valid JSON, valid 'updated', but the
-    # document itself fails schema validation.)
-    $tryLoadCategoryDb = {
-        param($p)
-        if (-not (Test-Path $p)) { return $null }
-        try {
-            $doc = Get-Content $p -Raw | ConvertFrom-Json
-            $errs = $null
-            if (Test-DFCategoryDbSchema -Database $doc -Errors ([ref]$errs)) { return $doc }
-            Write-Verbose "DotForge: category db at '$p' failed schema validation: $($errs -join '; ')"
-            return $null
-        } catch {
-            Write-Verbose "DotForge: unreadable category db '$p': $_"
-            return $null
-        }
-    }
-
-    $usedRefreshed = ($resolvedPath -ne $shippedPath)
-    $raw = & $tryLoadCategoryDb $resolvedPath
-    if (-not $raw -and $usedRefreshed) {
-        $raw = & $tryLoadCategoryDb $shippedPath
-    }
-
-    if (-not $raw -and -not $script:DFCategoryDbWarned) {
-        Write-Warning 'DotForge: category database is unavailable — -Category/-WorksWith search and card discovery sections will be empty.'
-        $script:DFCategoryDbWarned = $true
-    }
+    if ($Path) { $readArgs.ShippedPath = $Path }
+    $raw = Read-DFReleaseData @readArgs
 
     $nameIndex = @{}
     $idIndex = @{}
@@ -139,9 +97,8 @@ function Get-DFCategoryDbEntry {
     .DESCRIPTION
         Scoop package ids are bucket-qualified at runtime (e.g. 'main/fd')
         but the seed data stores bare names ('fd', matching Tools/*.json's
-        own convention) — so a scoop id lookup that misses on the full value
-        retries with just the trailing segment after '/', mirroring the same
-        bucket-stripping Find-DFPackage's resolveDFTool scriptblock uses.
+        own convention); Get-DFIdentityKeys supplies both keys, the same ones
+        the catalog merge uses.
     .PARAMETER Info
         A DotForge.ToolInfo (or any object with DFTool/Name/Sources shape).
     .PARAMETER Database
@@ -162,12 +119,9 @@ function Get-DFCategoryDbEntry {
     if ($Info.DFTool) { $key = $Database.NameIndex[$Info.DFTool.ToLowerInvariant()] }
     if (-not $key) {
         foreach ($s in @($Info.Sources)) {
-            $lookup = "$($s.Source):$($s.PackageId)".ToLowerInvariant()
-            if ($Database.IdIndex.ContainsKey($lookup)) { $key = $Database.IdIndex[$lookup]; break }
-            if ($s.Source -eq 'scoop' -and $s.PackageId -match '/') {
-                $bareLookup = "scoop:$(($s.PackageId -split '/')[-1])".ToLowerInvariant()
-                if ($Database.IdIndex.ContainsKey($bareLookup)) { $key = $Database.IdIndex[$bareLookup]; break }
-            }
+            $hit = @(Get-DFIdentityKeys -Source $s.Source -PackageId $s.PackageId) |
+                Where-Object { $Database.IdIndex.ContainsKey($_) } | Select-Object -First 1
+            if ($hit) { $key = $Database.IdIndex[$hit]; break }
         }
     }
     if (-not $key -and $Info.Name) { $key = $Database.NameIndex[$Info.Name.ToLowerInvariant()] }

@@ -13,12 +13,7 @@ function Get-DFHelpTopicList {
         [switch]$Force
     )
 
-    if (-not $Env:XDG_CACHE_HOME) {
-        Write-Warning 'DotForge: $Env:XDG_CACHE_HOME is not set. Call Initialize-DFEnvironment first.'
-        return
-    }
-
-    $cacheDir    = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
+    $cacheDir    = Join-Path (Get-DFXdgPath Cache) 'dotforge'
     $cacheFile   = Join-Path $cacheDir 'help-topics.txt'
     $keyFile     = Join-Path $cacheDir 'help-topics.key'
 
