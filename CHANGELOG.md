@@ -35,6 +35,15 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Role edge cases.** A role-variable conflict warns once per session, even when `. $PROFILE`
+  re-runs your own assignment. DotForge remembers which values it wrote across `Import-Module -Force`,
+  and `Get-DFRole` labels a value left by an earlier winner as `DotForge (earlier winner)`. A
+  whitespace-only `Defaults` entry is ignored; a `Defaults` winner is reported with the tool's own
+  spelling; a `Defaults` entry naming a category warns. An empty `env`/`aliases` role block no
+  longer counts as content, a role's hook name must match the role, and a companion or hook that
+  reuses a local variable name can no longer stop later hooks or the setup script.
+- **`Remove-DFTestGlobal -Alias` removes aliases.** It checked with `Test-Path alias:global:<n>`,
+  which is always false, so it never removed anything.
 - **`open <url>` failed with "Cannot find drive 'https'".** `Open-DFItem` passed URLs to
   `Invoke-Item`; anything with a `scheme://` now goes through `Start-Process`.
 - **`reload` dropped the profile's functions, aliases and variables.** `Invoke-DFProfileReload`

@@ -2,12 +2,13 @@ BeforeAll { . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1" }
 
 Describe 'Set-DFRoleEnv' {
     BeforeEach {
-        $script:DFRoleEnvSet = @{}
+        $global:DFRoleEnvState = $null
         $script:Saved = $Env:DF_TEST_PAGER
         Remove-Item Env:DF_TEST_PAGER -ErrorAction Ignore
         $script:Common = @{ Name = 'DF_TEST_PAGER'; Role = 'pager'; Winner = 'moar' }
     }
     AfterEach {
+        Remove-Variable DFRoleEnvState -Scope Global -ErrorAction Ignore
         if ($null -eq $script:Saved) { Remove-Item Env:DF_TEST_PAGER -ErrorAction Ignore } else { $Env:DF_TEST_PAGER = $script:Saved }
     }
 
@@ -55,5 +56,29 @@ Describe 'Set-DFRoleEnv' {
         $Env:DF_TEST_PAGER = 'less'
         Set-DFRoleEnv @script:Common -Value 'moar' -Reason priority
         $Env:DF_TEST_PAGER | Should -Be 'less'
+    }
+
+    It 'warns about one conflict once per session, even when the profile re-sets the variable' {
+        $Env:DF_TEST_PAGER = 'less'
+        Set-DFRoleEnv @script:Common -Value 'moar' -Reason Defaults -WarningAction SilentlyContinue
+        $Env:DF_TEST_PAGER = 'less'   # `. $PROFILE` runs the profile's own assignment again
+        Set-DFRoleEnv @script:Common -Value 'moar' -Reason Defaults -WarningVariable w
+        $w | Should -BeNullOrEmpty
+        $Env:DF_TEST_PAGER | Should -Be 'moar'
+    }
+
+    It 'still warns about a different conflict in the same session' {
+        $Env:DF_TEST_PAGER = 'less'
+        Set-DFRoleEnv @script:Common -Value 'moar' -Reason Defaults -WarningAction SilentlyContinue
+        $Env:DF_TEST_PAGER = 'more'
+        Set-DFRoleEnv @script:Common -Value 'moar' -Reason Defaults -WarningVariable w -WarningAction SilentlyContinue
+        "$w" | Should -Match "was 'more'"
+    }
+
+    It 'remembers what DotForge wrote across a module reload' {
+        Set-DFRoleEnv @script:Common -Value 'less' -Reason priority
+        . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"   # Import-Module -Force re-runs the file
+        Set-DFRoleEnv @script:Common -Value 'moar' -Reason priority
+        $Env:DF_TEST_PAGER | Should -Be 'moar'
     }
 }

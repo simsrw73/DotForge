@@ -85,6 +85,26 @@ Describe 'Get-DFRoleWinners' {
         $w['pager'].Reason | Should -Be 'priority'
     }
 
+    It 'treats a whitespace-only Defaults value as absent, without a warning' {
+        $Global:DFConfig = @{ Defaults = @{ pager = '   ' } }
+        $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn
+        $warn | Should -BeNullOrEmpty
+        $w['pager'].Reason | Should -Be 'priority'
+    }
+
+    It 'reports a Defaults winner with the tool''s own spelling' {
+        $Global:DFConfig = @{ Defaults = @{ prompt = 'STAR' } }
+        $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb
+        $w['prompt'].Winner | Should -BeExactly 'star'
+        $w['prompt'].Reason | Should -Be 'Defaults'
+    }
+
+    It 'warns that a category role has no winner when Defaults names one' {
+        $Global:DFConfig = @{ Defaults = @{ grep = 'rg' } }
+        $null = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
+        "$warn" | Should -Match "'grep' is a category"
+    }
+
     It 'considers only the tools being registered (subset registration)' {
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools @($script:Db.star) -RoleDb $script:RoleDb
         $w['prompt'].Winner | Should -Be 'star'

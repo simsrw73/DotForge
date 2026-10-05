@@ -34,7 +34,9 @@ function Remove-DFTestGlobal {
             if (Test-Path "function:global:$n") { Remove-Item -LiteralPath "function:$n" -Force }
         }
         foreach ($n in $Alias) {
-            if (Test-Path "alias:global:$n") { Remove-Item -LiteralPath "alias:$n" -Force }
+            # Test-Path alias:global:<n> is always false, even for an existing global
+            # alias, so ask Get-Alias for the global scope directly.
+            if (Get-Alias -Name $n -Scope Global -ErrorAction Ignore) { Remove-Alias -Name $n -Scope Global -Force }
         }
     } $Function $Alias
 }

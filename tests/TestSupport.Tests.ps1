@@ -13,7 +13,7 @@ Describe 'Remove-DFTestGlobal' {
         Set-Alias -Name dftest_ra -Value Get-Date -Scope Global
         Remove-DFTestGlobal -Function dftest_rg -Alias dftest_ra
         Test-Path function:global:dftest_rg | Should -BeFalse
-        Test-Path alias:global:dftest_ra | Should -BeFalse
+        Get-Alias -Name dftest_ra -Scope Global -ErrorAction Ignore | Should -BeNullOrEmpty -Because 'Test-Path alias:global:<n> is always false, so it cannot be the check'
     }
 
     It 'leaves a same-named function in the caller''s scope alone' {

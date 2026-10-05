@@ -64,6 +64,7 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | A `$DFConfig` setting has no effect | set after `Register-DFTool`, or the key is misspelled (no warning) | Set it before `Import-Module`; check the [settings table](configuration.md#all-settings). |
 | `$DFConfig.Defaults['<role>'] names an unknown role` | misspelled role name | Run `Get-DFRole` for the list. |
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
+| `$DFConfig.Defaults['<role>']: '<role>' is a category, which has no winner` | `Defaults` names a grouping-only role such as `grep` | Remove that entry; every member of a category is configured. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and you haven't chosen | Add the `Defaults` line the warning shows. |
 | `<VAR> was '<value>' but $DFConfig.Defaults.<role> is '<tool>'` | you set the variable yourself and also chose a different tool | Remove one of the two settings. |
 | `<tool> declares the <role> role but its companion defines no Initialize-DFRole…` | a tool record or companion is incomplete | Report it; the tool works, but not as that role's winner. |

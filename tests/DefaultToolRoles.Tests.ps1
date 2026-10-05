@@ -93,7 +93,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
-        $script:DFRoleEnvSet = @{}
+        $global:DFRoleEnvState = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
@@ -126,9 +126,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         }
         if ($null -eq $script:SavedPoshTheme) { Remove-Item Env:POSH_THEME -ErrorAction Ignore } else { $Env:POSH_THEME = $script:SavedPoshTheme }
         Remove-Item Env:POSH_THEMES_PATH, Env:STARSHIP_CONFIG, Env:STARSHIP_CACHE -ErrorAction Ignore
-        Remove-DFTestGlobal -Function oh-my-posh, Select-PoshTheme
-        # Remove-DFTestGlobal's alias guard (Test-Path alias:global:...) misses this one; remove it directly.
-        Remove-Alias -Name fpot -Scope Global -Force -ErrorAction Ignore
+        Remove-DFTestGlobal -Function oh-my-posh, Select-PoshTheme -Alias fpot
     }
 
     It 'initializes only oh-my-posh by priority, defines fpot, and warns once' {

@@ -74,6 +74,8 @@ function Get-DFRoleWinners {
     foreach ($roleName in @($defaults.Keys)) {
         if (-not $RoleDb.ContainsKey($roleName)) {
             Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names an unknown role — ignoring. See Get-DFRole for the list."
+        } elseif ($RoleDb[$roleName].kind -eq 'category') {
+            Write-Warning "DotForge: `$DFConfig.Defaults['$roleName']: '$roleName' is a category, which has no winner — every member is configured. Ignoring."
         }
     }
 
@@ -107,13 +109,14 @@ function Get-DFRoleWinners {
         $winner = $null
         $reason = $null
         $chosen = $defaults[$roleName]
-        if ($chosen) {
+        if (-not [string]::IsNullOrWhiteSpace($chosen)) {
             $chosenTool = $ToolDb[$chosen]
             if (-not $chosenTool -or -not $chosenTool.roles.PSObject.Properties[$roleName]) {
                 $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$roleName]) { $t.name } }) | Sort-Object
                 Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names '$chosen', which is not a $roleName tool (choose from: $($members -join ', ')) — using priority."
             } else {
-                foreach ($c in $candidates) { if ($c.name -eq $chosen) { $winner = $chosen; $reason = 'Defaults'; break } }
+                # Report the tool's own spelling, not the user's (names compare case-insensitively).
+                foreach ($c in $candidates) { if ($c.name -eq $chosen) { $winner = $c.name; $reason = 'Defaults'; break } }
             }
         }
         if ($candidates.Count -eq 0) { continue }
@@ -138,6 +141,21 @@ function Get-DFRoleWinners {
         }
     }
     $winners
+}
+
+function Test-DFHasEntries {
+    <#
+    .SYNOPSIS
+        True when a parsed JSON object (such as a role block's env or aliases) has at least one property.
+    .PARAMETER Object
+        The object, or $null.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([AllowNull()][object]$Object)
+    $null -ne $Object -and @($Object.PSObject.Properties).Count -gt 0
 }
 
 function Invoke-DFToolRegistration {
@@ -217,7 +235,9 @@ function Invoke-DFToolRegistration {
         [pscustomobject]@{
             Role         = $roleName
             Hook         = $RoleDb[$roleName].hook
-            HookRequired = -not ($block.env -or $block.aliases -or $block.legacy -or $RoleDb[$roleName].emptyMembership)
+            # An empty {} block is still an object, so count what it holds.
+            HookRequired = -not ((Test-DFHasEntries $block.env) -or (Test-DFHasEntries $block.aliases) -or
+                $block.legacy -or $RoleDb[$roleName].emptyMembership)
         }
     }
 

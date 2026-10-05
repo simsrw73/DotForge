@@ -99,7 +99,8 @@ Never unset one to test "no folder" behavior; that path writes to the developer'
 function:global:<name>` (or `alias:global:`) silently does nothing, so a stub such as `function global:git {}`
 leaks into every later test file in the run; an unqualified `Remove-Item function:<name>` removes the nearest
 definition, which may be the test file's own dot-sourced copy. `tests/TestSupport.Tests.ps1` rejects the
-qualified form.
+qualified form. `Test-Path alias:global:<name>` is always false, even for an existing global alias: check
+aliases with `Get-Alias -Name <name> -Scope Global`.
 
 Run a single file:
 

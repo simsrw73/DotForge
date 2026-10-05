@@ -43,6 +43,29 @@ function Initialize-DFRoleLost { param($Tool, $Role) $global:HookSaw = 'lost' }
         Remove-Variable HookSaw -Scope Global
     }
 
+    It 'is not thrown off by a companion or hook that reuses its local variable names' {
+        @'
+$Tool = $null; $ToolsPath = 'C:
+owhere'; $WonRoles = @(); $SkipSetup = @('clobtool')
+$companion = 'C:
+owhere.ps1'; $hasCompanion = $false; $setupCompanion = 'C:
+owhere.setup.ps1'
+function Initialize-DFRoleOne { param($Tool, $Role) $global:ClobCalls += "one:$($Tool.name)"; $won = $null; $WonRoles = @(); $hook = $null }
+function Initialize-DFRoleTwo { param($Tool, $Role) $global:ClobCalls += "two:$($Tool.name)" }
+'@ | Set-Content (Join-Path $script:TmpTools 'clobtool.ps1')
+        '$global:ClobCalls += "setup"' | Set-Content (Join-Path $script:TmpTools 'clobtool.setup.ps1')
+        $global:ClobCalls = @()
+        $tool = '{ "name": "clobtool" }' | ConvertFrom-Json
+        $won = @(
+            [pscustomobject]@{ Role = 'one'; Hook = 'Initialize-DFRoleOne'; HookRequired = $true }
+            [pscustomobject]@{ Role = 'two'; Hook = 'Initialize-DFRoleTwo'; HookRequired = $true }
+        )
+        try {
+            Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:TmpTools -WonRoles $won -WarningAction SilentlyContinue
+            $global:ClobCalls | Should -Be @('one:clobtool', 'two:clobtool', 'setup')
+        } finally { Remove-Variable ClobCalls -Scope Global -ErrorAction Ignore }
+    }
+
     It 'leaves hook functions out of every scope after it returns' {
         'function Initialize-DFRoleWon { }' | Set-Content (Join-Path $script:TmpTools 'hooktool.ps1')
         $tool = '{ "name": "hooktool" }' | ConvertFrom-Json

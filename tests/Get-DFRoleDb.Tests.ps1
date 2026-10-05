@@ -58,6 +58,15 @@ Describe 'Get-DFRoleDb' {
         $db.ContainsKey('p') | Should -BeFalse
     }
 
+    It 'rejects a single role whose hook name does not match its own name' {
+        $file = Join-Path $TestDrive 'roles-mismatch.json'
+        '{ "pager": { "kind": "single", "hook": "Initialize-DFRoleEditor" }, "project-env": { "kind": "single", "hook": "Initialize-DFRoleProjectEnv" } }' | Set-Content $file
+        $db = Get-DFRoleDb -Path $file -WarningVariable w -WarningAction SilentlyContinue
+        $db.ContainsKey('pager') | Should -BeFalse
+        "$w" | Should -Match 'Initialize-DFRolePager'
+        $db.ContainsKey('project-env') | Should -BeTrue
+    }
+
     It 'rejects a category role that declares a hook or reserved names' {
         $file = Join-Path $TestDrive 'roles.json'
         '{ "c": { "kind": "category", "reserved": { "env": ["X"] } } }' | Set-Content $file

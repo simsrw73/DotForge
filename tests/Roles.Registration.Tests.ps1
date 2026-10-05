@@ -17,7 +17,7 @@ Describe 'Register-DFTool role activation' {
     BeforeEach {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $script:DFRoleEnvSet = @{}
+        $global:DFRoleEnvState = $null
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             Set-Variable -Scope Script -Name "Saved$v" -Value ([Environment]::GetEnvironmentVariable("XDG_$($v)_HOME"))
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", (Join-Path $TestDrive $v.ToLower()))
@@ -128,6 +128,12 @@ function Initialize-DFRoleTother  { param($Tool, $Role) $global:RoleCalls += "be
         Register-DFTool -Name nohook, dfrolepager -ToolsPath $script:Tools -WarningVariable w -WarningAction SilentlyContinue
         "$w" | Should -Match 'nohook.*tother.*Initialize-DFRoleTother'
         $Env:DF_T_PAGER | Should -Be 'dfrolepager --paging'
+    }
+
+    It 'treats an empty env or aliases block as no content, so a missing hook still warns' {
+        Write-Tool 'emptyblock' '{ "name": "emptyblock", "executable": "emptyblock.exe", "roles": { "tother": { "priority": 99, "env": {}, "aliases": {} } } }'
+        Register-DFTool -Name emptyblock -ToolsPath $script:Tools -WarningVariable w -WarningAction SilentlyContinue
+        "$w" | Should -Match 'emptyblock.*tother.*Initialize-DFRoleTother'
     }
 
     It 'warns, and continues, when a hook throws' {

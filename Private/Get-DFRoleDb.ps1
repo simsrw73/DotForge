@@ -49,7 +49,8 @@ function ConvertTo-DFRoleRecord {
         Validates one role definition and returns it with every field present.
     .DESCRIPTION
         kind must be 'single' or 'category'. A single role needs a hook named
-        Initialize-DFRole<Name>. A category role may not declare a hook, exclusive,
+        Initialize-DFRole plus its name in PascalCase (project-env ->
+        Initialize-DFRoleProjectEnv). A category role may not declare a hook, exclusive,
         reserved names or emptyMembership. Invalid entries warn and return nothing.
     .PARAMETER Name
         The role name (the key in roles.json).
@@ -88,7 +89,11 @@ function ConvertTo-DFRoleRecord {
 
     $problem = switch ($record.kind) {
         'single' {
-            if ($record.hook -notmatch '^Initialize-DFRole[A-Z][A-Za-z]*$') { "hook '$($record.hook)' must be Initialize-DFRole<Name>" }
+            # The hook name is derived from the role name (project-env -> ProjectEnv),
+            # so no two roles can share one and a sidecar's function serves one role.
+            $pascal = -join ($Name -split '-' | Where-Object { $_ } | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() + $_.Substring(1) })
+            $expected = "Initialize-DFRole$pascal"
+            if ($record.hook -cne $expected) { "hook '$($record.hook)' must be $expected" }
         }
         'category' {
             if ($record.hook -or $record.emptyMembership -or $record.exclusive -or

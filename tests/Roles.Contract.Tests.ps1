@@ -30,6 +30,12 @@ BeforeAll {
         }
     }
 
+    # A role block has content when its env or aliases hold at least one entry;
+    # an empty {} is still a truthy hashtable.
+    function Test-RoleBlockContent([hashtable]$Block) {
+        ($Block['env'] -and $Block['env'].Count -gt 0) -or ($Block['aliases'] -and $Block['aliases'].Count -gt 0)
+    }
+
     function Get-SidecarAst($Path) {
         [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
     }
@@ -53,7 +59,7 @@ Describe 'Role contract: <Name>' -ForEach $script:ToolCases {
         foreach ($role in $memberships.Keys) {
             $def = $script:Roles[$role]
             $block = $memberships[$role]
-            $hasContent = $block['aliases'] -or $block['env']
+            $hasContent = Test-RoleBlockContent $block
             if ($def['kind'] -eq 'single') {
                 ($hasContent -or $def['hook'] -in $hooks -or $def['emptyMembership']) |
                     Should -BeTrue -Because "$Name joins '$role' but supplies no aliases, env or $($def['hook'])"
@@ -116,6 +122,13 @@ Describe 'Role contract: <Name>' -ForEach $script:ToolCases {
 }
 
 Describe 'Role contract: a broken fixture is caught' {
+    It 'does not count an empty env or aliases block as role content' {
+        Test-RoleBlockContent @{ env = @{}; aliases = @{} } | Should -BeFalse
+        Test-RoleBlockContent @{ env = @{ PAGER = 'less' } } | Should -BeTrue
+        Test-RoleBlockContent @{ aliases = @{ ls = @{ command = 'x' } } } | Should -BeTrue
+    }
+
+
     It 'flags a member that runs Invoke-Expression outside its prompt hook' {
         $path = Join-Path $TestDrive 'bad.ps1'
         'Invoke-Expression (starship init powershell)' | Set-Content $path

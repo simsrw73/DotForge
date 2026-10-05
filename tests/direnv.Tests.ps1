@@ -8,6 +8,7 @@ BeforeAll {
     . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
     . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/direnv.ps1'
+    $script:OriginalLocationChangedAction = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
 }
 
 Describe 'direnv tool JSON' {
@@ -26,6 +27,8 @@ Describe 'direnv tool sidecar caching' -Skip:(-not (Get-Command direnv.exe -Erro
     }
     AfterEach {
         $Env:XDG_CACHE_HOME = $script:SavedCacheHome
+        # Uninstall the real hook the test installed; see the last Describe.
+        $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = $script:OriginalLocationChangedAction
     }
 
     It 'caches the real hook script, and does not regenerate it on a second load' {
@@ -40,5 +43,14 @@ Describe 'direnv tool sidecar caching' -Skip:(-not (Get-Command direnv.exe -Erro
         . $script:CompanionPath; . Initialize-DFRoleProjectEnv -Role project-env
 
         (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
+    }
+}
+
+# Runs after the caching test. direnv's real hook attaches to the process-wide
+# LocationChangedAction; left installed, every later Set-Location in the run calls
+# direnv, which on Windows can unload variables such as PATH.
+Describe 'direnv tests clean up after themselves' {
+    It 'leaves LocationChangedAction as it found it' {
+        $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction | Should -Be $script:OriginalLocationChangedAction
     }
 }

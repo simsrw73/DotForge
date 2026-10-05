@@ -52,42 +52,52 @@ function Invoke-DFToolCompanion {
         [object[]]$WonRoles = @()
     )
 
-    $companion = Join-Path $ToolsPath "$($Tool.name).ps1"
-    $hasCompanion = Test-Path $companion -PathType Leaf
-    if ($hasCompanion) {
-        $DFCurrentTool = $Tool
-        . ($companion)
+    # The companion body and its hooks are dot-sourced into this scope, so they
+    # can overwrite any local here ($Tool, $companion, ...). Everything this
+    # function needs afterwards is captured first under one unlikely name.
+    $__dfCall = @{
+        Tool      = $Tool
+        Name      = $Tool.name
+        Companion = Join-Path $ToolsPath "$($Tool.name).ps1"
+        Setup     = Join-Path $ToolsPath "$($Tool.name).setup.ps1"
+        SkipSetup = @($SkipSetup)
+        WonRoles  = @($WonRoles)
+    }
+    $__dfCall.HasCompanion = Test-Path $__dfCall.Companion -PathType Leaf
+    if ($__dfCall.HasCompanion) {
+        $DFCurrentTool = $__dfCall.Tool
+        . ($__dfCall.Companion)
     }
 
     # Role hooks: plain functions the companion defined in this scope. Only a
     # definition from this tool's own companion file counts, so a stray global
     # of the same name is never mistaken for the hook. Dot-sourced so init
     # scripts run in the same scope the companion body did.
-    foreach ($won in $WonRoles) {
-        $hook = if ($hasCompanion) { Get-Item -LiteralPath "function:$($won.Hook)" -ErrorAction Ignore }
-        if ($hook -and $hook.ScriptBlock.File -and
-            [System.IO.Path]::GetFullPath($hook.ScriptBlock.File) -eq [System.IO.Path]::GetFullPath($companion)) {
-            $DFCurrentTool = $Tool
+    foreach ($__dfWon in $__dfCall.WonRoles) {
+        $__dfCall.Won = $__dfWon
+        $__dfHook = if ($__dfCall.HasCompanion) { Get-Item -LiteralPath "function:$($__dfWon.Hook)" -ErrorAction Ignore }
+        if ($__dfHook -and $__dfHook.ScriptBlock.File -and
+            [System.IO.Path]::GetFullPath($__dfHook.ScriptBlock.File) -eq [System.IO.Path]::GetFullPath($__dfCall.Companion)) {
+            $DFCurrentTool = $__dfCall.Tool
             try {
-                . $hook.ScriptBlock -Tool $Tool -Role $won.Role
+                . $__dfHook.ScriptBlock -Tool $__dfCall.Tool -Role $__dfCall.Won.Role
             } catch {
-                Write-Warning "DotForge: $($Tool.name) failed to activate as the $($won.Role) tool: $($_.Exception.Message)"
+                Write-Warning "DotForge: $($__dfCall.Name) failed to activate as the $($__dfCall.Won.Role) tool: $($_.Exception.Message)"
             }
-        } elseif ($won.HookRequired) {
-            Write-Warning "DotForge: $($Tool.name) declares the $($won.Role) role but its companion defines no $($won.Hook) — role not activated."
+        } elseif ($__dfCall.Won.HookRequired) {
+            Write-Warning "DotForge: $($__dfCall.Name) declares the $($__dfCall.Won.Role) role but its companion defines no $($__dfCall.Won.Hook) — role not activated."
         }
     }
     Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
 
-    $setupCompanion = Join-Path $ToolsPath "$($Tool.name).setup.ps1"
-    if ((Test-Path $setupCompanion -PathType Leaf) -and
-        $Tool.name -notin $SkipSetup -and
-        -not (Get-DFToolSetupState).PSObject.Properties[$Tool.name]) {
-        $DFCurrentTool = $Tool
+    if ((Test-Path $__dfCall.Setup -PathType Leaf) -and
+        $__dfCall.Name -notin $__dfCall.SkipSetup -and
+        -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
+        $DFCurrentTool = $__dfCall.Tool
         try {
-            . ($setupCompanion)
+            . ($__dfCall.Setup)
         } catch {
-            Write-Warning "DotForge: $($Tool.name) one-time setup failed: $($_.Exception.Message)"
+            Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
     }

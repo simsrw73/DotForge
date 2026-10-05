@@ -13,9 +13,11 @@ function Get-DFRole {
 
         Winners are computed the way Register-DFTool -All would compute them
         now: from installed tools, minus $DFConfig.SkipTools. Overridden lists
-        role variables whose current value is not the winner's, such as a PAGER
-        you set yourself, which DotForge keeps unless you also name a tool in
-        $DFConfig.Defaults. Read-only; changes nothing.
+        role variables whose current value is not the winner's. Source says
+        why: 'outside DotForge' is a value such as a PAGER you set yourself,
+        which DotForge keeps unless you also name a tool in $DFConfig.Defaults;
+        'DotForge (earlier winner)' is a value DotForge wrote for a different
+        winner earlier in this session. Read-only; changes nothing.
     .PARAMETER Name
         Role names to show. All roles when omitted.
     .PARAMETER ToolsPath
@@ -56,7 +58,8 @@ function Get-DFRole {
                 foreach ($var in $block.env.PSObject.Properties) {
                     $current = [Environment]::GetEnvironmentVariable($var.Name, 'Process')
                     if ($current -and $current -cne (Expand-DFXdgPath $var.Value)) {
-                        [pscustomobject]@{ Name = $var.Name; Value = $current; Source = 'outside DotForge' }
+                        $source = if ((Get-DFRoleEnvState).Written[$var.Name] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
+                        [pscustomobject]@{ Name = $var.Name; Value = $current; Source = $source }
                     }
                 }
             }

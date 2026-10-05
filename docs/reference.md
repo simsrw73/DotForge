@@ -319,7 +319,7 @@ Get-DFRole [[-Name] <string[]>] [-ToolsPath <string>] [<CommonParameters>]
 
 A role is a job several tools can do, such as pager or prompt. For a single role, one installed tool wins: the one named in $DFConfig.Defaults, otherwise the highest-priority installed tool. Only the winner sets the role's variables and aliases and installs its shell hooks. A category role only groups tools; every member works as usual.
 
-Winners are computed the way Register-DFTool -All would compute them now: from installed tools, minus $DFConfig.SkipTools. Overridden lists role variables whose current value is not the winner's, such as a PAGER you set yourself, which DotForge keeps unless you also name a tool in $DFConfig.Defaults. Read-only; changes nothing.
+Winners are computed the way Register-DFTool -All would compute them now: from installed tools, minus $DFConfig.SkipTools. Overridden lists role variables whose current value is not the winner's. Source says why: 'outside DotForge' is a value such as a PAGER you set yourself, which DotForge keeps unless you also name a tool in $DFConfig.Defaults; 'DotForge (earlier winner)' is a value DotForge wrote for a different winner earlier in this session. Read-only; changes nothing.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
