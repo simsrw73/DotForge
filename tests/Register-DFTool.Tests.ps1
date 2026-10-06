@@ -30,6 +30,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
     . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"

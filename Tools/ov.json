@@ -1,0 +1,11 @@
+{
+  "name": "ov",
+  "executable": "ov.exe",
+  "description": "Feature-rich terminal pager with headers, columns and sections",
+  "tags": ["pager", "viewer"],
+  "packages": { "scoop": "ov", "winget": "noborus.ov" },
+  "xdg": { "compliance": "full", "method": "default" },
+  "roles": { "pager": { "priority": 20, "env": { "PAGER": "ov --quit-if-one-screen" } } },
+  "aliases": {},
+  "picker": null
+}

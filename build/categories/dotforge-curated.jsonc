@@ -113,7 +113,8 @@
   },
   "less": {
     "function": ["file-viewing"], "worksWith": ["text", "logs"], "interface": "tui",
-    "ids": { "scoop": "less" }, "popularity": 1
+    "ids": { "scoop": "less", "winget": "jftuga.less", "choco": "less" },
+    "relatedTo": ["moor", "ov"], "popularity": 1
   },
   "mdcat": {
     "function": ["markdown-renderer"], "worksWith": ["markdown", "text"], "interface": "cli",
@@ -134,6 +135,11 @@
     "interface": "cli", "ids": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
     "relatedTo": ["direnv", "ps-dotenv", "fnm", "uv"], "popularity": 3
   },
+  "moor": {
+    "function": ["file-viewing"], "worksWith": ["text", "logs"], "interface": "tui",
+    "ids": { "scoop": "moor" },
+    "relatedTo": ["less", "ov", "bat"], "popularity": 1
+  },
   "npm": {
     "function": ["package-manager"], "worksWith": ["filesystem"], "interface": "cli",
     "popularity": 3
@@ -142,6 +148,11 @@
     "function": ["prompt"], "worksWith": ["environment-vars", "git"], "interface": "cli",
     "ids": { "scoop": "oh-my-posh", "winget": "JanDeDobbeleer.OhMyPosh" },
     "relatedTo": ["posh-git", "starship"], "popularity": 3
+  },
+  "ov": {
+    "function": ["file-viewing"], "worksWith": ["text", "logs", "csv"], "interface": "tui",
+    "ids": { "scoop": "ov", "winget": "noborus.ov" },
+    "relatedTo": ["less", "moor"], "popularity": 1
   },
   "posh-git": {
     "function": ["prompt", "vcs-client"], "worksWith": ["git"], "interface": "cli",

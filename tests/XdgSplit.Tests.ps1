@@ -30,6 +30,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
     . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -77,7 +78,7 @@ Describe 'env-block relocation preserves the migrated values' {
     It 'less keeps its XDG paths and moves LESS to env' {
         $j = Get-Content (Join-Path $script:RealTools 'less.json') -Raw | ConvertFrom-Json
         $j.xdg.vars.LESSHISTFILE | Should -Match '\$\{XDG_STATE_HOME\}'
-        $j.xdg.vars.LESSKEY      | Should -Match '\$\{XDG_CONFIG_HOME\}'
+        $j.xdg.vars.LESSKEYIN    | Should -Match '\$\{XDG_CONFIG_HOME\}'
         $j.xdg.vars.PSObject.Properties['LESS'] | Should -BeNullOrEmpty
         $j.env.LESS | Should -Be '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
     }

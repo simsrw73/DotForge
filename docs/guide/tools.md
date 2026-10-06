@@ -19,6 +19,8 @@ Get-DFTool -Tag pager | Sort-Object name | Select-Object -ExpandProperty name
 bat
 delta
 less
+moor
+ov
 ```
 
 ```powershell
@@ -52,7 +54,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Prompt | oh-my-posh, starship |
 | Editor | micro |
 | Fuzzy finding and navigation | fzf, zoxide |
-| Pager | less |
+| Pager | moor, ov, less (one sets `PAGER`; see below) |
 | Package managers | choco, npm, scoop, winget |
 | Development | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv, vcpkg |
 | PowerShell modules | posh-git, PSFzf, psreadline, Terminal-Icons |
@@ -147,6 +149,16 @@ These fill the `project-env` role, so only one is active: your `$DFConfig.Defaul
   Set `DotenvSafeMode = $false` to load every `.env` without approval. Install it with `Install-DFTool ps-dotenv`, which adds its scoop bucket first.
 - **mise** activates (`mise activate pwsh`) only when it's the `project-env` tool. Its shims folder is on PATH either way, so tools mise installed keep working under ps-dotenv.
 - **direnv** gets Git for Windows' bash through `DIRENV_BASH` unless your `direnv.toml` sets `bash_path`. Up to version 2.37.1 it unloads unrelated variables on Windows ([direnv#1488](https://github.com/direnv/direnv/issues/1488)), so DotForge warns while it's active.
+
+### Pagers: moor, ov, less
+
+These fill the `pager` role, so one of them sets `PAGER`: your `$DFConfig.Defaults['pager']` choice, otherwise moor, then ov, then less. A `PAGER` you set yourself is kept unless you name a different tool in `Defaults`.
+
+- **moor** gets `MOOR=-style <theme> -quit-if-one-screen` from your theme (`MoorTheme` or `Theme`), unless you've set `MOOR` yourself.
+- **ov** runs as `ov --quit-if-one-screen`. Its colors come only from `$XDG_CONFIG_HOME\ov\config.yaml`, which DotForge doesn't write; `ov --generate-config` prints a starting file.
+- **less**: DotForge points `PAGER` at the native Windows build (scoop, winget `jftuga.less` or choco), not Git for Windows' copy in `Git\usr\bin`, which needs `TERM` set correctly. With only Git's copy installed, `PAGER` is plain `less`. Key bindings come from `$XDG_CONFIG_HOME\less\lesskey` (`LESSKEYIN`) and search history goes to `$XDG_STATE_HOME\less\history`.
+
+bat isn't a pager here: when it pages, it uses the `PAGER` above.
 
 ### fnm and zoxide
 

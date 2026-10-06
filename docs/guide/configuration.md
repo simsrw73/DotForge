@@ -38,7 +38,7 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 | `CompletionMode` | string | `Native` | `Native` or `Inshellisense`. See [Completion](completion.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `DeltaTheme`, `FzfTheme`, `GlowTheme`, `MdcatTheme`, `MdvTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `DeltaTheme`, `FzfTheme`, `GlowTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -99,6 +99,7 @@ mdcat: dracula
 | glow | `GlowTheme` | `catppuccin-mocha`, glow's `auto`, `dark`, `light`, `dracula`, `pink`, `notty`, `ascii`, `tokyo-night`, or a path | warning; `auto` |
 | mdcat | `MdcatTheme` | `auto`, `dark`, `light`, `catppuccin-mocha`, `catppuccin-latte`, `gruvbox-dark`, `gruvbox-light`, `dracula`, `nord`, `solarized-dark`, `solarized-light` | warning; `auto` |
 | mdv | `MdvTheme` | `terminal`, `solarized-dark`, `nord`, `tokyonight`, `kanagawa`, `gruvbox`, `monokai`, `material-ocean`, `catppuccin` | warning; `terminal` |
+| moor | `MoorTheme` | any moor `-style` name (`catppuccin-mocha`, `dracula`, `nord`, …); used only when you haven't set `MOOR` | moor uses its default style |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | vivid (`LS_COLORS`) | `VividTheme` | any `vivid themes` name | warning; `LS_COLORS` unchanged |
 

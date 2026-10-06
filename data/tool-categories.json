@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-05",
+  "updated": "2026-10-06",
   "taxonomy": {
     "function": [
       "search",
@@ -769,8 +769,14 @@
       ],
       "interface": "tui",
       "ids": {
-        "scoop": "less"
+        "scoop": "less",
+        "winget": "jftuga.less",
+        "choco": "less"
       },
+      "relatedTo": [
+        "moor",
+        "ov"
+      ],
       "popularity": 1
     },
     "lsd": {
@@ -877,6 +883,25 @@
       ],
       "popularity": 3
     },
+    "moor": {
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "text",
+        "logs"
+      ],
+      "interface": "tui",
+      "ids": {
+        "scoop": "moor"
+      },
+      "relatedTo": [
+        "less",
+        "ov",
+        "bat"
+      ],
+      "popularity": 1
+    },
     "navi": {
       "function": [
         "documentation"
@@ -933,6 +958,26 @@
         "starship"
       ],
       "popularity": 3
+    },
+    "ov": {
+      "function": [
+        "file-viewing"
+      ],
+      "worksWith": [
+        "text",
+        "logs",
+        "csv"
+      ],
+      "interface": "tui",
+      "ids": {
+        "scoop": "ov",
+        "winget": "noborus.ov"
+      },
+      "relatedTo": [
+        "less",
+        "moor"
+      ],
+      "popularity": 1
     },
     "pastel": {
       "function": [

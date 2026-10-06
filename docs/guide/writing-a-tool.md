@@ -50,6 +50,7 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | --- | --- | --- |
 | `name` | yes | Tool name; the file must be `Tools/<name>.json`. |
 | `executable` | yes | What must be on `PATH` (e.g. `bat.exe`); for `"type": "module"`, the module name. |
+| `executableExclude` | | Glob patterns of install locations to skip when a role's `env` uses `${DF_TOOL_EXE}`, e.g. `["*\\Git\\usr\\bin\\*"]`. Detection ignores them. |
 | `type` | | `exe` (default) or `module`. A module tool is detected with `Get-Module -ListAvailable`. |
 | `description` | | One line; shown by `Get-DFTool` and `Find-DFTool`. |
 | `tags` | | Words for `Get-DFTool -Tag` and `Find-DFTool`. |
@@ -120,6 +121,7 @@ A role is a job several tools can do, such as `prompt` or `pager`. The roles and
 - `env` and `aliases` in the role block are applied **only when your tool wins** the role. A role's reserved variables and aliases may appear only here, never in the top-level `env`/`aliases`.
 - For behavior that needs code, define a plain function with the role's hook name in your companion: `Initialize-DFRolePrompt` for `prompt`, `Initialize-DFRoleProjectEnv` for `project-env`, and so on. DotForge calls it with `-Tool` and `-Role`, only when your tool wins, right after running the companion. Never make it `global:`, and don't set a role's reserved variables in it.
 - Code a role reserves (for example `Invoke-Expression` for prompt engines) may run only inside that hook.
+- In a role block's `env`, `${DF_TOOL_EXE}` becomes the full path of your tool's executable (forward slashes, quoted if it has a space), skipping `executableExclude` locations; with no other copy, it's the bare name. less uses it so `PAGER` names the native build.
 - A *category* role (such as `grep`) takes an empty block: `"grep": {}`.
 
 starship's companion is a complete example:

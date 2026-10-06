@@ -110,7 +110,7 @@
 - [ ] **Onboard more tools into roles (roles v2 follow-ups, requested 2026-10-05)** — the role
   framework (`docs/superpowers/specs/2026-10-05-roles-v2-design.md`) shipped with only the tools
   DotForge already had. Each batch is its own small spec or plan:
-  - pager: moar, ov
+  - pager: moor (formerly moar), ov — done 2026-10-05
   - editor: nano, vim
   - picker: skim; television doesn't take fzf's command line, so it needs its own adapter or a
     different role

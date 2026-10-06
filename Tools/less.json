@@ -6,9 +6,11 @@
     "viewer"
   ],
   "executable": "less.exe",
-  "roles": { "pager": { "priority": 20, "env": { "PAGER": "less" } } },
+  "executableExclude": ["*\\Git\\usr\\bin\\*"],
+  "roles": { "pager": { "priority": 10, "env": { "PAGER": "${DF_TOOL_EXE}" } } },
   "packages": {
     "scoop": "less",
+    "winget": "jftuga.less",
     "choco": "less"
   },
   "xdg": {
@@ -16,7 +18,7 @@
     "method": "env",
     "vars": {
       "LESSHISTFILE": "${XDG_STATE_HOME}/less/history",
-      "LESSKEY": "${XDG_CONFIG_HOME}/less/lesskey"
+      "LESSKEYIN": "${XDG_CONFIG_HOME}/less/lesskey"
     },
     "dirs": [
       "${XDG_STATE_HOME}/less",

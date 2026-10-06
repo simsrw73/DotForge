@@ -2,7 +2,7 @@ BeforeAll {
     foreach ($f in 'Private/Get-DFConfiguredTheme', 'Private/ConvertTo-DFPath', 'Private/Expand-DFXdgPath', 'Private/Test-DFToolSchema',
                    'Private/Import-DFToolDb', 'Private/Test-DFToolAvailable', 'Private/Get-DFRoleDb', 'Private/Write-DFFileAtomic',
                    'Public/New-DFDirectory', 'Private/Write-DFRoleNotice', 'Private/Set-DFRoleEnv',
-                   'Private/Register-DFToolSteps', 'Public/Get-DFRole') {
+                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Get-DFRole') {
         . "$PSScriptRoot/../$f.ps1"
     }
     $script:Tools = Join-Path $TestDrive 'tools'

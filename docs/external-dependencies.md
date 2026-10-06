@@ -149,6 +149,33 @@ Two categories, and the difference matters:
 | **Why** | The hook generates activation live each session (~73 ms, only when mise is the `project-env` tool); caching it like zoxide's would restore a stale PATH. Before running it, the hook rewrites line-leading `function <name>` to `function global:<name>`, because the hook runs inside a DotForge function whose locals vanish on return. It registers after oh-my-posh/starship so it wraps their prompt. |
 | **If it changes** | If mise stops embedding PATH, caching becomes possible as a startup optimization. If mise indents or renames those definitions, the rewrite no-ops: env loading still works (its hooks are already global), but `mise shell` is unavailable until the rewrite is updated (`tests/mise.Tests.ps1` pins the behavior). |
 
+### 15. less: native Windows build vs Git for Windows' MSYS build
+
+| | |
+|---|---|
+| **What** | scoop, winget (`jftuga.less`) and choco ship the native Windows `less` (jftuga/less-Windows), which uses the console API and ignores `TERM`. Git for Windows' `Git\usr\bin\less.exe` is an MSYS build that needs `TERM`/terminfo; when `Git\usr\bin` is on PATH ahead of the native one, a bare `less` is the MSYS build. Native less reads key bindings from `LESSKEYIN` (or `%XDG_CONFIG_HOME%\lesskey`); `LESSKEY` names the pre-582 compiled format. |
+| **Where** | `Tools/less.json` (`executableExclude`, `${DF_TOOL_EXE}`, `LESSKEYIN`) |
+| **Why** | When less is the `pager`, `PAGER` is the first `less.exe` on PATH outside `Git\usr\bin`, with forward slashes so git's `sh -c` keeps it intact. |
+| **If it changes** | If Git moves its copy, the exclude pattern no-ops and `PAGER` may name the MSYS build again (still works with a sane `TERM`). With no native build, `PAGER` is plain `less`. |
+
+### 16. bat: `PAGER=bat` falls back to less
+
+| | |
+|---|---|
+| **What** | bat picks its pager from `--pager`/config, `BAT_PAGER`, then `PAGER`. When `PAGER` names bat (or `more`/`most`), it silently runs `less` instead (`src/pager.rs`). |
+| **Where** | `Tools/bat.json` (no `pager` role) |
+| **Why** | As a `pager` member bat would only ever have run less, so it isn't one; its own paging follows the role's `PAGER`. |
+| **If it changes** | Nothing DotForge sets depends on the fallback. |
+
+### 17. moor: `MOOR` options and style names
+
+| | |
+|---|---|
+| **What** | moor (renamed from moar at v2.0.0) reads default options from `MOOR`; `-style` takes a highlighting style name (`catppuccin-mocha` among them) and falls back to its default for an unknown one. |
+| **Where** | `Tools/moor.ps1` |
+| **Why** | The companion sets `MOOR=-style <theme> -quit-if-one-screen` only when `MOOR` is empty, so a user's own value wins. |
+| **If it changes** | If `-style` is renamed, moor rejects the option: set `MOOR` yourself, or update the companion. |
+
 ---
 
 ## Documented but load-bearing

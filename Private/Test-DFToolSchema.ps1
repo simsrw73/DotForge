@@ -58,6 +58,14 @@ function Test-DFToolSchema {
         $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
     }
 
+    # executableExclude: glob patterns of install locations to skip.
+    # Read the property directly: returning it through PSProp would unroll a
+    # one-element array into a bare string and fail the array check.
+    $exclude = $Tool.PSObject.Properties['executableExclude']?.Value
+    if ($null -ne $exclude -and ($exclude -isnot [array] -or @($exclude | Where-Object { $_ -isnot [string] }).Count)) {
+        $errs.Add('executableExclude must be an array of strings')
+    }
+
     # scoopBucket: { name; url } naming a third-party scoop bucket.
     $bucket = PSProp $Tool 'scoopBucket'
     if ($null -ne $bucket -and (-not (PSProp $bucket 'name') -or -not (PSProp $bucket 'url'))) {

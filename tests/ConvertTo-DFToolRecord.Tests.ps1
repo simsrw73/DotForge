@@ -36,6 +36,12 @@ Describe 'ConvertTo-DFToolRecord' {
         $r.customField | Should -Be 42
     }
 
+    It 'defaults executableExclude to an empty array' {
+        $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe" }' | ConvertFrom-Json)
+        $r.PSObject.Properties['executableExclude'] | Should -Not -BeNullOrEmpty
+        @($r.executableExclude).Count | Should -Be 0
+    }
+
     It 'defaults roles to an empty object' {
         $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe" }' | ConvertFrom-Json)
         @($r.roles.PSObject.Properties).Count | Should -Be 0

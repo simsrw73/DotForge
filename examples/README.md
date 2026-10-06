@@ -54,6 +54,8 @@ Get-DFTool -Tag pager | Sort-Object name | Select-Object -ExpandProperty name
 bat
 delta
 less
+moor
+ov
 ```
 
 For themes, choosing between eza and lsd, and skipping tools, see the [configuration guide](../docs/guide/configuration.md). For everything else, start at the [documentation index](../README.md#documentation).

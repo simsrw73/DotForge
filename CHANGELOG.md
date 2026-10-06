@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **moor and ov join the `pager` role.** moor (formerly moar) is the default pager and gets
+  `MOOR=-style <theme> -quit-if-one-screen` from your theme (`MoorTheme`) unless you set `MOOR`; ov
+  runs as `ov --quit-if-one-screen`.
+- **less resolves to the native Windows build.** When less is the pager, `PAGER` names the first
+  `less.exe` outside Git for Windows' `usr\bin` (whose MSYS build needs `TERM`), via a new
+  `executableExclude` tool field and `${DF_TOOL_EXE}` role-env token. less's key bindings now use
+  `LESSKEYIN` (the lesskey source file) instead of `LESSKEY`. DotForge's own pager accepts a quoted
+  program path.
 - **ps-dotenv and mise join the `project-env` role.** ps-dotenv (the default winner) loads `.env`
   files as you change folders, with safe mode on: only folders in `$DFConfig.DotenvApprovedDirs` load
   (`DotenvSafeMode = $false` loads all). mise activates when it's the `project-env` tool, and its
@@ -117,6 +125,8 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **bat is no longer a `pager` role member.** As a pager it only ever ran less; its own paging
+  follows the role's `PAGER`.
 - **One prompt engine, one per-directory env hook.** With both oh-my-posh and starship installed,
   only one now initializes. Prompt, zoxide and direnv init moved into role hooks
   (`Initialize-DFRole<Role>` in each companion).

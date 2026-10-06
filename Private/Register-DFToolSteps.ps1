@@ -236,7 +236,10 @@ function Invoke-DFToolRegistration {
         $block = $Tool.roles.$roleName
         if ($block.env) {
             foreach ($var in $block.env.PSObject.Properties) {
-                Set-DFRoleEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Role $roleName -Winner $won.Winner -Reason $won.Reason
+                # ${DF_TOOL_EXE}: the winner's own executable path (see Resolve-DFToolExecutable).
+                $value = [string]$var.Value
+                if ($value.Contains('${DF_TOOL_EXE}')) { $value = $value.Replace('${DF_TOOL_EXE}', (ConvertTo-DFToolExePathToken -Tool $Tool)) }
+                Set-DFRoleEnv -Name $var.Name -Value (Expand-DFXdgPath $value) -Role $roleName -Winner $won.Winner -Reason $won.Reason
             }
         }
         if ($block.aliases) { Register-DFToolAliases -Tool $Tool -Aliases $block.aliases }

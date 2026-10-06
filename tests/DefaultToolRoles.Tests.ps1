@@ -29,6 +29,7 @@ BeforeAll {
     . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
     . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
     . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
+    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
     . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
     . "$PSScriptRoot/../Public/Register-DFTool.ps1"
     $script:RealTools = Join-Path $PSScriptRoot '../Tools'
@@ -209,5 +210,64 @@ Export-ModuleMember -Function * -Variable Dotenv
         $Global:DFConfig = @{ Defaults = @{ 'project-env' = 'mise' } }
         Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         $global:ProjectEnvInits | Should -Be @('mise')
+    }
+}
+
+Describe 'moor/ov/less share role: pager (real tool records)' {
+    BeforeEach {
+        $script:DFToolDb = $null
+        $script:DFToolAvailability = @{}
+        $script:DFRoleDb = $null
+        $global:DFRoleEnvState = $null
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        $script:SavedXdg = @{}
+        foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
+            $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
+            [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", (Join-Path $TestDrive "$($v.ToLower())-$([guid]::NewGuid())"))
+        }
+        $script:SavedPager = $Env:PAGER
+        $script:SavedMoor = $Env:MOOR
+        Remove-Item Env:PAGER, Env:MOOR -ErrorAction Ignore
+        Mock Get-Command {
+            param($Name)
+            switch ($Name) {
+                'less.exe' { [pscustomobject]@{ Source = 'C:\Program Files\Git\usr\bin\less.exe'; Path = 'C:\Program Files\Git\usr\bin\less.exe' }
+                             [pscustomobject]@{ Source = 'C:\scoop\shims\less.exe'; Path = 'C:\scoop\shims\less.exe' } }
+                { $_ -in 'moor.exe', 'ov.exe', 'bat.exe' } { [pscustomobject]@{ Source = "C:\fake\$Name"; Path = "C:\fake\$Name" } }
+            }
+        }
+        Mock Write-DFConflictNotice { }
+        Mock Initialize-DFCompletionStack { }
+    }
+    AfterEach {
+        foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
+            [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
+        }
+        if ($null -eq $script:SavedPager) { Remove-Item Env:PAGER -ErrorAction Ignore } else { $Env:PAGER = $script:SavedPager }
+        if ($null -eq $script:SavedMoor) { Remove-Item Env:MOOR -ErrorAction Ignore } else { $Env:MOOR = $script:SavedMoor }
+        Remove-Variable DFConfig, DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Remove-DFTestGlobal -Function cat -Alias cat
+    }
+
+    It 'makes moor the pager by priority' {
+        Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+        $Env:PAGER | Should -Be 'moor'
+    }
+
+    It 'uses ov with quit-if-one-screen when Defaults.pager = ov' {
+        $Global:DFConfig = @{ Defaults = @{ pager = 'ov' } }
+        Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+        $Env:PAGER | Should -Be 'ov --quit-if-one-screen'
+    }
+
+    It 'points PAGER at the native less, skipping Git''s MSYS build, when Defaults.pager = less' {
+        $Global:DFConfig = @{ Defaults = @{ pager = 'less' } }
+        Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+        $Env:PAGER | Should -Be 'C:/scoop/shims/less.exe'
+    }
+
+    It 'no longer counts bat as a pager' {
+        $j = Get-Content (Join-Path $script:RealTools 'bat.json') -Raw | ConvertFrom-Json
+        $j.PSObject.Properties['roles'] | Should -BeNullOrEmpty
     }
 }

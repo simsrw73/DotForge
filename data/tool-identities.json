@@ -164,6 +164,7 @@
     "less": {
       "packages": {
         "scoop": "less",
+        "winget": "jftuga.less",
         "choco": "less"
       },
       "linkedVia": "curated"
@@ -204,10 +205,23 @@
       },
       "linkedVia": "curated"
     },
+    "moor": {
+      "packages": {
+        "scoop": "moor"
+      },
+      "linkedVia": "curated"
+    },
     "oh-my-posh": {
       "packages": {
         "scoop": "oh-my-posh",
         "winget": "JanDeDobbeleer.OhMyPosh"
+      },
+      "linkedVia": "curated"
+    },
+    "ov": {
+      "packages": {
+        "scoop": "ov",
+        "winget": "noborus.ov"
       },
       "linkedVia": "curated"
     },

@@ -109,6 +109,24 @@ Describe 'Invoke-DFPagerExe' {
         ($Global:DFTestPagerArgs -join ',') | Should -Be 'paging=always,color=always'
     }
 
+    It 'runs a double-quoted program, then its arguments, without a warning' {
+        Invoke-DFPagerExe -Lines @('line') -Pager '"dftest_pager" arg1' -WarningVariable w
+        $w | Should -BeNullOrEmpty
+        ($Global:DFTestPagerArgs -join ',') | Should -Be 'arg1'
+        $Global:DFTestPagerInput | Should -Contain 'line'
+    }
+
+    It 'runs a quoted program path that contains a space' {
+        $dir = Join-Path $TestDrive 'dir with space'
+        New-Item -ItemType Directory -Force $dir | Out-Null
+        $script = Join-Path $dir 'fakepager.ps1'
+        'foreach ($a in $args) { $Global:DFTestPagerArgs.Add([string]$a) }; foreach ($i in $input) { $Global:DFTestPagerInput.Add($i) }' | Set-Content $script
+        Invoke-DFPagerExe -Lines @('spaced') -Pager ('"' + ($script -replace '\\', '/') + '" x1') -WarningVariable w
+        $w | Should -BeNullOrEmpty
+        ($Global:DFTestPagerArgs -join ',') | Should -Be 'x1'
+        $Global:DFTestPagerInput | Should -Contain 'spaced'
+    }
+
     It 'emits a warning when pager string contains a quoted argument' {
         # Pager arg begins with " (not -) so it is passed as a positional string to dftest_pager
         Invoke-DFPagerExe -Lines @('line') -Pager 'dftest_pager "--theme=Dark"' -WarningVariable w

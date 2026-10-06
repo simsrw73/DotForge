@@ -93,7 +93,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -2045,7 +2045,7 @@ Pages long output. The winner sets PAGER, which DotForge's own pager also reads.
 | | |
 | --- | --- |
 | Kind | single |
-| Members | [bat](#bat-tool), [less](#less-tool) |
+| Members | [less](#less-tool), [moor](#moor-tool), [ov](#ov-tool) |
 | Only the winner sets | `PAGER` |
 
 ### picker role
@@ -2121,8 +2121,6 @@ Modern cat replacement with syntax highlighting and Git integration
 | XDG variables | `BAT_CONFIG_PATH` = `${XDG_CONFIG_HOME}/bat/bat.conf` |
 | Environment | `BAT_THEME` = `Catppuccin Mocha` |
 | Aliases | `cat` → `bat -pp` |
-| Roles | [`pager`](#pager-role) |
-| Sets, as the pager tool | `PAGER` = `bat --paging=always --style=plain` |
 | Companion | `Tools/bat.ps1` |
 
 ### bitwarden tool
@@ -2396,13 +2394,13 @@ Opposite of more — terminal pager
 | --- | --- |
 | Detected by | `less.exe` |
 | Tags | `pager`, `viewer` |
-| Install ids | scoop: `less`<br>choco: `less` |
+| Install ids | scoop: `less`<br>winget: `jftuga.less`<br>choco: `less` |
 | XDG method | `env` |
-| XDG variables | `LESSHISTFILE` = `${XDG_STATE_HOME}/less/history`<br>`LESSKEY` = `${XDG_CONFIG_HOME}/less/lesskey` |
+| XDG variables | `LESSHISTFILE` = `${XDG_STATE_HOME}/less/history`<br>`LESSKEYIN` = `${XDG_CONFIG_HOME}/less/lesskey` |
 | Creates | `${XDG_STATE_HOME}/less`<br>`${XDG_CONFIG_HOME}/less` |
 | Environment | `LESS` = `--RAW-CONTROL-CHARS --quit-if-one-screen --no-init` |
 | Roles | [`pager`](#pager-role) |
-| Sets, as the pager tool | `PAGER` = `less` |
+| Sets, as the pager tool | `PAGER` = `${DF_TOOL_EXE}` |
 
 ### lsd tool
 
@@ -2475,6 +2473,20 @@ Dev tool versions, environment variables and tasks per project
 | Roles | [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
 | Companion | `Tools/mise.ps1` |
 
+### moor tool
+
+Pager that does the right thing without configuration (formerly moar)
+
+| | |
+| --- | --- |
+| Detected by | `moor.exe` |
+| Tags | `pager`, `viewer` |
+| Install ids | scoop: `moor` |
+| XDG method | `default` |
+| Roles | [`pager`](#pager-role) |
+| Sets, as the pager tool | `PAGER` = `moor` |
+| Companion | `Tools/moor.ps1` |
+
 ### npm tool
 
 Node.js package manager
@@ -2502,6 +2514,19 @@ Cross-shell prompt theme engine with hundreds of built-in themes
 | Creates | `${XDG_DATA_HOME}/oh-my-posh/themes`<br>`${XDG_CONFIG_HOME}/oh-my-posh` |
 | Roles | [`prompt`](#prompt-role) |
 | Companion | [`Tools/oh-my-posh.ps1`](#oh-my-posh-companion) |
+
+### ov tool
+
+Feature-rich terminal pager with headers, columns and sections
+
+| | |
+| --- | --- |
+| Detected by | `ov.exe` |
+| Tags | `pager`, `viewer` |
+| Install ids | scoop: `ov`<br>winget: `noborus.ov` |
+| XDG method | `default` |
+| Roles | [`pager`](#pager-role) |
+| Sets, as the pager tool | `PAGER` = `ov --quit-if-one-screen` |
 
 ### posh-git tool
 

@@ -7,7 +7,6 @@
     "file"
   ],
   "executable": "bat.exe",
-  "roles": { "pager": { "priority": 10, "env": { "PAGER": "bat --paging=always --style=plain" } } },
   "packages": {
     "scoop": "bat",
     "winget": "sharkdp.bat",

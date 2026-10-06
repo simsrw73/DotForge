@@ -8,7 +8,7 @@ BeforeAll {
                    'Public/Complete-DFToolSetup', 'Private/Set-DFToolXdgConfig', 'Private/Register-DFToolAliases',
                    'Private/New-DFToolPickerFunction', 'Private/Invoke-DFToolCompanion', 'Private/Start-DFModulePrewarm',
                    'Private/Get-DFRoleDb', 'Private/Write-DFRoleNotice', 'Private/Set-DFRoleEnv',
-                   'Private/Register-DFToolSteps', 'Public/Register-DFTool', 'Private/Initialize-DFCompletionStack') {
+                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Register-DFTool', 'Private/Initialize-DFCompletionStack') {
         . "$PSScriptRoot/../$f.ps1"
     }
 }
@@ -152,6 +152,13 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
             Register-DFTool -Name nohook -ToolsPath $script:Tools -WarningAction SilentlyContinue
             $global:RoleCalls | Should -Not -Contain 'stray'
         } finally { Remove-DFTestGlobal -Function 'Initialize-DFRoleTother' }
+    }
+
+    It 'expands ${DF_TOOL_EXE} in a won role''s env to the resolved path' {
+        Write-Tool 'exetool' '{ "name": "exetool", "executable": "exetool.exe", "roles": { "tpager": { "priority": 99, "env": { "DF_T_PAGER": "${DF_TOOL_EXE}" } } } }'
+        Mock Resolve-DFToolExecutable { 'C:\Tools\exetool.exe' }
+        Register-DFTool -Name exetool -ToolsPath $script:Tools
+        $Env:DF_T_PAGER | Should -Be 'C:/Tools/exetool.exe'
     }
 
     It 're-running registration calls the winner''s hook again' {

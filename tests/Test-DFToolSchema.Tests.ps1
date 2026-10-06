@@ -91,6 +91,19 @@ Describe 'Test-DFToolSchema' {
             "$errs" | Should -Match 'scoopBucket'
         }
 
+        It 'accepts a one-element executableExclude array' {
+            $t = '{ "name": "t", "executable": "t.exe", "executableExclude": ["*\\Git\\usr\\bin\\*"] }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeTrue -Because "$errs"
+        }
+
+        It 'rejects an executableExclude that is not an array of strings' {
+            $t = '{ "name": "t", "executable": "t.exe", "executableExclude": "x" }' | ConvertFrom-Json
+            $errs = @()
+            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
+            "$errs" | Should -Match 'executableExclude'
+        }
+
         It 'rejects roles that is not an object' {
             $t = '{ "name": "t", "executable": "t.exe", "roles": ["listing"] }' | ConvertFrom-Json
             $errs = @()
