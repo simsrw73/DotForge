@@ -1,15 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
-    . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
-    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
-    . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
-    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
-    . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 
     $rolesFile = Join-Path $TestDrive 'roles.json'
     @'

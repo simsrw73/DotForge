@@ -1,14 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
-    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
-    . "$PSScriptRoot/../Private/Get-DFCatalogInstalled.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     # Catalogs exist because their provider files register; load the real ones.
     Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
         ForEach-Object { . $_.FullName }

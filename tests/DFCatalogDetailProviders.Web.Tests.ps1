@@ -1,18 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Npm.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Pypi.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Crates.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.ps1"
-    . "$PSScriptRoot/../Private/DFXml.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
-    . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
 Describe 'web detail providers' {

@@ -90,7 +90,13 @@ Pester 6 (verified with 6.2.0). Pester 5 is no longer supported or tested. Run a
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference
 ```
 
-**Isolate every XDG folder a test can write to.** An unset `XDG_*` variable means the real default
+**Load the module with the shared loader, never a hand-kept list.** A test's `BeforeAll` starts with
+`. "$PSScriptRoot/TestSupport.ps1"` then `foreach ($f in Get-DFTestModuleFile) { . $f }`, which
+dot-sources every `Private/` and `Public/` file in `DotForge.psm1`'s order (so `Mock` works on private
+functions without `-ModuleName`). Load a `Tools/*.ps1` companion explicitly after it.
+
+**Isolate every XDG folder a test can write to.** Use `Set-DFTestXdg` in `BeforeEach` and
+`Restore-DFTestXdg` in `AfterEach` (`tests/TestSupport.ps1`): all four `XDG_*_HOME` go under `$TestDrive`. An unset `XDG_*` variable means the real default
 folder under `$HOME` (`Get-DFXdgPath`), not "disabled", so a test that registers a tool or calls a
 cache/state writer must point the relevant `XDG_*_HOME` at `$TestDrive` and restore it afterwards.
 Never unset one to test "no folder" behavior; that path writes to the developer's real folders.

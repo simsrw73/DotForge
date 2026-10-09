@@ -4,14 +4,8 @@ BeforeDiscovery {
 }
 
 BeforeAll {
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFSqliteQuery.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:Fixture = Join-Path $PSScriptRoot 'fixtures/winget-index-v2.db'
 }
 

@@ -1,6 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
 Describe 'Resolve-DFToolExecutable' {

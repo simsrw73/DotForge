@@ -2,6 +2,72 @@
 #     . "$PSScriptRoot/TestSupport.ps1"
 # (Not named *.Tests.ps1, so Pester never runs it as a test file.)
 
+function Get-DFTestModuleFile {
+    <#
+    .SYNOPSIS
+        Returns every module source file, in the order DotForge.psm1 loads them.
+    .DESCRIPTION
+        Tests dot-source the module's own files (rather than Import-Module) so
+        Mock works on private functions without -ModuleName. Loading all of them,
+        in the psm1's order, replaces hand-maintained per-test load lists: a new
+        private dependency can no longer break unrelated test files.
+
+        Dot-sourcing must happen in the test's scope, so this returns paths:
+            BeforeAll {
+                . "$PSScriptRoot/TestSupport.ps1"
+                foreach ($f in Get-DFTestModuleFile) { . $f }
+            }
+        Tools/*.ps1 companions are not included; a test loads its sidecar itself.
+    .OUTPUTS
+        System.String[]. Absolute paths: Private/*.ps1, then Public/*.ps1.
+    #>
+    $root = Split-Path $PSScriptRoot -Parent
+    # Same enumeration as DotForge.psm1, so load order (and therefore which
+    # $script: initializer runs first) matches the real module.
+    foreach ($dir in 'Private', 'Public') {
+        (Get-ChildItem -Path (Join-Path $root $dir) -Filter '*.ps1').FullName
+    }
+}
+
+function Set-DFTestXdg {
+    <#
+    .SYNOPSIS
+        Points all four XDG_*_HOME variables at folders under $TestDrive, saving the originals.
+    .DESCRIPTION
+        An unset XDG variable means the real default folder under $HOME
+        (Get-DFXdgPath), so a test that can reach any cache/state/config/data
+        writer must redirect all four. Pair with Restore-DFTestXdg:
+            BeforeEach { Set-DFTestXdg }
+            AfterEach  { Restore-DFTestXdg }
+        Folders are not created; DotForge creates what it writes.
+    .PARAMETER Root
+        Parent folder for the four homes. Default: $TestDrive\xdg.
+    .OUTPUTS
+        None.
+    #>
+    param([string]$Root = (Join-Path $TestDrive 'xdg'))
+    $script:DFTestSavedXdg = @{}
+    foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {
+        $name = "XDG_${kind}_HOME"
+        $script:DFTestSavedXdg[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+        [Environment]::SetEnvironmentVariable($name, (Join-Path $Root $kind.ToLowerInvariant()), 'Process')
+    }
+}
+
+function Restore-DFTestXdg {
+    <#
+    .SYNOPSIS
+        Restores the XDG_*_HOME values Set-DFTestXdg saved (unset ones become unset again).
+    .OUTPUTS
+        None.
+    #>
+    if (-not $script:DFTestSavedXdg) { return }
+    foreach ($entry in $script:DFTestSavedXdg.GetEnumerator()) {
+        [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, 'Process')
+    }
+    $script:DFTestSavedXdg = $null
+}
+
 function Remove-DFTestGlobal {
     <#
     .SYNOPSIS

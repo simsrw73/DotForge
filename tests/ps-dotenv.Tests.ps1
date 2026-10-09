@@ -1,7 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/ps-dotenv.ps1'
     $fakeDir = Join-Path $TestDrive 'fake\Dotenv'
     New-Item -ItemType Directory -Force $fakeDir | Out-Null

@@ -1,12 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Public/DFHelpers.Utility.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 
     # Canonical lower/upper-case v4 patterns: 8-4-4-4-12 hex, version nibble '4',
     # variant nibble in [89ab]. Anchored so length and shape are both enforced.

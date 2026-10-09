@@ -56,8 +56,8 @@ Describe 'Test-DFToolConformance harness' {
 
 Describe 'Shipped conformance data' {
     BeforeAll {
-        . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-        . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
+        . "$PSScriptRoot/TestSupport.ps1"
+        foreach ($f in Get-DFTestModuleFile) { . $f }
         . "$PSScriptRoot/../build/DFConformance.ps1"
         $script:ledger = Get-Content "$PSScriptRoot/../data/tool-conformance.json" -Raw | ConvertFrom-Json
         $script:confDir = "$PSScriptRoot/../build/conformance"

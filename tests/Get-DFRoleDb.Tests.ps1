@@ -1,5 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:ShippedRoles = Join-Path $PSScriptRoot '../data/roles.json'
 }
 

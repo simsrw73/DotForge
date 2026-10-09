@@ -1,16 +1,6 @@
 BeforeAll {
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
-    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
-    . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
-    . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
 Describe 'Get-DFCommandConflict' {

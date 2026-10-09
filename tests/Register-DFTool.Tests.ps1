@@ -1,51 +1,15 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
-    . "$PSScriptRoot/../Private/Test-DFOutputPiped.ps1"
-    . "$PSScriptRoot/../Private/Write-DFFileAtomic.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Base.ps1"
-    . "$PSScriptRoot/../Private/DFReleaseData.ps1"
-    . "$PSScriptRoot/../Private/Get-DFConfiguredTheme.ps1"
-    . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
-    . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
-    . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Private/Expand-DFXdgPath.ps1"
-    . "$PSScriptRoot/../Private/Import-DFToolDb.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFTopoSort.ps1"
-    . "$PSScriptRoot/../Private/Test-DFToolAvailable.ps1"
-    . "$PSScriptRoot/../Public/Get-DFTool.ps1"
-    . "$PSScriptRoot/../Public/Find-DFTool.ps1"
-    # Register-DFTool calls Get-DFCommandConflict for its shadowed-command warning.
-    . "$PSScriptRoot/../Private/Get-DFCoreutilsShadowSet.ps1"
-    . "$PSScriptRoot/../Public/Get-DFCommandConflict.ps1"
-    . "$PSScriptRoot/../Private/Get-DFToolSetupState.ps1"
-    . "$PSScriptRoot/../Public/Complete-DFToolSetup.ps1"
-    . "$PSScriptRoot/../Private/Set-DFToolXdgConfig.ps1"
-    . "$PSScriptRoot/../Private/Register-DFToolAliases.ps1"
-    . "$PSScriptRoot/../Private/New-DFToolPickerFunction.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFToolCompanion.ps1"
-    . "$PSScriptRoot/../Private/Start-DFModulePrewarm.ps1"
-    . "$PSScriptRoot/../Private/Get-DFRoleDb.ps1"
-    . "$PSScriptRoot/../Private/Write-DFRoleNotice.ps1"
-    . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"
-    . "$PSScriptRoot/../Private/Resolve-DFToolExecutable.ps1"
-    . "$PSScriptRoot/../Private/Register-DFToolSteps.ps1"
-    . "$PSScriptRoot/../Public/Register-DFTool.ps1"
-    . "$PSScriptRoot/../Private/Initialize-DFCompletionStack.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
 Describe 'Register-DFTool' {
     BeforeEach {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
+        Set-DFTestXdg
         $script:SavedPath       = $Env:Path
         $script:SavedWinDir     = $Env:WINDIR
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
         $Env:WINDIR = 'C:\Windows'
 
         # Create a minimal test tools directory
@@ -79,8 +43,7 @@ Describe 'Register-DFTool' {
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
-        $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
+        Restore-DFTestXdg
         $Env:Path             = $script:SavedPath
         $Env:WINDIR           = $script:SavedWinDir
         Remove-Item Env:\TESTTOOL_CONFIG -ErrorAction Ignore
@@ -224,6 +187,9 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
             @($RegisteredTools) -notcontains 'aaa-broken' -and @($RegisteredTools) -contains 'testtool'
         }
+        # $TestDrive lives for the whole Describe; later -All tests must not see this tool.
+        Remove-Item (Join-Path $script:TmpTools 'aaa-broken.*') -ErrorAction Ignore
+        $script:DFToolDb = $null
     }
 
     It 'warns for unknown tool name' {
@@ -579,13 +545,8 @@ Describe 'Register-DFTool one-time setup' {
     BeforeEach {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
-        $script:SavedStateHome  = $Env:XDG_STATE_HOME
+        Set-DFTestXdg
         $script:SavedWinDir     = $Env:WINDIR
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
         $Env:WINDIR = 'C:\Windows'
         $Global:__DFTestSetupRunCount = 0
 
@@ -625,9 +586,7 @@ throw 'boom: setup deliberately fails'
         # next test's BeforeEach (same $TestDrive/state path every time).
         Remove-Item (Join-Path $Env:XDG_STATE_HOME 'dotforge') -Recurse -Force -ErrorAction Ignore
 
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
-        $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
-        $Env:XDG_STATE_HOME  = $script:SavedStateHome
+        Restore-DFTestXdg
         $Env:WINDIR          = $script:SavedWinDir
         Remove-Variable __DFTestSetupRunCount -Scope Global -ErrorAction Ignore
         Remove-Alias tsf -Force -Scope Global -ErrorAction Ignore
