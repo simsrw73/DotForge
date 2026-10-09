@@ -23,12 +23,12 @@ Describe 'Get-DFConfig' {
         Get-DFConfig SkipConflictCheck -Default $true | Should -BeFalse
     }
     It 'reads a list setting as a flat list, so -in and -notin work on it' {
-        Set-DFTestConfig @{ SkipTools = @('lsd') }
-        $skip = @(Get-DFConfig SkipTools)
+        Set-DFTestConfig @{ ExcludeTools = @('lsd') }
+        $skip = @(Get-DFConfig ExcludeTools)
         $skip | Should -Be @('lsd')
         'lsd' -in $skip | Should -BeTrue
-        Set-DFTestConfig @{ SkipTools = @('lsd', 'eza') }
-        @(Get-DFConfig SkipTools).Count | Should -Be 2
+        Set-DFTestConfig @{ ExcludeTools = @('lsd', 'eza') }
+        @(Get-DFConfig ExcludeTools).Count | Should -Be 2
     }
     It 'returns a hashtable setting whole' {
         Set-DFTestConfig @{ Defaults = @{ listing = 'eza' } }

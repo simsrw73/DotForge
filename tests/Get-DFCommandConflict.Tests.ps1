@@ -157,7 +157,7 @@ Describe 'Get-DFCoreutilsShadowSet' {
     }
 
     It 'parses the pending hook from the profile before it has loaded' {
-        # Regression: profiles load CurrentUserAllHosts (Register-DFTool -All) BEFORE
+        # Regression: profiles load CurrentUserAllHosts (Start-DFSession) BEFORE
         # CurrentUserCurrentHost (the hook), so at check time $__COREUTILS__ does not
         # exist yet. Reading only the variable made this check dead code in a real
         # profile — it must fall back to the file.

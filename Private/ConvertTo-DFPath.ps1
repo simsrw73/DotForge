@@ -59,7 +59,7 @@ function Get-DFXdgPath {
             Bin     $HOME\.local\bin      (XDG_BIN_HOME is not in the spec; the location is)
 
         The result is canonical (ConvertTo-DFPath). Reading never sets the
-        variable; Initialize-DFEnvironment exports them for other programs.
+        variable; Start-DFSession exports them for other programs.
     .PARAMETER Kind
         Config, Data, State, Cache or Bin.
     .OUTPUTS

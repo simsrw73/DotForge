@@ -25,7 +25,7 @@ function Get-DFCoreutilsShadowSet {
     if ($var -and $var.Value) { return [string[]]@($var.Value) }
 
     # 2. The hook has not run YET. This is the normal case, not an edge case: profiles
-    #    load CurrentUserAllHosts (where Register-DFTool -All typically lives) BEFORE
+    #    load CurrentUserAllHosts (where Start-DFSession typically lives) BEFORE
     #    CurrentUserCurrentHost (where the installer writes the hook). Relying on the
     #    variable alone makes this check dead code in a real profile.
     #

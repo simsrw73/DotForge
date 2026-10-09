@@ -4,7 +4,41 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+> **Breaking: your profile needs one change.** DotForge now configures only the tools you ask for,
+> and never installs anything while it loads. Replace `Initialize-DFEnvironment` and
+> `Register-DFTool -All` with one call, and pass your settings to it:
+>
+> ```powershell
+> Import-Module DotForge
+> Start-DFSession -Config @{ Tools = @('+core', 'starship'); Defaults = @{ prompt = 'starship' } }
+> ```
+>
+> `SkipTools` is gone: list what you want in `Tools`, and remove members of a `+group` with
+> `ExcludeTools`. A global `$DFConfig` is no longer read; pass it with `-Config $DFConfig` if you
+> keep one. See `docs/guide/getting-started.md`.
+
 ### Added
+
+- **`Start-DFSession -Config`, the single profile entry point.** It configures exactly the tools
+  listed in `Tools` (tool names and `+groups`) that are installed, and never looks at the others:
+  only the requested tool records are read. It exports the XDG folders, runs each tool's one-time
+  setup the first time, activates the tools (one failure never stops the rest), checks for
+  coreutils shadowing over the active tools, and ends with a notice. Calling it again adds newly
+  requested tools.
+- **Tool groups.** `+core`, `+prompt`, `+git`, `+dev-tools`, `+admin-tools`, `+markdown` and
+  `+package-managers` request a set of tools at once. `Get-DFToolGroup` lists them.
+  `ExcludeTools` removes tools or groups from what `Tools` requests, and always wins.
+- **A missing-tools notice at the end of every load.** It names requested tools that aren't
+  installed (or gives the count when there are more than five), says which tool is standing in
+  for a missing role tool, lists tools that failed to load, and points at
+  `Install-DFTool -Missing`. It is silent when everything is installed.
+- **`Get-DFToolStatus [-Name] [-Missing] [-Failed]`** shows what the session decided for each
+  requested tool: `Active`, `Missing`, `Failed` or `Excluded`, what requested it, the roles it won,
+  and why it is missing or failed.
+- **Config validation.** An unknown key in `-Config` warns with a suggestion
+  (`ExludeTools` → `ExcludeTools`); a removed key (`SkipTools`, `CompletionMode`) says what
+  replaced it. A profile that still sets a global `$DFConfig` gets one loud warning that its
+  settings, including protective ones like `SkipSetup`, are no longer applied.
 
 - **Tool records are checked as they load.** A record with a malformed field is skipped with a
   warning that names the problem. That covers an object `picker` without `function` and `list`,
@@ -22,7 +56,7 @@ All notable changes to DotForge are documented here.
   `LESSKEYIN` (the lesskey source file) instead of `LESSKEY`. DotForge's own pager accepts a quoted
   program path.
 - **ps-dotenv and mise join the `project-env` role.** ps-dotenv (the default winner) loads `.env`
-  files as you change folders, with safe mode on: only folders in `$DFConfig.DotenvApprovedDirs` load
+  files as you change folders, with safe mode on: only folders in `DotenvApprovedDirs` load
   (`DotenvSafeMode = $false` loads all). mise activates when it's the `project-env` tool, and its
   shims stay on PATH either way. Tool records can declare a third-party `scoopBucket`, which
   `Install-DFTool` adds before installing, so `Install-DFTool ps-dotenv` works.
@@ -32,7 +66,7 @@ All notable changes to DotForge are documented here.
 - **Tool roles.** `data/roles.json` defines roles such as `prompt`, `pager`, `editor`, `picker`,
   `diff`, `listing`, `project-env`, `navigation` and `package-manager`, plus grouping-only
   categories (`grep`, `markdown-viewer`, …). Only the winning tool for a role
-  (`$DFConfig.Defaults`, else the highest-priority installed tool) sets that role's variables and
+  (`Defaults`, else the highest-priority installed tool) sets that role's variables and
   aliases and installs its shell hooks; the others stay configured and usable by name. When two
   tools could fill `prompt`, `project-env` or `navigation` and you haven't chosen, DotForge warns
   once and names its pick. New `Get-DFRole` lists roles, candidates and winners; `Find-DFTool -Role`
@@ -54,7 +88,7 @@ All notable changes to DotForge are documented here.
   `Tools/starship.ps1` initializes the prompt from cached `starship init powershell
   --print-full-init` output, which is regenerated when starship is upgraded. starship's
   `Enable-TransientPrompt`/`Disable-TransientPrompt` are re-imported globally so a profile can
-  call them. To switch from oh-my-posh, add `'oh-my-posh'` to `$DFConfig.SkipTools`.
+  call them. To switch from oh-my-posh, request starship instead of oh-my-posh in `Tools`.
 
 ### Fixed
 
@@ -107,8 +141,8 @@ All notable changes to DotForge are documented here.
 - **`which` returned every match on `PATH`, and `-All` did nothing.** It now returns the first
   match (the one that runs) and lists all of them only with `-All`.
 - **`examples/02-standard.ps1` reinstalled ripgrep on every shell start**, because it checked for
-  `ripgrep.exe` instead of `rg.exe`, and skipped `Initialize-DFEnvironment` once nothing was
-  missing. **`examples/04-vscode-fastpath.ps1`** said its VS Code path skipped oh-my-posh but
+  `ripgrep.exe` instead of `rg.exe`. (Installing at startup is gone altogether now; see the
+  breaking change above.) **`examples/04-vscode-fastpath.ps1`** said its VS Code path skipped oh-my-posh but
   registered it anyway.
 - **The `ff` and `ffd` pickers said "Enter to open"** but output the path; the headers now say so.
 - **carapace's specs and delta's theme file were rewritten on every shell start.** The "only when
@@ -155,10 +189,22 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`Register-DFTool -Name` adds tools to the current session.** It takes tool names and `+groups`,
+  recomputes role winners over the session's tools plus the new ones, reports a missing or
+  failed tool in `Get-DFToolStatus`, and re-applies a tool you name even if it is already active.
+  Use it to try a tool, or to re-apply one after changing its settings.
+- **`Get-DFRole` shows the session's view after `Start-DFSession`:** members, candidates and
+  winners among the tools you requested, exactly as decided at load. Outside a session it still
+  considers every tool DotForge knows.
+- **A role is filled only by a tool you requested.** If the tool `Defaults` names for a role is
+  requested but not installed, another requested tool fills the role and the notice says which;
+  a `Defaults` entry naming a tool you didn't request warns.
+- **The coreutils conflict check covers only the tools the session activated,** so it no longer
+  reads every tool record at startup, and its fix text points at `Start-DFSession -Config`.
 - **Tab completion is a role.** Which tool owns the Tab key is now the `tab-completion` role:
   PSFzf wins by default, then carapace, and inshellisense only when you choose it. Each tool binds
   Tab in its own companion, so core code no longer names any completion tool. A role block can
-  declare `"optIn": true` to be considered only when `$DFConfig.Defaults` names it.
+  declare `"optIn": true` to be considered only when `Defaults` names it.
   `Get-DFRole tab-completion` shows the winner.
 - **bat is no longer a `pager` role member.** As a pager it only ever ran less; its own paging
   follows the role's `PAGER`.
@@ -167,7 +213,7 @@ All notable changes to DotForge are documented here.
   (`Initialize-DFRole<Role>` in each companion).
 - **`PAGER`, `EDITOR`/`VISUAL` and `Picker` are set by the pager, editor and picker winners** when
   you haven't set them, so `pg`, `hm` and `ep` work out of the box. A value you set is kept,
-  unless `$DFConfig.Defaults` names a different tool: then the `Defaults` choice wins and DotForge
+  unless `Defaults` names a different tool: then the `Defaults` choice wins and DotForge
   warns until you remove one of the two settings. delta's `GIT_PAGER` is now the `diff` role's.
 - **Tool records declare `roles`** (an object: priority, plus the `env`/`aliases` only the winner
   gets) instead of the `role` string, which still loads. eza's and lsd's `ls`/`ll`/`la`/`tree`
@@ -185,10 +231,9 @@ All notable changes to DotForge are documented here.
   `ls`/`ll`/`la` in `Tools/eza.json` and `Tools/lsd.json` dropped `--hyperlink=auto`. eza's
   `ls`/`ll`/`la`/`tree` and its `ff` picker list command gained `--no-quotes`; lsd's
   `ls`/`ll`/`la`/`tree` gained its equivalent, `--literal`.
-- **DotForge's commands no longer need `Initialize-DFEnvironment` first.** An unset
-  `XDG_*_HOME` now means the XDG default under `$HOME` everywhere (`Get-DFXdgPath`); the
-  "XDG_CACHE_HOME is not set" warnings and disabled caches are gone. `Initialize-DFEnvironment` still
-  exports all five variables for the tools themselves.
+- **An unset `XDG_*_HOME` means the XDG default under `$HOME` everywhere** (`Get-DFXdgPath`); the
+  "XDG_CACHE_HOME is not set" warnings and disabled caches are gone. `Start-DFSession` exports all
+  five variables for the tools themselves.
 - **Code-quality pass (`audit.thermonuclear.md`).** No user-visible behavior changes beyond those
   listed here; for contributors:
   - Tool records are normalized once at load (`ConvertTo-DFToolRecord`), so every field exists
@@ -203,15 +248,22 @@ All notable changes to DotForge are documented here.
   - The winget, scoop and choco pickers run on one engine (`Invoke-DFPackageManagerAction`) from a
     spec per manager.
   - `Register-DFTool` is split into named steps (`Register-DFToolSteps.ps1`).
-  - Shared helpers for `$DFConfig` (`Get-DFConfig`), theme files (`Resolve-DFThemeFile`) and
+  - Shared helpers for settings (`Get-DFConfig`), theme files (`Resolve-DFThemeFile`) and
     color (`Test-DFColorOutput`, `Get-DFAnsiPalette`).
   - `tests/ModuleState.Tests.ps1` fails when two module files initialize the same `$script:`
     variable.
 
 ### Removed
 
-- **`$DFConfig.CompletionMode`.** To run inshellisense directly, set
-  `$DFConfig.Defaults['tab-completion'] = 'inshellisense'` instead.
+- **`Register-DFTool -All` and `SkipTools`.** DotForge no longer configures whatever happens to be
+  installed: list the tools you want in `Start-DFSession -Config @{ Tools = ... }`, and remove
+  members of a group with `ExcludeTools`.
+- **`Initialize-DFEnvironment`.** `Start-DFSession` exports the XDG folders. Package managers are
+  no longer detected at startup; only installing needs them.
+- **The global `$DFConfig`.** Pass your settings to `Start-DFSession -Config`; keeping them in a
+  `$DFConfig` variable of your own still works if you pass it.
+- **`CompletionMode`.** To run inshellisense directly, put it in `Tools` and set
+  `Defaults['tab-completion'] = 'inshellisense'` in your `-Config` instead.
 - **Role v1 alias suppression.** Losers no longer declare role aliases, so there is nothing to
   suppress.
 

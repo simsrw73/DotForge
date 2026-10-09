@@ -58,7 +58,7 @@ DotForge/
   CWD. New path boundaries must route through it.
 - **PowerShell regex on help output**: use `-creplace` (not `-replace`) for case-sensitive matching; use `\r?$` instead of `$` since `Get-Help | Out-String` produces CRLF on Windows.
 - **XDG folders come from `Get-DFXdgPath`** (`Private/ConvertTo-DFPath.ps1`): the `XDG_*_HOME` variable if set, else the XDG default under `$HOME`. Never read `$Env:XDG_*` directly or treat an unset one as "disabled". A `function:global:` closure (sidecar wrappers) reaches it, or any private helper, through a captured scriptblock: `$_xdgPath = ${function:Get-DFXdgPath}`, then `& $_xdgPath Cache`.
-- **`$DFConfig` is read through `Get-DFConfig -Key -Default`** (`Private/Get-DFConfiguredTheme.ps1`), never indexed directly. Read list settings with `@(Get-DFConfig SkipTools)`.
+- **Settings come from `Start-DFSession -Config` and are read only through `Get-DFConfig -Key -Default`** (`Private/DFSessionConfig.ps1`). Nothing reads a global `$DFConfig`; a test enforces it. Read list settings with `@(Get-DFConfig Tools)`. **A new config key must be added to `$script:DFConfigKeys`** in the same file (a test fails otherwise), so unknown keys can warn.
 - **Tool records are normalized at load** (`ConvertTo-DFToolRecord` in `Private/Import-DFToolDb.ps1`): every known field exists, so read `$tool.type`, `$tool.aliases`, … directly. Only the free-form `settings` object needs defensive reads.
 - **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.
 
@@ -71,7 +71,7 @@ Layer 2 — Tool Registry (Phase 2)
 Import-DFToolDb, Get-DFTool, Find-DFTool, Register-DFTool
 
 Layer 3 — Tool Operations (Phase 3)
-Install-DFTool, Initialize-DFEnvironment
+Start-DFSession, Get-DFToolStatus, Get-DFToolGroup, Install-DFTool
 
 General Helpers (Phase 5+)
 DFHelpers.\*.ps1 — pager, help/discovery, navigation, filesystem, process, environment, clipboard
@@ -100,6 +100,8 @@ functions without `-ModuleName`). Load a `Tools/*.ps1` companion explicitly afte
 folder under `$HOME` (`Get-DFXdgPath`), not "disabled", so a test that registers a tool or calls a
 cache/state writer must point the relevant `XDG_*_HOME` at `$TestDrive` and restore it afterwards.
 Never unset one to test "no folder" behavior; that path writes to the developer's real folders.
+
+**Set config with `Set-DFTestConfig`, and isolate session state with `Reset-DFTestSession`** (`tests/TestSupport.ps1`). `Set-DFTestConfig @{...}` sets the session config the module reads (`$null` clears it); never set a global `$DFConfig`. Session state (`Get-DFToolStatus`, the role winners, record caches) persists across tests in one file, and `Register-DFTool` folds it into each call, so every `Describe` that registers tools calls `Reset-DFTestSession` from its `BeforeEach`.
 
 **Pester 6 syntax only.** Use `Should -Invoke`, never `Assert-MockCalled`: Pester 6 removed it, and
 calling it makes PowerShell auto-import Windows PowerShell's bundled Pester 3.4.0, which then breaks
@@ -164,11 +166,11 @@ Each `Tools/*.json` must have at minimum:
   `{ "catppuccin-mocha": "catppuccin" }`). Only needed when the tool's native name differs from
   the canonical (per the plugin invariant — no central theme registry). Sidecars resolve the
   configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
-  this map), then validate against their own built-in list. Shared `$DFConfig.Theme` is
+  this map), then validate against their own built-in list. Shared `Theme` is
   canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
 - `roles` (optional): the roles this tool joins, an object keyed by role name; each value is
   `{ priority, env, aliases }` (`"grep": {}` for a category). Roles are defined in `data/roles.json`
-  (keyed by role, never by tool). Only the role's winner (`$DFConfig.Defaults`, else highest priority)
+  (keyed by role, never by tool). Only the role's winner (`Defaults`, else highest priority; a role is filled only by a requested tool)
   gets the block's `env`/`aliases` and its hook: a plain `function Initialize-DFRole<Role>` in the
   sidecar, called by `Invoke-DFToolCompanion`. A role's reserved env vars and aliases may appear only
   in role blocks, and its reserved code only in the hook; `tests/Roles.Contract.Tests.ps1` enforces
@@ -211,7 +213,7 @@ fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Proper
   `function:prompt` (not `LocationChangedAction` — both hook modes use prompt wrapping;
   `pwd` mode just skips `zoxide add` when the directory hasn't changed). The prompt engine
   (oh-my-posh or starship) must initialize _before_ zoxide so zoxide wraps its prompt.
-  `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]`, so `Register-DFTool`
+  `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]`, so the session
   topo-sorts either engine ahead of zoxide whenever both are in the registration set. (The
   tool DB is a plain hashtable, so without `dependsOn` the order is hash order, not
   alphabetical.) After an oh-my-posh theme switch via
@@ -224,7 +226,8 @@ fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Proper
   `internal/cmd/shell_pwsh.go` source. So registering `direnv` before or after oh-my-posh/zoxide
   makes no difference; it was deliberately given no `dependsOn`. Requires PowerShell 7.2+
   (direnv's generated hook throws below that); `Tools/direnv.ps1` guards this with a warning.
-- **`dependsOn` ordering**: Any tool JSON may declare `"dependsOn": ["othertool"]`. `Register-DFTool` calls `Invoke-DFTopoSort` (private, `Private/Invoke-DFTopoSort.ps1`) to sort the registration list using Kahn's algorithm before iterating. Dependencies outside the current registration set are skipped silently. Cycles emit `Write-Warning` and fall back to original order.
-- **`$DFCurrentTool` sidecar contract**: `Invoke-DFToolCompanion` (called from `Register-DFTool`'s per-tool loop) sets `$DFCurrentTool = $tool` immediately before dot-sourcing a companion `.ps1` and clears it after. Sidecars may read `$DFCurrentTool.settings` and other fields. Existing sidecars that do not reference `$DFCurrentTool` are unaffected. Sidecars needing their own subdirectory use `$PSScriptRoot`, which resolves to `Tools/` at dot-source time.
-- **Tool setup lifecycle**: an optional `Tools/<name>.setup.ps1`, parallel to the regular `.ps1`, runs at most once ever per tool (tracked in `$XDG_STATE_HOME/dotforge/setup-state.json`, checked/updated via `Private/Get-DFToolSetupState.ps1`/`Public/Complete-DFToolSetup.ps1`) — for setup that makes a persistent, user-visible change (e.g. an `[include]` line in the user's real git config) that must never be silently reasserted after the user edits or removes it. The script owns its own success: it must call `Complete-DFToolSetup -Name <tool> [-Actions <object[]>]` itself, as its own last line, only once its work has actually succeeded — a thrown error records nothing, so the next `Register-DFTool` call retries from the top. `$DFConfig['SkipSetup']` (array of tool names) opts a tool's setup script out entirely, mirroring `SkipTools`. Full design: `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`.
+- **Opt-in tool selection**: `Start-DFSession -Config` configures only the tools in `Tools` (names and `+groups` from `data/groups.json`, minus `ExcludeTools`) that are installed. Only those records are read (`Import-DFToolDb -Name`), role winners are picked among them, and nothing is ever installed during a load: missing tools are listed at the end and installed with `Install-DFTool -Missing`. `Invoke-DFSessionActivation` is the shared core of `Start-DFSession` and `Register-DFTool -Name`; it records a `DotForge.ToolStatus` per tool for `Get-DFToolStatus`. Full design: `docs/superpowers/specs/2026-10-09-tool-selection-design.md`.
+- **`dependsOn` ordering**: Any tool JSON may declare `"dependsOn": ["othertool"]`. `Invoke-DFSessionActivation` (shared by `Start-DFSession` and `Register-DFTool -Name`) calls `Invoke-DFTopoSort` (private, `Private/Invoke-DFTopoSort.ps1`) to sort the requested tools using Kahn's algorithm before iterating. Dependencies outside the current registration set are skipped silently. Cycles emit `Write-Warning` and fall back to original order.
+- **`$DFCurrentTool` sidecar contract**: `Invoke-DFToolCompanion` (called from `Invoke-DFSessionActivation`'s per-tool loop) sets `$DFCurrentTool = $tool` immediately before dot-sourcing a companion `.ps1` and clears it after. Sidecars may read `$DFCurrentTool.settings` and other fields. Existing sidecars that do not reference `$DFCurrentTool` are unaffected. Sidecars needing their own subdirectory use `$PSScriptRoot`, which resolves to `Tools/` at dot-source time.
+- **Tool setup lifecycle**: an optional `Tools/<name>.setup.ps1`, parallel to the regular `.ps1`, runs at most once ever per tool (tracked in `$XDG_STATE_HOME/dotforge/setup-state.json`, checked/updated via `Private/Get-DFToolSetupState.ps1`/`Public/Complete-DFToolSetup.ps1`) — for setup that makes a persistent, user-visible change (e.g. an `[include]` line in the user's real git config) that must never be silently reasserted after the user edits or removes it. The script owns its own success: it must call `Complete-DFToolSetup -Name <tool> [-Actions <object[]>]` itself, as its own last line, only once its work has actually succeeded — a thrown error records nothing, so the next load retries from the top. `SkipSetup` (array of tool names, in the session config) opts a tool's setup script out entirely. Full design: `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`.
 - **PSReadLine + PSFzf ordering**: PSFzf declares `"dependsOn": ["psreadline"]`. `psreadline.ps1` runs first and applies `Set-PSReadLineOption` settings + theme via `$DFCurrentTool.settings`. PSFzf then overlays its key bindings via `Set-PsFzfOption`. Each tool owns only what it touches. The global `$DFPSReadLineColors` hashtable is set by `Invoke-DFApplyPSReadLineTheme` as a test-observable side channel (PSReadLine suppresses `Colors` in non-VT terminals).
