@@ -9,8 +9,10 @@ function Invoke-DFInstallPlan {
           - its feeds are added if missing (listed first, added once);
           - the batch runs as one command when the manager supports batch,
             else one command per tool;
-          - a manager with installs.elevate runs through gsudo unless the shell
-            is elevated; with neither, the batch is skipped with the reason.
+          - a batch the plan marked Elevate runs through its ElevateWith
+            executable (the elevator role, e.g. gsudo);
+          - when a batch fails, each of its tools is re-checked: one bad id
+            doesn't fail the tools that did install.
         After the stage:
           - PATH is merged from the registry;
           - managers with installs.reactivate that installed something are
@@ -46,8 +48,6 @@ function Invoke-DFInstallPlan {
         }
     }
     $skipFor = { param($d) "skipped: $d $($result[$d].Result.ToLower())" }
-    $elevated = Test-DFElevated
-    $gsudo = $ToolDb['gsudo']
 
     foreach ($stage in $Plan.Stages) {
         $reactivate = [System.Collections.Generic.List[string]]::new()
@@ -58,9 +58,9 @@ function Invoke-DFInstallPlan {
                 if ($d) { & $set $it.Tool 'Skipped' (& $skipFor $d) } else { $it }
             })
             if (-not $ready) { continue }
-            $elevate = $m.installs.elevate -and -not $elevated
-            if ($elevate -and -not ($gsudo -and (& $IsAvailable $gsudo))) {
-                foreach ($it in $ready) { & $set $it.Tool 'Skipped' "$($m.name) needs an elevated shell: rerun as administrator, or add gsudo" }
+            $elevate = [bool]$batch.Elevate
+            if ($elevate -and -not $batch.ElevateWith) {
+                foreach ($it in $ready) { & $set $it.Tool 'Skipped' "$($m.name) needs an elevated shell: rerun as administrator, or install an elevator such as gsudo" }
                 continue
             }
             # Feeds first, each once, and only those the manager doesn't list yet.
@@ -91,10 +91,13 @@ function Invoke-DFInstallPlan {
                     foreach ($p in $m.installs.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
                     Invoke-DFInstallCommand -Manager $m -Function $m.installs.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $m.installs.command -Values @{ ids = $ids }) -Elevate:$elevate
+                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $m.installs.command -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
                 }
                 foreach ($it in $group) {
-                    if ($r.ExitCode -eq 0) { & $set $it.Tool 'Installed' "via $($m.name)" }
+                    $t = $ToolDb[$it.Tool]
+                    # A failed batch may still have installed some of its tools.
+                    $ok = $r.ExitCode -eq 0 -or ($group.Count -gt 1 -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
+                    if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
                     else {
                         $tail = @("$($r.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
                         & $set $it.Tool 'Failed' "$($m.name) failed: $tail"

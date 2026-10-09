@@ -42,6 +42,7 @@ function Get-DFToolStatus {
         Write-Warning 'DotForge: no session yet. Start-DFSession -Config @{ Tools = @(...) } configures the tools you request.'
         return
     }
+    Add-DFInstallHint
     foreach ($s in $script:DFSessionStatus.Values) {
         if ($Name -and $s.Name -notin $Name) { continue }
         if ($Missing -and $s.State -ne 'Missing') { continue }

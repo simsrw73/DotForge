@@ -27,7 +27,8 @@ function Invoke-DFInstallCommand {
     .DESCRIPTION
         An argv runs as a native command; a function (installs.function, e.g.
         Install-PSResource) is called with -Arguments splatted. -Elevate runs
-        the argv through gsudo. Tests mock this function.
+        the argv through -ElevateWith (the elevator role's executable, e.g.
+        gsudo). Tests mock this function.
     .PARAMETER Manager
         The manager's tool record (for messages).
     .PARAMETER Argv
@@ -37,7 +38,9 @@ function Invoke-DFInstallCommand {
     .PARAMETER Arguments
         Parameters for -Function.
     .PARAMETER Elevate
-        Run through gsudo.
+        Run through -ElevateWith.
+    .PARAMETER ElevateWith
+        The elevator's executable.
     .OUTPUTS
         PSCustomObject: ExitCode, Output.
     #>
@@ -48,7 +51,8 @@ function Invoke-DFInstallCommand {
         [string[]]$Argv = @(),
         [string]$Function,
         [hashtable]$Arguments = @{},
-        [switch]$Elevate
+        [switch]$Elevate,
+        [string]$ElevateWith
     )
     if ($Function) {
         try {
@@ -58,7 +62,10 @@ function Invoke-DFInstallCommand {
             return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
         }
     }
-    $exe, $rest = if ($Elevate) { 'gsudo', $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+    $exe, $rest = if ($Elevate) { $ElevateWith, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+    # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
+    # never sets an exit code: don't read a stale one from an earlier command.
+    $global:LASTEXITCODE = 0
     $out = & $exe @rest 2>&1 | Out-String
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }

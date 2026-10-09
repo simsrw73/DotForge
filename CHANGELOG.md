@@ -24,7 +24,7 @@ All notable changes to DotForge are documented here.
   node, then a tool from the npm registry). It never installs anything you didn't ask for: when a
   tool needs a manager you don't have, it asks which one, showing a default (Enter keeps it);
   `-UseDefaults` takes every default without asking. Third-party feeds (scoop buckets) and admin
-  prompts (choco, through gsudo) are shown in the plan before you confirm; `-WhatIf` shows only the
+  prompts (choco, through an `elevator` such as gsudo; without one, the next source is used) are shown in the plan before you confirm; `-WhatIf` shows only the
   plan. From a script with no one to ask, only decision-free tools install and the rest are
   reported. New tools are configured in the current session right away.
 - **Package managers are plugins.** A manager's record declares how it installs (`installs`:

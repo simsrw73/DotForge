@@ -118,7 +118,7 @@ A tool whose record has `installs` is a package manager: `Install-DFTool` uses i
 | `command` | The install command as an argv. `{id}` is the package id; with `batch`, it expands to every id in the batch. |
 | `function` / `args` | Instead of `command`, a PowerShell command and its parameters (`Install-PSResource` with `Name = "{id}"`). A `true` argument is a switch. |
 | `batch` | It can install several ids in one call. |
-| `elevate` | It needs an elevated shell (choco). DotForge runs it through gsudo when gsudo is installed, and otherwise skips it with the reason. |
+| `elevate` | It needs an elevated shell (choco). Unless the shell is elevated, DotForge runs it through the `elevator` role's tool (gsudo) when one is installed or being installed in the same run; otherwise it uses the tool's next source. |
 | `reactivate` | Re-run this manager's companion after it installs something, so a new runtime reaches `PATH` in the same shell (fnm, mise). |
 | `feeds` | How to list and add third-party feeds (buckets, marketplaces) and how a feed-qualified id is written. |
 

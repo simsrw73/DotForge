@@ -99,6 +99,18 @@ Describe 'Start-DFSession install hints' {
         Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
         Should -Invoke New-DFInstallPlan -Times 0
     }
+    It 'builds the hint only when the status is read, not at startup' {
+        Mock Test-DFToolAvailable { $Executable -eq 'scoop.cmd' }
+        Mock New-DFInstallPlan { }
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        Should -Invoke New-DFInstallPlan -Times 0
+    }
+    It 'still reports status when building the hint fails' {
+        Mock Test-DFToolAvailable { $Executable -eq 'scoop.cmd' }
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        Mock New-DFInstallPlan { throw 'broken manager record' }
+        (Get-DFToolStatus -Name glow 3>$null).State | Should -Be 'Missing'
+    }
     It 'says how a missing tool would be installed' {
         Mock Test-DFToolAvailable { $Executable -eq 'scoop.cmd' }
         Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null

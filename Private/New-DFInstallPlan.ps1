@@ -41,6 +41,16 @@ function New-DFInstallPlan {
         if ($m -and -not $want.Contains($m) -and $ToolDb[$m] -and -not (& $IsAvailable $ToolDb[$m])) { $want.Add($m) }
     }
 
+    # A manager that needs admin rights runs only in an elevated shell or
+    # through an elevator (the elevator role, e.g. gsudo) that is installed or
+    # installed earlier in this run.
+    $elevated = Test-DFElevated
+    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
+    $elevatorNow = $elevators | Where-Object { & $IsAvailable $_ } | Select-Object -First 1
+    $elevatorPlanned = if (-not $elevatorNow) { $elevators | Where-Object { $want.Contains($_.name) } | Select-Object -First 1 }
+    $elevator = if ($elevatorNow) { $elevatorNow } else { $elevatorPlanned }
+    $canElevate = $elevated -or [bool]$elevator
+
     $items = [ordered]@{}
     $gaps = [System.Collections.Generic.List[object]]::new()
     for ($i = 0; $i -lt $want.Count; $i++) {
@@ -54,7 +64,7 @@ function New-DFInstallPlan {
             continue
         }
         $planned = [string[]]@($want | Where-Object { $_ -ne $t.name })
-        $r = Resolve-DFInstallSource -Tool $t -ToolDb $ToolDb -IsAvailable $IsAvailable -Planned $planned -Choice $Choice -Via $Via
+        $r = Resolve-DFInstallSource -Tool $t -ToolDb $ToolDb -IsAvailable $IsAvailable -Planned $planned -Choice $Choice -Via $Via -CanElevate $canElevate
         if ($r.Gap) {
             $gaps.Add([pscustomobject]@{
                 Tool = $t.name; Reason = $r.Gap; Options = $r.Options
@@ -63,7 +73,9 @@ function New-DFInstallPlan {
             })
             continue
         }
-        $deps = @(@($required) + $(if ($want.Contains($r.Manager.name)) { $r.Manager.name }) | Where-Object { $_ } | Select-Object -Unique)
+        $needsElevator = $r.Manager.installs.elevate -and -not $elevated -and $elevatorPlanned
+        $deps = @(@($required) + $(if ($want.Contains($r.Manager.name)) { $r.Manager.name }) + $(if ($needsElevator) { $elevatorPlanned.name }) |
+            Where-Object { $_ -and $_ -ne $t.name } | Select-Object -Unique)
         $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0 }
     }
 
@@ -100,7 +112,12 @@ function New-DFInstallPlan {
 
     $stages = @(foreach ($g in ($items.Values | Group-Object Stage | Sort-Object { [int]$_.Name })) {
         $batches = @(foreach ($b in ($g.Group | Where-Object Manager | Group-Object { $_.Manager.name })) {
-            [pscustomobject]@{ Manager = $b.Group[0].Manager; Source = $b.Group[0].Source; Items = @($b.Group) }
+            $m = $b.Group[0].Manager
+            $elev = [bool]$m.installs.elevate -and -not $elevated
+            [pscustomobject]@{
+                Manager = $m; Source = $b.Group[0].Source; Items = @($b.Group)
+                Elevate = $elev; ElevateWith = $(if ($elev -and $elevator) { $elevator.executable })
+            }
         })
         [pscustomobject]@{ Number = [int]$g.Name; Batches = $batches; Provided = @($g.Group | Where-Object ProvidedBy) }
     })

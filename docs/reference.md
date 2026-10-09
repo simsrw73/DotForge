@@ -100,7 +100,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -2077,6 +2077,15 @@ Edits text files. The winner sets EDITOR and VISUAL.
 | Members | [micro](#micro-tool) |
 | Only the winner sets | `EDITOR`, `VISUAL` |
 
+### elevator role
+
+Runs a command with administrator rights. Install-DFTool runs a manager that needs admin (choco) through it.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [gsudo](#gsudo-tool) |
+
 ### file-search role
 
 Finds files by name.
@@ -2509,6 +2518,7 @@ Windows sudo — run commands with elevated privileges without a UAC prompt per 
 | Tags | `admin`, `elevation`, `sudo`, `windows` |
 | Install ids | scoop: `gsudo`<br>winget: `gerardog.gsudo`<br>choco: `gsudo` |
 | XDG method | `default` |
+| Roles | [`elevator`](#elevator-role) |
 | Companion | [`Tools/gsudo.ps1`](#gsudo-companion) |
 
 ### inshellisense tool

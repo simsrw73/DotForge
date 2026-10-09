@@ -6,6 +6,7 @@ $script:DFSessionStatus = $null
 # The session's requested tool records and role winners, for Get-DFRole.
 $script:DFSessionToolDb = @{}
 $script:DFSessionRoleWinners = $null
+$script:DFSessionToolsPath = $null
 
 function Invoke-DFSessionActivation {
     <#
@@ -147,21 +148,8 @@ function Invoke-DFSessionActivation {
         }
     }
 
-    # The install layer is built only when something is missing (no cost on a
-    # healthy machine): each missing tool's detail says how it would install.
-    $missingNames = @($tools | Where-Object { $status[$_.name].State -eq 'Missing' -and -not $status[$_.name].PSObject.Properties['FallbackTool'] } | ForEach-Object name)
-    if ($missingNames) {
-        $all = Import-DFToolDb @pathArgs
-        $plan = New-DFInstallPlan -Name $missingNames -ToolDb $all -IsAvailable { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type) } 3>$null
-        foreach ($it in $plan.Items) {
-            if (-not $status.Contains($it.Tool)) { continue }
-            $how = if ($it.ProvidedBy) { "comes with $($it.ProvidedBy)" } else { "via $($it.Manager.name)" }
-            $status[$it.Tool].Detail = "$($status[$it.Tool].Detail); Install-DFTool -Missing will install it $how"
-        }
-        foreach ($g in $plan.Gaps) {
-            if ($status.Contains($g.Tool)) { $status[$g.Tool].Detail = "$($status[$g.Tool].Detail); can't install yet: $($g.Reason)" }
-        }
-    }
+    # Install hints are built later, when the status is read (Add-DFInstallHint).
+    $script:DFSessionToolsPath = $ToolsPath
 
     foreach ($t in $tools) { if ($status[$t.name].State -eq 'Active') { $t } }
 }
@@ -368,4 +356,43 @@ function Get-DFRoleRequirementHint {
         elseif ($names) { "needs a $r`: add $($names[0]) to Tools" }
         else { "needs a $r" }
     }) -join '; '
+}
+
+function Add-DFInstallHint {
+    <#
+    .SYNOPSIS
+        Adds to each Missing tool's status detail how Install-DFTool would install it.
+    .DESCRIPTION
+        Building the install layer reads every tool record, so it runs when the
+        status is read (Get-DFToolStatus), never at startup, and once per tool.
+        A failure (say, a malformed manager record) is reported with
+        Write-Verbose; the status stays usable.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    if (-not $script:DFSessionStatus) { return }
+    $todo = @($script:DFSessionStatus.Values | Where-Object {
+        $_.State -eq 'Missing' -and -not $_.PSObject.Properties['InstallHinted'] -and -not $_.PSObject.Properties['FallbackTool'] })
+    if (-not $todo) { return }
+    foreach ($s in $todo) { $s | Add-Member -NotePropertyName InstallHinted -NotePropertyValue $true -Force }
+    try {
+        $pathArgs = if ($script:DFSessionToolsPath) { @{ ToolsPath = $script:DFSessionToolsPath } } else { @{} }
+        $all = Import-DFToolDb @pathArgs
+        $plan = New-DFInstallPlan -Name @($todo | ForEach-Object { $_.Name }) -ToolDb $all `
+            -IsAvailable { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type) } 3>$null
+        foreach ($it in $plan.Items) {
+            $st = $script:DFSessionStatus[$it.Tool]
+            if (-not $st -or $st -notin $todo) { continue }
+            $how = if ($it.ProvidedBy) { "comes with $($it.ProvidedBy)" } else { "via $($it.Manager.name)" }
+            $st.Detail = "$($st.Detail); Install-DFTool -Missing will install it $how"
+        }
+        foreach ($g in $plan.Gaps) {
+            $st = $script:DFSessionStatus[$g.Tool]
+            if ($st -and $st -in $todo) { $st.Detail = "$($st.Detail); can't install yet: $($g.Reason)" }
+        }
+    } catch {
+        Write-Verbose "DotForge: couldn't work out how missing tools would install: $($_.Exception.Message)"
+    }
 }

@@ -29,6 +29,12 @@ Describe 'Invoke-DFToolSetup' {
         Invoke-DFToolSetup -Name st -Force -Confirm:$false -ToolsPath $script:Tools
         Get-Content $script:Dest -Raw | Should -Be 'default'
     }
+    It '-WhatIf runs nothing' {
+        Remove-Item $script:Dest
+        Invoke-DFToolSetup -Name st -WhatIf -ToolsPath $script:Tools 6>$null
+        Test-Path $script:Dest | Should -BeFalse
+        (Get-DFToolSetupState).PSObject.Properties['st'] | Should -Not -BeNullOrEmpty
+    }
     It 'refuses a tool that isn''t active in the session' {
         { Invoke-DFToolSetup -Name nope -ToolsPath $script:Tools -ErrorAction Stop } | Should -Throw '*not active*'
     }

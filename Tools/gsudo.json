@@ -8,6 +8,7 @@
     "windows"
   ],
   "executable": "gsudo.exe",
+  "roles": { "elevator": {} },
   "packages": {
     "scoop": "gsudo",
     "winget": "gerardog.gsudo",

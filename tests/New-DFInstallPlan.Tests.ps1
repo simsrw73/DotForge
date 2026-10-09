@@ -19,7 +19,7 @@ BeforeAll {
 }
 
 Describe 'New-DFInstallPlan' {
-    BeforeEach { Set-DFTestConfig $null; $script:Db = New-ChainDb }
+    BeforeEach { Set-DFTestConfig $null; $script:Db = New-ChainDb; Mock Test-DFElevated { $false } }
     AfterEach { Set-DFTestConfig $null }
 
     It 'stages the scoop -> fnm -> node -> npm -> ish chain when all are requested' {
@@ -62,5 +62,40 @@ Describe 'New-DFInstallPlan' {
         $p = New-DFInstallPlan -Name ish, ishplug -ToolDb $db -IsAvailable $script:OnlyScoop
         ($p.Gaps | Where-Object Tool -eq ish).Dependents | Should -Contain 'ishplug'
         $p.Items.Tool | Should -Not -Contain 'ishplug'
+    }
+}
+
+Describe 'New-DFInstallPlan and elevation' {
+    BeforeEach {
+        Set-DFTestConfig @{ InstallVia = @{ glow = 'choco' } }
+        Mock Test-DFElevated { $false }
+        $script:Db = New-ChainDb
+        $script:Db.choco = Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "command": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'
+        $script:Db.gsudo = Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} }, "packages": { "scoop": "gsudo" } }'
+        $script:Db.glow = Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "choco": "glow", "scoop": "glow" } }'
+    }
+    AfterEach { Set-DFTestConfig $null }
+
+    It 'skips a manager that needs admin when nothing can elevate, and uses the next source' {
+        $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
+        ($p.Items | Where-Object Tool -eq glow).Source | Should -Be 'scoop'
+    }
+    It 'plans it through an installed elevator, and says so' {
+        $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco', 'gsudo' }
+        $b = $p.Stages[0].Batches[0]
+        $b.Manager.name | Should -Be 'choco'
+        $b.Elevate | Should -BeTrue
+        $b.ElevateWith | Should -Be 'gsudo.exe'
+    }
+    It 'makes it wait for an elevator installed in the same run' {
+        $p = New-DFInstallPlan -Name gsudo, glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
+        ($p.Items | Where-Object Tool -eq glow).Source | Should -Be 'choco'
+        ($p.Items | Where-Object Tool -eq glow).DependsOn | Should -Contain 'gsudo'
+    }
+    It 'needs no elevator when the shell is already elevated' {
+        Mock Test-DFElevated { $true }
+        $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
+        $p.Stages[0].Batches[0].Manager.name | Should -Be 'choco'
+        $p.Stages[0].Batches[0].Elevate | Should -BeFalse
     }
 }

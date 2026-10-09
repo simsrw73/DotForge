@@ -30,7 +30,7 @@ Describe 'Invoke-DFInstallPlan' {
         foreach ($r in @(
             (Rec '{ "name": "scoop", "executable": "scoop.cmd", "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true, "feeds": { "list": ["scoop","bucket","list"], "add": ["scoop","bucket","add","{name}","{url}"], "id": "{feed}/{id}" } } }'),
             (Rec '{ "name": "choco", "executable": "choco.exe", "installs": { "from": "choco", "command": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'),
-            (Rec '{ "name": "gsudo", "executable": "gsudo.exe" }'),
+            (Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} } }'),
             (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "command": ["fnm","install","{id}"], "reactivate": true } }'),
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "choco": "glow" } }'),
@@ -84,11 +84,20 @@ Describe 'Invoke-DFInstallPlan' {
         $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
         $script:Calls | Should -Be @('[elevated] choco install glow -y')
 
+        # Without an elevator, choco can't run, so glow comes from its next source.
         $script:Calls.Clear(); $script:Installed = @('scoop', 'choco')
         $plan = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable $script:Avail
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        $script:Calls | Should -Be @('scoop install glow')
+    }
+    It 'counts the tools of a failed batch that did install (one bad id doesn''t fail the rest)' {
+        $script:Fail = @('glow')
+        Mock Test-DFToolAvailable { $Executable -ne 'glow.exe' }
+        $plan = New-DFInstallPlan -Name fnm, glow, node -ToolDb $script:Db -IsAvailable $script:Avail
         $r = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
-        $script:Calls | Should -BeNullOrEmpty
-        ($r | Where-Object Tool -eq glow).Detail | Should -Match 'elevated shell.*gsudo'
+        ($r | Where-Object Tool -eq fnm).Result | Should -Be 'Installed'
+        ($r | Where-Object Tool -eq glow).Result | Should -Be 'Failed'
+        $script:Calls | Should -Contain 'fnm install lts'
     }
     It 'reports a tool that installed but still isn''t found' {
         Mock Test-DFToolAvailable { $false }
@@ -108,5 +117,26 @@ Describe 'Update-DFPathFromRegistry' {
             Update-DFPathFromRegistry
             $Env:Path | Should -Be 'C:\a;C:\b;C:\new'
         } finally { $Env:Path = $saved }
+    }
+}
+
+Describe 'Invoke-DFInstallCommand' {
+    It 'reports success for an in-process .ps1 shim even when an earlier command left a failure code' {
+        $bin = Join-Path $TestDrive "shim-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        New-Item -ItemType Directory $bin | Out-Null
+        'param() "ok"' | Set-Content (Join-Path $bin 'dffakemgr.ps1')
+        $saved = $Env:Path
+        try {
+            $Env:Path = "$bin;$Env:Path"
+            $global:LASTEXITCODE = 1
+            (Invoke-DFInstallCommand -Manager ([pscustomobject]@{ name = 'dffakemgr' }) -Argv 'dffakemgr', 'install', 'x').ExitCode | Should -Be 0
+        } finally { $Env:Path = $saved }
+    }
+}
+
+Describe 'Test-DFInteractiveHost' {
+    It 'is false when PowerShell was started with -NonInteractive (or -noni)' {
+        Test-DFInteractiveHost -CommandLine @('pwsh', '-NonInteractive', '-File', 'setup.ps1') | Should -BeFalse
+        Test-DFInteractiveHost -CommandLine @('pwsh', '-noni', '-c', 'x') | Should -BeFalse
     }
 }

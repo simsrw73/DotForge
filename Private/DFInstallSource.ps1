@@ -104,6 +104,10 @@ function Resolve-DFInstallSource {
         Source -> manager name the user picked for it.
     .PARAMETER Via
         Tool -> source for this call; passed to Get-DFInstallSourceOrder.
+    .PARAMETER CanElevate
+        Whether a manager that needs admin rights (installs.elevate) can run:
+        the shell is elevated, or an elevator is installed or planned. When
+        not, such a manager is passed over like an unavailable one.
     .OUTPUTS
         PSCustomObject: Tool, Source, Manager, Ref, Gap, Options.
     #>
@@ -115,7 +119,8 @@ function Resolve-DFInstallSource {
         [Parameter(Mandatory)][scriptblock]$IsAvailable,
         [AllowEmptyCollection()][string[]]$Planned = @(),
         [hashtable]$Choice = @{},
-        [hashtable]$Via = @{}
+        [hashtable]$Via = @{},
+        [bool]$CanElevate = $true
     )
     $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Ref = $null; Gap = $null; Options = @() }
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
@@ -126,7 +131,7 @@ function Resolve-DFInstallSource {
         return $result
     }
     foreach ($s in $sources) {
-        $managers = @(Get-DFSourceManager -Source $s -ToolDb $ToolDb)
+        $managers = @(Get-DFSourceManager -Source $s -ToolDb $ToolDb | Where-Object { $CanElevate -or -not $_.installs.elevate })
         $pick = if ($Choice[$s]) { $managers | Where-Object name -eq $Choice[$s] | Select-Object -First 1 }
                 else { $managers | Where-Object { $_.name -in $Planned -or (& $IsAvailable $_) } | Select-Object -First 1 }
         if ($pick) {
