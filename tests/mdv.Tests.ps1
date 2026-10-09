@@ -27,11 +27,11 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
     BeforeEach {
         $script:DFToolDb        = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
         $script:SavedConfigPath = $Env:MDV_CONFIG_PATH
-        $script:SavedStateHome  = $Env:XDG_STATE_HOME
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
-        $Env:XDG_STATE_HOME     = Join-Path $TestDrive 'state'
+
+
+
         # Clean up mdv config/state from previous tests to ensure fresh state
         Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'mdv') -Recurse -Force -ErrorAction Ignore
         Remove-Item $Env:XDG_STATE_HOME -Recurse -Force -ErrorAction Ignore
@@ -40,11 +40,11 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $Env:MDV_CONFIG_PATH = $script:SavedConfigPath
-        $Env:XDG_STATE_HOME  = $script:SavedStateHome
+
         $script:DFToolDb     = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'sets MDV_CONFIG_PATH and creates the dir' {

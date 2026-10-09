@@ -5,8 +5,8 @@ BeforeAll {
 
 Describe 'Search-DFCatalogQueryCache engine (via crates)' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Mock Start-DFCatalogRefreshJob { }
         Mock Invoke-RestMethod {
             [pscustomobject]@{
@@ -19,8 +19,8 @@ Describe 'Search-DFCatalogQueryCache engine (via crates)' {
         }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'fetches live on a cache miss and writes the query cache' {
@@ -73,12 +73,12 @@ Describe 'Search-DFCatalogQueryCache engine (via crates)' {
 
 Describe 'DFCatalog.Crates' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'sends a User-Agent header (crates.io requires one)' {
@@ -127,12 +127,12 @@ Describe 'DFCatalog.Crates' {
 
 Describe 'DFCatalog.Npm' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'maps npm search results' {
@@ -175,12 +175,12 @@ Describe 'DFCatalog.Npm' {
 
 Describe 'DFCatalog.Pypi' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'maps the PyPI JSON API for exact names' {
@@ -226,12 +226,12 @@ Describe 'OData providers (choco / psgallery)' {
 '@
     }
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'maps OData entries for choco' {

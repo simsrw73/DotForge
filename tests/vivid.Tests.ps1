@@ -31,24 +31,24 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
     BeforeEach {
         $script:DFToolDb       = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
-        $Env:XDG_CACHE_HOME     = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
+
+
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
 
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
-        $Env:XDG_CACHE_HOME  = $script:SavedCacheHome
+
         $script:DFToolDb     = $null
 
         [System.Environment]::SetEnvironmentVariable('LS_COLORS', $null, 'Process')
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Invoke-DFApplyLSColorsTheme', 'Select-LSColorsTheme'
         Remove-Alias fls -Scope Global -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'sets LS_COLORS to vivid catppuccin-mocha output by default' {

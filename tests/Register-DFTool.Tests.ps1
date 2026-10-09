@@ -43,7 +43,6 @@ Describe 'Register-DFTool' {
     }
 
     AfterEach {
-        Restore-DFTestXdg
         $Env:Path             = $script:SavedPath
         $Env:WINDIR           = $script:SavedWinDir
         Remove-Item Env:\TESTTOOL_CONFIG -ErrorAction Ignore
@@ -51,6 +50,7 @@ Describe 'Register-DFTool' {
         Remove-DFTestGlobal -Function 'tt-v', 'Select-TestTool'
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
         Remove-Alias sudo -Force -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'skips tools not found on PATH (no error)' {
@@ -586,11 +586,11 @@ throw 'boom: setup deliberately fails'
         # next test's BeforeEach (same $TestDrive/state path every time).
         Remove-Item (Join-Path $Env:XDG_STATE_HOME 'dotforge') -Recurse -Force -ErrorAction Ignore
 
-        Restore-DFTestXdg
         $Env:WINDIR          = $script:SavedWinDir
         Remove-Variable __DFTestSetupRunCount -Scope Global -ErrorAction Ignore
         Remove-Alias tsf -Force -Scope Global -ErrorAction Ignore
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'dot-sources <name>.setup.ps1 on first registration and records state' {

@@ -5,18 +5,18 @@ BeforeAll {
 
 Describe 'Set-DFToolXdgConfig' {
     BeforeEach {
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedStateHome  = $Env:XDG_STATE_HOME
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
+        Set-DFTestXdg
+
+
+
         Remove-Item Env:\TESTXDG_CONFIG -ErrorAction Ignore
         Remove-Item Env:\TESTXDG_HIST -ErrorAction Ignore
     }
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
-        $Env:XDG_STATE_HOME  = $script:SavedStateHome
+
         Remove-Item Env:\TESTXDG_CONFIG -ErrorAction Ignore
         Remove-Item Env:\TESTXDG_HIST -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'method env: sets env vars and creates directories' {

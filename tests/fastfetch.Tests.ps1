@@ -32,8 +32,8 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
     BeforeEach {
         $script:DFToolDb          = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome   = $Env:XDG_CONFIG_HOME
-        $Env:XDG_CONFIG_HOME      = Join-Path $TestDrive 'config'
+        Set-DFTestXdg
+
 
         Remove-Item $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
 
@@ -44,11 +44,11 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $script:DFToolDb     = $null
 
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'fastfetch'
+        Restore-DFTestXdg
     }
 
     It 'wraps fastfetch as a global function' {

@@ -67,11 +67,11 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         # tool xdg.vars never overwrite a variable that is already set, so start
         # from none (the developer's own profile may have set it)
         Remove-Item Env:\LESSHISTFILE -ErrorAction Ignore
-        $script:SavedState = $Env:XDG_STATE_HOME
-        $script:SavedCfg   = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
+
         $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
+
+
         # Registering delta for real (below) dot-sources the real Tools/delta.setup.ps1,
         # which calls `git config --global`. Redirect it explicitly rather than relying
         # on XDG_CONFIG_HOME alone -- git only falls back to $XDG_CONFIG_HOME/git/config
@@ -85,9 +85,9 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $Env:GIT_PAGER        = $script:SavedPager
         $Env:LESS             = $script:SavedLess
         $Env:LESSHISTFILE     = $script:SavedLessHist
-        $Env:XDG_STATE_HOME   = $script:SavedState
-        $Env:XDG_CONFIG_HOME  = $script:SavedCfg
+
         $Env:GIT_CONFIG_GLOBAL = $script:SavedGitConfigGlobal
+        Restore-DFTestXdg
     }
 
     It 'sets FZF_DEFAULT_OPTS from fzf.json env' {

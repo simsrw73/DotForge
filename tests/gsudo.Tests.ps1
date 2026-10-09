@@ -2,8 +2,8 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/gsudo.ps1'
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
+
+
 }
 
 Describe 'gsudo companion' {

@@ -3,8 +3,8 @@ BeforeAll {
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:RealTools    = Join-Path $PSScriptRoot '../Tools'
     $script:CompanionPath = Join-Path $script:RealTools 'rustup.ps1'
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Public/Add-DFToPath.ps1"
+
+
 }
 
 Describe 'rustup tool JSON' {

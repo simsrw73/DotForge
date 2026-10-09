@@ -7,20 +7,20 @@ BeforeAll {
 Describe 'mise companion' {
     BeforeEach {
         $script:SavedPath = $Env:Path
-        $script:SavedData = $Env:XDG_DATA_HOME
-        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'data'
+        Set-DFTestXdg
+
     }
     AfterEach {
         $Env:Path = $script:SavedPath
-        $Env:XDG_DATA_HOME = $script:SavedData
         Remove-DFTestGlobal -Function mise
         Remove-Variable MiseActivated -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'puts its shims on PATH from the body, without activating' {
         function global:mise { $global:MiseActivated = $true }
         . $script:CompanionPath
-        ($Env:Path -split ';') | Should -Contain (Join-Path $TestDrive 'data\mise\shims')
+        ($Env:Path -split ';') | Should -Contain (Join-Path $Env:XDG_DATA_HOME 'mise\shims')
         $global:MiseActivated | Should -BeNullOrEmpty
     }
 

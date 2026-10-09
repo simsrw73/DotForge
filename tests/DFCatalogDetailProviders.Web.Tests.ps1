@@ -5,10 +5,10 @@ BeforeAll {
 
 Describe 'web detail providers' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
+    AfterEach { Restore-DFTestXdg }
 
     It 'npm: maps the registry doc (deps, maintainers, dist-tags, readme)' {
         Mock Invoke-RestMethod {

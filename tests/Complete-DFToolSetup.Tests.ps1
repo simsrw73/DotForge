@@ -5,12 +5,12 @@ BeforeAll {
 
 Describe 'Complete-DFToolSetup' {
     BeforeEach {
-        $script:SavedStateHome = $Env:XDG_STATE_HOME
-        $Env:XDG_STATE_HOME = Join-Path $TestDrive 'state'
+        Set-DFTestXdg
+
     }
 
     AfterEach {
-        $Env:XDG_STATE_HOME = $script:SavedStateHome
+        Restore-DFTestXdg
     }
 
     It 'creates the state file and records actions for a new tool' {

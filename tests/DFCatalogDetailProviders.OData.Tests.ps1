@@ -41,10 +41,10 @@ Describe 'ConvertFrom-DFCatalogODataDetailEntry' {
 
 Describe 'choco + psgallery detail hooks' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
+    AfterEach { Restore-DFTestXdg }
 
     It 'choco: fetches FindPackagesById filtered to the latest version' {
         Mock Invoke-RestMethod { throw "unexpected URI: $Uri" }

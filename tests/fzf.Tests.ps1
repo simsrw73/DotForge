@@ -7,9 +7,9 @@ Describe 'fzf tool sidecar' {
     BeforeEach {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
         $script:SavedFzfOpts    = $Env:FZF_DEFAULT_OPTS
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+
         Remove-Item Env:\FZF_DEFAULT_OPTS -ErrorAction Ignore
 
         # Point at the real Tools directory
@@ -17,12 +17,12 @@ Describe 'fzf tool sidecar' {
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME  = $script:SavedConfigHome
         $Env:FZF_DEFAULT_OPTS = $script:SavedFzfOpts
         $script:DFToolDb      = $null
 
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Invoke-DFApplyFzfTheme'
+        Restore-DFTestXdg
     }
 
     It 'applies the catppuccin-mocha theme by default, preserving the existing non-color options' {

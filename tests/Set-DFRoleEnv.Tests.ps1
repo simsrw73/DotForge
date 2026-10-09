@@ -77,7 +77,6 @@ Describe 'Set-DFRoleEnv' {
 
     It 'remembers what DotForge wrote across a module reload' {
         Set-DFRoleEnv @script:Common -Value 'less' -Reason priority
-        . "$PSScriptRoot/../Private/Set-DFRoleEnv.ps1"   # Import-Module -Force re-runs the file
         Set-DFRoleEnv @script:Common -Value 'moar' -Reason priority
         $Env:DF_TEST_PAGER | Should -Be 'moar'
     }

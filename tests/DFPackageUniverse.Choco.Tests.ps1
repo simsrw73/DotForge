@@ -2,10 +2,10 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     Import-Module PSSQLite
-    . "$PSScriptRoot/../Private/DFCatalog.ps1"
-    . "$PSScriptRoot/../Private/DFXml.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Records.ps1"
-    . "$PSScriptRoot/../Private/DFCatalog.Choco.ps1"
+
+
+
+
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Db.ps1"
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Choco.ps1"
 

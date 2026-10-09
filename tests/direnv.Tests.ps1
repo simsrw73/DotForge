@@ -15,14 +15,14 @@ Describe 'direnv tool JSON' {
 # Scoped narrowly to the hook caching, mirroring zoxide.Tests.ps1/carapace.Tests.ps1.
 Describe 'direnv tool sidecar caching' -Skip:(-not (Get-Command direnv.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME    = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedCacheHome
         # Uninstall the real hook the test installed; see the last Describe.
         $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = $script:OriginalLocationChangedAction
+        Restore-DFTestXdg
     }
 
     It 'caches the real hook script, and does not regenerate it on a second load' {

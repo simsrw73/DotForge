@@ -34,14 +34,14 @@ BeforeAll {
 
 Describe 'DFCatalog.Scoop' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         $script:ScoopRoot = Join-Path $TestDrive 'scoop'
         New-FakeScoopRoot -Root $script:ScoopRoot
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'scoop'), (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item (Join-Path $TestDrive 'scoop'), ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     Context 'Update-DFCatalogScoopIndex' {

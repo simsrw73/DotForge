@@ -5,8 +5,8 @@ BeforeAll {
 
 Describe 'Update-DFPackageCache' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         $script:SavedProviders = $script:DFCatalogProviders
         $script:DFCatalogAvailability = @{}
         $global:DFTestRefreshLog = [System.Collections.Generic.List[string]]::new()
@@ -37,11 +37,11 @@ Describe 'Update-DFPackageCache' {
         }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
         $script:DFCatalogProviders = $script:SavedProviders
         $script:DFCatalogAvailability = @{}
         Remove-Variable -Name DFTestRefreshLog -Scope Global -ErrorAction Ignore
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'refreshes snapshot provider indexes' {

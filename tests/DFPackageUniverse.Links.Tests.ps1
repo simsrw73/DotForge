@@ -3,7 +3,7 @@ BeforeAll {
     foreach ($f in Get-DFTestModuleFile) { . $f }
     Import-Module PSSQLite
     # ConvertTo-DFNormalizedHomepage is reused from the existing identity code.
-    . "$PSScriptRoot/../Private/Resolve-DFToolIdentityCandidateRepo.ps1"
+
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Db.ps1"
     . "$PSScriptRoot/../build/Private/DFPackageUniverse.Links.ps1"
 

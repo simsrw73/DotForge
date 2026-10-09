@@ -25,13 +25,13 @@ Describe 'Resolve-DFGitHubRepoUrl' {
 
 Describe 'Get-DFGitHubRepoInfo' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         $githubCacheDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs/github/details'
         if (Test-Path $githubCacheDir) { Remove-Item $githubCacheDir -Recurse -Force }
         $script:DFGitHubCliOk = $null
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache; $script:DFGitHubCliOk = $null }
+    AfterEach { Restore-DFTestXdg; $script:DFGitHubCliOk = $null }
 
     It 'maps repo + latest release into DotForge.RepoInfo' {
         Mock Invoke-DFGitHubApi {

@@ -47,13 +47,14 @@ Describe 'Get-DFCategoryDb' {
         # (from actual DotForge usage) can be newer than this fixture's fixed
         # 'updated' date and silently win -- isolate it here so every test in
         # this Describe reads only the fixture, not ambient real-world state.
-        $script:SavedDataHome = $Env:XDG_DATA_HOME
-        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'xdg-data-home'
+        # (Tests below that point XDG_DATA_HOME elsewhere restore their own change;
+        # Restore-DFTestXdg then puts back the real values.)
+        Set-DFTestXdg
     }
     AfterEach {
         $script:DFCategoryDb = $null
         $script:DFReleaseDataWarned = @{}
-        $Env:XDG_DATA_HOME = $script:SavedDataHome
+        Restore-DFTestXdg
     }
 
     It 'loads a valid fixture and exposes the raw taxonomy' {

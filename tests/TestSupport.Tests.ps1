@@ -39,3 +39,36 @@ Describe 'Test-file cleanup' {
         $hits | Should -BeNullOrEmpty -Because 'use Remove-DFTestGlobal (tests/TestSupport.ps1)'
     }
 }
+
+Describe 'Set-DFTestXdg / Restore-DFTestXdg' {
+    BeforeAll {
+        $script:Kinds = 'CONFIG', 'CACHE', 'DATA', 'STATE'
+        function script:Get-XdgSnapshot {
+            ($script:Kinds | ForEach-Object { [Environment]::GetEnvironmentVariable("XDG_$($_)_HOME") }) -join '|'
+        }
+    }
+
+    It 'points all four homes under $TestDrive and restores the originals' {
+        $before = Get-XdgSnapshot
+        Set-DFTestXdg
+        foreach ($k in $script:Kinds) {
+            [Environment]::GetEnvironmentVariable("XDG_${k}_HOME") | Should -BeLike "$TestDrive*"
+        }
+        Restore-DFTestXdg
+        Get-XdgSnapshot | Should -Be $before
+    }
+
+    It 'restores each level when nested (outer BeforeAll, inner BeforeEach)' {
+        $before = Get-XdgSnapshot
+        Set-DFTestXdg -Root (Join-Path $TestDrive 'outer')
+        Set-DFTestXdg -Root (Join-Path $TestDrive 'inner')
+        Restore-DFTestXdg
+        $Env:XDG_CONFIG_HOME | Should -Be (Join-Path $TestDrive 'outer' 'config')
+        Restore-DFTestXdg
+        Get-XdgSnapshot | Should -Be $before
+    }
+
+    It 'throws on a Restore with no matching Set, instead of silently leaking' {
+        { Restore-DFTestXdg } | Should -Throw '*without a matching Set-DFTestXdg*'
+    }
+}

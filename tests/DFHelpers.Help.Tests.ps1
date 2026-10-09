@@ -10,12 +10,12 @@ BeforeAll {
         process { $InputObject }
         end { if ($Command) { & $Command } }
     }
-    . "$PSScriptRoot/../Private/ConvertTo-DFPath.ps1"
-    . "$PSScriptRoot/../Public/New-DFDirectory.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
-    . "$PSScriptRoot/../Private/Get-DFHelpTopicList.ps1"
-    . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
-    . "$PSScriptRoot/../Public/DFHelpers.Help.ps1"
+
+
+
+
+
+
 }
 
 Describe 'Invoke-DFHelp' {

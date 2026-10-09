@@ -7,12 +7,12 @@ Describe 'Invoke-DFToolCompanion' {
     BeforeEach {
         $script:TmpTools = Join-Path $TestDrive 'tools'
         New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
-        $script:SavedStateHome = $Env:XDG_STATE_HOME
-        $Env:XDG_STATE_HOME = Join-Path $TestDrive 'state'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_STATE_HOME = $script:SavedStateHome
         Remove-Variable -Name CompanionSawCurrentTool -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'dot-sources the regular companion, exposing $DFCurrentTool to it' {

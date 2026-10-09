@@ -5,12 +5,12 @@ BeforeAll {
 
 Describe 'Get-DFToolSetupState' {
     BeforeEach {
-        $script:SavedStateHome = $Env:XDG_STATE_HOME
-        $Env:XDG_STATE_HOME = Join-Path $TestDrive 'state'
+        Set-DFTestXdg
+
     }
 
     AfterEach {
-        $Env:XDG_STATE_HOME = $script:SavedStateHome
+        Restore-DFTestXdg
     }
 
     It 'returns an empty object when the state file does not exist' {

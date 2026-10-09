@@ -5,8 +5,8 @@ BeforeAll {
 
 Describe 'Find-DFPackage' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         $script:SavedPager = $Env:Pager
         $Env:Pager = $null
         $script:SavedProviders = $script:DFCatalogProviders
@@ -70,10 +70,10 @@ Describe 'Find-DFPackage' {
         Mock Get-DFToolIdentityGuide { [pscustomobject]@{ Raw = $null; IdIndex = @{} } }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
         $Env:Pager = $script:SavedPager
         $script:DFCatalogProviders = $script:SavedProviders
         $script:DFCatalogAvailability = @{}
+        Restore-DFTestXdg
     }
 
     It 'merges hits from multiple catalogs into one DotForge.ToolInfo' {

@@ -41,10 +41,10 @@ Describe 'Initialize-DFEnvironment' {
     }
 
     It 'creates the four XDG base directories' {
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_DATA_HOME   = Join-Path $TestDrive 'data'
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
-        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        $Env:XDG_CONFIG_HOME = $Env:XDG_CONFIG_HOME
+        $Env:XDG_DATA_HOME   = $Env:XDG_DATA_HOME
+        $Env:XDG_STATE_HOME  = $Env:XDG_STATE_HOME
+        $Env:XDG_CACHE_HOME  = $Env:XDG_CACHE_HOME
         Mock Get-Command { $null }
         Initialize-DFEnvironment
         Test-Path $Env:XDG_CONFIG_HOME | Should -BeTrue
@@ -67,10 +67,10 @@ Describe 'Initialize-DFEnvironment' {
 
     It 'is idempotent — calling twice does not throw' {
         Mock Get-Command { $null }
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_DATA_HOME   = Join-Path $TestDrive 'data'
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
-        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+        $Env:XDG_CONFIG_HOME = $Env:XDG_CONFIG_HOME
+        $Env:XDG_DATA_HOME   = $Env:XDG_DATA_HOME
+        $Env:XDG_STATE_HOME  = $Env:XDG_STATE_HOME
+        $Env:XDG_CACHE_HOME  = $Env:XDG_CACHE_HOME
         { Initialize-DFEnvironment; Initialize-DFEnvironment } | Should -Not -Throw
     }
 

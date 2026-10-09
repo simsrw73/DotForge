@@ -5,6 +5,9 @@ BeforeAll {
 }
 
 Describe 'Expand-DFConformanceToken' {
+    BeforeEach { Set-DFTestXdg }
+    AfterEach  { Restore-DFTestXdg }
+
     It 'expands ${SCRATCH} to the scratch dir via literal replace' {
         Expand-DFConformanceToken -Value '${SCRATCH}/bat.conf' -Scratch 'C:\tmp\s' |
             Should -Be 'C:\tmp\s/bat.conf'

@@ -1,7 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
-    . "$PSScriptRoot/../Private/Start-DFCatalogRefreshJob.ps1"   # must exist for Mock
 }
 
 Describe 'New-DFToolSourceDetail' {
@@ -25,13 +24,13 @@ Describe 'New-DFToolSourceDetail' {
 
 Describe 'Get-DFCatalogDetailCache' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         # Pester 5 does not clear TestDrive between Its; wipe the cache dir so
         # each test starts from a genuine miss.
         if (Test-Path $Env:XDG_CACHE_HOME) { Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force }
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
+    AfterEach { Restore-DFTestXdg }
 
     It 'fetches live on miss and writes the cache file' {
         $d = Get-DFCatalogDetailCache -Provider npm -PackageId left-pad -Fetch { param($id)

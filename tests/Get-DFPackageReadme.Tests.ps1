@@ -5,15 +5,15 @@ BeforeAll {
 
 Describe 'Get-DFPackageReadme' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         # Clear the github-readme cache subdir to avoid stale data from earlier It blocks
         $githubReadmeCacheDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge/catalogs/github-readme/details'
         if (Test-Path $githubReadmeCacheDir) {
             Remove-Item $githubReadmeCacheDir -Recurse -Force
         }
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
+    AfterEach { Restore-DFTestXdg }
 
     It 'prefers the npm detail readme' {
         $info = [pscustomobject]@{

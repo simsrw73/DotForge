@@ -9,13 +9,13 @@ BeforeAll {
 # has no pre-existing coverage beyond this and is otherwise out of scope here.
 Describe 'zoxide tool sidecar caching' -Skip:(-not (Get-Command zoxide.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME    = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedCacheHome
         Remove-Alias -Name cd -Scope Global -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'caches the real init script, and does not regenerate it on a second load' {

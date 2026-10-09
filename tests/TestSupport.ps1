@@ -2,6 +2,10 @@
 #     . "$PSScriptRoot/TestSupport.ps1"
 # (Not named *.Tests.ps1, so Pester never runs it as a test file.)
 
+# Set-DFTestXdg's save stack. Initialized here (in the test file's script scope,
+# where this file is dot-sourced) so the helpers stay StrictMode-safe.
+$script:DFTestSavedXdg = [System.Collections.Generic.Stack[hashtable]]::new()
+
 function Get-DFTestModuleFile {
     <#
     .SYNOPSIS
@@ -46,12 +50,15 @@ function Set-DFTestXdg {
         None.
     #>
     param([string]$Root = (Join-Path $TestDrive 'xdg'))
-    $script:DFTestSavedXdg = @{}
+    # A stack, so nested use (BeforeAll in a Describe, BeforeEach in a Context
+    # inside it) restores each level in turn instead of losing the outer save.
+    $saved = @{}
     foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {
         $name = "XDG_${kind}_HOME"
-        $script:DFTestSavedXdg[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+        $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
         [Environment]::SetEnvironmentVariable($name, (Join-Path $Root $kind.ToLowerInvariant()), 'Process')
     }
+    $script:DFTestSavedXdg.Push($saved)
 }
 
 function Restore-DFTestXdg {
@@ -61,11 +68,12 @@ function Restore-DFTestXdg {
     .OUTPUTS
         None.
     #>
-    if (-not $script:DFTestSavedXdg) { return }
-    foreach ($entry in $script:DFTestSavedXdg.GetEnumerator()) {
+    if ($script:DFTestSavedXdg.Count -eq 0) {
+        throw 'Restore-DFTestXdg called without a matching Set-DFTestXdg.'
+    }
+    foreach ($entry in $script:DFTestSavedXdg.Pop().GetEnumerator()) {
         [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, 'Process')
     }
-    $script:DFTestSavedXdg = $null
 }
 
 function Remove-DFTestGlobal {

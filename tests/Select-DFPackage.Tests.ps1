@@ -4,10 +4,10 @@ BeforeAll {
     # Catalogs exist because their provider files register; load the real ones.
     Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
         ForEach-Object { . $_.FullName }
-    . "$PSScriptRoot/../Private/Format-DFToolInfo.ps1"
-    . "$PSScriptRoot/../Public/Find-DFPackage.ps1"
-    . "$PSScriptRoot/../Public/Select-DFPackage.ps1"
-    . "$PSScriptRoot/../Private/Get-DFCategoryDb.ps1"
+
+
+
+
 
     function Initialize-LocalCaches {
         # Scoop index + one cached npm query + installed snapshot — local data only.
@@ -22,8 +22,8 @@ BeforeAll {
 
 Describe 'Get-DFCatalogLocalPackages' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Initialize-LocalCaches
         Mock Get-DFCatalogInstalled {
             @{
@@ -33,8 +33,8 @@ Describe 'Get-DFCatalogLocalPackages' {
         }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'aggregates local caches into one entry per package with merged sources' {
@@ -50,8 +50,8 @@ Describe 'Get-DFCatalogLocalPackages' {
 
 Describe 'Select-DFPackage' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Initialize-LocalCaches
         Mock Get-DFCatalogInstalled { @{ Items = @(); IdentityMap = @{} } }
         function Find-DFPackage {
@@ -68,8 +68,8 @@ Describe 'Select-DFPackage' {
         }   # stub for mocking
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'shows the info card for the picked package' {
@@ -87,7 +87,7 @@ Describe 'Select-DFPackage' {
     }
 
     It 'warns when no local catalog data exists yet' {
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force
         Mock Invoke-DFFzf { $null }
         $warnings = @()
         Select-DFPackage -WarningVariable warnings -WarningAction SilentlyContinue 3>$null

@@ -2,9 +2,9 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/choco.ps1'
-    . "$PSScriptRoot/../Private/Invoke-DFFzf.ps1"
-    . "$PSScriptRoot/../Public/Invoke-DFPicker.ps1"
-    . "$PSScriptRoot/../Private/Invoke-DFPackageManagerPicker.ps1"
+
+
+
 }
 
 Describe 'choco pickers' {

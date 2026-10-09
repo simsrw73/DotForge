@@ -5,8 +5,8 @@ BeforeAll {
 
 Describe 'Resolve-DFCatalogQueryMerge identity resolution' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         $script:SavedProviders = $script:DFCatalogProviders
         $script:DFCatalogAvailability = @{}
 
@@ -37,9 +37,9 @@ Describe 'Resolve-DFCatalogQueryMerge identity resolution' {
         Mock Get-DFToolIdentityGuide { [pscustomobject]@{ Raw = $null; IdIndex = @{} } }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
         $script:DFCatalogProviders = $script:SavedProviders
         $script:DFCatalogAvailability = @{}
+        Restore-DFTestXdg
     }
 
     It 'splits two different-source same-named hits with no identity link at all' {

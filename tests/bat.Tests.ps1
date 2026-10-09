@@ -21,16 +21,16 @@ Describe 'bat tool sidecar' -Skip:(-not (Get-Command bat.exe -ErrorAction Ignore
     BeforeEach {
         $script:DFToolDb       = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+        Set-DFTestXdg
+
         $script:RealTools       = Join-Path $PSScriptRoot '../Tools'
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $script:DFToolDb     = $null
         [System.Environment]::SetEnvironmentVariable('BAT_THEME', $null, 'Process')
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'sets BAT_THEME to Catppuccin Mocha by default' {

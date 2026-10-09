@@ -35,9 +35,9 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
     BeforeEach {
         $script:DFToolDb        = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
         $script:SavedConfigDir  = $Env:GLOW_CONFIG_DIR
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+
         $Env:GLOW_CONFIG_DIR    = $null
 
         # TestDrive persists for the whole file's run, not per-It: without this,
@@ -55,13 +55,13 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
         $Env:GLOW_CONFIG_DIR = $script:SavedConfigDir
         $script:DFToolDb     = $null
 
         Remove-Variable DFConfig    -Scope Global -ErrorAction Ignore
         Remove-Variable DFGlowStyle -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'glow', 'Resolve-DFGlowStyle'
+        Restore-DFTestXdg
     }
 
     It 'wraps glow as a global function' {

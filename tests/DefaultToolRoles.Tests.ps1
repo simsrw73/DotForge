@@ -117,7 +117,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
 
 Describe 'ps-dotenv/mise/direnv share role: project-env (real tool records and sidecars)' {
     BeforeAll {
-        . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1"
+
         $fakeDir = Join-Path $TestDrive 'fake-dotenv\Dotenv'
         New-Item -ItemType Directory -Force $fakeDir | Out-Null
         $script:FakeDotenv = Join-Path $fakeDir 'Dotenv.psm1'

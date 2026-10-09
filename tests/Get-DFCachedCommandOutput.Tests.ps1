@@ -5,8 +5,8 @@ BeforeAll {
 
 Describe 'Get-DFCachedCommandOutput' {
     BeforeEach {
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
 
         # A real file stands in for the resolved executable so LastWriteTimeUtc
@@ -16,7 +16,7 @@ Describe 'Get-DFCachedCommandOutput' {
         Mock Get-Command { [PSCustomObject]@{ Source = $script:FakeExe } }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedCacheHome
+        Restore-DFTestXdg
     }
 
     It 'calls -Generate and caches the result on a cold cache' {

@@ -122,7 +122,7 @@ Describe 'Test-DFToolSchema' {
 
 Describe 'Seed tool JSON files' {
     BeforeAll {
-        . "$PSScriptRoot/../Private/Test-DFToolSchema.ps1"
+
     }
 
     $seedFiles = @(

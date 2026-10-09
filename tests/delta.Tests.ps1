@@ -35,20 +35,20 @@ Describe 'delta tool sidecar' {
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\delta.exe' } }
 
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedStateHome  = $Env:XDG_STATE_HOME
+        Set-DFTestXdg
+
         $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
-        $Env:XDG_STATE_HOME  = Join-Path $TestDrive 'state'
+
+
         $Env:GIT_CONFIG_GLOBAL = Join-Path $TestDrive 'gitconfig'
         Remove-Item $Env:XDG_CONFIG_HOME, $Env:XDG_STATE_HOME, $Env:GIT_CONFIG_GLOBAL -Recurse -Force -ErrorAction Ignore
     }
     AfterEach {
         $Env:DELTA_FEATURES = $script:SavedFeat
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
-        $Env:XDG_CONFIG_HOME   = $script:SavedConfigHome
-        $Env:XDG_STATE_HOME    = $script:SavedStateHome
+
         $Env:GIT_CONFIG_GLOBAL = $script:SavedGitConfigGlobal
+        Restore-DFTestXdg
     }
 
     It 'sets DELTA_FEATURES to the canonical default, additively (+), when no theme is configured' {

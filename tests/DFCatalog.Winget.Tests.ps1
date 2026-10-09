@@ -24,12 +24,12 @@ BeforeAll {
 
 Describe 'DFCatalog.Winget' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedXdgCache
-        Remove-Item (Join-Path $TestDrive 'cache') -Recurse -Force -ErrorAction Ignore
+        Remove-Item ($Env:XDG_CACHE_HOME) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     Context 'index extraction' {

@@ -7,24 +7,24 @@ Describe 'psreadline tool sidecar' {
     BeforeEach {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $script:SavedStateHome  = $Env:XDG_STATE_HOME
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
-        $Env:XDG_STATE_HOME     = Join-Path $TestDrive 'state'
+        Set-DFTestXdg
+
+
+
 
         # Point at the real Tools directory
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
 
     AfterEach {
-        $Env:XDG_CONFIG_HOME = $script:SavedConfigHome
-        $Env:XDG_STATE_HOME  = $script:SavedStateHome
+
         $script:DFToolDb     = $null
 
         Remove-Variable DFConfig              -Scope Global -ErrorAction Ignore
         Remove-Variable DFPSReadLineColors    -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Select-PSReadLineTheme', 'Invoke-DFApplyPSReadLineTheme'
         Remove-Alias fprl -Scope Global -Force -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'registers Select-PSReadLineTheme as a global function' {

@@ -23,18 +23,18 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
         $script:DFToolDb     = $null
         $script:DFToolAvailability = @{}
         $script:SavedTheme   = $Env:MDCAT_THEME
-        $script:SavedCacheHome = $Env:XDG_CACHE_HOME
+        Set-DFTestXdg
         $Env:MDCAT_THEME     = $null
-        $Env:XDG_CACHE_HOME  = Join-Path $TestDrive 'cache'
+
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
     AfterEach {
         $Env:MDCAT_THEME = $script:SavedTheme
-        $Env:XDG_CACHE_HOME = $script:SavedCacheHome
         $script:DFToolDb = $null
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'caches the real completion script, and does not regenerate it on a second registration' {

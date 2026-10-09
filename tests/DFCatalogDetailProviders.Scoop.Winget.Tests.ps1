@@ -77,10 +77,10 @@ Describe 'ConvertFrom-DFCatalogWingetShow' {
 
 Describe 'winget Detail hook wiring' {
     BeforeEach {
-        $script:SavedXdgCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
     }
-    AfterEach { $Env:XDG_CACHE_HOME = $script:SavedXdgCache }
+    AfterEach { Restore-DFTestXdg }
 
     It 'caches winget show output through the detail engine' {
         Mock Invoke-DFCatalogWingetShowCli { @('Version: 1.0', 'Publisher: P') }

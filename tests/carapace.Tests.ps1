@@ -10,20 +10,20 @@ BeforeAll {
 # no pre-existing coverage and is out of scope here.
 Describe 'carapace tool sidecar caching' -Skip:(-not (Get-Command carapace.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
+
         $script:SavedBridges    = $Env:CARAPACE_BRIDGES
-        $Env:XDG_CACHE_HOME     = Join-Path $TestDrive 'cache'
+
         # The companion deploys specs under XDG_CONFIG_HOME; never the user's real one.
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+
         Remove-Item $Env:XDG_CACHE_HOME, $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME    = $script:SavedCacheHome
-        $Env:XDG_CONFIG_HOME   = $script:SavedConfigHome
+
         $Env:CARAPACE_BRIDGES  = $script:SavedBridges
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Restore-DFTestXdg
     }
 
     It 'caches the real init script, and does not regenerate it on a second load' {
@@ -90,8 +90,8 @@ if ($completions.count -eq 0) {
     BeforeEach {
         $script:SavedBridges = $Env:CARAPACE_BRIDGES
         # The companion deploys specs under XDG config; keep it off the real one.
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
-        $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config'
+        Set-DFTestXdg
+
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         $script:Captured = $null
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
@@ -100,7 +100,7 @@ if ($completions.count -eq 0) {
     }
     AfterEach {
         $Env:CARAPACE_BRIDGES = $script:SavedBridges
-        $Env:XDG_CONFIG_HOME  = $script:SavedConfigHome
+        Restore-DFTestXdg
     }
 
     It 'replaces the empty-string sentinel with a bare return when PSFzf is available' {
@@ -127,11 +127,11 @@ if ($completions.count -eq 0) {
 
 Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (Get-Command carapace.exe -ErrorAction Ignore)) {
     BeforeEach {
-        $script:SavedCacheHome  = $Env:XDG_CACHE_HOME
-        $script:SavedConfigHome = $Env:XDG_CONFIG_HOME
+        Set-DFTestXdg
+
         $script:SavedBridges    = $Env:CARAPACE_BRIDGES
-        $Env:XDG_CACHE_HOME     = Join-Path $TestDrive 'cache'
-        $Env:XDG_CONFIG_HOME    = Join-Path $TestDrive 'config'
+
+
         $Env:CARAPACE_BRIDGES   = ''
         Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
@@ -141,9 +141,9 @@ Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (
     }
     AfterEach {
         Pop-Location
-        $Env:XDG_CACHE_HOME   = $script:SavedCacheHome
-        $Env:XDG_CONFIG_HOME  = $script:SavedConfigHome
+
         $Env:CARAPACE_BRIDGES = $script:SavedBridges
+        Restore-DFTestXdg
     }
 
     It 'does not throw on a backslash-relative path and falls back to filesystem completion' {
