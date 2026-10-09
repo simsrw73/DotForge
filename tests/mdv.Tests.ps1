@@ -19,8 +19,8 @@ Describe 'Tools/mdv.json' {
     It 'declares a themeMap translating the canonical family to catppuccin' {
         $script:MdvJson.themeMap.'catppuccin-mocha' | Should -Be 'catppuccin'
     }
-    It 'declares a cargo package' {
-        $script:MdvJson.packages.cargo | Should -Be 'mdv'
+    It 'declares a crates (cargo) package' {
+        $script:MdvJson.packages.crates | Should -Be 'mdv'
     }
 }
 

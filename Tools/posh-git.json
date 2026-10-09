@@ -9,7 +9,7 @@
   ],
   "executable": "posh-git",
   "packages": {
-    "psresource": "posh-git",
+    "psgallery": "posh-git",
     "scoop": "posh-git"
   },
   "xdg": {

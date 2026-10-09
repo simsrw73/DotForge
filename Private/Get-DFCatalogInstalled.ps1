@@ -104,8 +104,9 @@ function Get-DFCatalogInstalled {
     foreach ($tool in $db.Values) {
         if (-not $tool.packages) { continue }
         foreach ($property in $tool.packages.PSObject.Properties) {
-            if ($property.Value) {
-                $key = "$(ConvertTo-DFCatalogSource $property.Name):$(([string]$property.Value).ToLowerInvariant())"
+            $ref = Get-DFPackageRef $property.Value
+            if ($ref) {
+                $key = "$(ConvertTo-DFCatalogSource $property.Name):$($ref.Id.ToLowerInvariant())"
                 $identity[$key] = $tool.name
             }
         }

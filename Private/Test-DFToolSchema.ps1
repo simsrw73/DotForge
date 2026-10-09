@@ -72,10 +72,19 @@ function Test-DFToolSchema {
         $errs.Add('executableExclude must be an array of strings')
     }
 
-    # scoopBucket: { name; url } naming a third-party scoop bucket.
-    $bucket = PSProp $Tool 'scoopBucket'
-    if ($null -ne $bucket -and (-not (PSProp $bucket 'name') -or -not (PSProp $bucket 'url'))) {
-        $errs.Add('scoopBucket must be an object with non-empty name and url')
+    # packages: source -> an id, or { id, feed: { name, url } } for a third-party feed.
+    $pk = PSProp $Tool 'packages'
+    if ($pk -is [pscustomobject]) {
+        foreach ($p in $pk.PSObject.Properties) {
+            $v = $p.Value
+            $feed = if ($v -is [pscustomobject]) { PSProp $v 'feed' }
+            $ok = ($v -is [string]) -or ($v -is [pscustomobject] -and (PSProp $v 'id') -is [string] -and (PSProp $v 'id') -and
+                  ($null -eq $feed -or ((PSProp $feed 'name') -and (PSProp $feed 'url'))))
+            if (-not $ok) { $errs.Add("packages.$($p.Name) must be an id, or { id, feed: { name, url } }") }
+        }
+    }
+    if ($Tool.PSObject.Properties['scoopBucket']) {
+        $errs.Add('scoopBucket was replaced: put { id, feed: { name, url } } in packages.scoop')
     }
 
     # roles: an object keyed by role name; priority is an integer and optIn is a boolean when present.
@@ -195,7 +204,7 @@ function Test-DFToolSchema {
     # data), so only a name that looks like a misspelling of a known one warns.
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
-                 'picker', 'after', 'roles', 'themeMap', 'settings', 'scoopBucket', 'executableExclude',
+                 'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
                  'prewarm', 'role', 'requires', 'setup'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'

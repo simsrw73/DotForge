@@ -46,17 +46,17 @@ Describe 'Get-DFToolIdentityGuide' {
         $guide.IdIndex['scoop:fd'] | Should -Be 'fd'
     }
 
-    It 'keys a package-manager name (cargo) by the catalog that lists it (crates)' {
+    It 'keys a registry source (crates) by its catalog name, and reads a feed object''s id' {
         $saved = $script:DFCatalogProviders.Clone()
         try {
-            Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile 'X:\DFCatalog.Crates.ps1' -PackageManager cargo
+            Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile 'X:\DFCatalog.Crates.ps1'
             @{
                 schemaVersion = 1; updated = '2026-07-01'
-                tools = @{ mdcat = @{ packages = @{ scoop = 'mdcat'; cargo = 'mdcat' }; linkedVia = 'curated' } }
+                tools = @{ mdcat = @{ packages = @{ scoop = @{ id = 'mdcat'; feed = @{ name = 'b'; url = 'https://x' } }; crates = 'mdcat' }; linkedVia = 'curated' } }
             } | ConvertTo-Json -Depth 6 | Set-Content -Path $script:FixturePath -Encoding UTF8
             $guide = Get-DFToolIdentityGuide -Path $script:FixturePath
             $guide.IdIndex['crates:mdcat'] | Should -Be 'mdcat'
-            $guide.IdIndex.ContainsKey('cargo:mdcat') | Should -BeFalse
+            $guide.IdIndex['scoop:mdcat'] | Should -Be 'mdcat'
         } finally { $script:DFCatalogProviders = $saved }
     }
 

@@ -97,7 +97,7 @@ function Install-DFTool {
         $toolPmOrder = @($pmOrder)
         if (-not $PackageManager -and
             $null -ne $packages -and
-            $packages.PSObject.Properties['cargo'] -and
+            $packages.PSObject.Properties['crates'] -and
             $toolPmOrder -notcontains 'cargo') {
             $toolPmOrder += 'cargo'
         }
@@ -110,17 +110,21 @@ function Install-DFTool {
             }
             if (-not $pmAvailable) { continue }
 
-            $pkgProp = if ($null -ne $packages) { $packages.PSObject.Properties[$pm] } else { $null }
-            $pkgId   = if ($null -ne $pkgProp) { $pkgProp.Value } else { $null }
+            # Packages are keyed by source; two managers install from a differently named one.
+            # (Temporary: slice 3 replaces this loop with manager plugins.)
+            $srcKey  = @{ cargo = 'crates'; psresource = 'psgallery' }[$pm] ?? $pm
+            $pkgProp = if ($null -ne $packages) { $packages.PSObject.Properties[$srcKey] } else { $null }
+            $ref     = if ($null -ne $pkgProp) { Get-DFPackageRef $pkgProp.Value } else { $null }
+            $pkgId   = ${ref}?.Id
             if (-not $pkgId) { continue }
 
             if ($PSCmdlet.ShouldProcess("$toolName via $pm ($pkgId)", 'Install')) {
                 # A third-party bucket is added first, so its message (or warning)
                 # gets its own line rather than splitting the progress line below.
                 $installId = $pkgId
-                if ($pm -eq 'scoop' -and $tool.scoopBucket) {
-                    if (-not (Add-DFScoopBucket -Bucket $tool.scoopBucket)) { continue }
-                    $installId = "$($tool.scoopBucket.name)/$pkgId"
+                if ($pm -eq 'scoop' -and $ref.Feed) {
+                    if (-not (Add-DFScoopBucket -Bucket $ref.Feed)) { continue }
+                    $installId = "$($ref.Feed.name)/$pkgId"
                 }
                 Write-Host "  Installing $toolName via $pm ($installId)…" `
                     -ForegroundColor DarkGray -NoNewline

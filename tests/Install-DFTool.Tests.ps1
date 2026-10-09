@@ -74,7 +74,7 @@ Describe 'Install-DFTool' {
 
     It 'installs a cargo-only tool via cargo when scoop/winget/choco lack it' {
         @'
-{ "name": "cargotool", "executable": "cargotool.exe", "packages": { "cargo": "cargotool" } }
+{ "name": "cargotool", "executable": "cargotool.exe", "packages": { "crates": "cargotool" } }
 '@ | Set-Content (Join-Path $script:TmpTools 'cargotool.json')
         $script:DFToolDb = $null
 
@@ -89,7 +89,7 @@ Describe 'Install-DFTool' {
 
     It 'prefers scoop over cargo when both are declared and available' {
         @'
-{ "name": "dualtool", "executable": "dualtool.exe", "packages": { "scoop": "dualtool", "cargo": "dualtool" } }
+{ "name": "dualtool", "executable": "dualtool.exe", "packages": { "scoop": "dualtool", "crates": "dualtool" } }
 '@ | Set-Content (Join-Path $script:TmpTools 'dualtool.json')
         $script:DFToolDb = $null
 
@@ -119,7 +119,7 @@ Describe 'Install-DFTool' {
     It 'installs via Install-PSResource when psresource package is specified' {
         @'
 { "name": "psmod", "type": "module", "executable": "PsMod",
-  "packages": { "psresource": "PsMod" } }
+  "packages": { "psgallery": "PsMod" } }
 '@ | Set-Content (Join-Path $script:TmpTools 'psmod.json')
         $script:DFToolDb = $null
 
@@ -146,8 +146,8 @@ Describe 'Install-DFTool with a scoop bucket' {
         $script:TmpTools = Join-Path $TestDrive "tools-$([guid]::NewGuid())"
         New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
         @'
-{ "name": "bucktool", "executable": "bucktool.exe", "packages": { "scoop": "bucktool" },
-  "scoopBucket": { "name": "testbucket", "url": "https://example.invalid/bucket" } }
+{ "name": "bucktool", "executable": "bucktool.exe",
+  "packages": { "scoop": { "id": "bucktool", "feed": { "name": "testbucket", "url": "https://example.invalid/bucket" } } } }
 '@ | Set-Content (Join-Path $script:TmpTools 'bucktool.json')
         $script:ScoopCalls = [System.Collections.Generic.List[string]]::new()
         $script:Buckets = @('main')

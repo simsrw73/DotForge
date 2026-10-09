@@ -112,4 +112,4 @@ function Get-DFCatalogPSGalleryDetail {
         -Fetch { param($id) Invoke-DFCatalogPSGalleryDetailFetch -PackageId $id }
 }
 
-Register-DFCatalogProvider -Name psgallery -Kind query-cache -Order 7 -SourceFile $PSCommandPath -PackageManager psresource
+Register-DFCatalogProvider -Name psgallery -Kind query-cache -Order 7 -SourceFile $PSCommandPath

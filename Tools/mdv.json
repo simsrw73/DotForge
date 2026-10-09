@@ -9,7 +9,7 @@
   "executable": "mdv.exe",
   "roles": { "markdown-viewer": {} },
   "packages": {
-    "cargo": "mdv"
+    "crates": "mdv"
   },
   "xdg": {
     "compliance": "partial",

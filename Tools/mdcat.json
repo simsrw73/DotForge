@@ -10,7 +10,7 @@
   "roles": { "markdown-viewer": {} },
   "packages": {
     "scoop": "mdcat",
-    "cargo": "mdcat"
+    "crates": "mdcat"
   },
   "xdg": {
     "compliance": "full",

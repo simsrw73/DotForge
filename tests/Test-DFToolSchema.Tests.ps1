@@ -78,11 +78,21 @@ Describe 'Test-DFToolSchema' {
             $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
-        It 'rejects a scoopBucket without both name and url' {
-            $t = '{ "name": "t", "executable": "t.exe", "scoopBucket": { "name": "x" } }' | ConvertFrom-Json
+        It 'rejects the old scoopBucket, pointing at a feed in packages' {
+            $t = '{ "name": "t", "executable": "t.exe", "scoopBucket": { "name": "x", "url": "u" } }' | ConvertFrom-Json
             $errs = @()
             Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'scoopBucket'
+            "$errs" | Should -Match 'scoopBucket was replaced'
+        }
+
+        It 'accepts a packages value that is an id or { id, feed }, and rejects a feed without a url' {
+            foreach ($ok in '"g"', '{ "id": "g", "feed": { "name": "b", "url": "https://u" } }', '{ "id": "g" }') {
+                $errs = @()
+                Test-DFToolSchema -Tool ("{ ""name"": ""t"", ""executable"": ""t.exe"", ""packages"": { ""scoop"": $ok } }" | ConvertFrom-Json) -Errors ([ref]$errs) | Should -BeTrue -Because $ok
+            }
+            $errs = @()
+            Test-DFToolSchema -Tool ('{ "name": "t", "executable": "t.exe", "packages": { "scoop": { "id": "g", "feed": { "name": "b" } } } }' | ConvertFrom-Json) -Errors ([ref]$errs) | Should -BeFalse
+            "$errs" | Should -Match 'packages.scoop'
         }
 
         It 'accepts a one-element executableExclude array' {

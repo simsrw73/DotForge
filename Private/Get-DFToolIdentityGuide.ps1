@@ -47,7 +47,8 @@ function Get-DFToolIdentityGuide {
             $entry = $prop.Value
             if (-not $entry.packages) { continue }
             foreach ($pkgProp in $entry.packages.PSObject.Properties) {
-                $idIndex["$(ConvertTo-DFCatalogSource $pkgProp.Name):$($pkgProp.Value)".ToLowerInvariant()] = $key
+                $ref = Get-DFPackageRef $pkgProp.Value
+                if ($ref) { $idIndex["$(ConvertTo-DFCatalogSource $pkgProp.Name):$($ref.Id)".ToLowerInvariant()] = $key }
             }
         }
     }

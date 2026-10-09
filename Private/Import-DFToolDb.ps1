@@ -129,7 +129,7 @@ function ConvertTo-DFToolRecord {
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
             packages / xdg / env / aliases / picker / themeMap /
-            settings / scoopBucket / setup $null, roles an empty object, executableExclude @()
+            settings / setup $null, roles an empty object, executableExclude @()
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -245,7 +245,6 @@ function ConvertTo-DFToolRecord {
         roles       = [pscustomobject]$roles
         themeMap    = & $get $Tool 'themeMap' $null
         settings    = & $get $Tool 'settings' $null
-        scoopBucket = & $get $Tool 'scoopBucket' $null
         executableExclude = [object[]]@(& $get $Tool 'executableExclude' @())
         prewarm     = [bool](& $get $Tool 'prewarm' $true)
         setup       = $setup

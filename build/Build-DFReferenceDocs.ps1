@@ -244,7 +244,12 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
     & $add 'Detected by' ($(if ($type -eq 'module') { 'module ' } else { '' }) + (& $code $Tool.executable))
     & $add 'Tags' ((@(& $prop $Tool 'tags') | ForEach-Object { & $code $_ }) -join ', ')
     $pk = & $prop $Tool 'packages'
-    if ($pk) { & $add 'Install ids' (($pk.PSObject.Properties | ForEach-Object { "$($_.Name): $(& $code $_.Value)" }) -join '<br>') }
+    if ($pk) {
+        & $add 'Install ids' (($pk.PSObject.Properties | ForEach-Object {
+            $id = if ($_.Value -is [string]) { $_.Value } else { $_.Value.id }
+            $feed = if ($_.Value -isnot [string] -and $_.Value.PSObject.Properties['feed']) { " (feed $(& $code $_.Value.feed.name))" } else { '' }
+            "$($_.Name): $(& $code $id)$feed" }) -join '<br>')
+    }
     $xdg = & $prop $Tool 'xdg'
     if ($xdg) {
         $method = & $prop $xdg 'method'

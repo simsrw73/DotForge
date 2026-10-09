@@ -40,14 +40,14 @@ Describe 'Get-DFCatalogInstalled' {
         $r.IdentityMap['choco:ripgrep'] | Should -Be 'ripgrep'
     }
 
-    It 'keys package-manager names (cargo, psresource) by the catalog that lists them (crates, psgallery)' {
+    It 'keys registry sources (crates, psgallery) by their catalog names' {
         @{
             name = 'mdcat'; executable = 'mdcat.exe'; xdg = @{ method = 'default' }
-            packages = @{ scoop = 'mdcat'; cargo = 'mdcat' }
+            packages = @{ scoop = 'mdcat'; crates = 'mdcat' }
         } | ConvertTo-Json | Set-Content (Join-Path $script:ToolsPath 'mdcat.json')
         @{
             name = 'posh-git'; executable = 'posh-git'; type = 'module'; xdg = @{ method = 'default' }
-            packages = @{ psresource = 'posh-git' }
+            packages = @{ psgallery = 'posh-git' }
         } | ConvertTo-Json | Set-Content (Join-Path $script:ToolsPath 'posh-git.json')
         $r = Get-DFCatalogInstalled -ToolsPath $script:ToolsPath -FetchItems { @() }
         $r.IdentityMap['crates:mdcat'] | Should -Be 'mdcat'

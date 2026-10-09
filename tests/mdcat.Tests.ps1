@@ -13,9 +13,9 @@ Describe 'Tools/mdcat.json' {
     It 'sets a catppuccin MDCAT_THEME default in the env block' {
         $script:McatJson.env.MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
-    It 'declares scoop and cargo packages' {
+    It 'declares scoop and crates (cargo) packages' {
         $script:McatJson.packages.scoop | Should -Be 'mdcat'
-        $script:McatJson.packages.cargo | Should -Be 'mdcat'
+        $script:McatJson.packages.crates | Should -Be 'mdcat'
     }
 }
 

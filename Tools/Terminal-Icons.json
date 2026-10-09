@@ -9,7 +9,7 @@
   ],
   "executable": "Terminal-Icons",
   "packages": {
-    "psresource": "Terminal-Icons"
+    "psgallery": "Terminal-Icons"
   },
   "xdg": {
     "compliance": "none",

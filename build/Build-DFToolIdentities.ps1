@@ -82,8 +82,12 @@ foreach ($file in (Get-ChildItem $ToolsPath -Filter '*.json')) {
     $tool = Get-Content $file.FullName -Raw | ConvertFrom-Json
     if (-not $tool.packages -or @($tool.packages.PSObject.Properties).Count -eq 0) { continue }
 
-    $linkage = & $ResolveLinkage $tool.name $tool.packages $Fresh.IsPresent
-    $entry = [ordered]@{ packages = $tool.packages; linkedVia = $linkage.LinkedVia }
+    # Identity is about package ids only: a { id, feed } value is stored as its id.
+    $ids = [ordered]@{}
+    foreach ($p in $tool.packages.PSObject.Properties) { $ref = Get-DFPackageRef $p.Value; if ($ref) { $ids[$p.Name] = $ref.Id } }
+    $packages = [pscustomobject]$ids
+    $linkage = & $ResolveLinkage $tool.name $packages $Fresh.IsPresent
+    $entry = [ordered]@{ packages = $packages; linkedVia = $linkage.LinkedVia }
     if ($linkage.Repo) { $entry.repo = $linkage.Repo }
     Add-DFIdentityEntry -Key $tool.name -Entry ([pscustomobject]$entry) -SourceLabel "Tools/$($file.Name)"
 }

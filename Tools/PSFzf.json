@@ -12,7 +12,7 @@
   "after": ["psreadline"],
   "requires": ["fzf"],
   "packages": {
-    "psresource": "PSFzf",
+    "psgallery": "PSFzf",
     "scoop": "psfzf"
   },
   "xdg": {

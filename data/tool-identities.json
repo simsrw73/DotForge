@@ -180,13 +180,13 @@
     "mdcat": {
       "packages": {
         "scoop": "mdcat",
-        "cargo": "mdcat"
+        "crates": "mdcat"
       },
       "linkedVia": "curated"
     },
     "mdv": {
       "packages": {
-        "cargo": "mdv"
+        "crates": "mdv"
       },
       "linkedVia": "curated"
     },
@@ -227,7 +227,7 @@
     },
     "posh-git": {
       "packages": {
-        "psresource": "posh-git",
+        "psgallery": "posh-git",
         "scoop": "posh-git"
       },
       "linkedVia": "curated"
@@ -248,7 +248,7 @@
     },
     "PSFzf": {
       "packages": {
-        "psresource": "PSFzf",
+        "psgallery": "PSFzf",
         "scoop": "psfzf"
       },
       "linkedVia": "curated"
@@ -278,7 +278,7 @@
     },
     "Terminal-Icons": {
       "packages": {
-        "psresource": "Terminal-Icons"
+        "psgallery": "Terminal-Icons"
       },
       "linkedVia": "curated"
     },

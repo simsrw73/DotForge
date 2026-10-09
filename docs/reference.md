@@ -2508,7 +2508,7 @@ cat for markdown — render CommonMark in the terminal
 | --- | --- |
 | Detected by | `mdcat.exe` |
 | Tags | `markdown`, `viewer`, `text` |
-| Install ids | scoop: `mdcat`<br>cargo: `mdcat` |
+| Install ids | scoop: `mdcat`<br>crates: `mdcat` |
 | XDG method | `default` |
 | Environment | `MDCAT_THEME` = `catppuccin-mocha` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
@@ -2522,7 +2522,7 @@ Terminal markdown viewer with themes and syntax highlighting
 | --- | --- |
 | Detected by | `mdv.exe` |
 | Tags | `markdown`, `viewer`, `text` |
-| Install ids | cargo: `mdv` |
+| Install ids | crates: `mdv` |
 | XDG method | `env` |
 | XDG variables | `MDV_CONFIG_PATH` = `${XDG_CONFIG_HOME}/mdv` |
 | Creates | `${XDG_CONFIG_HOME}/mdv` |
@@ -2622,7 +2622,7 @@ Git status summary in the PowerShell prompt with tab completion for git commands
 | --- | --- |
 | Detected by | module `posh-git` |
 | Tags | `git`, `prompt`, `module` |
-| Install ids | psresource: `posh-git`<br>scoop: `posh-git` |
+| Install ids | psgallery: `posh-git`<br>scoop: `posh-git` |
 | XDG method | `default` |
 | Companion | [`Tools/posh-git.ps1`](#posh-git-companion) |
 
@@ -2646,7 +2646,7 @@ Loads .env files as you change folders (PowerShell-native direnv alternative)
 | --- | --- |
 | Detected by | module `Dotenv` |
 | Tags | `environment-vars`, `shell-enhancement`, `dev` |
-| Install ids | scoop: `ps-dotenv` |
+| Install ids | scoop: `ps-dotenv` (feed `insomnia`) |
 | XDG method | `default` |
 | Roles | [`project-env`](#project-env-role) |
 | Companion | `Tools/ps-dotenv.ps1` |
@@ -2659,7 +2659,7 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | --- | --- |
 | Detected by | module `PSFzf` |
 | Tags | `fuzzy`, `picker`, `module` |
-| Install ids | psresource: `PSFzf`<br>scoop: `psfzf` |
+| Install ids | psgallery: `PSFzf`<br>scoop: `psfzf` |
 | XDG method | `default` |
 | Requires | `fzf` |
 | Registers after | `psreadline` |
@@ -2744,7 +2744,7 @@ Adds Nerd Font file and folder icons to terminal output (ls, eza, etc.)
 | --- | --- |
 | Detected by | module `Terminal-Icons` |
 | Tags | `icons`, `display`, `module` |
-| Install ids | psresource: `Terminal-Icons` |
+| Install ids | psgallery: `Terminal-Icons` |
 | XDG method | `default` |
 | Companion | `Tools/Terminal-Icons.ps1` |
 
