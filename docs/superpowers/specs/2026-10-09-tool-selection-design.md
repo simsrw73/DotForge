@@ -1,6 +1,6 @@
 # Opt-in tool selection, groups and explicit install: design
 
-**Status:** draft for review · **Date:** 2026-10-09 · **Decided in:** a grilling session (decisions 1–13 below are the user's)
+**Status:** approved 2026-10-09 · **Date:** 2026-10-09 · **Decided in:** a grilling session (decisions 1–14 below are the user's)
 **Related:** `arch-imp-audit-(claude).md` (2026-10-09). This spec reorders that review: it comes first, and candidates 1 and 3 become follow-ups.
 
 ## Context
@@ -50,6 +50,7 @@ The intended model is that the user says which tools they want. At load, DotForg
 | 11 | **`after` (ordering only) and `requires` (hard dependency)** replace `dependsOn`. Requirements are requested automatically; a tool whose requirement is missing isn't activated. |
 | 12 | **`Start-DFSession -Config <hashtable>`** is the single profile entry point. `-Config` is required, the module keeps its own copy, and the global `$DFConfig` is no longer read anywhere. `Initialize-DFEnvironment` is removed. |
 | 13 | Idle activation and the compiled registry are out of scope (follow-ups). |
+| 14 | **`requires` can name a role** as well as a tool: inshellisense needs a JavaScript runtime (node or bun, or a node version manager such as fnm), not fnm itself. |
 
 Defaults chosen while writing this spec. Each is reversible in review.
 
@@ -251,6 +252,12 @@ Package managers are never detected at startup. Only `Install-DFTool` and the pa
 
 - **`after`** affects ordering only, and only among requested tools. It is today's `dependsOn` renamed.
 - **`requires`** auto-requests the named tools and implies `after`. If a required tool is unavailable, the tool isn't activated.
+- **A role requirement** is written `role:<name>`, e.g. `"requires": ["role:js-runtime"]`. A plain name is always a tool, so the two namespaces never collide.
+  - It is satisfied when **any requested, available member** of the role is active.
+  - If no member is requested, the role's winner over all its members (`Defaults`, then priority) is auto-requested, marked `RequestedBy: requires (<tool>)`.
+  - If that member is missing, the requiring tool reports `Missing` with the detail "requires a js-runtime (node, bun or fnm)".
+  - A role requirement implies `after` for every member of the role.
+  - `Resolve-DFRequestedTools` (section 3, step 3) handles both kinds; the schema checks that `role:` names a role in `roles.json`.
 - **The schema validates both** (arrays of tool names; an unknown name is an error), and `dependsOn` is removed. That's no compatibility concern, since there are no users yet.
 
 **Today's `dependsOn` re-sorted:**
@@ -260,7 +267,7 @@ Package managers are never detected at startup. Only `Install-DFTool` and the pa
 | PSFzf | psreadline, fzf | `requires: [fzf]`, `after: [psreadline]` |
 | zoxide | oh-my-posh, starship | `after: [oh-my-posh, starship]` |
 | carapace | fnm, psreadline | `after: [fnm, psreadline]`. The inshellisense bridge degrades without fnm. |
-| inshellisense | psreadline | `requires: [fnm]`? It needs Node on PATH. To verify. Also `after: [psreadline]`. |
+| inshellisense | psreadline | `requires: [role:js-runtime]`, `after: [psreadline]` |
 | others | (see each `Tools/*.json`) | classified one by one during implementation |
 
 ## What's removed
@@ -331,5 +338,5 @@ Package managers are never detected at startup. Only `Install-DFTool` and the pa
 ## Open items for review
 
 - **The draft group list (section 2):** names and members are the user's call.
-- **inshellisense:** does it need `requires: [fnm]`, or only `after`? Verify against how `is` is installed.
+- **The new `js-runtime` role** (decision 14) needs members. fnm joins it, since it provides `node`, and stays in `version-manager`. `nodejs` and `bun` tool records don't exist yet; adding them is a TODO.
 - **The notice threshold** of 5 is a guess. Adjust after living with it.
