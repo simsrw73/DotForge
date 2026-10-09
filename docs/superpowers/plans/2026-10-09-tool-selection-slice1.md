@@ -64,6 +64,11 @@ The user's installed module (`OneDrive\Documents\PowerShell\Modules\DotForge`) i
     - `CHANGELOG.md` (Added/Removed)
     - `CLAUDE.md` (profile shape, Testing section)
 12. **Verify:**
+   - **Result (2026-10-09, 3 runs each, `pwsh -NoProfile`, branch code):**
+     - groups only (28 active): **2.28–2.45 s** (import ~0.72 s, `Start-DFSession` 1.57–1.72 s)
+     - groups plus all 16 extras (44 active): 2.75–3.25 s
+     - baseline (`-All`, 43 active): 3.05–3.12 s
+     - So opt-in saves what you drop (~0.7 s for the 16 extras). The remaining ~2.3 s is import plus a handful of tools (module imports and init scripts): review candidates 1–3 (idle activation, module split, compiled registry) are where the rest is.
     - Run the full suite with the decoy folders.
     - Run a real shell with the new profile shape against a temp XDG: only requested tools are touched, and the notice is correct.
     - Measure startup after, compare with task 1, and record both.
