@@ -3,15 +3,16 @@
 function Invoke-DFToolCompanion {
     <#
     .SYNOPSIS
-        Dot-sources a tool's companion Tools/<name>.ps1 (if present) and its
-        one-time Tools/<name>.setup.ps1 (if present, not yet run, and not
-        skipped), setting $DFCurrentTool around each.
+        Runs a tool's one-time setup step (setup.seed files and
+        Tools/<name>.setup.ps1, if not yet recorded and not skipped), then
+        dot-sources its companion Tools/<name>.ps1, setting $DFCurrentTool
+        around each.
     .DESCRIPTION
-        The regular companion runs every Register-DFTool call. The setup
-        companion runs at most once ever per tool -- see
+        The regular companion runs on every load. The setup step runs first,
+        at most once ever per tool -- see
         docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md --
-        and is responsible for calling Complete-DFToolSetup itself on
-        success; a thrown error here is caught and warned so the next
+        and a setup script is responsible for calling Complete-DFToolSetup
+        itself on success (a tool with only setup.seed is recorded here); a thrown error here is caught and warned so the next
         Register-DFTool call retries it. Dot-sourcing runs the companion
         directly in this function's own scope (not a child scope), so
         $DFCurrentTool set here immediately before each dot-source is what
@@ -23,8 +24,8 @@ function Invoke-DFToolCompanion {
     .PARAMETER ToolsPath
         The resolved Tools/ directory to look for companions in.
     .PARAMETER SkipSetup
-        Tool names ($DFConfig['SkipSetup']) whose one-time setup companion
-        must never run.
+        Tool names (the SkipSetup setting) whose one-time setup step (seeds and
+        script) must never run.
     .PARAMETER WonRoles
         Roles this tool won: { Role; Hook; HookRequired }. After the companion
         runs, each role's hook function, if the companion itself defined it,
@@ -64,6 +65,29 @@ function Invoke-DFToolCompanion {
         WonRoles  = @($WonRoles)
     }
     $__dfCall.HasCompanion = Test-Path $__dfCall.Companion -PathType Leaf
+
+    # The one-time setup step runs first, so the companion can rely on what it
+    # created: setup.seed files, then Tools/<name>.setup.ps1, which records its
+    # own completion. With no script, the seeds are recorded here.
+    $__dfCall.HasSetupScript = Test-Path $__dfCall.Setup -PathType Leaf
+    $__dfCall.HasSeed = [bool]$__dfCall.Tool.PSObject.Properties['setup']?.Value?.seed
+    if (($__dfCall.HasSetupScript -or $__dfCall.HasSeed) -and
+        $__dfCall.Name -notin $__dfCall.SkipSetup -and
+        -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
+        try {
+            $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $ToolsPath)
+            if ($__dfCall.HasSetupScript) {
+                $DFCurrentTool = $__dfCall.Tool
+                . ($__dfCall.Setup)
+            } else {
+                Complete-DFToolSetup -Name $__dfCall.Name -Actions $__dfCall.Seeded
+            }
+        } catch {
+            Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
+        }
+        Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
+    }
+
     if ($__dfCall.HasCompanion) {
         $DFCurrentTool = $__dfCall.Tool
         . ($__dfCall.Companion)
@@ -89,16 +113,4 @@ function Invoke-DFToolCompanion {
         }
     }
     Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
-
-    if ((Test-Path $__dfCall.Setup -PathType Leaf) -and
-        $__dfCall.Name -notin $__dfCall.SkipSetup -and
-        -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
-        $DFCurrentTool = $__dfCall.Tool
-        try {
-            . ($__dfCall.Setup)
-        } catch {
-            Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
-        }
-        Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
-    }
 }

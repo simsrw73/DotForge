@@ -13,7 +13,7 @@
 #      zoxide jump AND fnm's per-directory Node switch.
 #
 # Step 1 only recovers zoxide's binding if zoxide registered first, so fnm.json
-# declares "dependsOn": ["zoxide"] and Register-DFTool topo-sorts zoxide ahead of
+# declares "after": ["zoxide"] and the session topo-sorts zoxide ahead of
 # fnm. With zoxide absent, $global:cdBeforeFnm falls back to Set-Location and fnm
 # still works standalone.
 #

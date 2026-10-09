@@ -8,7 +8,7 @@
 
 Slices 2–4 (`after`/`requires` + setup, install, migration) are separate plans.
 
-> **Update (2026-10-09):** `requires` (tools and `role:<name>`) landed early, after slice 1 went live: npm and inshellisense were reported missing because node is on PATH only after fnm's companion runs. They now `require role:js-runtime`, a category role fnm (priority 20) and mise (10) belong to. Slice 2 still renames `dependsOn` to `after` and adds the setup step.
+> **Update (2026-10-09):** `requires` (tools and `role:<name>`) landed early, after slice 1 went live: npm and inshellisense were reported missing because node is on PATH only after fnm's companion runs. They now `require role:js-runtime`, a category role fnm (priority 20) and mise (10) belong to. Slice 2 (`dependsOn` → `after`, and `setup.seed` folded into the one-time setup step) followed the same day.
 
 **Rules:** TDD for each task. The full suite runs with every `XDG_*_HOME` pointed at an empty sentinel folder, before each commit. Startup is measured before and after the slice.
 

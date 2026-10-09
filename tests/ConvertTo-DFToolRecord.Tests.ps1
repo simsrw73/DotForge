@@ -11,7 +11,7 @@ Describe 'ConvertTo-DFToolRecord' {
         $r.type        | Should -Be 'exe'
         $r.description | Should -Be ''
         @($r.tags).Count      | Should -Be 0
-        @($r.dependsOn).Count | Should -Be 0
+        @($r.after).Count | Should -Be 0
         $r.prewarm     | Should -BeTrue
         foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'settings', 'scoopBucket') {
             $r.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "$p must exist"
@@ -21,12 +21,12 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'keeps every value the record sets, including fields it does not know' {
         $raw = '{ "name": "t", "executable": "t.exe", "type": "module", "prewarm": false,
-                  "tags": ["a"], "dependsOn": ["x"], "customField": 42 }' | ConvertFrom-Json
+                  "tags": ["a"], "after": ["x"], "customField": 42 }' | ConvertFrom-Json
         $r = ConvertTo-DFToolRecord $raw
         $r.type | Should -Be 'module'
         $r.prewarm | Should -BeFalse
         $r.tags | Should -Be @('a')
-        $r.dependsOn | Should -Be @('x')
+        $r.after | Should -Be @('x')
         $r.customField | Should -Be 42
     }
 
@@ -70,7 +70,7 @@ Describe 'ConvertTo-DFToolRecord' {
     It 'normalizes xdg so every xdg field exists' {
         $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t", "xdg": { "method": "env" } }' | ConvertFrom-Json)
         $r.xdg.method | Should -Be 'env'
-        foreach ($p in 'vars', 'dirs', 'config_path', 'config_content', 'instructions') {
+        foreach ($p in 'vars', 'dirs', 'instructions', 'compliance') {
             $r.xdg.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "xdg.$p must exist"
         }
     }
@@ -104,13 +104,14 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
         $fields = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env',
-                  'aliases', 'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'prewarm', 'scoopBucket'
+                  'aliases', 'picker', 'after', 'requires', 'roles', 'themeMap', 'settings', 'prewarm', 'scoopBucket', 'setup'
         foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '..' 'Tools') -Filter '*.json') {
             $r = ConvertTo-DFToolRecord (Get-Content $file.FullName -Raw | ConvertFrom-Json)
             {
                 Set-StrictMode -Version Latest
                 foreach ($f in $fields) { $null = $r.$f }
-                if ($r.xdg) { $null = $r.xdg.method, $r.xdg.vars, $r.xdg.dirs, $r.xdg.config_path, $r.xdg.config_content, $r.xdg.instructions }
+                if ($r.xdg) { $null = $r.xdg.method, $r.xdg.vars, $r.xdg.dirs, $r.xdg.instructions, $r.xdg.compliance }
+                if ($r.setup) { $null = $r.setup.seed }
                 if ($r.picker -is [pscustomobject]) { $null = $r.picker.function, $r.picker.list, $r.picker.alias, $r.picker.action, $r.picker.parse }
                 if ($r.aliases) { foreach ($a in $r.aliases.PSObject.Properties) { $null = $a.Value.command, $a.Value.args } }
             } | Should -Not -Throw -Because $file.Name

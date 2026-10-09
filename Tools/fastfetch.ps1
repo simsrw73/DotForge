@@ -12,26 +12,21 @@ $_settings = $DFCurrentTool.settings
 $_cfgRaw   = $_settings.PSObject.Properties['configPath']?.Value ?? '${XDG_CONFIG_HOME}/fastfetch/config.jsonc'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
 
-New-DFDirectory (Split-Path $_cfg) | Out-Null
-
-if (-not (Test-Path $_cfg)) {
-    $_content = $_settings.PSObject.Properties['configContent']?.Value
-    if ($_content) {
-        Set-Content -Path $_cfg -Value $_content -Encoding UTF8
-    }
-}
+# The themed default config is seeded once by the setup step (setup.seed in
+# fastfetch.json), not here: a config the user deletes stays deleted.
 
 Set-Item -Path 'function:global:fastfetch' -Value ({
     <#
     .SYNOPSIS
         Runs fastfetch with DotForge's config file.
     .DESCRIPTION
-        Wraps fastfetch.exe and always passes --config <path>, because fastfetch
+        Wraps fastfetch.exe and passes --config <path>, because fastfetch
         ignores XDG_CONFIG_HOME on Windows. The path comes from
         settings.configPath in fastfetch.json (default
-        $XDG_CONFIG_HOME\fastfetch\config.jsonc). On first registration the
-        companion seeds that file from settings.configContent if it doesn't
-        exist; after that the file is yours to edit and is never overwritten.
+        $XDG_CONFIG_HOME\fastfetch\config.jsonc). DotForge's one-time setup
+        seeds that file with a themed default; after that it is yours to edit
+        and is never overwritten. If you delete it, fastfetch runs with its
+        own defaults (no --config is passed).
 
         All other arguments, and piped input, are passed to fastfetch unchanged.
         Defined by DotForge's fastfetch companion.
@@ -48,9 +43,10 @@ Set-Item -Path 'function:global:fastfetch' -Value ({
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
+    $cfgArgs = if (Test-Path -LiteralPath $_cfg -PathType Leaf) { '--config', $_cfg } else { @() }
     if ($MyInvocation.ExpectingInput) {
-        $input | & fastfetch.exe --config $_cfg @args
+        $input | & fastfetch.exe @cfgArgs @args
     } else {
-        & fastfetch.exe --config $_cfg @args
+        & fastfetch.exe @cfgArgs @args
     }
 }.GetNewClosure())

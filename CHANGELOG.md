@@ -202,6 +202,13 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Default config files are seeded once, in the one-time setup step.** A tool declares
+  `setup.seed` (destination → a file shipped under `Tools/<name>/`); setup copies each file only if
+  it doesn't exist, before the companion runs, and records that it ran. A config you delete on
+  purpose is no longer recreated on the next load. fastfetch's themed config moved to
+  `Tools/fastfetch/config.jsonc`, and its wrapper passes `--config` only while that file exists.
+  `SkipSetup` now skips seeding too.
+- **PSFzf requires fzf.** Requesting PSFzf requests fzf too; without fzf, PSFzf reports Missing.
 - **`Register-DFTool -Name` adds tools to the current session.** It takes tool names and `+groups`,
   recomputes role winners over the session's tools plus the new ones, reports a missing or
   failed tool in `Get-DFToolStatus`, and re-applies a tool you name even if it is already active.
@@ -268,6 +275,10 @@ All notable changes to DotForge are documented here.
 
 ### Removed
 
+- **`dependsOn` in tool JSON**, replaced by `after` (ordering only, among requested tools) and
+  `requires` (also requests the tool). A record that still uses `dependsOn` fails validation.
+- **`xdg.method: "config"`** (`xdg.config_path`/`config_content`), replaced by `setup.seed`. No
+  shipped tool used it.
 - **`Register-DFTool -All` and `SkipTools`.** DotForge no longer configures whatever happens to be
   installed: list the tools you want in `Start-DFSession -Config @{ Tools = ... }`, and remove
   members of a group with `ExcludeTools`.

@@ -159,7 +159,7 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
 
     Context 'legacy "role" string (role v1 records)' {
         BeforeEach {
-            Write-Tool 'legacytool' '{ "name": "legacytool", "executable": "legacytool.exe", "role": "tlisting", "dependsOn": ["dfrolepager"],
+            Write-Tool 'legacytool' '{ "name": "legacytool", "executable": "legacytool.exe", "role": "tlisting", "after": ["dfrolepager"],
                 "aliases": { "tls": { "command": "legacytool", "args": ["--legacy"] }, "lonly": { "command": "legacytool", "args": ["--only"] } } }'
             function global:legacytool { $global:RoleCalls += "legacytool:$args" }
             function global:dfrolepager { $global:RoleCalls += "dfrolepager:$args" }

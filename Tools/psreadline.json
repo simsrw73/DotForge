@@ -5,7 +5,6 @@
   "tags": ["readline", "completion", "theme", "module"],
   "executable": "PSReadLine",
   "roles": { "completion": {} },
-  "dependsOn": [],
   "prewarm": false,
   "xdg": {
     "compliance": "partial",

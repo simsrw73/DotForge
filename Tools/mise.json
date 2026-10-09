@@ -3,7 +3,7 @@
   "executable": "mise.exe",
   "description": "Dev tool versions, environment variables and tasks per project",
   "tags": ["version-manager", "environment-vars", "dev"],
-  "dependsOn": ["oh-my-posh", "starship"],
+  "after": ["oh-my-posh",  "starship"],
   "packages": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
   "xdg": { "compliance": "full", "method": "default" },
   "roles": { "project-env": { "priority": 20 }, "version-manager": {}, "js-runtime": { "priority": 10 } },

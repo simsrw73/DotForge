@@ -13,8 +13,6 @@
     "method": "default"
   },
   "aliases": {},
-  "dependsOn": [
-    "gsudo"
-  ],
+  "after": ["gsudo"],
   "picker": "custom"
 }

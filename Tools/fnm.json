@@ -14,9 +14,7 @@
     "winget": "Schniz.fnm",
     "choco": "fnm"
   },
-  "dependsOn": [
-    "zoxide"
-  ],
+  "after": ["zoxide"],
   "xdg": {
     "compliance": "partial",
     "method": "env",

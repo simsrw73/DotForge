@@ -11,11 +11,13 @@
   "xdg": {
     "compliance": "none",
     "method": "wrapper",
-    "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and seeds the themed default config on first use."
+    "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc)."
   },
   "settings": {
-    "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc",
-    "configContent": "{\n  \"$schema\": \"https://github.com/fastfetch-cli/fastfetch/raw/2.68.1/doc/json_schema.json\",\n  \"logo\": { \"type\": \"none\" },\n  \"display\": { \"separator\": \"  \", \"color\": { \"keys\": \"#cba6f7\", \"output\": \"#cdd6f4\" } },\n  \"modules\": [\n    \"os\", \"host\", \"kernel\", \"uptime\", \"packages\", \"shell\", \"terminal\",\n    \"cpu\", \"gpu\", { \"type\": \"memory\", \"format\": \"{used} / {total} ({percentage})\" },\n    \"display\", { \"type\": \"localip\", \"format\": \"{ipv4} ({ifname})\" },\n    { \"type\": \"disk\", \"format\": \"{mountpoint} ({filesystem}): {size-used} / {size-total} ({size-percentage})\" },\n    { \"type\": \"physicaldisk\", \"hideVirtual\": true, \"hideUnused\": true, \"format\": \"{name} ({physical-type}, {interconnect}): {size}\" }\n  ]\n}\n"
+    "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc"
+  },
+  "setup": {
+    "seed": { "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc" }
   },
   "aliases": {},
   "picker": null

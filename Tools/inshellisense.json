@@ -8,7 +8,7 @@
   ],
   "executable": "is",
   "roles": { "completion": {}, "tab-completion": { "priority": 0, "optIn": true } },
-  "dependsOn": ["psreadline"],
+  "after": ["psreadline"],
   "requires": ["role:js-runtime"],
   "packages": {
     "npm": "@microsoft/inshellisense"

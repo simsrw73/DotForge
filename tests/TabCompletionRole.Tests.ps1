@@ -16,7 +16,7 @@ Describe 'tab-completion role declarations' {
 
     It 'registers PSFzf after fzf, so fzf''s env block cannot wipe the --ansi PSFzf''s Tab hook adds' {
         # fzf.json sets FZF_DEFAULT_OPTS unconditionally; PSFzf's hook appends --ansi to it.
-        (Get-Content "$PSScriptRoot/../Tools/PSFzf.json" -Raw | ConvertFrom-Json).dependsOn | Should -Contain 'fzf'
+        (Get-Content "$PSScriptRoot/../Tools/PSFzf.json" -Raw | ConvertFrom-Json).requires | Should -Contain 'fzf'
     }
 }
 

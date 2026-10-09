@@ -4,13 +4,14 @@ function Set-DFToolXdgConfig {
     <#
     .SYNOPSIS
         Applies one tool's xdg.method configuration: env vars, directories,
-        a seeded config file, or a manual-instructions warning.
+        or a manual-instructions warning.
     .DESCRIPTION
         Reads $Tool.xdg.method and dispatches accordingly: 'env' sets env
-        vars from xdg.vars that aren't already set and creates xdg.dirs; 'config' seeds a default
-        config file only when absent (never overwrites a user's edits);
+        vars from xdg.vars that aren't already set and creates xdg.dirs;
         'manual' warns with any instructions; 'wrapper' and 'default' are
-        no-ops here (handled by a companion .ps1, or not needed at all).
+        no-ops here (handled by a companion .ps1, or not needed at all). A
+        default config file is seeded once by the setup step (setup.seed,
+        Invoke-DFToolSetup), never here on every load.
     .PARAMETER Tool
         The tool record (from the tool JSON database) to configure.
     .OUTPUTS
@@ -48,16 +49,6 @@ function Set-DFToolXdgConfig {
         }
         'manual' {
             Write-Warning "DotForge: $($Tool.name) requires manual XDG configuration.$(if ($xdg.instructions) { " $($xdg.instructions)" })"
-        }
-        'config' {
-            if ($xdg.config_path) {
-                $expandedPath = Expand-DFXdgPath $xdg.config_path
-                New-DFDirectory (Split-Path $expandedPath)
-                if (-not (Test-Path $expandedPath) -and $xdg.config_content) {
-                    Set-Content -Path $expandedPath -Value $xdg.config_content -Encoding UTF8
-                    Write-Verbose "DotForge: Created default config at $expandedPath"
-                }
-            }
         }
         'wrapper' {
             Write-Verbose "DotForge: $($Tool.name) xdg.method 'wrapper' — handled by companion .ps1"

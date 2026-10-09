@@ -180,10 +180,21 @@ Describe 'Test-DFToolSchema' {
             Get-SchemaErrors @{ themeMap = [pscustomobject]@{ 'catppuccin-mocha' = 'catppuccin' } } | Should -BeNullOrEmpty
             Get-SchemaErrors @{ themeMap = [pscustomobject]@{ 'catppuccin-mocha' = 1 } } | Should -Match 'themeMap'
         }
-        It 'requires dependsOn to be an array of strings, and prewarm a boolean' {
-            Get-SchemaErrors @{ dependsOn = @('fnm') } | Should -BeNullOrEmpty
-            Get-SchemaErrors @{ dependsOn = 'fnm' } | Should -Match 'dependsOn'
-            Get-SchemaErrors @{ dependsOn = @('fnm', 3) } | Should -Match 'dependsOn'
+        It 'rejects the old dependsOn, naming after and requires' {
+            Get-SchemaErrors @{ dependsOn = @('fnm') } | Should -Match 'dependsOn was replaced: use after .* or requires'
+        }
+        It 'rejects xdg.method config, pointing at setup.seed' {
+            Get-SchemaErrors @{ xdg = [pscustomobject]@{ method = 'config' } } | Should -Match 'setup\.seed'
+        }
+        It 'requires setup.seed to map destinations to file names' {
+            Get-SchemaErrors @{ setup = [pscustomobject]@{ seed = [pscustomobject]@{ '${XDG_CONFIG_HOME}/t/c' = 't/c' } } } | Should -BeNullOrEmpty
+            Get-SchemaErrors @{ setup = [pscustomobject]@{ seed = [pscustomobject]@{ '${XDG_CONFIG_HOME}/t/c' = 3 } } } | Should -Match 'setup\.seed'
+            Get-SchemaErrors @{ setup = 'x' } | Should -Match 'setup must be an object'
+        }
+        It 'requires after to be an array of strings, and prewarm a boolean' {
+            Get-SchemaErrors @{ after = @('fnm') } | Should -BeNullOrEmpty
+            Get-SchemaErrors @{ after = 'fnm' } | Should -Match 'after'
+            Get-SchemaErrors @{ after = @('fnm', 3) } | Should -Match 'after'
             Get-SchemaErrors @{ prewarm = $false } | Should -BeNullOrEmpty
             Get-SchemaErrors @{ prewarm = 'false' } | Should -Match 'prewarm'
         }
@@ -199,8 +210,8 @@ Describe 'Test-DFToolSchema' {
         }
 
         It 'warns about a field that looks like a misspelled known field, naming the suggestion' {
-            $w = Get-SchemaWarnings ([pscustomobject]@{ name = 't'; executable = 't.exe'; dependson = @('x'); themMap = [pscustomobject]@{} })
-            "$w" | Should -Match "dependson.*dependsOn"
+            $w = Get-SchemaWarnings ([pscustomobject]@{ name = 't'; executable = 't.exe'; requirs = @('x'); themMap = [pscustomobject]@{} })
+            "$w" | Should -Match "requirs.*requires"
             "$w" | Should -Match "themMap.*themeMap"
         }
         It 'checks inside picker, xdg and role blocks too' {
@@ -221,7 +232,7 @@ Describe 'Test-DFToolSchema' {
         }
         It 'keeps the tool valid when it only has warnings' {
             $errs = @(); $warns = @()
-            Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; dependson = @() }) -Errors ([ref]$errs) -Warnings ([ref]$warns) |
+            Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; requirs = @() }) -Errors ([ref]$errs) -Warnings ([ref]$warns) |
                 Should -BeTrue
         }
     }
@@ -231,10 +242,10 @@ Describe 'Import-DFToolDb schema warnings' {
     It 'loads a tool with a typo warning, and reports the warning with the file name' {
         $dir = Join-Path $TestDrive 'tools-typo'
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        '{ "name": "typotool", "executable": "typo.exe", "dependson": [] }' | Set-Content (Join-Path $dir 'typotool.json')
+        '{ "name": "typotool", "executable": "typo.exe", "requirs": [] }' | Set-Content (Join-Path $dir 'typotool.json')
         $db = Import-DFToolDb -ToolsPath $dir -WarningVariable w 3>$null
         $db.ContainsKey('typotool') | Should -BeTrue
-        "$w" | Should -Match 'typotool\.json.*dependson.*dependsOn'
+        "$w" | Should -Match 'typotool\.json.*requirs.*requires'
     }
 }
 

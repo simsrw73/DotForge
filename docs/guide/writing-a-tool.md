@@ -60,12 +60,13 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker; see below. |
-| `dependsOn` | | Tools that must be registered first, when both are being registered. |
+| `after` | | Tools this one is registered after, when both are requested. Ordering only: it requests nothing. |
 | `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members; it never picks a member for the user, and never blocks. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
 | `themeMap` | | Shared theme name → this tool's own spelling, e.g. `{ "catppuccin-mocha": "Catppuccin Mocha" }`. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |
 | `prewarm` | | `false` stops DotForge pre-loading a module tool in the background. |
+| `setup` | | `{ "seed": { "<destination>": "<file under Tools/>" } }`: default config files copied once, in the one-time setup step (see below). |
 
 ### `xdg.method`
 
@@ -73,7 +74,6 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | --- | --- |
 | `default` | Nothing: the tool already follows XDG. |
 | `env` | Sets each `xdg.vars` variable that isn't already set (a value you set yourself is kept), and creates each folder in `xdg.dirs`. Values are `${XDG_*}` path templates only. |
-| `config` | Writes `xdg.config_content` to `xdg.config_path` if that file doesn't exist; never overwrites it. |
 | `wrapper` | Nothing in the record; the companion script wraps the executable (as glow and fastfetch do). |
 | `manual` | Warns, with `xdg.instructions`, that the user must configure it. |
 
@@ -140,14 +140,25 @@ function Initialize-DFRolePrompt {
 
 `tests/Roles.Contract.Tests.ps1` checks every rule above for every tool.
 
-## One-time setup scripts
+## One-time setup
 
-For a persistent change the user may later undo, such as a line in their global git config, add `Tools/<name>.setup.ps1`. It runs at most once per machine:
+Setup runs at most once per machine, the first time the tool is activated, before its companion script. It has two parts, either or both.
+
+**Seeding a default config file.** Ship the file under `Tools/<name>/` and declare it in `setup.seed`, keyed by its destination:
+
+```json
+"setup": { "seed": { "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc" } }
+```
+
+A file that already exists is kept. Because seeding is part of setup, a file the user deletes on purpose isn't recreated on the next load. Files DotForge owns and must keep current (carapace's specs, delta's theme) are deployed by the companion on every load instead.
+
+**A setup script.** For a persistent change the user may later undo, such as a line in their global git config, add `Tools/<name>.setup.ps1`. It runs after the seeds:
 
 - It must call `Complete-DFToolSetup -Name <name>` as its last line, and only after its work succeeded. If it throws, nothing is recorded and it runs again next time.
 - Once recorded in `$XDG_STATE_HOME\dotforge\setup-state.json`, it never runs again, so a user's edit or removal sticks.
 - Print what you changed and how to undo it.
-- Users can opt out with `$DFConfig.SkipSetup = @('<name>')`.
+- Without a script, DotForge records the seeds itself.
+- Users can opt out of the whole setup step with `SkipSetup = @('<name>')` in their `Start-DFSession` config.
 
 ## Check your work
 
@@ -179,7 +190,7 @@ Invoke-Pester tests/ -Output Detailed
 | `Unknown tool '<name>'` | the record was skipped as invalid, or you used a different name than its `name` field | Look for a `schema errors` warning; tools are looked up by `name`, not file name. |
 | An edit to a record in `Tools\` has no effect | the tool database is read once per session | `Import-Module ./DotForge.psd1 -Force`, or a new shell. |
 | A companion's function disappears after registration | defined without `global:` | Use `function global:Name`. |
-| `circular dependency detected in tool dependsOn` | two tools depend on each other | Remove one direction; DotForge falls back to an unordered registration. |
+| `circular dependency detected in tool after/requires` | two tools depend on each other | Remove one direction; DotForge falls back to an unordered registration. |
 | An `xdg.vars` value isn't applied | the variable was already set | Expected: user values win. Clear it to test. |
 
 More on the [troubleshooting page](troubleshooting.md).

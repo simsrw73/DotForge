@@ -34,8 +34,8 @@ function Enable-DFCarapaceInshellisenseBridge {
 # and never overrides TabExpansion. Tab itself is bound once, after every tool has
 # registered. Tab ownership is selected by the tab-completion role; both route through
 # TabExpansion2, which consults these completers. Registration order is
-# irrelevant, so no dependsOn on PSFzf is declared. (carapace.json does declare
-# "dependsOn": ["fnm"] so fnm puts the Node-hosted `is` on PATH before the bridge
+# irrelevant, so no after on PSFzf is declared. (carapace.json does declare
+# "after": ["fnm"] so fnm puts the Node-hosted `is` on PATH before the bridge
 # check below.)
 #
 # Argument completers are registered session-wide by the engine regardless of the

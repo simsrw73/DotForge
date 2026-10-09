@@ -268,8 +268,12 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
         $what = if ($action -eq 'output') { 'outputs the selection' } else { 'runs ' + (& $code $action) }
         & $add 'Picker' "$(& $code (& $prop $picker 'alias')) ($(& $prop $picker 'function')): lists $(& $code (& $prop $picker 'list')); Enter $what"
     }
-    $deps = & $prop $Tool 'dependsOn'
+    $req = & $prop $Tool 'requires'
+    if ($req) { & $add 'Requires' ((@($req) | ForEach-Object { & $code $_ }) -join ', ') }
+    $deps = & $prop $Tool 'after'
     if ($deps) { & $add 'Registers after' ((@($deps) | ForEach-Object { & $code $_ }) -join ', ') }
+    $seed = (& $prop $Tool 'setup')?.PSObject.Properties['seed']?.Value
+    if ($seed) { & $add 'Seeds once' ((@($seed.PSObject.Properties.Name) | ForEach-Object { & $code $_ }) -join '<br>') }
     $roles = & $prop $Tool 'roles'
     $roleNames = @(if ($roles) { $roles.PSObject.Properties.Name })
     if (& $prop $Tool 'role') { $roleNames += & $prop $Tool 'role' }

@@ -15,7 +15,7 @@ function Invoke-DFSessionActivation {
         The shared core of Start-DFSession and Register-DFTool -Name. For the
         given request entries (Resolve-DFRequestedTools output):
           - reads only those tool records (Import-DFToolDb -Name);
-          - orders them by dependsOn;
+          - orders them by after and requires;
           - picks role winners among them (Get-DFRoleWinners);
           - activates each installed one through Invoke-DFToolRegistration,
             including its one-time setup. A failure is recorded as Failed with

@@ -172,7 +172,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         'throw "sidecar boom"' | Set-Content (Join-Path $script:TmpTools 'aaa-broken.ps1')
         # Registered after aaa-broken regardless of hash order.
         $json = Get-Content (Join-Path $script:TmpTools 'testtool.json') -Raw | ConvertFrom-Json
-        $json | Add-Member dependsOn @('aaa-broken')
+        $json | Add-Member after @('aaa-broken')
         $json | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $script:TmpTools 'testtool.json')
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
 
@@ -224,31 +224,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $script:DFToolDb = $null
     }
 
-    It 'xdg method config: creates config file if it does not exist' {
-        $configPath = Join-Path $TestDrive 'cfgtool' 'config.conf'
-        $escapedPath = $configPath -replace '\\', '/'
-        @"
-{
-  "name": "cfgtool",
-  "executable": "cfgtool.exe",
-  "xdg": {
-    "compliance": "partial",
-    "method": "config",
-    "config_path": "$escapedPath",
-    "config_content": "# default config"
-  }
-}
-"@ | Set-Content (Join-Path $script:TmpTools 'cfgtool.json')
-
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\cfgtool.exe' } }
-        Register-DFTool -Name 'cfgtool' -ToolsPath $script:TmpTools
-        Test-Path $configPath | Should -BeTrue
-        Get-Content $configPath | Should -Be '# default config'
-
-        Remove-Item (Join-Path $script:TmpTools 'cfgtool.json') -ErrorAction Ignore
-        $script:DFToolDb = $null
-    }
-
     It 'uses Get-Module -ListAvailable for type=module tools' {
         @'
 { "name": "mymod", "type": "module", "executable": "MyModule" }
@@ -264,39 +239,13 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $script:DFToolDb = $null
     }
 
-    It 'xdg method config: does not overwrite existing config file' {
-        $configPath = Join-Path $TestDrive 'cfgtool2' 'config.conf'
-        New-Item -ItemType Directory -Force -Path (Split-Path $configPath) | Out-Null
-        'user content' | Set-Content $configPath
-        $escapedPath = $configPath -replace '\\', '/'
-        @"
-{
-  "name": "cfgtool2",
-  "executable": "cfgtool2.exe",
-  "xdg": {
-    "compliance": "partial",
-    "method": "config",
-    "config_path": "$escapedPath",
-    "config_content": "# default config"
-  }
-}
-"@ | Set-Content (Join-Path $script:TmpTools 'cfgtool2.json')
-
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\cfgtool2.exe' } }
-        Register-DFTool -Name 'cfgtool2' -ToolsPath $script:TmpTools
-        Get-Content $configPath | Should -Be 'user content'
-
-        Remove-Item (Join-Path $script:TmpTools 'cfgtool2.json') -ErrorAction Ignore
-        $script:DFToolDb = $null
-    }
-
-    It 'registers psreadline before PSFzf when PSFzf has dependsOn = ["psreadline"]' {
+    It 'registers psreadline before PSFzf when PSFzf has after = ["psreadline"]' {
         @'
-{ "name": "psreadline", "type": "module", "executable": "PSReadLine", "dependsOn": [] }
+{ "name": "psreadline", "type": "module", "executable": "PSReadLine", "after": [] }
 '@ | Set-Content (Join-Path $script:TmpTools 'psreadline.json')
 
         @'
-{ "name": "PSFzf", "type": "module", "executable": "PSFzf", "dependsOn": ["psreadline"] }
+{ "name": "PSFzf", "type": "module", "executable": "PSFzf", "after": ["psreadline"] }
 '@ | Set-Content (Join-Path $script:TmpTools 'PSFzf.json')
 
         # Record registration order via sentinels
@@ -582,6 +531,75 @@ throw 'boom: setup deliberately fails'
         Get-Alias tsf -ErrorAction Ignore | Should -Not -BeNullOrEmpty
     }
 
+    Context 'setup.seed' {
+        BeforeEach {
+            # seedtool seeds ${XDG_CONFIG_HOME}/seedtool/config.conf from Tools/seedtool/default.conf.
+            New-Item -ItemType Directory -Force (Join-Path $script:TmpTools 'seedtool') | Out-Null
+            Set-Content (Join-Path $script:TmpTools 'seedtool' 'default.conf') '# seeded default' -NoNewline
+            @'
+{ "name": "seedtool", "executable": "seedtool.exe",
+  "setup": { "seed": { "${XDG_CONFIG_HOME}/seedtool/config.conf": "seedtool/default.conf" } } }
+'@ | Set-Content (Join-Path $script:TmpTools 'seedtool.json')
+            # The companion records whether the seeded file already existed when it ran.
+            '$global:__DFTestSeenSeed = Test-Path (Join-Path $Env:XDG_CONFIG_HOME "seedtool" "config.conf")' |
+                Set-Content (Join-Path $script:TmpTools 'seedtool.ps1')
+            $script:SeedDest = Join-Path $Env:XDG_CONFIG_HOME 'seedtool' 'config.conf'
+            Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\seedtool.exe' } }
+        }
+        AfterEach {
+            Remove-Item (Join-Path $script:TmpTools 'seedtool*') -Recurse -Force -ErrorAction Ignore
+            Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'seedtool') -Recurse -Force -ErrorAction Ignore
+            Remove-Variable __DFTestSeenSeed -Scope Global -ErrorAction Ignore
+        }
+
+        It 'copies the seed before the companion runs, and records it' {
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            Get-Content $script:SeedDest -Raw | Should -Be '# seeded default'
+            $global:__DFTestSeenSeed | Should -BeTrue
+            $a = (Get-DFToolSetupState).seedtool.actions[0]
+            $a.type | Should -Be 'seedConfig'
+            $a.created | Should -BeTrue
+        }
+
+        It 'keeps an existing file, and records that it was kept' {
+            New-Item -ItemType Directory -Force (Split-Path $script:SeedDest) | Out-Null
+            Set-Content $script:SeedDest 'user content' -NoNewline
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            Get-Content $script:SeedDest -Raw | Should -Be 'user content'
+            (Get-DFToolSetupState).seedtool.actions[0].created | Should -BeFalse
+        }
+
+        It 'does not recreate a seeded file the user deleted' {
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            Remove-Item $script:SeedDest
+            Reset-DFTestSession
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            Test-Path $script:SeedDest | Should -BeFalse
+        }
+
+        It 'seeds nothing when the tool is in SkipSetup' {
+            Set-DFTestConfig @{ SkipSetup = @('seedtool') }
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            Test-Path $script:SeedDest | Should -BeFalse
+            (Get-DFToolSetupState).PSObject.Properties['seedtool'] | Should -BeNullOrEmpty
+        }
+
+        It 'runs a setup script after the seeds, and leaves recording to it' {
+            'if (Test-Path (Join-Path $Env:XDG_CONFIG_HOME "seedtool" "config.conf")) { Complete-DFToolSetup -Name seedtool -Actions @(@{ type = "script" }) }' |
+                Set-Content (Join-Path $script:TmpTools 'seedtool.setup.ps1')
+            Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
+            (Get-DFToolSetupState).seedtool.actions[0].type | Should -Be 'script'
+        }
+
+        It 'warns and records nothing when a seed source is missing, so the next load retries' {
+            Remove-Item (Join-Path $script:TmpTools 'seedtool' 'default.conf')
+            $w = Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools 3>&1 |
+                Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+            "$w" | Should -Match 'seedtool one-time setup failed: seed source'
+            (Get-DFToolSetupState).PSObject.Properties['seedtool'] | Should -BeNullOrEmpty
+        }
+    }
+
     It 'never dot-sources setup.ps1 for a tool not found on PATH' {
         Mock Get-Command { $null }
         Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
@@ -592,7 +610,7 @@ throw 'boom: setup deliberately fails'
 
 Describe 'Invoke-DFTopoSort' {
     BeforeEach { Reset-DFTestSession }
-    It 'returns tools unchanged when no dependsOn fields present' {
+    It 'returns tools unchanged when no after fields present' {
         $tools = @(
             [PSCustomObject]@{ name = 'zzz' },
             [PSCustomObject]@{ name = 'aaa' }
@@ -604,8 +622,8 @@ Describe 'Invoke-DFTopoSort' {
 
     It 'places dependency before dependent tool' {
         $tools = @(
-            [PSCustomObject]@{ name = 'PSFzf';    dependsOn = @('psreadline') },
-            [PSCustomObject]@{ name = 'psreadline'; dependsOn = @() }
+            [PSCustomObject]@{ name = 'PSFzf';    after = @('psreadline') },
+            [PSCustomObject]@{ name = 'psreadline'; after = @() }
         )
         $result = Invoke-DFTopoSort -Tools $tools
         $result[0].name | Should -Be 'psreadline'
@@ -614,9 +632,9 @@ Describe 'Invoke-DFTopoSort' {
 
     It 'handles three-tool chain: a -> b -> c' {
         $tools = @(
-            [PSCustomObject]@{ name = 'c'; dependsOn = @('b') },
-            [PSCustomObject]@{ name = 'a'; dependsOn = @() },
-            [PSCustomObject]@{ name = 'b'; dependsOn = @('a') }
+            [PSCustomObject]@{ name = 'c'; after = @('b') },
+            [PSCustomObject]@{ name = 'a'; after = @() },
+            [PSCustomObject]@{ name = 'b'; after = @('a') }
         )
         $result = Invoke-DFTopoSort -Tools $tools
         $result[0].name | Should -Be 'a'
@@ -626,7 +644,7 @@ Describe 'Invoke-DFTopoSort' {
 
     It 'ignores dep not present in the tool set (no error, tool still registered)' {
         $tools = @(
-            [PSCustomObject]@{ name = 'PSFzf'; dependsOn = @('psreadline') }
+            [PSCustomObject]@{ name = 'PSFzf'; after = @('psreadline') }
         )
         { $result = Invoke-DFTopoSort -Tools $tools } | Should -Not -Throw
         $result = Invoke-DFTopoSort -Tools $tools
@@ -636,8 +654,8 @@ Describe 'Invoke-DFTopoSort' {
 
     It 'emits a warning and returns original order on cycle' {
         $tools = @(
-            [PSCustomObject]@{ name = 'a'; dependsOn = @('b') },
-            [PSCustomObject]@{ name = 'b'; dependsOn = @('a') }
+            [PSCustomObject]@{ name = 'a'; after = @('b') },
+            [PSCustomObject]@{ name = 'b'; after = @('a') }
         )
         $warns = $null
         $result = Invoke-DFTopoSort -Tools $tools -WarningVariable warns 3>$null

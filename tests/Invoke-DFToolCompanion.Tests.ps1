@@ -45,7 +45,10 @@ owhere.setup.ps1'
 function Initialize-DFRoleOne { param($Tool, $Role) $global:ClobCalls += "one:$($Tool.name)"; $won = $null; $WonRoles = @(); $hook = $null }
 function Initialize-DFRoleTwo { param($Tool, $Role) $global:ClobCalls += "two:$($Tool.name)" }
 '@ | Set-Content (Join-Path $script:TmpTools 'clobtool.ps1')
-        '$global:ClobCalls += "setup"' | Set-Content (Join-Path $script:TmpTools 'clobtool.setup.ps1')
+        # The setup script runs first (before the companion) and clobbers the same names.
+        '$global:ClobCalls += "setup"; $Tool = $null; $ToolsPath = "C:
+owhere"; $WonRoles = @()' |
+            Set-Content (Join-Path $script:TmpTools 'clobtool.setup.ps1')
         $global:ClobCalls = @()
         $tool = '{ "name": "clobtool" }' | ConvertFrom-Json
         $won = @(
@@ -54,7 +57,7 @@ function Initialize-DFRoleTwo { param($Tool, $Role) $global:ClobCalls += "two:$(
         )
         try {
             Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:TmpTools -WonRoles $won -WarningAction SilentlyContinue
-            $global:ClobCalls | Should -Be @('one:clobtool', 'two:clobtool', 'setup')
+            $global:ClobCalls | Should -Be @('setup', 'one:clobtool', 'two:clobtool')
         } finally { Remove-Variable ClobCalls -Scope Global -ErrorAction Ignore }
     }
 

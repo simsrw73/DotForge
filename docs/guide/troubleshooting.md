@@ -51,7 +51,7 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | `Unknown tool '<name>'` | not a DotForge tool name | `Get-DFTool \| Select-Object name` lists valid names. |
 | `Could not install '<tool>'. No compatible package manager from: <list>` | no installed manager has a package id for the tool, or every attempt failed | Install another manager, or install the tool yourself. |
 | `<tool> one-time setup failed: <error>` | the tool's setup script threw | Fix the cause shown; setup retries on the next `Register-DFTool`. |
-| `circular dependency detected in tool dependsOn` | two tool records depend on each other | A bug in the tool records; tools still register, unordered. |
+| `circular dependency detected in tool after/requires` | two tool records depend on each other | A bug in the tool records; tools still register, unordered. |
 | `<file> schema errors: <errors>` or `Failed to parse <file>` | a tool record is invalid | That tool is skipped. See [writing a tool record](writing-a-tool.md). |
 | A tool you installed isn't configured | it isn't on `PATH` in this shell yet, or it isn't in `Tools` | Open a new shell; add it to `Tools`, or run `Register-DFTool -Name <tool> -Verbose`. |
 

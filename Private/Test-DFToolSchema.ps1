@@ -7,7 +7,7 @@ function Test-DFToolSchema {
         Returns $true if valid; populates -Errors with any violation messages.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, dependsOn, requires, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, after, requires, setup, prewarm and role blocks.
         Errors are collected into a list and returned via the -Errors reference parameter.
     .PARAMETER Tool
         The tool PSCustomObject to validate (typically parsed from JSON).
@@ -58,10 +58,10 @@ function Test-DFToolSchema {
     }
 
     # xdg.method valid values
-    $validMethods = @('default', 'env', 'config', 'wrapper', 'manual')
+    $validMethods = @('default', 'env', 'wrapper', 'manual')
     $xdgMethod = PSProp (PSProp $Tool 'xdg') 'method'
     if ($xdgMethod -and $xdgMethod -notin $validMethods) {
-        $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')")
+        $errs.Add("Invalid xdg.method '$xdgMethod'. Valid: $($validMethods -join ', ')$(if ($xdgMethod -eq 'config') { ". Seed a default config file with setup.seed instead" })")
     }
 
     # executableExclude: glob patterns of install locations to skip.
@@ -137,9 +137,21 @@ function Test-DFToolSchema {
         }
     }
 
-    $dependsOn = $Tool.PSObject.Properties['dependsOn']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $dependsOn -and ($dependsOn -isnot [array] -or @($dependsOn | Where-Object { $_ -isnot [string] }).Count)) {
-        $errs.Add('dependsOn must be an array of tool names')
+    if ($Tool.PSObject.Properties['dependsOn']) {
+        $errs.Add('dependsOn was replaced: use after (ordering only) or requires (the tool cannot work without it)')
+    }
+    $after = $Tool.PSObject.Properties['after']?.Value   # read directly: a helper would unroll ["x"]
+    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] }).Count)) {
+        $errs.Add('after must be an array of tool names')
+    }
+    $setup = $Tool.PSObject.Properties['setup']?.Value
+    if ($null -ne $setup) {
+        $seed = $setup.PSObject.Properties['seed']?.Value
+        if ($setup -isnot [pscustomobject]) {
+            $errs.Add('setup must be an object')
+        } elseif ($null -ne $seed -and ($seed -isnot [pscustomobject] -or @($seed.PSObject.Properties | Where-Object { $_.Value -isnot [string] -or -not $_.Value }).Count)) {
+            $errs.Add('setup.seed must map destination paths to files under Tools/')
+        }
     }
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
     if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
@@ -183,11 +195,12 @@ function Test-DFToolSchema {
     # data), so only a name that looks like a misspelling of a known one warns.
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
-                 'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'scoopBucket', 'executableExclude',
-                 'prewarm', 'role', 'requires'
+                 'picker', 'after', 'roles', 'themeMap', 'settings', 'scoopBucket', 'executableExclude',
+                 'prewarm', 'role', 'requires', 'setup'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
-        xdg    = 'method', 'vars', 'dirs', 'config_path', 'config_content', 'instructions', 'compliance'
+        xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
+        setup  = 'seed'
         role   = 'priority', 'optIn', 'aliases', 'env'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
@@ -195,6 +208,8 @@ function Test-DFToolSchema {
     if ($picker -is [pscustomobject]) { $sections.Add(@('picker', $picker, 'picker.')) }
     $xdg = PSProp $Tool 'xdg'
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
+    $setupObj = PSProp $Tool 'setup'
+    if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
     if ($roles -is [pscustomobject]) {
         foreach ($r in $roles.PSObject.Properties) {
             if ($r.Value -is [pscustomobject]) { $sections.Add(@('role', $r.Value, "roles.$($r.Name).")) }

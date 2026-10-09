@@ -45,7 +45,7 @@ Describe 'mise activation scope' {
 Describe 'Tools/mise.json' {
     It 'registers after the prompt engines, because activation wraps the prompt' {
         $j = Get-Content (Join-Path $PSScriptRoot '../Tools/mise.json') -Raw | ConvertFrom-Json
-        $j.dependsOn | Should -Contain 'oh-my-posh'
-        $j.dependsOn | Should -Contain 'starship'
+        $j.after | Should -Contain 'oh-my-posh'
+        $j.after | Should -Contain 'starship'
     }
 }

@@ -19,7 +19,7 @@ Describe 'prompt engine ordering against zoxide' {
         @{ Engine = 'oh-my-posh' }
     ) {
         # .NET randomizes string hashes per process, so hash order can't be
-        # relied on to expose a missing dependsOn — put zoxide first on purpose.
+        # relied on to expose a missing after — put zoxide first on purpose.
         $tools = @($script:Db['zoxide']) + @($script:Db.Values | Where-Object name -ne 'zoxide')
         $order = @(Invoke-DFTopoSort -Tools $tools).name
         $order.IndexOf($Engine) | Should -BeGreaterOrEqual 0

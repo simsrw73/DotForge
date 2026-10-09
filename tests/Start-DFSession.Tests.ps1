@@ -103,7 +103,7 @@ Describe 'Start-DFSession' {
         $bin = Join-Path $TestDrive "fakenode-$([guid]::NewGuid().ToString('N').Substring(0, 6))"
         New-Item -ItemType Directory $bin | Out-Null
         Set-Content (Join-Path $bin 'nodetool.cmd') '@echo off'
-        Set-Content (Join-Path $script:Tools 'nodetool.json') '{ "name": "nodetool", "executable": "nodetool.cmd", "dependsOn": ["vm"] }'
+        Set-Content (Join-Path $script:Tools 'nodetool.json') '{ "name": "nodetool", "executable": "nodetool.cmd", "after": ["vm"] }'
         Set-Content (Join-Path $script:Tools 'vm.json') '{ "name": "vm", "executable": "vm.exe" }'
         "`$Env:Path = '$bin;' + `$Env:Path" | Set-Content (Join-Path $script:Tools 'vm.ps1')
         $script:Installed += 'vm.exe'

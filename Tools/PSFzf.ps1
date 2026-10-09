@@ -3,7 +3,7 @@
 #   Alt+C   fuzzy cd (through zoxide's z when zoxide is installed)
 #   Tab     fuzzy tab completion (when PSFzf wins tab-completion)
 # plus fd for file listing and fuzzy scoop aliases. PSFzf declares
-# "dependsOn": ["psreadline"], so psreadline.ps1's settings are applied first.
+# "after": ["psreadline"], so psreadline.ps1's settings are applied first.
 # Reads nothing from $DFConfig; writes no files.
 Import-Module PSFzf -ErrorAction SilentlyContinue
 

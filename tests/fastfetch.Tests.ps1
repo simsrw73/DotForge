@@ -19,24 +19,31 @@ Describe 'Tools/fastfetch.json' {
         $script:FastfetchJson.xdg.PSObject.Properties['vars'] | Should -BeNullOrEmpty
     }
 
+    It 'seeds its bundled config to the path the wrapper passes with --config' {
+        $seed = $script:FastfetchJson.setup.seed.PSObject.Properties
+        @($seed).Count | Should -Be 1
+        $seed.Name | Should -Be $script:FastfetchJson.settings.configPath
+        Test-Path (Join-Path "$PSScriptRoot/../Tools" $seed.Value) -PathType Leaf | Should -BeTrue
+    }
+
     It 'ships a seeded config that parses as JSON' {
-        { $script:FastfetchJson.settings.configContent | ConvertFrom-Json } | Should -Not -Throw
+        { Get-Content "$PSScriptRoot/../Tools/fastfetch/config.jsonc" -Raw | ConvertFrom-Json } | Should -Not -Throw
     }
 
     It 'excludes the publicip module (measured 2.87s cold-path network spike during design)' {
-        $config = $script:FastfetchJson.settings.configContent | ConvertFrom-Json
+        $config = Get-Content "$PSScriptRoot/../Tools/fastfetch/config.jsonc" -Raw | ConvertFrom-Json
         $config.modules | Should -Not -Contain 'publicip'
     }
 }
 
 Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorAction Ignore)) {
-    BeforeEach { Reset-DFTestSession;
+    BeforeEach {
+        Reset-DFTestSession
         $script:DFToolDb          = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg
-
-
-        Remove-Item $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
+        # A fresh machine: no config, and no record that setup already ran.
+        Remove-Item $Env:XDG_CONFIG_HOME, $Env:XDG_STATE_HOME -Recurse -Force -ErrorAction Ignore
 
         # Do not inherit $DFConfig from whichever test file ran before this one.
         Set-DFTestConfig $null
@@ -57,11 +64,6 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
         Test-Path 'function:global:fastfetch' | Should -BeTrue
     }
 
-    It 'creates the XDG config directory' {
-        Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
-        Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'fastfetch') | Should -BeTrue
-    }
-
     It 'seeds the themed config on first registration' {
         Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
         $cfg = Join-Path $Env:XDG_CONFIG_HOME 'fastfetch/config.jsonc'
@@ -70,14 +72,23 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
     }
 
     It 'does not overwrite an existing config on re-registration' {
-        # Regression: Set-DFToolXdgConfig's "seed only when absent" behavior is
-        # bypassed for wrapper tools -- Tools/fastfetch.ps1 must replicate it itself.
         Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
         $cfg = Join-Path $Env:XDG_CONFIG_HOME 'fastfetch/config.jsonc'
         Add-Content $cfg "`n// user edit marker"
 
+        Reset-DFTestSession
         Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
         Get-Content $cfg -Raw | Should -Match 'user edit marker'
+    }
+
+    It 'runs without --config, and does not recreate the config, after the user deletes it' {
+        Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
+        $cfg = Join-Path $Env:XDG_CONFIG_HOME 'fastfetch/config.jsonc'
+        Remove-Item $cfg
+        Reset-DFTestSession
+        Register-DFTool -Name 'fastfetch' -ToolsPath $script:RealTools
+        Test-Path $cfg | Should -BeFalse
+        { fastfetch --logo none --structure OS } | Should -Not -Throw
     }
 
     It 'runs successfully via the wrapped --config flag, independent of XDG_CONFIG_HOME auto-discovery' {

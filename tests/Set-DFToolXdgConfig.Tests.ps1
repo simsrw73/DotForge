@@ -66,26 +66,6 @@ Describe 'Set-DFToolXdgConfig' {
             Should -Not -BeNullOrEmpty
     }
 
-    It 'method config: seeds default content only when the file is absent' {
-        $tool = @'
-{
-  "name": "configtool",
-  "xdg": {
-    "method": "config",
-    "config_path": "${XDG_CONFIG_HOME}/configtool/configtool.conf",
-    "config_content": "default = true"
-  }
-}
-'@ | ConvertFrom-Json
-        Set-DFToolXdgConfig -Tool $tool
-        $expected = Join-Path $Env:XDG_CONFIG_HOME 'configtool' 'configtool.conf'
-        Get-Content $expected -Raw | Should -Be "default = true`r`n"
-
-        Set-Content -Path $expected -Value 'user edited this' -NoNewline
-        Set-DFToolXdgConfig -Tool $tool
-        Get-Content $expected -Raw | Should -Be 'user edited this'
-    }
-
     It 'method wrapper: no env/dir side effects (handled by companion)' {
         $tool = @'
 { "name": "wrappertool", "xdg": { "method": "wrapper" } }

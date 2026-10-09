@@ -127,9 +127,9 @@ function ConvertTo-DFToolRecord {
         the record the rest of DotForge reads. Every known top-level field
         exists on the result; absent ones get their default:
 
-            type 'exe', description '', tags @(), dependsOn @(), requires @(), prewarm $true,
+            type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
             packages / xdg / env / aliases / picker / themeMap /
-            settings / scoopBucket $null, roles an empty object, executableExclude @()
+            settings / scoopBucket / setup $null, roles an empty object, executableExclude @()
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -138,7 +138,8 @@ function ConvertTo-DFToolRecord {
         string becomes roles.x with priority 0 and legacy $true.
 
         Nested shapes are normalized too: xdg always has method, vars, dirs,
-        config_path, config_content and instructions; each alias is
+        instructions and compliance; setup, when present, has seed (an object
+        mapping destination path template to a file under Tools/, or $null); each alias is
         { command; args[] } with a missing args meaning none; an object picker
         has every field, with preview '', preview_window 'right:60%',
         header '', ansi and list_accepts_path $false. A non-object picker (the
@@ -166,8 +167,6 @@ function ConvertTo-DFToolRecord {
             method         = & $get $xdg 'method' $null
             vars           = & $get $xdg 'vars' $null
             dirs           = @(& $get $xdg 'dirs' @())
-            config_path    = & $get $xdg 'config_path' $null
-            config_content = & $get $xdg 'config_content' $null
             instructions   = & $get $xdg 'instructions' $null
             compliance     = & $get $xdg 'compliance' $null
         }
@@ -227,6 +226,9 @@ function ConvertTo-DFToolRecord {
         }
     }
 
+    $setup = & $get $Tool 'setup' $null
+    if ($setup) { $setup = [pscustomobject]@{ seed = & $get $setup 'seed' $null } }
+
     $record = [ordered]@{
         name        = $Tool.name
         executable  = $Tool.executable
@@ -238,7 +240,7 @@ function ConvertTo-DFToolRecord {
         env         = & $get $Tool 'env' $null
         aliases     = $aliases
         picker      = $picker
-        dependsOn   = [object[]]@(& $get $Tool 'dependsOn' @())
+        after       = [object[]]@(& $get $Tool 'after' @())
         requires    = [object[]]@(& $get $Tool 'requires' @())
         roles       = [pscustomobject]$roles
         themeMap    = & $get $Tool 'themeMap' $null
@@ -246,6 +248,7 @@ function ConvertTo-DFToolRecord {
         scoopBucket = & $get $Tool 'scoopBucket' $null
         executableExclude = [object[]]@(& $get $Tool 'executableExclude' @())
         prewarm     = [bool](& $get $Tool 'prewarm' $true)
+        setup       = $setup
     }
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.
     foreach ($p in $Tool.PSObject.Properties) {

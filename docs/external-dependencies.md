@@ -78,8 +78,8 @@ Two categories, and the difference matters:
 | | |
 |---|---|
 | **What** | `zoxide init --hook pwd` wraps `function:prompt` (not `LocationChangedAction`), and guards against double-hooking with `$global:__zoxide_hooked = 1`. |
-| **Where** | `Tools/zoxide.ps1`, `Tools/zoxide.json` (`dependsOn`); ordering rules in `CLAUDE.md` |
-| **Why** | It forces an ordering constraint: the prompt engine (oh-my-posh or starship) must initialize **before** zoxide so zoxide wraps its prompt. `zoxide.json` declares `"dependsOn": ["oh-my-posh", "starship"]` so `Register-DFTool` topo-sorts the engine first. The order is not alphabetical: the tool DB is a hashtable. |
+| **Where** | `Tools/zoxide.ps1`, `Tools/zoxide.json` (`after`); ordering rules in `CLAUDE.md` |
+| **Why** | It forces an ordering constraint: the prompt engine (oh-my-posh or starship) must initialize **before** zoxide so zoxide wraps its prompt. `zoxide.json` declares `"after": ["oh-my-posh", "starship"]` so the session topo-sorts the engine first. The order is not alphabetical: the tool DB is a hashtable. |
 | **If it changes** | **Known live limitation:** after a theme switch via `fpot`, OMP re-inits and replaces `function:prompt`, but zoxide's guard prevents re-hooking — so directory tracking stops until the next shell. No clean workaround. |
 
 ### 8. fnm: the `cd` hook shape (`Set-LocationWithFnm` / `Set-FnmOnLoad`)
@@ -88,7 +88,7 @@ Two categories, and the difference matters:
 |---|---|
 | **What** | `fnm env --use-on-cd --shell powershell` emits a global `Set-LocationWithFnm` function that calls plain `Set-Location`, a `Set-FnmOnLoad` helper, and `Set-Alias -Option AllScope -Scope global cd Set-LocationWithFnm`. `Tools/fnm.ps1` (a) captures the pre-fnm `cd` target from zoxide's alias via `(Get-Alias 'cd').ReferencedCommand`, then (b) **redefines `global:Set-LocationWithFnm`** to route through that captured command so zoxide's jump and fnm's version switch both run. |
 | **Where** | `Tools/fnm.ps1` |
-| **Why** | fnm's wrapper hardcodes `Set-Location`, so without the re-wrap fnm silently clobbers zoxide's smart `cd`. The re-wrap depends on the exact names `Set-LocationWithFnm` (the function fnm's `cd` alias points at) and `Set-FnmOnLoad` (the per-directory switch), plus zoxide binding `cd` as an alias so `.ReferencedCommand` is callable. `fnm.json` declares `"dependsOn": ["zoxide"]` so the capture in step 1 sees zoxide's binding, not the built-in `cd`. |
+| **Why** | fnm's wrapper hardcodes `Set-Location`, so without the re-wrap fnm silently clobbers zoxide's smart `cd`. The re-wrap depends on the exact names `Set-LocationWithFnm` (the function fnm's `cd` alias points at) and `Set-FnmOnLoad` (the per-directory switch), plus zoxide binding `cd` as an alias so `.ReferencedCommand` is callable. `fnm.json` declares `"after": ["zoxide"]` so the capture in step 1 sees zoxide's binding, not the built-in `cd`. |
 | **If it changes** | If fnm renames `Set-LocationWithFnm`/`Set-FnmOnLoad` or stops routing `cd` through the function, the re-wrap no longer chains: `cd` falls back to whatever fnm's newer init installs (still a working `cd`, just without zoxide's jump). If zoxide ever binds `cd` as a function instead of an alias, `(Get-Alias 'cd')` returns nothing and `$global:cdBeforeFnm` falls back to `Set-Location` — fnm keeps working, zoxide's jump is lost. Both degrade to a functional `cd`, never an error. |
 
 ---
@@ -145,7 +145,7 @@ Two categories, and the difference matters:
 | | |
 |---|---|
 | **What** | `mise activate pwsh` output contains the session's PATH as literal text (`__MISE_ORIG_PATH`, `PATH`), wraps `function:prompt`, chains onto `LocationChangedAction`, and defines some top-level functions without `global:` (its `mise` wrapper, which `mise shell`/`deactivate` need). |
-| **Where** | `Tools/mise.ps1`, `Tools/mise.json` (`dependsOn` the prompt engines) |
+| **Where** | `Tools/mise.ps1`, `Tools/mise.json` (`after` the prompt engines) |
 | **Why** | The hook generates activation live each session (~73 ms, only when mise is the `project-env` tool); caching it like zoxide's would restore a stale PATH. Before running it, the hook rewrites line-leading `function <name>` to `function global:<name>`, because the hook runs inside a DotForge function whose locals vanish on return. It registers after oh-my-posh/starship so it wraps their prompt. |
 | **If it changes** | If mise stops embedding PATH, caching becomes possible as a startup optimization. If mise indents or renames those definitions, the rewrite no-ops: env loading still works (its hooks are already global), but `mise shell` is unavailable until the rewrite is updated (`tests/mise.Tests.ps1` pins the behavior). |
 

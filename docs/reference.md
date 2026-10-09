@@ -2347,6 +2347,7 @@ Fast, actively-maintained neofetch-like system information tool
 | Tags | `system`, `info` |
 | Install ids | scoop: `fastfetch`<br>winget: `Fastfetch-cli.Fastfetch` |
 | XDG method | `wrapper` |
+| Seeds once | `${XDG_CONFIG_HOME}/fastfetch/config.jsonc` |
 | Roles | [`system-info`](#system-info-role) |
 | Companion | [`Tools/fastfetch.ps1`](#fastfetch-companion) |
 
@@ -2440,6 +2441,7 @@ AI-powered terminal completion engine
 | Tags | `completion`, `shell`, `productivity` |
 | Install ids | npm: `@microsoft/inshellisense` |
 | XDG method | `default` |
+| Requires | `role:js-runtime` |
 | Registers after | `psreadline` |
 | Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | [`Tools/inshellisense.ps1`](#inshellisense-companion) |
@@ -2582,6 +2584,7 @@ Node.js package manager
 | XDG variables | `NPM_CONFIG_USERCONFIG` = `${XDG_CONFIG_HOME}/npm/npmrc`<br>`NODE_REPL_HISTORY` = `${XDG_DATA_HOME}/node_repl_history` |
 | Creates | `${XDG_CONFIG_HOME}/npm` |
 | Aliases | `nls` → `npm list -g --depth=0` |
+| Requires | `role:js-runtime` |
 
 ### oh-my-posh tool
 
@@ -2658,7 +2661,8 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | Tags | `fuzzy`, `picker`, `module` |
 | Install ids | psresource: `PSFzf`<br>scoop: `psfzf` |
 | XDG method | `default` |
-| Registers after | `psreadline`, `fzf` |
+| Requires | `fzf` |
+| Registers after | `psreadline` |
 | Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/PSFzf.ps1` |
 
@@ -2972,7 +2976,7 @@ Pick ripgrep and press Enter to get: choco install ripgrep -y
 
 Runs fastfetch with DotForge's config file.
 
-Wraps fastfetch.exe and always passes --config &lt;path&gt;, because fastfetch ignores XDG_CONFIG_HOME on Windows. The path comes from settings.configPath in fastfetch.json (default $XDG_CONFIG_HOME\\fastfetch\\config.jsonc). On first registration the companion seeds that file from settings.configContent if it doesn't exist; after that the file is yours to edit and is never overwritten.
+Wraps fastfetch.exe and passes --config &lt;path&gt;, because fastfetch ignores XDG_CONFIG_HOME on Windows. The path comes from settings.configPath in fastfetch.json (default $XDG_CONFIG_HOME\\fastfetch\\config.jsonc). DotForge's one-time setup seeds that file with a themed default; after that it is yours to edit and is never overwritten. If you delete it, fastfetch runs with its own defaults (no --config is passed).
 
 All other arguments, and piped input, are passed to fastfetch unchanged. Defined by DotForge's fastfetch companion.
 

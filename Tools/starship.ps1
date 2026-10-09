@@ -9,7 +9,7 @@ param()
 # (verified byte-identical across runs; the session key is generated at
 # runtime inside the script), so it is cached keyed to the binary's identity
 # and a starship upgrade regenerates it. starship must init before zoxide,
-# which wraps the prompt function — zoxide.json's dependsOn enforces the order.
+# which wraps the prompt function — zoxide.json's "after" enforces the order.
 function Initialize-DFRolePrompt {
     # Called by DotForge only when starship wins the prompt role.
     param([PSCustomObject]$Tool, [string]$Role)

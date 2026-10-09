@@ -173,6 +173,7 @@ requested ──► available? ──no──► Missing (notice; Install-DFTool
   - `-Setup` re-runs it.
 - **`SkipSetup`** keeps its meaning.
 - **Exact field shape:** `xdg.method: "config"` becomes a `setup.seed` block, and the TODO "`xdg.method` can't express env + config seeding" is resolved by letting a tool have both `xdg.vars` and `setup.seed`.
+- **As implemented (slice 2):** `"setup": { "seed": { "<destination template>": "<file under Tools/>" } }`. Seeds are copied (only when absent) by `Invoke-DFToolSeed`, and the whole setup step (seeds, then `Tools/<name>.setup.ps1`) runs **before** the companion, so a companion can rely on what setup created. A tool with seeds but no script is recorded by DotForge; a script still records itself. A missing seed source is a setup failure (warned, retried next load). Files DotForge owns and keeps current (carapace specs, delta's theme) stay in their companions, deployed on every load when the bundled copy changes: they aren't user config. `-Setup` (re-run) arrives with `Install-DFTool` in slice 3.
 
 ### 6. `Start-DFSession -Config`
 
