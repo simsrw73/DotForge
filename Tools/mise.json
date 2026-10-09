@@ -7,7 +7,7 @@
   "packages": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
   "installs": { "from": "mise", "command": ["mise", "use", "--global", "{id}"], "reactivate": true },
   "xdg": { "compliance": "full", "method": "default" },
-  "roles": { "project-env": { "priority": 20 }, "version-manager": {}, "js-runtime": { "priority": 10 } },
+  "roles": { "project-env": { "priority": 20 }, "version-manager": {} },
   "aliases": {},
   "picker": null
 }

@@ -1,0 +1,12 @@
+{
+  "name": "pnpm",
+  "description": "Fast, disk-efficient JavaScript package manager",
+  "tags": ["javascript", "dev", "package-manager"],
+  "executable": "pnpm.cmd",
+  "roles": { "js-package-manager": { "priority": 20 } },
+  "requires": ["role:js-runtime"],
+  "packages": { "scoop": "pnpm", "winget": "pnpm.pnpm", "npm": "pnpm" },
+  "installs": { "from": "npm", "command": ["pnpm", "add", "-g", "{id}"], "batch": true },
+  "aliases": {},
+  "picker": null
+}

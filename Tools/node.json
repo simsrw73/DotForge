@@ -1,0 +1,12 @@
+{
+  "name": "node",
+  "description": "Node.js JavaScript runtime",
+  "tags": ["node", "javascript", "dev", "runtime"],
+  "executable": "node.exe",
+  "roles": { "js-runtime": { "priority": 20 } },
+  "after": ["role:version-manager"],
+  "packages": { "fnm": "lts", "mise": "node@lts", "scoop": "nodejs-lts", "winget": "OpenJS.NodeJS.LTS", "choco": "nodejs-lts" },
+  "install": { "prefer": ["fnm", "mise"] },
+  "aliases": {},
+  "picker": null
+}

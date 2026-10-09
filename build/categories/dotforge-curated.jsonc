@@ -23,6 +23,10 @@
     "ids": { "scoop": "broot", "choco": "broot" },
     "relatedTo": ["fzf", "fd"], "popularity": 1
   },
+  "bun": {
+    "function": ["language-runtime", "package-manager"], "worksWith": ["code"], "interface": "cli",
+    "ids": { "scoop": "bun", "winget": "Oven-sh.Bun", "npm": "bun" }, "relatedTo": ["node", "pnpm"], "popularity": 2
+  },
   "carapace": {
     "function": ["shell-enhancement"], "worksWith": ["text"], "interface": "cli",
     "ids": { "scoop": "carapace-bin", "winget": "rsteube.Carapace" },
@@ -144,6 +148,10 @@
     "ids": { "scoop": "moor" },
     "relatedTo": ["less", "ov", "bat"], "popularity": 1
   },
+  "node": {
+    "function": ["language-runtime"], "worksWith": ["code"], "interface": "cli",
+    "ids": { "scoop": "nodejs-lts", "winget": "OpenJS.NodeJS.LTS", "choco": "nodejs-lts" }, "relatedTo": ["npm", "fnm"], "popularity": 3
+  },
   "npm": {
     "function": ["package-manager"], "worksWith": ["filesystem"], "interface": "cli",
     "popularity": 3
@@ -182,6 +190,10 @@
     "aliases": ["rg"], "alternativeTo": ["grep"],
     "ids": { "scoop": "ripgrep", "winget": "BurntSushi.ripgrep.MSVC", "choco": "ripgrep" },
     "relatedTo": ["fd", "fzf", "rga"], "popularity": 3
+  },
+  "pnpm": {
+    "function": ["package-manager"], "worksWith": ["code"], "interface": "cli",
+    "ids": { "scoop": "pnpm", "winget": "pnpm.pnpm", "npm": "pnpm" }, "relatedTo": ["npm", "bun"], "popularity": 2
   },
   "psresource": {
     "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",

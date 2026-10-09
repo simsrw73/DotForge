@@ -76,6 +76,16 @@ function Invoke-DFSessionActivation {
     Resolve-DFToolRequirements -Records $records -ToolDb $db -RequestedBy $by -Excluded $excluded `
         -Edges $edges -Blocked $blocked -RoleHint $roleHint @pathArgs
 
+    # after: ["role:<name>"] orders a tool after every requested member of that role.
+    foreach ($r in $records) {
+        foreach ($a in @($r.after | Where-Object { $_ -like 'role:*' })) {
+            $role = $a.Substring(5)
+            foreach ($m in @($db.Values | Where-Object { $_.name -ne $r.name -and $_.roles.PSObject.Properties[$role] })) {
+                $edges[$r.name] = @(@($edges[$r.name]) + $m.name | Where-Object { $_ })
+            }
+        }
+    }
+
     $tools = @(Invoke-DFTopoSort -Tools $records.ToArray() -ExtraEdges $edges | Where-Object { $_ })
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $db -Tools $tools -RoleDb $roleDb

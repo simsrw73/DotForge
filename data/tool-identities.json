@@ -25,6 +25,14 @@
       },
       "linkedVia": "curated"
     },
+    "bun": {
+      "packages": {
+        "scoop": "bun",
+        "winget": "Oven-sh.Bun",
+        "npm": "bun"
+      },
+      "linkedVia": "curated"
+    },
     "carapace": {
       "packages": {
         "scoop": "carapace-bin",
@@ -211,6 +219,16 @@
       },
       "linkedVia": "curated"
     },
+    "node": {
+      "packages": {
+        "fnm": "lts",
+        "mise": "node@lts",
+        "scoop": "nodejs-lts",
+        "winget": "OpenJS.NodeJS.LTS",
+        "choco": "nodejs-lts"
+      },
+      "linkedVia": "curated"
+    },
     "oh-my-posh": {
       "packages": {
         "scoop": "oh-my-posh",
@@ -222,6 +240,14 @@
       "packages": {
         "scoop": "ov",
         "winget": "noborus.ov"
+      },
+      "linkedVia": "curated"
+    },
+    "pnpm": {
+      "packages": {
+        "scoop": "pnpm",
+        "winget": "pnpm.pnpm",
+        "npm": "pnpm"
       },
       "linkedVia": "curated"
     },

@@ -67,6 +67,14 @@ Describe 'requires (tools and role:<name>)' {
         (Get-DFToolStatus -Name app).Detail | Should -Match 'requires lib, which is excluded'
     }
 
+    It 'orders a tool after every requested member of a role named in after' {
+        New-ReqTool 'rt' ', "after": ["role:version-manager"]'
+        New-ReqTool 'vm1' ', "roles": { "version-manager": {} }'
+        $script:Installed = 'rt.exe', 'vm1.exe'
+        Start-DFSession -Config @{ Tools = @('rt', 'vm1') } -ToolsPath $script:Tools 3>$null
+        $global:DFTestOrder | Should -Be @('vm1', 'rt')
+    }
+
     Context 'role:js-runtime (npm needs a JavaScript runtime, not a particular one)' {
         It 'orders the tool after the requested member of the role' {
             New-ReqTool 'npmx' ', "requires": ["role:js-runtime"]'
@@ -137,10 +145,9 @@ Describe 'shipped requires' {
         }
         @($bad) | Should -BeNullOrEmpty
     }
-    It 'gives npm and inshellisense a JavaScript runtime, and puts fnm and mise in that role' {
-        (Get-Content "$PSScriptRoot/../Tools/npm.json" -Raw | ConvertFrom-Json).requires | Should -Contain 'role:js-runtime'
+    It 'gives npm node and inshellisense a JavaScript runtime; node is a js-runtime' {
+        (Get-Content "$PSScriptRoot/../Tools/npm.json" -Raw | ConvertFrom-Json).requires | Should -Contain 'node'
         (Get-Content "$PSScriptRoot/../Tools/inshellisense.json" -Raw | ConvertFrom-Json).requires | Should -Contain 'role:js-runtime'
-        (Get-Content "$PSScriptRoot/../Tools/fnm.json" -Raw | ConvertFrom-Json).roles.'js-runtime' | Should -Not -BeNullOrEmpty
-        (Get-Content "$PSScriptRoot/../Tools/mise.json" -Raw | ConvertFrom-Json).roles.'js-runtime' | Should -Not -BeNullOrEmpty
+        (Get-Content "$PSScriptRoot/../Tools/node.json" -Raw | ConvertFrom-Json).roles.'js-runtime' | Should -Not -BeNullOrEmpty
     }
 }

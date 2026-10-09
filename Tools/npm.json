@@ -8,7 +8,7 @@
     "package-manager"
   ],
   "executable": "npm.cmd",
-  "requires": ["role:js-runtime"],
+  "requires": ["node"],
   "packages": {},
   "roles": { "js-package-manager": { "priority": 30 } },
   "installs": { "from": "npm", "command": ["npm", "install", "-g", "{id}"], "batch": true },

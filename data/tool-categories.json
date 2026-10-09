@@ -38,7 +38,8 @@
       "linter",
       "formatter",
       "uuid-generator",
-      "dotfiles-management"
+      "dotfiles-management",
+      "language-runtime"
     ],
     "worksWith": [
       "text",
@@ -171,6 +172,26 @@
         "fd"
       ],
       "popularity": 1
+    },
+    "bun": {
+      "function": [
+        "language-runtime",
+        "package-manager"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "bun",
+        "winget": "Oven-sh.Bun",
+        "npm": "bun"
+      },
+      "relatedTo": [
+        "node",
+        "pnpm"
+      ],
+      "popularity": 2
     },
     "carapace": {
       "function": [
@@ -943,6 +964,25 @@
       ],
       "popularity": 1
     },
+    "node": {
+      "function": [
+        "language-runtime"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "nodejs-lts",
+        "winget": "OpenJS.NodeJS.LTS",
+        "choco": "nodejs-lts"
+      },
+      "relatedTo": [
+        "npm",
+        "fnm"
+      ],
+      "popularity": 3
+    },
     "npm": {
       "function": [
         "package-manager"
@@ -1001,6 +1041,25 @@
       ],
       "interface": "cli",
       "popularity": 0
+    },
+    "pnpm": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "pnpm",
+        "winget": "pnpm.pnpm",
+        "npm": "pnpm"
+      },
+      "relatedTo": [
+        "npm",
+        "bun"
+      ],
+      "popularity": 2
     },
     "posh-git": {
       "function": [

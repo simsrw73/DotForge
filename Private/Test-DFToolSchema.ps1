@@ -150,8 +150,8 @@ function Test-DFToolSchema {
         $errs.Add('dependsOn was replaced: use after (ordering only) or requires (the tool cannot work without it)')
     }
     $after = $Tool.PSObject.Properties['after']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] }).Count)) {
-        $errs.Add('after must be an array of tool names')
+    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+        $errs.Add('after must be an array of tool names or role:<role> entries')
     }
     $setup = $Tool.PSObject.Properties['setup']?.Value
     if ($null -ne $setup) {

@@ -95,7 +95,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -2065,16 +2065,16 @@ Installs packages from the npm registry. Install-DFTool uses the Defaults choice
 | | |
 | --- | --- |
 | Kind | category |
-| Members | [npm](#npm-tool) |
+| Members | [bun](#bun-tool), [npm](#npm-tool), [pnpm](#pnpm-tool) |
 
 ### js-runtime role
 
-Provides a JavaScript runtime (node) on PATH. Tools that need one declare requires: ["role:js-runtime"].
+Provides a JavaScript runtime on PATH (node, bun). Tools that need one declare requires: ["role:js-runtime"].
 
 | | |
 | --- | --- |
 | Kind | category |
-| Members | [fnm](#fnm-tool), [mise](#mise-tool) |
+| Members | [bun](#bun-tool), [node](#node-tool) |
 
 ### listing role
 
@@ -2248,6 +2248,18 @@ Interactive file browser with fuzzy search
 | XDG method | `env` |
 | Creates | `${XDG_CONFIG_HOME}/broot` |
 
+### bun tool
+
+Bun JavaScript runtime and package manager
+
+| | |
+| --- | --- |
+| Detected by | `bun.exe` |
+| Tags | `javascript`, `dev`, `runtime`, `package-manager` |
+| Install ids | scoop: `bun`<br>winget: `Oven-sh.Bun`<br>npm: `bun` |
+| Registers after | `role:version-manager` |
+| Roles | [`js-package-manager`](#js-package-manager-role), [`js-runtime`](#js-runtime-role) |
+
 ### carapace tool
 
 Multi-shell completion engine — argument completers for 500+ CLI tools
@@ -2408,7 +2420,7 @@ Fast Node.js version manager with automatic per-directory switching
 | XDG variables | `FNM_DIR` = `${XDG_DATA_HOME}/fnm` |
 | Creates | `${XDG_DATA_HOME}/fnm` |
 | Registers after | `zoxide` |
-| Roles | [`js-runtime`](#js-runtime-role), [`version-manager`](#version-manager-role) |
+| Roles | [`version-manager`](#version-manager-role) |
 | Companion | [`Tools/fnm.ps1`](#fnm-companion) |
 
 ### fzf tool
@@ -2586,7 +2598,7 @@ Dev tool versions, environment variables and tasks per project
 | Install ids | scoop: `mise`<br>winget: `jdx.mise`<br>choco: `mise` |
 | XDG method | `default` |
 | Registers after | `oh-my-posh`, `starship` |
-| Roles | [`js-runtime`](#js-runtime-role), [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
+| Roles | [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
 | Companion | `Tools/mise.ps1` |
 
 ### moor tool
@@ -2603,6 +2615,18 @@ Pager that does the right thing without configuration (formerly moar)
 | Sets, as the pager tool | `PAGER` = `moor` |
 | Companion | `Tools/moor.ps1` |
 
+### node tool
+
+Node.js JavaScript runtime
+
+| | |
+| --- | --- |
+| Detected by | `node.exe` |
+| Tags | `node`, `javascript`, `dev`, `runtime` |
+| Install ids | fnm: `lts`<br>mise: `node@lts`<br>scoop: `nodejs-lts`<br>winget: `OpenJS.NodeJS.LTS`<br>choco: `nodejs-lts` |
+| Registers after | `role:version-manager` |
+| Roles | [`js-runtime`](#js-runtime-role) |
+
 ### npm tool
 
 Node.js package manager
@@ -2615,7 +2639,7 @@ Node.js package manager
 | XDG variables | `NPM_CONFIG_USERCONFIG` = `${XDG_CONFIG_HOME}/npm/npmrc`<br>`NODE_REPL_HISTORY` = `${XDG_DATA_HOME}/node_repl_history` |
 | Creates | `${XDG_CONFIG_HOME}/npm` |
 | Aliases | `nls` → `npm list -g --depth=0` |
-| Requires | `role:js-runtime` |
+| Requires | `node` |
 | Roles | [`js-package-manager`](#js-package-manager-role) |
 
 ### oh-my-posh tool
@@ -2645,6 +2669,18 @@ Feature-rich terminal pager with headers, columns and sections
 | XDG method | `default` |
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `ov --quit-if-one-screen` |
+
+### pnpm tool
+
+Fast, disk-efficient JavaScript package manager
+
+| | |
+| --- | --- |
+| Detected by | `pnpm.cmd` |
+| Tags | `javascript`, `dev`, `package-manager` |
+| Install ids | scoop: `pnpm`<br>winget: `pnpm.pnpm`<br>npm: `pnpm` |
+| Requires | `role:js-runtime` |
+| Roles | [`js-package-manager`](#js-package-manager-role) |
 
 ### posh-git tool
 

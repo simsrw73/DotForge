@@ -1,0 +1,12 @@
+{
+  "name": "bun",
+  "description": "Bun JavaScript runtime and package manager",
+  "tags": ["javascript", "dev", "runtime", "package-manager"],
+  "executable": "bun.exe",
+  "roles": { "js-runtime": { "priority": 10 }, "js-package-manager": { "priority": 10 } },
+  "after": ["role:version-manager"],
+  "packages": { "scoop": "bun", "winget": "Oven-sh.Bun", "npm": "bun" },
+  "installs": { "from": "npm", "command": ["bun", "add", "-g", "{id}"], "batch": true },
+  "aliases": {},
+  "picker": null
+}

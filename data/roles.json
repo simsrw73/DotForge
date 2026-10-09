@@ -78,7 +78,7 @@
   "system-info":     { "kind": "category", "description": "Shows system information." },
   "url-fetch":       { "kind": "category", "description": "Downloads files and calls HTTP APIs." },
   "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." },
-  "js-runtime":      { "kind": "category", "description": "Provides a JavaScript runtime (node) on PATH. Tools that need one declare requires: [\"role:js-runtime\"]." },
+  "js-runtime":      { "kind": "category", "description": "Provides a JavaScript runtime on PATH (node, bun). Tools that need one declare requires: [\"role:js-runtime\"]." },
   "js-package-manager":         { "kind": "category", "description": "Installs packages from the npm registry. Install-DFTool uses the Defaults choice, else the highest priority." },
   "rust-package-manager":       { "kind": "category", "description": "Installs crates from crates.io." },
   "powershell-package-manager": { "kind": "category", "description": "Installs modules from the PowerShell Gallery." }
