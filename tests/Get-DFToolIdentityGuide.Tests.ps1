@@ -53,6 +53,20 @@ Describe 'Get-DFToolIdentityGuide' {
         $guide.IdIndex['scoop:fd'] | Should -Be 'fd'
     }
 
+    It 'keys a package-manager name (cargo) by the catalog that lists it (crates)' {
+        $saved = $script:DFCatalogProviders.Clone()
+        try {
+            Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile 'X:\DFCatalog.Crates.ps1' -PackageManager cargo
+            @{
+                schemaVersion = 1; updated = '2026-07-01'
+                tools = @{ mdcat = @{ packages = @{ scoop = 'mdcat'; cargo = 'mdcat' }; linkedVia = 'curated' } }
+            } | ConvertTo-Json -Depth 6 | Set-Content -Path $script:FixturePath -Encoding UTF8
+            $guide = Get-DFToolIdentityGuide -Path $script:FixturePath
+            $guide.IdIndex['crates:mdcat'] | Should -Be 'mdcat'
+            $guide.IdIndex.ContainsKey('cargo:mdcat') | Should -BeFalse
+        } finally { $script:DFCatalogProviders = $saved }
+    }
+
     It 'caches the -Path load as a singleton until -Force' {
         $guide1 = Get-DFToolIdentityGuide -Path $script:FixturePath
         $script:DFToolIdentityGuide = $guide1

@@ -36,6 +36,15 @@ Describe 'Get-DFCachedCommandOutput' {
         Test-Path (Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'test-tool.txt') | Should -BeTrue
     }
 
+    It 'writes atomically, the content before the key that vouches for it' {
+        # Two shells starting at once must never read a half-written init script,
+        # and a crash between the writes must leave a key that does NOT match.
+        $script:writes = [System.Collections.Generic.List[string]]::new()
+        Mock Write-DFFileAtomic { $script:writes.Add((Split-Path $Path -Leaf)) }
+        Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'generated-output' } | Out-Null
+        $script:writes | Should -Be @('test-tool.txt', 'test-tool.key')
+    }
+
     It 'reuses the cache on a second call -- does not re-invoke -Generate' {
         Get-DFCachedCommandOutput -Name 'test-tool' -Executable 'test-tool' -Generate { 'first' } | Out-Null
 

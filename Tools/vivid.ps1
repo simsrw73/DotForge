@@ -15,7 +15,8 @@
 # Sets: LS_COLORS (read by eza, lsd and other listing tools).
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
 
-$_xdgPath = ${function:Get-DFXdgPath}
+$_xdgPath     = ${function:Get-DFXdgPath}
+$_writeAtomic = ${function:Write-DFFileAtomic}
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     <#
@@ -71,9 +72,10 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         }
         $value = $raw.Trim()
 
-        New-DFDirectory $cacheDir
-        Set-Content -Path $keyFile   -Value $Name  -Encoding UTF8
-        Set-Content -Path $cacheFile -Value $value -Encoding UTF8
+        # Content first, then the key that vouches for it: a crash in between
+        # leaves an old key, which only costs a regeneration.
+        & $_writeAtomic -Path $cacheFile -Value $value
+        & $_writeAtomic -Path $keyFile   -Value $Name
     }
 
     [System.Environment]::SetEnvironmentVariable('LS_COLORS', $value, 'Process')

@@ -48,6 +48,21 @@ Describe 'Get-DFCatalogInstalled' {
         $r.IdentityMap['choco:ripgrep'] | Should -Be 'ripgrep'
     }
 
+    It 'keys package-manager names (cargo, psresource) by the catalog that lists them (crates, psgallery)' {
+        @{
+            name = 'mdcat'; executable = 'mdcat.exe'; xdg = @{ method = 'default' }
+            packages = @{ scoop = 'mdcat'; cargo = 'mdcat' }
+        } | ConvertTo-Json | Set-Content (Join-Path $script:ToolsPath 'mdcat.json')
+        @{
+            name = 'posh-git'; executable = 'posh-git'; type = 'module'; xdg = @{ method = 'default' }
+            packages = @{ psresource = 'posh-git' }
+        } | ConvertTo-Json | Set-Content (Join-Path $script:ToolsPath 'posh-git.json')
+        $r = Get-DFCatalogInstalled -ToolsPath $script:ToolsPath -FetchItems { @() }
+        $r.IdentityMap['crates:mdcat'] | Should -Be 'mdcat'
+        $r.IdentityMap['psgallery:posh-git'] | Should -Be 'posh-git'
+        $r.IdentityMap['scoop:mdcat'] | Should -Be 'mdcat'
+    }
+
     It 'calls the real Invoke-DFCatalogInstalledFetch when -FetchItems is not supplied' {
         Mock Invoke-DFCatalogInstalledFetch {
             @([pscustomobject]@{ Source = 'npm'; Name = 'x'; PackageId = 'x'; InstalledVersion = '1' })

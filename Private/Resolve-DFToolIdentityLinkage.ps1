@@ -36,7 +36,7 @@ function Resolve-DFToolIdentityLinkage {
     $homepages = [ordered]@{}
     foreach ($prop in $Packages.PSObject.Properties) {
         if (-not $prop.Value) { continue }
-        $resolved = Resolve-DFToolIdentityCandidateRepo -Source $prop.Name -PackageId ([string]$prop.Value) -Fresh:$Fresh
+        $resolved = Resolve-DFToolIdentityCandidateRepo -Source (ConvertTo-DFCatalogSource $prop.Name) -PackageId ([string]$prop.Value) -Fresh:$Fresh
         if ($resolved.Repo) { $repos[$prop.Name] = $resolved.Repo }
         elseif ($resolved.Homepage) { $homepages[$prop.Name] = $resolved.Homepage }
     }

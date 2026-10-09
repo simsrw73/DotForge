@@ -32,7 +32,7 @@ Find-DFTool markdown | Sort-Object name | Select-Object name, description
 name  description
 ----  -----------
 glow  Render Markdown on the CLI
-mdcat cat for markdown - render CommonMark in the terminal
+mdcat cat for markdown — render CommonMark in the terminal
 mdv   Terminal markdown viewer with themes and syntax highlighting
 ```
 

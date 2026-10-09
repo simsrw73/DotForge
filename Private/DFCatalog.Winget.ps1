@@ -76,11 +76,12 @@ function Update-DFCatalogWingetIndex {
         $zip.Dispose()
     }
 
-    @{
+    $meta = @{
         path           = $msix.FullName
         lastWriteTicks = $msix.LastWriteTimeUtc.Ticks
         length         = $msix.Length
-    } | ConvertTo-Json | Set-Content -Path $metaFile -Encoding UTF8
+    }
+    Write-DFFileAtomic -Path $metaFile -Value ($meta | ConvertTo-Json)
 }
 
 function Get-DFCatalogWingetIndexPath {

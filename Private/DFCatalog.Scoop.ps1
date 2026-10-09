@@ -171,8 +171,8 @@ function Update-DFCatalogScoopIndex {
     $data = @(Build-DFCatalogScoopIndexData -ScoopRoot $ScoopRoot)
 
     Write-DFCatalogCacheFile -Path (Join-Path $dir 'index.json') -Query '' -Results $data
-    Set-Content -Path (Join-Path $dir 'index.key') `
-        -Value (Get-DFCatalogScoopFingerprint -ScoopRoot $ScoopRoot) -Encoding UTF8
+    Write-DFFileAtomic -Path (Join-Path $dir 'index.key') `
+        -Value (Get-DFCatalogScoopFingerprint -ScoopRoot $ScoopRoot)
 }
 
 function Get-DFCatalogScoopIndex {

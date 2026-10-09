@@ -81,9 +81,9 @@ function Get-DFCachedCommandOutput {
     $value = (& $Generate)
     if ($value) { $value = $value.Trim() }
     if ($value) {
-        New-DFDirectory $cacheDir
-        Set-Content -Path $keyFile   -Value $fingerprint -Encoding UTF8
-        Set-Content -Path $cacheFile -Value $value        -Encoding UTF8
+        # Content first, then the key that vouches for it (see Write-DFFileAtomic).
+        Write-DFFileAtomic -Path $cacheFile -Value $value
+        Write-DFFileAtomic -Path $keyFile   -Value $fingerprint
     }
     return $value
 }

@@ -51,6 +51,23 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **One broken tool no longer stops the rest from registering.** A companion that threw, or any
+  error while `$ErrorActionPreference = 'Stop'` (common in profiles), aborted `Register-DFTool` and
+  skipped every tool after it. Each tool's failure is now caught and reported as `DotForge: <tool>
+  failed to register: …`, and registration continues.
+- **cargo and PSGallery packages never matched across catalogs.** Tool records and
+  `data/tool-identities.json` key packages by package manager (`cargo`, `psresource`), but the
+  catalogs are named `crates` and `psgallery`. So mdcat, mdv, posh-git, PSFzf and Terminal-Icons
+  never merged their crates.io/PSGallery hits into the tool's row, and the identity build never
+  checked those packages. Providers now declare the manager they serve (`-PackageManager`), and every
+  identity index translates through it.
+- **Cache files could be read half-written.** The cached init scripts (carapace, zoxide, …),
+  help-topic list, LS_COLORS, scoop index key, winget index metadata and CLI help-flag cache were
+  written in place, with the fingerprint key first. Two shells starting at once could
+  `Invoke-Expression` a truncated init script, and a crash between the two writes left a valid key
+  over stale content. They now go through `Write-DFFileAtomic`, content before key.
+- **Two documented examples failed their output check** because the expected output had a hyphen
+  where DotForge prints an em dash.
 - **Exclusive-role notice suggests the right alternative.** When two or more tools could fill
   `prompt`, `project-env` or `navigation`, the one-time warning now suggests the runner-up by
   priority (mise, not the alphabetically first direnv).

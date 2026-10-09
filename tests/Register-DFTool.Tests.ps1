@@ -203,6 +203,29 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Variable CompanionLoaded -Scope Global -ErrorAction Ignore
     }
 
+    It 'warns and keeps registering later tools when one tool''s companion throws, even under ErrorActionPreference Stop' {
+        '{ "name": "aaa-broken", "executable": "broken.exe", "aliases": {} }' |
+            Set-Content (Join-Path $script:TmpTools 'aaa-broken.json')
+        'throw "sidecar boom"' | Set-Content (Join-Path $script:TmpTools 'aaa-broken.ps1')
+        # Registered after aaa-broken regardless of hash order.
+        $json = Get-Content (Join-Path $script:TmpTools 'testtool.json') -Raw | ConvertFrom-Json
+        $json | Add-Member dependsOn @('aaa-broken')
+        $json | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $script:TmpTools 'testtool.json')
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        Mock Initialize-DFCompletionStack {}
+
+        $ErrorActionPreference = 'Stop'
+        try {
+            Register-DFTool -Name 'aaa-broken', 'testtool' -ToolsPath $script:TmpTools -WarningVariable warns 3>$null
+        } finally { $ErrorActionPreference = 'Continue' }
+
+        $warns | Where-Object { $_ -match 'aaa-broken' -and $_ -match 'sidecar boom' } | Should -Not -BeNullOrEmpty
+        Get-Alias tt -Scope Global -ErrorAction Ignore | Should -Not -BeNullOrEmpty
+        Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
+            @($RegisteredTools) -notcontains 'aaa-broken' -and @($RegisteredTools) -contains 'testtool'
+        }
+    }
+
     It 'warns for unknown tool name' {
         Register-DFTool -Name 'nosuch' -ToolsPath $script:TmpTools `
             -WarningVariable warns 3>$null
@@ -540,7 +563,8 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $fakeJob = Start-ThreadJob -ScriptBlock { Start-Sleep -Seconds 30 }
         Mock Start-DFModulePrewarm { $fakeJob }
 
-        { Register-DFTool -Name 'moduletool', 'throwtool' -ToolsPath $script:TmpTools } | Should -Throw
+        # The throw is caught per tool (warned, not propagated); the job is still removed.
+        { Register-DFTool -Name 'moduletool', 'throwtool' -ToolsPath $script:TmpTools 3>$null } | Should -Not -Throw
 
         Get-Job -Id $fakeJob.Id -ErrorAction Ignore | Should -BeNullOrEmpty
 

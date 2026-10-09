@@ -36,6 +36,11 @@ function Register-DFCatalogProvider {
         Position in the canonical catalog order; lower comes first.
     .PARAMETER SourceFile
         The provider's own file; pass $PSCommandPath.
+    .PARAMETER PackageManager
+        The name tool records use for this catalog in their packages block, when it
+        differs from -Name: packages.cargo is listed by crates, packages.psresource
+        by psgallery. Identity keys always use the catalog name; see
+        ConvertTo-DFCatalogSource.
     .PARAMETER ExtraFiles
         Other Private files the provider's functions need, by file name.
     .PARAMETER Test
@@ -53,6 +58,7 @@ function Register-DFCatalogProvider {
         [Parameter(Mandatory)][ValidateSet('query-cache', 'snapshot')][string]$Kind,
         [Parameter(Mandatory)][int]$Order,
         [Parameter(Mandatory)][string]$SourceFile,
+        [string]$PackageManager,
         [string[]]$ExtraFiles = @(),
         [scriptblock]$Test = { $true },
         [scriptblock]$Refresh,
@@ -67,6 +73,7 @@ function Register-DFCatalogProvider {
         Name              = $Name
         Kind              = $Kind
         Order             = $Order
+        PackageManager    = $PackageManager ? $PackageManager : $Name
         # This file first, so a runspace that loads only these files can register.
         Files             = @('DFCatalog.Base.ps1', (Split-Path $SourceFile -Leaf)) + $ExtraFiles
         InstalledFunction = $installed
@@ -76,6 +83,37 @@ function Register-DFCatalogProvider {
         Refresh           = $Refresh ?? [scriptblock]::Create("param(`$Query) if (`$Query) { `$null = $search -Query `$Query -Fresh }")
         Detail            = $Detail ?? [scriptblock]::Create("param(`$PackageId, `$Fresh) Get-DFCatalog${stem}Detail -PackageId `$PackageId -Fresh:`$Fresh")
     }
+}
+
+function ConvertTo-DFCatalogSource {
+    <#
+    .SYNOPSIS
+        Maps a packages-block key (a package-manager name) to the catalog name that lists it.
+    .DESCRIPTION
+        Tool records and the identity guide key packages by the manager that
+        installs them (cargo, psresource), because Install-DFTool runs that manager.
+        Catalog hits carry the catalog name (crates, psgallery). Identity keys must
+        use one vocabulary, so every index built from a packages block goes through
+        this. A name that is already a catalog name, or that no provider claims,
+        is returned unchanged, lowercased.
+    .PARAMETER Name
+        The packages-block key or catalog name.
+    .EXAMPLE
+        ConvertTo-DFCatalogSource cargo
+
+        Returns 'crates'.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Name)
+    $key = $Name.ToLowerInvariant()
+    if ($script:DFCatalogProviders.ContainsKey($key)) { return $key }
+    foreach ($provider in $script:DFCatalogProviders.Values) {
+        if ($provider['PackageManager'] -and $provider['PackageManager'] -eq $key) { return $provider['Name'] }
+    }
+    $key
 }
 
 function Get-DFIdentityKeys {

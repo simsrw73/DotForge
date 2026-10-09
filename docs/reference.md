@@ -687,7 +687,7 @@ For each requested tool that is installed (its executable is on PATH, or for a "
      $XDG_STATE_HOME\dotforge\setup-state.json).
 ```
 
-Tools that aren't installed are skipped silently (use -Verbose to see them). Tools are registered in dependency order, honoring "dependsOn".
+Tools that aren't installed are skipped silently (use -Verbose to see them). Tools are registered in dependency order, honoring "dependsOn". If one tool fails (a companion throws, or any error under $ErrorActionPreference = 'Stop'), DotForge warns with its name and goes on with the rest; that tool is left out of the completion stack.
 
 After the loop it installs the completion stack (Carapace, PSFzf or inshellisense Tab handling) once, and warns once if Coreutils for Windows shadows any DotForge command (see Get-DFCommandConflict).
 

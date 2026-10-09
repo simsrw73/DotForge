@@ -23,6 +23,9 @@ function Register-DFTool {
 
         Tools that aren't installed are skipped silently (use -Verbose to see
         them). Tools are registered in dependency order, honoring "dependsOn".
+        If one tool fails (a companion throws, or any error under
+        $ErrorActionPreference = 'Stop'), DotForge warns with its name and
+        goes on with the rest; that tool is left out of the completion stack.
 
         After the loop it installs the completion stack (Carapace, PSFzf or
         inshellisense Tab handling) once, and warns once if Coreutils for
@@ -121,7 +124,14 @@ function Register-DFTool {
                 Write-Verbose "DotForge: '$($tool.executable)' not available — skipping $($tool.name)"
                 continue
             }
-            Invoke-DFToolRegistration -Tool $tool -RoleWinners $roleWinners -ToolsPath $resolvedToolsPath -SkipSetup $skipSetup -RoleDb $roleDb
+            # One tool's failure (most often a throwing companion, or any error under a
+            # profile's $ErrorActionPreference = 'Stop') must not abort every tool after it.
+            try {
+                Invoke-DFToolRegistration -Tool $tool -RoleWinners $roleWinners -ToolsPath $resolvedToolsPath -SkipSetup $skipSetup -RoleDb $roleDb
+            } catch {
+                Write-Warning "DotForge: $($tool.name) failed to register: $($_.Exception.Message)"
+                continue
+            }
             Write-Verbose "DotForge: $($tool.name) registered"
             $registered.Add($tool.name)
         }

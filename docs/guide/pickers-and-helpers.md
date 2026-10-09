@@ -121,7 +121,7 @@ Get-Content (Join-Path $HOME '.local' 'bin' 'ps7.cmd')
 ```
 
 ```text
-WARNING: DotForge: '...\.local\bin' is not on PATH - shims won't be invocable until it is added
+WARNING: DotForge: '...\.local\bin' is not on PATH — shims won't be invocable until it is added
 @echo off
 setlocal
 "...pwsh.exe" %*

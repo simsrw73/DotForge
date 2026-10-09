@@ -36,9 +36,9 @@ function Get-DFHelpTopicList {
               Sort-Object Name |
               ForEach-Object { "$($_.Name)`t$($_.Category)" }
 
-    New-DFDirectory $cacheDir
-    Set-Content -Path $keyFile   -Value $fingerprint -Encoding UTF8
-    Set-Content -Path $cacheFile -Value $topics      -Encoding UTF8
+    # Content first, then the key that vouches for it (see Write-DFFileAtomic).
+    Write-DFFileAtomic -Path $cacheFile -Value ($topics -join "`n")
+    Write-DFFileAtomic -Path $keyFile   -Value $fingerprint
 
     $topics
 }

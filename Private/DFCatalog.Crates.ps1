@@ -142,4 +142,4 @@ function Get-DFCatalogCratesDetail {
 }
 
 # A pure web registry: searchable without a local toolchain, so always available.
-Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile $PSCommandPath
+Register-DFCatalogProvider -Name crates -Kind query-cache -Order 6 -SourceFile $PSCommandPath -PackageManager cargo

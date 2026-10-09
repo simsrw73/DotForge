@@ -54,9 +54,8 @@ function Resolve-DFCliHelpFlag {
 
         if ($looksHelp -and -not $isError) {
             if ($cacheFile) {
-                New-DFDirectory $cacheDir
                 $cache[$Name] = $flag
-                $cache | ConvertTo-Json | Set-Content -Path $cacheFile -Encoding UTF8
+                Write-DFFileAtomic -Path $cacheFile -Value ($cache | ConvertTo-Json)
             }
             return $flag
         }
