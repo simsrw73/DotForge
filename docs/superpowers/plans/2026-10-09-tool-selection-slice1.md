@@ -41,7 +41,8 @@ The user's installed module (`OneDrive\Documents\PowerShell\Modules\DotForge`) i
    - Invariant tests: members exist; no group name equals a tool name; no nesting; descriptions present.
 4. **`Resolve-DFRequestedTools`** (private, pure). Inputs: Tools, ExcludeTools, the group DB, and a record lookup.
    - Output: an ordered request set with `RequestedBy` and `Excluded` entries.
-   - Warnings: unknown tool (did you mean), unknown group (error), and excluding something that wasn't requested.
+   - Warnings: unknown tool (did you mean), unknown group, and excluding something that wasn't requested.
+   - **Deviation from the spec:** an unknown group **warns** instead of erroring, so a typo can't abort a profile that sets `$ErrorActionPreference = 'Stop'`.
    - In this slice it orders by the existing `dependsOn`. Requirements come in slice 2.
 5. **Read only requested records.** `Import-DFToolDb` gains `-Name` and reads only those `Tools/<name>.json` files, plus their `dependsOn` closure for ordering. The whole-folder read stays for `Get-DFTool`/`Find-DFTool`.
 6. **Roles over requested tools.**
