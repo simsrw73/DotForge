@@ -1,6 +1,6 @@
 # Companion for vivid — resolve the configured theme, generate (or reuse a
-# cached) LS_COLORS value, and apply it to the session. Caching mirrors
-# Private/Get-DFHelpTopicList.ps1's file-plus-fingerprint pattern: the
+# cached) LS_COLORS value, and apply it to the session. Caching uses
+# Get-DFFingerprintCache (Private/Get-DFFingerprintCache.ps1): the
 # fingerprint is just the resolved theme name, so a theme change invalidates
 # the cache and a stable theme reuses it without spawning vivid again
 # (~42ms measured locally — worth avoiding on every shell startup).
@@ -8,15 +8,14 @@
 # Invoke-DFApplyLSColorsTheme is a function:global: (callable after
 # Register-DFTool returns, and from the fls picker). Private functions can't be
 # called *by name* from such a closure, but a scriptblock captured here keeps
-# its module binding, so $_xdgPath below works. (An earlier note here called
+# its module binding, so $_fingerprintCache below works. (An earlier note here called
 # this a hard constraint; capturing the scriptblock is the way around it.)
 #
 # Reads: $DFConfig.VividTheme, then $DFConfig.Theme, then settings.theme in vivid.json.
 # Sets: LS_COLORS (read by eza, lsd and other listing tools).
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
 
-$_xdgPath     = ${function:Get-DFXdgPath}
-$_writeAtomic = ${function:Write-DFFileAtomic}
+$_fingerprintCache = ${function:Get-DFFingerprintCache}
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     <#
@@ -55,28 +54,16 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         [switch]$Force
     )
 
-    $cacheDir  = Join-Path (& $_xdgPath Cache) 'dotforge'
-    $cacheFile = Join-Path $cacheDir 'ls-colors.txt'
-    $keyFile   = Join-Path $cacheDir 'ls-colors.key'
-
-    $cacheValid = -not $Force -and (Test-Path $cacheFile) -and (Test-Path $keyFile) -and
-                  ((Get-Content $keyFile -Raw).Trim() -eq $Name)
-
-    if ($cacheValid) {
-        $value = (Get-Content $cacheFile -Raw).Trim()
-    } else {
+    # Keyed by theme name: a theme change regenerates, the same theme reuses it.
+    $value = & $_fingerprintCache -Name 'ls-colors' -Fingerprint $Name -Force:$Force -Generate {
         $raw = & vivid generate $Name 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "DotForge: vivid theme '$Name' failed — $($raw.Trim())"
             return
         }
-        $value = $raw.Trim()
-
-        # Content first, then the key that vouches for it: a crash in between
-        # leaves an old key, which only costs a regeneration.
-        & $_writeAtomic -Path $cacheFile -Value $value
-        & $_writeAtomic -Path $keyFile   -Value $Name
+        $raw
     }
+    if (-not $value) { return }
 
     [System.Environment]::SetEnvironmentVariable('LS_COLORS', $value, 'Process')
 }.GetNewClosure())

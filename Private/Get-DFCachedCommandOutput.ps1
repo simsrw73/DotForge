@@ -64,28 +64,10 @@ function Get-DFCachedCommandOutput {
         return & $Generate
     }
 
-    $cacheDir  = Join-Path (Get-DFXdgPath Cache) 'dotforge'
-    $cacheFile = Join-Path $cacheDir "$Name.txt"
-    $keyFile   = Join-Path $cacheDir "$Name.key"
     $target = Resolve-DFExecutableTarget -Path $cmd.Source
     $fingerprint = "$target|$((Get-Item $target).LastWriteTimeUtc.Ticks)"
     if ($ExtraKey) { $fingerprint += "|$ExtraKey" }
-
-    $cacheValid = -not $Force -and (Test-Path $cacheFile -PathType Leaf) -and (Test-Path $keyFile -PathType Leaf) -and
-                  ((Get-Content $keyFile -Raw).Trim() -eq $fingerprint)
-
-    if ($cacheValid) {
-        return (Get-Content $cacheFile -Raw).Trim()
-    }
-
-    $value = (& $Generate)
-    if ($value) { $value = $value.Trim() }
-    if ($value) {
-        # Content first, then the key that vouches for it (see Write-DFFileAtomic).
-        Write-DFFileAtomic -Path $cacheFile -Value $value
-        Write-DFFileAtomic -Path $keyFile   -Value $fingerprint
-    }
-    return $value
+    Get-DFFingerprintCache -Name $Name -Fingerprint $fingerprint -Generate $Generate -Force:$Force
 }
 
 function Resolve-DFExecutableTarget {
