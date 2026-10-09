@@ -1,215 +1,102 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
+    function script:New-InstallTools {
+        $dir = Join-Path $TestDrive "it-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        New-Item -ItemType Directory $dir | Out-Null
+        @{
+            scoop = '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true } }'
+            npm   = '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "packages": { "scoop": "nodejs" }, "installs": { "from": "npm", "command": ["npm","i","-g","{id}"], "batch": true } }'
+            pnpm  = '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "packages": { "scoop": "pnpm" }, "installs": { "from": "npm", "command": ["pnpm","add","-g","{id}"], "batch": true } }'
+            glow  = '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" } }'
+            ish   = '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }'
+        }.GetEnumerator() | ForEach-Object { Set-Content (Join-Path $dir "$($_.Key).json") $_.Value }
+        $dir
+    }
 }
 
 Describe 'Install-DFTool' {
     BeforeEach {
-        $script:DFToolDb          = $null
-        $script:DFPackageManagers = $null
-        $script:DFToolAvailability = @{}
-        $script:TmpTools = Join-Path $TestDrive 'tools'
-        New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
-
-        @'
-{
-  "name": "pkgtool",
-  "executable": "pkgtool.exe",
-  "packages": { "scoop": "pkgtool-scoop", "winget": "Vendor.pkgtool" }
-}
-'@ | Set-Content (Join-Path $script:TmpTools 'pkgtool.json')
-
-        @'
-{ "name": "nopkg", "executable": "nopkg.exe", "packages": {} }
-'@ | Set-Content (Join-Path $script:TmpTools 'nopkg.json')
-
-        Set-DFTestConfig $null
-    }
-
-    It 'warns for an unknown tool name' {
-        Install-DFTool -Name 'nosuch' -ToolsPath $script:TmpTools -WarningVariable warns 3>$null
-        $warns | Where-Object { $_ -match 'nosuch' } | Should -Not -BeNullOrEmpty
-    }
-
-    It 'warns when no package manager is available for the tool' {
-        Mock Get-Command { $null }
-        Install-DFTool -Name 'pkgtool' -ToolsPath $script:TmpTools -WarningVariable warns 3>$null
-        $warns | Where-Object { $_ -match 'pkgtool' } | Should -Not -BeNullOrEmpty
-    }
-
-    It 'warns when the available PM has no package for the tool' {
-        Mock Get-Command { if ($Name -eq 'choco') { [PSCustomObject]@{ Name = 'choco' } } else { $null } }
-        Install-DFTool -Name 'pkgtool' -PackageManager 'choco' -ToolsPath $script:TmpTools -WarningVariable warns 3>$null
-        $warns | Where-Object { $_ -match 'pkgtool' } | Should -Not -BeNullOrEmpty
-    }
-
-    It 'uses -PackageManager override when specified' {
-        $script:ScoopCalled = $false
-        function script:scoop { $script:ScoopCalled = $true; $global:LASTEXITCODE = 0 }
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools
-        $script:ScoopCalled | Should -BeTrue
-    }
-
-    It 'uses the InstallOrder setting when set' {
-        Set-DFTestConfig @{ InstallOrder = @('winget') }
-        $script:WingetCalled = $false
-        function script:winget { $script:WingetCalled = $true; $global:LASTEXITCODE = 0 }
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        Install-DFTool -Name 'pkgtool' -ToolsPath $script:TmpTools
-        $script:WingetCalled | Should -BeTrue
-        Set-DFTestConfig $null
-    }
-
-    It 'tolerates $DFConfig being set to $null' {
-        # Regression: guarding on the variable's existence rather than its value
-        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        Set-DFTestConfig $null
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        function script:scoop { $global:LASTEXITCODE = 0 }
-        { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools } |
-            Should -Not -Throw
-        Set-DFTestConfig $null
-    }
-
-    It 'installs a cargo-only tool via cargo when scoop/winget/choco lack it' {
-        @'
-{ "name": "cargotool", "executable": "cargotool.exe", "packages": { "crates": "cargotool" } }
-'@ | Set-Content (Join-Path $script:TmpTools 'cargotool.json')
-        $script:DFToolDb = $null
-
-        $script:CargoArgs = $null
-        function script:cargo { $script:CargoArgs = $args; $global:LASTEXITCODE = 0 }
-        # cargo present; the default managers are not
-        Mock Get-Command { if ($Name -eq 'cargo') { [PSCustomObject]@{ Name = 'cargo' } } else { $null } }
-
-        Install-DFTool -Name 'cargotool' -ToolsPath $script:TmpTools
-        ($script:CargoArgs -join ' ') | Should -Match 'install\s+cargotool'
-    }
-
-    It 'prefers scoop over cargo when both are declared and available' {
-        @'
-{ "name": "dualtool", "executable": "dualtool.exe", "packages": { "scoop": "dualtool", "crates": "dualtool" } }
-'@ | Set-Content (Join-Path $script:TmpTools 'dualtool.json')
-        $script:DFToolDb = $null
-
-        $script:ScoopHit = $false; $script:CargoHit = $false
-        function script:scoop { $script:ScoopHit = $true; $global:LASTEXITCODE = 0 }
-        function script:cargo { $script:CargoHit = $true; $global:LASTEXITCODE = 0 }
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }   # everything available
-
-        Install-DFTool -Name 'dualtool' -ToolsPath $script:TmpTools
-        $script:ScoopHit | Should -BeTrue
-        $script:CargoHit | Should -BeFalse
-    }
-
-    It 'does not throw when -WhatIf is specified' {
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools -WhatIf } |
-            Should -Not -Throw
-    }
-
-    It 'processes multiple tool names in a single call' {
-        Mock Get-Command { $null }
-        Install-DFTool -Name @('pkgtool', 'nopkg', 'nosuch') -ToolsPath $script:TmpTools `
-            -WarningVariable warns 3>$null
-        @($warns).Count | Should -Be 3
-    }
-
-    It 'installs via Install-PSResource when psresource package is specified' {
-        @'
-{ "name": "psmod", "type": "module", "executable": "PsMod",
-  "packages": { "psgallery": "PsMod" } }
-'@ | Set-Content (Join-Path $script:TmpTools 'psmod.json')
-        $script:DFToolDb = $null
-
-        $script:PSResourceCalled = $false
-        function script:Install-PSResource {
-            param($Name, $Scope, $ErrorAction)
-            $script:PSResourceCalled = $true
+        Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
+        $script:Tools = New-InstallTools
+        $script:Installed = @('scoop.cmd')
+        $script:Calls = [System.Collections.Generic.List[string]]::new()
+        Mock Test-DFToolAvailable { $Executable -in $script:Installed }
+        Mock Invoke-DFInstallCommand {
+            $script:Calls.Add($Argv -join ' ')
+            # An install makes its tools "installed".
+            $exe = @{ glow = 'glow.exe'; '@microsoft/inshellisense' = 'is.cmd'; nodejs = 'npm.cmd'; pnpm = 'pnpm.cmd' }
+            if ($Argv[1] -in 'install', 'i', 'add') { $script:Installed += @($Argv | Select-Object -Skip 2 | ForEach-Object { $exe[$_] } | Where-Object { $_ }) }
+            [pscustomobject]@{ ExitCode = 0; Output = '' }
         }
-        Mock Get-Command { [PSCustomObject]@{ Name = 'Install-PSResource' } } `
-            -ParameterFilter { $Name -eq 'Install-PSResource' }
+        Mock Update-DFPathFromRegistry { }
+        Mock Test-DFElevated { $false }
+        Mock Write-DFConflictNotice { }
+        Mock Test-DFInteractiveHost { $false }
+        Mock Read-DFInstallChoice { $Default }
+    }
+    AfterEach { Restore-DFTestXdg; Set-DFTestConfig $null }
 
-        Install-DFTool -Name 'psmod' -PackageManager 'psresource' -ToolsPath $script:TmpTools
-        $script:PSResourceCalled | Should -BeTrue
-
-        Remove-Item (Join-Path $script:TmpTools 'psmod.json') -ErrorAction Ignore
-        $script:DFToolDb = $null
+    It '-Missing installs the session''s missing tools and activates them' {
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        $r = Install-DFTool -Missing -UseDefaults -ToolsPath $script:Tools 6>$null
+        $script:Calls | Should -Be @('scoop install glow')
+        ($r | Where-Object Tool -eq glow).Result | Should -Be 'Installed'
+        (Get-DFToolStatus -Name glow).State | Should -Be 'Active'
+    }
+    It '-WhatIf installs nothing' {
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        $null = Install-DFTool -Missing -WhatIf -ToolsPath $script:Tools 6>$null
+        $script:Calls | Should -BeNullOrEmpty
+    }
+    It 'a non-interactive host without -UseDefaults reports a gap and its dependents, and asks nothing' {
+        $r = Install-DFTool -Name ish -ToolsPath $script:Tools 3>$null 6>$null
+        Should -Invoke Read-DFInstallChoice -Times 0
+        $script:Calls | Should -BeNullOrEmpty
+        ($r | Where-Object Tool -eq ish).Result | Should -Be 'Gap'
+        ($r | Where-Object Tool -eq ish).Detail | Should -Match 'npm, pnpm'
+    }
+    It '-UseDefaults fills a gap with the role''s top member and installs it first' {
+        $null = Install-DFTool -Name ish -UseDefaults -ToolsPath $script:Tools 3>$null 6>$null
+        $script:Calls | Should -Be @('scoop install nodejs', 'npm i -g @microsoft/inshellisense')
+    }
+    It 'interactive mode asks for each open choice, showing the default, and uses the answer' {
+        Mock Test-DFInteractiveHost { $true }
+        # Pick pnpm for the manager question; say yes to the plan.
+        Mock Read-DFInstallChoice { if ($Options -contains 'pnpm') { 'pnpm' } else { 'y' } }
+        $null = Install-DFTool -Name ish -ToolsPath $script:Tools 3>$null 6>$null
+        Should -Invoke Read-DFInstallChoice -Times 1 -ParameterFilter { $Default -eq 'npm' -and $Options -contains 'pnpm' }
+        Should -Invoke Read-DFInstallChoice -Times 1 -ParameterFilter { $Options -contains 'y' }
+        $script:Calls | Should -Be @('scoop install pnpm', 'pnpm add -g @microsoft/inshellisense')
+    }
+    It 'warns that a tool installed by name but not in Tools loads only this session' {
+        Start-DFSession -Config @{ Tools = @() } -ToolsPath $script:Tools 3>$null
+        $null = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools -WarningVariable w 3>$null 6>$null
+        "$w" | Should -Match 'glow.*add it to Tools'
+    }
+    It 'does not reinstall what a previous partial run already installed' {
+        $script:Installed += 'glow.exe'
+        $null = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools 3>$null 6>$null
+        $script:Calls | Should -BeNullOrEmpty
+    }
+    It '-Via installs from the named source for this call' {
+        $null = Install-DFTool -Name glow -Via scoop -UseDefaults -ToolsPath $script:Tools 3>$null 6>$null
+        $script:Calls | Should -Be @('scoop install glow')
     }
 }
 
-Describe 'Install-DFTool with a scoop bucket' {
-    BeforeEach {
-        $script:DFToolDb = $null
-        $script:DFToolAvailability = @{}
-        $script:TmpTools = Join-Path $TestDrive "tools-$([guid]::NewGuid())"
-        New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
-        @'
-{ "name": "bucktool", "executable": "bucktool.exe",
-  "packages": { "scoop": { "id": "bucktool", "feed": { "name": "testbucket", "url": "https://example.invalid/bucket" } } } }
-'@ | Set-Content (Join-Path $script:TmpTools 'bucktool.json')
-        $script:ScoopCalls = [System.Collections.Generic.List[string]]::new()
-        $script:Buckets = @('main')
-        $script:BucketAddExit = 0
-        $script:ListCalls = 0
-        $script:ListFailures = 0
-        function script:scoop {
-            $script:ScoopCalls.Add(($args -join ' '))
-            if ($args[0] -eq 'bucket' -and $args[1] -eq 'list') {
-                $script:ListCalls++
-                if ($script:ListCalls -le $script:ListFailures) { $global:LASTEXITCODE = 1; return }
-                $script:Buckets | ForEach-Object { [pscustomobject]@{ Name = $_ } }; $global:LASTEXITCODE = 0; return
-            }
-            if ($args[0] -eq 'bucket' -and $args[1] -eq 'add') { $global:LASTEXITCODE = $script:BucketAddExit; return }
-            $global:LASTEXITCODE = 0
-        }
-        Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        Set-DFTestConfig $null
+Describe 'Start-DFSession install hints' {
+    BeforeEach { Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null; $script:Tools = New-InstallTools; Mock Write-DFConflictNotice { } }
+    AfterEach { Restore-DFTestXdg; Set-DFTestConfig $null }
+    It 'reads no manager record when nothing is missing' {
+        Mock Test-DFToolAvailable { $true }
+        Mock New-DFInstallPlan { }
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        Should -Invoke New-DFInstallPlan -Times 0
     }
-    AfterEach { Remove-Item function:scoop -ErrorAction Ignore }
-
-    It 'adds a missing bucket, then installs the bucket-qualified package' {
-        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
-        $script:ScoopCalls | Should -Contain 'bucket add testbucket https://example.invalid/bucket'
-        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
-    }
-
-    It 'skips the add when the bucket is already there' {
-        $script:Buckets = @('main', 'testbucket')
-        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
-        @($script:ScoopCalls | Where-Object { $_ -like 'bucket add*' }).Count | Should -Be 0
-        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
-    }
-
-    It 'warns and does not install when the bucket cannot be added' {
-        $script:BucketAddExit = 1
-        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools -WarningVariable w -WarningAction SilentlyContinue 6>$null
-        "$w" | Should -Match "testbucket"
-        @($script:ScoopCalls | Where-Object { $_ -like 'install*' }).Count | Should -Be 0
-    }
-
-    It 'prints the bucket message on its own line, before the install progress line' {
-        $info = @(Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools 6>&1 | ForEach-Object { "$_" })
-        $added = [array]::FindIndex([string[]]$info, [Predicate[string]] { param($l) $l -match 'added scoop bucket' })
-        $installing = [array]::FindIndex([string[]]$info, [Predicate[string]] { param($l) $l -match 'Installing bucktool' })
-        $added | Should -BeGreaterOrEqual 0
-        $added | Should -BeLessThan $installing
-    }
-
-    It 'installs when a failed add turns out to be a bucket that was already there' {
-        $script:ListFailures = 1          # the first list errors, so the bucket looks missing
-        $script:Buckets = @('main', 'testbucket')
-        $script:BucketAddExit = 1         # scoop refuses: it already exists
-        Install-DFTool -Name bucktool -PackageManager scoop -ToolsPath $script:TmpTools -WarningVariable w -WarningAction SilentlyContinue 6>$null
-        $w | Should -BeNullOrEmpty
-        $script:ScoopCalls | Should -Contain 'install testbucket/bucktool'
-    }
-
-    It 'installs an unqualified id when the tool declares no bucket' {
-        '{ "name": "plain", "executable": "plain.exe", "packages": { "scoop": "plain" } }' | Set-Content (Join-Path $script:TmpTools 'plain.json')
-        Install-DFTool -Name plain -PackageManager scoop -ToolsPath $script:TmpTools 6>$null
-        $script:ScoopCalls | Should -Contain 'install plain'
-        @($script:ScoopCalls | Where-Object { $_ -like 'bucket*' }).Count | Should -Be 0
+    It 'says how a missing tool would be installed' {
+        Mock Test-DFToolAvailable { $Executable -eq 'scoop.cmd' }
+        Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
+        (Get-DFToolStatus -Name glow).Detail | Should -Match 'Install-DFTool -Missing will install it via scoop'
     }
 }

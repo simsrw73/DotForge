@@ -137,6 +137,22 @@ function Invoke-DFSessionActivation {
         }
     }
 
+    # The install layer is built only when something is missing (no cost on a
+    # healthy machine): each missing tool's detail says how it would install.
+    $missingNames = @($tools | Where-Object { $status[$_.name].State -eq 'Missing' -and -not $status[$_.name].PSObject.Properties['FallbackTool'] } | ForEach-Object name)
+    if ($missingNames) {
+        $all = Import-DFToolDb @pathArgs
+        $plan = New-DFInstallPlan -Name $missingNames -ToolDb $all -IsAvailable { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type) } 3>$null
+        foreach ($it in $plan.Items) {
+            if (-not $status.Contains($it.Tool)) { continue }
+            $how = if ($it.ProvidedBy) { "comes with $($it.ProvidedBy)" } else { "via $($it.Manager.name)" }
+            $status[$it.Tool].Detail = "$($status[$it.Tool].Detail); Install-DFTool -Missing will install it $how"
+        }
+        foreach ($g in $plan.Gaps) {
+            if ($status.Contains($g.Tool)) { $status[$g.Tool].Detail = "$($status[$g.Tool].Detail); can't install yet: $($g.Reason)" }
+        }
+    }
+
     foreach ($t in $tools) { if ($status[$t.name].State -eq 'Active') { $t } }
 }
 

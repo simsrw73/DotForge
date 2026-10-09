@@ -21,7 +21,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
 | [Get-DFToolStatus](#get-dftoolstatus) |  | Shows what this session's Start-DFSession decided for each requested tool. |
-| [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
+| [Install-DFTool](#install-dftool) |  | Installs missing tools: everything the session reported missing (-Missing), or the named tools. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
 | [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
@@ -477,70 +477,63 @@ Lists the requested tools that aren't installed; Install-DFTool -Missing install
 
 ### Install-DFTool
 
-Installs one or more known CLI tools via the first available package manager that has a package entry for each tool.
+Installs missing tools: everything the session reported missing (-Missing), or the named tools.
 
 ```text
-Install-DFTool [-Name] <string[]> [[-PackageManager] <string>] [[-ToolsPath] <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Install-DFTool -Missing [-UseDefaults] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Install-DFTool -Name <string[]> [-Via <string>] [-UseDefaults] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
-Looks up each tool in the JSON registry (Tools/&lt;name&gt;.json) and walks a package-manager preference list, installing through the first manager that is on PATH and has a package id in the tool's "packages" map.
-
-The preference list is, in order of precedence: -PackageManager, then $DFConfig['PackageManagerOrder'], then the auto-detected order (scoop, winget, choco). cargo is appended as a last resort for any tool that declares packages.cargo, unless -PackageManager pins a manager.
+Builds one plan for all targets: a source and manager per tool (InstallVia, the tool's install.prefer, InstallOrder, DotForge's order; ExcludeSources never used unless InstallVia names it), in stages so that a manager or runtime installs before the tools that need it. Nothing you didn't ask for is installed, unless you choose it or pass -UseDefaults.
 
 ```text
-Commands run, per manager:
-    scoop       scoop install <id>; for a tool that declares scoopBucket,
-                scoop bucket add <name> <url> (when missing), then
-                scoop install <name>/<id>
-    winget      winget install --id <id> --silent --accept-source-agreements --accept-package-agreements
-    choco       choco install <id> -y        (needs an elevated shell)
-    cargo       cargo install <id>
-    psresource  Install-PSResource -Name <id> -Scope CurrentUser
+Modes:
+  - Interactive (default, when someone can answer): each open choice
+    shows its default ("Enter keeps it"); then the whole plan is shown,
+    including third-party feeds and elevation, and confirmed once.
+  - -UseDefaults: no questions; DotForge's and the tool specs'
+    defaults fill every gap.
+  - No one to ask and no -UseDefaults (a script): only what needs no
+    decision installs; each gap is reported with the tools waiting on it.
+  - -WhatIf: the plan only.
 ```
 
-The package manager's own output is discarded; each attempt prints one progress line ("Installing &lt;tool&gt; via &lt;pm&gt; (&lt;id&gt;)… ✓" or "failed"). A failure moves on to the next manager. An unknown tool name, or a tool no available manager can install, writes a warning and continues with the next name. Supports -WhatIf and -Confirm.
-
-Installing does not configure the tool. Run Register-DFTool -Name &lt;tool&gt; (or start a new session) afterwards.
+Afterwards, new tools are activated in this session. A tool you named that isn't in your Tools setting is active only until the shell closes.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Name` | string[] |  | yes |  | One or more tool names to install. Each must match a Tools/&lt;name&gt;.json record; list them with Get-DFTool. |
-| `-PackageManager` | string |  |  |  | Use only this package manager for the call: scoop, winget, choco, psresource, or cargo. Default: the preference list described above. |
-| `-ToolsPath` | string |  |  |  | Read tool records from this directory instead of the module's Tools folder. Intended for tests. |
+| `-Missing` | switch |  | yes |  | Install the tools Get-DFToolStatus -Missing lists. |
+| `-Name` | string[] |  | yes |  | Tools (and +groups) to install. |
+| `-Via` | string |  |  |  | Install the named tools from this source, for this call only. |
+| `-UseDefaults` | switch |  |  |  | Don't ask: take the default for every open choice. |
+| `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
 
-**Outputs:** None. Writes progress to the host and installs software through the chosen package manager.
+**Outputs:** PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
 
 **Example 1**
 
 ```powershell
-Install-DFTool -Name ripgrep
+Install-DFTool -Missing
 ```
 
-Installs ripgrep via scoop, winget, or choco — whichever is available first.
+Asks about anything undecided, shows the plan, and installs it.
 
 **Example 2**
 
 ```powershell
-Install-DFTool -Name ripgrep, bat, eza
+Install-DFTool -Name glow -Via scoop -UseDefaults
 ```
 
-Installs multiple tools in one call.
+Installs glow from scoop without asking.
 
 **Example 3**
 
 ```powershell
-Install-DFTool -Name ripgrep -PackageManager winget
+Install-DFTool -Missing -WhatIf
 ```
 
-Forces installation via winget regardless of preference order.
-
-**Example 4**
-
-```powershell
-Install-DFTool -Name ripgrep -WhatIf
-```
-
-Shows what would be installed without executing.
+Shows what would be installed, in which stage, and from where.
 
 **See also:** [getting-started](guide/getting-started.md)
 

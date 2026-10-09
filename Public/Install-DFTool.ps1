@@ -3,165 +3,108 @@
 function Install-DFTool {
     <#
     .SYNOPSIS
-        Installs one or more known CLI tools via the first available package manager
-        that has a package entry for each tool.
+        Installs missing tools: everything the session reported missing (-Missing), or the named tools.
     .DESCRIPTION
-        Looks up each tool in the JSON registry (Tools/<name>.json) and walks a
-        package-manager preference list, installing through the first manager
-        that is on PATH and has a package id in the tool's "packages" map.
+        Builds one plan for all targets: a source and manager per tool
+        (InstallVia, the tool's install.prefer, InstallOrder, DotForge's
+        order; ExcludeSources never used unless InstallVia names it), in
+        stages so that a manager or runtime installs before the tools that
+        need it. Nothing you didn't ask for is installed, unless you choose it
+        or pass -UseDefaults.
 
-        The preference list is, in order of precedence: -PackageManager, then
-        $DFConfig['PackageManagerOrder'], then the auto-detected order
-        (scoop, winget, choco). cargo is appended as a last resort for any tool
-        that declares packages.cargo, unless -PackageManager pins a manager.
+        Modes:
+          - Interactive (default, when someone can answer): each open choice
+            shows its default ("Enter keeps it"); then the whole plan is shown,
+            including third-party feeds and elevation, and confirmed once.
+          - -UseDefaults: no questions; DotForge's and the tool specs'
+            defaults fill every gap.
+          - No one to ask and no -UseDefaults (a script): only what needs no
+            decision installs; each gap is reported with the tools waiting on it.
+          - -WhatIf: the plan only.
 
-        Commands run, per manager:
-            scoop       scoop install <id>; for a tool that declares scoopBucket,
-                        scoop bucket add <name> <url> (when missing), then
-                        scoop install <name>/<id>
-            winget      winget install --id <id> --silent --accept-source-agreements --accept-package-agreements
-            choco       choco install <id> -y        (needs an elevated shell)
-            cargo       cargo install <id>
-            psresource  Install-PSResource -Name <id> -Scope CurrentUser
-
-        The package manager's own output is discarded; each attempt prints one
-        progress line ("Installing <tool> via <pm> (<id>)… ✓" or "failed"). A
-        failure moves on to the next manager. An unknown tool name, or a tool no
-        available manager can install, writes a warning and continues with the
-        next name. Supports -WhatIf and -Confirm.
-
-        Installing does not configure the tool. Run Register-DFTool -Name <tool>
-        (or start a new session) afterwards.
+        Afterwards, new tools are activated in this session. A tool you named
+        that isn't in your Tools setting is active only until the shell closes.
+    .PARAMETER Missing
+        Install the tools Get-DFToolStatus -Missing lists.
     .PARAMETER Name
-        One or more tool names to install. Each must match a Tools/<name>.json
-        record; list them with Get-DFTool.
-    .PARAMETER PackageManager
-        Use only this package manager for the call: scoop, winget, choco,
-        psresource, or cargo. Default: the preference list described above.
+        Tools (and +groups) to install.
+    .PARAMETER Via
+        Install the named tools from this source, for this call only.
+    .PARAMETER UseDefaults
+        Don't ask: take the default for every open choice.
     .PARAMETER ToolsPath
-        Read tool records from this directory instead of the module's Tools
-        folder. Intended for tests.
+        Tools folder. Default: the module's Tools/.
     .EXAMPLE
-        Install-DFTool -Name ripgrep
+        Install-DFTool -Missing
 
-        Installs ripgrep via scoop, winget, or choco — whichever is available first.
+        Asks about anything undecided, shows the plan, and installs it.
     .EXAMPLE
-        Install-DFTool -Name ripgrep, bat, eza
+        Install-DFTool -Name glow -Via scoop -UseDefaults
 
-        Installs multiple tools in one call.
+        Installs glow from scoop without asking.
     .EXAMPLE
-        Install-DFTool -Name ripgrep -PackageManager winget
+        Install-DFTool -Missing -WhatIf
 
-        Forces installation via winget regardless of preference order.
-    .EXAMPLE
-        Install-DFTool -Name ripgrep -WhatIf
-
-        Shows what would be installed without executing.
+        Shows what would be installed, in which stage, and from where.
     .OUTPUTS
-        None. Writes progress to the host and installs software through the
-        chosen package manager.
+        PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
     #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [OutputType([void])]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Missing')]
+    [OutputType([pscustomobject])]
     param(
-        [Parameter(Mandatory)][string[]]$Name,
-        [string]$PackageManager,
+        [Parameter(Mandatory, ParameterSetName = 'Missing')][switch]$Missing,
+        [Parameter(Mandatory, ParameterSetName = 'Name')][string[]]$Name,
+        [Parameter(ParameterSetName = 'Name')][string]$Via,
+        [switch]$UseDefaults,
         [string]$ToolsPath
     )
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $db = Import-DFToolDb @pathArgs
 
-    $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
-    $db = Import-DFToolDb @dbArgs
-
-    $pmOrder = if ($PackageManager) {
-        @($PackageManager)
-    } elseif (Get-DFConfig InstallOrder) {
-        @(Get-DFConfig InstallOrder)
+    $targets = if ($Missing) {
+        @(Get-DFToolStatus -Missing 3>$null | ForEach-Object Name)
     } else {
-        Resolve-DFPackageManager
+        @(Resolve-DFRequestedTools -Tools $Name -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) -Source 'Install-DFTool' | ForEach-Object Name)
+    }
+    # Fresh checks: a previous partial run may have installed some of these.
+    $isAvailable = { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type -Force) }
+    $targets = @($targets | Where-Object { $db.ContainsKey($_) -and -not (& $isAvailable $db[$_]) })
+    if (-not $targets) { Write-Host 'DotForge: nothing to install.'; return }
+
+    $viaMap = @{}
+    if ($Via) { foreach ($t in $targets) { $viaMap[$t] = $Via } }
+
+    # Choices: one question per open gap source, until nothing more can be decided.
+    $interactive = -not $UseDefaults -and (Test-DFInteractiveHost)
+    $choice = @{}
+    while ($true) {
+        $plan = New-DFInstallPlan -Name $targets -ToolDb $db -IsAvailable $isAvailable -Choice $choice -Via $viaMap
+        $open = @($plan.Gaps | Where-Object { $_.Options -and $_.Source -and -not $choice.ContainsKey($_.Source) })
+        if (-not $open -or -not ($UseDefaults -or $interactive)) { break }
+        $g = $open[0]
+        $choice[$g.Source] = if ($UseDefaults) { $g.Options[0] }
+            else { Read-DFInstallChoice -Prompt "$($g.Tool) needs a manager for $($g.Source)" -Options $g.Options -Default $g.Options[0] }
     }
 
-    foreach ($toolName in $Name) {
-        if (-not $db.ContainsKey($toolName)) {
-            Write-Warning "DotForge: Unknown tool '$toolName'"
-            continue
-        }
+    Write-DFInstallPlan -Plan $plan
+    $gapRows = @(Get-DFInstallGapResult -Plan $plan)
+    # -WhatIf: the plan only. Interactive: confirm once. -UseDefaults, or no one
+    # to ask: no prompt (without -UseDefaults, only decision-free tools are planned).
+    if (-not $plan.Items -or $WhatIfPreference) { return $gapRows }
+    if ($interactive -and (Read-DFInstallChoice -Prompt "Install $(@($plan.Items).Count) tool(s) as planned above?" -Options 'y', 'n' -Default 'y') -ne 'y') { return $gapRows }
 
-        $tool     = $db[$toolName]
-        $packages = $tool.packages
-        $installedVia = $null
-
-        # cargo is not in the auto-detect priority; append it as a last resort when
-        # this tool declares a cargo package (skipped when -PackageManager pins one).
-        $toolPmOrder = @($pmOrder)
-        if (-not $PackageManager -and
-            $null -ne $packages -and
-            $packages.PSObject.Properties['crates'] -and
-            $toolPmOrder -notcontains 'cargo') {
-            $toolPmOrder += 'cargo'
-        }
-
-        foreach ($pm in $toolPmOrder) {
-            $pmAvailable = if ($pm -eq 'psresource') {
-                Get-Command Install-PSResource -ErrorAction Ignore
-            } else {
-                Get-Command $pm -ErrorAction Ignore
-            }
-            if (-not $pmAvailable) { continue }
-
-            # Packages are keyed by source; two managers install from a differently named one.
-            # (Temporary: slice 3 replaces this loop with manager plugins.)
-            $srcKey  = @{ cargo = 'crates'; psresource = 'psgallery' }[$pm] ?? $pm
-            $pkgProp = if ($null -ne $packages) { $packages.PSObject.Properties[$srcKey] } else { $null }
-            $ref     = if ($null -ne $pkgProp) { Get-DFPackageRef $pkgProp.Value } else { $null }
-            $pkgId   = ${ref}?.Id
-            if (-not $pkgId) { continue }
-
-            if ($PSCmdlet.ShouldProcess("$toolName via $pm ($pkgId)", 'Install')) {
-                # A third-party bucket is added first, so its message (or warning)
-                # gets its own line rather than splitting the progress line below.
-                $installId = $pkgId
-                if ($pm -eq 'scoop' -and $ref.Feed) {
-                    if (-not (Add-DFScoopBucket -Bucket $ref.Feed)) { continue }
-                    $installId = "$($ref.Feed.name)/$pkgId"
-                }
-                Write-Host "  Installing $toolName via $pm ($installId)…" `
-                    -ForegroundColor DarkGray -NoNewline
-
-                $null = switch ($pm) {
-                    'scoop'      { scoop  install $installId 2>&1 }
-                    'winget'     { winget install --id $pkgId --silent `
-                                       --accept-source-agreements `
-                                       --accept-package-agreements 2>&1 }
-                    'choco'      { choco  install $pkgId -y 2>&1 }
-                    'cargo'      { cargo install $pkgId 2>&1 }
-                    'psresource' {
-                        try {
-                            Install-PSResource -Name $pkgId -Scope CurrentUser -ErrorAction Stop | Out-Null
-                            $global:LASTEXITCODE = 0
-                        } catch {
-                            $global:LASTEXITCODE = 1
-                        }
-                    }
-                }
-
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host ' ✓' -ForegroundColor Green
-                    $installedVia = $pm
-                    $null = Test-DFToolAvailable -Executable $tool.executable -Type $tool.type -Force
-                    break
-                } else {
-                    Write-Host ' failed' -ForegroundColor Red
-                }
-            } else {
-                $installedVia = $pm
-                break
-            }
-        }
-
-        if (-not $installedVia) {
-            Write-Warning "DotForge: Could not install '$toolName'. No compatible package manager from: $($pmOrder -join ', ')"
+    $results = @(Invoke-DFInstallPlan -Plan $plan -ToolDb $db -IsAvailable $isAvailable @pathArgs)
+    $done = @($results | Where-Object Result -eq 'Installed' | ForEach-Object Tool)
+    if ($done) {
+        Register-DFTool -Name $done @pathArgs 3>$null
+        $requested = @(Resolve-DFRequestedTools -Tools @(Get-DFConfig Tools) -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) 3>$null | ForEach-Object Name)
+        foreach ($t in $done | Where-Object { $_ -notin $requested -and $_ -in $targets }) {
+            Write-Warning "DotForge: $t is installed and active now; add it to Tools to load it in future sessions."
         }
     }
+    $all = @($results) + $gapRows
+    Write-DFInstallSummary -Result $all
+    $all
 }
