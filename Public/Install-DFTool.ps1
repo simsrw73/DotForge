@@ -64,9 +64,9 @@ function Install-DFTool {
     $db = Import-DFToolDb @pathArgs
 
     $targets = if ($Missing) {
-        @(Get-DFToolStatus -Missing 3>$null | ForEach-Object Name)
+        @(Get-DFToolStatus -Missing 3>$null | ForEach-Object { $_.Name })
     } else {
-        @(Resolve-DFRequestedTools -Tools $Name -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) -Source 'Install-DFTool' | ForEach-Object Name)
+        @(Resolve-DFRequestedTools -Tools $Name -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) -Source 'Install-DFTool' | ForEach-Object { $_.Name })
     }
     # Fresh checks: a previous partial run may have installed some of these.
     $isAvailable = { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type -Force) }
@@ -96,10 +96,10 @@ function Install-DFTool {
     if ($interactive -and (Read-DFInstallChoice -Prompt "Install $(@($plan.Items).Count) tool(s) as planned above?" -Options 'y', 'n' -Default 'y') -ne 'y') { return $gapRows }
 
     $results = @(Invoke-DFInstallPlan -Plan $plan -ToolDb $db -IsAvailable $isAvailable @pathArgs)
-    $done = @($results | Where-Object Result -eq 'Installed' | ForEach-Object Tool)
+    $done = @($results | Where-Object Result -eq 'Installed' | ForEach-Object { $_.Tool })
     if ($done) {
         Register-DFTool -Name $done @pathArgs 3>$null
-        $requested = @(Resolve-DFRequestedTools -Tools @(Get-DFConfig Tools) -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) 3>$null | ForEach-Object Name)
+        $requested = @(Resolve-DFRequestedTools -Tools @(Get-DFConfig Tools) -GroupDb (Get-DFGroupDb) -KnownTools @($db.Keys) 3>$null | ForEach-Object { $_.Name })
         foreach ($t in $done | Where-Object { $_ -notin $requested -and $_ -in $targets }) {
             Write-Warning "DotForge: $t is installed and active now; add it to Tools to load it in future sessions."
         }

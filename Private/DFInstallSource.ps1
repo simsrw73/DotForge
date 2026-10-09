@@ -68,7 +68,7 @@ function Get-DFInstallSourceOrder {
     [CmdletBinding()]
     [OutputType([string[]])]
     param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][hashtable]$ToolDb, [hashtable]$Via = @{})
-    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object Name })
+    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
     # (A local named $via would be the $Via parameter: names are case-insensitive.)
     $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
     if ($pinned -and $pinned -notin $have) {
@@ -137,7 +137,7 @@ function Resolve-DFInstallSource {
         }
     }
     $first = $sources[0]
-    $result.Options = [string[]]@(Get-DFSourceManager -Source $first -ToolDb $ToolDb | ForEach-Object name)
+    $result.Options = [string[]]@(Get-DFSourceManager -Source $first -ToolDb $ToolDb | ForEach-Object { $_.name })
     $result.Gap = "needs a manager for $first ($(if ($result.Options) { $result.Options -join ', ' } else { 'none known' })), and none is installed or requested"
     $result
 }

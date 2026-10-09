@@ -44,6 +44,11 @@ Describe 'Install-DFTool' {
         ($r | Where-Object Tool -eq glow).Result | Should -Be 'Installed'
         (Get-DFToolStatus -Name glow).State | Should -Be 'Active'
     }
+    It '-WhatIf prints the plan without PowerShell''s per-property What-if noise' {
+        $out = Install-DFTool -Name glow -WhatIf -ToolsPath $script:Tools *>&1 | Out-String
+        $out | Should -Not -Match 'Retrieve the value'
+        $out | Should -Match 'scoop: glow'
+    }
     It '-WhatIf installs nothing' {
         Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
         $null = Install-DFTool -Missing -WhatIf -ToolsPath $script:Tools 6>$null
