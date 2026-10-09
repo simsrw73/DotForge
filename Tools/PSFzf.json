@@ -9,7 +9,7 @@
   ],
   "executable": "PSFzf",
   "roles": { "completion": {}, "tab-completion": { "priority": 20 } },
-  "dependsOn": ["psreadline"],
+  "dependsOn": ["psreadline", "fzf"],
   "packages": {
     "psresource": "PSFzf",
     "scoop": "psfzf"
