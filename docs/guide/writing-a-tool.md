@@ -61,6 +61,7 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker; see below. |
 | `dependsOn` | | Tools that must be registered first, when both are being registered. |
+| `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members, and requests the first installed member if none is requested. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
 | `themeMap` | | Shared theme name → this tool's own spelling, e.g. `{ "catppuccin-mocha": "Catppuccin Mocha" }`. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |

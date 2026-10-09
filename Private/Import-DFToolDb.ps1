@@ -127,7 +127,7 @@ function ConvertTo-DFToolRecord {
         the record the rest of DotForge reads. Every known top-level field
         exists on the result; absent ones get their default:
 
-            type 'exe', description '', tags @(), dependsOn @(), prewarm $true,
+            type 'exe', description '', tags @(), dependsOn @(), requires @(), prewarm $true,
             packages / xdg / env / aliases / picker / themeMap /
             settings / scoopBucket $null, roles an empty object, executableExclude @()
 
@@ -239,6 +239,7 @@ function ConvertTo-DFToolRecord {
         aliases     = $aliases
         picker      = $picker
         dependsOn   = [object[]]@(& $get $Tool 'dependsOn' @())
+        requires    = [object[]]@(& $get $Tool 'requires' @())
         roles       = [pscustomobject]$roles
         themeMap    = & $get $Tool 'themeMap' $null
         settings    = & $get $Tool 'settings' $null

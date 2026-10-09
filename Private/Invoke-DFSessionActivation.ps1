@@ -57,11 +57,26 @@ function Invoke-DFSessionActivation {
     $by = @{}
     foreach ($e in $wanted) { $by[$e.Name] = $e.RequestedBy }
 
-    $records = @(foreach ($e in $wanted) {
-        if ($db.ContainsKey($e.Name)) { $db[$e.Name] }
+    $records = [System.Collections.Generic.List[object]]::new()
+    foreach ($e in $wanted) {
+        if ($db.ContainsKey($e.Name)) { $records.Add($db[$e.Name]) }
         else { $status[$e.Name] = New-DFToolStatus -Name $e.Name -State Failed -RequestedBy $e.RequestedBy -Detail 'its tool record is missing or invalid (see the warning above)' }
+    }
+
+    $edges = @{}
+    $blocked = @{}
+    $roleHint = @{}
+    # Every excluded name, not just the requested ones: a required tool can be
+    # excluded without having been requested.
+    $groups = Get-DFGroupDb
+    $excluded = @(foreach ($x in @(Get-DFConfig ExcludeTools)) {
+        if (-not $x) { continue }
+        if ($x.StartsWith('+')) { $g = $x.Substring(1); if ($groups.Contains($g)) { $groups[$g].Tools } } else { $x }
     })
-    $tools = @(Invoke-DFTopoSort -Tools $records | Where-Object { $_ })
+    Resolve-DFToolRequirements -Records $records -ToolDb $db -RequestedBy $by -Excluded $excluded `
+        -Edges $edges -Blocked $blocked -RoleHint $roleHint @pathArgs
+
+    $tools = @(Invoke-DFTopoSort -Tools $records.ToArray() -ExtraEdges $edges | Where-Object { $_ })
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $db -Tools $tools -RoleDb $roleDb
     # Stored before any companion runs: a companion may ask Get-DFRole who won.
@@ -78,8 +93,24 @@ function Invoke-DFSessionActivation {
     try {
         foreach ($t in $tools) {
             if ($status.Contains($t.name) -and $status[$t.name].State -eq 'Active' -and $t.name -notin $Reactivate) { continue }
+            if ($blocked.ContainsKey($t.name)) {
+                $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail $blocked[$t.name]
+                continue
+            }
+            # A required tool (not a role) was ordered first; if it then failed to
+            # activate, neither can this one. (On a requires cycle, the tool not
+            # yet reached has no status, so the cycle doesn't block itself.)
+            $unmet = @(foreach ($req in @($t.requires)) {
+                if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and $status[$req].State -ne 'Active') { $req }
+            })
+            if ($unmet) {
+                $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail "requires $($unmet -join ', '), which is not available"
+                continue
+            }
             if (-not (Test-DFToolAvailable -Executable $t.executable -Type $t.type)) {
-                $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail "'$($t.executable)' is not installed"
+                $detail = "'$($t.executable)' is not installed"
+                if ($roleHint.ContainsKey($t.name)) { $detail += "; $($roleHint[$t.name])" }
+                $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail $detail
                 continue
             }
             # One tool's failure (a throwing companion, or any error under a
@@ -193,5 +224,110 @@ function Write-DFSessionNotice {
     if ($failed) {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
+    }
+}
+
+function Resolve-DFToolRequirements {
+    <#
+    .SYNOPSIS
+        Expands the requested tools' requires: adds required tools and role providers, and records the ordering they impose.
+    .DESCRIPTION
+        For each record's requires entry, transitively:
+          - A tool name: the tool is requested too (RequestedBy
+            'requires (<tool>)') and ordered first. If it is excluded, or has
+            no record, the requiring tool is blocked with that reason.
+          - role:<name>: the tool is ordered after every requested member of
+            the role. If none is requested, the highest-priority member that
+            is installed is requested (the role's Defaults choice first, then
+            priority, then name). If no member is
+            installed, nothing is blocked: the runtime can come from outside
+            DotForge (a standalone node, say). The requiring tool still needs
+            its own executable, and if that is missing too, its detail names
+            the role's members (-RoleHint).
+        Reading every tool record happens only in the rare case a role has no
+        requested member.
+    .PARAMETER Records
+        The requested records. Required tools and providers are appended.
+    .PARAMETER ToolDb
+        Name -> record for the requested tools. Additions are added here too.
+    .PARAMETER RequestedBy
+        Name -> RequestedBy. Additions are recorded here.
+    .PARAMETER Excluded
+        Names excluded by ExcludeTools.
+    .PARAMETER Edges
+        Filled: tool name -> names it must come after (for Invoke-DFTopoSort -ExtraEdges).
+    .PARAMETER Blocked
+        Filled: tool name -> why it can't be activated.
+    .PARAMETER RoleHint
+        Filled: tool name -> which tools could provide a role it requires.
+    .PARAMETER ToolsPath
+        Tools folder. Default: the module's Tools/.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Records,
+        [Parameter(Mandatory)][hashtable]$ToolDb,
+        [Parameter(Mandatory)][hashtable]$RequestedBy,
+        [AllowEmptyCollection()][string[]]$Excluded = @(),
+        [Parameter(Mandatory)][hashtable]$Edges,
+        [Parameter(Mandatory)][hashtable]$Blocked,
+        [Parameter(Mandatory)][hashtable]$RoleHint,
+        [string]$ToolsPath
+    )
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $all = $null
+    $add = {
+        param($Record, [string]$By)
+        $ToolDb[$Record.name] = $Record
+        $RequestedBy[$Record.name] = $By
+        $Records.Add($Record)
+        $queue.Enqueue($Record)
+    }
+    $queue = [System.Collections.Generic.Queue[object]]::new()
+    foreach ($r in $Records.ToArray()) { $queue.Enqueue($r) }
+
+    while ($queue.Count) {
+        $r = $queue.Dequeue()
+        foreach ($req in @($r.requires)) {
+            if (-not $req) { continue }
+            if ($req -like 'role:*') {
+                $role = $req.Substring(5)
+                $members = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties[$role] })
+                if (-not $members) {
+                    if (-not $all) { $all = Import-DFToolDb @pathArgs }
+                    # Defaults names the user's choice; then priority, then name.
+                    $preferred = (Get-DFConfig Defaults -Default @{})[$role]
+                    $candidates = @($all.Values | Where-Object { $_.roles.PSObject.Properties[$role] -and $_.name -notin $Excluded } |
+                        Sort-Object @{ Expression = { $_.name -eq $preferred }; Descending = $true },
+                                    @{ Expression = { $_.roles.$role.priority }; Descending = $true }, name)
+                    $pick = $candidates | Where-Object { Test-DFToolAvailable -Executable $_.executable -Type $_.type } | Select-Object -First 1
+                    if ($pick) {
+                        & $add $pick "requires ($($r.name))"
+                        $members = @($pick)
+                    } elseif ($candidates) {
+                        $RoleHint[$r.name] = "needs a $role ($(@($candidates.name) -join ', '))"
+                    }
+                }
+                foreach ($m in $members) {
+                    if ($m.name -ne $r.name) { $Edges[$r.name] = @(@($Edges[$r.name]) + $m.name | Where-Object { $_ }) }
+                }
+                continue
+            }
+            if ($req -in $Excluded) {
+                $Blocked[$r.name] = "requires $req, which is excluded"
+                continue
+            }
+            if (-not $ToolDb.ContainsKey($req)) {
+                $found = Import-DFToolDb -Name $req @pathArgs
+                if (-not $found.Count) {
+                    $Blocked[$r.name] = "requires $req, which has no tool record"
+                    continue
+                }
+                & $add @($found.Values)[0] "requires ($($r.name))"
+            }
+            $Edges[$r.name] = @(@($Edges[$r.name]) + $req | Where-Object { $_ })
+        }
     }
 }

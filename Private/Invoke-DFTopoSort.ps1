@@ -9,6 +9,9 @@ function Invoke-DFTopoSort {
     .PARAMETER Tools
         Tool records (parsed Tools/*.json objects) to order; each may carry a
         dependsOn array of tool names. Names compare case-insensitively.
+    .PARAMETER ExtraEdges
+        More ordering on top of dependsOn: tool name -> names it must come after
+        (what requires adds). Names outside -Tools are ignored, as for dependsOn.
     .OUTPUTS
         System.Object[]. The same records, dependencies first.
     #>
@@ -16,7 +19,8 @@ function Invoke-DFTopoSort {
     param(
         [Parameter(Mandatory = $false)]
         [AllowEmptyCollection()]
-        [object[]]$Tools = @()
+        [object[]]$Tools = @(),
+        [hashtable]$ExtraEdges = @{}
     )
 
     if ($null -eq $Tools -or $Tools.Count -eq 0) { return @() }
@@ -33,7 +37,7 @@ function Invoke-DFTopoSort {
     }
 
     foreach ($t in $Tools) {
-        foreach ($dep in @($t.dependsOn)) {
+        foreach ($dep in @(@($t.dependsOn) + @($ExtraEdges[$t.name]) | Where-Object { $_ } | Select-Object -Unique)) {
             # A dependency outside this call's set (not installed, skipped, or
             # not requested) imposes no order, so it adds no edge.
             if ($toolNames.Contains($dep)) {
@@ -66,7 +70,7 @@ function Invoke-DFTopoSort {
     # stage; any shortfall means a cycle. Registering in the caller's order is
     # safer than dropping those tools.
     if ($sorted.Count -ne $Tools.Count) {
-        Write-Warning 'DotForge: circular dependency detected in tool dependsOn — falling back to original order'
+        Write-Warning 'DotForge: circular dependency detected in tool dependsOn/requires — falling back to original order'
         return $Tools
     }
 

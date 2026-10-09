@@ -77,5 +77,6 @@
   "file-search":     { "kind": "category", "description": "Finds files by name." },
   "system-info":     { "kind": "category", "description": "Shows system information." },
   "url-fetch":       { "kind": "category", "description": "Downloads files and calls HTTP APIs." },
-  "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." }
+  "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." },
+  "js-runtime":      { "kind": "category", "description": "Provides a JavaScript runtime (node) on PATH. Tools that need one declare requires: [\"role:js-runtime\"]." }
 }

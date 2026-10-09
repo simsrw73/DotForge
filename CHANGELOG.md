@@ -19,6 +19,13 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`requires` in tool JSON.** A tool can name tools it can't work without (`"requires": ["fzf"]`)
+  or a role (`"requires": ["role:js-runtime"]`). A required tool is requested automatically
+  (`Get-DFToolStatus` shows `RequestedBy: requires (<tool>)`) and activated first; if it is missing
+  or excluded, the requiring tool reports Missing with the reason. A role requirement orders the
+  tool after every requested member of the role; with none requested, the first installed member
+  (`Defaults`, then priority) is requested. With none installed the tool isn't blocked, since the
+  role can be filled from outside DotForge. New category role `js-runtime`: fnm and mise.
 - **`Start-DFSession -Config`, the single profile entry point.** It configures exactly the tools
   listed in `Tools` (tool names and `+groups`) that are installed, and never looks at the others:
   only the requested tool records are read. It exports the XDG folders, runs each tool's one-time
@@ -107,6 +114,11 @@ All notable changes to DotForge are documented here.
   written in place, with the fingerprint key first. Two shells starting at once could
   `Invoke-Expression` a truncated init script, and a crash between the two writes left a valid key
   over stale content. They now go through `Write-DFFileAtomic`, content before key.
+- **npm and inshellisense were reported missing although they were installed.** Node (and the
+  npm global folder) is on PATH only after the version manager's companion runs, but nothing
+  ordered these tools after it, and DotForge remembered a "not installed" answer for the rest of
+  the load. Both now declare `"requires": ["role:js-runtime"]` (see Added), and a missing tool is
+  re-checked rather than remembered, so a tool another tool puts on PATH mid-load is found.
 - **An empty help-topic scan was cached.** If `Get-Help *` returned nothing once, the help pickers
   stayed empty until a module was installed or updated. The help-topic list, cached tool init
   scripts and LS_COLORS now share one cache (`Get-DFFingerprintCache`) that never stores an empty

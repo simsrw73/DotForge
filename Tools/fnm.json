@@ -8,7 +8,7 @@
     "dev"
   ],
   "executable": "fnm.exe",
-  "roles": { "version-manager": {} },
+  "roles": { "version-manager": {}, "js-runtime": { "priority": 20 } },
   "packages": {
     "scoop": "fnm",
     "winget": "Schniz.fnm",

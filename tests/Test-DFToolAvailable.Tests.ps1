@@ -36,6 +36,14 @@ Describe 'Test-DFToolAvailable' {
         Test-DFToolAvailable -Executable 'foo' -Type 'module' | Should -BeFalse
     }
 
+    It 'does not remember "not installed": a tool put on PATH later (e.g. by fnm) is found on the next call' {
+        $script:found = $false
+        Mock Get-Command { if ($script:found) { [pscustomobject]@{ Path = 'C:\x\npm.cmd' } } }
+        Test-DFToolAvailable -Executable 'npm.cmd' | Should -BeFalse
+        $script:found = $true   # an earlier tool's companion just extended PATH
+        Test-DFToolAvailable -Executable 'npm.cmd' | Should -BeTrue
+    }
+
     It 're-probes when -Force is specified' {
         Mock Get-Command { $null }
         Test-DFToolAvailable -Executable 'ripgrep.exe' | Should -BeFalse

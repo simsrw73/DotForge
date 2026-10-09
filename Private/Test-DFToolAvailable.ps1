@@ -5,21 +5,16 @@ $script:DFToolAvailability = @{}
 function Test-DFToolAvailable {
     <#
     .SYNOPSIS
-        Checks whether a tool's executable or module is available, memoized
-        per (type, name) for the session.
+        Checks whether a tool's executable or module is available; "available" is remembered for the session.
     .DESCRIPTION
         Wraps Get-Command (exe-type tools) / Get-Module -ListAvailable
         (module-type tools) with a session-scoped cache keyed by type and
-        name, so a given tool is probed at most once regardless of how many
-        times Register-DFTool runs or how many role-resolution checks
-        reference it. Install-DFTool calls this with -Force immediately after
-        a successful install, so a Register-DFTool call right after installing
-        a tool picks it up, provided the install landed on this session's PATH
-        already (true for scoop's shim directory; not guaranteed for winget/
-        choco installs that land somewhere the running shell won't see until
-        it restarts). A tool made available by any other means mid-session
-        (e.g. a user manually editing PATH) is not detected until -Force is
-        passed or a new session starts.
+        name. Only a positive answer is remembered: an available tool is probed
+        once per session, but a missing one is probed again on every call,
+        because an earlier tool can put it on PATH mid-load (fnm puts node,
+        npm and inshellisense's `is` on PATH only when its companion runs) and
+        an install can add it mid-session. A missing tool costs one lookup per
+        call, and only missing tools pay it.
     .PARAMETER Executable
         The executable name (exe-type tools) or module name (module-type
         tools) to check.
@@ -59,6 +54,7 @@ function Test-DFToolAvailable {
         Get-Command $Executable -ErrorAction Ignore
     })
 
-    $script:DFToolAvailability[$key] = $available
+    # Never remember "not installed": see .DESCRIPTION.
+    if ($available) { $script:DFToolAvailability[$key] = $true }
     return $available
 }

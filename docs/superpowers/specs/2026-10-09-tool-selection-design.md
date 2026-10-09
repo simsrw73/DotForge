@@ -132,7 +132,7 @@ Not in any draft group: bitwarden, broot, choco, direnv, docker, inshellisense, 
    - Excluded tools are kept, marked `Excluded`, so `Get-DFToolStatus` can show them.
 3. **Add requirements.** For each remaining tool, add its `requires` tools transitively, each marked `RequestedBy: requires (<tool>)`.
    - An excluded tool that another tool requires stays excluded. The requiring tool then reports `Missing` with the detail "requires X, which is excluded".
-   - A cycle in `requires` is an error and is named.
+   - A cycle in `requires` warns and falls back to the original order, as `dependsOn` cycles always have; both tools are still activated. (Changed from "an error" when `requires` was implemented.)
 4. **Return** the request set, ordered by `after` and `requires` (topological sort, as today's `Invoke-DFTopoSort`).
 
 Only the records of requested tools are read. With today's per-file JSON that means the requested files plus `groups.json` (and `roles.json`). The loader exposes this as one call, "records for these names", so a compiled registry can replace it later.
@@ -254,10 +254,10 @@ Package managers are never detected at startup. Only `Install-DFTool` and the pa
 - **`requires`** auto-requests the named tools and implies `after`. If a required tool is unavailable, the tool isn't activated.
 - **A role requirement** is written `role:<name>`, e.g. `"requires": ["role:js-runtime"]`. A plain name is always a tool, so the two namespaces never collide.
   - It is satisfied when **any requested, available member** of the role is active.
-  - If no member is requested, the role's winner over all its members (`Defaults`, then priority) is auto-requested, marked `RequestedBy: requires (<tool>)`.
-  - If that member is missing, the requiring tool reports `Missing` with the detail "requires a js-runtime (node, bun or fnm)".
+  - If no member is requested, the first **installed** member (`Defaults`, then priority, then name) is auto-requested, marked `RequestedBy: requires (<tool>)`.
+  - If no member is installed, the requiring tool is **not** blocked: the runtime can come from outside DotForge (a standalone node on PATH). It still needs its own executable; if that is missing too, its detail names the role's members ("needs a js-runtime (fnm, mise)"). (Changed from "reports `Missing`" when implemented.)
   - A role requirement implies `after` for every member of the role.
-  - `Resolve-DFRequestedTools` (section 3, step 3) handles both kinds; the schema checks that `role:` names a role in `roles.json`.
+  - `Resolve-DFToolRequirements` (in `Private/Invoke-DFSessionActivation.ps1`) handles both kinds after `Resolve-DFRequestedTools`; the schema checks the `requires` shape, and a test checks that shipped `role:` names exist in `roles.json`.
 - **The schema validates both** (arrays of tool names; an unknown name is an error), and `dependsOn` is removed. That's no compatibility concern, since there are no users yet.
 
 **Today's `dependsOn` re-sorted:**

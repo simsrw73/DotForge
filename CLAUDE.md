@@ -176,6 +176,10 @@ Each `Tools/*.json` must have at minimum:
   in role blocks, and its reserved code only in the hook; `tests/Roles.Contract.Tests.ps1` enforces
   it. The legacy `role` string still loads. Read `docs/superpowers/specs/2026-10-05-roles-v2-design.md`
   before adding a role.
+- `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
+  Resolved by `Resolve-DFToolRequirements` (`Private/Invoke-DFSessionActivation.ps1`): required tools
+  are auto-requested and ordered first, and a missing/excluded one blocks the tool. A role requirement
+  orders after the role's requested members (or requests the first installed one) and never blocks.
 
 ## External Dependencies
 

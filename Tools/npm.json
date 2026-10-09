@@ -8,6 +8,7 @@
     "package-manager"
   ],
   "executable": "npm.cmd",
+  "requires": ["role:js-runtime"],
   "packages": {},
   "xdg": {
     "compliance": "partial",

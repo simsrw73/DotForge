@@ -99,7 +99,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -2065,6 +2065,15 @@ Searches file contents.
 | Kind | category |
 | Members | [ripgrep](#ripgrep-tool) |
 
+### js-runtime role
+
+Provides a JavaScript runtime (node) on PATH. Tools that need one declare requires: ["role:js-runtime"].
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fnm](#fnm-tool), [mise](#mise-tool) |
+
 ### listing role
 
 Lists directory contents. The winner defines ls, ll, la and tree.
@@ -2367,7 +2376,7 @@ Fast Node.js version manager with automatic per-directory switching
 | XDG variables | `FNM_DIR` = `${XDG_DATA_HOME}/fnm` |
 | Creates | `${XDG_DATA_HOME}/fnm` |
 | Registers after | `zoxide` |
-| Roles | [`version-manager`](#version-manager-role) |
+| Roles | [`js-runtime`](#js-runtime-role), [`version-manager`](#version-manager-role) |
 | Companion | [`Tools/fnm.ps1`](#fnm-companion) |
 
 ### fzf tool
@@ -2544,7 +2553,7 @@ Dev tool versions, environment variables and tasks per project
 | Install ids | scoop: `mise`<br>winget: `jdx.mise`<br>choco: `mise` |
 | XDG method | `default` |
 | Registers after | `oh-my-posh`, `starship` |
-| Roles | [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
+| Roles | [`js-runtime`](#js-runtime-role), [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
 | Companion | `Tools/mise.ps1` |
 
 ### moor tool

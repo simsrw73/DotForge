@@ -7,7 +7,7 @@ function Test-DFToolSchema {
         Returns $true if valid; populates -Errors with any violation messages.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, dependsOn, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, dependsOn, requires, prewarm and role blocks.
         Errors are collected into a list and returned via the -Errors reference parameter.
     .PARAMETER Tool
         The tool PSCustomObject to validate (typically parsed from JSON).
@@ -141,6 +141,10 @@ function Test-DFToolSchema {
     if ($null -ne $dependsOn -and ($dependsOn -isnot [array] -or @($dependsOn | Where-Object { $_ -isnot [string] }).Count)) {
         $errs.Add('dependsOn must be an array of tool names')
     }
+    $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
+    if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+        $errs.Add('requires must be an array of tool names or role:<role> entries')
+    }
     $prewarm = PSProp $Tool 'prewarm'
     if ($null -ne $prewarm -and $prewarm -isnot [bool]) { $errs.Add('prewarm must be a boolean (true/false, not a string)') }
 
@@ -180,7 +184,7 @@ function Test-DFToolSchema {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'dependsOn', 'roles', 'themeMap', 'settings', 'scoopBucket', 'executableExclude',
-                 'prewarm', 'role'
+                 'prewarm', 'role', 'requires'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'config_path', 'config_content', 'instructions', 'compliance'

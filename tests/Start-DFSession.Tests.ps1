@@ -97,6 +97,27 @@ Describe 'Start-DFSession' {
         (Get-DFToolStatus -Name alpha).State | Should -Be 'Active'
     }
 
+    It 'finds a tool that an earlier tool''s companion puts on PATH (node tools after fnm)' {
+        # A real fnm puts node/npm on PATH only when its companion runs. The availability
+        # check for npm must not have been answered (and remembered) before that.
+        $bin = Join-Path $TestDrive "fakenode-$([guid]::NewGuid().ToString('N').Substring(0, 6))"
+        New-Item -ItemType Directory $bin | Out-Null
+        Set-Content (Join-Path $bin 'nodetool.cmd') '@echo off'
+        Set-Content (Join-Path $script:Tools 'nodetool.json') '{ "name": "nodetool", "executable": "nodetool.cmd", "dependsOn": ["vm"] }'
+        Set-Content (Join-Path $script:Tools 'vm.json') '{ "name": "vm", "executable": "vm.exe" }'
+        "`$Env:Path = '$bin;' + `$Env:Path" | Set-Content (Join-Path $script:Tools 'vm.ps1')
+        $script:Installed += 'vm.exe'
+        # Real lookups for nodetool, so PATH matters; the fake list for the rest.
+        Mock Test-DFToolAvailable { if ($Executable -eq 'nodetool.cmd') { [bool](Get-Command $Executable -ErrorAction Ignore) } else { $Executable -in $script:Installed } }
+        $savedPath = $Env:Path
+        try {
+            # Ask about nodetool before vm runs, as role-winner selection can.
+            $null = Test-DFToolAvailable -Executable 'nodetool.cmd'
+            Start-DFSession -Config @{ Tools = @('nodetool', 'vm') } -ToolsPath $script:Tools 3>$null
+            (Get-DFToolStatus -Name nodetool).State | Should -Be 'Active'
+        } finally { $Env:Path = $savedPath }
+    }
+
     It 'stores the config, so Get-DFConfig reads it afterwards' {
         Start-DFSession -Config @{ Tools = @('alpha'); Theme = 'nord' } -ToolsPath $script:Tools 3>$null
         Get-DFConfig Theme | Should -Be 'nord'
