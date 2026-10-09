@@ -60,7 +60,7 @@ $script:DFPackageManagerSpecs['winget'] = @{
             $latest = @($_.AvailableVersions)[0]
             ('{0,-36} {1,-30} {2} -> {3}' -f $_.Name, $_.Id, $_.InstalledVersion, $latest) + "`t" + $_.Id
         } }
-    InstallCommand   = 'winget install --id {0} --exact'
+    InstallCommand   = Format-DFInstallCommand -Manager $DFCurrentTool   # from this record's installs block
     UninstallCommand = 'winget uninstall --id {0}'
     InPlace          = { param($command) $command }
     Install          = { param($Id) Install-WinGetPackage -Id $Id -MatchOption Equals }

@@ -88,7 +88,7 @@ function Invoke-DFCatalogPSGalleryDetailFetch {
     $term = [uri]::EscapeDataString(($PackageId -replace "'", "''"))
     $uri = "https://www.powershellgallery.com/api/v2/FindPackagesById()?id='$term'&`$filter=IsLatestVersion"
     $entry = @(Invoke-RestMethod -Uri $uri -TimeoutSec 15) | Select-Object -First 1
-    ConvertFrom-DFCatalogODataDetailEntry -Source 'psgallery' -Entry $entry -InstallHint "Install-PSResource $PackageId"
+    ConvertFrom-DFCatalogODataDetailEntry -Source 'psgallery' -Entry $entry -InstallHint (Get-DFInstallHint -Source psgallery -Id $PackageId)
 }
 
 function Get-DFCatalogPSGalleryDetail {

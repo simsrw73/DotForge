@@ -53,7 +53,7 @@ Describe 'choco + psgallery detail hooks' {
         }
         $d = Get-DFCatalogChocoDetail -PackageId ripgrep -Fresh
         $d.Publisher | Should -Be 'BurntSushi'
-        $d.InstallHint | Should -Be 'choco install ripgrep'
+        $d.InstallHint | Should -Be 'choco install ripgrep -y'
     }
 
     It 'psgallery: same shape, PSResource install hint' {
@@ -62,7 +62,7 @@ Describe 'choco + psgallery detail hooks' {
             $Uri -like '*powershellgallery.com*FindPackagesById*IsLatestVersion*'
         }
         $d = Get-DFCatalogPSGalleryDetail -PackageId PSFzf -Fresh
-        $d.InstallHint | Should -Be 'Install-PSResource PSFzf'
+        $d.InstallHint | Should -Be 'Install-PSResource -Name PSFzf -Scope CurrentUser -TrustRepository'
     }
 
     It 'registers Detail hooks on both providers' {

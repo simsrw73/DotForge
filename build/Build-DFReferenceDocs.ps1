@@ -41,6 +41,7 @@ $sectionByFile = [ordered]@{
     'Start-DFSession'            = 'Core'
     'Get-DFToolStatus'           = 'Core'
     'Install-DFTool'             = 'Core'
+    'Invoke-DFToolSetup'         = 'Core'
     'Invoke-DFPicker'            = 'Core'
     'New-DFDirectory'            = 'Core'
     'New-DFShim'                 = 'Core'

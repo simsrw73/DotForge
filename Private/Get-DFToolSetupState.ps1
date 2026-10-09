@@ -47,3 +47,20 @@ function Get-DFToolSetupState {
         [PSCustomObject]@{}
     }
 }
+
+function Clear-DFToolSetupState {
+    <#
+    .SYNOPSIS
+        Forgets that one tool's one-time setup ran, so it runs again on its next activation.
+    .PARAMETER Name
+        The tool.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $state = Get-DFToolSetupState
+    if (-not $state.PSObject.Properties[$Name]) { return }
+    $state.PSObject.Properties.Remove($Name)
+    Write-DFFileAtomic -Path (Get-DFToolSetupStatePath) -Value ($state | ConvertTo-Json -Depth 10)
+}

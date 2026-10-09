@@ -102,7 +102,7 @@ $script:DFPackageManagerSpecs['scoop'] = @{
         Get-ScoopApp 2>$null | ForEach-Object {
             ('{0,-34} {1,-18} {2}' -f $_.Name, $_.Version, $_.Source) + "`t" + $_.Name
         } }
-    InstallCommand   = 'scoop install {0}'
+    InstallCommand   = Format-DFInstallCommand -Manager $DFCurrentTool   # from this record's installs block
     UninstallCommand = 'scoop uninstall {0}'
     InPlace          = { param($command) $command }
     Install          = { param($Id) Install-ScoopApp -Name $Id }

@@ -25,6 +25,7 @@
         'Complete-DFToolSetup',
         # Layer 3 — Tool Operations
         'Install-DFTool',
+        'Invoke-DFToolSetup',
         'New-DFShim',
         'Get-DFCommandConflict',
         # General Helpers — Help & Discovery

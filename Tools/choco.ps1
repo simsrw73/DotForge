@@ -88,7 +88,7 @@ $script:DFPackageManagerSpecs['choco'] = @{
             $parts = $_ -split '\|'
             ('{0,-34} {1} -> {2}' -f $parts[0], $parts[1], $parts[2]) + "`t" + $parts[0]
         } }
-    InstallCommand   = 'choco install {0} -y'
+    InstallCommand   = Format-DFInstallCommand -Manager $DFCurrentTool   # from this record's installs block
     UninstallCommand = 'choco uninstall {0} -y'
     # fzf's execute() keys run in a cmd subshell: elevate through gsudo when it's set up.
     InPlace          = { param($command)

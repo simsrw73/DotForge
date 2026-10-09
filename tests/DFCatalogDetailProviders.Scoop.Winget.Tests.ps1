@@ -66,7 +66,7 @@ Describe 'ConvertFrom-DFCatalogWingetShow' {
         $d.ReleaseNotesUrl | Should -Be 'https://zed.dev/releases'
         $d.Tags | Should -Be @('editor', 'rust')
         $d.Notes | Should -Be 'A high-performance editor. Built in Rust.'
-        $d.InstallHint | Should -Be 'winget install --id Zed.Zed --exact'
+        $d.InstallHint | Should -Be 'winget install --id Zed.Zed --exact --silent --accept-source-agreements --accept-package-agreements'
     }
 
     It 'returns null when no Key: value lines are present (package not found)' {

@@ -116,7 +116,7 @@ function Invoke-DFCatalogCratesDetailFetch {
         -Downloads ([nullable[long]]$crate.downloads) `
         -RepositoryUrl ([string]$crate.repository) `
         -DocsUrl ([string]$crate.documentation) `
-        -InstallHint "cargo install $($crate.name)" `
+        -InstallHint (Get-DFInstallHint -Source crates -Id $crate.name) `
         -Extra $extra
 }
 

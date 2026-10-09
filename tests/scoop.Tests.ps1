@@ -2,6 +2,8 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/scoop.ps1'
+    # Real loading sets $DFCurrentTool before dot-sourcing a companion (the sidecar contract); so do these tests.
+    $script:DFCurrentTool = ConvertTo-DFToolRecord (Get-Content (Join-Path $PSScriptRoot '../Tools/scoop.json') -Raw | ConvertFrom-Json)
 }
 
 Describe 'scoop companion' {

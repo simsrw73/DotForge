@@ -371,7 +371,7 @@ function Get-DFCatalogScoopDetail {
         -PackageId "$bucket/$name" `
         -Dependencies (& $flat $manifest.depends) `
         -RepositoryUrl ((([string]$manifest.homepage) -match 'github\.com') ? [string]$manifest.homepage : '') `
-        -InstallHint "scoop install $bucket/$name" `
+        -InstallHint (Get-DFInstallHint -Source scoop -Id $name -Feed $bucket) `
         -Notes ((& $flat $manifest.notes) -join ' ') `
         -Extra $extra
 }

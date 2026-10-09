@@ -206,7 +206,7 @@ function Invoke-DFCatalogChocoDetailFetch {
     $term = [uri]::EscapeDataString(($PackageId -replace "'", "''"))
     $uri = "https://community.chocolatey.org/api/v2/FindPackagesById()?id='$term'&`$filter=IsLatestVersion"
     $entry = @(Invoke-RestMethod -Uri $uri -TimeoutSec 15) | Select-Object -First 1
-    ConvertFrom-DFCatalogODataDetailEntry -Source 'choco' -Entry $entry -InstallHint "choco install $PackageId"
+    ConvertFrom-DFCatalogODataDetailEntry -Source 'choco' -Entry $entry -InstallHint (Get-DFInstallHint -Source choco -Id $PackageId)
 }
 
 function Get-DFCatalogChocoDetail {

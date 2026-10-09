@@ -159,7 +159,7 @@ function Invoke-DFCatalogNpmDetailFetch {
         -Dependencies $deps `
         -Tags @(@($doc.keywords) | ForEach-Object { [string]$_ } | Where-Object { $_ }) `
         -RepositoryUrl ([string]$doc.repository.url) `
-        -InstallHint "npm install -g $($doc.name)" `
+        -InstallHint (Get-DFInstallHint -Source npm -Id $doc.name) `
         -Readme ([string]$doc.readme) `
         -Extra $extra
 }

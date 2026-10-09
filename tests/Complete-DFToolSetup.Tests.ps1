@@ -53,4 +53,13 @@ Describe 'Complete-DFToolSetup' {
         $ranAtUtc | Should -BeGreaterThan ([datetime]::UtcNow.AddMinutes(-5))
         $ranAtUtc | Should -BeLessThan ([datetime]::UtcNow.AddMinutes(1))
     }
+
+    It 'Clear-DFToolSetupState forgets one tool and keeps the others' {
+        Complete-DFToolSetup -Name a
+        Complete-DFToolSetup -Name b
+        Clear-DFToolSetupState -Name a
+        $state = Get-DFToolSetupState
+        $state.PSObject.Properties['a'] | Should -BeNullOrEmpty
+        $state.PSObject.Properties['b'] | Should -Not -BeNullOrEmpty
+    }
 }

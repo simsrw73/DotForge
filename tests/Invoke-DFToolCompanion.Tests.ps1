@@ -15,6 +15,16 @@ Describe 'Invoke-DFToolCompanion' {
         Restore-DFTestXdg
     }
 
+    It 'with -SetupOnly runs the setup step (seeds) and not the companion' {
+        New-Item -ItemType Directory -Force (Join-Path $script:TmpTools 'so') | Out-Null
+        Set-Content (Join-Path $script:TmpTools 'so' 'c.conf') 'seed' -NoNewline
+        '$global:CompanionSawCurrentTool = "ran"' | Set-Content (Join-Path $script:TmpTools 'so.ps1')
+        $tool = '{ "name": "so", "setup": { "seed": { "${XDG_CONFIG_HOME}/so/c.conf": "so/c.conf" } } }' | ConvertFrom-Json
+        Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:TmpTools -SetupOnly
+        $global:CompanionSawCurrentTool | Should -BeNullOrEmpty
+        Get-Content (Join-Path $Env:XDG_CONFIG_HOME 'so' 'c.conf') -Raw | Should -Be 'seed'
+    }
+
     It 'dot-sources the regular companion, exposing $DFCurrentTool to it' {
         '$global:CompanionSawCurrentTool = $DFCurrentTool.name' |
             Set-Content (Join-Path $script:TmpTools 'companiontool.ps1')

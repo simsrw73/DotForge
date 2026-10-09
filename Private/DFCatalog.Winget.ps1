@@ -372,7 +372,7 @@ function ConvertFrom-DFCatalogWingetShow {
         -ReleaseNotes (& $joined 'Release Notes') `
         -ReleaseNotesUrl (& $joined 'Release Notes Url') `
         -RepositoryUrl (((& $joined 'Homepage') -match 'github\.com') ? (& $joined 'Homepage') : '') `
-        -InstallHint "winget install --id $PackageId --exact" `
+        -InstallHint (Get-DFInstallHint -Source winget -Id $PackageId) `
         -Notes (& $joined 'Description')
 }
 

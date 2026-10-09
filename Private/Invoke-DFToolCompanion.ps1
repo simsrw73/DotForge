@@ -32,6 +32,9 @@ function Invoke-DFToolCompanion {
         is dot-sourced with -Tool and -Role. A throwing hook warns; a missing
         hook warns when HookRequired. Roles the tool lost are never passed, so
         their hooks never run.
+    .PARAMETER SetupOnly
+        Run only the setup step and return before the companion
+        (Invoke-DFToolSetup).
     .OUTPUTS
         None
     #>
@@ -50,7 +53,9 @@ function Invoke-DFToolCompanion {
         [string[]]$SkipSetup = @(),
 
         [AllowEmptyCollection()]
-        [object[]]$WonRoles = @()
+        [object[]]$WonRoles = @(),
+
+        [switch]$SetupOnly
     )
 
     # The companion body and its hooks are dot-sourced into this scope, so they
@@ -63,6 +68,7 @@ function Invoke-DFToolCompanion {
         Setup     = Join-Path $ToolsPath "$($Tool.name).setup.ps1"
         SkipSetup = @($SkipSetup)
         WonRoles  = @($WonRoles)
+        SetupOnly = [bool]$SetupOnly
     }
     $__dfCall.HasCompanion = Test-Path $__dfCall.Companion -PathType Leaf
 
@@ -87,6 +93,7 @@ function Invoke-DFToolCompanion {
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
     }
+    if ($__dfCall.SetupOnly) { return }
 
     if ($__dfCall.HasCompanion) {
         $DFCurrentTool = $__dfCall.Tool

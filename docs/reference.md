@@ -23,6 +23,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFToolStatus](#get-dftoolstatus) |  | Shows what this session's Start-DFSession decided for each requested tool. |
 | [Install-DFTool](#install-dftool) |  | Installs missing tools: everything the session reported missing (-Missing), or the named tools. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
+| [Invoke-DFToolSetup](#invoke-dftoolsetup) |  | Runs a tool's one-time setup again: its seeded config files, then its setup script. |
 | [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
@@ -598,6 +599,42 @@ if ($r.Key -eq 'alt-k') { Stop-Process -Id $r.Selected -WhatIf } else { Get-Proc
 Shows process names while carrying the id in a hidden field. Enter shows the process; Alt-K previews stopping it. -Expect makes both keys select the same item but drive different actions.
 
 **See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
+
+### Invoke-DFToolSetup
+
+Runs a tool's one-time setup again: its seeded config files, then its setup script.
+
+```text
+Invoke-DFToolSetup [-Name] <string> [[-ToolsPath] <string>] [-Force] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Setup normally runs once per machine, the first time a tool is activated, and is then recorded so it never repeats (a config file you delete stays deleted). This clears that record for one tool and runs setup now. A seeded file that exists is kept, unless -Force, which overwrites it with DotForge's default after confirmation. The tool must be active in this session.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The tool. |
+| `-Force` | switch |  |  |  | Overwrite seeded files that exist (asks first). |
+| `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+Invoke-DFToolSetup -Name fastfetch
+```
+
+Recreates fastfetch's default config if you deleted it.
+
+**Example 2**
+
+```powershell
+Invoke-DFToolSetup -Name fastfetch -Force
+```
+
+Replaces your fastfetch config with DotForge's default.
+
+**See also:** [writing-a-tool](guide/writing-a-tool.md)
 
 ### Invoke-DFWithPager
 

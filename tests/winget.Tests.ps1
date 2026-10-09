@@ -2,6 +2,8 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/winget.ps1'
+    # Real loading sets $DFCurrentTool before dot-sourcing a companion (the sidecar contract); so do these tests.
+    $script:DFCurrentTool = ConvertTo-DFToolRecord (Get-Content (Join-Path $PSScriptRoot '../Tools/winget.json') -Raw | ConvertFrom-Json)
 
 
 
@@ -83,7 +85,7 @@ Describe 'winget companion' {
         It 'returns the install command string on Enter (empty key line)' {
             Mock Invoke-DFFzf { '' ; @($InputItems)[0] }
             $out = Select-WingetPackage -Query 'ripgrep'
-            $out | Should -Be 'winget install --id BurntSushi.ripgrep.MSVC --exact'
+            $out | Should -Be 'winget install --id BurntSushi.ripgrep.MSVC --exact --silent --accept-source-agreements --accept-package-agreements'
         }
 
         It 'calls Install-WinGetPackage on Alt-R' {
