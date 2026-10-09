@@ -266,8 +266,11 @@ function Show-DFCliHelp {
 
     if ($PSBoundParameters.ContainsKey('Flag')) {
         $useFlag = $Flag
+        $capture = $null
     } else {
-        $useFlag = Resolve-DFCliHelpFlag -Name $Name -Force:$Force
+        $resolution = Resolve-DFCliHelpFlag -Name $Name -Force:$Force -PassThru
+        $useFlag = $resolution.Flag
+        $capture = $resolution.Capture
     }
 
     if ($null -eq $useFlag) {
@@ -275,7 +278,7 @@ function Show-DFCliHelp {
         return
     }
 
-    $raw = (Invoke-DFCommandCapture -Name $Name -Arguments @($useFlag)).Text
+    $raw = if ($capture) { $capture.Text } else { (Invoke-DFCommandCapture -Name $Name -Arguments @($useFlag)).Text }
     $out = Format-DFCliHelpText -Text $raw -Color (Test-DFColorOutput)
 
     if ($Paged) { $out | Invoke-DFWithPager } else { $out }

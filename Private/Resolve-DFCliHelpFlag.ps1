@@ -15,13 +15,21 @@ function Resolve-DFCliHelpFlag {
         The command name to resolve a help flag for.
     .PARAMETER Force
         Ignore (and overwrite) any cached flag and re-detect.
+    .PARAMETER PassThru
+        Return an object containing the resolved Flag and the captured probe
+        result when detection ran. A cached flag has a null Capture value.
+    .OUTPUTS
+        System.String by default. With -PassThru, a PSCustomObject with Flag
+        and Capture properties.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0)]
         [string]$Name,
 
-        [switch]$Force
+        [switch]$Force,
+
+        [switch]$PassThru
     )
 
     $cacheDir  = Join-Path (Get-DFXdgPath Cache) 'dotforge'
@@ -35,15 +43,18 @@ function Resolve-DFCliHelpFlag {
         } catch { $cache = @{} }
     }
     if (-not $Force -and $cache.ContainsKey($Name)) {
+        if ($PassThru) { return [pscustomobject]@{ Flag = $cache[$Name]; Capture = $null } }
         return $cache[$Name]
     }
 
     $candidates = '--help', '-help', '-?', 'help', '-h'
     $best = $null
+    $bestCapture = $null
     $bestLines = -1
 
     foreach ($flag in $candidates) {
-        $text = (Invoke-DFCommandCapture -Name $Name -Arguments @($flag)).Text
+        $capture = Invoke-DFCommandCapture -Name $Name -Arguments @($flag)
+        $text = $capture.Text
         if ([string]::IsNullOrWhiteSpace($text)) { continue }
 
         $isError = ($text -match '(?i)(unknown|unrecognized|invalid|unexpected)\b.{0,30}\b(option|flag|argument|switch|command)') -or
@@ -57,11 +68,17 @@ function Resolve-DFCliHelpFlag {
                 $cache[$Name] = $flag
                 Write-DFFileAtomic -Path $cacheFile -Value ($cache | ConvertTo-Json)
             }
+            if ($PassThru) { return [pscustomobject]@{ Flag = $flag; Capture = $capture } }
             return $flag
         }
 
-        if ($lineCount -gt $bestLines) { $bestLines = $lineCount; $best = $flag }
+        if ($lineCount -gt $bestLines) {
+            $bestLines = $lineCount
+            $best = $flag
+            $bestCapture = $capture
+        }
     }
 
+    if ($PassThru) { return [pscustomobject]@{ Flag = $best; Capture = $bestCapture } }
     return $best
 }

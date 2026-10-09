@@ -95,8 +95,7 @@ Describe 'the shipped data/tool-categories.json extras' {
 
     It 'no extras entry has an ids field' {
         $doc = Get-Content "$PSScriptRoot/../data/tool-categories.json" -Raw | ConvertFrom-Json
-        $extrasNames = (Get-Content "$PSScriptRoot/../build/categories/extras.jsonc" -Raw |
-            ForEach-Object { $_ -replace '(?m)^(?<code>(?:[^"]|"[^"]*")*?)//', '$1' } | ConvertFrom-Json).PSObject.Properties.Name
+        $extrasNames = (Get-Content "$PSScriptRoot/../build/categories/extras.jsonc" -Raw | ConvertFrom-Json).PSObject.Properties.Name
         foreach ($name in $extrasNames) {
             $doc.tools.$name.PSObject.Properties.Name | Should -Not -Contain 'ids'
         }

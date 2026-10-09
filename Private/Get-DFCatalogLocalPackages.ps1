@@ -12,7 +12,6 @@ function Get-DFCatalogLocalPackages {
     param()
 
     $cacheRoot = Get-DFCatalogCacheRoot
-    if (-not $cacheRoot) { return }
 
     $aggregate = [ordered]@{}
     $add = {

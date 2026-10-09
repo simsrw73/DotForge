@@ -1,5 +1,22 @@
 #Requires -Version 7.0
 
+function Get-DFToolSetupStatePath {
+    <#
+    .SYNOPSIS
+        Returns the persisted tool-setup state file path.
+    .DESCRIPTION
+        Centralizes the XDG state location shared by Get-DFToolSetupState and
+        Complete-DFToolSetup.
+    .OUTPUTS
+        System.String — $XDG_STATE_HOME\dotforge\setup-state.json.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    Join-Path (Get-DFXdgPath State) 'dotforge' 'setup-state.json'
+}
+
 function Get-DFToolSetupState {
     <#
     .SYNOPSIS
@@ -19,7 +36,7 @@ function Get-DFToolSetupState {
     [OutputType([PSCustomObject])]
     param()
 
-    $stateFile = Join-Path (Get-DFXdgPath State) 'dotforge' 'setup-state.json'
+    $stateFile = Get-DFToolSetupStatePath
     if (-not (Test-Path $stateFile -PathType Leaf)) {
         return [PSCustomObject]@{}
     }

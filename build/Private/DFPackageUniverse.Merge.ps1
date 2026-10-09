@@ -1,5 +1,6 @@
 #Requires -Version 7.0
 
+
 # Phase C (tool merge) build helpers. Flattens Phase B clusters + singletons
 # into the master tools table, losslessly. See
 # docs/superpowers/specs/2026-07-16-package-universe-tool-merge-design.md
@@ -161,9 +162,8 @@ function Import-DFPackageUniverseCategoryRules {
     <#
     .SYNOPSIS
         Loads the version-controlled keyword->category rule file into
-        { Category; Keywords[] } objects. JSONC: whole-line // comments and
-        /* */ blocks are stripped (line comments anchored to line start so a
-        '//' inside a value is safe). A missing file, or one that is empty or
+        { Category; Keywords[] } objects. JSONC: ConvertFrom-Json (PowerShell 7)
+        accepts // and /* */ comments, and a '//' inside a string is safe. A missing file, or one that is empty or
         entirely comments, yields @().
     #>
     [CmdletBinding()]
@@ -171,10 +171,9 @@ function Import-DFPackageUniverseCategoryRules {
 
     if (-not (Test-Path $Path)) { return @() }
     $text = Get-Content -Raw -Path $Path
-    $text = [regex]::Replace($text, '(?m)^\s*//.*$', '')
-    $text = [regex]::Replace($text, '(?s)/\*.*?\*/', '')
     if (-not $text.Trim()) { return @() }
     $doc = $text | ConvertFrom-Json
+    if (-not $doc) { return @() }
 
     $rulesProp = $doc.PSObject.Properties['rules']
     if (-not $rulesProp) { return @() }

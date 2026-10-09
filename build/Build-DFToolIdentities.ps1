@@ -35,6 +35,7 @@ param(
     [scriptblock]$ResolveLinkage
 )
 
+
 if (-not (Get-Command Test-DFToolIdentityGuideSchema -ErrorAction Ignore)) {
     # Test-DFToolIdentityGuideSchema / Resolve-DFToolIdentityLinkage are
     # Private (not exported) per repo convention, so Import-Module alone
@@ -52,11 +53,7 @@ if (-not $ResolveLinkage) {
 
 function Read-DFIdentityFragment {
     param([string]$Path)
-    $raw = Get-Content $Path -Raw
-    $stripped = ($raw -split "`n" | ForEach-Object {
-        if ($_ -match '^(?<code>(?:[^"]|"[^"]*")*?)//') { $Matches.code } else { $_ }
-    }) -join "`n"
-    $stripped | ConvertFrom-Json
+    Get-Content $Path -Raw | ConvertFrom-Json   # PowerShell 7 parses // and /* */ comments itself
 }
 
 $tools = [ordered]@{}

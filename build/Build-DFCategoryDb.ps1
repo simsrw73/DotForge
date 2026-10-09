@@ -22,13 +22,7 @@ param(
 
 function Read-DFCategoryFragment {
     param([string]$Path)
-    $raw = Get-Content $Path -Raw
-    # Strip //-prefixed line comments — these fragments are author-controlled,
-    # not general JSONC, so a simple non-quoted-// strip is sufficient.
-    $stripped = ($raw -split "`n" | ForEach-Object {
-        if ($_ -match '^(?<code>(?:[^"]|"[^"]*")*?)//') { $Matches.code } else { $_ }
-    }) -join "`n"
-    $stripped | ConvertFrom-Json
+    Get-Content $Path -Raw | ConvertFrom-Json   # PowerShell 7 parses // and /* */ comments itself
 }
 
 $fragmentFiles = Get-ChildItem $CategoriesDir -Filter '*.jsonc' | Sort-Object Name

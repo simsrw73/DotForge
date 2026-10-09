@@ -43,7 +43,6 @@ function Update-DFCatalogWingetIndex {
     )
 
     $cacheRoot = Get-DFCatalogCacheRoot
-    if (-not $cacheRoot) { return }
     if (-not (Test-Path $MsixPath)) { return }
 
     $dir = Join-Path $cacheRoot 'winget'
@@ -99,7 +98,6 @@ function Get-DFCatalogWingetIndexPath {
     )
 
     $cacheRoot = Get-DFCatalogCacheRoot
-    if (-not $cacheRoot) { return $null }
 
     Update-DFCatalogWingetIndex -Force:$Force
     $indexFile = Join-Path $cacheRoot 'winget/index.db'

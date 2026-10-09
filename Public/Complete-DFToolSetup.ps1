@@ -54,6 +54,6 @@ function Complete-DFToolSetup {
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
-    $stateFile = Join-Path (Get-DFXdgPath State) 'dotforge' 'setup-state.json'
+    $stateFile = Get-DFToolSetupStatePath
     Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
 }

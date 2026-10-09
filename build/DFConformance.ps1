@@ -14,11 +14,7 @@ $script:DFConfVerdicts = @('pass','fail','manual','unknown')
 function Read-DFConformanceFragment {
     [CmdletBinding()] [OutputType([pscustomobject])]
     param([Parameter(Mandatory)][string]$Path)
-    $raw = Get-Content $Path -Raw
-    $stripped = ($raw -split "`n" | ForEach-Object {
-        if ($_ -match '^(?<code>(?:[^"]|"[^"]*")*?)//') { $Matches.code } else { $_ }
-    }) -join "`n"
-    $stripped | ConvertFrom-Json
+    Get-Content $Path -Raw | ConvertFrom-Json   # PowerShell 7 parses // and /* */ comments itself
 }
 
 function Expand-DFConformanceToken {

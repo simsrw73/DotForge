@@ -66,6 +66,8 @@ All notable changes to DotForge are documented here.
   written in place, with the fingerprint key first. Two shells starting at once could
   `Invoke-Expression` a truncated init script, and a crash between the two writes left a valid key
   over stale content. They now go through `Write-DFFileAtomic`, content before key.
+- **`Show-DFCliHelp` ran a tool's help twice on first use.** Detecting the help flag ran the tool
+  and threw the text away, then the command ran it again. The detection's output is now reused.
 - **Two documented examples failed their output check** because the expected output had a hyphen
   where DotForge prints an em dash.
 - **Exclusive-role notice suggests the right alternative.** When two or more tools could fill

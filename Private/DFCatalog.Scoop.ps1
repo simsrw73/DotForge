@@ -165,7 +165,6 @@ function Update-DFCatalogScoopIndex {
     )
 
     $cacheRoot = Get-DFCatalogCacheRoot
-    if (-not $cacheRoot) { return }
 
     $dir = Join-Path $cacheRoot 'scoop'
     $data = @(Build-DFCatalogScoopIndexData -ScoopRoot $ScoopRoot)

@@ -1,5 +1,6 @@
 #Requires -Version 7.0
 
+
 # Phase B (identity clustering) build helpers. Reads raw_packages produced by
 # Phase A acquisition; derives cross-catalog link signals, scores them, and
 # unions them into clusters. See
@@ -540,10 +541,7 @@ function Import-DFPackageUniverseCuration {
 
     if (-not (Test-Path $Path)) { return [pscustomobject]@{ Same = @(); Different = @() } }
 
-    $text = Get-Content -Raw -Path $Path
-    $text = [regex]::Replace($text, '(?m)^\s*//.*$', '')
-    $text = [regex]::Replace($text, '(?s)/\*.*?\*/', '')
-    $doc = $text | ConvertFrom-Json
+    $doc = Get-Content -Raw -Path $Path | ConvertFrom-Json
 
     $sameProp = $doc.PSObject.Properties['same']
     $diffProp = $doc.PSObject.Properties['different']

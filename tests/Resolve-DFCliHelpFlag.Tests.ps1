@@ -5,14 +5,14 @@ BeforeAll {
 
 Describe 'Resolve-DFCliHelpFlag' {
     BeforeEach {
-        $script:SavedCache = $Env:XDG_CACHE_HOME
-        $Env:XDG_CACHE_HOME = Join-Path $TestDrive 'cache'
+        Set-DFTestXdg
+
         # TestDrive persists for the whole Describe; clear any cache a prior test wrote
         $df = Join-Path $Env:XDG_CACHE_HOME 'dotforge'
         if (Test-Path $df) { Remove-Item $df -Recurse -Force }
     }
     AfterEach {
-        $Env:XDG_CACHE_HOME = $script:SavedCache
+        Restore-DFTestXdg
     }
 
     It 'returns the first candidate that produces help-looking output' {
@@ -67,6 +67,16 @@ Describe 'Resolve-DFCliHelpFlag' {
         Mock Invoke-DFCommandCapture { throw 'should not run' }
         Resolve-DFCliHelpFlag -Name 'demo' | Should -Be '-?'
         Should -Invoke Invoke-DFCommandCapture -Times 0
+    }
+
+    It 'passes through the successful probe capture when detection runs' {
+        Mock Invoke-DFCommandCapture {
+            [pscustomobject]@{ Text = "USAGE`n  demo`n  option"; ExitCode = 0 }
+        }
+
+        $result = Resolve-DFCliHelpFlag -Name 'demo' -PassThru
+        $result.Flag | Should -Be '--help'
+        $result.Capture.Text | Should -Match '^USAGE'
     }
 
     It 're-guesses when -Force is passed even with a cache entry' {
