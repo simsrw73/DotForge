@@ -68,7 +68,7 @@ function Get-DFInstallSourceOrder {
     [CmdletBinding()]
     [OutputType([string[]])]
     param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][hashtable]$ToolDb, [hashtable]$Via = @{})
-    $have = @($Tool.packages?.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object Name)
+    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object Name })
     # (A local named $via would be the $Via parameter: names are case-insensitive.)
     $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
     if ($pinned -and $pinned -notin $have) {
@@ -120,7 +120,7 @@ function Resolve-DFInstallSource {
     $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Ref = $null; Gap = $null; Options = @() }
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
     if (-not $sources) {
-        $have = @($Tool.packages?.PSObject.Properties.Name)
+        $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
         $result.Gap = if (-not $have) { 'no package in any source' }
                       else { "no source left (only $($have -join ', ') $(if ($have.Count -eq 1) { 'has' } else { 'have' }) it, and ExcludeSources removes $(if ($have.Count -eq 1) { 'it' } else { 'them' }))" }
         return $result
