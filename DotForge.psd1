@@ -24,6 +24,7 @@
         'Initialize-DFEnvironment',
         'Install-DFTool',
         'New-DFShim',
+        'Get-DFCommandConflict',
         # General Helpers — Help & Discovery
         'Invoke-DFHelp',
         'Show-DFCliHelp',
@@ -60,8 +61,7 @@
         'Select-DFPackage',
         'Get-DFCategoryList',
         'Update-DFCategoryDb',
-        'Update-DFToolIdentityGuide',
-        'Get-DFCommandConflict'
+        'Update-DFToolIdentityGuide'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

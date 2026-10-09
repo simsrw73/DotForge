@@ -30,21 +30,33 @@ param(
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $Ast = [System.Management.Automation.Language.Ast]
 
-# Public/*.ps1 basename -> reference section. Files not listed are 'Core'.
+# Public/*.ps1 basename -> reference section.
 $sectionByFile = [ordered]@{
-    'DFHelpers.Help'        = 'Help and discovery'
-    'DFHelpers.Navigation'  = 'Navigation'
-    'DFHelpers.FileSystem'  = 'Files'
-    'DFHelpers.Process'     = 'Processes'
-    'DFHelpers.Environment' = 'Environment and profile'
-    'DFHelpers.Clipboard'   = 'Clipboard, pager and utilities'
-    'DFHelpers.Pager'       = 'Clipboard, pager and utilities'
-    'DFHelpers.Utility'     = 'Clipboard, pager and utilities'
-    'Find-DFPackage'        = 'Package catalog'
-    'Select-DFPackage'      = 'Package catalog'
-    'Get-DFCategoryList'    = 'Package catalog'
-    'Update-DFPackageCache' = 'Package catalog'
-    'Update-DFCategoryDb'   = 'Package catalog'
+    'Add-DFToPath'               = 'Core'
+    'Complete-DFToolSetup'       = 'Core'
+    'Find-DFTool'                = 'Core'
+    'Get-DFRole'                 = 'Core'
+    'Get-DFTool'                 = 'Core'
+    'Initialize-DFEnvironment'   = 'Core'
+    'Install-DFTool'             = 'Core'
+    'Invoke-DFPicker'            = 'Core'
+    'New-DFDirectory'            = 'Core'
+    'New-DFShim'                 = 'Core'
+    'Register-DFTool'            = 'Core'
+    'DFHelpers.Help'             = 'Help and discovery'
+    'DFHelpers.Navigation'       = 'Navigation'
+    'DFHelpers.FileSystem'       = 'Files'
+    'DFHelpers.Process'          = 'Processes'
+    'DFHelpers.Environment'      = 'Environment and profile'
+    'DFHelpers.Clipboard'        = 'Clipboard, pager and utilities'
+    'DFHelpers.Pager'            = 'Core'
+    'DFHelpers.Utility'          = 'Clipboard, pager and utilities'
+    'Find-DFPackage'             = 'Package catalog'
+    'Get-DFCategoryList'         = 'Package catalog'
+    'Get-DFCommandConflict'      = 'Core'
+    'Select-DFPackage'           = 'Package catalog'
+    'Update-DFCategoryDb'        = 'Package catalog'
+    'Update-DFPackageCache'      = 'Package catalog'
     'Update-DFToolIdentityGuide' = 'Package catalog'
 }
 $sectionOrder = @('Core', 'Help and discovery', 'Navigation', 'Files', 'Processes',
@@ -190,7 +202,7 @@ $exported = foreach ($cmd in Get-Command -Module DotForge -CommandType Function)
     $file = [IO.Path]::GetFileNameWithoutExtension($cmd.ScriptBlock.File)
     [pscustomobject]@{
         Name    = $cmd.Name
-        Section = $sectionByFile[$file] ?? 'Core'
+        Section = $sectionByFile[$file] ?? $(throw "Public file '$file' is not mapped to a reference section in `$sectionByFile.")
         Body    = $cmd.ScriptBlock.Ast.Body
         Aliases = @($publicAliases[$cmd.Name] | Sort-Object)
         Syntax  = ((Get-Command $cmd.Name -Syntax) -replace '\r', '').Trim()

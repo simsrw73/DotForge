@@ -22,8 +22,8 @@ BeforeAll {
     }
 
     # Every command name DotForge creates, from the two places it creates them:
-    # the manifest's AliasesToExport (helper aliases, created at import with
-    # -Scope Global, so the module never owns them and ExportedAliases is empty),
+    # the manifest's AliasesToExport (helper aliases, created at import and exported
+    # by the module manifest, so the module owns them and ExportedAliases contains them),
     # and the tool database (tool aliases, role aliases and picker aliases).
     $script:OwnedNames = [System.Collections.Generic.List[string]]::new()
 

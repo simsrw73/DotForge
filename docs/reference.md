@@ -22,6 +22,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Initialize-DFEnvironment](#initialize-dfenvironment) |  | Sets the XDG base-directory variables, creates the directories, and reports the available package managers. |
 | [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
+| [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [Register-DFTool](#register-dftool) |  | Configures one or more known CLI tools in the current session. |
@@ -77,7 +78,6 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | --- | --- | --- |
 | [Copy-DFToClipboard](#copy-dftoclipboard) | `yank` | Copies pipeline input to the system clipboard (copy equivalent). |
 | [Get-DFFromClipboard](#get-dffromclipboard) | `paste` | Retrieves the current contents of the system clipboard (paste equivalent). |
-| [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFUuid](#new-dfuuid) | `uuidgen` | Generates a new random (version 4) UUID with selectable formatting. |
 
 **Package catalog**
@@ -569,6 +569,48 @@ if ($r.Key -eq 'alt-k') { Stop-Process -Id $r.Selected -WhatIf } else { Get-Proc
 ```
 
 Shows process names while carrying the id in a hidden field. Enter shows the process; Alt-K previews stopping it. -Expect makes both keys select the same item but drive different actions.
+
+**See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
+
+### Invoke-DFWithPager
+
+Alias: `pg`
+
+Pipes output through the pager named by $Env:Pager, or prints it when none is set.
+
+```text
+Invoke-DFWithPager [[-Command] <scriptblock>] [-InputObject <string>] [<CommonParameters>]
+```
+
+Accepts either pipeline input or a scriptblock. Collects all output as strings, then either sends it to the external pager named by $Env:Pager (via Invoke-DFPagerExe) or writes it to the success stream when no pager is configured. Nothing is sent to the pager when the collected result is empty.
+
+$Env:Pager is a command line split on whitespace: the first word is the executable, the rest are its arguments (e.g. 'less -R' or 'bat --paging=always'). Quoted arguments are not supported; use the --key=value form instead. A warning is written when quotes are present.
+
+Side effects: starts the pager process. Reads $Env:Pager only.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-InputObject` | string |  |  | value | String values piped in from the pipeline. Non-string objects are converted with their default ToString(). Ignored, with a warning, when -Command is also given. |
+| `-Command` | scriptblock |  |  |  | Optional scriptblock whose output is used instead of pipeline input. Each output object is converted to a string. |
+
+**Outputs:** System.String. Emitted only when $Env:Pager is unset; otherwise the output goes to the pager and nothing is returned.
+
+**Example 1**
+
+```powershell
+Get-ChildItem | Select-Object -ExpandProperty Name | Invoke-DFWithPager
+```
+
+Pages the names of the files in the current directory.
+
+**Example 2**
+
+```powershell
+$Env:Pager = 'less -R'
+pg { git log --oneline }
+```
+
+Runs the scriptblock and pages its output through less, using the pg alias.
 
 **See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
 
@@ -1560,48 +1602,6 @@ paste | Set-Content output.txt
 ```
 
 Writes clipboard contents to a file using the paste alias.
-
-**See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
-
-### Invoke-DFWithPager
-
-Alias: `pg`
-
-Pipes output through the pager named by $Env:Pager, or prints it when none is set.
-
-```text
-Invoke-DFWithPager [[-Command] <scriptblock>] [-InputObject <string>] [<CommonParameters>]
-```
-
-Accepts either pipeline input or a scriptblock. Collects all output as strings, then either sends it to the external pager named by $Env:Pager (via Invoke-DFPagerExe) or writes it to the success stream when no pager is configured. Nothing is sent to the pager when the collected result is empty.
-
-$Env:Pager is a command line split on whitespace: the first word is the executable, the rest are its arguments (e.g. 'less -R' or 'bat --paging=always'). Quoted arguments are not supported; use the --key=value form instead. A warning is written when quotes are present.
-
-Side effects: starts the pager process. Reads $Env:Pager only.
-
-| Parameter | Type | Default | Required | Pipeline | Description |
-| --- | --- | --- | --- | --- | --- |
-| `-InputObject` | string |  |  | value | String values piped in from the pipeline. Non-string objects are converted with their default ToString(). Ignored, with a warning, when -Command is also given. |
-| `-Command` | scriptblock |  |  |  | Optional scriptblock whose output is used instead of pipeline input. Each output object is converted to a string. |
-
-**Outputs:** System.String. Emitted only when $Env:Pager is unset; otherwise the output goes to the pager and nothing is returned.
-
-**Example 1**
-
-```powershell
-Get-ChildItem | Select-Object -ExpandProperty Name | Invoke-DFWithPager
-```
-
-Pages the names of the files in the current directory.
-
-**Example 2**
-
-```powershell
-$Env:Pager = 'less -R'
-pg { git log --oneline }
-```
-
-Runs the scriptblock and pages its output through less, using the pg alias.
 
 **See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
 

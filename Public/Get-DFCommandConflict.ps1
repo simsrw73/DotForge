@@ -73,10 +73,9 @@ function Get-DFCommandConflict {
     if (-not $shadowed) { return }
 
     # Names DotForge creates. Two sources, because they are created two different ways:
-    #  1. Helper aliases (touch, env, paste, ...) — created at import by Public/*.ps1.
-    #     They are Set-Alias -Scope Global, so the module never owns them and
-    #     (Get-Module DotForge).ExportedAliases is empty; the manifest's
-    #     AliasesToExport is the only maintained list of them.
+    #  1. Helper aliases (touch, env, paste, ...) — created at import by Public/*.ps1
+    #     and exported by the module manifest (AliasesToExport), so the module owns
+    #     them and (Get-Module DotForge).ExportedAliases contains them.
     #  2. Tool aliases and picker aliases (cat, ls, ff, ...) — created by
     #     Register-DFTool from the tool database.
     $owned = [System.Collections.Generic.List[string]]::new()
