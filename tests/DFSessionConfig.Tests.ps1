@@ -32,6 +32,14 @@ Describe 'Session config' {
             $cfg.Theme = 'changed'
             Get-DFConfig Theme | Should -Be 'nord'
         }
+        It 'stores a deep copy, so nested values (Defaults, lists) cannot be changed afterwards' {
+            $cfg = @{ Defaults = @{ prompt = 'starship' }; SkipSetup = [System.Collections.Generic.List[string]]@('delta') }
+            Set-DFSessionConfig -Config $cfg
+            $cfg.Defaults.prompt = 'oh-my-posh'
+            $cfg.SkipSetup.Add('mdv')
+            (Get-DFConfig Defaults).prompt | Should -Be 'starship'
+            @(Get-DFConfig SkipSetup) | Should -Be @('delta')
+        }
         It 'warns about an unknown key, suggesting a known one' {
             Set-DFSessionConfig -Config @{ ExludeTools = @('x') } -WarningVariable w 3>$null
             "$w" | Should -Match "ExludeTools.*ExcludeTools"
@@ -49,6 +57,32 @@ Describe 'Session config' {
             $cfg = @{}
             foreach ($k in $script:DFConfigKeys.Keys) { $cfg[$k] = $null }
             Set-DFSessionConfig -Config $cfg -WarningVariable w 3>$null
+            $w | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Assert-DFSessionConfigured (fail-closed migration guard)' {
+        BeforeEach { $script:DFSessionConfigured = $false; $script:DFLegacyConfigWarned = $false }
+        AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+
+        It 'warns loudly when a global $DFConfig exists but no session config was set, naming the protections being ignored' {
+            $global:DFConfig = @{ SkipSetup = @('delta') }
+            Assert-DFSessionConfigured -WarningVariable w 3>$null
+            "$w" | Should -Match 'Start-DFSession -Config'
+            "$w" | Should -Match 'SkipSetup'
+        }
+        It 'warns only once per session' {
+            $global:DFConfig = @{}
+            Assert-DFSessionConfigured 3>$null
+            Assert-DFSessionConfigured -WarningVariable w 3>$null
+            $w | Should -BeNullOrEmpty
+        }
+        It 'is silent once a session config is set, or when there is no global $DFConfig' {
+            Assert-DFSessionConfigured -WarningVariable w 3>$null
+            $w | Should -BeNullOrEmpty
+            $global:DFConfig = @{}
+            Set-DFSessionConfig -Config @{}
+            Assert-DFSessionConfigured -WarningVariable w 3>$null
             $w | Should -BeNullOrEmpty
         }
     }
@@ -73,7 +107,7 @@ Describe 'Session config' {
             $unknown = @($read | Sort-Object -Unique | Where-Object { -not $script:DFConfigKeys.Contains($_) })
             $unknown | Should -BeNullOrEmpty -Because 'add new $DFConfig keys to $script:DFConfigKeys in Private/DFSessionConfig.ps1'
         }
-        It 'no code in Private, Public or Tools reads a $DFConfig variable' {
+        It 'no code in Private, Public or Tools reads a $DFConfig variable (the migration guard only tests that it exists)' {
             $root = Split-Path $PSScriptRoot -Parent
             $hits = foreach ($file in Get-ChildItem (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {
                 $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)

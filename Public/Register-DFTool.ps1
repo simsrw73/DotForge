@@ -98,6 +98,10 @@ function Register-DFTool {
 
     $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $db = Import-DFToolDb @dbArgs
+    # An old-style global $DFConfig is no longer read; say so instead of silently
+    # dropping its settings (some of them, like SkipSetup, are protections).
+    Assert-DFSessionConfigured
+
     $resolvedToolsPath = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath } else { Join-Path $PSScriptRoot '../Tools' })
 
     $tools       = Invoke-DFTopoSort -Tools @(Get-DFRegistrationSet -ToolDb $db -Name $Name -All:$All)

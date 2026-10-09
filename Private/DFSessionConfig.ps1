@@ -92,7 +92,58 @@ function Set-DFSessionConfig {
         $hint = if ($suggestion) { " — did you mean '$suggestion'?" } else { ' (ignored)' }
         Write-Warning "DotForge: unknown config key '$key'$hint"
     }
-    $copy = @{}
-    foreach ($key in $Config.Keys) { $copy[$key] = $Config[$key] }
-    $script:DFSessionConfig = $copy
+    $script:DFSessionConfig = Copy-DFConfigValue $Config
+    $script:DFSessionConfigured = $true
+}
+
+function Copy-DFConfigValue {
+    <#
+    .SYNOPSIS
+        Deep-copies a config value: dictionaries and lists are copied recursively, scalars returned as is.
+    .DESCRIPTION
+        The session snapshot must not share nested objects (the Defaults
+        hashtable, list settings) with the caller's hashtable, or changing
+        them after Start-DFSession would silently change the session.
+    .PARAMETER Value
+        The value to copy.
+    .OUTPUTS
+        System.Object. Dictionaries come back as hashtables, lists as object arrays.
+    #>
+    param($Value)
+    if ($Value -is [System.Collections.IDictionary]) {
+        $copy = @{}
+        foreach ($k in $Value.Keys) { $copy[$k] = Copy-DFConfigValue $Value[$k] }
+        return $copy
+    }
+    if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+        return , [object[]]@(foreach ($item in $Value) { Copy-DFConfigValue $item })
+    }
+    $Value
+}
+
+$script:DFSessionConfigured = $false
+$script:DFLegacyConfigWarned = $false
+
+function Assert-DFSessionConfigured {
+    <#
+    .SYNOPSIS
+        Warns, once per session, when an old-style global $DFConfig exists but was never passed to Start-DFSession.
+    .DESCRIPTION
+        DotForge no longer reads a global $DFConfig. A profile that still sets
+        one would otherwise lose its settings silently, including protective
+        ones (SkipSetup keeps a tool's one-time setup from changing files such
+        as your global git config; DotenvSafeMode and DotenvApprovedDirs limit
+        which .env files load). Failing open silently is the wrong default, so
+        this says so loudly. It only tests that the variable exists; it never
+        reads its values.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    if ($script:DFSessionConfigured -or $script:DFLegacyConfigWarned) { return }
+    if (-not (Test-Path variable:global:DFConfig)) { return }
+    $script:DFLegacyConfigWarned = $true
+    Write-Warning ("DotForge: a global `$DFConfig was found but is no longer read, so none of its settings apply " +
+        "(including SkipSetup, DotenvSafeMode and DotenvApprovedDirs). Pass it explicitly: Start-DFSession -Config `$DFConfig")
 }
