@@ -65,6 +65,46 @@ Describe 'Import-DFToolDb' {
         $warns | Should -Not -BeNullOrEmpty
     }
 
+    Context '-Name (read only the requested records)' {
+        BeforeEach {
+            '{ "name": "other", "executable": "other.exe" }' | Set-Content (Join-Path $script:TmpTools 'other.json')
+            '{ "name": "broken" }' | Set-Content (Join-Path $script:TmpTools 'broken.json')
+        }
+        It 'returns only the named tools and never opens the other files' {
+            # Reading either of these would warn (unparseable / schema error), so a
+            # clean warning stream proves they were never opened. No mocking needed.
+            'not json {' | Set-Content (Join-Path $script:TmpTools 'other.json')
+            $db = Import-DFToolDb -ToolsPath $script:TmpTools -Name 'mytool' -WarningVariable w 3>$null
+            @($db.Keys) | Should -Be @('mytool')
+            $w | Should -BeNullOrEmpty
+        }
+        It 'matches names case-insensitively' {
+            (Import-DFToolDb -ToolsPath $script:TmpTools -Name 'MYTOOL').Contains('mytool') | Should -BeTrue
+        }
+        It 'warns and skips a named tool whose file is missing or invalid' {
+            $db = Import-DFToolDb -ToolsPath $script:TmpTools -Name 'mytool', 'nope', 'broken' -WarningVariable w 3>$null
+            @($db.Keys) | Should -Be @('mytool')
+            "$w" | Should -Match 'nope'
+            "$w" | Should -Match 'broken'
+        }
+    }
+
+    Context 'Get-DFToolNames' {
+        It 'lists tool names from file names without reading any file' {
+            $dir = Join-Path $TestDrive 'names-only'   # fresh: $TestDrive outlives each test
+            New-Item -ItemType Directory $dir -Force | Out-Null
+            'x' | Set-Content (Join-Path $dir 'mytool.json')
+            'x' | Set-Content (Join-Path $dir 'other.json')
+            Mock Get-Content { throw 'must not read' }
+            Get-DFToolNames -ToolsPath $dir | Sort-Object | Should -Be @('mytool', 'other')
+        }
+        It 'matches every shipped record''s name to its file name, so file names can stand in for names' {
+            $mismatch = Get-ChildItem "$PSScriptRoot/../Tools" -Filter '*.json' |
+                Where-Object { (Get-Content $_.FullName -Raw | ConvertFrom-Json).name -cne $_.BaseName } | ForEach-Object Name
+            @($mismatch) | Should -BeNullOrEmpty
+        }
+    }
+
     It 'returns empty hashtable when ToolsPath does not exist' {
         $db = Import-DFToolDb -ToolsPath 'C:\nonexistent\tools'
         $db | Should -BeOfType [hashtable]

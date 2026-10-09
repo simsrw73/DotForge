@@ -24,35 +24,97 @@ function Import-DFToolDb {
     [OutputType([hashtable])]
     param(
         [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'),
+        [string[]]$Name,
         [switch]$Force
     )
 
     $explicitToolsPath = $PSBoundParameters.ContainsKey('ToolsPath')
+
+    if ($Name) {
+        # Only the requested records: one file read each (record name = file name,
+        # enforced by tests). Default-location records are cached per name.
+        $db = @{}
+        foreach ($n in $Name) {
+            $record = $null
+            if (-not $explicitToolsPath -and -not $Force) {
+                if ($script:DFToolDb -and $script:DFToolDb.ContainsKey($n)) { $record = $script:DFToolDb[$n] }
+                elseif ($script:DFToolRecordCache.ContainsKey($n)) { $record = $script:DFToolRecordCache[$n] }
+            }
+            if (-not $record) {
+                $file = Join-Path $ToolsPath "$n.json"
+                if (-not (Test-Path $file -PathType Leaf)) {
+                    Write-Warning "DotForge: no tool record for '$n' ($file)."
+                    continue
+                }
+                $record = Read-DFToolRecordFile -Path $file
+                if (-not $record) { continue }
+                if (-not $explicitToolsPath) { $script:DFToolRecordCache[$record.name] = $record }
+            }
+            $db[$record.name] = $record
+        }
+        return $db
+    }
 
     if (-not $explicitToolsPath -and -not $Force -and $script:DFToolDb) { return $script:DFToolDb }
 
     $db = @{}
 
     if (Test-Path $ToolsPath -PathType Container) {
-        Get-ChildItem $ToolsPath -Filter '*.json' -ErrorAction Ignore |
-            ForEach-Object {
-                try {
-                    $tool = Get-Content $_.FullName -Raw | ConvertFrom-Json
-                    $errors = @(); $warnings = @()
-                    if (Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) -Warnings ([ref]$warnings)) {
-                        foreach ($w in $warnings) { Write-Warning "DotForge: $($_.Name): $w" }
-                        $db[$tool.name] = ConvertTo-DFToolRecord $tool
-                    } else {
-                        Write-Warning "DotForge: $($_.Name) schema errors: $($errors -join '; ')"
-                    }
-                } catch {
-                    Write-Warning "DotForge: Failed to parse $($_.Name): $($_.Exception.Message)"
-                }
-            }
+        foreach ($file in Get-ChildItem $ToolsPath -Filter '*.json' -ErrorAction Ignore) {
+            $record = Read-DFToolRecordFile -Path $file.FullName
+            if ($record) { $db[$record.name] = $record }
+        }
     }
 
     if (-not $explicitToolsPath) { $script:DFToolDb = $db }
     return $db
+}
+
+$script:DFToolRecordCache = @{}
+
+function Read-DFToolRecordFile {
+    <#
+    .SYNOPSIS
+        Reads, validates and normalizes one tool JSON file; warns and returns $null when it's invalid.
+    .PARAMETER Path
+        The tool JSON file.
+    .OUTPUTS
+        pscustomobject (a ConvertTo-DFToolRecord record), or $null.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+    $leaf = Split-Path $Path -Leaf
+    try {
+        $tool = Get-Content $Path -Raw | ConvertFrom-Json
+    } catch {
+        Write-Warning "DotForge: Failed to parse $leaf`: $($_.Exception.Message)"
+        return $null
+    }
+    $errors = @(); $warnings = @()
+    if (-not (Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) -Warnings ([ref]$warnings))) {
+        Write-Warning "DotForge: $leaf schema errors: $($errors -join '; ')"
+        return $null
+    }
+    foreach ($w in $warnings) { Write-Warning "DotForge: $leaf`: $w" }
+    ConvertTo-DFToolRecord $tool
+}
+
+function Get-DFToolNames {
+    <#
+    .SYNOPSIS
+        Lists the names of every tool DotForge has a record for, from file names alone.
+    .DESCRIPTION
+        Reads no file: a record's name equals its file name (tests enforce it),
+        so request resolution can validate names without loading records.
+    .PARAMETER ToolsPath
+        The tools folder. Default: the module's Tools/.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
+    @(Get-ChildItem $ToolsPath -Filter '*.json' -File -ErrorAction Ignore | ForEach-Object BaseName)
 }
 
 function ConvertTo-DFToolRecord {
