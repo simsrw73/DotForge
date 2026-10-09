@@ -1,371 +1,327 @@
 # DotForge Architecture Review (Claude)
 
-**Date:** 2026-10-06
-**Scope:** tool registration and the sidecar seam, the package catalog, caching, install, the Pester harness, and build metadata. Read-only; no production code changed.
+**Date:** 2026-10-09 · **Scope:** the whole module, with backward compatibility out of scope (no users yet) · **Previous review:** 2026-10-06, in git history (`6d31800`). Its candidates #1–#7 and #9 were adopted (shrunk to a consistency test in #9's case); #8 was deferred and appears again here as candidate 5.
 
-**Status (2026-10-08):** Triaged. Adopted: #1 (scoped down to a package-manager→catalog alias on the provider record), #3, #4, #5, #6 (lighter: unknown-field warnings plus shape checks), #9 (as a consistency test only), and the smaller findings as one sweep. Shrunk: #2, to a shared theme helper plus one env-precedence rule; the full context object is deferred. Deferred: #8 (until `Install-DFTool` next changes). Skipped: #7, because the wrappers carry help that the docs tests parse.
+**Inputs:**
+- Three read-only explorations: startup and composition, the tool plugin model, and catalog/data/install.
+- Startup measured on this machine.
+- Spot checks of every claim below.
 
-**Legend:** solid box = module · dashed edge = seam · red = leak across a seam · thick dark box = deep module.
+**Glossary:** the terms *module*, *interface*, *depth*, *seam*, *adapter*, *leverage* and *locality* are used as defined in the codebase-design skill. No `CONTEXT.md` or ADRs exist yet, so domain terms come from `docs/plugin-architecture.md`: *tool record*, *companion*, *role*, *winner*, *catalog provider*.
 
-No `CONTEXT.md` or `docs/adr/` exists, so no candidate conflicts with a recorded decision. The earlier `arch-imp-audit.md` from today was cross-checked. Its five candidates appear below (#2, #4, #6, #9, plus the exe wrapper folded into #2), with fresh evidence and four new ones.
+## Measured startup (this machine, `pwsh -NoProfile`)
 
-## Already deep
-
-- **Path normalization** (`ConvertTo-DFPath`): one interface hides every Windows/XDG path rule.
-- **The catalog cache engine** (`Invoke-DFCacheFirst`, `Private/DFCatalog.ps1:170-233`) handles fresh results, serving stale data, a stale cache counting as a miss, fetch-failure fallback and skip-empty, all behind one call.
-- **The companion runner** (`Invoke-DFToolCompanion`) hides PowerShell's dot-source scope rules and checks that a hook comes from the right file (`:79-80`).
-- **Role winner selection** (`Get-DFRoleWinners`, `Set-DFRoleEnv`) and **release data** (`DFReleaseData.ps1`): `Update-DFCategoryDb` and `Update-DFToolIdentityGuide` are each one-line callers of it.
-
----
-
-## 1. Catalog identity module: one name per catalog
-
-**Strength:** Strong · **Dependency category:** in-process
-**Files:** `Private/DFCatalog.Base.ps1`, `Private/DFCatalog.Crates.ps1`, `Private/DFCatalog.PSGallery.ps1`, `Private/Get-DFToolIdentityGuide.ps1`, `Private/Get-DFCatalogInstalled.ps1`, `Private/Resolve-DFToolIdentityLinkage.ps1`, `Private/Get-DFCatalogLocalPackages.ps1`, `Public/Find-DFPackage.ps1`, `Public/Install-DFTool.ps1`, `Tools/{mdcat,mdv,posh-git,PSFzf,Terminal-Icons}.json`, `data/tool-identities.json`
-
-```mermaid
-flowchart LR
-  subgraph Before
-    TJ["Tools/*.json<br/>cargo / psresource"] --> IG[Identity guide<br/>key cargo:mdcat]
-    PR["Catalog providers<br/>crates / psgallery"] --> K[Get-DFIdentityKeys<br/>key crates:mdcat]
-    IG -. no match .-> K
-    FP[Find-DFPackage<br/>scoop bucket strip] -.dup.-> K
-    LP[Get-DFCatalogLocalPackages] -.reads scoop/index.json<br/>winget/index.db.-> PR
-    classDef leak stroke:#dc2626,stroke-width:2px,color:#dc2626;
-    class FP,LP leak
-  end
-  subgraph After
-    TJ2[Tools/*.json] --> CI[[Catalog identity module<br/>canonical name · aliases · key normalization · local listing]]
-    PR2[Catalog providers] --> CI
-    IG2[Identity guide] --> CI
-    FP2[Find-DFPackage] --> CI
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class CI deep
-  end
-```
-
-**Problem.** There is a live bug. Tool records and `data/tool-identities.json` key packages as `cargo`/`psresource`, but the providers register as `crates`/`psgallery`, and nothing maps one name to the other. As a result, identity keys never match: `Resolve-DFToolIdentityLinkage` hands `cargo` to a catalog that doesn't exist. Five tools can never be corroborated. Key-normalization knowledge is spread across `DFCatalog.Base.ps1:105` and `Find-DFPackage.ps1:150`. `Get-DFCatalogLocalPackages.ps1:35-43` reads two providers' index files directly, bypassing the provider seam.
-
-**Solution.** One module owns catalog identity: the canonical catalog name, accepted aliases, `source:id` key normalization (including the scoop bucket strip), and a "list local packages" hook on the provider interface.
-
-**Wins**
-- Fixes cargo/psresource matching
-- Locality: key rules live in one place
-- Provider seam stops leaking index files
-- Tests cover key matching in one place
-
----
-
-## 2. Sidecar context module
-
-**Strength:** Strong · **Dependency category:** in-process
-**Files:** `Private/Invoke-DFToolCompanion.ps1`, `Private/Get-DFConfiguredTheme.ps1`, `Private/Resolve-DFThemeName.ps1`, `Tools/{bat,delta,fzf,glow,mdcat,moor,psreadline,vivid,fastfetch}.ps1`, `Tools/mdv.setup.ps1`
-
-Mass diagram: how wide the interface a sidecar author must learn is (`█`) compared with what core does for them (`░`).
-
-```text
-Before  interface ████████████████████████  ambient $DFCurrentTool, all of Private/, hook naming,
-        impl      ██████████░░░░░░          captured-scriptblock idiom, 3 env precedence policies,
-                                            theme chain, settings reads, wrapper closures
-After   interface ████                      $ctx.Theme() · $ctx.Setting() · $ctx.Wrap() · $ctx.SetEnv()
-        impl      ░░░░░░░░░░░░░░░░░░░░░░░░  resolution, precedence, closures, error isolation
-```
-
-```mermaid
-flowchart LR
-  subgraph Before
-    S[Sidecar] --> A[$DFCurrentTool]
-    S --> T1[Get-DFConfiguredTheme] --> T2[Resolve-DFThemeName]
-    S --> P[Private/* by name]
-    S --> G["Set-Item function:global:<br/>+ captured scriptblocks"]
-    S --> E["$Env: / SetEnvironmentVariable<br/>(own precedence)"]
-    classDef leak stroke:#dc2626,stroke-width:2px;
-    class P,E leak
-  end
-  subgraph After
-    S2[Sidecar] --> C[[Sidecar context<br/>theme · settings · wrapper · env · errors]]
-    C -.-> I[internal: scope, closures, precedence]
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class C deep
-  end
-```
-
-**Problem.** The sidecar interface is all of `Private/` plus ambient scope.
-- The theme chain `Get-DFConfiguredTheme`→`Resolve-DFThemeName` is copied in all 9 files that resolve a theme.
-- An identical `ExpectingInput` exe wrapper appears in `glow.ps1:113-117` and `fastfetch.ps1:51-55`.
-- The captured-scriptblock idiom appears 5 times.
-- Env writes follow three precedence policies: `xdg.vars` keep an existing value, the `env` block overwrites, and each sidecar picks its own.
-- The sidecar body runs outside try/catch (`Invoke-DFToolCompanion.ps1:69`), so a single throw aborts registration of every tool after it.
-
-**Solution.** Pass the sidecar one context object that carries theme, settings, wrapper creation and env writes under a single precedence rule. Wrap the body in the same error isolation hooks and setup already get. Existing sidecars keep working while they migrate one at a time.
-
-**Wins**
-- Theme chain: 9 copies → 1
-- One env precedence rule
-- One sidecar failure stops aborting the rest
-- Private renames stop breaking plugins
-- Leverage: every new tool benefits
-
----
-
-## 3. Fingerprint cache module
-
-**Strength:** Strong · **Dependency category:** local-substitutable (TestDrive)
-**Files:** `Private/Get-DFCachedCommandOutput.ps1`, `Private/Get-DFHelpTopicList.ps1`, `Private/Resolve-DFCliHelpFlag.ps1`, `Private/DFCatalog.Scoop.ps1`, `Private/DFCatalog.Winget.ps1`, `Tools/vivid.ps1`, `Private/Write-DFFileAtomic.ps1`, `Public/Update-DFPackageCache.ps1`, `Private/Get-DFCatalogLocalPackages.ps1`
-
-Cross-section: the same job done by separate hand-rolled caches.
-
-| Module | Fingerprint | Atomic write |
+| Phase | Time | Notes |
 |---|---|---|
-| catalog envelope | TTL | yes |
-| scoop index | git HEAD `.key` | **`.key` no** |
-| winget index | msix size + mtime | **meta no** |
-| `Get-DFCachedCommandOutput` | exe path + mtime | **no** |
-| `Get-DFHelpTopicList` | module list | **no** |
-| `Resolve-DFCliHelpFlag` | none | **no** |
-| `Tools/vivid.ps1` | theme name | **no** |
+| `Import-Module DotForge` | 0.76–1.05 s | dot-sources 86 files (60 Private, 26 Public, ~10,000 lines) |
+| `Initialize-DFEnvironment` | ~0.31 s | includes a full tool-DB load and package-manager detection |
+| `Import-DFToolDb` + role winners | ~0.3 s | 47 JSON files parsed and validated every start |
+| availability checks | 0.35–0.64 s | `Get-Module -ListAvailable` per module tool |
+| per-tool registration | 4–6 s* | posh-git 0.7–1.7 s, Terminal-Icons 0.6–0.9 s, PSFzf 0.4–0.6 s, starship/carapace/fnm 0.15–0.7 s each; the other 39 tools mostly under 100 ms |
 
-```mermaid
-flowchart LR
-  subgraph Before
-    A[scoop] --> F1[(txt + .key)]
-    B[help topics] --> F2[(txt + .key)]
-    C[cached cmd output] --> F3[(txt + .key)]
-    D[vivid] --> F4[(txt + .key)]
-    U[Update-DFPackageCache] -.parses seen-queries.json<br/>walks provider/details.-> X[(catalog cache layout)]
-    classDef leak stroke:#dc2626,stroke-width:2px;
-    class U leak
-  end
-  subgraph After
-    A2[scoop] & B2[help topics] & C2[cmd output] & D2[vivid] --> FC[[Fingerprint cache<br/>Get · Set · fingerprint scriptblock<br/>atomic, XDG-rooted]]
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class FC deep
-  end
-```
-
-**Problem.** The "text plus `.key` fingerprint" cache is written four times. Five writers aren't atomic, even though `Write-DFFileAtomic` says it covers "every cache and state file". Four modules build `Join-Path (Get-DFXdgPath Cache) 'dotforge'` themselves. Knowledge of the cache layout leaks into `Update-DFPackageCache.ps1:75-104` and `Get-DFCatalogLocalPackages.ps1:46`.
-
-**Solution.** One fingerprint-cache module. Callers pass a name, a fingerprint scriptblock and a producer, and get content back. The module owns the path, staleness checks and atomic writes. The catalog cache exposes enumeration operations so its layout stays inside it.
-
-**Wins**
-- 4 cache implementations → 1
-- Every cache write becomes atomic
-- Cache layout stays inside the module
-- One module to test against TestDrive
+\* Measured per tool without the background prewarm `Register-DFTool` starts. End to end, `Register-DFTool -All` measured about 2.3 s.
 
 ---
 
-## 4. Test composition harness
+## 1. Two-phase activation: register what the prompt needs, defer the rest to idle
 
 **Strength:** Strong · **Dependency category:** in-process
-**Files:** `tests/TestSupport.ps1`, `tests/*.Tests.ps1` (111 of 126), `tests/ModuleState.Tests.ps1`
+**Files:** `Public/Register-DFTool.ps1`, `Private/Register-DFToolSteps.ps1`, `Private/Start-DFModulePrewarm.ps1`, `Tools/{posh-git,Terminal-Icons,PSFzf,fnm,mise,oh-my-posh}.ps1`, `data/roles.json`
 
 ```mermaid
 flowchart LR
   subgraph Before
-    T1[delta.Tests<br/>35 dot-sources] --> L1[hand-ordered list]
-    T2[XdgSplit.Tests<br/>34] --> L2[hand-ordered list]
-    T3[mdv.Tests<br/>33 + XDG save/restore] --> L3[hand-ordered list]
+    P[profile] --> R[Register-DFTool -All] --> T1[47 tools, in order, synchronously] --> PR[first prompt after ~3 s]
+    R -.ThreadJob prewarm<br/>only warms OS cache.-> T1
   end
   subgraph After
-    TA[Test] --> H[[Import-DFTestSeam Registration<br/>Use-DFTestXdg]]
-    TB[Test] --> H
-    TC[Test] --> H
-    H -.-> M[module script scope<br/>+ TestDrive XDG]
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class H deep
+    P2[profile] --> R2[[activation module]]
+    R2 --> N[phase 1: prompt, psreadline, completion<br/>and anything another tool needs now] --> PR2[first prompt]
+    R2 --> I[phase 2 on PowerShell.OnIdle:<br/>posh-git, Terminal-Icons, fnm, ...]
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class R2 deep
+  end
+```
+
+**Problem.** Every tool is activated before the first prompt. Three module imports (posh-git, Terminal-Icons, PSFzf) cost 1.7–3.2 s, and Terminal-Icons only matters the first time you list a directory. The prewarm ThreadJob adds a runspace and a second availability probe, and it only warms the OS file cache (`Start-DFModulePrewarm.ps1:145`, `Register-DFTool.ps1:112-114`).
+
+**Solution.** A tool record declares *when* it activates: `"activation": "prompt"` (the default for roles marked as such in `roles.json`: prompt, tab-completion, project-env, navigation) or `"activation": "idle"`. The activation module runs phase 1 synchronously, then drains phase 2 from a `PowerShell.OnIdle` subscription, one tool per idle tick, still in `dependsOn` order. The prewarm job is deleted.
+
+**Wins**
+- **Time to first prompt:** expected to drop by most of the 2–3 s. The real number needs measuring.
+- **Locality:** the timing policy lives in one module instead of in per-tool tricks.
+- **Leverage:** any slow tool gets faster by changing one field.
+- **Tests:** the phase split is a pure function of tool records, testable without real tools.
+
+---
+
+## 2. Split the startup core from the on-demand modules
+
+**Strength:** Strong · **Dependency category:** in-process
+**Files:** `DotForge.psm1`, `DotForge.psd1`, `Private/DFCatalog*.ps1` and ~25 catalog/identity/category files, `Public/{Find,Select}-DFPackage.ps1`, `Update-DF*.ps1`, `Get-DFCategoryList.ps1`, `Public/DFHelpers.*.ps1`, `Install-DFTool.ps1`, `New-DFShim.ps1`
+
+```mermaid
+flowchart LR
+  subgraph Before
+    M[DotForge.psm1] --> A[86 files dot-sourced at import<br/>~10k lines, 193 functions]
+    A --> C[catalog ~5.2k lines]
+    A --> H[helpers ~1.1k lines]
+    A --> K[registration core]
+  end
+  subgraph After
+    M2[[DotForge: startup core]] --> K2[registry · activation · XDG · roles]
+    CAT[[DotForge.Catalog]] -.auto-loads on first Find-DFPackage.-> M2
+    HLP[[DotForge.Helpers]] -.auto-loads on first use.-> M2
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class M2,CAT,HLP deep
+  end
+```
+
+**Problem.** Import costs 0.8–1 s, and about half of the code (the package catalog, the general helpers, install and shims) is never used while a shell starts. It loads eagerly anyway because provider registration, `$script:` state and argument completers all run at import time. Shared helpers sit in files named after something else (`Get-DFConfig` lives in `Get-DFConfiguredTheme.ps1`, `Get-DFXdgPath` in `ConvertTo-DFPath.ps1`). A build step could also bundle each module into a single `.psm1`, which loads much faster than 86 separate files.
+
+**Solution.** Three PowerShell modules from one repo: **DotForge** (the startup core), **DotForge.Catalog** (trifle: catalogs, identity, categories, GitHub/readme enrichment) and **DotForge.Helpers** (general helpers, aliases). PowerShell's command auto-loading imports the other two on first use. A build script bundles each into one `.psm1` for publishing. Each module gets one file per concept.
+
+**Wins**
+- **Startup:** import should drop to only what registration touches. This needs measuring after the bundle step.
+- **Locality:** catalog changes can't affect startup, and catalog tests load only the catalog.
+- **Interface:** each module's export list becomes the honest interface; today one manifest lists everything.
+
+---
+
+## 3. One compiled tool registry instead of 47 files parsed and validated per start
+
+**Strength:** Strong · **Dependency category:** local-substitutable (files)
+**Files:** `Private/Import-DFToolDb.ps1`, `Private/Test-DFToolSchema.ps1`, `Initialize-DFEnvironment.ps1`, `Resolve-DFPackageManager.ps1`, `DotForge.psd1`, `docs/plugin-architecture.md`
+
+```mermaid
+flowchart LR
+  subgraph Before
+    J[47 Tools/*.json] --> V[parse + Test-DFToolSchema + normalize<br/>on every shell start] --> DB[(tool db)]
+    I[Initialize-DFEnvironment] --> PM[package-manager detection<br/>+ a second full DB load]
+  end
+  subgraph After
+    J2[Tools/*.json] --> B[build: validate + normalize + index] --> REG[(data/tool-registry.json)]
+    REG --> L[[registry: one file read]]
+    U[user ToolsPath files] --> V2[validated at load, only these]
+    V2 --> L
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class L deep
   end
 ```
 
 **Problem.**
-- 111 test files dot-source hand-ordered load lists; `delta.Tests.ps1:2-35` alone is 35 files.
-- `ModuleState.Tests.ps1:2-4` acknowledges that dot-sourcing doesn't reproduce the module's shared script scope.
-- 46 files hand-roll the XDG save / point at TestDrive / restore sequence (82 assignments).
-- The 87 `Get-Command` mocks show that "is this tool on PATH?" has no DotForge-owned seam.
-- `TestSupport.ps1` has a single helper.
+- **Repeated work every start:** reading, validating and normalizing 47 JSON files, which costs 100–130 ms plus 14 ms of schema checks.
+- **A second pass during `Initialize-DFEnvironment`:** it detects package managers, which only `Install-DFTool` needs, and prints a status line.
+- **Cross-tool indexes don't exist yet.** `docs/plugin-architecture.md` already says they should come from a build step: role membership, export lists, and the alias names that `Get-DFCommandConflict` re-parses from the manifest at runtime.
 
-**Solution.** Add two test-only modules. `Import-DFTestSeam` loads the real module, or a named seam with its dependencies. `Use-DFTestXdg` isolates all four `XDG_*_HOME` variables and restores them automatically. Keep a few true `Import-Module` contract tests.
+**Solution.** A build step compiles shipped tools into one normalized, pre-validated registry file holding the role index and the alias inventory. The runtime reads that one file, and runs validation only on user-supplied tool files. `Initialize-DFEnvironment` shrinks to exporting XDG variables, and package-manager detection moves into the install path. A test fails when the compiled registry is stale, like `Docs.Reference.Tests` does for the generated reference.
 
 **Wins**
-- Load lists: 111 → 0
-- XDG isolation can't be forgotten
-- Tests run in real module scope
-- Leverage: a loader change fixes all tests
+- **Startup:** about a 150–300 ms cut.
+- **Locality:** validation and normalization happen once, at build time.
+- **Leverage:** role and alias indexes come for free.
+- **Tests:** they assert on the compiled registry, one file and one interface.
 
 ---
 
-## 5. Declared completion field (remove core's tool-name switch)
+## 4. A declarative tool-effects engine: themes, wrappers, config files and env precedence move out of companions
 
-**Strength:** Worth exploring · **Dependency category:** in-process
-**Files:** `Private/Initialize-DFCompletionStack.ps1`, `Tools/PSFzf.json`, `Tools/carapace.json`, `Tools/inshellisense.ps1`, `docs/plugin-architecture.md`
+**Strength:** Strong · **Dependency category:** in-process (plus local-substitutable files)
+**Files:** `Tools/{bat,delta,fzf,glow,mdcat,mdv,moor,psreadline,vivid,fastfetch,carapace}.ps1` + `.json`, `Private/Get-DFConfiguredTheme.ps1`, `Resolve-DFThemeName.ps1`, `Set-DFToolXdgConfig.ps1`, `Register-DFToolSteps.ps1`, `Set-DFRoleEnv.ps1`
 
 ```mermaid
 flowchart LR
   subgraph Before
-    CS[Initialize-DFCompletionStack] -.if psfzf.-> P[PSFzf]
-    CS -.elseif carapace.-> C[carapace]
-    CS -.calls global Start-DFInshellisense.-> I[inshellisense.ps1]
-    classDef leak stroke:#dc2626,stroke-width:2px;
-    class CS leak
+    S1[bat.ps1] --> TH[theme chain ×9]
+    S2[glow.ps1] --> WR[exe wrapper ×2]
+    S3[mdv.setup.ps1] --> CF[config seeding ×3 ways]
+    S4[moor/carapace/fzf/...] --> EV[5 env-precedence rules]
+    classDef leak stroke:#dc2626,stroke-width:2px
+    class TH,WR,CF,EV leak
   end
   subgraph After
-    PJ["PSFzf.json completion: { tabHandler, priority }"] --> CS2[Completion stack<br/>reads declarations]
-    CJ["carapace.json completion: { provider }"] --> CS2
+    JS[tool JSON: theme · wrap · configFile · env] --> E[[effects engine<br/>one precedence rule · one theme chain · live re-theme]]
+    E --> CO[companion: only truly tool-specific code]
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class E deep
   end
 ```
 
-**Problem.** `Initialize-DFCompletionStack.ps1:114-118` branches on `psfzf` and `carapace` by name. It also calls a global that only one sidecar defines. That breaks the plugin invariant, and it's the only tool-name switch left in core.
+**Problem.** A companion author must learn scope rules, two global-function forms, captured `${function:}` scriptblocks and module `$script:` variables. The same idioms are copied across files:
+- the theme chain, 9 times
+- the exe wrapper with `ExpectingInput` piping, 2 times
+- "deploy a bundled file if the bytes differ", 2 times
+- validate against a name list, then warn and fall back, 3 times
+- config seeding, 3 different ways
 
-**Solution.** Add a declarative `completion` field, or a `completion` role whose hook owns the Tab binding, and have core read only declarations.
+There are 11 ways a tool affects the session, with at least 5 env-precedence rules:
+- `xdg.vars` keeps the user's value
+- the `env` block overwrites it, so a `BAT_THEME` set in a profile is lost
+- role env uses Defaults over user value over priority
+- each companion picks its own rule
+- two different write styles are used
+
+Per-tool config keys (`BatTheme`, `MoorTheme`) exist only as string literals in code, so they can't be discovered or checked for typos. Most companion tests must run the full registration with real binaries, because nothing builds a valid `$DFCurrentTool`.
+
+**Solution.** Add declarative fields the core applies with one set of rules:
+- **`theme`:** `{ env | setting | file, map, names, default, configKey }`. One resolution chain and one live re-theme command for every tool, replacing the per-tool `Invoke-DFApply*Theme` functions and `$global:DFGlowStyle`.
+- **`wrap`:** `{ args, configFlag }`, generating the exe wrapper.
+- **`configFile`:** `{ path, seed: 'once' | 'always' | 'if-bytes-differ', source }`.
+- **One env rule:** a tool default never overwrites a value the user set, while Defaults and roles still win over tool defaults.
+
+Companions shrink to genuinely tool-specific code. Several (bat, moor, vivid, maybe delta) may disappear entirely. A `New-DFTestToolContext` helper builds the companion's input record for direct tests.
 
 **Wins**
-- Removes the invariant violation
-- New completer: no core edit
-- Testable with fake tool records
+- **Locality:** theme, wrapper and env bugs get fixed once.
+- **Leverage:** every new tool gets themes and wrappers by declaring them.
+- **Config keys:** they become data, so the schema can validate `$DFConfig` keys and `Get-DFTool` can list them.
+- **Tests:** they run through the engine with fake records instead of real binaries.
+- **Size:** likely the largest code deletion in this review.
 
 ---
 
-## 6. ToolRecord decoder owns validation
+## 5. A package-manager module: one definition per manager for install, pickers, hints and search
 
-**Strength:** Worth exploring · **Dependency category:** in-process
-**Files:** `Private/Import-DFToolDb.ps1`, `Private/Test-DFToolSchema.ps1`, `Private/New-DFToolPickerFunction.ps1`, `Private/Register-DFToolAliases.ps1`, `Private/Resolve-DFThemeName.ps1`
+**Strength:** Strong *(was deferred as #8; now carries live bugs)* · **Dependency category:** true external (package managers), so a port is justified, with two adapters: real and a recording fake
+**Files:** `Public/Install-DFTool.ps1`, `Private/Resolve-DFPackageManager.ps1`, `Add-DFScoopBucket.ps1`, `Invoke-DFPackageManagerPicker.ps1`, `Tools/{scoop,winget,choco}.ps1`, `Private/DFCatalog.{Scoop,Winget,Choco,Npm,Pypi,Crates,PSGallery}.ps1`
 
 ```mermaid
 flowchart LR
   subgraph Before
-    J[tool JSON] --> V[Test-DFToolSchema<br/>6 fields]
-    V --> N[ConvertTo-DFToolRecord<br/>casts, keeps typos]
-    N -.bad shape fails late.-> R[registration / sidecar]
-    classDef leak stroke:#dc2626,stroke-width:2px;
-    class R leak
+    IN[Install-DFTool switch] --> X1[commands]
+    HL[help text] --> X2[commands]
+    PK[picker specs ×3<br/>string + scriptblock each] --> X3[commands]
+    CH[catalog InstallHint ×7] --> X4[commands]
+    classDef leak stroke:#dc2626,stroke-width:2px
+    class X1,X2,X3,X4 leak
   end
   subgraph After
-    J2[tool JSON] --> D[[ToolRecord decoder<br/>one field table: validate + normalize]]
-    D --> R2[registration]
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class D deep
+    PMR[[package-manager module<br/>Install · Uninstall · Update · Hint · Search · Installed]]
+    IN2[Install-DFTool] --> PMR
+    PK2[pickers] --> PMR
+    CAT2[catalog providers] --> PMR
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class PMR deep
   end
 ```
+
+**Problem.** Install commands live in 5 places, and they disagree:
+- winget is called with `--silent` in one place and `--exact` in another
+- the choco hint lacks `-y`
+- pypi hints use pipx, but `packages` blocks have no pypi key
+
+**Live bug:** `Install-DFTool` has no npm case, so `inshellisense` and `npm`, which declare only npm packages, can never be installed (verified).
+
+Search and installed-listing are implemented twice, once in the picker specs and once in the catalog providers. Picker specs write a core `$script:` table directly. Install runs package managers inline with `$LASTEXITCODE` checks, behind no seam.
+
+**Solution.** One record per package manager, held in a registry: install/uninstall/update/hint argv, bucket handling, search, installed, and availability. `Install-DFTool`, the pickers and the catalog providers all call it. It sits behind a port with a real adapter and a recording fake, so install logic is testable without running real package managers.
+
+**Wins**
+- **Fixes the npm bug** and the flag drift.
+- **One place to add a manager.**
+- **Install becomes testable** through the fake.
+- **Removes duplicates:** the double search implementation and the `$script:` writes from companions go away.
+
+---
+
+## 6. One source of package identity, with one vocabulary
+
+**Strength:** Strong · **Dependency category:** in-process (plus a build step)
+**Files:** `data/tool-identities.json`, `build/Build-DFToolIdentities.ps1`, `build/categories/*.jsonc`, `Tools/*.json` (`packages`), `Private/DFCatalog.Base.ps1` (`ConvertTo-DFCatalogSource`, `Get-DFIdentityKeys`), `Public/Find-DFPackage.ps1:150`, `Resolve-DFCatalogQueryMerge.ps1`
+
+```mermaid
+flowchart LR
+  subgraph Before
+    T[Tools/*.json packages<br/>keys: cargo, psresource] --> G[tool-identities.json<br/>identical copy, 42/42]
+    T -.hand copy, 6 drifted.-> CC[categories ids<br/>cargo keys never match]
+    T --> TR[ConvertTo-DFCatalogSource<br/>cargo→crates]
+    classDef leak stroke:#dc2626,stroke-width:2px
+    class G,CC,TR leak
+  end
+  subgraph After
+    T2[Tools/*.json packages<br/>keyed by catalog: crates, psgallery] --> ID[[identity module<br/>keys · scoop bucket rule · lookup]]
+    EX[build/extras.jsonc<br/>non-shipped tools only] --> ID
+    classDef deep fill:#0f172a,color:#fff,stroke-width:3px
+    class ID deep
+  end
+```
+
+**Problem.** Package ids exist in three copies:
+- `Tools/*.json`.
+- `data/tool-identities.json`, all 42 entries identical (verified). It adds only `linkedVia`/`repo`, and at runtime it's consulted after the Tools map anyway.
+- A hand-written copy in `build/categories/dotforge-curated.jsonc`. It has drifted in 6 places: micro and wget lack choco, lsd and starship live in extras, and mdcat and mdv use `cargo` keys that the facet lookup never matches. That last one is a live bug.
+
+Two names for the same catalog (manager vs catalog) need a translation function, which this session added as a stopgap. The scoop bucket-strip rule exists twice.
+
+**Solution.** Key `packages` by **catalog** name. The package-manager module (candidate 5) maps a catalog to the manager that installs from it, which deletes `ConvertTo-DFCatalogSource`. The identity guide ships only what Tools/*.json can't say: non-shipped tools plus `repo`/`linkedVia`. Category data references tools by name and never copies ids. One identity module owns key rules and lookup.
+
+**Wins**
+- **Drift and the mdcat/mdv bug disappear by construction.**
+- **One vocabulary:** the translation layer goes away.
+- **Locality:** key rules live in one module.
+
+---
+
+## 7. The catalog cache owns its layout; providers become fetch + parse only
+
+**Strength:** Worth exploring · **Dependency category:** remote but not owned (registries), so tests use recorded responses
+**Files:** `Private/DFCatalog.ps1`, `DFCatalog.Base.ps1`, `DFCatalog.<Stem>.ps1` ×7, `Get-DFCatalogLocalPackages.ps1`, `Public/Update-DFPackageCache.ps1`, `Get-DFPackageReadme.ps1`, `Get-DFGitHubRepoInfo.ps1`, `Find-DFPackage.ps1`
 
 **Problem.**
-- `[bool]"false"` evaluates to `$true` for `prewarm`, `ansi` and `list_accepts_path` (`Import-DFToolDb.ps1:155,158,182`).
-- The `picker`, `themeMap`, `aliases`, `env` and `dependsOn` shapes aren't checked.
-- Misspelled fields are kept without a warning.
-- A picker scriptblock with a syntax error only surfaces at profile load.
-- Adding a field means editing the validator, the normalizer and the consumer, which share no field list.
+- **Registration by naming convention:** `Register-DFCatalogProvider` binds hooks by function name, so a misnamed hook fails only when it runs.
+- **Thin providers:** each provider is five functions, two of them 3-line forwarders with help text, so the interface is nearly as large as the work.
+- **Cache layout knowledge leaks:**
+  - `Get-DFCatalogLocalPackages` hardcodes `scoop/index.json` and `winget/index.db`, and runs SQL against the index.
+  - `Update-DFPackageCache` parses `seen-queries.json` and envelope files directly.
+  - GitHub and readme enrichment ride the detail engine as "pseudo-providers", with a special case in the engine for them.
+- **A hidden cross-provider dependency:** PSGallery uses an OData parser defined in the Choco provider's file.
+- **Find-DFPackage assembles results itself:** it mutates `Details`, `Category` and `GitHub` instead of calling one enrichment step.
 
-**Solution.** One field table drives both validation and normalization. `settings` stays free-form.
+**Solution.**
+- **Providers become data:** `{ Name, Kind, Fetch, FetchDetail, ListLocal, Ttl }` scriptblocks, registered explicitly.
+- **The cache module owns everything else:** cache-first behavior, enumeration (for refresh), and local listing.
+- **Enrichment becomes its own module:** GitHub info and readmes, called once per result.
+- **Shared parsers move into shared files.**
 
 **Wins**
-- Errors surface at load, once
-- One field table, three uses
-- Negative tests in one place
+- **About 14 forwarding functions deleted.**
+- **The cache layout stays inside one module.**
+- **Adding a catalog means writing fetch/parse only.**
+- **Tests:** they feed recorded responses through one cache interface.
 
 ---
 
-## 7. Query-cache provider binding
+## 8. Build pipelines depend on a small, named build kit instead of all of `Private/`
 
-**Strength:** Worth exploring · **Dependency category:** ports & adapters (7 adapters)
-**Files:** `Private/DFCatalog.Base.ps1`, `Private/DFCatalog.{Choco,Npm,Pypi,Crates,PSGallery}.ps1`
+**Strength:** Speculative (the package-universe pipeline is parked) · **Dependency category:** in-process
+**Files:** `build/Build-DFToolIdentities.ps1:44`, `Build-DFPackageUniverseRaw.ps1:117`, `Build-DFPackageUniverseLinks.ps1:49`, `Test-DFToolConformance.ps1:39`
 
-```mermaid
-flowchart LR
-  subgraph Before
-    R[Register-DFCatalogProvider] --> S[Search-DFCatalogX<br/>×5 copy-paste]
-    R --> D[Get-DFCatalogXDetail<br/>×6 copy-paste]
-    S --> Q[Search-DFCatalogQueryCache]
-    D --> DC[Get-DFCatalogDetailCache]
-  end
-  subgraph After
-    R2["Register-DFCatalogProvider<br/>-Fetch -DetailFetch"] --> Q2[[query cache engine]]
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class Q2 deep
-  end
-```
+**Problem.** Four build scripts dot-source all of `Private/`, running the provider registration and module state along with it. They depend on private names such as `Build-DFCatalogScoopIndexData` and `ConvertFrom-DFCatalogODataEntry`. A rename silently breaks a pipeline that can take about 54 minutes to run.
 
-**Problem.** Every query-cache adapter repeats two wrappers that only forward to the cache engine.
+**Solution.** After candidates 2 and 7, build scripts `Import-Module DotForge.Catalog` and use its exported interface, or a small `build/DFBuildKit.ps1` that re-exports exactly what they need. A test checks that every function a build script calls exists.
 
-**Solution.** `Register-DFCatalogProvider` binds the fetch scriptblocks itself, so an adapter writes only its fetch and parse logic.
-
-**Wins**
-- Removes 11 forwarding wrappers
-- New web catalog: fetch functions only
-
----
-
-## 8. Package-manager registry
-
-**Strength:** Worth exploring · **Dependency category:** ports & adapters
-**Files:** `Public/Install-DFTool.ps1`, `Private/Resolve-DFPackageManager.ps1`, `Private/Invoke-DFPackageManagerPicker.ps1`, `Tools/{scoop,winget,choco}.ps1`, `Private/DFCatalog.{Scoop,Winget}.ps1`
-
-```mermaid
-flowchart LR
-  subgraph Before
-    SC[scoop.ps1 / winget.ps1 / choco.ps1] -.writes $script:DFPackageManagerSpecs.-> PM[Invoke-DFPackageManagerPicker]
-    IN[Install-DFTool] --> X["scoop / winget / choco / cargo inline<br/>+ $LASTEXITCODE"]
-    H[provider InstallHint] -.3rd copy of install cmd.-> X
-    classDef leak stroke:#dc2626,stroke-width:2px;
-    class SC,H leak
-  end
-  subgraph After
-    SC2[PM sidecars] --> REG[[Package-manager registry<br/>Register · Install · Hint]]
-    IN2[Install-DFTool] --> REG
-    CAT[catalog providers] --> REG
-    classDef deep fill:#0f172a,color:#fff,stroke-width:3px;
-    class REG deep
-  end
-```
-
-**Problem.**
-- Sidecars write a core private hashtable directly.
-- Install command lines live in three places.
-- `Install-DFTool` runs package managers inline and checks `$LASTEXITCODE`, with no seam.
-- The `psresource` availability check is a special case.
-
-**Solution.** Mirror `Register-DFCatalogProvider`: one registry with an install command per package manager, used by install, the catalog hints and the PM picker. Pairs naturally with #1.
-
-**Wins**
-- Install commands: 3 copies → 1
-- Install becomes testable without running real package managers
-
----
-
-## 9. Public-surface metadata
-
-**Strength:** Speculative · **Dependency category:** in-process
-**Files:** `DotForge.psd1`, `DotForge.psm1`, `build/Build-DFReferenceDocs.ps1`
-
-```mermaid
-flowchart LR
-  subgraph Before
-    A[psd1 export groupings] -. disagree .- B[Build-DFReferenceDocs sectionByFile]
-    C[psm1 loads all Public/] --- A
-  end
-  subgraph After
-    S[[one declared surface]] --> A2[manifest]
-    S --> B2[reference sections]
-  end
-```
-
-**Problem.** The groupings already disagree: `Invoke-DFWithPager` and `Get-DFCommandConflict` fall into different sections in the manifest and the reference docs. Nothing checks `Public/` against `FunctionsToExport`.
-
-**Solution.** Generate both from one source, but only once the manifest-generation work in `docs/plugin-architecture.md` lands. Until then, a test that the two groupings agree is enough.
-
-**Wins**
-- One fact, one place
+**Wins:** renames fail fast, and the build depends on an interface instead of internals.
 
 ---
 
 ## Smaller findings (not candidates)
 
-- Dead `if (-not $cacheRoot)` checks: `Get-DFCatalogCacheRoot` always returns a path (8 sites).
-- JSONC comment stripping is copied in 3 `build/` scripts and 1 test, and the heading-slug logic twice.
-- `Resolve-DFCliHelpFlag` runs the help command and then throws the text away, so `Show-DFCliHelp` runs it again.
-- Two different regexes colorize help headers (`DFHelpers.Help.ps1:40`, `Format-DFCliHelpText.ps1:29-43`).
-- Stale comments say aliases are global and "ExportedAliases is empty" (`Get-DFCommandConflict.ps1:78-79`, `tests/Coreutils.Conflicts.Tests.ps1:33-34`).
-- `Test-DFHasEntries` and `Get-DFRegistrationSet` fail the deletion test: each has one caller and is a one-liner.
-- The setup-state path is built in two places (`Get-DFToolSetupState.ps1:22`, `Complete-DFToolSetup.ps1:57`).
+- **Shared helpers hidden in other files:** `Get-DFConfig` sits in `Get-DFConfiguredTheme.ps1` and `Get-DFXdgPath` in `ConvertTo-DFPath.ps1`. They should be one file per concept (folds into candidate 2).
+- **Repeated executable lookups:** companions repeat `Get-Command` lookups that `Test-DFToolAvailable` already cached (scoop, PSFzf, carapace, gsudo, choco, winget). `Get-DFCachedCommandOutput` resolves the executable again too. The registry could pass the resolved path to the companion.
+- **Uncached process launches at every start:** `oh-my-posh init`, `mise activate`, and `fnm env` (which is per session, so it may not be cacheable).
+- **Session globals with no lifecycle:** `$global:cdBeforeFnm`, `$global:DFGlowStyle`, `$global:DFDotenvLocationHook`, `$global:DFPSReadLineColors`.
+- **Default-on diagnostic:** the coreutils conflict check runs every start and reads profile files. It could move to idle phase 2 (candidate 1).
+- **Two unrelated category taxonomies:** `data/package-universe-categories.jsonc` and `tool-categories.json`. The package-universe files are build-only but ship in `data/`.
+- **Fixed during this review:** PSFzf now depends on fzf, so fzf's `env` block can't wipe the `--ansi` that PSFzf's Tab hook adds (`b237124`).
 
 ## Top recommendation
 
-**Start with [#1, the catalog identity module](#1-catalog-identity-module-one-name-per-catalog).** It's the only candidate fixing a live bug: five tools can't be identity-matched today. The change is small, and it creates the seam that #7 and #8 extend. **#2, the sidecar context module,** is the next pick and has the most leverage, because every new tool benefits.
+**Start with candidate 4, the declarative tool-effects engine,** then do candidate 1.
+
+- **Why 4 first:**
+  - It's where most of the code and most of the confusion live: 9 copies of the theme chain, 5 env rules, 3 ways to seed config, and companions that can only be tested with real binaries.
+  - It shrinks the interface every future tool has to learn.
+  - It makes candidate 1 easier, since smaller, declarative companions are easier to defer and to reorder.
+- **Why 1 right after:** it's the biggest user-visible win, seconds off every shell start, and it's mostly independent.
+- **Bundled with 1:** the measurable parts of candidates 2 and 3 (the module split and the compiled registry), because they share the "measure before and after" work.
+- **Next:** candidates 5 and 6 together. They fix two live bugs (npm installs; mdcat/mdv facet ids), and 5's catalog-to-manager mapping is what lets 6 delete the translation layer.
