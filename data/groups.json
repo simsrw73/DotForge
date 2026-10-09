@@ -1,0 +1,30 @@
+{
+  "core": {
+    "description": "Everyday shell improvements: line editing, fuzzy finding, listing, viewing, searching, smarter cd, completion and paging",
+    "tools": ["psreadline", "PSFzf", "fzf", "eza", "bat", "fd", "ripgrep", "zoxide", "carapace", "less"]
+  },
+  "prompt": {
+    "description": "A fast, themed prompt",
+    "tools": ["starship"]
+  },
+  "git": {
+    "description": "Git helpers: a diff pager, the GitHub CLI and a terminal UI",
+    "tools": ["delta", "gh", "lazygit"]
+  },
+  "dev-tools": {
+    "description": "Developer tooling: JSON, Python, Node and Rust toolchains, an editor, per-project environments and dotfiles",
+    "tools": ["jq", "uv", "fnm", "rustup", "micro", "mise", "chezmoi"]
+  },
+  "admin-tools": {
+    "description": "System administration: elevation, processes, system info and downloads",
+    "tools": ["gsudo", "procs", "fastfetch", "curl", "wget"]
+  },
+  "markdown": {
+    "description": "Read Markdown in the terminal",
+    "tools": ["glow"]
+  },
+  "package-managers": {
+    "description": "Windows package managers and their fuzzy pickers",
+    "tools": ["scoop", "winget"]
+  }
+}

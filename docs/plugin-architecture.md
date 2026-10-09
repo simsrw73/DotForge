@@ -48,6 +48,18 @@ invariant forbids.
    already use — a `build/` scanner reads `Tools/*` and emits a precomputed file).
    Never scan/reflect at profile-startup time to discover behavior.
 
+### The one sanctioned central list: tool groups
+
+`data/groups.json` is a hand-kept list of tools keyed by group (`+core`, `+git`,
+…). That's a deliberate exception to rule 3 (decision 3 in
+[the tool-selection spec](superpowers/specs/2026-10-09-tool-selection-design.md)).
+Groups are curated bundles DotForge offers users. They're data, not behavior:
+core code never branches on a group or its members. They live in one file so
+loading them doesn't mean scanning every tool record. `tests/Groups.Tests.ps1`
+keeps the list honest: every member must exist in `Tools/`, groups don't nest,
+and no group shares a name with a tool. Don't add other central lists keyed by
+tool name on the strength of this exception.
+
 ## Why data + generated indexes, not a runtime plugin framework
 
 Profile startup speed is a first-class constraint. The good news is the

@@ -19,6 +19,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFCommandConflict](#get-dfcommandconflict) |  | Reports DotForge commands that another tool shadows before PowerShell can resolve them. |
 | [Get-DFRole](#get-dfrole) |  | Lists DotForge's tool roles, which tools fill each, and which one is active. |
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
+| [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
 | [Initialize-DFEnvironment](#initialize-dfenvironment) |  | Sets the XDG base-directory variables, creates the directories, and reports the available package managers. |
 | [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
@@ -395,6 +396,38 @@ Get-DFTool | Select-Object name, description
 Lists all registered tools with their descriptions.
 
 **See also:** [tools](guide/tools.md)
+
+### Get-DFToolGroup
+
+Lists DotForge's predefined tool groups and their members.
+
+```text
+Get-DFToolGroup [[-Name] <string[]>] [<CommonParameters>]
+```
+
+A group is a predefined list of tools you can request as one entry in Start-DFSession -Config: Tools = @('+core', '+git') requests every member. Groups can also be excluded (ExcludeTools = @('+admin-tools')). Use this to see what a group contains before requesting it.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  |  |  | Group names to show, with or without the leading +. Default: all groups. |
+
+**Outputs:** DotForge.ToolGroup objects: Name, Description, Tools.
+
+**Example 1**
+
+```powershell
+Get-DFToolGroup
+```
+
+Lists every group with its description and members.
+
+**Example 2**
+
+```powershell
+Get-DFToolGroup +core | Select-Object -ExpandProperty Tools
+```
+
+Shows which tools +core requests.
 
 ### Initialize-DFEnvironment
 
@@ -2582,7 +2615,7 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | Tags | `fuzzy`, `picker`, `module` |
 | Install ids | psresource: `PSFzf`<br>scoop: `psfzf` |
 | XDG method | `default` |
-| Registers after | `psreadline` |
+| Registers after | `psreadline`, `fzf` |
 | Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/PSFzf.ps1` |
 

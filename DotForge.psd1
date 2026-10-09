@@ -18,6 +18,7 @@
         'Get-DFTool',
         'Find-DFTool',
         'Get-DFRole',
+        'Get-DFToolGroup',
         'Register-DFTool',
         'Complete-DFToolSetup',
         # Layer 3 — Tool Operations
