@@ -20,7 +20,7 @@ Describe 'fzf tool sidecar' {
         $Env:FZF_DEFAULT_OPTS = $script:SavedFzfOpts
         $script:DFToolDb      = $null
 
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-DFTestGlobal -Function 'Invoke-DFApplyFzfTheme'
         Restore-DFTestXdg
     }
@@ -34,13 +34,13 @@ Describe 'fzf tool sidecar' {
     }
 
     It 'follows the shared $DFConfig[Theme] key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
         $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
     }
 
     It 'lets $DFConfig[FzfTheme] override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; FzfTheme = 'custom' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; FzfTheme = 'custom' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         @'
@@ -75,7 +75,7 @@ Describe 'fzf tool sidecar' {
         # FZF_DEFAULT_OPTS is tokenized by fzf as additional CLI args, so an
         # unvalidated value containing a newline could smuggle in a flag like
         # --bind=execute(...). This must be dropped, not passed through.
-        $Global:DFConfig = @{ FzfTheme = 'malicious' }
+        Set-DFTestConfig @{ FzfTheme = 'malicious' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         $themeJson = @{
@@ -91,14 +91,14 @@ Describe 'fzf tool sidecar' {
     }
 
     It 'warns when the named theme is not found' {
-        $Global:DFConfig = @{ FzfTheme = 'nonexistent-theme' }
+        Set-DFTestConfig @{ FzfTheme = 'nonexistent-theme' }
         $warnings = Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools 3>&1 |
             Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
         $warnings | Where-Object { $_ -match 'not found' } | Should -Not -BeNullOrEmpty
     }
 
     It 'tolerates $DFConfig being set to $null' {
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         { Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools } | Should -Not -Throw
         $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
     }

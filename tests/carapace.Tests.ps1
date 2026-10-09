@@ -20,12 +20,12 @@ Describe 'carapace tool sidecar caching' -Skip:(-not (Get-Command carapace.exe -
         # The companion deploys specs under XDG_CONFIG_HOME; never the user's real one.
 
         Remove-Item $Env:XDG_CACHE_HOME, $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
     AfterEach {
 
         $Env:CARAPACE_BRIDGES  = $script:SavedBridges
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Restore-DFTestXdg
     }
 
@@ -95,7 +95,7 @@ if ($completions.count -eq 0) {
         # The companion deploys specs under XDG config; keep it off the real one.
         Set-DFTestXdg
 
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:Captured = $null
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
         Mock Get-DFCachedCommandOutput { $script:FakeInit }
@@ -136,7 +136,7 @@ Describe 'carapace completer with a path carapace cannot complete' -Skip:(-not (
 
 
         $Env:CARAPACE_BRIDGES   = ''
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Mock Enable-DFCarapaceInshellisenseBridge { $false }
         New-Item -ItemType Directory -Path (Join-Path $TestDrive 'work' 'sub') -Force | Out-Null
         Set-Content -Path (Join-Path $TestDrive 'work' 'sibling.txt') -Value 'x'

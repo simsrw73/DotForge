@@ -6,7 +6,7 @@ BeforeAll {
 Describe 'New-DFShim' {
     BeforeEach {
         $script:DFToolDb = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
 
         # Set up a fake app directory and executable
         $script:AppDir  = Join-Path $TestDrive 'myapp'
@@ -24,7 +24,7 @@ Describe 'New-DFShim' {
 
     AfterEach {
         $Env:PATH = $script:SavedPath
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:DFToolDb = $null
     }
 
@@ -68,7 +68,7 @@ Describe 'New-DFShim' {
 
     It 'uses ShimsPath from $DFConfig when -ShimsPath is not specified' {
         $configDir = Join-Path $TestDrive 'config-shims'
-        $Global:DFConfig = @{ ShimsPath = $configDir }
+        Set-DFTestConfig @{ ShimsPath = $configDir }
         New-DFShim -Name 'myapp' -Target $script:FakeExe
         Test-Path (Join-Path $configDir 'myapp.cmd') | Should -BeTrue
     }
@@ -76,7 +76,7 @@ Describe 'New-DFShim' {
     It 'tolerates $DFConfig being set to $null' {
         # Regression: guarding on the variable's existence rather than its value
         # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         { New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir } |
             Should -Not -Throw
         Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue

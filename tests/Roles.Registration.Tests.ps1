@@ -1,16 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
-    foreach ($f in 'Private/Test-DFOutputPiped', 'Private/Write-DFFileAtomic', 'Private/DFCatalog.Base', 'Private/DFReleaseData',
-                   'Private/Get-DFConfiguredTheme', 'Public/Add-DFToPath', 'Public/New-DFDirectory', 'Private/Invoke-DFFzf',
-                   'Public/Invoke-DFPicker', 'Private/Test-DFToolSchema', 'Private/ConvertTo-DFPath', 'Private/Expand-DFXdgPath',
-                   'Private/Import-DFToolDb', 'Private/Invoke-DFTopoSort', 'Private/Test-DFToolAvailable',
-                   'Private/Get-DFCoreutilsShadowSet', 'Public/Get-DFCommandConflict', 'Private/Get-DFToolSetupState',
-                   'Public/Complete-DFToolSetup', 'Private/Set-DFToolXdgConfig', 'Private/Register-DFToolAliases',
-                   'Private/New-DFToolPickerFunction', 'Private/Invoke-DFToolCompanion', 'Private/Start-DFModulePrewarm',
-                   'Private/Get-DFRoleDb', 'Private/Write-DFRoleNotice', 'Private/Set-DFRoleEnv',
-                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Register-DFTool') {
-        . "$PSScriptRoot/../$f.ps1"
-    }
+    foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
 Describe 'Register-DFTool role activation' {
@@ -27,7 +17,7 @@ Describe 'Register-DFTool role activation' {
         $Env:XDG_STATE_HOME = Join-Path $TestDrive "state-$([guid]::NewGuid())"
         $script:SavedPager = $Env:DF_T_PAGER
         Remove-Item Env:DF_T_PAGER -ErrorAction Ignore
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:Tools = Join-Path $TestDrive "tools-$([guid]::NewGuid())"
         New-Item -ItemType Directory $script:Tools | Out-Null
 
@@ -73,7 +63,7 @@ function Initialize-DFRoleTother  { param($Tool, $Role) $global:RoleCalls += "be
         }
         if ($null -eq $script:SavedPager) { Remove-Item Env:DF_T_PAGER -ErrorAction Ignore } else { $Env:DF_T_PAGER = $script:SavedPager }
         Remove-Item Env:DF_T_ALPHA_ENV -ErrorAction Ignore
-        Remove-Variable DFConfig, RoleCalls -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable RoleCalls -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function tls
         $script:DFRoleDb = $null
     }
@@ -93,14 +83,14 @@ function Initialize-DFRoleTother  { param($Tool, $Role) $global:RoleCalls += "be
     }
 
     It 'follows Defaults for the hook' {
-        $Global:DFConfig = @{ Defaults = @{ tprompt = 'beta' } }
+        Set-DFTestConfig @{ Defaults = @{ tprompt = 'beta' } }
         Register-DFTool -Name alpha, beta -ToolsPath $script:Tools
         $global:RoleCalls | Should -Contain 'beta:tprompt'
         $global:RoleCalls | Should -Not -Contain 'alpha:tprompt'
     }
 
     It 'still applies a loser''s non-role configuration' {
-        $Global:DFConfig = @{ Defaults = @{ tprompt = 'beta' } }
+        Set-DFTestConfig @{ Defaults = @{ tprompt = 'beta' } }
         Register-DFTool -Name alpha, beta -ToolsPath $script:Tools
         $Env:DF_T_ALPHA_ENV | Should -Be '1'
     }
@@ -177,7 +167,7 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
         AfterEach { Remove-DFTestGlobal -Function legacytool, dfrolepager, lonly }
 
         It 'keeps a legacy winner''s top-level aliases, with no missing-hook warning' {
-            $Global:DFConfig = @{ Defaults = @{ tlisting = 'legacytool' } }
+            Set-DFTestConfig @{ Defaults = @{ tlisting = 'legacytool' } }
             Register-DFTool -Name legacytool, dfrolepager -ToolsPath $script:Tools -WarningVariable w -WarningAction SilentlyContinue
             "$w" | Should -Not -Match 'Initialize-DFRole'
             tls
@@ -186,7 +176,7 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
         }
 
         It 'suppresses a legacy loser''s reserved top-level aliases, and keeps its others' {
-            $Global:DFConfig = @{ Defaults = @{ tlisting = 'dfrolepager' } }
+            Set-DFTestConfig @{ Defaults = @{ tlisting = 'dfrolepager' } }
             Register-DFTool -Name legacytool, dfrolepager -ToolsPath $script:Tools -WarningAction SilentlyContinue
             tls
             $global:RoleCalls | Should -Contain 'dfrolepager:--list'
@@ -204,7 +194,7 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
 
 Describe 'Get-DFRoleWinners opt-in memberships' {
     BeforeEach {
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Mock Test-DFToolAvailable { $true }
         $script:RoleDb = @{ 'tab-completion' = [pscustomobject]@{ kind = 'single' } }
         $script:ToolDb = @{
@@ -212,7 +202,7 @@ Describe 'Get-DFRoleWinners opt-in memberships' {
             optional = [pscustomobject]@{ name = 'optional'; executable = 'optional.exe'; type = 'exe'; roles = [pscustomobject]@{ 'tab-completion' = [pscustomobject]@{ priority = 20; optIn = $true } } }
         }
     }
-    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+    AfterEach { Set-DFTestConfig $null }
 
     It 'skips an opt-in candidate unless Defaults names it' {
         $winner = Get-DFRoleWinners -ToolDb $script:ToolDb -Tools $script:ToolDb.Values -RoleDb $script:RoleDb
@@ -221,7 +211,7 @@ Describe 'Get-DFRoleWinners opt-in memberships' {
     }
 
     It 'allows Defaults to opt an optional candidate in over a higher-priority standard candidate' {
-        $Global:DFConfig = @{ Defaults = @{ 'tab-completion' = 'optional' } }
+        Set-DFTestConfig @{ Defaults = @{ 'tab-completion' = 'optional' } }
         $winner = Get-DFRoleWinners -ToolDb $script:ToolDb -Tools $script:ToolDb.Values -RoleDb $script:RoleDb
         $winner['tab-completion'].Winner | Should -Be 'optional'
         $winner['tab-completion'].Reason | Should -Be 'Defaults'

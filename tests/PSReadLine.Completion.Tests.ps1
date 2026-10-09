@@ -17,7 +17,7 @@ Describe 'psreadline completion configuration' {
     }
 
     AfterEach {
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-Variable DFCurrentTool -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Select-PSReadLineTheme', 'Invoke-DFApplyPSReadLineTheme'
         Remove-Alias fprl -Scope Global -Force -ErrorAction Ignore
@@ -25,7 +25,7 @@ Describe 'psreadline completion configuration' {
     }
 
     It 'uses the configured Emacs edit mode instead of the JSON Windows default' {
-        $Global:DFConfig = @{ PSReadLineEditMode = 'Emacs' }
+        Set-DFTestConfig @{ PSReadLineEditMode = 'Emacs' }
 
         . $script:CompanionPath
 
@@ -33,7 +33,7 @@ Describe 'psreadline completion configuration' {
     }
 
     It 'warns for an invalid edit mode and retains the record option' {
-        $Global:DFConfig = @{ PSReadLineEditMode = 'Vi' }
+        Set-DFTestConfig @{ PSReadLineEditMode = 'Vi' }
 
         $warnings = . $script:CompanionPath 3>&1 |
             Where-Object { $_ -is [System.Management.Automation.WarningRecord] }

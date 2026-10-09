@@ -38,7 +38,7 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
         Remove-Item $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore
 
         # Do not inherit $DFConfig from whichever test file ran before this one.
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
 
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
@@ -46,7 +46,7 @@ Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorA
     AfterEach {
         $script:DFToolDb     = $null
 
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-DFTestGlobal -Function 'fastfetch'
         Restore-DFTestXdg
     }

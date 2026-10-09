@@ -9,7 +9,7 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
@@ -28,7 +28,7 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         function global:lsd { $global:LastCommandCalled = 'lsd' }
     }
     AfterEach {
-        Remove-Variable DFConfig, LastCommandCalled -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable LastCommandCalled -Scope Global -ErrorAction Ignore
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
         }
@@ -46,7 +46,7 @@ Describe 'eza/lsd share role: listing (real tool records)' {
     }
 
     It 'gives the listing aliases to <Winner> when Defaults.listing = <Winner>' -ForEach @(@{ Winner = 'eza' }, @{ Winner = 'lsd' }) {
-        $Global:DFConfig = @{ Defaults = @{ listing = $Winner } }
+        Set-DFTestConfig @{ Defaults = @{ listing = $Winner } }
         Register-DFTool -Name 'eza', 'lsd' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         foreach ($a in 'ls', 'll', 'la', 'tree') { & $a; $global:LastCommandCalled | Should -Be $Winner -Because $a }
     }
@@ -64,7 +64,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
         $global:DFRoleEnvState = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
@@ -89,7 +89,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         function global:oh-my-posh { '$global:PromptInits += "oh-my-posh"' }
     }
     AfterEach {
-        Remove-Variable DFConfig, PromptInits -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable PromptInits -Scope Global -ErrorAction Ignore
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
         }
@@ -106,7 +106,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
     }
 
     It 'initializes only starship when Defaults.prompt = starship, and leaves fpot undefined' {
-        $Global:DFConfig = @{ Defaults = @{ prompt = 'starship' } }
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'starship' } }
         Register-DFTool -Name 'oh-my-posh', 'starship' -ToolsPath $script:RealTools -WarningVariable w -WarningAction SilentlyContinue
         $global:PromptInits | Should -Be @('starship')
         Get-Alias fpot -ErrorAction Ignore | Should -BeNullOrEmpty
@@ -133,7 +133,7 @@ Export-ModuleMember -Function * -Variable Dotenv
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
         $global:DFRoleEnvState = $null
-        Remove-Variable DFConfig, DFDotenvLocationHook -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook -Scope Global -ErrorAction Ignore
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
@@ -159,7 +159,7 @@ Export-ModuleMember -Function * -Variable Dotenv
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
         }
         Remove-Module Dotenv -Force -ErrorAction Ignore
-        Remove-Variable DFConfig, DFDotenvLocationHook, ProjectEnvInits, Dotenv, DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook, ProjectEnvInits, Dotenv, DFRoleEnvState -Scope Global -ErrorAction Ignore
         Remove-Item Env:DIRENV_BASH -ErrorAction Ignore
         Remove-DFTestGlobal -Function mise
     }
@@ -174,7 +174,7 @@ Export-ModuleMember -Function * -Variable Dotenv
     }
 
     It 'activates only mise when Defaults.project-env = mise' {
-        $Global:DFConfig = @{ Defaults = @{ 'project-env' = 'mise' } }
+        Set-DFTestConfig @{ Defaults = @{ 'project-env' = 'mise' } }
         Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         $global:ProjectEnvInits | Should -Be @('mise')
     }
@@ -186,7 +186,7 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
         $global:DFRoleEnvState = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             $script:SavedXdg[$v] = [Environment]::GetEnvironmentVariable("XDG_$($v)_HOME")
@@ -211,7 +211,7 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
         }
         if ($null -eq $script:SavedPager) { Remove-Item Env:PAGER -ErrorAction Ignore } else { $Env:PAGER = $script:SavedPager }
         if ($null -eq $script:SavedMoor) { Remove-Item Env:MOOR -ErrorAction Ignore } else { $Env:MOOR = $script:SavedMoor }
-        Remove-Variable DFConfig, DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFRoleEnvState -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function cat -Alias cat
     }
 
@@ -221,13 +221,13 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
     }
 
     It 'uses ov with quit-if-one-screen when Defaults.pager = ov' {
-        $Global:DFConfig = @{ Defaults = @{ pager = 'ov' } }
+        Set-DFTestConfig @{ Defaults = @{ pager = 'ov' } }
         Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         $Env:PAGER | Should -Be 'ov --quit-if-one-screen'
     }
 
     It 'points PAGER at the native less, skipping Git''s MSYS build, when Defaults.pager = less' {
-        $Global:DFConfig = @{ Defaults = @{ pager = 'less' } }
+        Set-DFTestConfig @{ Defaults = @{ pager = 'less' } }
         Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         $Env:PAGER | Should -Be 'C:/scoop/shims/less.exe'
     }

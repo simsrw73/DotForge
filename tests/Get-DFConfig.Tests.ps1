@@ -4,34 +4,34 @@ BeforeAll {
 }
 
 Describe 'Get-DFConfig' {
-    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+    AfterEach { Set-DFTestConfig $null }
 
     It 'returns the configured value' {
-        $Global:DFConfig = @{ ShimsPath = 'C:\shims' }
+        Set-DFTestConfig @{ ShimsPath = 'C:\shims' }
         Get-DFConfig ShimsPath | Should -Be 'C:\shims'
     }
     It 'returns the default when the key is missing, $DFConfig is unset, or $DFConfig is $null' {
-        $Global:DFConfig = @{}
+        Set-DFTestConfig @{}
         Get-DFConfig ShimsPath -Default 'd' | Should -Be 'd'
-        Remove-Variable DFConfig -Scope Global
+        Set-DFTestConfig $null
         Get-DFConfig ShimsPath -Default 'd' | Should -Be 'd'
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         Get-DFConfig ShimsPath -Default 'd' | Should -Be 'd'
     }
     It 'returns a configured $false rather than the default' {
-        $Global:DFConfig = @{ SkipConflictCheck = $false }
+        Set-DFTestConfig @{ SkipConflictCheck = $false }
         Get-DFConfig SkipConflictCheck -Default $true | Should -BeFalse
     }
     It 'reads a list setting as a flat list, so -in and -notin work on it' {
-        $Global:DFConfig = @{ SkipTools = @('lsd') }
+        Set-DFTestConfig @{ SkipTools = @('lsd') }
         $skip = @(Get-DFConfig SkipTools)
         $skip | Should -Be @('lsd')
         'lsd' -in $skip | Should -BeTrue
-        $Global:DFConfig = @{ SkipTools = @('lsd', 'eza') }
+        Set-DFTestConfig @{ SkipTools = @('lsd', 'eza') }
         @(Get-DFConfig SkipTools).Count | Should -Be 2
     }
     It 'returns a hashtable setting whole' {
-        $Global:DFConfig = @{ Defaults = @{ listing = 'eza' } }
+        Set-DFTestConfig @{ Defaults = @{ listing = 'eza' } }
         (Get-DFConfig Defaults)['listing'] | Should -Be 'eza'
     }
 }

@@ -27,13 +27,13 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
         $Env:MDCAT_THEME     = $null
 
         Remove-Item $Env:XDG_CACHE_HOME -Recurse -Force -ErrorAction Ignore
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
     AfterEach {
         $Env:MDCAT_THEME = $script:SavedTheme
         $script:DFToolDb = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Restore-DFTestXdg
     }
 
@@ -58,25 +58,25 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
     }
 
     It 'lets $DFConfig[MdcatTheme] override the theme' {
-        $Global:DFConfig = @{ MdcatTheme = 'dracula' }
+        Set-DFTestConfig @{ MdcatTheme = 'dracula' }
         Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
         $Env:MDCAT_THEME | Should -Be 'dracula'
     }
 
     It 'maps the shared catppuccin-mocha family to catppuccin-mocha' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
         $Env:MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
 
     It 'falls back to auto for an unsupported theme name' {
-        $Global:DFConfig = @{ MdcatTheme = 'no-such-theme' }
+        Set-DFTestConfig @{ MdcatTheme = 'no-such-theme' }
         Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         $Env:MDCAT_THEME | Should -Be 'auto'
     }
 
     It 'tolerates $DFConfig being set to $null' {
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         { Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools } | Should -Not -Throw
     }
 }

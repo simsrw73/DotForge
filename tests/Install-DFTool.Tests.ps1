@@ -23,7 +23,7 @@ Describe 'Install-DFTool' {
 { "name": "nopkg", "executable": "nopkg.exe", "packages": {} }
 '@ | Set-Content (Join-Path $script:TmpTools 'nopkg.json')
 
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
 
     It 'warns for an unknown tool name' {
@@ -52,24 +52,24 @@ Describe 'Install-DFTool' {
     }
 
     It 'uses $DFConfig.PackageManagerOrder when set' {
-        $Global:DFConfig = @{ PackageManagerOrder = @('winget') }
+        Set-DFTestConfig @{ PackageManagerOrder = @('winget') }
         $script:WingetCalled = $false
         function script:winget { $script:WingetCalled = $true; $global:LASTEXITCODE = 0 }
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
         Install-DFTool -Name 'pkgtool' -ToolsPath $script:TmpTools
         $script:WingetCalled | Should -BeTrue
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
 
     It 'tolerates $DFConfig being set to $null' {
         # Regression: guarding on the variable's existence rather than its value
         # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
         function script:scoop { $global:LASTEXITCODE = 0 }
         { Install-DFTool -Name 'pkgtool' -PackageManager 'scoop' -ToolsPath $script:TmpTools } |
             Should -Not -Throw
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
 
     It 'installs a cargo-only tool via cargo when scoop/winget/choco lack it' {
@@ -165,7 +165,7 @@ Describe 'Install-DFTool with a scoop bucket' {
             $global:LASTEXITCODE = 0
         }
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
     AfterEach { Remove-Item function:scoop -ErrorAction Ignore }
 

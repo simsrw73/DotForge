@@ -59,23 +59,23 @@ Describe 'Resolve-DFPackageManager' {
 
 Describe 'Get-DFPackageManagerOrder' {
     BeforeEach {
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $mk = { param($n, $p) ConvertTo-DFToolRecord ([pscustomobject]@{ name = $n; executable = "$n.exe"; roles = [pscustomobject]@{ 'package-manager' = [pscustomobject]@{ priority = $p } } }) }
         $script:Db = @{ scoop = (& $mk 'scoop' 30); winget = (& $mk 'winget' 20); choco = (& $mk 'choco' 10) }
     }
-    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+    AfterEach { Set-DFTestConfig $null }
 
     It 'orders members by priority' {
         Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
     }
 
     It 'puts the Defaults choice first' {
-        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'choco' } }
+        Set-DFTestConfig @{ Defaults = @{ 'package-manager' = 'choco' } }
         Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('choco', 'scoop', 'winget')
     }
 
     It 'ignores a Defaults value that is not a member' {
-        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'apt' } }
+        Set-DFTestConfig @{ Defaults = @{ 'package-manager' = 'apt' } }
         Get-DFPackageManagerOrder -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
     }
 
@@ -84,7 +84,7 @@ Describe 'Get-DFPackageManagerOrder' {
     }
 
     It 'drives Resolve-DFPackageManager''s default order' {
-        $Global:DFConfig = @{ Defaults = @{ 'package-manager' = 'choco' } }
+        Set-DFTestConfig @{ Defaults = @{ 'package-manager' = 'choco' } }
         Mock Get-DFPackageManagerOrder { 'choco', 'scoop' }
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }
         Resolve-DFPackageManager -Force | Should -Be @('choco', 'scoop')

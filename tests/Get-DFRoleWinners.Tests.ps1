@@ -17,7 +17,7 @@ BeforeAll {
 
 Describe 'Get-DFRoleWinners' {
     BeforeEach {
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:Installed = @('omp.exe', 'star.exe', 'less.exe', 'bat.exe', 'rg.exe')
         Mock Test-DFToolAvailable { $Executable -in $script:Installed }
         $omp  = New-RoleTool 'omp'  @{ prompt = [pscustomobject]@{ priority = 20 } }
@@ -28,7 +28,7 @@ Describe 'Get-DFRoleWinners' {
         $script:Db = @{ omp = $omp; star = $star; less = $less; bat = $bat; rg = $rg }
         $script:All = @($omp, $star, $less, $bat, $rg)
     }
-    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+    AfterEach { Set-DFTestConfig $null }
 
     It 'picks the highest priority candidate when Defaults is absent' {
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb
@@ -42,28 +42,28 @@ Describe 'Get-DFRoleWinners' {
     }
 
     It 'lets Defaults override priority' {
-        $Global:DFConfig = @{ Defaults = @{ prompt = 'star' } }
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'star' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb
         $w['prompt'].Winner | Should -Be 'star'
         $w['prompt'].Reason | Should -Be 'Defaults'
     }
 
     It 'warns and falls back to priority when Defaults names a non-member' {
-        $Global:DFConfig = @{ Defaults = @{ prompt = 'less' } }
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'less' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
         $w['prompt'].Winner | Should -Be 'omp'
         "$warn" | Should -Match "Defaults\['prompt'\].*less"
     }
 
     It 'warns when Defaults names a role that does not exist' {
-        $Global:DFConfig = @{ Defaults = @{ nosuchrole = 'omp' } }
+        Set-DFTestConfig @{ Defaults = @{ nosuchrole = 'omp' } }
         $null = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
         "$warn" | Should -Match 'nosuchrole'
     }
 
     It 'falls back silently when the Defaults tool is a member but not installed' {
         $script:Installed = @('omp.exe')
-        $Global:DFConfig = @{ Defaults = @{ prompt = 'star' } }
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'star' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn
         $warn | Should -BeNullOrEmpty
         $w['prompt'].Winner | Should -Be 'omp'
@@ -71,28 +71,28 @@ Describe 'Get-DFRoleWinners' {
     }
 
     It 'treats an empty Defaults value as absent, without a warning' {
-        $Global:DFConfig = @{ Defaults = @{ pager = '' } }
+        Set-DFTestConfig @{ Defaults = @{ pager = '' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn
         $warn | Should -BeNullOrEmpty
         $w['pager'].Reason | Should -Be 'priority'
     }
 
     It 'treats a whitespace-only Defaults value as absent, without a warning' {
-        $Global:DFConfig = @{ Defaults = @{ pager = '   ' } }
+        Set-DFTestConfig @{ Defaults = @{ pager = '   ' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn
         $warn | Should -BeNullOrEmpty
         $w['pager'].Reason | Should -Be 'priority'
     }
 
     It 'reports a Defaults winner with the tool''s own spelling' {
-        $Global:DFConfig = @{ Defaults = @{ prompt = 'STAR' } }
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'STAR' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb
         $w['prompt'].Winner | Should -BeExactly 'star'
         $w['prompt'].Reason | Should -Be 'Defaults'
     }
 
     It 'warns that a category role has no winner when Defaults names one' {
-        $Global:DFConfig = @{ Defaults = @{ grep = 'rg' } }
+        Set-DFTestConfig @{ Defaults = @{ grep = 'rg' } }
         $null = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
         "$warn" | Should -Match "'grep' is a category"
     }

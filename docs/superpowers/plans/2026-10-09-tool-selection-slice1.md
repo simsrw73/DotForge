@@ -28,6 +28,7 @@ The user's installed module (`OneDrive\Documents\PowerShell\Modules\DotForge`) i
 ## Tasks
 
 1. **Baseline.** Measure startup with the current profile shape (`Import-Module`; `Initialize-DFEnvironment`; `Register-DFTool -All` with the user's `SkipTools`). Save the numbers in this plan.
+   - **Result (2026-10-09, 3 runs, `pwsh -NoProfile`, the user's `$DFConfig`):** import 0.69–0.72 s, `Initialize-DFEnvironment` 0.27–0.29 s, `Register-DFTool -All` 2.09–2.11 s. **Total 3.05–3.12 s.**
 2. **Config snapshot.**
    - `Get-DFConfig` reads `$script:DFSessionConfig`, with no global fallback.
    - Add `Set-DFSessionConfig` (private): validate keys, warn with "did you mean" (`Get-DFFieldSuggestion`), store a copy.

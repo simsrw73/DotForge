@@ -36,14 +36,14 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
         Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'mdv') -Recurse -Force -ErrorAction Ignore
         Remove-Item $Env:XDG_STATE_HOME -Recurse -Force -ErrorAction Ignore
         $Env:MDV_CONFIG_PATH    = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'
     }
     AfterEach {
         $Env:MDV_CONFIG_PATH = $script:SavedConfigPath
 
         $script:DFToolDb     = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Restore-DFTestXdg
     }
 
@@ -87,7 +87,7 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
     }
 
     It 'skips config seeding entirely when SkipSetup names mdv' {
-        $Global:DFConfig = @{ SkipSetup = @('mdv') }
+        Set-DFTestConfig @{ SkipSetup = @('mdv') }
         Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
         $cfg = Join-Path $Env:XDG_CONFIG_HOME 'mdv' 'config.yaml'
         Test-Path $cfg | Should -BeFalse
@@ -95,14 +95,14 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
     }
 
     It 'maps the catppuccin family down to mdv''s catppuccin theme' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools
         $cfg = Join-Path $Env:XDG_CONFIG_HOME 'mdv' 'config.yaml'
         (Get-Content $cfg -Raw) | Should -Match 'theme:\s*"catppuccin"'
     }
 
     It 'tolerates $DFConfig being set to $null' {
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         { Register-DFTool -Name 'mdv' -ToolsPath $script:RealTools } | Should -Not -Throw
     }
 }

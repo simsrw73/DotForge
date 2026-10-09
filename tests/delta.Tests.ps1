@@ -32,7 +32,7 @@ Describe 'delta tool sidecar' {
         $script:DFToolAvailability = @{}
         $script:SavedFeat  = $Env:DELTA_FEATURES
         $Env:DELTA_FEATURES = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\delta.exe' } }
 
         Set-DFTestXdg
@@ -45,7 +45,7 @@ Describe 'delta tool sidecar' {
     }
     AfterEach {
         $Env:DELTA_FEATURES = $script:SavedFeat
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
 
         $Env:GIT_CONFIG_GLOBAL = $script:SavedGitConfigGlobal
         Restore-DFTestXdg
@@ -56,12 +56,12 @@ Describe 'delta tool sidecar' {
         $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
     }
     It 'follows the shared $DFConfig[Theme]' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
         $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
     }
     It 'lets $DFConfig[DeltaTheme] override with a verbatim (non-canonical) name, additively' {
-        $Global:DFConfig = @{ DeltaTheme = 'my-custom-feature' }
+        Set-DFTestConfig @{ DeltaTheme = 'my-custom-feature' }
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
         $Env:DELTA_FEATURES | Should -Be '+my-custom-feature'
     }
@@ -107,7 +107,7 @@ Describe 'delta tool sidecar' {
     }
 
     It 'skips the git-config edit and setup state entirely when SkipSetup names delta' {
-        $Global:DFConfig = @{ SkipSetup = @('delta') }
+        Set-DFTestConfig @{ SkipSetup = @('delta') }
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
 
         $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'

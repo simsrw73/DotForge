@@ -29,7 +29,7 @@ Describe 'bat tool sidecar' -Skip:(-not (Get-Command bat.exe -ErrorAction Ignore
     AfterEach {
         $script:DFToolDb     = $null
         [System.Environment]::SetEnvironmentVariable('BAT_THEME', $null, 'Process')
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Restore-DFTestXdg
     }
 
@@ -39,19 +39,19 @@ Describe 'bat tool sidecar' -Skip:(-not (Get-Command bat.exe -ErrorAction Ignore
     }
 
     It 'follows the shared $DFConfig[Theme] key, translating to the native name' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'bat' -ToolsPath $script:RealTools
         $Env:BAT_THEME | Should -Be 'Catppuccin Mocha'
     }
 
     It 'lets BatTheme override with a non-canonical native bat theme name' {
-        $Global:DFConfig = @{ BatTheme = 'Dracula' }
+        Set-DFTestConfig @{ BatTheme = 'Dracula' }
         Register-DFTool -Name 'bat' -ToolsPath $script:RealTools
         $Env:BAT_THEME | Should -Be 'Dracula'
     }
 
     It 'lets BatTheme override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; BatTheme = 'Dracula' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; BatTheme = 'Dracula' }
         Register-DFTool -Name 'bat' -ToolsPath $script:RealTools
         $Env:BAT_THEME | Should -Be 'Dracula'
     }

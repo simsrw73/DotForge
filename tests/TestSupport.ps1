@@ -6,6 +6,27 @@
 # where this file is dot-sourced) so the helpers stay StrictMode-safe.
 $script:DFTestSavedXdg = [System.Collections.Generic.Stack[hashtable]]::new()
 
+function Set-DFTestConfig {
+    <#
+    .SYNOPSIS
+        Sets the session config the module files read through Get-DFConfig, without validation.
+    .DESCRIPTION
+        Tests dot-source the module files, so Get-DFConfig reads the test file's
+        $script:DFSessionConfig. $null clears it (every Get-DFConfig returns its
+        default). Use Set-DFSessionConfig instead to test validation warnings.
+            BeforeEach { Set-DFTestConfig @{ Tools = @('bat') } }
+            AfterEach  { Set-DFTestConfig $null }
+    .PARAMETER Config
+        The config hashtable, or $null.
+    .OUTPUTS
+        None.
+    #>
+    param([System.Collections.IDictionary]$Config)
+    $copy = @{}
+    if ($Config) { foreach ($k in $Config.Keys) { $copy[$k] = $Config[$k] } }
+    $script:DFSessionConfig = $copy
+}
+
 function Get-DFTestModuleFile {
     <#
     .SYNOPSIS

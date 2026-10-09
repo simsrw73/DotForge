@@ -19,13 +19,11 @@ Describe 'Get-DFCommandConflict' {
   "picker": { "alias": "ff", "function": "Select-TestTool", "list": "testtool list", "action": "output" }
 }
 '@ | Set-Content (Join-Path $script:TmpTools 'testtool.json')
-
-        $script:SavedConfig = $Global:DFConfig
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
     }
 
     AfterEach {
-        $Global:DFConfig = $script:SavedConfig
+        Set-DFTestConfig $null
     }
 
     It 'returns nothing when no coreutils hook applies to this host' {
@@ -108,13 +106,13 @@ Describe 'Get-DFCommandConflict' {
 
     It 'suppresses conflicts listed in $DFConfig.IgnoreConflicts' {
         Mock Get-DFCoreutilsShadowSet { [string[]]@('cat') }
-        $Global:DFConfig = @{ IgnoreConflicts = @('cat') }
+        Set-DFTestConfig @{ IgnoreConflicts = @('cat') }
         Get-DFCommandConflict -ToolsPath $script:TmpTools | Should -BeNullOrEmpty
     }
 
     It 'still reports ignored conflicts with -IncludeIgnored, flagged as Ignored' {
         Mock Get-DFCoreutilsShadowSet { [string[]]@('cat') }
-        $Global:DFConfig = @{ IgnoreConflicts = @('cat') }
+        Set-DFTestConfig @{ IgnoreConflicts = @('cat') }
         $c = @(Get-DFCommandConflict -ToolsPath $script:TmpTools -IncludeIgnored)
         $c.Command | Should -Contain 'cat'
         ($c | Where-Object Command -eq 'cat').Ignored | Should -BeTrue

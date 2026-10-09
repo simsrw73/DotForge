@@ -1,10 +1,6 @@
 BeforeAll {
-    foreach ($f in 'Private/Get-DFConfiguredTheme', 'Private/ConvertTo-DFPath', 'Private/Expand-DFXdgPath', 'Private/Test-DFToolSchema',
-                   'Private/Import-DFToolDb', 'Private/Test-DFToolAvailable', 'Private/Get-DFRoleDb', 'Private/Write-DFFileAtomic',
-                   'Public/New-DFDirectory', 'Private/Write-DFRoleNotice', 'Private/Set-DFRoleEnv',
-                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Get-DFRole') {
-        . "$PSScriptRoot/../$f.ps1"
-    }
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:Tools = Join-Path $TestDrive 'tools'
     New-Item -ItemType Directory $script:Tools | Out-Null
     '{ "name": "pa", "executable": "pa.exe", "roles": { "pager": { "priority": 20, "env": { "DF_T2_PAGER": "pa" } } } }' | Set-Content (Join-Path $script:Tools 'pa.json')
@@ -15,7 +11,7 @@ BeforeAll {
 Describe 'Get-DFRole' {
     BeforeEach {
         $script:DFToolDb = $null
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-Item Env:DF_T2_PAGER -ErrorAction Ignore
         Mock Test-DFToolAvailable { $Executable -ne 'pb.exe' }
         # Point the role DB at a fixture whose pager reserves the test variable.

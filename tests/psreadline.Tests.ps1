@@ -20,7 +20,7 @@ Describe 'psreadline tool sidecar' {
 
         $script:DFToolDb     = $null
 
-        Remove-Variable DFConfig              -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-Variable DFPSReadLineColors    -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Select-PSReadLineTheme', 'Invoke-DFApplyPSReadLineTheme'
         Remove-Alias fprl -Scope Global -Force -ErrorAction Ignore
@@ -66,7 +66,7 @@ Describe 'psreadline tool sidecar' {
     }
 
     It 'lets $DFConfig[PSReadLineEditMode] override the default to Windows' {
-        $Global:DFConfig = @{ PSReadLineEditMode = 'Windows' }
+        Set-DFTestConfig @{ PSReadLineEditMode = 'Windows' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         (Get-PSReadLineOption).EditMode | Should -Be 'Windows'
     }
@@ -96,7 +96,7 @@ Describe 'psreadline tool sidecar' {
 
     It 'applies the theme named in $DFConfig[PSReadLineTheme]' {
         # NOTE: Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
-        $Global:DFConfig = @{ PSReadLineTheme = 'light' }
+        Set-DFTestConfig @{ PSReadLineTheme = 'light' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         # Light theme Command color is #0000ff — VT sequence contains "0;0;255"
@@ -106,7 +106,7 @@ Describe 'psreadline tool sidecar' {
 
     It 'follows the shared $DFConfig[Theme] key (catppuccin-mocha -> mocha)' {
         # Same VT/redirect limitation — fall back to $global:DFPSReadLineColors.
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
@@ -115,7 +115,7 @@ Describe 'psreadline tool sidecar' {
     }
 
     It 'lets PSReadLineTheme override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-mocha'; PSReadLineTheme = 'light' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; PSReadLineTheme = 'light' }
         Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools
         $colors = (Get-PSReadLineOption).Colors
         $commandColor = if ($colors) { $colors.Command } else { $global:DFPSReadLineColors['Command'] }
@@ -129,7 +129,7 @@ Describe 'psreadline tool sidecar' {
         # ambient default (now catppuccin-mocha, not dark) — this test is about
         # XDG-user-dir-beats-bundled resolution for a *named* theme, independent
         # of whatever the default happens to be.
-        $Global:DFConfig = @{ PSReadLineTheme = 'dark' }
+        Set-DFTestConfig @{ PSReadLineTheme = 'dark' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         @'
@@ -158,7 +158,7 @@ Describe 'psreadline tool sidecar' {
     }
 
     It 'warns and continues when an invalid hex color is in the theme' {
-        $Global:DFConfig = @{ PSReadLineTheme = 'badcolors' }
+        Set-DFTestConfig @{ PSReadLineTheme = 'badcolors' }
         $userDir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
         New-Item -ItemType Directory -Force -Path $userDir | Out-Null
         @'
@@ -177,7 +177,7 @@ Describe 'psreadline tool sidecar' {
     }
 
     It 'warns when named theme is not found' {
-        $Global:DFConfig = @{ PSReadLineTheme = 'nonexistent-theme' }
+        Set-DFTestConfig @{ PSReadLineTheme = 'nonexistent-theme' }
         $warnings = Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools 3>&1 |
             Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
         $warnings | Where-Object { $_ -match 'not found' } | Should -Not -BeNullOrEmpty
@@ -186,7 +186,7 @@ Describe 'psreadline tool sidecar' {
     It 'tolerates $DFConfig being set to $null' {
         # Regression: guarding on the variable's existence rather than its value
         # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         { Register-DFTool -Name 'psreadline' -ToolsPath $script:RealTools } | Should -Not -Throw
         Test-Path 'function:global:Invoke-DFApplyPSReadLineTheme' | Should -BeTrue
     }

@@ -206,20 +206,20 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 '@ | Set-Content (Join-Path $script:TmpTools 'skiptool.json')
         $script:DFToolDb = $null
 
-        $Global:DFConfig = @{ SkipTools = @('skiptool') }
+        Set-DFTestConfig @{ SkipTools = @('skiptool') }
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
         Mock Register-ArgumentCompleter { }
 
         Register-DFTool -All -ToolsPath $script:TmpTools
         Should -Invoke Get-Command -ParameterFilter { $Name -eq 'skiptool.exe' } -Times 0
 
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-Item (Join-Path $script:TmpTools 'skiptool.json') -ErrorAction Ignore
         $script:DFToolDb = $null
     }
 
     It 'does not skip tools when $Global:DFConfig is not set' {
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
@@ -227,10 +227,10 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
     It 'tolerates $Global:DFConfig being set to $null' {
         # Regression: guarding on the variable's existence rather than its value
         # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        $Global:DFConfig = $null
+        Set-DFTestConfig $null
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
         { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
     }
 
     It 'list_accepts_path: creates picker function without error (path safety)' {
@@ -563,7 +563,7 @@ throw 'boom: setup deliberately fails'
         $Env:WINDIR          = $script:SavedWinDir
         Remove-Variable __DFTestSetupRunCount -Scope Global -ErrorAction Ignore
         Remove-Alias tsf -Force -Scope Global -ErrorAction Ignore
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Restore-DFTestXdg
     }
 
@@ -598,7 +598,7 @@ throw 'boom: setup deliberately fails'
 
     It 'never dot-sources setup.ps1 when the tool is in $DFConfig.SkipSetup' {
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testsetup.exe' } }
-        $Global:DFConfig = @{ SkipSetup = @('testsetup') }
+        Set-DFTestConfig @{ SkipSetup = @('testsetup') }
         Register-DFTool -Name 'testsetup' -ToolsPath $script:TmpTools
 
         $Global:__DFTestSetupRunCount | Should -Be 0

@@ -45,7 +45,7 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         $script:DFToolDb     = $null
 
         [System.Environment]::SetEnvironmentVariable('LS_COLORS', $null, 'Process')
-        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null
         Remove-DFTestGlobal -Function 'Invoke-DFApplyLSColorsTheme', 'Select-LSColorsTheme'
         Remove-Alias fls -Scope Global -Force -ErrorAction Ignore
         Restore-DFTestXdg
@@ -116,14 +116,14 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
     }
 
     It 'follows the shared $DFConfig[Theme] key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-latte' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-latte' }
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         $keyFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.key'
         (Get-Content $keyFile -Raw).Trim() | Should -Be 'catppuccin-latte'
     }
 
     It 'lets VividTheme override the shared Theme key' {
-        $Global:DFConfig = @{ Theme = 'catppuccin-latte'; VividTheme = 'catppuccin-mocha' }
+        Set-DFTestConfig @{ Theme = 'catppuccin-latte'; VividTheme = 'catppuccin-mocha' }
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         $keyFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.key'
         (Get-Content $keyFile -Raw).Trim() | Should -Be 'catppuccin-mocha'

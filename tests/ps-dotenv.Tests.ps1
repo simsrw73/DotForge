@@ -19,7 +19,7 @@ Describe 'ps-dotenv project-env hook' {
         $global:FakeDotenvCalls = @()
         $script:SavedLca = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction
         $script:SavedLoc = Get-Location
-        Remove-Variable DFConfig, DFDotenvLocationHook -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook -Scope Global -ErrorAction Ignore
         Mock Get-Module { [pscustomobject]@{ Path = $script:FakeModule } } -ParameterFilter { $ListAvailable }
         . $script:CompanionPath
     }
@@ -27,7 +27,7 @@ Describe 'ps-dotenv project-env hook' {
         $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = $script:SavedLca
         Set-Location $script:SavedLoc
         Remove-Module Dotenv -Force -ErrorAction Ignore
-        Remove-Variable DFConfig, DFDotenvLocationHook, FakeDotenvCalls, Dotenv -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook, FakeDotenvCalls, Dotenv -Scope Global -ErrorAction Ignore
     }
 
     It 'imports by the discovered path, enables, turns safe mode on and async off, and loads the start folder' {
@@ -39,20 +39,20 @@ Describe 'ps-dotenv project-env hook' {
     }
 
     It 'leaves safe mode off when DotenvSafeMode is $false' {
-        $Global:DFConfig = @{ DotenvSafeMode = $false }
+        Set-DFTestConfig @{ DotenvSafeMode = $false }
         . Initialize-DFRoleProjectEnv -Role project-env
         $Dotenv.SafeMode | Should -BeFalse
     }
 
     It 'approves each listed folder, expanding ~, and warns about one that fails' {
-        $Global:DFConfig = @{ DotenvApprovedDirs = @('~\projects', 'C:\bad') }
+        Set-DFTestConfig @{ DotenvApprovedDirs = @('~\projects', 'C:\bad') }
         $w = . Initialize-DFRoleProjectEnv -Role project-env 3>&1
         $global:FakeDotenvCalls | Should -Contain "approve:$(Join-Path $HOME 'projects')"
         "$w" | Should -Match 'C:\\bad'
     }
 
     It 'skips a relative approved folder instead of binding it to the current folder' {
-        $Global:DFConfig = @{ DotenvApprovedDirs = @('relative\dir') }
+        Set-DFTestConfig @{ DotenvApprovedDirs = @('relative\dir') }
         . Initialize-DFRoleProjectEnv -Role project-env 3>$null
         @($global:FakeDotenvCalls | Where-Object { $_ -like 'approve:*' }).Count | Should -Be 0
     }
