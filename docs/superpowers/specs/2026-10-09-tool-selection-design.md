@@ -224,6 +224,8 @@ Its objects pipe into `Install-DFTool`, which takes `Name` by property name.
 
 ### 9. `Install-DFTool`
 
+> **Superseded (2026-10-09)** by [the install spec](2026-10-09-install-design.md), which redesigns this section: managers as plugins, sources and feeds, staged install, `-UseDefaults`/interactive modes, and `Invoke-DFToolSetup` instead of `-Setup`.
+
 ```powershell
 Install-DFTool -Missing [-Force] [-WhatIf]
 Install-DFTool -Name <string[]> [-Setup] [-Force] [-WhatIf]
