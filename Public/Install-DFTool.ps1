@@ -76,8 +76,8 @@ function Install-DFTool {
 
     $pmOrder = if ($PackageManager) {
         @($PackageManager)
-    } elseif (Get-DFConfig PackageManagerOrder) {
-        @(Get-DFConfig PackageManagerOrder)
+    } elseif (Get-DFConfig InstallOrder) {
+        @(Get-DFConfig InstallOrder)
     } else {
         Resolve-DFPackageManager
     }

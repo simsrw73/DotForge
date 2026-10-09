@@ -51,8 +51,8 @@ Describe 'Install-DFTool' {
         $script:ScoopCalled | Should -BeTrue
     }
 
-    It 'uses $DFConfig.PackageManagerOrder when set' {
-        Set-DFTestConfig @{ PackageManagerOrder = @('winget') }
+    It 'uses the InstallOrder setting when set' {
+        Set-DFTestConfig @{ InstallOrder = @('winget') }
         $script:WingetCalled = $false
         function script:winget { $script:WingetCalled = $true; $global:LASTEXITCODE = 0 }
         Mock Get-Command { [PSCustomObject]@{ Name = $Name } }

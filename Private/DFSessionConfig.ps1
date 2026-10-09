@@ -17,7 +17,9 @@ $script:DFConfigKeys = [ordered]@{
     SkipConflictCheck  = 'Skip the coreutils shadowing check'
     IgnoreConflicts    = 'Command names left out of the shadowing check'
     ShimsPath          = 'Folder New-DFShim writes to'
-    PackageManagerOrder = 'Install-DFTool package-manager order'
+    InstallVia          = 'Tool -> source to install it from (beats everything, including ExcludeSources)'
+    InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
+    ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
     BatTheme           = 'bat theme'
     DeltaTheme         = 'delta theme'
     FzfTheme           = 'fzf theme'
@@ -34,6 +36,7 @@ $script:DFConfigKeys = [ordered]@{
 
 # Keys that existed before and what replaced them.
 $script:DFRemovedConfigKeys = @{
+    PackageManagerOrder = 'use InstallOrder (sources, ordering only) and ExcludeSources'
     SkipTools      = 'list the tools you want in Tools, and unwanted members of a +group in ExcludeTools'
     CompletionMode = "set Defaults['tab-completion'] = 'inshellisense' to use inshellisense"
 }
