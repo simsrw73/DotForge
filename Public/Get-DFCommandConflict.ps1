@@ -33,8 +33,11 @@ function Get-DFCommandConflict {
         Directory of tool JSON records to read alias names from. Defaults to the
         module's own Tools directory.
 
+    .PARAMETER Tools
+        Tool records to check instead of every known tool. Start-DFSession passes
+        the tools it activated.
     .PARAMETER IncludeIgnored
-        Also return conflicts listed in $Global:DFConfig.IgnoreConflicts, which are
+        Also return conflicts listed in the session config's IgnoreConflicts, which are
         suppressed by default.
 
     .EXAMPLE
@@ -50,7 +53,7 @@ function Get-DFCommandConflict {
         it, so it maps to 'ls'.
 
     .EXAMPLE
-        $Global:DFConfig = @{ IgnoreConflicts = @('cat') }
+        Start-DFSession -Config @{ Tools = @('bat'); IgnoreConflicts = @('cat') }
         Get-DFCommandConflict
 
         Reports conflicts while accepting coreutils' cat over DotForge's bat alias.
@@ -66,6 +69,7 @@ function Get-DFCommandConflict {
     [OutputType([PSCustomObject])]
     param(
         [string]$ToolsPath,
+        [object[]]$Tools,
         [switch]$IncludeIgnored
     )
 
@@ -94,11 +98,14 @@ function Get-DFCommandConflict {
     }
     if ($script:DFManifestAliases) { $owned.AddRange([string[]]$script:DFManifestAliases) }
 
-    $dbParams = @{}
-    if ($ToolsPath) { $dbParams['ToolsPath'] = $ToolsPath }
-    # Import-DFToolDb returns a hashtable keyed by tool name, not a list.
-    $db = Import-DFToolDb @dbParams -ErrorAction Ignore
-    foreach ($tool in @($db.Values)) {
+    # A session passes its active tools; run on its own, every known tool is checked.
+    $checked = if ($PSBoundParameters.ContainsKey('Tools')) { @($Tools) } else {
+        $dbParams = @{}
+        if ($ToolsPath) { $dbParams['ToolsPath'] = $ToolsPath }
+        @((Import-DFToolDb @dbParams -ErrorAction Ignore).Values)
+    }
+    foreach ($tool in $checked) {
+        if (-not $tool) { continue }
         if ($tool.aliases) {
             $owned.AddRange([string[]]@($tool.aliases.PSObject.Properties.Name))
         }

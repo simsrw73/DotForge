@@ -280,14 +280,14 @@ function Write-DFConflictNotice {
         coreutils is absent, and stops once the conflict is resolved. Resolving
         it needs elevation and is the user's choice, so this only prints the
         commands.
-    .PARAMETER ToolsPath
-        The resolved Tools folder (for the alias names to check).
+    .PARAMETER Tools
+        The tool records whose command names to check (the session's active tools).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$ToolsPath)
-    $conflicts = @(Get-DFCommandConflict -ToolsPath $ToolsPath -ErrorAction Ignore)
+    param([AllowEmptyCollection()][object[]]$Tools = @())
+    $conflicts = @(Get-DFCommandConflict -Tools $Tools -ErrorAction Ignore)
     if (-not $conflicts) { return }
     $names = ($conflicts.Command | Sort-Object) -join ' '
     # DisableWith, not Command: 'la' is not a coreutils utility and the manager
@@ -297,7 +297,7 @@ function Write-DFConflictNotice {
 DotForge: coreutils shadows $($conflicts.Count) DotForge command(s) before PowerShell resolves them: $names
   These will not reach DotForge's version at the prompt, even though Get-Command reports otherwise.
   Keep DotForge's:  coreutils-manager disable $disable   (run elevated, once)
-  Keep coreutils':  `$DFConfig.IgnoreConflicts = @($(($conflicts.Command | Sort-Object | ForEach-Object { "'$_'" }) -join ', '))
-  Silence entirely: `$DFConfig.SkipConflictCheck = `$true
+  Keep coreutils':  add IgnoreConflicts = @($(($conflicts.Command | Sort-Object | ForEach-Object { "'$_'" }) -join ', ')) to your Start-DFSession -Config
+  Silence entirely: add SkipConflictCheck = `$true to your Start-DFSession -Config
 "@
 }

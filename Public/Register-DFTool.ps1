@@ -133,7 +133,7 @@ function Register-DFTool {
             }
             Write-Verbose "DotForge: $($tool.name) registered"
         }
-        if (-not (Get-DFConfig SkipConflictCheck -Default $false)) { Write-DFConflictNotice -ToolsPath $resolvedToolsPath }
+        if (-not (Get-DFConfig SkipConflictCheck -Default $false)) { Write-DFConflictNotice -Tools $tools }
     } finally {
         # Even if a companion throws or registration is interrupted, so the job
         # never lingers in Get-Job. Nothing needs its result.

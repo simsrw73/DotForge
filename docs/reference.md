@@ -20,6 +20,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFRole](#get-dfrole) |  | Lists DotForge's tool roles, which tools fill each, and which one is active. |
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
+| [Get-DFToolStatus](#get-dftoolstatus) |  | Shows what this session's Start-DFSession decided for each requested tool. |
 | [Initialize-DFEnvironment](#initialize-dfenvironment) |  | Sets the XDG base-directory variables, creates the directories, and reports the available package managers. |
 | [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
@@ -27,6 +28,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [Register-DFTool](#register-dftool) |  | Configures one or more known CLI tools in the current session. |
+| [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 
 **Help and discovery**
 
@@ -265,7 +267,7 @@ Lists every tool that can be the pager.
 Reports DotForge commands that another tool shadows before PowerShell can resolve them.
 
 ```text
-Get-DFCommandConflict [[-ToolsPath] <string>] [-IncludeIgnored] [<CommonParameters>]
+Get-DFCommandConflict [[-ToolsPath] <string>] [[-Tools] <Object[]>] [-IncludeIgnored] [<CommonParameters>]
 ```
 
 Coreutils for Windows installs a PSConsoleHostReadLine hook that rewrites command names to '&lt;name&gt;.cmd' before PowerShell resolves them. Any DotForge alias sharing a name with an enabled coreutils utility is therefore unreachable at the prompt — and because the rewrite happens above command resolution, Get-Command still reports DotForge's version, so the conflict is invisible to normal probing.
@@ -279,7 +281,8 @@ Resolving a conflict requires elevation and is a policy choice, so DotForge neve
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
 | `-ToolsPath` | string |  |  |  | Directory of tool JSON records to read alias names from. Defaults to the module's own Tools directory. |
-| `-IncludeIgnored` | switch |  |  |  | Also return conflicts listed in $Global:DFConfig.IgnoreConflicts, which are suppressed by default. |
+| `-Tools` | object[] |  |  |  | Tool records to check instead of every known tool. Start-DFSession passes the tools it activated. |
+| `-IncludeIgnored` | switch |  |  |  | Also return conflicts listed in the session config's IgnoreConflicts, which are suppressed by default. |
 
 **Outputs:** [PSCustomObject] with Command, ShadowedBy, WouldResolveTo, Ignored, DisableWith, and Fix properties. Returns nothing when no conflict exists.
 
@@ -302,7 +305,7 @@ Produces the argument list for 'coreutils-manager disable'. Use DisableWith rath
 **Example 3**
 
 ```powershell
-$Global:DFConfig = @{ IgnoreConflicts = @('cat') }
+Start-DFSession -Config @{ Tools = @('bat'); IgnoreConflicts = @('cat') }
 Get-DFCommandConflict
 ```
 
@@ -428,6 +431,50 @@ Get-DFToolGroup +core | Select-Object -ExpandProperty Tools
 ```
 
 Shows which tools +core requests.
+
+### Get-DFToolStatus
+
+Shows what this session's Start-DFSession decided for each requested tool.
+
+```text
+Get-DFToolStatus [[-Name] <string[]>] [-Missing] [-Failed] [<CommonParameters>]
+```
+
+```text
+One object per requested (or excluded) tool:
+    Name         the tool
+    State        Active, Missing (not installed), Failed (setup or
+                 activation threw), or Excluded (by ExcludeTools)
+    RequestedBy  Tools, the +group that requested it, or Register-DFTool
+    Roles        roles it won this session, e.g. prompt
+    Detail       why it is Missing or Failed, or the tool standing in for it
+It reports what already happened, so it is instant. Pipe -Missing
+into Install-DFTool to install those tools.
+```
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  |  |  | Only these tools. |
+| `-Missing` | switch |  |  |  | Only tools that aren't installed. |
+| `-Failed` | switch |  |  |  | Only tools that failed to load. |
+
+**Outputs:** DotForge.ToolStatus objects.
+
+**Example 1**
+
+```powershell
+Get-DFToolStatus
+```
+
+Lists every requested tool and what happened to it.
+
+**Example 2**
+
+```powershell
+Get-DFToolStatus -Missing
+```
+
+Lists the requested tools that aren't installed; Install-DFTool -Missing installs them.
 
 ### Initialize-DFEnvironment
 
@@ -816,6 +863,70 @@ Register-DFTool -All -Verbose
 Gives ls/ll/la/tree to eza and the prompt to starship (lsd and oh-my-posh stay usable by name), and prints which tools were registered or skipped.
 
 **See also:** [configuration](guide/configuration.md), [safety](guide/safety.md)
+
+### Start-DFSession
+
+Configures the tools you request for this PowerShell session. Call it once, from your profile.
+
+```text
+Start-DFSession [-Config] <IDictionary> [[-ToolsPath] <string>] [<CommonParameters>]
+```
+
+```text
+Start-DFSession is DotForge's profile entry point:
+  1. Stores -Config as the session's configuration (unknown keys warn).
+  2. Exports the XDG folders (XDG_CONFIG_HOME and the rest).
+  3. Resolves Tools and ExcludeTools: +groups expand, exclusions win.
+  4. Reads only the requested tools' records, checks which are
+     installed, and picks role winners among them.
+  5. Runs each installed tool's one-time setup (first time only), then
+     activates it: environment variables, aliases, pickers, companion,
+     role hook. One tool's failure never stops the rest.
+  6. Checks for coreutils shadowing DotForge's commands (SkipConflictCheck
+     turns this off).
+  7. Warns about requested tools that aren't installed or failed, with
+     the command that installs them.
+```
+
+Tools that aren't requested are never looked at. Nothing is installed: run Install-DFTool -Missing for that. Calling Start-DFSession again applies the new config and activates newly requested tools; a tool no longer requested stays active until you open a new shell.
+
+```text
+Config keys (see docs/guide/configuration.md for all of them):
+    Tools              Tool names and +groups to configure.
+    ExcludeTools       Tool names and +groups to leave out.
+    Defaults           Role -> preferred tool, e.g. @{ prompt = 'starship' }.
+    Theme              Shared theme name.
+    SkipSetup          Tools whose one-time setup never runs.
+    SkipConflictCheck  $true skips the coreutils shadowing check.
+    IgnoreConflicts    Command names left out of that check.
+```
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Config` | Collections.IDictionary |  | yes |  | The session configuration hashtable. Required. |
+| `-ToolsPath` | string |  |  |  | Read tool records and companions from this folder instead of the module's Tools/. For testing and custom tool sets. |
+
+**Outputs:** None. See Get-DFToolStatus for what the session decided.
+
+**Example 1**
+
+```powershell
+Import-Module DotForge
+Start-DFSession -Config @{ Tools = @('+core', 'starship'); ExcludeTools = @('less') }
+```
+
+Configures every +core tool except less, plus starship.
+
+**Example 2**
+
+```powershell
+$DFConfig = @{ Tools = @('+core', '+git'); Defaults = @{ pager = 'moor' }; Theme = 'catppuccin-mocha' }
+Start-DFSession -Config $DFConfig
+```
+
+Keeps the configuration in a variable of your own. DotForge doesn't read the variable itself, only what you pass.
+
+**See also:** [getting-started](guide/getting-started.md)
 
 ## Help and discovery
 
