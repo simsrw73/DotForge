@@ -1,41 +1,7 @@
 #Requires -Version 7.0
 
-# The steps Register-DFTool runs, one function each, so its body reads as the
-# algorithm: choose the tools, resolve role winners, register each tool, then
-# finish completion and report coreutils conflicts.
-
-function Get-DFRegistrationSet {
-    <#
-    .SYNOPSIS
-        Returns the tool records a Register-DFTool call should consider, before ordering.
-    .DESCRIPTION
-        With -All: every record except those in $DFConfig.SkipTools. With
-        -Name: the named records (SkipTools is not applied to names given
-        explicitly); an unknown name warns and is skipped.
-    .PARAMETER ToolDb
-        The tool database (Import-DFToolDb).
-    .PARAMETER Name
-        Tool names asked for.
-    .PARAMETER All
-        Every known tool.
-    .OUTPUTS
-        PSCustomObject[]. Tool records.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][hashtable]$ToolDb,
-        [string[]]$Name,
-        [switch]$All
-    )
-    if ($All) {
-        $skipTools = @(Get-DFConfig SkipTools)
-        return @($ToolDb.Values | Where-Object { $_.name -notin $skipTools })
-    }
-    foreach ($n in $Name) {
-        if ($ToolDb.ContainsKey($n)) { $ToolDb[$n] }
-        else { Write-Warning "DotForge: Unknown tool '$n'" }
-    }
-}
+# The per-session steps Invoke-DFSessionActivation runs: resolve role winners,
+# register each tool, and report coreutils conflicts.
 
 function Get-DFRoleWinners {
     <#

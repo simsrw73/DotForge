@@ -4,7 +4,7 @@ BeforeAll {
 }
 
 Describe 'psreadline tool sidecar' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg

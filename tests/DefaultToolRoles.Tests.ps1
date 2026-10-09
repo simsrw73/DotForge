@@ -5,7 +5,7 @@ BeforeAll {
 }
 
 Describe 'eza/lsd share role: listing (real tool records)' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
@@ -59,7 +59,7 @@ Describe 'eza/lsd share role: listing (real tool records)' {
 
 Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars)' {
     BeforeAll { . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1" }
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
@@ -128,7 +128,7 @@ function Update-Dotenv { $global:ProjectEnvInits += 'ps-dotenv' }
 Export-ModuleMember -Function * -Variable Dotenv
 '@ | Set-Content $script:FakeDotenv
     }
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
@@ -181,7 +181,7 @@ Export-ModuleMember -Function * -Variable Dotenv
 }
 
 Describe 'moor/ov/less share role: pager (real tool records)' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null

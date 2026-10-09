@@ -4,6 +4,7 @@ BeforeAll {
 }
 
 Describe 'Session config' {
+    BeforeEach { Reset-DFTestSession }
     AfterEach { Set-DFTestConfig $null }
 
     Context 'Get-DFConfig' {

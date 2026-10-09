@@ -18,7 +18,7 @@ BeforeAll {
 }
 
 Describe 'winget companion' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         . $script:CompanionPath
     }
     AfterEach {

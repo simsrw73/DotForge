@@ -11,6 +11,7 @@ BeforeAll {
 }
 
 Describe 'prompt engine ordering against zoxide' {
+    BeforeEach { Reset-DFTestSession }
     # zoxide --hook pwd wraps function:prompt; a prompt engine initialized after
     # it replaces that wrapper and silently stops directory tracking.
     It '<Engine> registers before zoxide in the shipped tool set' -ForEach @(
@@ -27,6 +28,7 @@ Describe 'prompt engine ordering against zoxide' {
 }
 
 Describe 'starship companion' {
+    BeforeEach { Reset-DFTestSession }
     It 'initializes starship from cached full-init output' {
         $src = Get-Content "$PSScriptRoot/../Tools/starship.ps1" -Raw
         $src | Should -Match "Get-DFCachedCommandOutput -Name 'starship-init' -Executable 'starship'"
@@ -68,12 +70,14 @@ Describe 'starship companion' {
 }
 
 Describe 'starship XDG defaults' {
+    BeforeEach { Reset-DFTestSession }
     It 'keeps its config in its own folder under XDG_CONFIG_HOME' {
         $script:Db['starship'].xdg.vars.STARSHIP_CONFIG | Should -Be '${XDG_CONFIG_HOME}/starship/starship.toml'
     }
 }
 
 Describe 'starship companion contract' {
+    BeforeEach { Reset-DFTestSession }
     AfterEach { Remove-DFTestGlobal -Function 'Get-DFCachedCommandOutput' }
 
     It 'only defines its hook when dot-sourced; the prompt init runs only through the hook' {

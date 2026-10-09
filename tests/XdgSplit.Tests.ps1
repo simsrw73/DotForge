@@ -5,6 +5,7 @@ BeforeAll {
 }
 
 Describe 'xdg.vars is path-templates-only after the split' {
+    BeforeEach { Reset-DFTestSession }
     It 'tool <Name> has no non-XDG value in xdg.vars' -ForEach @(
         @{ Name = 'fzf' }, @{ Name = 'delta' }, @{ Name = 'less' }, @{ Name = 'mdcat' },
         @{ Name = 'rustup' }, @{ Name = 'vcpkg' }
@@ -21,6 +22,7 @@ Describe 'xdg.vars is path-templates-only after the split' {
 }
 
 Describe 'env-block relocation preserves the migrated values' {
+    BeforeEach { Reset-DFTestSession }
     It 'fzf env carries the fuzzy-finder settings' {
         $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
         $j.env.FZF_DEFAULT_COMMAND | Should -Be 'fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
@@ -58,7 +60,7 @@ Describe 'env-block relocation preserves the migrated values' {
 }
 
 Describe 'Register applies the migrated env settings (tools without a sidecar)' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolAvailability = @{}
         $script:SavedFzf   = $Env:FZF_DEFAULT_OPTS
         $script:SavedPager = $Env:GIT_PAGER

@@ -4,6 +4,7 @@ BeforeAll {
 }
 
 Describe 'Register-DFToolAliases with no args key' {
+    BeforeEach { Reset-DFTestSession }
     AfterEach { Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore; Remove-DFTestGlobal -Function 'testalias' }
 
     It 'creates a plain alias when the record omits "args"' {
@@ -17,6 +18,7 @@ Describe 'Register-DFToolAliases with no args key' {
 }
 
 Describe 'Register-DFToolAliases' {
+    BeforeEach { Reset-DFTestSession }
     AfterEach {
         Remove-Alias testalias -Force -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'testalias-v'

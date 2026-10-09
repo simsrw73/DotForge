@@ -6,16 +6,18 @@ function Get-DFRole {
         Lists DotForge's tool roles, which tools fill each, and which one is active.
     .DESCRIPTION
         A role is a job several tools can do, such as pager or prompt. For a
-        single role, one installed tool wins: the one named in
-        $DFConfig.Defaults, otherwise the highest-priority installed tool. Only
+        single role, one installed tool wins: the one named in Defaults,
+        otherwise the highest-priority installed tool. Only
         the winner sets the role's variables and aliases and installs its shell
         hooks. A category role only groups tools; every member works as usual.
 
-        Winners are computed the way Register-DFTool -All would compute them
-        now: from installed tools, minus $DFConfig.SkipTools. Overridden lists
+        After Start-DFSession, it shows the session's view: members, candidates
+        and winners among the tools you requested, as they were decided at
+        load. Before a session (or with -ToolsPath) it considers every tool
+        DotForge knows. Overridden lists
         role variables whose current value is not the winner's. Source says
         why: 'outside DotForge' is a value such as a PAGER you set yourself,
-        which DotForge keeps unless you also name a tool in $DFConfig.Defaults;
+        which DotForge keeps unless you also name a tool in Defaults;
         'DotForge (earlier winner)' is a value DotForge wrote for a different
         winner earlier in this session. Read-only; changes nothing.
     .PARAMETER Name
@@ -42,11 +44,19 @@ function Get-DFRole {
         [Parameter(Position = 0)][string[]]$Name,
         [string]$ToolsPath
     )
-    $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
-    $db = Import-DFToolDb @dbArgs
     $roleDb = Get-DFRoleDb
-    $set = @(Get-DFRegistrationSet -ToolDb $db -All)
-    $winners = Get-DFRoleWinners -ToolDb $db -Tools $set -RoleDb $roleDb
+    if ($script:DFSessionRoleWinners -and -not $ToolsPath) {
+        # In a session: the session's own view, among the tools you requested.
+        # No extra records are read, and it matches what is actually active.
+        $db = $script:DFSessionToolDb
+        $set = @($db.Values)
+        $winners = $script:DFSessionRoleWinners
+    } else {
+        $dbArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+        $db = Import-DFToolDb @dbArgs
+        $set = @($db.Values)
+        $winners = Get-DFRoleWinners -ToolDb $db -Tools $set -RoleDb $roleDb
+    }
 
     foreach ($role in $roleDb.Values | Sort-Object name) {
         if ($Name -and $role.name -notin $Name) { continue }

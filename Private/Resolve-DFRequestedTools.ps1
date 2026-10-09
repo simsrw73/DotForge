@@ -24,6 +24,8 @@ function Resolve-DFRequestedTools {
         Get-DFGroupDb output.
     .PARAMETER KnownTools
         Every tool name DotForge has a record for (canonical case).
+    .PARAMETER Source
+        Where the Tools names came from, for warnings. Default: 'Tools'.
     .OUTPUTS
         pscustomobject: Name, RequestedBy, Excluded.
     #>
@@ -32,7 +34,8 @@ function Resolve-DFRequestedTools {
         [AllowEmptyCollection()][string[]]$Tools = @(),
         [AllowEmptyCollection()][string[]]$ExcludeTools = @(),
         [Parameter(Mandatory)][System.Collections.IDictionary]$GroupDb,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$KnownTools
+        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$KnownTools,
+        [string]$Source = 'Tools'
     )
 
     $canonical = @{}   # case-insensitive name -> canonical name
@@ -61,7 +64,7 @@ function Resolve-DFRequestedTools {
     foreach ($item in $Tools) {
         if (-not $item) { continue }
         $by = $item.StartsWith('+') ? $item : 'Tools'
-        foreach ($name in @(& $expand $item 'Tools')) {
+        foreach ($name in @(& $expand $item $Source)) {
             if (-not $entries.Contains($name)) {
                 $entries[$name] = [pscustomobject]@{ Name = $name; RequestedBy = $by; Excluded = $false }
             } elseif ($by -eq 'Tools') {

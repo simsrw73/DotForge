@@ -4,7 +4,7 @@ BeforeAll {
 }
 
 Describe 'Get-DFCommandConflict' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:TmpTools = Join-Path $TestDrive 'tools'
         New-Item -ItemType Directory -Force -Path $script:TmpTools | Out-Null
@@ -130,7 +130,7 @@ Describe 'Get-DFCommandConflict' {
 }
 
 Describe 'Get-DFCoreutilsShadowSet' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:FakeProfile = Join-Path $TestDrive 'Microsoft.PowerShell_profile.ps1'
     }
 

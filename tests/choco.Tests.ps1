@@ -8,7 +8,7 @@ BeforeAll {
 }
 
 Describe 'choco pickers' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         . $script:CompanionPath
         # choco stand-in: machine-readable (-r) rows keyed off the sub-command.
         Mock choco {

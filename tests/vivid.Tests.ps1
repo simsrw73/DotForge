@@ -4,6 +4,7 @@ BeforeAll {
 }
 
 Describe 'Tools/vivid.json' {
+    BeforeEach { Reset-DFTestSession }
     BeforeAll {
         $script:VividJson = Get-Content "$PSScriptRoot/../Tools/vivid.json" -Raw | ConvertFrom-Json
     }
@@ -28,7 +29,7 @@ Describe 'Tools/vivid.json' {
 }
 
 Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb       = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg

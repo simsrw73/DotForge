@@ -4,7 +4,7 @@ BeforeAll {
 }
 
 Describe 'Register-DFTool role activation' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $global:DFRoleEnvState = $null
@@ -193,7 +193,7 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
 }
 
 Describe 'Get-DFRoleWinners opt-in memberships' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         Set-DFTestConfig $null
         Mock Test-DFToolAvailable { $true }
         $script:RoleDb = @{ 'tab-completion' = [pscustomobject]@{ kind = 'single' } }

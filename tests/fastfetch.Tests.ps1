@@ -6,6 +6,7 @@ BeforeAll {
 }
 
 Describe 'Tools/fastfetch.json' {
+    BeforeEach { Reset-DFTestSession }
     It 'declares the wrapper XDG method' {
         # fastfetch's Windows config discovery is a hardcoded Win32 known-folder
         # lookup and ignores XDG_CONFIG_HOME entirely -- see docs/external-dependencies.md.
@@ -29,7 +30,7 @@ Describe 'Tools/fastfetch.json' {
 }
 
 Describe 'fastfetch tool sidecar' -Skip:(-not (Get-Command fastfetch.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb          = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg

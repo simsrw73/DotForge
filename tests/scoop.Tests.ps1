@@ -5,6 +5,7 @@ BeforeAll {
 }
 
 Describe 'scoop companion' {
+    BeforeEach { Reset-DFTestSession }
     AfterEach {
         Remove-DFTestGlobal -Function 'scoop', 'scoop-search', 'git'
     }
@@ -88,7 +89,7 @@ Describe 'scoop pickers' {
         }
     }
 
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         # scoop-search stand-in: emits hook text for --hook (consumed when the
         # companion loads), canned search results otherwise.
         function global:scoop-search {

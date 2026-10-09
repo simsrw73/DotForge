@@ -5,6 +5,7 @@ BeforeAll {
 }
 
 Describe 'Tools/delta.json' {
+    BeforeEach { Reset-DFTestSession }
     It 'sets GIT_PAGER only as the diff role winner, and carries no top-level env (no DELTA_FEATURES)' {
         $j = Get-Content (Join-Path $script:RealTools 'delta.json') -Raw | ConvertFrom-Json
         $j.PSObject.Properties['env'] | Should -BeNullOrEmpty
@@ -13,6 +14,7 @@ Describe 'Tools/delta.json' {
 }
 
 Describe 'Tools/delta/catppuccin.gitconfig' {
+    BeforeEach { Reset-DFTestSession }
     It 'exists and defines the catppuccin-mocha feature' {
         $path = Join-Path $script:RealTools 'delta' 'catppuccin.gitconfig'
         Test-Path $path | Should -BeTrue
@@ -27,7 +29,7 @@ Describe 'delta tool sidecar' {
         $shadow = Get-Command git -CommandType Function, Alias -ErrorAction Ignore
         if ($shadow) { throw "A '$($shadow.CommandType)' named git shadows git.exe; an earlier test did not clean it up (use Remove-DFTestGlobal)." }
     }
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb   = $null
         $script:DFToolAvailability = @{}
         $script:SavedFeat  = $Env:DELTA_FEATURES

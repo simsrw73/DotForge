@@ -21,13 +21,12 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
 | [Get-DFToolStatus](#get-dftoolstatus) |  | Shows what this session's Start-DFSession decided for each requested tool. |
-| [Initialize-DFEnvironment](#initialize-dfenvironment) |  | Sets the XDG base-directory variables, creates the directories, and reports the available package managers. |
 | [Install-DFTool](#install-dftool) |  | Installs one or more known CLI tools via the first available package manager that has a package entry for each tool. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
 | [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
-| [Register-DFTool](#register-dftool) |  | Configures one or more known CLI tools in the current session. |
+| [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 
 **Help and discovery**
@@ -321,9 +320,9 @@ Lists DotForge's tool roles, which tools fill each, and which one is active.
 Get-DFRole [[-Name] <string[]>] [-ToolsPath <string>] [<CommonParameters>]
 ```
 
-A role is a job several tools can do, such as pager or prompt. For a single role, one installed tool wins: the one named in $DFConfig.Defaults, otherwise the highest-priority installed tool. Only the winner sets the role's variables and aliases and installs its shell hooks. A category role only groups tools; every member works as usual.
+A role is a job several tools can do, such as pager or prompt. For a single role, one installed tool wins: the one named in Defaults, otherwise the highest-priority installed tool. Only the winner sets the role's variables and aliases and installs its shell hooks. A category role only groups tools; every member works as usual.
 
-Winners are computed the way Register-DFTool -All would compute them now: from installed tools, minus $DFConfig.SkipTools. Overridden lists role variables whose current value is not the winner's. Source says why: 'outside DotForge' is a value such as a PAGER you set yourself, which DotForge keeps unless you also name a tool in $DFConfig.Defaults; 'DotForge (earlier winner)' is a value DotForge wrote for a different winner earlier in this session. Read-only; changes nothing.
+After Start-DFSession, it shows the session's view: members, candidates and winners among the tools you requested, as they were decided at load. Before a session (or with -ToolsPath) it considers every tool DotForge knows. Overridden lists role variables whose current value is not the winner's. Source says why: 'outside DotForge' is a value such as a PAGER you set yourself, which DotForge keeps unless you also name a tool in Defaults; 'DotForge (earlier winner)' is a value DotForge wrote for a different winner earlier in this session. Read-only; changes nothing.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -475,51 +474,6 @@ Get-DFToolStatus -Missing
 ```
 
 Lists the requested tools that aren't installed; Install-DFTool -Missing installs them.
-
-### Initialize-DFEnvironment
-
-Sets the XDG base-directory variables, creates the directories, and reports the available package managers.
-
-```text
-Initialize-DFEnvironment [<CommonParameters>]
-```
-
-Sets each of these session environment variables only when it is not already set, so values from your profile or system always win:
-
-```text
-    XDG_CONFIG_HOME   $HOME\.config
-    XDG_DATA_HOME     $HOME\.local\share
-    XDG_STATE_HOME    $HOME\.local\state
-    XDG_CACHE_HOME    $HOME\.cache
-    XDG_BIN_HOME      $HOME\.local\bin   (not in the XDG spec; the location is)
-```
-
-Every value, including one you set yourself, is then canonicalized with ConvertTo-DFPath (a leading ~ is expanded, '..' collapsed, native separators), and the five directories are created if missing.
-
-Finally it re-detects which package managers are on PATH (scoop, winget, choco) and writes one line to the host: a green "Environment ready" line listing them, or a warning when none is found. Install-DFTool needs at least one.
-
-DotForge's own commands use the same defaults whether or not this has run (see Get-DFXdgPath); run it so the variables are also exported to the tools you start, which read them themselves. Designed to run once near the top of a profile. Safe to call again (idempotent). Variables are set for the current process only; nothing is written to the registry.
-
-**Outputs:** None. Sets session environment variables, creates directories, and writes a status line to the host.
-
-**Example 1**
-
-```powershell
-Initialize-DFEnvironment
-```
-
-Bootstraps the XDG directories and prints, for example: DotForge: Environment ready. Package managers: scoop, winget
-
-**Example 2**
-
-```powershell
-$Env:XDG_CONFIG_HOME = 'D:\dotfiles\config'
-Initialize-DFEnvironment
-```
-
-Keeps your own config root and fills in defaults for the other four.
-
-**See also:** [getting-started](guide/getting-started.md)
 
 ### Install-DFTool
 
@@ -784,54 +738,33 @@ Shows what would be created without writing any file.
 
 ### Register-DFTool
 
-Configures one or more known CLI tools in the current session.
+Adds one or more tools to the current session, without restarting the shell.
 
 ```text
-Register-DFTool [-Name <string[]>] [-ToolsPath <string>] [<CommonParameters>]
-
-Register-DFTool [-All] [-ToolsPath <string>] [<CommonParameters>]
+Register-DFTool [-Name] <string[]> [-ToolsPath <string>] [<CommonParameters>]
 ```
 
-For each requested tool that is installed (its executable is on PATH, or for a "type": "module" tool, the module is available), Register-DFTool:
+Start-DFSession configures the tools your profile requests. Use Register-DFTool to add another tool (or +group) to the session you are in, for example to try one out, or after installing it. Install-DFTool calls it for the tools it installs.
+
+Each named tool goes through the same steps Start-DFSession uses: its record is read, role winners are recomputed over the session's tools plus the new ones, and an installed tool is set up (once ever) and activated:
 
 ```text
-  1. Applies its XDG configuration: sets the env vars in xdg.vars and
-     creates the directories in xdg.dirs.
-  2. Sets the non-XDG env vars in its "env" block (e.g. FZF_DEFAULT_OPTS,
-     LESS) for the current process.
-  3. Defines its aliases and wrapper functions.
-  4. Builds its declarative fzf picker function, if it declares one.
-  5. For each role it wins (see Get-DFRole), applies that role's
-     variables and aliases. Roles it loses are skipped entirely.
-  6. Dot-sources its companion Tools/<name>.ps1, if one exists, then
-     runs the companion's hook for each role it won, and runs
-     Tools/<name>.setup.ps1 once ever per machine (tracked in
-     $XDG_STATE_HOME\dotforge\setup-state.json).
+  1. Its XDG configuration: the env vars in xdg.vars and the
+     directories in xdg.dirs.
+  2. The non-XDG env vars in its "env" block.
+  3. Its aliases and wrapper functions, and its declarative picker.
+  4. For each role it wins, that role's variables and aliases.
+  5. Its companion Tools/<name>.ps1 and its role hooks; and once
+     ever per machine, Tools/<name>.setup.ps1.
 ```
 
-Tools that aren't installed are skipped silently (use -Verbose to see them). Tools are registered in dependency order, honoring "dependsOn". If one tool fails (a companion throws, or any error under $ErrorActionPreference = 'Stop'), DotForge warns with its name and goes on with the rest. After the loop it warns once if Coreutils for Windows shadows any DotForge command (see Get-DFCommandConflict).
-
-```text
-$DFConfig keys read:
-    SkipTools          tool names excluded from -All
-    SkipSetup          tool names whose one-time setup script never runs
-    Defaults           role -> tool, e.g. @{ prompt = 'starship'; pager = 'bat' };
-                       picks the winner of each role. Without it the
-                       highest-priority installed tool wins (with a
-                       one-time warning for prompt, project-env and
-                       navigation)
-    SkipConflictCheck  $true disables the coreutils shadowing warning
-    IgnoreConflicts    command names left out of that warning
-Tool companions also read their own keys (Theme, <Tool>Theme,
-PSReadLineEditMode, ShimsPath, …).
-```
+A tool that isn't installed is reported as missing, a tool that fails is reported and the rest continue, and a tool you name is applied again even if it is already active (useful after changing its settings). Get-DFToolStatus shows the result. Registering a tool doesn't add it to your profile's Tools: add it there to load it in future sessions.
 
 Side effects: changes are scoped to the current session (env vars, functions, aliases, key bindings), except what a companion or setup script writes to disk: deployed config and theme files under $XDG_CONFIG_HOME, caches under $XDG_CACHE_HOME, the setup-state file, and for delta, one include.path line in your global git config. Some tools relocate their data to XDG paths, so a tool that already had files in its old default location stops seeing them.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Name` | string[] |  |  |  | One or more tool names to configure. An unknown name writes a warning and is skipped. $DFConfig['SkipTools'] is not applied to names you list explicitly. |
-| `-All` | switch |  |  |  | Configure every known tool that is installed, except those in $DFConfig['SkipTools']. |
+| `-Name` | string[] |  | yes |  | Tool names and +groups to add. An unknown name warns and is skipped. |
 | `-ToolsPath` | string |  |  |  | Read tool records and companions from this directory instead of the module's Tools folder. Intended for tests. |
 
 **Outputs:** None. Changes the current session and may write the files listed above.
@@ -839,28 +772,18 @@ Side effects: changes are scoped to the current session (env vars, functions, al
 **Example 1**
 
 ```powershell
-Register-DFTool -All
+Register-DFTool -Name glow
 ```
 
-Configures every installed tool in one call. Typical profile usage.
+Adds glow to this session.
 
 **Example 2**
 
 ```powershell
-Register-DFTool -Name psreadline, PSFzf
+Register-DFTool +git
 ```
 
-Configures only psreadline and PSFzf (in dependency order).
-
-**Example 3**
-
-```powershell
-$DFConfig = @{ Defaults = @{ listing = 'eza'; prompt = 'starship' } }
-Import-Module DotForge
-Register-DFTool -All -Verbose
-```
-
-Gives ls/ll/la/tree to eza and the prompt to starship (lsd and oh-my-posh stay usable by name), and prints which tools were registered or skipped.
+Adds every tool in the +git group (delta, gh, lazygit) to this session.
 
 **See also:** [configuration](guide/configuration.md), [safety](guide/safety.md)
 

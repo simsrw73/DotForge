@@ -7,6 +7,7 @@ BeforeAll {
 }
 
 Describe 'Tools/glow.json' {
+    BeforeEach { Reset-DFTestSession }
     It 'declares the wrapper XDG method' {
         # glow is configured by CLI flags in Tools/glow.ps1, not by Register-DFTool.
         $script:GlowJson.xdg.method | Should -Be 'wrapper'
@@ -32,7 +33,7 @@ Describe 'Tools/glow.json' {
 }
 
 Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb        = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg

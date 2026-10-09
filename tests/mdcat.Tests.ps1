@@ -6,6 +6,7 @@ BeforeAll {
 }
 
 Describe 'Tools/mdcat.json' {
+    BeforeEach { Reset-DFTestSession }
     It 'declares the default XDG method (mdcat is XDG-native)' {
         $script:McatJson.xdg.method | Should -Be 'default'
     }
@@ -19,7 +20,7 @@ Describe 'Tools/mdcat.json' {
 }
 
 Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb     = $null
         $script:DFToolAvailability = @{}
         $script:SavedTheme   = $Env:MDCAT_THEME

@@ -27,6 +27,26 @@ function Set-DFTestConfig {
     $script:DFSessionConfig = $copy
 }
 
+function Reset-DFTestSession {
+    <#
+    .SYNOPSIS
+        Clears the session state Start-DFSession and Register-DFTool keep, so tests don't see each other's tools.
+    .DESCRIPTION
+        Register-DFTool folds the session's requested tools into each call (so
+        role winners are computed over everything requested). Within one test
+        file that state persists, so every Describe that registers tools calls
+        this from its BeforeEach. Also clears the per-name record cache and
+        the full tool DB cache.
+    .OUTPUTS
+        None.
+    #>
+    $script:DFSessionStatus = $null
+    $script:DFSessionToolDb = @{}
+    $script:DFSessionRoleWinners = $null
+    $script:DFToolRecordCache = @{}
+    $script:DFToolDb = $null
+}
+
 function Get-DFTestModuleFile {
     <#
     .SYNOPSIS

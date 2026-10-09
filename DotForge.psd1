@@ -24,7 +24,6 @@
         'Register-DFTool',
         'Complete-DFToolSetup',
         # Layer 3 — Tool Operations
-        'Initialize-DFEnvironment',
         'Install-DFTool',
         'New-DFShim',
         'Get-DFCommandConflict',

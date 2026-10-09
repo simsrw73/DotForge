@@ -6,6 +6,7 @@ BeforeAll {
 }
 
 Describe 'Tools/mdv.json' {
+    BeforeEach { Reset-DFTestSession }
     It 'declares the env XDG method' {
         $script:MdvJson.xdg.method | Should -Be 'env'
     }
@@ -24,7 +25,7 @@ Describe 'Tools/mdv.json' {
 }
 
 Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb        = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg
@@ -108,6 +109,7 @@ Describe 'mdv tool sidecar' -Skip:(-not (Get-Command mdv.exe -ErrorAction Ignore
 }
 
 Describe 'Tools/carapace/specs/mdv.yaml' {
+    BeforeEach { Reset-DFTestSession }
     BeforeAll {
         $script:SpecPath = "$PSScriptRoot/../Tools/carapace/specs/mdv.yaml"
         $script:Spec     = Get-Content $script:SpecPath -Raw

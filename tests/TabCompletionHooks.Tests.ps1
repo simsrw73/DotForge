@@ -12,7 +12,7 @@ BeforeAll {
 }
 
 Describe 'tab-completion sidecar hooks' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:SavedFzfDefaultOpts = $Env:FZF_DEFAULT_OPTS
         $script:SavedCarapaceBridges = $Env:CARAPACE_BRIDGES
         Set-DFTestXdg
@@ -123,7 +123,7 @@ Describe 'tab-completion sidecar hooks' {
 }
 
 Describe 'Register-DFTool tab-completion role activation' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:TabCalls = @()

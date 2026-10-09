@@ -3,6 +3,9 @@
 # What the current session decided, per requested tool: name -> DotForge.ToolStatus.
 # $null until Start-DFSession (or Register-DFTool) first runs. Get-DFToolStatus reads it.
 $script:DFSessionStatus = $null
+# The session's requested tool records and role winners, for Get-DFRole.
+$script:DFSessionToolDb = @{}
+$script:DFSessionRoleWinners = $null
 
 function Invoke-DFSessionActivation {
     <#
@@ -25,13 +28,17 @@ function Invoke-DFSessionActivation {
         Request entries: Name, RequestedBy, Excluded.
     .PARAMETER ToolsPath
         Tools folder. Default: the module's Tools/.
+    .PARAMETER Reactivate
+        Tools to activate again even if already Active (Register-DFTool -Name:
+        re-applying a tool you name is the point of naming it).
     .OUTPUTS
         The tool records that are Active after this call.
     #>
     [CmdletBinding()]
     param(
         [AllowEmptyCollection()][object[]]$Request = @(),
-        [string]$ToolsPath
+        [string]$ToolsPath,
+        [AllowEmptyCollection()][string[]]$Reactivate = @()
     )
     if (-not $script:DFSessionStatus) {
         $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
@@ -57,6 +64,9 @@ function Invoke-DFSessionActivation {
     $tools = @(Invoke-DFTopoSort -Tools $records | Where-Object { $_ })
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $db -Tools $tools -RoleDb $roleDb
+    # Stored before any companion runs: a companion may ask Get-DFRole who won.
+    foreach ($k in $db.Keys) { $script:DFSessionToolDb[$k] = $db[$k] }
+    $script:DFSessionRoleWinners = $winners
     Write-DFRoleNotice -RoleWinners $winners -RoleDb $roleDb
     $skipSetup = @(Get-DFConfig SkipSetup)
 
@@ -67,7 +77,7 @@ function Invoke-DFSessionActivation {
     $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
     try {
         foreach ($t in $tools) {
-            if ($status.Contains($t.name) -and $status[$t.name].State -eq 'Active') { continue }
+            if ($status.Contains($t.name) -and $status[$t.name].State -eq 'Active' -and $t.name -notin $Reactivate) { continue }
             if (-not (Test-DFToolAvailable -Executable $t.executable -Type $t.type)) {
                 $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail "'$($t.executable)' is not installed"
                 continue

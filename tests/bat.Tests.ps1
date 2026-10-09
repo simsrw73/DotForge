@@ -4,6 +4,7 @@ BeforeAll {
 }
 
 Describe 'Tools/bat.json' {
+    BeforeEach { Reset-DFTestSession }
     BeforeAll {
         $script:BatJson = Get-Content "$PSScriptRoot/../Tools/bat.json" -Raw | ConvertFrom-Json
     }
@@ -18,7 +19,7 @@ Describe 'Tools/bat.json' {
 }
 
 Describe 'bat tool sidecar' -Skip:(-not (Get-Command bat.exe -ErrorAction Ignore)) {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb       = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg

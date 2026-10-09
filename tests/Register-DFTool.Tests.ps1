@@ -4,7 +4,7 @@ BeforeAll {
 }
 
 Describe 'Register-DFTool' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg
@@ -181,9 +181,13 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
             Register-DFTool -Name 'aaa-broken', 'testtool' -ToolsPath $script:TmpTools -WarningVariable warns 3>$null
         } finally { $ErrorActionPreference = 'Continue' }
 
-        $warns | Where-Object { $_ -match 'aaa-broken' -and $_ -match 'sidecar boom' } | Should -Not -BeNullOrEmpty
+        # The failure is recorded with its message, and the end-of-load notice names it.
+        (Get-DFToolStatus -Failed).Name | Should -Be 'aaa-broken'
+        (Get-DFToolStatus -Name 'aaa-broken').Detail | Should -Match 'sidecar boom'
+        $warns | Where-Object { $_ -match 'failed to load: aaa-broken' } | Should -Not -BeNullOrEmpty
+        (Get-DFToolStatus -Name 'testtool').State | Should -Be 'Active'
         Get-Alias tt -Scope Global -ErrorAction Ignore | Should -Not -BeNullOrEmpty
-        # $TestDrive lives for the whole Describe; later -All tests must not see this tool.
+        # $TestDrive lives for the whole Describe; later tests must not see this tool.
         Remove-Item (Join-Path $script:TmpTools 'aaa-broken.*') -ErrorAction Ignore
         $script:DFToolDb = $null
     }
@@ -192,45 +196,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Register-DFTool -Name 'nosuch' -ToolsPath $script:TmpTools `
             -WarningVariable warns 3>$null
         $warns | Where-Object { $_ -match 'nosuch' } | Should -Not -BeNullOrEmpty
-    }
-
-    It 'registers all installed tools when -All is specified' {
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-{ Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
-    }
-
-
-    It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
-        @'
-{ "name": "skiptool", "executable": "skiptool.exe" }
-'@ | Set-Content (Join-Path $script:TmpTools 'skiptool.json')
-        $script:DFToolDb = $null
-
-        Set-DFTestConfig @{ SkipTools = @('skiptool') }
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        Mock Register-ArgumentCompleter { }
-
-        Register-DFTool -All -ToolsPath $script:TmpTools
-        Should -Invoke Get-Command -ParameterFilter { $Name -eq 'skiptool.exe' } -Times 0
-
-        Set-DFTestConfig $null
-        Remove-Item (Join-Path $script:TmpTools 'skiptool.json') -ErrorAction Ignore
-        $script:DFToolDb = $null
-    }
-
-    It 'does not skip tools when $Global:DFConfig is not set' {
-        Set-DFTestConfig $null
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-{ Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
-    }
-
-    It 'tolerates $Global:DFConfig being set to $null' {
-        # Regression: guarding on the variable's existence rather than its value
-        # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
-        Set-DFTestConfig $null
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
-        Set-DFTestConfig $null
     }
 
     It 'list_accepts_path: creates picker function without error (path safety)' {
@@ -342,7 +307,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 
         $Global:RegOrder = [System.Collections.Generic.List[string]]::new()
         Mock Get-Module { [PSCustomObject]@{ Name = $Name } }
-        Register-DFTool -All -ToolsPath $script:TmpTools
+        Register-DFTool -Name 'PSFzf', 'psreadline' -ToolsPath $script:TmpTools  # listed out of order on purpose
 
         $Global:RegOrder[0] | Should -Be 'psreadline'
         $Global:RegOrder[1] | Should -Be 'PSFzf'
@@ -516,7 +481,7 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 }
 
 Describe 'Register-DFTool one-time setup' {
-    BeforeEach {
+    BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         Set-DFTestXdg
@@ -626,6 +591,7 @@ throw 'boom: setup deliberately fails'
 }
 
 Describe 'Invoke-DFTopoSort' {
+    BeforeEach { Reset-DFTestSession }
     It 'returns tools unchanged when no dependsOn fields present' {
         $tools = @(
             [PSCustomObject]@{ name = 'zzz' },
