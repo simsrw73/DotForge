@@ -12,7 +12,7 @@ Look a tool up in all seven catalogs at once:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 trifle ripgrep
 ```
 
@@ -28,7 +28,7 @@ Why: you know roughly what you want but not its exact name.
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 trifle static site generator
 trifle bat -Source scoop, winget
 trifle rg
@@ -48,7 +48,7 @@ Why: skip ranking and get the full details for one package in one catalog.
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 trifle winget:Zed.Zed
 trifle winget:Zed.Zed -GitInfo
 trifle npm:left-pad -Readme
@@ -68,7 +68,7 @@ When trifle's output is piped, redirected or assigned with `-AsObject`, it retur
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 $hits = Find-DFPackage ripgrep -AsObject
 $hits | Select-Object -First 1 Name, Installed, InstalledVia, DFTool
 ```
@@ -108,7 +108,7 @@ Then search a category; installed state and versions still come from the live ca
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 trifle -Category search
 trifle -Category search -WorksWith filesystem
 ```
@@ -138,7 +138,7 @@ clipboard
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 ftrifle zed
 ```
 
@@ -185,7 +185,7 @@ The category database and the identity guide ship with the module. Newer copies 
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 Update-DFCategoryDb
 Update-DFToolIdentityGuide
 ```

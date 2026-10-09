@@ -12,7 +12,7 @@
 #     (the pickers warn and no-op if it is missing)
 
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @('winget') }
 Register-DFTool -Name winget    # registers wins / wrm / wup (or use -All)
 
 # ── Search → install ────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@
 # Requires fzf on PATH (or $Env:Picker = 'sk' for skim).
 
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @('scoop', 'choco') }
 Register-DFTool -Name scoop, choco    # or -All
 
 # ── scoop (sins / srm / sup) ────────────────────────────────────────────────

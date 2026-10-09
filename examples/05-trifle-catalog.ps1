@@ -4,10 +4,10 @@
 # Find-DFPackage (alias: trifle) answers "what is this tool, is it installed,
 # where from, and what do the catalogs carry?" across scoop, winget, choco,
 # npm, PyPI, crates.io, and PSGallery — cache-first, so warm queries answer in
-# ~200 ms. Requires $Env:XDG_CACHE_HOME (set by Initialize-DFEnvironment).
+# ~200 ms. Requires $Env:XDG_CACHE_HOME (exported by Start-DFSession).
 
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 
 # ── Interactive lookups ────────────────────────────────────────────────────
 trifle ripgrep                    # info card: installed via scoop? versions everywhere?

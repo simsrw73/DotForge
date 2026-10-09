@@ -8,7 +8,7 @@
 
 | | |
 | --- | --- |
-| **Reads** | `$DFConfig`, environment variables, its own tool records, your installed tools and modules, package managers' local catalog files. |
+| **Reads** | the configuration passed to `Start-DFSession`, environment variables, its own tool records, your requested installed tools and modules, package managers' local catalog files. |
 | **Writes** | Folders and files under your XDG folders (`~\.config`, `~\.local\share`, `~\.local\state`, `~\.cache`, `~\.local\bin`). One line in your global git config (delta, once). Shims, only when you run `New-DFShim`. |
 | **Changes for the session only** | Environment variables, `PATH`, aliases, functions, PSReadLine options and key bindings, the prompt. Nothing is written to the registry or to user/machine environment variables. |
 | **Runs** | Your installed tools' own setup commands while registering; package managers only when you run `Install-DFTool` or a picker action. |
@@ -51,7 +51,7 @@ Before registering a tool you already use, either move its old folder to the new
 
 | Path | Written by | When |
 | --- | --- | --- |
-| `$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME`, `$XDG_BIN_HOME` | `Initialize-DFEnvironment` | creates the folders if missing |
+| `$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME`, `$XDG_BIN_HOME` | `Start-DFSession` | exports the folders for the session |
 | Tool folders listed in each record's `xdg.dirs` | `Register-DFTool` | creates them if missing |
 | `$XDG_CONFIG_HOME\carapace\specs\scoop.yaml`, `mdv.yaml` | carapace companion | rewritten when DotForge's copy changes |
 | `$XDG_CONFIG_HOME\delta\catppuccin.gitconfig` | delta companion | rewritten when DotForge's copy changes |

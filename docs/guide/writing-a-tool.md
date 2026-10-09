@@ -12,7 +12,7 @@ A tool is one JSON file. Try one out from a scratch folder with `-ToolsPath`, wh
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 $tools = Join-Path $HOME 'scratch-tools'
 New-DFDirectory $tools
 @'

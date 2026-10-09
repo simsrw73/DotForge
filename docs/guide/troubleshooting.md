@@ -12,7 +12,7 @@ Most problems come from one of these. Check them in one go:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 "PowerShell $($PSVersionTable.PSVersion)"
 "DotForge $((Get-Module DotForge).Version)"
 "fzf: $([bool](Get-Command fzf -ErrorAction Ignore))"
@@ -32,8 +32,8 @@ Then see which tools were configured and which were skipped, and why:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All -Verbose 4>&1 | ForEach-Object { "$_" } | Where-Object { $_ -match 'registered|skipping' }
+Start-DFSession -Config @{ Tools = @('+core') }
+Get-DFToolStatus | Format-Table Name, State, Detail
 ```
 
 <!-- output: varies -->
@@ -53,7 +53,12 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | `<tool> one-time setup failed: <error>` | the tool's setup script threw | Fix the cause shown; setup retries on the next `Register-DFTool`. |
 | `circular dependency detected in tool dependsOn` | two tool records depend on each other | A bug in the tool records; tools still register, unordered. |
 | `<file> schema errors: <errors>` or `Failed to parse <file>` | a tool record is invalid | That tool is skipped. See [writing a tool record](writing-a-tool.md). |
-| A tool you installed isn't configured | it isn't on `PATH` in this shell yet, or it's in `SkipTools` | Open a new shell; check `$DFConfig.SkipTools`; run `Register-DFTool -Name <tool> -Verbose`. |
+| A tool you installed isn't configured | it isn't on `PATH` in this shell yet, or it isn't in `Tools` | Open a new shell; add it to `Tools`, or run `Register-DFTool -Name <tool> -Verbose`. |
+
+| Requested tools aren't installed | the requested tools are missing | Run `Get-DFToolStatus -Missing`; when ready, run `Install-DFTool -Missing`. |
+| A tool failed to load | its setup or activation failed | Run `Get-DFToolStatus -Failed` and inspect `Detail`. |
+| Unknown tool or group | a name in `Tools`, `ExcludeTools`, or `Register-DFTool` is not known | Check spelling with `Get-DFTool` or `Get-DFToolGroup`. |
+| A global `$DFConfig` has no effect | DotForge does not read it by itself | Pass it explicitly with `Start-DFSession -Config $DFConfig`. |
 | `reload` didn't remove a function you deleted | reloading runs the profile again; it doesn't undo | Open a new shell. |
 | `$PROFILE not found at <path>` | you have no profile yet | `New-Item -ItemType File -Path $PROFILE -Force`. |
 

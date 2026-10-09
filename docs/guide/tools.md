@@ -6,6 +6,10 @@
 
 `Register-DFTool` configures a tool only if it's installed. For the exact environment variables, aliases and install ids of each tool, see the generated [tool records](../reference.md#tool-records); this page explains the behavior behind them.
 
+## Groups
+
+Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, uv, fnm, rustup, micro, mise, chezmoi; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget.
+
 ## Quick start
 
 Ask the registry what DotForge knows:
@@ -100,7 +104,7 @@ The winget, scoop and Chocolatey pickers work the same way: search and install, 
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 Register-DFTool -Name winget
 wins ripgrep
 ```
@@ -136,7 +140,7 @@ It prints the command to remove the line, and never adds it again after you remo
 
 ### Per-folder environments: ps-dotenv, mise, direnv
 
-These fill the `project-env` role, so only one is active: your `$DFConfig.Defaults['project-env']` choice, otherwise ps-dotenv, then mise, then direnv.
+These fill the `project-env` role, so only one is active: your `Defaults['project-env']` choice, otherwise ps-dotenv, then mise, then direnv.
 
 - **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load. Add the folders to your `$DFConfig` block:
 
@@ -152,7 +156,7 @@ These fill the `project-env` role, so only one is active: your `$DFConfig.Defaul
 
 ### Pagers: moor, ov, less
 
-These fill the `pager` role, so one of them sets `PAGER`: your `$DFConfig.Defaults['pager']` choice, otherwise moor, then ov, then less. A `PAGER` you set yourself is kept unless you name a different tool in `Defaults`.
+These fill the `pager` role, so one of them sets `PAGER`: your `Defaults['pager']` choice, otherwise moor, then ov, then less. A `PAGER` you set yourself is kept unless you name a different tool in `Defaults`.
 
 - **moor** gets `MOOR=-style <theme> -quit-if-one-screen` from your theme (`MoorTheme` or `Theme`), unless you've set `MOOR` yourself.
 - **ov** runs as `ov --quit-if-one-screen`. Its colors come only from `$XDG_CONFIG_HOME\ov\config.yaml`, which DotForge doesn't write; `ov --generate-config` prints a starting file.
@@ -172,7 +176,7 @@ Neither tool reads its config location from environment variables on Windows, so
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @('glow') }
 Register-DFTool -Name glow
 '# Hello' | Set-Content hello.md
 $global:DFGlowStyle = 'notty'
@@ -193,7 +197,7 @@ glow hello.md
 
 ### lsd
 
-lsd panics when pointed at a config file that doesn't exist, so DotForge doesn't manage its config and prints a reminder each time lsd is registered. To stop the reminder, skip lsd (`$DFConfig.SkipTools = @('lsd')`), or uninstall one of eza and lsd.
+lsd panics when pointed at a config file that doesn't exist, so DotForge doesn't manage its config and prints a reminder each time lsd is registered. To stop the reminder, exclude lsd (`ExcludeTools = @('lsd')`), or uninstall one of eza and lsd.
 
 ### mdcat and mdv
 

@@ -12,17 +12,15 @@ Install Carapace, then register your tools. Tab now completes arguments for hund
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
 Install-DFTool -Name carapace
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('psreadline', 'carapace') }
 ```
 
 Check it without pressing Tab, by asking PowerShell's completion engine directly:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('psreadline', 'carapace') }
 (TabExpansion2 -inputScript 'git checko' -cursorColumn 10).CompletionMatches.CompletionText
 ```
 
@@ -57,8 +55,7 @@ See which handler Tab has:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('psreadline', 'carapace', 'PSFzf', 'fzf') }
 Get-PSReadLineKeyHandler -Bound | Where-Object Key -EQ 'Tab' | Select-Object Key, Function
 ```
 
@@ -78,10 +75,9 @@ inshellisense has its own completion specs. PSFzf wins the `tab-completion` role
 To opt in to direct inshellisense completion:
 
 ```powershell
-$DFConfig = @{ Defaults = @{ 'tab-completion' = 'inshellisense' } }
+$DFConfig = @{ Tools = @('psreadline', 'inshellisense', 'fnm'); Defaults = @{ 'tab-completion' = 'inshellisense' } }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 ```
 
 inshellisense is a Node program, so it's usually installed with npm and only on `PATH` after fnm sets up Node. DotForge registers fnm before Carapace for that reason.
@@ -92,7 +88,7 @@ Carapace has no completer for some tools. DotForge ships specs for `scoop` and `
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 $specs = Join-Path $Env:XDG_CONFIG_HOME 'carapace' 'specs'
 New-DFDirectory $specs
 @'
@@ -108,7 +104,6 @@ Get-ChildItem $specs -Name
 ```
 
 ```text
-...
 deploy.yaml
 ```
 
@@ -122,7 +117,7 @@ DotForge's own `scoop.yaml` and `mdv.yaml` appear there too once Carapace has be
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| Tab stopped completing after you changed key bindings | `Set-PSReadLineOption -EditMode` after `Register-DFTool` resets Tab | Set `PSReadLineEditMode` in `$DFConfig` instead. |
+| Tab stopped completing after you changed key bindings | `Set-PSReadLineOption -EditMode` after session start resets Tab | Set `PSReadLineEditMode` in the session configuration instead. |
 | The fuzzy picker shows `[0m`-style codes | `FZF_DEFAULT_OPTS` was replaced after registration, dropping `--ansi` | Append to `FZF_DEFAULT_OPTS` instead of overwriting it. |
 | A command you added a Carapace spec for doesn't complete | the spec was added after this shell started | Open a new shell. Check the spec with `carapace --help`'s spec format. |
 

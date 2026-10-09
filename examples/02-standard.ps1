@@ -2,10 +2,11 @@
 # DotForge standard profile
 # ─────────────────────────────────────────────────────────────────────────────
 # Typical single-developer setup: package manager preference, default-tool role
-# winners, and a first-run bootstrap that installs missing core tools.
+# winners, and an explicit opt-in tool list.
 
-# ── DotForge config (set BEFORE Import-Module) ────────────────────────────────
+# ── DotForge config (pass to Start-DFSession -Config) ─────────────────────────
 $DFConfig = @{
+    Tools = @('+core', '+prompt', '+git')
     # Package manager priority for Install-DFTool
     PackageManagerOrder = @('scoop', 'winget')
 
@@ -42,28 +43,15 @@ $DFConfig = @{
 
 Import-Module DotForge
 
-# Always first: sets the XDG variables every tool companion relies on.
-Initialize-DFEnvironment
+# If requested tools are missing, review the warning and run Install-DFTool -Missing manually.
 
-# ── First-run bootstrap ────────────────────────────────────────────────────────
-# Install core tools if any are missing. Each tool's record knows its real
-# executable name (ripgrep's is rg.exe), so check that rather than "<name>.exe";
-# only absent tools are passed to Install-DFTool.
-$coreTools = @('eza', 'bat', 'fzf', 'ripgrep', 'zoxide', 'fd', 'delta', 'gh')
-$missing = $coreTools | Where-Object {
-    -not (Get-Command (Get-DFTool -Name $_).executable -ErrorAction Ignore)
-}
-if ($missing) {
-    Install-DFTool -Name $missing
-}
-
-# ── Configure all installed tools ─────────────────────────────────────────────
+# ── Configure requested installed tools ───────────────────────────────────────
 # oh-my-posh and zoxide inits are handled by their companions inside Register-DFTool.
 # Set $Env:POSH_THEME before this line to pin a specific config file; otherwise the
 # companion auto-discovers *.omp.* from $XDG_CONFIG_HOME/oh-my-posh/ (warns if ambiguous).
 # Use fpot in-session to preview and switch themes (note: theme switch breaks zoxide
 # directory tracking for the rest of that session — known limitation).
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 
 # ── Optional: lightweight system-info banner ──────────────────────────────────
 # Uncomment to show a one-shot system summary at the top of every new shell.

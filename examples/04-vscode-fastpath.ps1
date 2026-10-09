@@ -5,6 +5,7 @@
 # the tools. The fast path skips them and returns early, so it starts faster.
 
 $DFConfig = @{
+    Tools               = @('+core', '+prompt')
     PackageManagerOrder = @('scoop', 'winget')
     Defaults            = @{ listing = 'eza' }  # eza fills the listing role (ls/ll/la/tree)
 }
@@ -13,16 +14,14 @@ Import-Module DotForge
 
 # ── VS Code fast-path ─────────────────────────────────────────────────────────
 if ($Env:TERM_PROGRAM -eq 'vscode') {
-    $DFConfig.SkipTools = @('oh-my-posh')   # VS Code shows its own status
-    Initialize-DFEnvironment
-    Register-DFTool -All
+    $DFConfig.ExcludeTools = @('oh-my-posh')   # VS Code shows its own status
+    Start-DFSession -Config $DFConfig
     return   # skip the transcript below
 }
 
 # ── Full init (standard terminals) ────────────────────────────────────────────
 
-Initialize-DFEnvironment
-Register-DFTool -All   # oh-my-posh and zoxide inits handled by companions
+Start-DFSession -Config $DFConfig   # oh-my-posh and zoxide inits handled by companions
 
 # Session transcript
 $transcriptDir = Join-Path $HOME 'Documents' 'PowerShell.Transcripts' (Get-Date -Format 'yyyy-MM-dd')

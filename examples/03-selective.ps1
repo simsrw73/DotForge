@@ -14,7 +14,7 @@ $DFConfig = @{
 
 Import-Module DotForge
 
-Initialize-DFEnvironment
+Start-DFSession -Config $DFConfig
 
 # ── Prompt (must register before zoxide) ──────────────────────────────────────
 # oh-my-posh wraps function:prompt; zoxide must wrap it afterwards.

@@ -57,6 +57,7 @@ List the commands in `IgnoreConflicts` to accept coreutils' version and silence 
 ```powershell
 $DFConfig = @{ IgnoreConflicts = @('cat', 'touch', 'env', 'paste') }
 Import-Module DotForge
+Start-DFSession -Config (@{ Tools = @('+core'); IgnoreConflicts = @('cat', 'touch', 'env', 'paste') })
 Get-DFCommandConflict -IncludeIgnored | Format-Table Command, Ignored
 ```
 
@@ -67,8 +68,7 @@ Get-DFCommandConflict -IncludeIgnored | Format-Table Command, Ignored
 ```powershell
 $DFConfig = @{ SkipConflictCheck = $true }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config (@{ Tools = @('+core'); SkipConflictCheck = $true })
 ```
 
 The check is cheap: it reads the same list the coreutils hook uses, and costs nothing when coreutils isn't installed.

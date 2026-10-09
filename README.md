@@ -49,8 +49,7 @@ Then add these lines to your profile (`notepad $PROFILE`), and open a new termin
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('+core', '+prompt', '+git') }
 ```
 
 <!-- output: varies -->
@@ -59,8 +58,8 @@ DotForge: Environment ready. Package managers: scoop, winget, choco
 ```
 
 1. `Import-Module DotForge` loads the module and its general commands (`which`, `touch`, `mkcd`, `up`, …).
-2. `Initialize-DFEnvironment` sets up the XDG folders and finds your package managers.
-3. `Register-DFTool -All` configures every supported tool you have installed. Tools you don't have are skipped.
+2. `Start-DFSession` sets up the XDG folders and configures the installed tools you request. Tools you don't request are left alone.
+3. If a requested tool is missing, the session warns you and points to `Install-DFTool -Missing`; normal loads never install software.
 
 Install a tool you don't have yet with `Install-DFTool -Name ripgrep`. To run the latest code from GitHub instead of the Gallery, clone the repository and `Import-Module <clone>\DotForge.psd1`.
 
@@ -69,7 +68,7 @@ Install a tool you don't have yet with `Install-DFTool -Name ripgrep`. To run th
 | Page | Read it to |
 | --- | --- |
 | [Getting started](docs/guide/getting-started.md) | install DotForge and set up your profile, step by step |
-| [Configuration](docs/guide/configuration.md) | change themes, pick between eza and lsd, skip tools, every `$DFConfig` setting |
+| [Configuration](docs/guide/configuration.md) | choose tools, change themes, pick between eza and lsd, and set every configuration key |
 | [Tools](docs/guide/tools.md) | see the 43 tools and the commands each adds |
 | [Pickers and helpers](docs/guide/pickers-and-helpers.md) | use the fuzzy pickers and general commands, and build your own picker |
 | [Completion](docs/guide/completion.md) | set up Tab completion with Carapace, PSFzf or inshellisense |

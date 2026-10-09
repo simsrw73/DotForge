@@ -2,7 +2,7 @@
 
 **Audience:** PowerShell users on Windows 11 who are comfortable editing their profile.  
 **Topic:** installing DotForge and configuring your command-line tools with it.  
-**Goal:** a profile that sets up every installed tool on each new shell, plus one new tool installed with DotForge.
+**Goal:** a profile that sets up only the tools you request on each new shell, plus one new tool installed with DotForge.
 
 ## Before you start
 
@@ -42,8 +42,7 @@ Configure your tools in the current shell only, to see what DotForge does before
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('+core', '+prompt') }
 ```
 
 <!-- output: varies -->
@@ -54,8 +53,8 @@ DotForge: Environment ready. Package managers: scoop, winget, choco
 What each line does:
 
 1. `Import-Module DotForge` loads the module and defines the general helpers (`which`, `touch`, `up`, `mkcd`, …). Nothing else changes yet.
-2. `Initialize-DFEnvironment` sets the XDG base-directory variables (`XDG_CONFIG_HOME` and the rest), creates the folders, and reports which package managers it found. It also exports the variables, so the tools themselves use the same folders.
-3. `Register-DFTool -All` configures every tool DotForge knows that is installed: environment variables, aliases, pickers, completions, prompt and theme. Tools you don't have are skipped silently.
+2. `Start-DFSession` sets the XDG base-directory variables (`XDG_CONFIG_HOME` and the rest) and exports them, so the tools themselves use the same folders.
+3. Its `Tools` list configures only the requested installed tools: environment variables, aliases, pickers, completions, prompt and theme. Missing requested tools are reported with `Install-DFTool -Missing` as the next step.
 
 You may also see a few lines from individual tools, such as a note that delta added a theme include to your git config. The [troubleshooting page](troubleshooting.md) explains each warning.
 
@@ -97,12 +96,11 @@ Check the XDG folders DotForge set up:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 Get-DFEnv XDG*
 ```
 
 ```text
-DotForge: Environment ready. Package managers: ...
 XDG_BIN_HOME=...\.local\bin
 XDG_CACHE_HOME=...\.cache
 XDG_CONFIG_HOME=...\.config
@@ -114,25 +112,24 @@ The paths are under your home folder unless you set the variables yourself first
 
 ## Step 4: make it permanent
 
-Add the same three lines to your profile so every new shell is configured. Open your profile with `notepad $PROFILE` (or your editor), and add:
+Add the same two lines to your profile so every new shell is configured. Open your profile with `notepad $PROFILE` (or your editor), and add:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('+core', '+prompt') }
 ```
 
-To customize what DotForge does (themes, which tool wins `ls`, which tools to skip), set `$DFConfig` above those lines. The [configuration guide](configuration.md) lists every setting:
+To customize what DotForge does (tools, themes, and which tool wins `ls`), pass your hashtable to `Start-DFSession -Config`. The [configuration guide](configuration.md) lists every setting:
 
 ```powershell
 $DFConfig = @{
+    Tools     = @('+core', '+prompt')
     Theme     = 'catppuccin-mocha'
     Defaults  = @{ listing = 'eza' }
-    SkipTools = @('lsd')
+    ExcludeTools = @('lsd')
 }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 ```
 
 Open a new terminal to check that it loads without errors.
@@ -157,17 +154,16 @@ Then install it, and configure it in the current session:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
 Install-DFTool -Name ripgrep
 Register-DFTool -Name ripgrep
 ```
 
 1. `Install-DFTool` tries your package managers in order (scoop, winget, choco, unless you set `PackageManagerOrder`) and uses the first one that has the tool.
-2. `Register-DFTool -Name ripgrep` configures just that tool now. New shells pick it up through `Register-DFTool -All`.
+2. `Register-DFTool -Name ripgrep` configures just that tool now. Add it to `Tools` for future shells.
 
 ## Next steps
 
-- [Configuration](configuration.md): every `$DFConfig` setting, themes, and choosing which tool fills each role.
+- [Configuration](configuration.md): every configuration key, themes, and choosing which tool fills each role.
 - [Tools](tools.md): the 43 tools DotForge configures, and the commands each one adds.
 - [Pickers and helpers](pickers-and-helpers.md): the fuzzy pickers and general commands you get from importing the module.
 - [Package catalog](package-catalog.md): `trifle`, which searches every package catalog at once.

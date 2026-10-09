@@ -1,29 +1,29 @@
 # Configuration
 
 **Audience:** DotForge users who want to change its defaults.  
-**Topic:** the `$DFConfig` settings, themes, choosing which tool fills each role, and the environment variables DotForge reads.  
-**Goal:** a `$DFConfig` block in your profile that sets your theme, your package manager and the tools you want.
+**Topic:** session configuration, themes, choosing which tool fills each role, and the environment variables DotForge reads.
+**Goal:** a configuration hashtable in your profile that sets your theme, your package manager and the tools you want.
 
 ## Quick start
 
-Set `$DFConfig` in your profile **before** `Import-Module DotForge`. It's a plain hashtable; every key is optional:
+Pass a configuration hashtable to `Start-DFSession -Config`. Every key is optional except `Tools`:
 
 ```powershell
 $DFConfig = @{
+    Tools               = @('+core')
     Theme               = 'catppuccin-mocha'
     PackageManagerOrder = @('scoop', 'winget')
     Defaults            = @{ listing = 'eza' }
-    SkipTools           = @('lsd')
+    ExcludeTools        = @('lsd')
 }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 ```
 
 1. `Theme` sets one color theme for every tool that has themes.
 2. `PackageManagerOrder` makes `Install-DFTool` try scoop first, then winget.
 3. `Defaults` says that eza, not lsd, owns `ls`, `ll`, `la` and `tree`.
-4. `SkipTools` leaves lsd unconfigured.
+4. `ExcludeTools` leaves lsd unconfigured, even when a group requested it.
 
 A key you don't set keeps its default. A misspelled key is ignored without a warning, so compare yours with the table below.
 
@@ -32,7 +32,8 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `PackageManagerOrder` | string[] | the `package-manager` role's order | Order `Install-DFTool` tries package managers in. Only managers on `PATH` are used. Overrides `Defaults['package-manager']`. |
-| `SkipTools` | string[] | none | Tools `Register-DFTool -All` leaves alone. Naming a tool with `-Name` still registers it. |
+| `Tools` | string[] | none | Tool names and `+groups` to configure. |
+| `ExcludeTools` | string[] | none | Tools and `+groups` removed from `Tools`; exclusions win. |
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
@@ -44,7 +45,7 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 | `IgnoreConflicts` | string[] | none | Commands left out of the coreutils warning. See [Coreutils conflicts](coreutils-conflicts.md). |
 | `SkipConflictCheck` | bool | `$false` | `$true` turns the coreutils check off. |
 
-`$DFConfig` is read when `Register-DFTool` and `Install-DFTool` run, so a change takes effect the next time you call them (or in a new shell).
+DotForge reads the hashtable you pass to `Start-DFSession -Config`, so a change takes effect the next time you call it (or in a new shell).
 
 ## Themes
 
@@ -59,8 +60,7 @@ Why: consistent colors across every viewer, prompt and listing.
 ```powershell
 $DFConfig = @{ Theme = 'catppuccin-mocha' }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config (@{ Tools = @('+core'); Theme = 'catppuccin-mocha' })
 ```
 
 ### Change one tool's theme
@@ -69,13 +69,13 @@ Why: a tool has a theme you prefer, or the shared theme isn't available in it.
 
 ```powershell
 $DFConfig = @{
+    Tools      = @('mdcat', 'vivid')
     Theme      = 'catppuccin-mocha'
     MdcatTheme = 'dracula'
     VividTheme = 'nord'
 }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 "mdcat: $Env:MDCAT_THEME"
 ```
 
@@ -112,7 +112,7 @@ Why: use a palette DotForge doesn't ship.
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 $dir = Join-Path $Env:XDG_CONFIG_HOME 'psreadline' 'themes'
 New-DFDirectory $dir
 @{ colors = @{ Command = '#89b4fa'; String = '#a6e3a1'; Comment = '#6c7086' } } |
@@ -143,8 +143,7 @@ Get-DFRole | Format-Table Name, Kind, Winner, Reason, Candidates
 ```powershell
 $DFConfig = @{ Defaults = @{ listing = 'eza' } }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('eza', 'lsd'); Defaults = @{ listing = 'eza' } }
 ls --version | Select-Object -First 1
 ```
 
@@ -155,10 +154,11 @@ eza - A modern, maintained replacement for ls
 
 Without a `Defaults` entry, the installed tool with the highest priority wins (eza over lsd, oh-my-posh over starship, less over bat). For `prompt`, `project-env` and `navigation`, where two active tools would break each other, DotForge also warns once, naming its pick and the line that changes it. A tool name that isn't in that role writes a warning, and priority decides.
 
-For per-folder environment variables, `project-env` holds ps-dotenv (the default), mise or direnv; see [Tools](tools.md#per-folder-environments-ps-dotenv-mise-direnv). In your `$DFConfig` block, name your pick and the folders ps-dotenv may load `.env` files from:
+For per-folder environment variables, `project-env` holds ps-dotenv (the default), mise or direnv; see [Tools](tools.md#per-folder-environments-ps-dotenv-mise-direnv). In your configuration hashtable, name your pick and the folders ps-dotenv may load `.env` files from:
 
 ```powershell
 $DFConfig = @{
+    Tools               = @('ps-dotenv')
     Defaults           = @{ 'project-env' = 'ps-dotenv' }
     DotenvApprovedDirs = @('~\projects')
 }
@@ -175,10 +175,9 @@ A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker`
 Why: you have a tool installed but don't want DotForge to touch it.
 
 ```powershell
-$DFConfig = @{ SkipTools = @('eza', 'lsd') }
+$DFConfig = @{ Tools = @('+core'); ExcludeTools = @('eza', 'lsd') }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config $DFConfig
 (Get-Command ls).Definition
 ```
 
@@ -194,8 +193,7 @@ To keep a tool's configuration but skip its one-time setup script (delta's git-c
 ```powershell
 $DFConfig = @{ SkipSetup = @('delta') }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('delta'); SkipSetup = @('delta') }
 ```
 
 ## Prefer a package manager
@@ -220,11 +218,10 @@ DotForge sets PSReadLine to Emacs keys. To keep Windows keys:
 ```powershell
 $DFConfig = @{ PSReadLineEditMode = 'Windows' }
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('psreadline'); PSReadLineEditMode = 'Windows' }
 ```
 
-Set this in `$DFConfig`, not with `Set-PSReadLineOption -EditMode` after `Register-DFTool`: changing the edit mode afterwards resets the Tab key DotForge set up.
+Set this in the hashtable passed to `Start-DFSession`, not with `Set-PSReadLineOption -EditMode` afterwards: changing the edit mode afterwards resets the Tab key DotForge set up.
 
 ## Environment variables DotForge reads
 
@@ -244,11 +241,11 @@ Set these in your profile, before or after importing DotForge:
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| A setting has no effect | `$DFConfig` set after `Register-DFTool`, or the key is misspelled | Set it before importing DotForge; check the key against [All settings](#all-settings). |
+| A setting has no effect | the hashtable was not passed to `Start-DFSession`, or the key is misspelled | Pass it with `-Config`; check the key against [All settings](#all-settings). |
 | `fzf theme '<name>' not found` or `PSReadLine theme '<name>' not found` | the shared `Theme` names a theme those tools don't ship | Set `FzfTheme`/`PSReadLineTheme` to `catppuccin-mocha`, or add a theme file. |
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |
 | `PAGER was '<value>' but $DFConfig.Defaults.pager is '<tool>'` | you set the variable and also chose a different tool | Remove one of the two settings. |
-| Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after `Register-DFTool` | Use `PSReadLineEditMode` in `$DFConfig`. |
+| Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after session start | Use `PSReadLineEditMode` in the session configuration. |
 
 More on the [troubleshooting page](troubleshooting.md).

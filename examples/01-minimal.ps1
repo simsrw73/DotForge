@@ -6,8 +6,7 @@
 
 Import-Module DotForge
 
-Initialize-DFEnvironment   # sets XDG dirs, detects package managers
-Register-DFTool -All       # configures every installed tool in one call
+Start-DFSession -Config @{ Tools = @('+core') }  # sets XDG dirs and configures the requested group
 
 # Optional lightweight system-info banner: see examples/02-standard.ps1's
 # "Optional: lightweight system-info banner" section.

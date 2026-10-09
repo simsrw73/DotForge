@@ -9,7 +9,7 @@ Copy one of these files as your `$PROFILE` starting point, or borrow parts of th
 | File | When to use |
 | --- | --- |
 | `01-minimal.ps1` | Getting started, CI, shared machines: no configuration |
-| `02-standard.ps1` | A typical setup: `$DFConfig`, plus installing missing core tools on first run |
+| `02-standard.ps1` | A typical setup: a configuration hashtable and an explicit tool profile |
 | `03-selective.ps1` | A lean startup: register tools in groups instead of all at once |
 | `04-vscode-fastpath.ps1` | A full profile with a lighter path for VS Code's terminal |
 | `05-trifle-catalog.ps1` | Package catalog lookups (`trifle`) and a scheduled cache refresh |
@@ -22,8 +22,7 @@ The smallest useful profile, the same as `01-minimal.ps1`:
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
-Register-DFTool -All
+Start-DFSession -Config @{ Tools = @('+core') }
 ```
 
 ## Common patterns
@@ -34,7 +33,7 @@ Each tool record knows its real executable (ripgrep's is `rg.exe`), so check tha
 
 ```powershell
 Import-Module DotForge
-Initialize-DFEnvironment
+Start-DFSession -Config @{ Tools = @() }
 $missing = @('eza', 'bat', 'fzf', 'ripgrep') | Where-Object {
     -not (Get-Command (Get-DFTool -Name $_).executable -ErrorAction Ignore)
 }
