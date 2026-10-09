@@ -36,6 +36,9 @@ Describe 'core plugin invariant' {
             [pscustomobject]@{ File = 'Install-DFTool.ps1'; Literal = 'scoop'; Reason = 'Scoop package-manager install path' }
             [pscustomobject]@{ File = 'Install-DFTool.ps1'; Literal = 'winget'; Reason = 'Winget package-manager install path' }
             [pscustomobject]@{ File = 'Install-DFTool.ps1'; Literal = 'choco'; Reason = 'Chocolatey package-manager install path' }
+            # Temporary (install slice 3, Task 2): cargo and psresource became tool records; Task 6 rewrites Install-DFTool without any of these five.
+            [pscustomobject]@{ File = 'Install-DFTool.ps1'; Literal = 'cargo'; Reason = 'cargo install path (until slice 3 Task 6)' }
+            [pscustomobject]@{ File = 'Install-DFTool.ps1'; Literal = 'psresource'; Reason = 'psresource install path (until slice 3 Task 6)' }
         )
         $occurrences = foreach ($file in Get-ChildItem (Join-Path $root 'Private'), (Join-Path $root 'Public') -Filter '*.ps1') {
             $tokens = $null; $errors = $null

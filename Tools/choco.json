@@ -8,6 +8,7 @@
   "executable": "choco.exe",
   "roles": { "package-manager": { "priority": 10 } },
   "packages": {},
+  "installs": { "from": "choco", "command": ["choco", "install", "{id}", "-y"], "batch": true, "elevate": true },
   "xdg": {
     "compliance": "none",
     "method": "default"

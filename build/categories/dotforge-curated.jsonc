@@ -33,6 +33,10 @@
     "ids": { "scoop": "chezmoi", "winget": "twpayne.chezmoi", "choco": "chezmoi" },
     "popularity": 2
   },
+  "cargo": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "relatedTo": ["rustup"], "popularity": 2
+  },
   "choco": {
     "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
     "popularity": 3
@@ -178,6 +182,10 @@
     "aliases": ["rg"], "alternativeTo": ["grep"],
     "ids": { "scoop": "ripgrep", "winget": "BurntSushi.ripgrep.MSVC", "choco": "ripgrep" },
     "relatedTo": ["fd", "fzf", "rga"], "popularity": 3
+  },
+  "psresource": {
+    "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
+    "ids": { "psgallery": "Microsoft.PowerShell.PSResourceGet" }, "popularity": 2
   },
   "rustup": {
     "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",

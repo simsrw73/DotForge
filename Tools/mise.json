@@ -5,6 +5,7 @@
   "tags": ["version-manager", "environment-vars", "dev"],
   "after": ["oh-my-posh",  "starship"],
   "packages": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
+  "installs": { "from": "mise", "command": ["mise", "use", "--global", "{id}"], "reactivate": true },
   "xdg": { "compliance": "full", "method": "default" },
   "roles": { "project-env": { "priority": 20 }, "version-manager": {}, "js-runtime": { "priority": 10 } },
   "aliases": {},

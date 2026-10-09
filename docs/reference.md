@@ -95,11 +95,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -2065,6 +2065,15 @@ Searches file contents.
 | Kind | category |
 | Members | [ripgrep](#ripgrep-tool) |
 
+### js-package-manager role
+
+Installs packages from the npm registry. Install-DFTool uses the Defaults choice, else the highest priority.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [npm](#npm-tool) |
+
 ### js-runtime role
 
 Provides a JavaScript runtime (node) on PATH. Tools that need one declare requires: ["role:js-runtime"].
@@ -2132,6 +2141,15 @@ Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker run
 | Only the winner sets | `Picker` |
 | Requires | Accepts fzf's command-line options and reads candidates on stdin. |
 
+### powershell-package-manager role
+
+Installs modules from the PowerShell Gallery.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [psresource](#psresource-tool) |
+
 ### project-env role
 
 Loads per-directory environment variables. Two active hooks would fight over the same variables.
@@ -2149,6 +2167,15 @@ Draws the shell prompt. Only one prompt engine may own the prompt function.
 | --- | --- |
 | Kind | single, exclusive |
 | Members | [oh-my-posh](#oh-my-posh-tool), [starship](#starship-tool) |
+
+### rust-package-manager role
+
+Installs crates from crates.io.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [cargo](#cargo-tool) |
 
 ### system-info role
 
@@ -2241,6 +2268,17 @@ Multi-shell completion engine — argument completers for 500+ CLI tools
 | Registers after | `fnm`, `psreadline` |
 | Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/carapace.ps1` |
+
+### cargo tool
+
+Rust package manager (installs crates from crates.io)
+
+| | |
+| --- | --- |
+| Detected by | `cargo.exe` |
+| Tags | `rust`, `dev`, `package-manager` |
+| Requires | `rustup` |
+| Roles | [`rust-package-manager`](#rust-package-manager-role) |
 
 ### chezmoi tool
 
@@ -2585,6 +2623,7 @@ Node.js package manager
 | Creates | `${XDG_CONFIG_HOME}/npm` |
 | Aliases | `nls` → `npm list -g --depth=0` |
 | Requires | `role:js-runtime` |
+| Roles | [`js-package-manager`](#js-package-manager-role) |
 
 ### oh-my-posh tool
 
@@ -2678,6 +2717,16 @@ Enhanced command-line editing and syntax highlighting for PowerShell
 | Creates | `${XDG_STATE_HOME}/psreadline` |
 | Roles | [`completion`](#completion-role) |
 | Companion | [`Tools/psreadline.ps1`](#psreadline-companion) |
+
+### psresource tool
+
+PowerShell module installer (PSResourceGet; installs from the PowerShell Gallery)
+
+| | |
+| --- | --- |
+| Detected by | module `Microsoft.PowerShell.PSResourceGet` |
+| Tags | `powershell`, `package-manager` |
+| Roles | [`powershell-package-manager`](#powershell-package-manager-role) |
 
 ### ripgrep tool
 

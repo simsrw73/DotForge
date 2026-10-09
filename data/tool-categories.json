@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-06",
+  "updated": "2026-10-09",
   "taxonomy": {
     "function": [
       "search",
@@ -189,6 +189,19 @@
         "PSFzf"
       ],
       "popularity": 1
+    },
+    "cargo": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "rustup"
+      ],
+      "popularity": 2
     },
     "chezmoi": {
       "function": [
@@ -1070,6 +1083,19 @@
         "text"
       ],
       "interface": "cli",
+      "popularity": 2
+    },
+    "psresource": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "ids": {
+        "psgallery": "Microsoft.PowerShell.PSResourceGet"
+      },
       "popularity": 2
     },
     "rclone": {

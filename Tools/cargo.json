@@ -1,0 +1,12 @@
+{
+  "name": "cargo",
+  "description": "Rust package manager (installs crates from crates.io)",
+  "tags": ["rust", "dev", "package-manager"],
+  "executable": "cargo.exe",
+  "roles": { "rust-package-manager": { "priority": 10 } },
+  "requires": ["rustup"],
+  "packages": {},
+  "installs": { "from": "crates", "command": ["cargo", "install", "{id}"], "batch": true },
+  "aliases": {},
+  "picker": null
+}

@@ -1,0 +1,13 @@
+{
+  "name": "psresource",
+  "description": "PowerShell module installer (PSResourceGet; installs from the PowerShell Gallery)",
+  "tags": ["powershell", "package-manager"],
+  "type": "module",
+  "executable": "Microsoft.PowerShell.PSResourceGet",
+  "prewarm": false,
+  "roles": { "powershell-package-manager": { "priority": 10 } },
+  "packages": {},
+  "installs": { "from": "psgallery", "function": "Install-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser", "TrustRepository": true }, "batch": true },
+  "aliases": {},
+  "picker": null
+}

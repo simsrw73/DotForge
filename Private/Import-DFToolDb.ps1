@@ -139,7 +139,11 @@ function ConvertTo-DFToolRecord {
 
         Nested shapes are normalized too: xdg always has method, vars, dirs,
         instructions and compliance; setup, when present, has seed (an object
-        mapping destination path template to a file under Tools/, or $null); each alias is
+        mapping destination path template to a file under Tools/, or $null);
+        installs, when present, has from, command (string[] or $null),
+        function, args, batch, elevate and reactivate ($false by default) and
+        feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
+        present, has prefer (string[]); each alias is
         { command; args[] } with a missing args meaning none; an object picker
         has every field, with preview '', preview_window 'right:60%',
         header '', ansi and list_accepts_path $false. A non-object picker (the
@@ -229,6 +233,32 @@ function ConvertTo-DFToolRecord {
     $setup = & $get $Tool 'setup' $null
     if ($setup) { $setup = [pscustomobject]@{ seed = & $get $setup 'seed' $null } }
 
+    # A package manager's installs block (install spec section 1).
+    $installs = & $get $Tool 'installs' $null
+    if ($installs) {
+        $feeds = & $get $installs 'feeds' $null
+        if ($feeds) {
+            $feeds = [pscustomobject]@{
+                list = [string[]]@(& $get $feeds 'list' @())
+                add  = [string[]]@(& $get $feeds 'add' @())
+                id   = & $get $feeds 'id' '{feed}/{id}'
+            }
+        }
+        $command = & $get $installs 'command' $null
+        $installs = [pscustomobject]@{
+            from       = & $get $installs 'from' $null
+            command    = $(if ($null -ne $command) { [string[]]@($command) })
+            function   = & $get $installs 'function' $null
+            args       = & $get $installs 'args' $null
+            batch      = [bool](& $get $installs 'batch' $false)
+            elevate    = [bool](& $get $installs 'elevate' $false)
+            reactivate = [bool](& $get $installs 'reactivate' $false)
+            feeds      = $feeds
+        }
+    }
+    $install = & $get $Tool 'install' $null
+    if ($install) { $install = [pscustomobject]@{ prefer = [string[]]@(& $get $install 'prefer' @()) } }
+
     $record = [ordered]@{
         name        = $Tool.name
         executable  = $Tool.executable
@@ -248,6 +278,8 @@ function ConvertTo-DFToolRecord {
         executableExclude = [object[]]@(& $get $Tool 'executableExclude' @())
         prewarm     = [bool](& $get $Tool 'prewarm' $true)
         setup       = $setup
+        installs    = $installs
+        install     = $install
     }
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.
     foreach ($p in $Tool.PSObject.Properties) {

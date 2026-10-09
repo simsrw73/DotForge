@@ -8,6 +8,7 @@
   "executable": "scoop.cmd",
   "roles": { "package-manager": { "priority": 30 } },
   "packages": {},
+  "installs": { "from": "scoop", "command": ["scoop", "install", "{id}"], "batch": true, "feeds": { "list": ["scoop", "bucket", "list"], "add": ["scoop", "bucket", "add", "{name}", "{url}"], "id": "{feed}/{id}" } },
   "xdg": {
     "compliance": "none",
     "method": "default"

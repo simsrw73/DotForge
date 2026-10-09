@@ -10,6 +10,8 @@
   "executable": "npm.cmd",
   "requires": ["role:js-runtime"],
   "packages": {},
+  "roles": { "js-package-manager": { "priority": 30 } },
+  "installs": { "from": "npm", "command": ["npm", "install", "-g", "{id}"], "batch": true },
   "xdg": {
     "compliance": "partial",
     "method": "env",

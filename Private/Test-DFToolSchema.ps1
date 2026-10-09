@@ -162,6 +162,26 @@ function Test-DFToolSchema {
             $errs.Add('setup.seed must map destination paths to files under Tools/')
         }
     }
+    # installs: a package manager's install recipe; install.prefer: this tool's preferred sources.
+    $ins = PSProp $Tool 'installs'
+    if ($null -ne $ins) {
+        if ($ins -isnot [pscustomobject]) {
+            $errs.Add('installs must be an object')
+        } else {
+            if (-not ((PSProp $ins 'from') -is [string] -and (PSProp $ins 'from'))) { $errs.Add('installs.from must name the source this manager installs from') }
+            $cmd = $ins.PSObject.Properties['command']?.Value   # read directly: a helper would unroll ["x"]
+            $hasCmd = $null -ne $cmd
+            $hasFn = $null -ne (PSProp $ins 'function')
+            if ($hasCmd -eq $hasFn) { $errs.Add('installs needs exactly one of command or function') }
+            if ($hasCmd -and $cmd -isnot [array]) { $errs.Add('installs.command must be an array (argv)') }
+        }
+    }
+    $inst = PSProp $Tool 'install'
+    if ($null -ne $inst) {
+        $have = @((PSProp $Tool 'packages')?.PSObject.Properties.Name)
+        $bad = @(@($inst.PSObject.Properties['prefer']?.Value) | Where-Object { $_ -and $_ -notin $have })
+        if ($bad) { $errs.Add("install.prefer names sources the tool has no package for: $($bad -join ', ')") }
+    }
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
     if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
         $errs.Add('requires must be an array of tool names or role:<role> entries')
@@ -205,11 +225,13 @@ function Test-DFToolSchema {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
         setup  = 'seed'
+        installs = 'from', 'command', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
+        install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
@@ -219,6 +241,10 @@ function Test-DFToolSchema {
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = PSProp $Tool 'setup'
     if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
+    foreach ($sec in 'installs', 'install') {
+        $o = PSProp $Tool $sec
+        if ($o -is [pscustomobject]) { $sections.Add(@($sec, $o, "$sec.")) }
+    }
     if ($roles -is [pscustomobject]) {
         foreach ($r in $roles.PSObject.Properties) {
             if ($r.Value -is [pscustomobject]) { $sections.Add(@('role', $r.Value, "roles.$($r.Name).")) }

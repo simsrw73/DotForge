@@ -15,6 +15,7 @@
     "choco": "fnm"
   },
   "after": ["zoxide"],
+  "installs": { "from": "fnm", "command": ["fnm", "install", "{id}"], "reactivate": true },
   "xdg": {
     "compliance": "partial",
     "method": "env",

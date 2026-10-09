@@ -8,6 +8,7 @@
   "executable": "winget.exe",
   "roles": { "package-manager": { "priority": 20 } },
   "packages": {},
+  "installs": { "from": "winget", "command": ["winget", "install", "--id", "{id}", "--exact", "--silent", "--accept-source-agreements", "--accept-package-agreements"] },
   "xdg": {
     "compliance": "none",
     "method": "default"
