@@ -69,9 +69,10 @@ function ConvertTo-DFToolRecord {
             settings / scoopBucket $null, roles an empty object, executableExclude @()
 
         roles is an object keyed by role name; each value is { priority
-        (default 0); aliases (same shape as top-level aliases, or $null); env;
-        legacy }. A legacy "role": "x" string becomes roles.x with priority 0
-        and legacy $true.
+        (default 0); optIn (default $false); aliases (same shape as top-level
+        aliases, or $null); env; legacy }. An opt-in member is considered only
+        when $DFConfig.Defaults selects it for that role. A legacy "role": "x"
+        string becomes roles.x with priority 0 and legacy $true.
 
         Nested shapes are normalized too: xdg always has method, vars, dirs,
         config_path, config_content and instructions; each alias is
@@ -132,6 +133,7 @@ function ConvertTo-DFToolRecord {
         foreach ($r in $rawRoles.PSObject.Properties) {
             $roles[$r.Name] = [pscustomobject]@{
                 priority = [int](& $get $r.Value 'priority' 0)
+                optIn    = [bool](& $get $r.Value 'optIn' $false)
                 aliases  = & $normalizeAliases (& $get $r.Value 'aliases' $null)
                 env      = & $get $r.Value 'env' $null
                 legacy   = $false
@@ -143,7 +145,7 @@ function ConvertTo-DFToolRecord {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = & $get $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; aliases = $null; env = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; legacy = $true }
     }
 
     $picker = & $get $Tool 'picker' $null

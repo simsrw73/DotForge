@@ -8,7 +8,7 @@ BeforeAll {
                    'Public/Complete-DFToolSetup', 'Private/Set-DFToolXdgConfig', 'Private/Register-DFToolAliases',
                    'Private/New-DFToolPickerFunction', 'Private/Invoke-DFToolCompanion', 'Private/Start-DFModulePrewarm',
                    'Private/Get-DFRoleDb', 'Private/Write-DFRoleNotice', 'Private/Set-DFRoleEnv',
-                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Register-DFTool', 'Private/Initialize-DFCompletionStack') {
+                   'Private/Resolve-DFToolExecutable', 'Private/Register-DFToolSteps', 'Public/Register-DFTool') {
         . "$PSScriptRoot/../$f.ps1"
     }
 }
@@ -199,5 +199,36 @@ function Initialize-DFRoleTother { param($Tool, $Role) throw 'kaboom' }
             Register-DFTool -Name oddlegacy -ToolsPath $script:Tools -WarningVariable w -WarningAction SilentlyContinue
             "$w" | Should -Not -Match 'unknown role'
         }
+    }
+}
+
+Describe 'Get-DFRoleWinners opt-in memberships' {
+    BeforeEach {
+        Remove-Variable DFConfig -Scope Global -ErrorAction Ignore
+        Mock Test-DFToolAvailable { $true }
+        $script:RoleDb = @{ 'tab-completion' = [pscustomobject]@{ kind = 'single' } }
+        $script:ToolDb = @{
+            standard = [pscustomobject]@{ name = 'standard'; executable = 'standard.exe'; type = 'exe'; roles = [pscustomobject]@{ 'tab-completion' = [pscustomobject]@{ priority = 10; optIn = $false } } }
+            optional = [pscustomobject]@{ name = 'optional'; executable = 'optional.exe'; type = 'exe'; roles = [pscustomobject]@{ 'tab-completion' = [pscustomobject]@{ priority = 20; optIn = $true } } }
+        }
+    }
+    AfterEach { Remove-Variable DFConfig -Scope Global -ErrorAction Ignore }
+
+    It 'skips an opt-in candidate unless Defaults names it' {
+        $winner = Get-DFRoleWinners -ToolDb $script:ToolDb -Tools $script:ToolDb.Values -RoleDb $script:RoleDb
+        $winner['tab-completion'].Winner | Should -Be 'standard'
+        $winner['tab-completion'].Candidates | Should -Be @('standard')
+    }
+
+    It 'allows Defaults to opt an optional candidate in over a higher-priority standard candidate' {
+        $Global:DFConfig = @{ Defaults = @{ 'tab-completion' = 'optional' } }
+        $winner = Get-DFRoleWinners -ToolDb $script:ToolDb -Tools $script:ToolDb.Values -RoleDb $script:RoleDb
+        $winner['tab-completion'].Winner | Should -Be 'optional'
+        $winner['tab-completion'].Reason | Should -Be 'Defaults'
+    }
+
+    It 'leaves a sole opt-in candidate without a winner' {
+        $winner = Get-DFRoleWinners -ToolDb @{ optional = $script:ToolDb.optional } -Tools @($script:ToolDb.optional) -RoleDb $script:RoleDb
+        $winner.ContainsKey('tab-completion') | Should -BeFalse
     }
 }

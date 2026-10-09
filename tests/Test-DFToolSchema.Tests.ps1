@@ -117,6 +117,16 @@ Describe 'Test-DFToolSchema' {
             $errs = @()
             Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeTrue
         }
+
+        It 'accepts a boolean role optIn and rejects another type' {
+            $valid = '{ "name": "t", "executable": "t.exe", "roles": { "optional": { "optIn": true } } }' | ConvertFrom-Json
+            $invalid = '{ "name": "t", "executable": "t.exe", "roles": { "optional": { "optIn": "yes" } } }' | ConvertFrom-Json
+            $errors = @()
+            Test-DFToolSchema -Tool $valid -Errors ([ref]$errors) | Should -BeTrue -Because "$errors"
+            $errors = @()
+            Test-DFToolSchema -Tool $invalid -Errors ([ref]$errors) | Should -BeFalse
+            "$errors" | Should -Match 'optIn'
+        }
     }
 }
 

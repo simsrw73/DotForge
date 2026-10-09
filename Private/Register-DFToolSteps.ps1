@@ -43,10 +43,12 @@ function Get-DFRoleWinners {
         Chooses one winner per single-kind role for this registration.
     .DESCRIPTION
         Candidates are the tools in -Tools that declare the role and are
-        installed. The winner is the $DFConfig.Defaults entry when it names a
-        candidate (reason 'Defaults'); otherwise the candidate with the highest
-        roles.<role>.priority, ties broken by name (reason 'priority', or 'sole'
-        for a single candidate). A Defaults entry naming an unknown role or a
+        installed. A membership with roles.<role>.optIn true is a candidate only
+        when $DFConfig.Defaults[<role>] names that tool. The winner is the
+        $DFConfig.Defaults entry when it names a candidate (reason 'Defaults');
+        otherwise the candidate with the highest roles.<role>.priority, ties
+        broken by name (reason 'priority', or 'sole' for a single candidate).
+        A Defaults entry naming an unknown role or a
         non-member warns; one naming a member that is not a candidate falls
         back silently, since registering a subset is legitimate. A tool
         declaring a role the definitions don't know warns and is ignored for
@@ -95,6 +97,9 @@ function Get-DFRoleWinners {
                 continue
             }
             if ($RoleDb[$rn].kind -ne 'single') { continue }
+            # optIn is generic role metadata: an optional member joins the
+            # candidate set only when the user selected it for this role.
+            if ($rp.Value.optIn -and $defaults[$rn] -ine $t.name) { continue }
             if ($null -eq $available) { $available = Test-DFToolAvailable -Executable $t.executable -Type $t.type }
             if (-not $available) { continue }
             if (-not $candidatesByRole.ContainsKey($rn)) { $candidatesByRole[$rn] = [System.Collections.Generic.List[object]]::new() }

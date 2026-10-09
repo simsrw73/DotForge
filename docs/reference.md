@@ -97,7 +97,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [file-search](#file-search-role) · [grep](#grep-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -729,9 +729,7 @@ For each requested tool that is installed (its executable is on PATH, or for a "
      $XDG_STATE_HOME\dotforge\setup-state.json).
 ```
 
-Tools that aren't installed are skipped silently (use -Verbose to see them). Tools are registered in dependency order, honoring "dependsOn". If one tool fails (a companion throws, or any error under $ErrorActionPreference = 'Stop'), DotForge warns with its name and goes on with the rest; that tool is left out of the completion stack.
-
-After the loop it installs the completion stack (Carapace, PSFzf or inshellisense Tab handling) once, and warns once if Coreutils for Windows shadows any DotForge command (see Get-DFCommandConflict).
+Tools that aren't installed are skipped silently (use -Verbose to see them). Tools are registered in dependency order, honoring "dependsOn". If one tool fails (a companion throws, or any error under $ErrorActionPreference = 'Stop'), DotForge warns with its name and goes on with the rest. After the loop it warns once if Coreutils for Windows shadows any DotForge command (see Get-DFCommandConflict).
 
 ```text
 $DFConfig keys read:
@@ -742,7 +740,6 @@ $DFConfig keys read:
                        highest-priority installed tool wins (with a
                        one-time warning for prompt, project-env and
                        navigation)
-    CompletionMode     'Native' (default) or 'Inshellisense'
     SkipConflictCheck  $true disables the coreutils shadowing warning
     IgnoreConflicts    command names left out of that warning
 Tool companions also read their own keys (Theme, <Tool>Theme,
@@ -2086,6 +2083,15 @@ Shows system information.
 | Kind | category |
 | Members | [fastfetch](#fastfetch-tool) |
 
+### tab-completion role
+
+Owns the Tab key. The winner binds Tab; the others still register their completers.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [carapace](#carapace-tool), [inshellisense](#inshellisense-tool), [PSFzf](#psfzf-tool) |
+
 ### url-fetch role
 
 Downloads files and calls HTTP APIs.
@@ -2156,8 +2162,8 @@ Multi-shell completion engine — argument completers for 500+ CLI tools
 | Tags | `completion`, `shell`, `productivity` |
 | Install ids | scoop: `carapace-bin`<br>winget: `rsteube.Carapace` |
 | XDG method | `default` |
-| Registers after | `fnm` |
-| Roles | [`completion`](#completion-role) |
+| Registers after | `fnm`, `psreadline` |
+| Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/carapace.ps1` |
 
 ### chezmoi tool
@@ -2358,7 +2364,8 @@ AI-powered terminal completion engine
 | Tags | `completion`, `shell`, `productivity` |
 | Install ids | npm: `@microsoft/inshellisense` |
 | XDG method | `default` |
-| Roles | [`completion`](#completion-role) |
+| Registers after | `psreadline` |
+| Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | [`Tools/inshellisense.ps1`](#inshellisense-companion) |
 
 ### jq tool
@@ -2576,7 +2583,7 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | Install ids | psresource: `PSFzf`<br>scoop: `psfzf` |
 | XDG method | `default` |
 | Registers after | `psreadline` |
-| Roles | [`completion`](#completion-role) |
+| Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/PSFzf.ps1` |
 
 ### psreadline tool
@@ -3058,7 +3065,7 @@ Starts an inshellisense session in this shell unless one is already running.
 
 Checks is -c, which succeeds inside an existing inshellisense session, and returns without doing anything in that case. Otherwise it runs the script printed by is init pwsh, which starts inshellisense's IDE-style autocomplete in the current shell.
 
-DotForge calls this for you when $DFConfig.CompletionMode is 'Inshellisense'. Defined by DotForge's inshellisense companion; requires the is command (installed with npm).
+DotForge calls this when inshellisense wins the tab-completion role. Defined by DotForge's inshellisense companion; requires the is command.
 
 **Outputs:** None.
 

@@ -1,5 +1,4 @@
 # Companion for carapace — registers native argument completers for ~519 commands.
-# Reads: $DFConfig.CompletionMode (via Get-DFCompletionMode).
 # Writes: bundled specs to $XDG_CONFIG_HOME\carapace\specs\*.yaml, and the cached
 # init script under $XDG_CACHE_HOME\dotforge\ (Get-DFCachedCommandOutput).
 # Sets: CARAPACE_BRIDGES (adds 'inshellisense', see below); carapace's own init
@@ -8,10 +7,32 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
+function Enable-DFCarapaceInshellisenseBridge {
+    <#
+    .SYNOPSIS
+        Adds inshellisense to CARAPACE_BRIDGES when it is installed but does not own Tab.
+    .DESCRIPTION
+        Retains user bridges, removes duplicate entries case-insensitively, and
+        leaves the setting alone when inshellisense is the tab-completion winner.
+    .OUTPUTS
+        System.Boolean. True when the bridge is enabled.
+    #>
+    [CmdletBinding()]
+    param([string]$TabCompletionWinner)
+    $executable = Get-Command is -ErrorAction Ignore
+    if (-not $executable) { $executable = Get-Command inshellisense -ErrorAction Ignore }
+    if (-not $executable -or $TabCompletionWinner -eq 'inshellisense') { return $false }
+    $bridges = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($bridge in @($Env:CARAPACE_BRIDGES -split ',')) { $name = $bridge.Trim(); if ($name -and $seen.Add($name)) { $bridges.Add($name) } }
+    if ($seen.Add('inshellisense')) { $bridges.Add('inshellisense') }
+    $Env:CARAPACE_BRIDGES = $bridges -join ','
+    $true
+}
+
 # carapace's init emits Register-ArgumentCompleter calls only — it never binds Tab
 # and never overrides TabExpansion. Tab itself is bound once, after every tool has
-# registered, by Initialize-DFCompletionStack (PSFzf's fuzzy Tab when PSFzf is
-# registered, otherwise PSReadLine's MenuComplete); both route through
+# registered. Tab ownership is selected by the tab-completion role; both route through
 # TabExpansion2, which consults these completers. Registration order is
 # irrelevant, so no dependsOn on PSFzf is declared. (carapace.json does declare
 # "dependsOn": ["fnm"] so fnm puts the Node-hosted `is` on PATH before the bridge
@@ -24,12 +45,13 @@ param()
 # to PATH itself (the bridge-shim directory) instead of going through Add-DFToPath.
 # That line is emitted by carapace, not DotForge, and cannot be rerouted.
 #
-# Bridges: in Native completion mode, when inshellisense (`is`) is on PATH,
+# Bridges: when inshellisense (`is`) is on PATH and did not win Tab,
 # 'inshellisense' is appended to CARAPACE_BRIDGES so commands carapace has no
 # completer for fall back to inshellisense's specs. Bridge entries the user set
 # are kept. Other bridges (zsh/fish/bash) are left to the user: each shells out
 # once per completion.
-Enable-DFCarapaceInshellisenseBridge | Out-Null
+$_tabWinner = (Get-DFRole 'tab-completion').Winner
+Enable-DFCarapaceInshellisenseBridge -TabCompletionWinner $_tabWinner | Out-Null
 
 # Deploy bundled specs (e.g. scoop, which carapace ships no completer for) into
 # carapace's spec directory. carapace auto-loads *.yaml from there — see
@@ -74,7 +96,7 @@ $_specKey = if ($_specDir -and (Test-Path $_specDir)) {
 $_carapaceInit = Get-DFCachedCommandOutput -Name 'carapace-init' -Executable 'carapace' -ExtraKey $_specKey -Generate {
     carapace _carapace powershell | Out-String
 }
-if (((Get-DFCompletionMode) -eq 'Native') -and (Get-Module -ListAvailable -Name PSFzf)) {
+if ($_tabWinner -eq 'PSFzf') {
     # Trimming could leave an empty CompletionText, which [CompletionResult]::new
     # rejects -- drop whitespace-only items before they reach the constructor.
     $_carapaceInit = $_carapaceInit.Replace(
@@ -93,3 +115,8 @@ if (((Get-DFCompletionMode) -eq 'Native') -and (Get-Module -ListAvailable -Name 
 # carapace changes that codegen. Catalogued in docs/external-dependencies.md.
 $_carapaceInit = $_carapaceInit.Replace('return "" # prevent default file completion', 'return')
 Invoke-Expression $_carapaceInit
+
+function Initialize-DFRoleTabCompletion {
+    param($Tool, $Role)
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+}

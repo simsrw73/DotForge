@@ -73,17 +73,12 @@ Tab CustomAction
 
 ## Use inshellisense
 
-inshellisense has its own completion specs. DotForge can use it two ways, set with `CompletionMode`:
+inshellisense has its own completion specs. PSFzf wins the `tab-completion` role by default, then carapace. When inshellisense is installed but does not own Tab, carapace adds it to `CARAPACE_BRIDGES`, so commands carapace does not know can fall back to inshellisense's specs. Use `Get-DFRole tab-completion` to see the active winner.
 
-| `CompletionMode` | What happens |
-| --- | --- |
-| `Native` (default) | Carapace stays the completer. If the `is` command exists, DotForge adds `inshellisense` to `CARAPACE_BRIDGES`, so commands Carapace doesn't know fall back to inshellisense's specs. Bridges you set yourself are kept. |
-| `Inshellisense` | DotForge starts inshellisense directly in each shell, after all tools are registered, and leaves Tab alone. If `is` isn't found, it warns and uses `Native`. |
-
-To run inshellisense directly:
+To opt in to direct inshellisense completion:
 
 ```powershell
-$DFConfig = @{ CompletionMode = 'Inshellisense' }
+$DFConfig = @{ Defaults = @{ 'tab-completion' = 'inshellisense' } }
 Import-Module DotForge
 Initialize-DFEnvironment
 Register-DFTool -All
@@ -129,8 +124,6 @@ DotForge's own `scoop.yaml` and `mdv.yaml` appear there too once Carapace has be
 | --- | --- | --- |
 | Tab stopped completing after you changed key bindings | `Set-PSReadLineOption -EditMode` after `Register-DFTool` resets Tab | Set `PSReadLineEditMode` in `$DFConfig` instead. |
 | The fuzzy picker shows `[0m`-style codes | `FZF_DEFAULT_OPTS` was replaced after registration, dropping `--ansi` | Append to `FZF_DEFAULT_OPTS` instead of overwriting it. |
-| `Inshellisense completion requested but its executable or starter was not found` | `CompletionMode = 'Inshellisense'` without `is` on `PATH` | Install inshellisense (`npm install -g @microsoft/inshellisense`) and make sure fnm is registered. |
-| `CompletionMode '<x>' is invalid; using Native.` | a typo in `CompletionMode` | Use `Native` or `Inshellisense`. |
 | A command you added a Carapace spec for doesn't complete | the spec was added after this shell started | Open a new shell. Check the spec with `carapace --help`'s spec format. |
 
 More on the [troubleshooting page](troubleshooting.md).

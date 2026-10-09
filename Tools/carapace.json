@@ -7,13 +7,14 @@
     "productivity"
   ],
   "executable": "carapace.exe",
-  "roles": { "completion": {} },
+  "roles": { "completion": {}, "tab-completion": { "priority": 10 } },
   "packages": {
     "scoop": "carapace-bin",
     "winget": "rsteube.Carapace"
   },
   "dependsOn": [
-    "fnm"
+    "fnm",
+    "psreadline"
   ],
   "xdg": {
     "compliance": "full",

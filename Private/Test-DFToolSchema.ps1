@@ -72,7 +72,7 @@ function Test-DFToolSchema {
         $errs.Add('scoopBucket must be an object with non-empty name and url')
     }
 
-    # roles: an object keyed by role name; each priority, when present, is an integer.
+    # roles: an object keyed by role name; priority is an integer and optIn is a boolean when present.
     $roles = PSProp $Tool 'roles'
     if ($null -ne $roles) {
         if ($roles -isnot [pscustomobject]) {
@@ -82,6 +82,10 @@ function Test-DFToolSchema {
                 $priority = PSProp $r.Value 'priority'
                 if ($null -ne $priority -and $priority -isnot [int] -and $priority -isnot [long]) {
                     $errs.Add("roles.$($r.Name).priority must be an integer")
+                }
+                $optIn = PSProp $r.Value 'optIn'
+                if ($null -ne $optIn -and $optIn -isnot [bool]) {
+                    $errs.Add("roles.$($r.Name).optIn must be a boolean")
                 }
             }
         }

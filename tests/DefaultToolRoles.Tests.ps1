@@ -84,7 +84,6 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         }
         Mock Get-Module { }   # no posh-git, so the oh-my-posh hook skips its import
         Mock Write-DFConflictNotice { }
-        Mock Initialize-DFCompletionStack { }
         Mock Get-DFCachedCommandOutput { '$global:PromptInits += "starship"' } -ParameterFilter { $Name -eq 'starship-init' }
         # oh-my-posh's init output is piped to Invoke-Expression; emit a line that records the call.
         function global:oh-my-posh { '$global:PromptInits += "oh-my-posh"' }
@@ -149,7 +148,6 @@ Export-ModuleMember -Function * -Variable Dotenv
         }
         Mock Get-Module { [pscustomobject]@{ Name = 'Dotenv'; Path = $script:FakeDotenv } } -ParameterFilter { $ListAvailable }
         Mock Write-DFConflictNotice { }
-        Mock Initialize-DFCompletionStack { }
         Mock Get-DFCachedCommandOutput { '$global:ProjectEnvInits += "direnv"' } -ParameterFilter { $Name -eq 'direnv-hook' }
         Mock Get-DFCachedCommandOutput { '2.38.0' } -ParameterFilter { $Name -eq 'direnv-version' }
         function global:mise { '$global:ProjectEnvInits += "mise"' }
@@ -206,7 +204,6 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
             }
         }
         Mock Write-DFConflictNotice { }
-        Mock Initialize-DFCompletionStack { }
     }
     AfterEach {
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {

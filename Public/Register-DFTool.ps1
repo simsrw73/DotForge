@@ -25,10 +25,7 @@ function Register-DFTool {
         them). Tools are registered in dependency order, honoring "dependsOn".
         If one tool fails (a companion throws, or any error under
         $ErrorActionPreference = 'Stop'), DotForge warns with its name and
-        goes on with the rest; that tool is left out of the completion stack.
-
-        After the loop it installs the completion stack (Carapace, PSFzf or
-        inshellisense Tab handling) once, and warns once if Coreutils for
+        goes on with the rest. After the loop it warns once if Coreutils for
         Windows shadows any DotForge command (see Get-DFCommandConflict).
 
         $DFConfig keys read:
@@ -39,7 +36,6 @@ function Register-DFTool {
                                highest-priority installed tool wins (with a
                                one-time warning for prompt, project-env and
                                navigation)
-            CompletionMode     'Native' (default) or 'Inshellisense'
             SkipConflictCheck  $true disables the coreutils shadowing warning
             IgnoreConflicts    command names left out of that warning
         Tool companions also read their own keys (Theme, <Tool>Theme,
@@ -118,7 +114,6 @@ function Register-DFTool {
     } | ForEach-Object executable)
     $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
     try {
-        $registered = [System.Collections.Generic.List[string]]::new()
         foreach ($tool in $tools) {
             if (-not (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type)) {
                 Write-Verbose "DotForge: '$($tool.executable)' not available — skipping $($tool.name)"
@@ -133,9 +128,7 @@ function Register-DFTool {
                 continue
             }
             Write-Verbose "DotForge: $($tool.name) registered"
-            $registered.Add($tool.name)
         }
-        Initialize-DFCompletionStack -RegisteredTools $registered.ToArray()
         if (-not (Get-DFConfig SkipConflictCheck -Default $false)) { Write-DFConflictNotice -ToolsPath $resolvedToolsPath }
     } finally {
         # Even if a companion throws or registration is interrupted, so the job

@@ -35,7 +35,6 @@ A key you don't set keeps its default. A misspelled key is ignored without a war
 | `SkipTools` | string[] | none | Tools `Register-DFTool -All` leaves alone. Naming a tool with `-Name` still registers it. |
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
-| `CompletionMode` | string | `Native` | `Native` or `Inshellisense`. See [Completion](completion.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
 | `BatTheme`, `DeltaTheme`, `FzfTheme`, `GlowTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |

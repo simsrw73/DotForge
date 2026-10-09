@@ -101,6 +101,11 @@ folder under `$HOME` (`Get-DFXdgPath`), not "disabled", so a test that registers
 cache/state writer must point the relevant `XDG_*_HOME` at `$TestDrive` and restore it afterwards.
 Never unset one to test "no folder" behavior; that path writes to the developer's real folders.
 
+**Pester 6 syntax only.** Use `Should -Invoke`, never `Assert-MockCalled`: Pester 6 removed it, and
+calling it makes PowerShell auto-import Windows PowerShell's bundled Pester 3.4.0, which then breaks
+every `Mock`. Pester can only mock a command that exists, so stub a function a sidecar or an
+uninstalled module defines (e.g. `function Set-PsFzfOption {}`) before mocking it.
+
 **Remove test-defined globals with `Remove-DFTestGlobal`** (`tests/TestSupport.ps1`). `Remove-Item
 function:global:<name>` (or `alias:global:`) silently does nothing, so a stub such as `function global:git {}`
 leaks into every later test file in the run; an unqualified `Remove-Item function:<name>` removes the nearest

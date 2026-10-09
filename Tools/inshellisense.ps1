@@ -1,8 +1,7 @@
 # Companion for inshellisense — defines Start-DFInshellisense, which the
-# completion stack calls once after all tools are registered when
-# $DFConfig.CompletionMode is 'Inshellisense' (see
-# Private/Initialize-DFCompletionStack.ps1). Registering inshellisense alone does
-# not start it. Invoke-Expression is required by inshellisense's init pattern.
+# tab-completion hook calls when inshellisense wins. Registering inshellisense
+# alone does not start it because its role membership is opt-in. Invoke-Expression
+# is required by inshellisense's init pattern.
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
@@ -16,9 +15,8 @@ function global:Start-DFInshellisense {
         script printed by is init pwsh, which starts inshellisense's IDE-style
         autocomplete in the current shell.
 
-        DotForge calls this for you when $DFConfig.CompletionMode is
-        'Inshellisense'. Defined by DotForge's inshellisense companion; requires
-        the is command (installed with npm).
+        DotForge calls this when inshellisense wins the tab-completion role.
+        Defined by DotForge's inshellisense companion; requires the is command.
     .EXAMPLE
         Start-DFInshellisense
 
@@ -34,4 +32,9 @@ function global:Start-DFInshellisense {
     }
 
     Invoke-Expression (is init pwsh | Out-String)
+}
+
+function Initialize-DFRoleTabCompletion {
+    param($Tool, $Role)
+    Start-DFInshellisense
 }

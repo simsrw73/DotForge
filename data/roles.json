@@ -64,6 +64,13 @@
     "reserved": { "env": [], "aliases": [], "code": [] },
     "description": "Installs tools. Install-DFTool tries the winner first, then the others by priority."
   },
+  "tab-completion": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleTabCompletion",
+    "reserved": { "env": [], "aliases": [], "code": ["Set-PSReadLineKeyHandler -Key Tab"] },
+    "description": "Owns the Tab key. The winner binds Tab; the others still register their completers."
+  },
   "markdown-viewer": { "kind": "category", "description": "Renders Markdown in the terminal." },
   "completion":      { "kind": "category", "description": "Adds or improves Tab completion." },
   "grep":            { "kind": "category", "description": "Searches file contents." },

@@ -8,7 +8,7 @@
 # moves to $XDG_STATE_HOME\psreadline\history; earlier history in PowerShell's
 # default AppData file is not copied over. Binds Ctrl+p / Ctrl+n.
 # Do not change EditMode after Register-DFTool: Set-PSReadLineOption -EditMode
-# resets the Tab binding the completion stack installed.
+# resets the Tab binding installed by the selected tab-completion role.
 
 # 1. Apply settings from tool JSON
 $_settings = $DFCurrentTool.settings

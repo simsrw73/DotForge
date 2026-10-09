@@ -68,7 +68,6 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and you haven't chosen | Add the `Defaults` line the warning shows. |
 | `<VAR> was '<value>' but $DFConfig.Defaults.<role> is '<tool>'` | you set the variable yourself and also chose a different tool | Remove one of the two settings. |
 | `<tool> declares the <role> role but its companion defines no Initialize-DFRole…` | a tool record or companion is incomplete | Report it; the tool works, but not as that role's winner. |
-| `CompletionMode '<x>' is invalid; using Native.` | typo | `Native` or `Inshellisense`. |
 | `invalid PSReadLineEditMode '<x>'` | typo | `Emacs` or `Windows`. |
 | `fzf theme '<name>' not found`, `PSReadLine theme '<name>' not found` | the theme isn't bundled or in your themes folder | Use `catppuccin-mocha`, or add a theme file; see [themes](configuration.md#themes). |
 | `mdcat theme '<name>' not recognized`, `mdv theme '<name>' not recognized`, `glow style '<name>' not found` | not a theme that tool has | Pick from the [theme table](configuration.md#theme-names-each-tool-accepts). |

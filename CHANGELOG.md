@@ -144,6 +144,11 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Tab completion is a role.** Which tool owns the Tab key is now the `tab-completion` role:
+  PSFzf wins by default, then carapace, and inshellisense only when you choose it. Each tool binds
+  Tab in its own companion, so core code no longer names any completion tool. A role block can
+  declare `"optIn": true` to be considered only when `$DFConfig.Defaults` names it.
+  `Get-DFRole tab-completion` shows the winner.
 - **bat is no longer a `pager` role member.** As a pager it only ever ran less; its own paging
   follows the role's `PAGER`.
 - **One prompt engine, one per-directory env hook.** With both oh-my-posh and starship installed,
@@ -194,6 +199,8 @@ All notable changes to DotForge are documented here.
 
 ### Removed
 
+- **`$DFConfig.CompletionMode`.** To run inshellisense directly, set
+  `$DFConfig.Defaults['tab-completion'] = 'inshellisense'` instead.
 - **Role v1 alias suppression.** Losers no longer declare role aliases, so there is nothing to
   suppress.
 

@@ -8,7 +8,7 @@
     "module"
   ],
   "executable": "PSFzf",
-  "roles": { "completion": {} },
+  "roles": { "completion": {}, "tab-completion": { "priority": 20 } },
   "dependsOn": ["psreadline"],
   "packages": {
     "psresource": "PSFzf",

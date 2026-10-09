@@ -175,7 +175,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         $json | Add-Member dependsOn @('aaa-broken')
         $json | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $script:TmpTools 'testtool.json')
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        Mock Initialize-DFCompletionStack {}
 
         $ErrorActionPreference = 'Stop'
         try {
@@ -184,9 +183,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 
         $warns | Where-Object { $_ -match 'aaa-broken' -and $_ -match 'sidecar boom' } | Should -Not -BeNullOrEmpty
         Get-Alias tt -Scope Global -ErrorAction Ignore | Should -Not -BeNullOrEmpty
-        Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
-            @($RegisteredTools) -notcontains 'aaa-broken' -and @($RegisteredTools) -contains 'testtool'
-        }
         # $TestDrive lives for the whole Describe; later -All tests must not see this tool.
         Remove-Item (Join-Path $script:TmpTools 'aaa-broken.*') -ErrorAction Ignore
         $script:DFToolDb = $null
@@ -203,28 +199,6 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
 { Register-DFTool -All -ToolsPath $script:TmpTools } | Should -Not -Throw
     }
 
-    It 'finalizes completion ownership after registering completion tools' {
-        @'
-{ "name": "carapace", "executable": "carapace.exe" }
-'@ | Set-Content (Join-Path $script:TmpTools 'carapace.json')
-        @'
-{ "name": "PSFzf", "type": "module", "executable": "PSFzf" }
-'@ | Set-Content (Join-Path $script:TmpTools 'PSFzf.json')
-        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'carapace.ps1')
-        '$null = $null' | Set-Content (Join-Path $script:TmpTools 'PSFzf.ps1')
-        $script:DFToolDb = $null
-
-        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
-        Mock Get-Module { [PSCustomObject]@{ Name = 'PSFzf' } }
-        Mock Initialize-DFCompletionStack {}
-
-        Register-DFTool -All -ToolsPath $script:TmpTools
-
-        Should -Invoke Initialize-DFCompletionStack -Times 1 -ParameterFilter {
-            @($RegisteredTools) -contains 'carapace' -and
-            @($RegisteredTools) -contains 'PSFzf'
-        }
-    }
 
     It 'skips tools listed in $Global:DFConfig.SkipTools when -All is used' {
         @'

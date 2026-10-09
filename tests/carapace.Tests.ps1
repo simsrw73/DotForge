@@ -2,6 +2,9 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/carapace.ps1'
+    # Defined by the companion itself; a stub lets Mock attach before it is dot-sourced
+    # (Pester's mock alias then wins over the companion's definition).
+    function Enable-DFCarapaceInshellisenseBridge { param($TabCompletionWinner) }
 }
 
 # Scoped narrowly to the init-script caching this session's startup-perf audit

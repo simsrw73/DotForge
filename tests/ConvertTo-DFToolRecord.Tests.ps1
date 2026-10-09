@@ -41,15 +41,17 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.roles.PSObject.Properties).Count | Should -Be 0
     }
 
-    It 'normalizes each role block: priority defaults to 0, aliases get the alias shape' {
+    It 'normalizes each role block: priority defaults to 0, optIn defaults to false, and aliases get the alias shape' {
         $raw = '{ "name": "t", "executable": "t.exe", "roles": {
                     "listing": { "priority": 20, "aliases": { "ls": { "command": "t" } } },
-                    "grep": {} } }' | ConvertFrom-Json
+                    "grep": {}, "optional": { "optIn": true } } }' | ConvertFrom-Json
         $r = ConvertTo-DFToolRecord $raw
         $r.roles.listing.priority | Should -Be 20
         $r.roles.listing.aliases.ls.command | Should -Be 't'
         @($r.roles.listing.aliases.ls.args).Count | Should -Be 0
         $r.roles.grep.priority | Should -Be 0
+        $r.roles.grep.optIn | Should -BeFalse
+        $r.roles.optional.optIn | Should -BeTrue
         $r.roles.grep.aliases | Should -BeNullOrEmpty
         $r.roles.grep.env | Should -BeNullOrEmpty
     }
