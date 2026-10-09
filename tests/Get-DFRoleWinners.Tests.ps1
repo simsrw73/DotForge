@@ -61,13 +61,28 @@ Describe 'Get-DFRoleWinners' {
         "$warn" | Should -Match 'nosuchrole'
     }
 
-    It 'falls back silently when the Defaults tool is a member but not installed' {
+    It 'falls back to another requested tool, without a warning, when the Defaults tool is requested but not installed' {
+        # The end-of-load missing-tools notice reports it ("using omp instead").
         $script:Installed = @('omp.exe')
         Set-DFTestConfig @{ Defaults = @{ prompt = 'star' } }
         $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn
         $warn | Should -BeNullOrEmpty
         $w['prompt'].Winner | Should -Be 'omp'
-        $w['prompt'].Reason | Should -Be 'sole'
+        $w['prompt'].Reason | Should -Be 'fallback'
+        $w['prompt'].Preferred | Should -Be 'star'
+    }
+
+    It 'warns when Defaults names a tool that is not requested, and uses priority' {
+        Set-DFTestConfig @{ Defaults = @{ prompt = 'starship' } }
+        $w = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
+        $w['prompt'].Winner | Should -Be 'omp'
+        "$warn" | Should -Match "Defaults\['prompt'\].*starship.*not requested"
+    }
+
+    It 'never mentions the old global $DFConfig in its messages' {
+        Set-DFTestConfig @{ Defaults = @{ nosuchrole = 'omp'; prompt = 'less' } }
+        $null = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue
+        "$warn" | Should -Not -Match '\$DFConfig'
     }
 
     It 'treats an empty Defaults value as absent, without a warning' {

@@ -43,14 +43,16 @@ function Get-DFRoleWinners {
         Chooses one winner per single-kind role for this registration.
     .DESCRIPTION
         Candidates are the tools in -Tools that declare the role and are
-        installed. A membership with roles.<role>.optIn true is a candidate only
-        when $DFConfig.Defaults[<role>] names that tool. The winner is the
-        $DFConfig.Defaults entry when it names a candidate (reason 'Defaults');
-        otherwise the candidate with the highest roles.<role>.priority, ties
-        broken by name (reason 'priority', or 'sole' for a single candidate).
-        A Defaults entry naming an unknown role or a
-        non-member warns; one naming a member that is not a candidate falls
-        back silently, since registering a subset is legitimate. A tool
+        installed (in a session, -Tools holds only the requested tools). A
+        membership with roles.<role>.optIn true is a candidate only when
+        Defaults[<role>] names that tool. The winner is the Defaults entry when
+        it names a candidate (reason 'Defaults'). When the Defaults tool is
+        requested but unavailable, the highest-priority candidate stands in
+        (reason 'fallback', Preferred names the tool it stands in for).
+        Otherwise the highest roles.<role>.priority wins, ties broken by name
+        (reason 'priority', or 'sole' for a single candidate). A Defaults
+        entry naming a tool that is not requested warns.
+        A Defaults entry naming an unknown role or a non-member also warns. A tool
         declaring a role the definitions don't know warns and is ignored for
         it. Category roles and roles without candidates are left out. Never
         throws.
@@ -61,7 +63,7 @@ function Get-DFRoleWinners {
     .PARAMETER RoleDb
         Role definitions (Get-DFRoleDb).
     .OUTPUTS
-        System.Collections.Hashtable. Role name -> @{ Role; Winner; Reason; Candidates (by name); Ranked (by priority) }.
+        System.Collections.Hashtable. Role name -> @{ Role; Winner; Reason; Candidates (by name); Ranked (by priority); Preferred }.
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -75,9 +77,9 @@ function Get-DFRoleWinners {
 
     foreach ($roleName in @($defaults.Keys)) {
         if (-not $RoleDb.ContainsKey($roleName)) {
-            Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names an unknown role — ignoring. See Get-DFRole for the list."
+            Write-Warning "DotForge: Defaults['$roleName'] names an unknown role — ignoring. See Get-DFRole for the list."
         } elseif ($RoleDb[$roleName].kind -eq 'category') {
-            Write-Warning "DotForge: `$DFConfig.Defaults['$roleName']: '$roleName' is a category, which has no winner — every member is configured. Ignoring."
+            Write-Warning "DotForge: Defaults['$roleName']: '$roleName' is a category, which has no winner — every member is configured. Ignoring."
         }
     }
 
@@ -116,9 +118,12 @@ function Get-DFRoleWinners {
         $chosen = $defaults[$roleName]
         if (-not [string]::IsNullOrWhiteSpace($chosen)) {
             $chosenTool = $ToolDb[$chosen]
-            if (-not $chosenTool -or -not $chosenTool.roles.PSObject.Properties[$roleName]) {
+            if (-not $chosenTool) {
+                # A role is only ever filled by a tool the user asked for.
+                Write-Warning "DotForge: Defaults['$roleName'] names '$chosen', which is not requested in Tools — using priority. Add '$chosen' to Tools to use it."
+            } elseif (-not $chosenTool.roles.PSObject.Properties[$roleName]) {
                 $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$roleName]) { $t.name } }) | Sort-Object
-                Write-Warning "DotForge: `$DFConfig.Defaults['$roleName'] names '$chosen', which is not a $roleName tool (choose from: $($members -join ', ')) — using priority."
+                Write-Warning "DotForge: Defaults['$roleName'] names '$chosen', which is not a $roleName tool (requested ones: $($members -join ', ')) — using priority."
             } else {
                 # Report the tool's own spelling, not the user's (names compare case-insensitively).
                 foreach ($c in $candidates) { if ($c.name -eq $chosen) { $winner = $c.name; $reason = 'Defaults'; break } }
@@ -139,9 +144,14 @@ function Get-DFRoleWinners {
             }
             $ranked.Insert($i, $c)
         }
+        # The user's preferred member, when it is requested and really in the role.
+        $preferred = if (-not [string]::IsNullOrWhiteSpace($chosen) -and $ToolDb[$chosen] -and
+            $ToolDb[$chosen].roles.PSObject.Properties[$roleName]) { $ToolDb[$chosen].name }
         if (-not $winner) {
             $winner = $ranked[0].name
-            $reason = if ($candidates.Count -eq 1) { 'sole' } else { 'priority' }
+            # The preferred tool is requested but unavailable: another requested
+            # tool stands in, and the end-of-load notice says so.
+            $reason = if ($preferred) { 'fallback' } elseif ($candidates.Count -eq 1) { 'sole' } else { 'priority' }
         }
         $names = [string[]]@(foreach ($c in $candidates) { $c.name })
         [array]::Sort($names, [System.StringComparer]::OrdinalIgnoreCase)
@@ -151,6 +161,7 @@ function Get-DFRoleWinners {
             Reason     = $reason
             Candidates = $names
             Ranked     = [string[]]@(foreach ($c in $ranked) { $c.name })
+            Preferred  = $preferred
         }
     }
     $winners
