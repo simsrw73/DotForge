@@ -9,7 +9,7 @@
 # carapace alone would rebind Tab to MenuComplete, replacing PSFzf's picker.
 
 $DFConfig = @{
-    PackageManagerOrder = @('scoop', 'winget', 'choco')
+    InstallOrder = @('scoop', 'winget', 'choco')
 }
 
 Import-Module DotForge

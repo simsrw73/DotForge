@@ -134,32 +134,35 @@ Start-DFSession -Config $DFConfig
 
 Open a new terminal to check that it loads without errors.
 
-## Step 5: install a missing tool
+## Step 5: install what's missing
 
-Install a tool by its DotForge name; DotForge picks the package id for whichever package manager you have. Preview first with `-WhatIf`:
+When a requested tool isn't installed, the session lists it and points here. Preview the install first with `-WhatIf`:
 
 ```powershell
 Import-Module DotForge
-Install-DFTool -Name ripgrep -WhatIf
+Start-DFSession -Config @{ Tools = @('ripgrep') }
+Install-DFTool -Missing -WhatIf
 ```
 
 <!-- output: varies -->
 ```text
-What if: Performing the operation "Install" on target "ripgrep via scoop (ripgrep)".
+  stage 1  scoop: ripgrep (ripgrep)
 ```
 
-Then install it, and configure it in the current session:
+Then install everything that's missing at once:
 
 <!-- system -->
 
 ```powershell
 Import-Module DotForge
-Install-DFTool -Name ripgrep
-Register-DFTool -Name ripgrep
+Start-DFSession -Config $DFConfig
+Install-DFTool -Missing
 ```
 
-1. `Install-DFTool` tries your package managers in order (scoop, winget, choco, unless you set `PackageManagerOrder`) and uses the first one that has the tool.
-2. `Register-DFTool -Name ripgrep` configures just that tool now. Add it to `Tools` for future shells.
+1. `Install-DFTool` builds one plan: a source for each tool (scoop, winget, choco, or a registry such as npm or the PowerShell Gallery), in stages, so that a manager or runtime installs before the tools that need it (for example fnm, then node, then a tool from npm).
+2. It never installs something you didn't ask for. When a tool needs a manager you don't have (say, a JavaScript package manager), it asks which one, showing a default; Enter keeps it. Third-party feeds (a scoop bucket) and admin prompts (choco) appear in the plan before you confirm.
+3. `-UseDefaults` answers every question with the default and doesn't ask for confirmation. From a script with no one to ask, and no `-UseDefaults`, only the tools that need no decision are installed; the rest are reported with the reason.
+4. New tools are configured in the current session right away. `Install-DFTool -Name ripgrep` installs one tool by name; add it to `Tools` to load it in future shells.
 
 ## Next steps
 

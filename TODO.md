@@ -24,7 +24,7 @@
 - [ ] **Help header colorization misses `ABOUT_ALIAS_PROVIDER`-style headers** — `Invoke-DFHelp` regex matches ALL-CAPS headers but fails when they contain underscores (e.g. `ABOUT_ALIAS_PROVIDER`). Extend the regex to allow underscores.
 - [ ] **`'Out-String" 2>nul' is not recognized`** — error appears in some contexts; investigate source (likely a companion script using CMD-style stderr redirect instead of PowerShell `2>$null`)
 - [ ] **Red `?` on a line by itself in some Help output** — appears at the same indentation as surrounding content; investigate whether it's a broken ANSI sequence or a `Get-Help` rendering artifact
-- [ ] **Add `node` and `bun` tool records for the `js-runtime` role** — planned in slice 3 ([the install spec](docs/superpowers/specs/2026-10-09-install-design.md), section 8): node and bun become the role's members, fnm and mise leave it and become install sources for node.
+- [x] **Add `node` and `bun` tool records for the `js-runtime` role** — done 2026-10-09 in slice 3 ([the install spec](docs/superpowers/specs/2026-10-09-install-design.md), section 8): node and bun are the role's members; fnm and mise left it and are install sources for node.
 - [ ] **Is posh-git still needed now that starship is the prompt?** posh-git is a tool record of its own (`Tools/posh-git.json`, prompt-tagged), so `Register-DFTool -All` imports it whenever it is installed. That costs 0.7–1.7 s at startup (measured 2026-10-09). Only `Tools/oh-my-posh.ps1:12-13` uses it (`POSH_GIT_ENABLED`); `Tools/starship.ps1` does not. Check what still uses it: its git tab completion (carapace also completes git), and the pickers `Tools/posh-git.ps1` defines. Then drop it from the profile or tool set, or keep it only for oh-my-posh users. Also likely answered by the tool-selection redesign: a tool nobody requests is never loaded.
 - [ ] **`Error: unknown command "completion" for "oh-my-posh"`** — may be version-specific; verify against current oh-my-posh release and fix or suppress if the subcommand was removed
 
@@ -60,10 +60,9 @@
   the need for `-Force` entirely rather than working around it.
 - [ ] **Fix `Register-DFTool` `list_accepts_path` command splitting** — generated picker functions split the list command on whitespace, breaking quoted arguments and single-word commands. Add tests that invoke generated picker functions, not just tests that verify they exist.
 - [ ] **Key `Import-DFToolDb` cache by `ToolsPath`** — the current single `$script:DFToolDb` cache can return the wrong registry when callers use different `-ToolsPath` values without `-Force`.
-- [ ] **Key `Resolve-DFPackageManager` cache by priority order** — a prior default lookup can make later custom `-Priority` calls return stale ordering.
 - [ ] **Harden `New-DFShim` PATH normalization** — malformed PATH entries can throw during the shims-dir-on-PATH check. Match `Add-DFToPath` behavior by safely handling invalid entries.
 - [ ] **Expand tool schema validation** — validate shapes for `packages`, `aliases`, `picker`, `xdg.vars`, `xdg.dirs`, and `after` so malformed records fail early instead of during profile registration.
-- [ ] **Improve `Install-DFTool` failure diagnostics** — installer output is suppressed and failures only report `failed`. Capture and show output on failure, or expose it under `-Verbose`.
+- [ ] **Improve `Install-DFTool` failure diagnostics** — a failed batch now reports the last three lines of the manager's output in its result `Detail` (slice 3). Still open: show the full output under `-Verbose`.
 - [ ] **Make `New-DFDirectory` failures visible** — it currently uses `-ErrorAction SilentlyContinue`, which can hide permissions/path issues and cause later failures elsewhere.
 - [ ] **Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation still enumerates all installed modules to compute the fingerprint. Consider a TTL or cheaper fingerprint strategy.
 - [ ] **Add review coverage gaps** — add tests for cache isolation across two `ToolsPath` values, custom package-manager priority after a default lookup, generated `list_accepts_path` functions with single-word and quoted commands, malformed PATH during `New-DFShim`, duplicate tool names, and schema rejection for malformed `aliases`, `picker`, `packages`, and `after`.
@@ -125,8 +124,7 @@
     (gsudo), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd),
     watch (watchexec), code-stats (tokei, scc)
   - promote `markdown-viewer` from category to single once something in DotForge consumes a winner
-  - retire `$DFConfig.PackageManagerOrder` in favor of `Defaults['package-manager']`, or keep both
-    deliberately (today `PackageManagerOrder` wins)
+  - ~~retire `PackageManagerOrder`~~ — done 2026-10-09: replaced by `InstallOrder` / `ExcludeSources` / `InstallVia` (install spec)
 - [x] **Per-directory environment tools: alternatives to `direnv`, each zero-config** — done 2026-10-05: ps-dotenv (with `scoopBucket`), mise, and direnv's bash path + bug warning (`docs/superpowers/specs/2026-10-05-project-env-tools-design.md`). Still open: survey other Windows-capable alternatives. Original note (requested
   2026-10-05)** — `direnv` (`Tools/direnv.json`/`.ps1`) is not usable as shipped on Windows: it
   needs a `direnv.toml` pointing at Git Bash (`bash_path`), which DotForge never writes, and it

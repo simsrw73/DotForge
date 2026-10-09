@@ -7,8 +7,8 @@
 # ── DotForge config (pass to Start-DFSession -Config) ─────────────────────────
 $DFConfig = @{
     Tools = @('+core', '+prompt', '+git')
-    # Package manager priority for Install-DFTool
-    PackageManagerOrder = @('scoop', 'winget')
+    # Preferred install sources for Install-DFTool (ordering only)
+    InstallOrder = @('scoop', 'winget')
 
     # Defaults picks the tool for each role (see Get-DFRole). eza and lsd both
     # fill 'listing' (ls/ll/la/tree); oh-my-posh and starship both fill 'prompt'.

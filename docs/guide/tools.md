@@ -150,7 +150,7 @@ These fill the `project-env` role, so only one is active: your `Defaults['projec
   }
   ```
 
-  Set `DotenvSafeMode = $false` to load every `.env` without approval. Install it with `Install-DFTool ps-dotenv`, which adds its scoop bucket first.
+  Set `DotenvSafeMode = $false` to load every `.env` without approval. Install it with `Install-DFTool -Name ps-dotenv`, which adds its scoop bucket (shown in the plan) first.
 - **mise** activates (`mise activate pwsh`) only when it's the `project-env` tool. Its shims folder is on PATH either way, so tools mise installed keep working under ps-dotenv.
 - **direnv** gets Git for Windows' bash through `DIRENV_BASH` unless your `direnv.toml` sets `bash_path`. Up to version 2.37.1 it unloads unrelated variables on Windows ([direnv#1488](https://github.com/direnv/direnv/issues/1488)), so DotForge warns while it's active.
 

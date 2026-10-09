@@ -47,9 +47,13 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 
 | Message or symptom | Cause | Fix |
 | --- | --- | --- |
-| `No supported package managers found (scoop, winget, choco)` | none of them is on `PATH` | Install one. Everything except `Install-DFTool` still works. |
 | `Unknown tool '<name>'` | not a DotForge tool name | `Get-DFTool \| Select-Object name` lists valid names. |
-| `Could not install '<tool>'. No compatible package manager from: <list>` | no installed manager has a package id for the tool, or every attempt failed | Install another manager, or install the tool yourself. |
+| `needs a manager for <source> (<managers>), and none is installed or requested` | the tool's only packages are in a source whose manager you don't have (e.g. the npm registry) | Run `Install-DFTool` interactively to pick one, pass `-UseDefaults`, or add a manager (`npm`, `pnpm`, …) to `Tools`. |
+| `no source left (only <sources> have it, and ExcludeSources removes them)` | `ExcludeSources` forbids every source the tool has | Allow one for this tool with `InstallVia = @{ <tool> = '<source>' }`. |
+| `no package in any source` | the tool record lists no packages | Install the tool yourself. |
+| `<manager> needs an elevated shell: rerun as administrator, or add gsudo` | the manager (choco) needs admin rights | Run the shell as administrator, install gsudo, or pick another source with `-Via`. |
+| `installed, but '<exe>' isn't found yet: open a new shell` | the installer changed PATH in a way this shell can't pick up | Open a new shell. |
+| `skipped: <tool> failed` | an earlier stage failed, so tools that need it were not attempted | Fix the first failure (its output is in the summary) and run `Install-DFTool -Missing` again; installed tools aren't reinstalled. |
 | `<tool> one-time setup failed: <error>` | the tool's setup script threw | Fix the cause shown; setup retries on the next `Register-DFTool`. |
 | `circular dependency detected in tool after/requires` | two tool records depend on each other | A bug in the tool records; tools still register, unordered. |
 | `<file> schema errors: <errors>` or `Failed to parse <file>` | a tool record is invalid | That tool is skipped. See [writing a tool record](writing-a-tool.md). |

@@ -1,6 +1,6 @@
 # Installing tools: managers as plugins, sources, staged install (slice 3)
 
-**Status:** approved 2026-10-09 · **Date:** 2026-10-09 · **Decided in:** a grilling session (decisions 1–12 below are the user's)
+**Status:** implemented 2026-10-09 (branch `feat/install-slice3`; deviations are the rulings in the plan ledger) · **Date:** 2026-10-09 · **Decided in:** a grilling session (decisions 1–14 below are the user's)
 **Parent:** [the tool-selection spec](2026-10-09-tool-selection-design.md), slice 3. This spec replaces its section 9 (`Install-DFTool`) and the "managers are not runtimes" open item in section 10.
 
 ## Context

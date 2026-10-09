@@ -12,7 +12,7 @@ Pass a configuration hashtable to `Start-DFSession -Config`. Every key is option
 $DFConfig = @{
     Tools               = @('+core')
     Theme               = 'catppuccin-mocha'
-    PackageManagerOrder = @('scoop', 'winget')
+    InstallOrder        = @('scoop', 'winget')
     Defaults            = @{ listing = 'eza' }
     ExcludeTools        = @('lsd')
 }
@@ -21,17 +21,19 @@ Start-DFSession -Config $DFConfig
 ```
 
 1. `Theme` sets one color theme for every tool that has themes.
-2. `PackageManagerOrder` makes `Install-DFTool` try scoop first, then winget.
+2. `InstallOrder` makes `Install-DFTool` prefer scoop, then winget, for tools whose own record doesn't say otherwise.
 3. `Defaults` says that eza, not lsd, owns `ls`, `ll`, `la` and `tree`.
 4. `ExcludeTools` leaves lsd unconfigured, even when a group requested it.
 
-A key you don't set keeps its default. A misspelled key is ignored without a warning, so compare yours with the table below.
+A key you don't set keeps its default. A misspelled key warns at startup and names the closest known key.
 
 ## All settings
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `PackageManagerOrder` | string[] | the `package-manager` role's order | Order `Install-DFTool` tries package managers in. Only managers on `PATH` are used. Overrides `Defaults['package-manager']`. |
+| `InstallVia` | hashtable | none | Tool → source to install it from, e.g. `@{ glow = 'scoop' }`. Beats everything, including `ExcludeSources`. |
+| `InstallOrder` | string[] | DotForge's order | Sources `Install-DFTool` prefers, in order (`scoop`, `winget`, `choco`, `npm`, `crates`, `psgallery`, …). Ordering only: a source you leave out is still used. A tool's own preference (`install.prefer` in its record) comes first. |
+| `ExcludeSources` | string[] | none | Sources `Install-DFTool` never uses, unless `InstallVia` names one for a tool. |
 | `Tools` | string[] | none | Tool names and `+groups` to configure. |
 | `ExcludeTools` | string[] | none | Tools and `+groups` removed from `Tools`; exclusions win. |
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
@@ -168,7 +170,7 @@ $DFConfig = @{
 
 A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
 
-`PackageManagerOrder`, when set, overrides the `package-manager` role entirely.
+Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
 
 ## Skip a tool
 
@@ -199,17 +201,24 @@ Start-DFSession -Config @{ Tools = @('delta'); SkipSetup = @('delta') }
 ## Prefer a package manager
 
 ```powershell
-$DFConfig = @{ PackageManagerOrder = @('winget', 'scoop') }
 Import-Module DotForge
+Start-DFSession -Config @{ Tools = @(); InstallOrder = @('winget', 'scoop'); ExcludeSources = @('choco') }
 Install-DFTool -Name ripgrep -WhatIf
 ```
 
 <!-- output: varies -->
 ```text
-What if: Performing the operation "Install" on target "ripgrep via winget (BurntSushi.ripgrep.MSVC)".
+  stage 1  winget: ripgrep (BurntSushi.ripgrep.MSVC)
 ```
 
-DotForge skips a manager that isn't installed or has no package for the tool, and tries the next one. A tool with a Rust crate also tries `cargo install` last. `-PackageManager` overrides the order for one call.
+For each tool, `Install-DFTool` takes the first source that has a package for it and a manager you have (or are installing in the same run):
+
+1. `InstallVia` for that tool;
+2. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
+3. `InstallOrder`;
+4. DotForge's order: scoop, winget, choco, then the registries.
+
+`ExcludeSources` removes a source unless `InstallVia` names it. `-Via` picks the source for one call: `Install-DFTool -Name glow -Via scoop`.
 
 ## Command-line editing keys
 

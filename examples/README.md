@@ -29,15 +29,12 @@ Start-DFSession -Config @{ Tools = @('+core') }
 
 ### Install missing tools on first run
 
-Each tool record knows its real executable (ripgrep's is `rg.exe`), so check that instead of guessing:
+The session already knows which requested tools are missing (each record knows its real executable: ripgrep's is `rg.exe`), so let it plan the install:
 
 ```powershell
 Import-Module DotForge
-Start-DFSession -Config @{ Tools = @() }
-$missing = @('eza', 'bat', 'fzf', 'ripgrep') | Where-Object {
-    -not (Get-Command (Get-DFTool -Name $_).executable -ErrorAction Ignore)
-}
-if ($missing) { Install-DFTool -Name $missing -WhatIf }
+Start-DFSession -Config @{ Tools = @('eza', 'bat', 'fzf', 'ripgrep') }
+Install-DFTool -Missing -WhatIf
 ```
 
 Remove `-WhatIf` to install for real.

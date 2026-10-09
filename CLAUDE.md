@@ -71,7 +71,7 @@ Layer 2 — Tool Registry (Phase 2)
 Import-DFToolDb, Get-DFTool, Find-DFTool, Register-DFTool
 
 Layer 3 — Tool Operations (Phase 3)
-Start-DFSession, Get-DFToolStatus, Get-DFToolGroup, Install-DFTool
+Start-DFSession, Get-DFToolStatus, Get-DFToolGroup, Install-DFTool, Invoke-DFToolSetup
 
 General Helpers (Phase 5+)
 DFHelpers.\*.ps1 — pager, help/discovery, navigation, filesystem, process, environment, clipboard
@@ -155,6 +155,12 @@ Each `Tools/*.json` must have at minimum:
 
 - `name` (string, required)
 - `executable` (string, required)
+- `packages` (optional): install ids keyed by **source** — a system manager (`scoop`, `winget`,
+  `choco`), a registry (`npm`, `crates`, `psgallery`) or a version manager (`fnm`, `mise`). A value is
+  an id or `{ id, feed: { name, url } }` (a third-party scoop bucket). Read values only through
+  `Get-DFPackageRef`. `install.prefer` (optional) is the tool's own source preference.
+- `installs` (optional): makes the tool a package manager — `from` (its source), `command` (argv,
+  `{id}`) or `function`/`args`, `batch`, `elevate`, `reactivate`, `feeds`. Core never names a manager.
 - `xdg.method`: one of `default | env | wrapper | manual` (seed a default config file with `setup.seed`, not an xdg method)
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
@@ -232,6 +238,7 @@ fields parsed from fragments must be read StrictMode-safe (`$obj.PSObject.Proper
   makes no difference; it was deliberately given no `after`. Requires PowerShell 7.2+
   (direnv's generated hook throws below that); `Tools/direnv.ps1` guards this with a warning.
 - **Opt-in tool selection**: `Start-DFSession -Config` configures only the tools in `Tools` (names and `+groups` from `data/groups.json`, minus `ExcludeTools`) that are installed. Only those records are read (`Import-DFToolDb -Name`), role winners are picked among them, and nothing is ever installed during a load: missing tools are listed at the end and installed with `Install-DFTool -Missing`. `Invoke-DFSessionActivation` is the shared core of `Start-DFSession` and `Register-DFTool -Name`; it records a `DotForge.ToolStatus` per tool for `Get-DFToolStatus`. Full design: `docs/superpowers/specs/2026-10-09-tool-selection-design.md`.
+- **Installing** (`Install-DFTool`, `docs/superpowers/specs/2026-10-09-install-design.md`): managers are plugins (`installs`); a source is chosen per tool by `InstallVia`, the tool's `install.prefer`, `InstallOrder`, then DotForge's order (`Private/DFInstallSource.ps1`); `New-DFInstallPlan` stages the install (a manager or runtime before what needs it; nothing unrequested unless the user picks it or passes `-UseDefaults`); `Invoke-DFInstallPlan` runs it, and **`Invoke-DFInstallCommand` is the only place a manager runs** — tests mock it, and no test may run a real package manager. `Start-DFSession` builds the install layer only when something is missing.
 - **`after` ordering**: Any tool JSON may declare `"after": ["othertool"]` (ordering only; `requires` also requests the tool). The old `dependsOn` is a schema error. `Invoke-DFSessionActivation` (shared by `Start-DFSession` and `Register-DFTool -Name`) calls `Invoke-DFTopoSort` (private, `Private/Invoke-DFTopoSort.ps1`) to sort the requested tools using Kahn's algorithm before iterating. Dependencies outside the current registration set are skipped silently. Cycles emit `Write-Warning` and fall back to original order.
 - **`$DFCurrentTool` sidecar contract**: `Invoke-DFToolCompanion` (called from `Invoke-DFSessionActivation`'s per-tool loop) sets `$DFCurrentTool = $tool` immediately before dot-sourcing a companion `.ps1` and clears it after. Sidecars may read `$DFCurrentTool.settings` and other fields. Existing sidecars that do not reference `$DFCurrentTool` are unaffected. Sidecars needing their own subdirectory use `$PSScriptRoot`, which resolves to `Tools/` at dot-source time.
 - **Tool setup lifecycle**: the one-time setup step runs before the companion: `setup.seed` files (`Invoke-DFToolSeed`, copied only when absent), then an optional `Tools/<name>.setup.ps1`, parallel to the regular `.ps1`. It runs at most once ever per tool (tracked in `$XDG_STATE_HOME/dotforge/setup-state.json`, checked/updated via `Private/Get-DFToolSetupState.ps1`/`Public/Complete-DFToolSetup.ps1`) — for setup that makes a persistent, user-visible change (e.g. an `[include]` line in the user's real git config) that must never be silently reasserted after the user edits or removes it. The script owns its own success: it must call `Complete-DFToolSetup -Name <tool> [-Actions <object[]>]` itself, as its own last line, only once its work has actually succeeded — a thrown error records nothing, so the next load retries from the top. `SkipSetup` (array of tool names, in the session config) opts a tool's setup script out entirely. Full design: `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`.

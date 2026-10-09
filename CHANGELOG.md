@@ -19,6 +19,30 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Install-DFTool -Missing` installs everything the session reported missing, in one run.** It
+  builds a staged plan, so a manager or runtime installs before the tools that need it (fnm, then
+  node, then a tool from the npm registry). It never installs anything you didn't ask for: when a
+  tool needs a manager you don't have, it asks which one, showing a default (Enter keeps it);
+  `-UseDefaults` takes every default without asking. Third-party feeds (scoop buckets) and admin
+  prompts (choco, through gsudo) are shown in the plan before you confirm; `-WhatIf` shows only the
+  plan. From a script with no one to ask, only decision-free tools install and the rest are
+  reported. New tools are configured in the current session right away.
+- **Package managers are plugins.** A manager's record declares how it installs (`installs`:
+  source, command, batching, elevation, feeds), so adding one is a JSON file. New records: cargo,
+  psresource, pnpm, bun, node; npm gains an `installs` block. Pickers and `trifle`'s install hints
+  read the same blocks.
+- **Choosing where a tool comes from:** `InstallVia` (per tool), the tool record's own preference
+  (`install.prefer`, for official or better-maintained packages), `InstallOrder` (ordering only),
+  then DotForge's order. `ExcludeSources` forbids a source unless `InstallVia` names it.
+  `Install-DFTool -Via <source>` picks one for a single call. Which manager serves a shared registry
+  is a role: `Defaults['js-package-manager']`, `rust-package-manager`, `powershell-package-manager`.
+- **`Invoke-DFToolSetup -Name <tool>`** re-runs a tool's one-time setup (a deleted seed comes back);
+  `-Force` also replaces an edited seed, after a confirm.
+- **`Start-DFSession` says how each missing tool would be installed** (`Get-DFToolStatus` detail),
+  computed only when something is missing.
+- **`node` and `bun` are the `js-runtime` members.** node installs through your version manager
+  (fnm, mise) when you have one; npm comes with node. fnm and mise left `js-runtime`. `after` accepts
+  `role:<name>`, so node is checked after any version manager has run.
 - **`requires` in tool JSON.** A tool can name tools it can't work without (`"requires": ["fzf"]`)
   or a role (`"requires": ["role:js-runtime"]`). A required tool is requested automatically
   (`Get-DFToolStatus` shows `RequestedBy: requires (<tool>)`) and activated first; if it is missing
@@ -100,6 +124,8 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Tools only on the npm registry (inshellisense) couldn't be installed:** `Install-DFTool` had
+  no npm path. npm, pnpm and bun now install them.
 - **One broken tool no longer stops the rest from registering.** A companion that threw, or any
   error while `$ErrorActionPreference = 'Stop'` (common in profiles), aborted `Register-DFTool` and
   skipped every tool after it. Each tool's failure is now caught and reported as `DotForge: <tool>
@@ -202,6 +228,10 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`packages` is keyed by source** (`crates` and `psgallery` instead of `cargo` and `psresource`),
+  the same names the package catalog uses, and a value can be `{ id, feed }` for a third-party feed.
+- **Install hints show each manager's full command** (winget includes `--silent` and the agreement
+  flags).
 - **Default config files are seeded once, in the one-time setup step.** A tool declares
   `setup.seed` (destination → a file shipped under `Tools/<name>/`); setup copies each file only if
   it doesn't exist, before the companion runs, and records that it ran. A config you delete on
@@ -275,6 +305,9 @@ All notable changes to DotForge are documented here.
 
 ### Removed
 
+- **`PackageManagerOrder`**, replaced by `InstallOrder` (ordering only) and `ExcludeSources`; and
+  `Install-DFTool -PackageManager`, replaced by `-Via`.
+- **`scoopBucket`** in tool records, replaced by a `feed` on the scoop package.
 - **`dependsOn` in tool JSON**, replaced by `after` (ordering only, among requested tools) and
   `requires` (also requests the tool). A record that still uses `dependsOn` fails validation.
 - **`xdg.method: "config"`** (`xdg.config_path`/`config_content`), replaced by `setup.seed`. No

@@ -54,13 +54,14 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `type` | | `exe` (default) or `module`. A module tool is detected with `Get-Module -ListAvailable`. |
 | `description` | | One line; shown by `Get-DFTool` and `Find-DFTool`. |
 | `tags` | | Words for `Get-DFTool -Tag` and `Find-DFTool`. |
-| `packages` | | Install ids per manager: `scoop`, `winget`, `choco`, `psresource`, `cargo`. |
-| `scoopBucket` | | `{ "name": "...", "url": "..." }` for a package in a third-party scoop bucket; `Install-DFTool` adds the bucket if needed, then installs `<name>/<id>`. |
+| `packages` | | Install ids per **source**: a system manager (`scoop`, `winget`, `choco`), a registry (`npm`, `crates`, `psgallery`), or a version manager (`fnm`, `mise`). A value is an id, or `{ "id": "...", "feed": { "name": "...", "url": "..." } }` for a package in a third-party feed such as a scoop bucket; `Install-DFTool` adds the feed (shown in the plan first), then installs `<feed>/<id>`. |
+| `install` | | `{ "prefer": ["winget", "scoop"] }`: this tool's preferred sources, for when one package is official or better maintained. Only sources in `packages`. The user's `InstallVia` still wins. |
+| `installs` | | Makes the tool a **package manager**; see [Package managers](#package-managers). |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
 | `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker; see below. |
-| `after` | | Tools this one is registered after, when both are requested. Ordering only: it requests nothing. |
+| `after` | | Tools (`"zoxide"`) or roles (`"role:version-manager"`) this one is registered after, when both are requested. Ordering only: it requests nothing. |
 | `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members; it never picks a member for the user, and never blocks. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
 | `themeMap` | | Shared theme name → this tool's own spelling, e.g. `{ "catppuccin-mocha": "Catppuccin Mocha" }`. |
@@ -93,6 +94,35 @@ Non-path values (flags, theme names) belong in `env`, not `xdg.vars`.
 | `action` | `output` to return the value, or a command with `{}` for the value (`"Set-Location {}"`). |
 
 Check every alias against `Get-Alias` and `Get-Command` before you ship it; see the [builtin safety policy](../builtin-safety-policy.md).
+
+## Package managers
+
+A tool whose record has `installs` is a package manager: `Install-DFTool` uses it for every tool with a package in its source. Core code never names a manager, so adding one is only a JSON file.
+
+```json
+"installs": {
+  "from": "scoop",
+  "command": ["scoop", "install", "{id}"],
+  "batch": true,
+  "feeds": {
+    "list": ["scoop", "bucket", "list"],
+    "add":  ["scoop", "bucket", "add", "{name}", "{url}"],
+    "id":   "{feed}/{id}"
+  }
+}
+```
+
+| Field | What it means |
+| --- | --- |
+| `from` | The source it installs from: its own name for a system manager (`scoop`), or a registry several managers share (`npm` for npm, pnpm and bun). Which of those does the work is a role (`js-package-manager`): the user's `Defaults` choice, else the highest priority. |
+| `command` | The install command as an argv. `{id}` is the package id; with `batch`, it expands to every id in the batch. |
+| `function` / `args` | Instead of `command`, a PowerShell command and its parameters (`Install-PSResource` with `Name = "{id}"`). A `true` argument is a switch. |
+| `batch` | It can install several ids in one call. |
+| `elevate` | It needs an elevated shell (choco). DotForge runs it through gsudo when gsudo is installed, and otherwise skips it with the reason. |
+| `reactivate` | Re-run this manager's companion after it installs something, so a new runtime reaches `PATH` in the same shell (fnm, mise). |
+| `feeds` | How to list and add third-party feeds (buckets, marketplaces) and how a feed-qualified id is written. |
+
+A tool with no `packages` that `requires` another tool is installed by installing that tool: npm comes with node.
 
 ## Companion scripts
 
@@ -159,6 +189,7 @@ A file that already exists is kept. Because seeding is part of setup, a file the
 - Print what you changed and how to undo it.
 - Without a script, DotForge records the seeds itself.
 - Users can opt out of the whole setup step with `SkipSetup = @('<name>')` in their `Start-DFSession` config.
+- `Invoke-DFToolSetup -Name <name>` runs setup again (a deleted seed comes back; `-Force` also replaces an edited one).
 
 ## Check your work
 

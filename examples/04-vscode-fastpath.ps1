@@ -6,7 +6,7 @@
 
 $DFConfig = @{
     Tools               = @('+core', '+prompt')
-    PackageManagerOrder = @('scoop', 'winget')
+    InstallOrder        = @('scoop', 'winget')
     Defaults            = @{ listing = 'eza' }  # eza fills the listing role (ls/ll/la/tree)
 }
 
