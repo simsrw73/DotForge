@@ -72,3 +72,13 @@ Describe 'Set-DFTestXdg / Restore-DFTestXdg' {
         { Restore-DFTestXdg } | Should -Throw '*without a matching Set-DFTestXdg*'
     }
 }
+
+Describe 'XDG isolation hygiene' {
+    It 'no test assigns an XDG_*_HOME variable to itself (that "isolation" writes to the real folders)' {
+        $hits = Get-ChildItem $PSScriptRoot -Filter '*.Tests.ps1' |
+            Select-String -Pattern '\$Env:(XDG_[A-Z]+_HOME)\s*=\s*\$Env:(XDG_[A-Z]+_HOME)\s*(;|$|\})' |
+            Where-Object { $_.Matches[0].Groups[1].Value -eq $_.Matches[0].Groups[2].Value } |
+            ForEach-Object { "$($_.Filename):$($_.LineNumber)" }
+        $hits | Should -BeNullOrEmpty -Because 'point XDG folders at $TestDrive with Set-DFTestXdg'
+    }
+}

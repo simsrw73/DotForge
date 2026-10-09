@@ -42,7 +42,7 @@ Describe 'Resolve-DFThemeFile' {
         New-Item -ItemType Directory -Path $script:bundled -Force | Out-Null
         Set-Content (Join-Path $script:bundled 'shipped.json') '{}'
     }
-    BeforeEach { $script:saved = $Env:XDG_CONFIG_HOME; $Env:XDG_CONFIG_HOME = $Env:XDG_CONFIG_HOME }
+    BeforeEach { $script:saved = $Env:XDG_CONFIG_HOME; $Env:XDG_CONFIG_HOME = Join-Path $TestDrive 'config' }
     AfterEach  { $Env:XDG_CONFIG_HOME = $script:saved }
 
     It 'finds a bundled theme' {

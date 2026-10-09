@@ -78,7 +78,7 @@ Describe 'Get-DFToolIdentityGuide' {
 
     It 'a refreshed copy newer than shipped wins' {
         $script:SavedDataHome = $Env:XDG_DATA_HOME
-        $Env:XDG_DATA_HOME = $Env:XDG_DATA_HOME
+        $Env:XDG_DATA_HOME = Join-Path $TestDrive 'data'
         try {
             New-Item -ItemType Directory -Path (Join-Path $Env:XDG_DATA_HOME 'dotforge') -Force | Out-Null
             $refreshedPath = Join-Path $Env:XDG_DATA_HOME 'dotforge/tool-identities.json'
