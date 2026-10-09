@@ -38,8 +38,9 @@ function Import-DFToolDb {
             ForEach-Object {
                 try {
                     $tool = Get-Content $_.FullName -Raw | ConvertFrom-Json
-                    $errors = @()
-                    if (Test-DFToolSchema -Tool $tool -Errors ([ref]$errors)) {
+                    $errors = @(); $warnings = @()
+                    if (Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) -Warnings ([ref]$warnings)) {
+                        foreach ($w in $warnings) { Write-Warning "DotForge: $($_.Name): $w" }
                         $db[$tool.name] = ConvertTo-DFToolRecord $tool
                     } else {
                         Write-Warning "DotForge: $($_.Name) schema errors: $($errors -join '; ')"

@@ -6,6 +6,13 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Tool records are checked as they load.** A record with a malformed field is skipped with a
+  warning that names the problem. That covers an object `picker` without `function` and `list`,
+  `"false"` in quotes where `true`/`false` belongs, an `aliases` entry without a `command`, and a
+  non-array `dependsOn`. A picker `action` or `parse` that isn't valid PowerShell is caught here
+  too, instead of when your profile runs. A field name that looks like a misspelling of a known
+  one (`dependson`, `themMap`, `preview_windows`) warns "did you mean", and the tool still loads.
+
 - **moor and ov join the `pager` role.** moor (formerly moar) is the default pager and gets
   `MOOR=-style <theme> -quit-if-one-screen` from your theme (`MoorTheme`) unless you set `MOOR`; ov
   runs as `ov --quit-if-one-screen`.

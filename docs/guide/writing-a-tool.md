@@ -159,7 +159,14 @@ Invoke-Pester tests/ -Output Detailed
 ./build/Build-DFReferenceDocs.ps1
 ```
 
-1. The tool database skips, with a warning, any record missing `name` or `executable` or using an unknown `type` or `xdg.method`, so watch for warnings. The tests check companion help (`tests/Docs.Help.Tests.ps1`); add a `tests/<name>.Tests.ps1` for any companion logic. Checking new aliases against `Get-Alias` and `Get-Command` is up to you.
+1. Watch for warnings when DotForge loads your tool.
+   - The tool database skips a record, with a warning naming the problem, when:
+     - `name` or `executable` is missing;
+     - `type` or `xdg.method` has an unknown value;
+     - a field has the wrong shape. For example, an object `picker` without `function` and `list`, `"false"` in quotes where `true`/`false` belongs, or an `aliases` entry without a `command`;
+     - a picker's `action` or `parse` isn't valid PowerShell.
+   - A field name that looks like a misspelling of a known one (`dependson`, `themMap`, `preview_windows`) gets a "did you mean" warning, but the tool still loads. Other extra fields are allowed.
+   - The tests check every shipped tool against these rules, and check companion help (`tests/Docs.Help.Tests.ps1`). Add a `tests/<name>.Tests.ps1` for any companion logic. Checking new aliases against `Get-Alias` and `Get-Command` is up to you.
 2. The reference generator adds your tool to [the tool records](../reference.md#tool-records); commit the regenerated `docs/reference.md`.
 3. Add your tool to the tables in [Tools](tools.md), and a note there if it behaves unusually.
 
