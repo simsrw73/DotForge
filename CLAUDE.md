@@ -179,7 +179,8 @@ Each `Tools/*.json` must have at minimum:
 - `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
   Resolved by `Resolve-DFToolRequirements` (`Private/Invoke-DFSessionActivation.ps1`): required tools
   are auto-requested and ordered first, and a missing/excluded one blocks the tool. A role requirement
-  orders after the role's requested members (or requests the first installed one) and never blocks.
+  orders after the role's requested members, never requests a member itself (the user chooses in
+  `Tools`), and never blocks.
 
 ## External Dependencies
 

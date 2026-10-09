@@ -23,9 +23,10 @@ All notable changes to DotForge are documented here.
   or a role (`"requires": ["role:js-runtime"]`). A required tool is requested automatically
   (`Get-DFToolStatus` shows `RequestedBy: requires (<tool>)`) and activated first; if it is missing
   or excluded, the requiring tool reports Missing with the reason. A role requirement orders the
-  tool after every requested member of the role; with none requested, the first installed member
-  (`Defaults`, then priority) is requested. With none installed the tool isn't blocked, since the
-  role can be filled from outside DotForge. New category role `js-runtime`: fnm and mise.
+  tool after every requested member of the role. It never picks a member for you (which version
+  manager or runtime you use is your choice, made in `Tools`) and never blocks, since the role can
+  be filled from outside DotForge; if the tool is missing, its detail names the tools that could
+  fill the role. New category role `js-runtime`: fnm and mise.
 - **`Start-DFSession -Config`, the single profile entry point.** It configures exactly the tools
   listed in `Tools` (tool names and `+groups`) that are installed, and never looks at the others:
   only the requested tool records are read. It exports the XDG folders, runs each tool's one-time

@@ -76,24 +76,15 @@ Describe 'requires (tools and role:<name>)' {
             $global:DFTestOrder | Should -Be @('nodeprov', 'npmx')
         }
 
-        It 'requests the highest-priority available member when none is requested' {
-            New-ReqTool 'npmx' ', "requires": ["role:js-runtime"]'
-            New-ReqTool 'provlow' ', "roles": { "js-runtime": { "priority": 10 } }'
-            New-ReqTool 'provhigh' ', "roles": { "js-runtime": { "priority": 20 } }'
-            New-ReqTool 'provgone' ', "roles": { "js-runtime": { "priority": 30 } }'
-            $script:Installed = 'npmx.exe', 'provlow.exe', 'provhigh.exe'
-            Start-DFSession -Config @{ Tools = @('npmx') } -ToolsPath $script:Tools 3>$null
-            $global:DFTestOrder | Should -Be @('provhigh', 'npmx')
-            (Get-DFToolStatus -Name provhigh).RequestedBy | Should -Be 'requires (npmx)'
-        }
-
-        It 'prefers the role''s Defaults choice over priority' {
+        It 'never requests a member on the user''s behalf: which manager or runtime is their choice' {
             New-ReqTool 'npmx' ', "requires": ["role:js-runtime"]'
             New-ReqTool 'provlow' ', "roles": { "js-runtime": { "priority": 10 } }'
             New-ReqTool 'provhigh' ', "roles": { "js-runtime": { "priority": 20 } }'
             $script:Installed = 'npmx.exe', 'provlow.exe', 'provhigh.exe'
             Start-DFSession -Config @{ Tools = @('npmx'); Defaults = @{ 'js-runtime' = 'provlow' } } -ToolsPath $script:Tools 3>$null
-            $global:DFTestOrder | Should -Be @('provlow', 'npmx')
+            $global:DFTestOrder | Should -Be @('npmx')
+            Get-DFToolStatus -Name provlow | Should -BeNullOrEmpty
+            Get-DFToolStatus -Name provhigh | Should -BeNullOrEmpty
         }
 
         It 'does not block the tool when no member is available (a runtime may come from outside DotForge)' {
@@ -105,11 +96,20 @@ Describe 'requires (tools and role:<name>)' {
             Get-DFToolStatus -Name provgone | Should -BeNullOrEmpty
         }
 
-        It 'explains a missing tool whose required role has no available member' {
+        It 'tells the user which tools could fill the role when a tool is missing and no member is requested' {
             New-ReqTool 'npmx' ', "requires": ["role:js-runtime"]'
             New-ReqTool 'provgone' ', "roles": { "js-runtime": { "priority": 30 } }'
+            New-ReqTool 'provother' ', "roles": { "js-runtime": {} }'
             Start-DFSession -Config @{ Tools = @('npmx') } -ToolsPath $script:Tools 3>$null
-            (Get-DFToolStatus -Name npmx).Detail | Should -Match 'needs a js-runtime.*provgone'
+            (Get-DFToolStatus -Name npmx).Detail | Should -Match "needs a js-runtime: add provgone or provother to Tools"
+        }
+
+        It 'reads every tool record only when a tool is missing' {
+            New-ReqTool 'npmx' ', "requires": ["role:js-runtime"]'
+            $script:Installed = 'npmx.exe'
+            Mock Get-DFRoleRequirementHint { 'hint' }
+            Start-DFSession -Config @{ Tools = @('npmx') } -ToolsPath $script:Tools 3>$null
+            Should -Invoke Get-DFRoleRequirementHint -Times 0
         }
     }
 

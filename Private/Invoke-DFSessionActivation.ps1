@@ -109,7 +109,7 @@ function Invoke-DFSessionActivation {
             }
             if (-not (Test-DFToolAvailable -Executable $t.executable -Type $t.type)) {
                 $detail = "'$($t.executable)' is not installed"
-                if ($roleHint.ContainsKey($t.name)) { $detail += "; $($roleHint[$t.name])" }
+                if ($roleHint.ContainsKey($t.name)) { $detail += "; $(Get-DFRoleRequirementHint -Role $roleHint[$t.name] @pathArgs)" }
                 $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail $detail
                 continue
             }
@@ -230,24 +230,21 @@ function Write-DFSessionNotice {
 function Resolve-DFToolRequirements {
     <#
     .SYNOPSIS
-        Expands the requested tools' requires: adds required tools and role providers, and records the ordering they impose.
+        Expands the requested tools' requires: adds required tools, and records the ordering requirements impose.
     .DESCRIPTION
         For each record's requires entry, transitively:
           - A tool name: the tool is requested too (RequestedBy
             'requires (<tool>)') and ordered first. If it is excluded, or has
             no record, the requiring tool is blocked with that reason.
           - role:<name>: the tool is ordered after every requested member of
-            the role. If none is requested, the highest-priority member that
-            is installed is requested (the role's Defaults choice first, then
-            priority, then name). If no member is
-            installed, nothing is blocked: the runtime can come from outside
-            DotForge (a standalone node, say). The requiring tool still needs
-            its own executable, and if that is missing too, its detail names
-            the role's members (-RoleHint).
-        Reading every tool record happens only in the rare case a role has no
-        requested member.
+            the role. A member is never requested on the user's behalf: which
+            version manager or runtime to use is the user's choice, made by
+            listing it in Tools. With no member requested nothing is blocked
+            (the runtime can come from outside DotForge, e.g. a standalone
+            node on PATH); the role is recorded in -RoleHint so that, if the
+            tool turns out to be missing, its detail can name the role.
     .PARAMETER Records
-        The requested records. Required tools and providers are appended.
+        The requested records. Required tools are appended.
     .PARAMETER ToolDb
         Name -> record for the requested tools. Additions are added here too.
     .PARAMETER RequestedBy
@@ -259,7 +256,7 @@ function Resolve-DFToolRequirements {
     .PARAMETER Blocked
         Filled: tool name -> why it can't be activated.
     .PARAMETER RoleHint
-        Filled: tool name -> which tools could provide a role it requires.
+        Filled: tool name -> the required roles none of whose members is requested.
     .PARAMETER ToolsPath
         Tools folder. Default: the module's Tools/.
     .OUTPUTS
@@ -277,7 +274,6 @@ function Resolve-DFToolRequirements {
         [string]$ToolsPath
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
-    $all = $null
     $add = {
         param($Record, [string]$By)
         $ToolDb[$Record.name] = $Record
@@ -295,21 +291,7 @@ function Resolve-DFToolRequirements {
             if ($req -like 'role:*') {
                 $role = $req.Substring(5)
                 $members = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties[$role] })
-                if (-not $members) {
-                    if (-not $all) { $all = Import-DFToolDb @pathArgs }
-                    # Defaults names the user's choice; then priority, then name.
-                    $preferred = (Get-DFConfig Defaults -Default @{})[$role]
-                    $candidates = @($all.Values | Where-Object { $_.roles.PSObject.Properties[$role] -and $_.name -notin $Excluded } |
-                        Sort-Object @{ Expression = { $_.name -eq $preferred }; Descending = $true },
-                                    @{ Expression = { $_.roles.$role.priority }; Descending = $true }, name)
-                    $pick = $candidates | Where-Object { Test-DFToolAvailable -Executable $_.executable -Type $_.type } | Select-Object -First 1
-                    if ($pick) {
-                        & $add $pick "requires ($($r.name))"
-                        $members = @($pick)
-                    } elseif ($candidates) {
-                        $RoleHint[$r.name] = "needs a $role ($(@($candidates.name) -join ', '))"
-                    }
-                }
+                if (-not $members) { $RoleHint[$r.name] = @(@($RoleHint[$r.name]) + $role | Where-Object { $_ }) }
                 foreach ($m in $members) {
                     if ($m.name -ne $r.name) { $Edges[$r.name] = @(@($Edges[$r.name]) + $m.name | Where-Object { $_ }) }
                 }
@@ -330,4 +312,34 @@ function Resolve-DFToolRequirements {
             $Edges[$r.name] = @(@($Edges[$r.name]) + $req | Where-Object { $_ })
         }
     }
+}
+
+function Get-DFRoleRequirementHint {
+    <#
+    .SYNOPSIS
+        Says which tools could fill roles a missing tool requires, e.g. "needs a js-runtime: add fnm or mise to Tools".
+    .DESCRIPTION
+        Finding a role's members means reading every tool record, so this runs
+        only when a tool is already missing, never on a normal load.
+    .PARAMETER Role
+        The role names.
+    .PARAMETER ToolsPath
+        Tools folder. Default: the module's Tools/.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][string[]]$Role,
+        [string]$ToolsPath
+    )
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $all = Import-DFToolDb @pathArgs
+    @(foreach ($r in $Role) {
+        $names = @($all.Values | Where-Object { $_.roles.PSObject.Properties[$r] } | ForEach-Object name | Sort-Object)
+        if ($names.Count -gt 1) { "needs a $r`: add $($names[0..($names.Count - 2)] -join ', ') or $($names[-1]) to Tools" }
+        elseif ($names) { "needs a $r`: add $($names[0]) to Tools" }
+        else { "needs a $r" }
+    }) -join '; '
 }
