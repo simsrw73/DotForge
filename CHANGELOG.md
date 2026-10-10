@@ -235,8 +235,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
-- **`Import-Module DotForge` is faster** (0.70 s to 0.42 s; startup 2.23 s to 1.95 s with a 47-tool
-  profile). The package catalog (`trifle`) and the general helpers are now separate modules inside
+- **`Import-Module DotForge` is about 5x faster** (0.70 s to 0.15 s; startup 2.23 s to 1.71 s with a
+  47-tool profile). The startup core loads from one bundled file (`Bundle/DotForge.Core.ps1`, used
+  only when it matches the sources; `$Env:DF_NO_BUNDLE = '1'` loads the separate files). The package catalog (`trifle`) and the general helpers are now separate modules inside
   DotForge (`DotForge.Catalog`, `DotForge.Helpers`) that PowerShell loads the first time you use one
   of their commands. Nothing changes in how you call them; every alias is still defined when DotForge
   loads. `Get-Command -Module DotForge` now lists only the core; use

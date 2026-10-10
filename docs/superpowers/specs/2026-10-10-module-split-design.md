@@ -39,3 +39,16 @@ About half the code (the package catalog behind `trifle`, the general helpers) i
 - `Get-DFConfig` is exported and returns the session's value.
 - No file in `Shared/` reads session state (`$script:DFSession*`).
 - Startup is measured before and after each step.
+
+## Result (2026-10-10)
+
+Implemented as designed. The user's config, `pwsh -NoProfile`, median of 7:
+
+| Step | Import | Session | Total |
+| --- | --- | --- | --- |
+| Before | 0.70 s | 1.53 s | 2.23 s |
+| Split (on-demand catalog and helpers) | 0.42 s | 1.54 s | 1.95 s |
+| Core bundle | 0.15 s | 1.56 s | **1.71 s** |
+
+`trifle` on first use: same time as before the split (~2 s for a warm scoop search); the catalog module loads in well under the search time.
+

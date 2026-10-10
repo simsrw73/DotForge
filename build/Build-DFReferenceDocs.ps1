@@ -198,6 +198,8 @@ function Get-AliasMap([string[]]$Files) {
 }
 
 # ── Exported functions ─────────────────────────────────────────────────────────
+# Sections map functions by their source file, so load the separate files, not the core bundle.
+$Env:DF_NO_BUNDLE = '1'
 Import-Module (Join-Path $repo 'DotForge.psd1') -Force 3>$null
 # The core and its on-demand modules, loaded from this checkout.
 $moduleDirs = @($repo, (Join-Path $repo 'Modules' 'DotForge.Catalog'), (Join-Path $repo 'Modules' 'DotForge.Helpers'))

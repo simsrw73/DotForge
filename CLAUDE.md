@@ -37,6 +37,7 @@ DotForge/
 ├── Public/          # The startup core's exported commands (+ DFAliases.ps1: every alias)
 ├── Private/         # The core's internal functions
 ├── Shared/          # Stateless helpers the core and the on-demand modules both load
+├── Bundle/          # Generated: the startup core as one file (build/Build-DFCoreBundle.ps1)
 ├── Modules/         # On-demand modules, auto-loaded on first use of one of their commands
 │   ├── DotForge.Catalog/   # trifle: package catalogs, identity, categories (Private/, Public/)
 │   └── DotForge.Helpers/   # general helpers: help, navigation, files, env, clipboard
@@ -131,6 +132,7 @@ Invoke-Pester tests/Add-DFToPath.Tests.ps1 -Output Detailed
 ## Before Commiting
 
 - Update the user docs with any changes: the relevant page in `docs/guide/` (README.md is a short landing page; keep it that way), and `.\examples`.
+- **Regenerate the core bundle** after changing any file in `Shared/`, `Private/` or `Public/`: `./build/Build-DFCoreBundle.ps1` rewrites `Bundle/DotForge.Core.ps1` (the startup core as one file, ~0.3 s faster to load). The module uses it only when its source hash matches, so a forgotten rebuild costs speed, never correctness; `tests/CoreBundle.Tests.ps1` fails when it is stale. Set `$Env:DF_NO_BUNDLE = '1'` to load the separate files (errors then report real file and line numbers).
 - **Regenerate the tool registry** after changing any `Tools/*.json`: `./build/Build-DFToolRegistry.ps1` rewrites `data/tool-registry.json` (each record validated and normalized, keyed by a hash of its JSON, so startup skips those checks; a record whose hash doesn't match is read the slow way). `tests/ToolRegistry.Tests.ps1` fails when it is stale.
 - **Regenerate the reference**: `./build/Build-DFReferenceDocs.ps1` rewrites `docs/reference.md` from comment-based help and `Tools/*.json`. Never edit `docs/reference.md` by hand; `tests/Docs.Reference.Tests.ps1` fails when it is stale.
 - **Every public function, and every global function a `Tools/*.ps1` companion defines, must have complete comment-based help**: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each param, at least one `.EXAMPLE` (code, then a blank line, then prose), and `.OUTPUTS`. `tests/Docs.Help.Tests.ps1` enforces this. Run `Get-Help <FunctionName> -Full` to confirm `Get-Help` renders all sections correctly.
