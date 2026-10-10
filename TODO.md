@@ -86,14 +86,14 @@ Consolidated 2026-10-10 from `arch-imp-audit-(claude).md`, `arch-imp-audit.md`, 
 
 ## Priority 2 — Readability (improve-code-quality Phase 2, 2026-10-10)
 
-Clean-code score of the starting module (registration, activation, record loader): **7/10** (names 7, functions 5, comments 9, error handling 8, tests 9, smells 6). Fixes 1–5 and 10 are scheduled for Phase 3; 6–9 are logged here for later.
+Clean-code score of the starting module (registration, activation, record loader): **7/10** (names 7, functions 5, comments 9, error handling 8, tests 9, smells 6). Fixes 1–5 and 10 were done in Phase 3 (2026-10-10, structure-only commits); 6–9 are logged here for later.
 
-- [ ] **Split `Invoke-DFSessionActivation` into named steps** (100 lines): collect excluded names, add role ordering, find what blocks a tool (excluded requirement / unmet requirement / not installed), annotate role outcomes. Phase 3.
-- [ ] **One home for `+group` expansion** — the activation code re-expands `ExcludeTools` groups separately from `Resolve-DFRequestedTools`. Phase 3.
-- [ ] **`Resolve-DFToolRequirements` returns a result object** instead of filling three hashtables passed in (8 parameters). Phase 3.
-- [ ] **One `Test-DFToolActive` helper** for the 4 repeated "is it already Active?" checks. Phase 3.
-- [ ] **Full names for long-scope loop variables** in the activation code (`$t`, `$e`, `$r`, `$w`, `$by`). Phase 3.
-- [ ] **`Invoke-DFToolRegistration` takes one context** instead of 5 parameters (`Private/Register-DFToolSteps.ps1`). Phase 3.
+- [x] **Split `Invoke-DFSessionActivation` into named steps** (100 lines): collect excluded names, add role ordering, find what blocks a tool (excluded requirement / unmet requirement / not installed), annotate role outcomes.
+- [x] **One home for `+group` expansion** — the activation code re-expands `ExcludeTools` groups separately from `Resolve-DFRequestedTools`; both now call `Expand-DFGroupEntry`.
+- [x] **`Resolve-DFToolRequirements` returns a result object** instead of filling three hashtables passed in (8 parameters).
+- [x] **One `Test-DFToolActive` helper** for the 4 repeated "is it already Active?" checks.
+- [x] **Full names for long-scope loop variables** in the activation code (`$t`, `$e`, `$r`, `$w`, `$by`).
+- [x] **`Invoke-DFToolRegistration` takes one context** instead of 5 parameters (`Private/Register-DFToolSteps.ps1`).
 - [ ] **Split `Test-DFToolSchema`** (206 lines, `Shared/Test-DFToolSchema.ps1`) into one validator per section behind the same interface. Pin the schema error branches listed in `docs/TESTING.md` first.
 - [ ] **Split `ConvertTo-DFToolRecord`** (116 lines, `Shared/Import-DFToolDb.ps1`) into one normalizer per block.
 - [ ] **Split `Get-DFRoleWinners`** (84 lines, `Private/Register-DFToolSteps.ps1`): ranking apart from fallback. Pin "a role member with no record" first.

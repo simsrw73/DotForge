@@ -16,7 +16,7 @@ Started 2026-10-10 (the `/improve-code-quality` journey; an earlier, unadopted r
 |---|---|---|---|---|
 | 1 — Build the safety net | working-with-legacy-code | done | TESTING.md + TODO.md (GATE) | 2026-10-10 |
 | 2 — Make the code readable | clean-code | done (score 7/10; gaps logged with fixes) | TODO.md (Readability) + CLAUDE.md | 2026-10-10 |
-| 3 — Apply named refactorings | refactoring-patterns | pending | TODO.md | |
+| 3 — Apply named refactorings | refactoring-patterns | done (6 structure-only commits) | TODO.md (Readability) | 2026-10-10 |
 | 4 — Reduce complexity | software-design-philosophy | pending | TODO.md (Architecture Backlog) | |
 | 5 — Draw the architecture boundary | clean-architecture | pending | TESTING.md / this tracker (light) | |
 | 6 — Lock in the habits | pragmatic-programmer | pending | TODO.md + CLAUDE.md | |
@@ -38,8 +38,11 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 | 2026-10-10 | 2 | Apply fixes 1–5 and 10 in Phase 3 (activation steps, one `+group` expansion, a requirements result object, `Test-DFToolActive`, full loop-variable names, a registration context); log 6–9 (splitting `Test-DFToolSchema`, `ConvertTo-DFToolRecord`, `Get-DFRoleWinners`; a schema result object) in `TODO.md`. | 1–5 and 10 sit in the highest-churn code and are fully covered by the safety net; 6–9 are larger, and 9 churns many tests. |
 | 2026-10-10 | 2 | Four readability rules go in CLAUDE.md's Conventions: full names for long-lived variables, result objects over output parameters, split functions past ~60 lines, one home per rule. | Recorded where every agent reads them. |
 | 2026-10-10 | 2 | No score gate; re-score at the end of the journey. | There is no CI. |
+| 2026-10-10 | 3 | Applied, one commit each, safety-net suites green between steps: Extract Function `Test-DFToolActive`; Rename Variable (full loop-variable names); Replace Output Parameters with a returned result (`Resolve-DFToolRequirements`); Extract Function `Expand-DFGroupEntry` (one home for `+group` expansion); Introduce Parameter Object (the registration context); Extract Function ×6 (the activation's named steps). Done in a worktree, then merged. | The order goes from smallest to largest, so each step's diff stays reviewable; `main` is live in the user's shell. |
+| 2026-10-10 | 3 | No preparatory refactoring for an upcoming feature, and no CI gate list (there is no CI). | Nothing is scheduled to land in the activation code next. |
 
 ## Next Actions
 - [x] Phase 1: safety net mapped (92–98% coverage of the starting module), three high gaps pinned and mutation-checked (Claude, 2026-10-10)
 - [x] Phase 2: starting module scored 7/10; top ten fixes ranked; conventions adopted (Claude, 2026-10-10)
-- [ ] Phase 3: apply fixes 1–5 and 10 as structure-only commits, tests green between each (Claude)
+- [x] Phase 3: fixes 1–5 and 10 applied as structure-only commits; full suite green (Claude, 2026-10-10)
+- [ ] Phase 4: fold into the TODO.md Architecture Backlog (already scoped at intake); then Phase 5 (light) (Claude)
