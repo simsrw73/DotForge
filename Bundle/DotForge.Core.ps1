@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 650cd31c5aee566a6ef91e95414ec23ace732010fa81f91d0752134dd079bf36
+# sources-sha256: daf2f81f48ba4b5d570048e756e7f1a6a6c2ad09397a9fefbce2effe2167bdca
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.0
@@ -2450,11 +2450,7 @@ function Invoke-DFSessionActivation {
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $toolsDir = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath } else { Join-Path $PSScriptRoot '../Tools' })
 
-    foreach ($entry in $Request) {
-        if ($entry.Excluded -and -not (Test-DFToolActive $entry.Name)) {
-            $status[$entry.Name] = New-DFToolStatus -Name $entry.Name -State Excluded -RequestedBy $entry.RequestedBy -Detail 'excluded by ExcludeTools'
-        }
-    }
+    Set-DFExcludedToolStatus -Request $Request
     $wanted = @($Request | Where-Object { -not $_.Excluded })
     $toolDb = if ($wanted) { Import-DFToolDb -Name $wanted.Name @pathArgs } else { @{} }
     $requestedBy = @{}
@@ -2466,28 +2462,9 @@ function Invoke-DFSessionActivation {
         else { $status[$entry.Name] = New-DFToolStatus -Name $entry.Name -State Failed -RequestedBy $entry.RequestedBy -Detail 'its tool record is missing or invalid (see the warning above)' }
     }
 
-    # Every excluded name, not just the requested ones: a required tool can be
-    # excluded without having been requested.
-    $groups = Get-DFGroupDb
-    $excluded = @(foreach ($excludeEntry in @(Get-DFConfig ExcludeTools)) {
-        if ($excludeEntry) { Expand-DFGroupEntry -Entry $excludeEntry -GroupDb $groups }
-    })
-    $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy -Excluded $excluded @pathArgs
-    $edges = $requirements.Edges
-    $blocked = $requirements.Blocked
-    $roleHint = $requirements.RoleHint
-
-    # after: ["role:<name>"] orders a tool after every requested member of that role.
-    foreach ($record in $records) {
-        foreach ($afterEntry in @($record.after | Where-Object { $_ -like 'role:*' })) {
-            $role = $afterEntry.Substring(5)
-            foreach ($member in @($toolDb.Values | Where-Object { $_.name -ne $record.name -and $_.roles.PSObject.Properties[$role] })) {
-                $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ })
-            }
-        }
-    }
-
-    $tools = @(Invoke-DFTopoSort -Tools $records.ToArray() -ExtraEdges $edges | Where-Object { $_ })
+    $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy `
+        -Excluded @(Get-DFExcludedToolNames) @pathArgs
+    $tools = @(Get-DFActivationOrder -Records $records -ToolDb $toolDb -RequirementEdges $requirements.Edges)
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $toolDb -Tools $tools -RoleDb $roleDb
     # Stored before any companion runs: a companion may ask Get-DFRole who won.
@@ -2501,32 +2478,13 @@ function Invoke-DFSessionActivation {
         SkipSetup   = @(Get-DFConfig SkipSetup)
     }
 
-    $prewarmModules = @(foreach ($tool in $tools) {
-        if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
-            (Test-DFToolAvailable -Executable $tool.executable -Type 'module')) { $tool.executable }
-    })
-    $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
+    $prewarmJob = Start-DFActivationPrewarm -Tools $tools
     try {
         foreach ($tool in $tools) {
             if ((Test-DFToolActive $tool.name) -and $tool.name -notin $Reactivate) { continue }
-            if ($blocked.ContainsKey($tool.name)) {
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail $blocked[$tool.name]
-                continue
-            }
-            # A required tool (not a role) was ordered first; if it then failed to
-            # activate, neither can this one. (On a requires cycle, the tool not
-            # yet reached has no status, so the cycle doesn't block itself.)
-            $unmet = @(foreach ($req in @($tool.requires)) {
-                if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
-            })
-            if ($unmet) {
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail "requires $($unmet -join ', '), which is not available"
-                continue
-            }
-            if (-not (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type)) {
-                $detail = "'$($tool.executable)' is not installed"
-                if ($roleHint.ContainsKey($tool.name)) { $detail += "; $(Get-DFRoleRequirementHint -Role $roleHint[$tool.name] @pathArgs)" }
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail $detail
+            $blocker = Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs
+            if ($blocker) {
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail $blocker
                 continue
             }
             # One tool's failure (a throwing companion, or any error under a
@@ -2542,21 +2500,172 @@ function Invoke-DFSessionActivation {
         if ($prewarmJob) { $prewarmJob | Remove-Job -Force -ErrorAction Ignore }
     }
 
-    foreach ($roleOutcome in $winners.Values) {
-        if ($status.Contains($roleOutcome.Winner) -and $roleOutcome.Role -notin $status[$roleOutcome.Winner].Roles) {
-            $status[$roleOutcome.Winner].Roles = [string[]](@($status[$roleOutcome.Winner].Roles) + $roleOutcome.Role)
-        }
-        if ($roleOutcome.Reason -eq 'fallback' -and $status.Contains($roleOutcome.Preferred) -and $status[$roleOutcome.Preferred].State -eq 'Missing') {
-            $status[$roleOutcome.Preferred].Detail = "$($status[$roleOutcome.Preferred].Detail); using $($roleOutcome.Winner) instead ($($roleOutcome.Role))"
-            $status[$roleOutcome.Preferred] | Add-Member -NotePropertyName FallbackRole -NotePropertyValue $roleOutcome.Role -Force
-            $status[$roleOutcome.Preferred] | Add-Member -NotePropertyName FallbackTool -NotePropertyValue $roleOutcome.Winner -Force
-        }
-    }
+    Add-DFRoleOutcomeStatus -RoleWinners $winners
 
     # Install hints are built later, when the status is read (Add-DFInstallHint).
     $script:DFSessionToolsPath = $ToolsPath
 
     foreach ($tool in $tools) { if (Test-DFToolActive $tool.name) { $tool } }
+}
+
+function Set-DFExcludedToolStatus {
+    <#
+    .SYNOPSIS
+        Records Excluded for each excluded request entry that isn't already Active.
+    .PARAMETER Request
+        Request entries: Name, RequestedBy, Excluded.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Request = @())
+    foreach ($entry in $Request) {
+        if ($entry.Excluded -and -not (Test-DFToolActive $entry.Name)) {
+            $script:DFSessionStatus[$entry.Name] = New-DFToolStatus -Name $entry.Name -State Excluded `
+                -RequestedBy $entry.RequestedBy -Detail 'excluded by ExcludeTools'
+        }
+    }
+}
+
+function Get-DFExcludedToolNames {
+    <#
+    .SYNOPSIS
+        Every tool name ExcludeTools excludes, with +groups expanded.
+    .DESCRIPTION
+        Every excluded name, not just the requested ones: a required tool can be
+        excluded without having been requested.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    $groups = Get-DFGroupDb
+    foreach ($excludeEntry in @(Get-DFConfig ExcludeTools)) {
+        if ($excludeEntry) { Expand-DFGroupEntry -Entry $excludeEntry -GroupDb $groups }
+    }
+}
+
+function Get-DFActivationOrder {
+    <#
+    .SYNOPSIS
+        Orders the records for activation: by after, requires, and after: ["role:<name>"].
+    .DESCRIPTION
+        after: ["role:<name>"] orders a tool after every requested member of
+        that role. Those edges are added to (a copy of) the requirement edges,
+        and Invoke-DFTopoSort orders the records.
+    .PARAMETER Records
+        The records to order.
+    .PARAMETER ToolDb
+        Name -> record for the requested tools.
+    .PARAMETER RequirementEdges
+        Resolve-DFToolRequirements' Edges: tool name -> names it must come after.
+    .OUTPUTS
+        The records, in activation order.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Records,
+        [Parameter(Mandatory)][hashtable]$ToolDb,
+        [Parameter(Mandatory)][hashtable]$RequirementEdges
+    )
+    $edges = @{}
+    foreach ($name in $RequirementEdges.Keys) { $edges[$name] = @($RequirementEdges[$name]) }
+    foreach ($record in $Records) {
+        foreach ($afterEntry in @($record.after | Where-Object { $_ -like 'role:*' })) {
+            $role = $afterEntry.Substring(5)
+            foreach ($member in @($ToolDb.Values | Where-Object { $_.name -ne $record.name -and $_.roles.PSObject.Properties[$role] })) {
+                $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ })
+            }
+        }
+    }
+    Invoke-DFTopoSort -Tools $Records.ToArray() -ExtraEdges $edges | Where-Object { $_ }
+}
+
+function Start-DFActivationPrewarm {
+    <#
+    .SYNOPSIS
+        Starts loading, in the background, the installed prewarm modules about to be activated.
+    .PARAMETER Tools
+        The ordered tool records.
+    .OUTPUTS
+        The prewarm job, or nothing when no module needs it.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Tools = @())
+    $prewarmModules = @(foreach ($tool in $Tools) {
+        if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
+            (Test-DFToolAvailable -Executable $tool.executable -Type 'module')) { $tool.executable }
+    })
+    if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
+}
+
+function Get-DFActivationBlocker {
+    <#
+    .SYNOPSIS
+        Says why a tool can't be activated now, or returns an empty string when nothing blocks it.
+    .DESCRIPTION
+        In order: a requirement Resolve-DFToolRequirements blocked (excluded, or
+        no record); a required tool that didn't activate; the tool not being
+        installed (with a hint naming any required role none of whose members
+        is requested).
+    .PARAMETER Tool
+        The tool record.
+    .PARAMETER Requirements
+        Resolve-DFToolRequirements result.
+    .PARAMETER ToolsPath
+        Tools folder. Default: the module's Tools/.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Tool,
+        [Parameter(Mandatory)][PSCustomObject]$Requirements,
+        [string]$ToolsPath
+    )
+    if ($Requirements.Blocked.ContainsKey($Tool.name)) { return $Requirements.Blocked[$Tool.name] }
+    # A required tool (not a role) was ordered first; if it then failed to
+    # activate, neither can this one. (On a requires cycle, the tool not
+    # yet reached has no status, so the cycle doesn't block itself.)
+    $status = $script:DFSessionStatus
+    $unmet = @(foreach ($req in @($Tool.requires)) {
+        if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
+    })
+    if ($unmet) { return "requires $($unmet -join ', '), which is not available" }
+    if (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type) { return '' }
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $detail = "'$($Tool.executable)' is not installed"
+    if ($Requirements.RoleHint.ContainsKey($Tool.name)) {
+        $detail += "; $(Get-DFRoleRequirementHint -Role $Requirements.RoleHint[$Tool.name] @pathArgs)"
+    }
+    $detail
+}
+
+function Add-DFRoleOutcomeStatus {
+    <#
+    .SYNOPSIS
+        Adds the role outcomes to the session status: each winner's Roles, and each missing preferred tool's stand-in.
+    .PARAMETER RoleWinners
+        Get-DFRoleWinners result.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][hashtable]$RoleWinners)
+    $status = $script:DFSessionStatus
+    foreach ($roleOutcome in $RoleWinners.Values) {
+        if ($status.Contains($roleOutcome.Winner) -and $roleOutcome.Role -notin $status[$roleOutcome.Winner].Roles) {
+            $status[$roleOutcome.Winner].Roles = [string[]](@($status[$roleOutcome.Winner].Roles) + $roleOutcome.Role)
+        }
+        if ($roleOutcome.Reason -eq 'fallback' -and $status.Contains($roleOutcome.Preferred) -and $status[$roleOutcome.Preferred].State -eq 'Missing') {
+            $preferred = $status[$roleOutcome.Preferred]
+            $preferred.Detail = "$($preferred.Detail); using $($roleOutcome.Winner) instead ($($roleOutcome.Role))"
+            $preferred | Add-Member -NotePropertyName FallbackRole -NotePropertyValue $roleOutcome.Role -Force
+            $preferred | Add-Member -NotePropertyName FallbackTool -NotePropertyValue $roleOutcome.Winner -Force
+        }
+    }
 }
 
 function New-DFToolStatus {
