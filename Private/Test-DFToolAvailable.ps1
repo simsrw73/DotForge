@@ -48,13 +48,75 @@ function Test-DFToolAvailable {
         return $script:DFToolAvailability[$key]
     }
 
-    $available = [bool]$(if ($Type -eq 'module') {
-        Get-Module -Name $Executable -ListAvailable -ErrorAction Ignore
-    } else {
-        Get-Command $Executable -ErrorAction Ignore
-    })
+    $available = if ($Type -eq 'module') { Test-DFModuleOnPath -Name $Executable } else { Test-DFExecutableOnPath -Name $Executable }
 
     # Never remember "not installed": see .DESCRIPTION.
     if ($available) { $script:DFToolAvailability[$key] = $true }
     return $available
+}
+
+function Test-DFExecutableOnPath {
+    <#
+    .SYNOPSIS
+        Whether an executable is on PATH, by checking its exact candidate filenames in each PATH folder.
+    .DESCRIPTION
+        A cheaper stand-in for Get-Command when only "is it installed?"
+        matters (about half the time per tool at startup). A name with an
+        extension is looked up as is; a bare name also tries each PATHEXT
+        extension (pipx is pipx.cmd from scoop, pipx.exe from pip). Folders
+        that don't exist are skipped. A rooted path is checked directly.
+    .PARAMETER Name
+        The executable, e.g. 'rg.exe' or 'pipx'.
+    .PARAMETER PathValue
+        The PATH to search. Default: $Env:Path.
+    .PARAMETER PathExt
+        Extensions a bare name may have. Default: $Env:PATHEXT.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [string]$PathValue = $Env:Path,
+        [string]$PathExt = $Env:PATHEXT
+    )
+    if ([IO.Path]::IsPathRooted($Name)) { return [IO.File]::Exists($Name) }
+    $names = if ([IO.Path]::HasExtension($Name)) { @($Name) }
+             else { @($Name) + @("$PathExt" -split ';' | Where-Object { $_ } | ForEach-Object { $Name + $_ }) }
+    foreach ($dir in "$PathValue" -split [IO.Path]::PathSeparator) {
+        $dir = $dir.Trim().Trim('"')
+        if (-not $dir) { continue }
+        foreach ($n in $names) {
+            if ([IO.File]::Exists([IO.Path]::Combine($dir, $n))) { return $true }
+        }
+    }
+    $false
+}
+
+function Test-DFModuleOnPath {
+    <#
+    .SYNOPSIS
+        Whether a PowerShell module is installed, by checking for its folder under each PSModulePath root.
+    .DESCRIPTION
+        A cheaper stand-in for Get-Module -ListAvailable (about a tenth of the
+        time), which also reads every manifest it finds.
+    .PARAMETER Name
+        The module name.
+    .PARAMETER ModulePath
+        The module search path. Default: $Env:PSModulePath.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [string]$ModulePath = $Env:PSModulePath
+    )
+    foreach ($root in "$ModulePath" -split [IO.Path]::PathSeparator) {
+        $root = $root.Trim().Trim('"')
+        if ($root -and [IO.Directory]::Exists([IO.Path]::Combine($root, $Name))) { return $true }
+    }
+    $false
 }

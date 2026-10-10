@@ -60,6 +60,9 @@ Describe 'eza/lsd share role: listing (real tool records)' {
 Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars)' {
     BeforeAll { . "$PSScriptRoot/../Private/Get-DFCachedCommandOutput.ps1" }
     BeforeEach { Reset-DFTestSession;
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
