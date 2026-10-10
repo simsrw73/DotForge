@@ -50,18 +50,32 @@ function Invoke-DFCatalogInstalledFetch {
     $work = @($Providers | ForEach-Object {
         @{ Name = $_.Name; Files = @($_.Files); InstalledFunction = $_.InstalledFunction }
     })
-    @($work | ForEach-Object -Parallel {
-        $p = $_
-        try {
-            foreach ($file in $p.Files) {
-                . (Join-Path $using:PrivateRoot $file)
+    # Collected as they arrive: when the time limit stops the batch, what already
+    # finished is kept. The stop is reported under -Verbose, never shown as an error
+    # or thrown: it arrives as an error record (2>&1), or, under a profile's
+    # $ErrorActionPreference = 'Stop', as an exception.
+    $items = [System.Collections.Generic.List[object]]::new()
+    try {
+        $work | ForEach-Object -Parallel {
+            $p = $_
+            try {
+                foreach ($file in $p.Files) {
+                    . (Join-Path $using:PrivateRoot $file)
+                }
+                @(& (Get-Command $p.InstalledFunction))
+            } catch {
+                Write-Verbose "DotForge: installed enumeration for '$($p.Name)' failed: $_"
+                @()
             }
-            @(& (Get-Command $p.InstalledFunction))
-        } catch {
-            Write-Verbose "DotForge: installed enumeration for '$($p.Name)' failed: $_"
-            @()
+        } -ThrottleLimit $ThrottleLimit -TimeoutSeconds $TimeoutSeconds 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                Write-Verbose "DotForge: installed enumeration stopped after $TimeoutSeconds s; keeping what finished: $($_.Exception.Message)"
+            } elseif ($_) { $items.Add($_) }
         }
-    } -ThrottleLimit $ThrottleLimit -TimeoutSeconds $TimeoutSeconds) | Where-Object { $_ }
+    } catch {
+        Write-Verbose "DotForge: installed enumeration stopped after $TimeoutSeconds s; keeping what finished: $($_.Exception.Message)"
+    }
+    $items.ToArray()
 }
 
 function Get-DFCatalogInstalled {

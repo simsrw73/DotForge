@@ -111,11 +111,28 @@ function Get-FakeEmptyInstalled {
         $script:r.Count | Should -Be 0
     }
 
+    It 'keeps what finished when the time limit cuts off a slow provider, even under ErrorActionPreference Stop' {
+        Set-Content (Join-Path $script:FakeRoot 'FakeSlow.ps1') @'
+function Get-FakeSlowInstalled {
+    Start-Sleep -Seconds 20
+    [pscustomobject]@{ Source = 'slow'; Name = 'late'; PackageId = 'late'; InstalledVersion = '1.0' }
+}
+'@
+        $providers = @(
+            @{ Name = 'good'; Files = @('FakeGood.ps1'); InstalledFunction = 'Get-FakeGoodInstalled' }
+            @{ Name = 'slow'; Files = @('FakeSlow.ps1'); InstalledFunction = 'Get-FakeSlowInstalled' })
+        $ErrorActionPreference = 'Stop'   # a profile setting; the fetch must still fail soft
+        $script:r = $null
+        { $script:r = @(Invoke-DFCatalogInstalledFetch -Providers $providers -PrivateRoot $script:FakeRoot -TimeoutSeconds 2) } |
+            Should -Not -Throw
+        @($script:r.Source) | Should -Be @('good')
+    }
+
     It 'every registered provider loads and runs in a fresh runspace (its Files list is complete)' {
         $privateRoot = "$PSScriptRoot/../Modules/DotForge.Catalog/Private"
         @($script:DFCatalogProviders.Values).Count | Should -Be 7
         $verboseRecords = Invoke-DFCatalogInstalledFetch -Providers @($script:DFCatalogProviders.Values) `
-            -PrivateRoot $privateRoot -Verbose 4>&1 |
+            -PrivateRoot $privateRoot -TimeoutSeconds 60 -Verbose 4>&1 |   # room for a cold CI runner
             Where-Object { $_ -is [System.Management.Automation.VerboseRecord] }
         $failures = @($verboseRecords | Where-Object Message -match "installed enumeration for '.*' failed")
         $failures | Should -BeNullOrEmpty -Because (($failures.Message) -join '; ')

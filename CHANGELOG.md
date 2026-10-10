@@ -8,6 +8,9 @@ All notable changes to DotForge are documented here.
 
 - **The Gallery package is tagged `PSEdition_Core`**, and every script's `#Requires` line now
   matches the manifest's minimum, PowerShell 7.2.
+- **A slow package manager could make `trifle` throw:** when listing installed packages hit its
+  10-second limit, the whole lookup failed under `$ErrorActionPreference = 'Stop'` (and printed an
+  error otherwise). It now keeps what finished and notes the cut-off under `-Verbose`.
 - **`Invoke-DFToolSetup -WhatIf` changed state and could fail:** it cleared the tool's setup record
   before checking `-WhatIf`, and the skipped write then raised an error (a terminating one under
   `$ErrorActionPreference = 'Stop'`). `-WhatIf` now only reports what it would do.
