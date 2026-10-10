@@ -160,25 +160,22 @@ function Invoke-DFToolRegistration {
         companion writes to the output stream passes through to the caller.
     .PARAMETER Tool
         The normalized tool record.
-    .PARAMETER RoleWinners
-        Get-DFRoleWinners result.
-    .PARAMETER ToolsPath
-        The resolved Tools folder holding companions.
-    .PARAMETER SkipSetup
-        Tool names whose one-time setup script must not run.
-    .PARAMETER RoleDb
-        Role definitions (Get-DFRoleDb).
+    .PARAMETER Context
+        What the whole activation shares (Invoke-DFSessionActivation builds it):
+          RoleWinners: Get-DFRoleWinners result.
+          RoleDb: role definitions (Get-DFRoleDb).
+          ToolsPath: the resolved Tools folder holding companions.
+          SkipSetup: tool names whose one-time setup script must not run.
     .OUTPUTS
         None of its own.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][PSCustomObject]$Tool,
-        [Parameter(Mandatory)][hashtable]$RoleWinners,
-        [Parameter(Mandatory)][string]$ToolsPath,
-        [string[]]$SkipSetup = @(),
-        [hashtable]$RoleDb = (Get-DFRoleDb)
+        [Parameter(Mandatory)][PSCustomObject]$Context
     )
+    $RoleWinners = $Context.RoleWinners
+    $RoleDb = $Context.RoleDb
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands
@@ -234,7 +231,7 @@ function Invoke-DFToolRegistration {
         }
     }
 
-    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $ToolsPath -SkipSetup $SkipSetup -WonRoles @($wonRoles)
+    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
 }
 
 function Write-DFConflictNotice {

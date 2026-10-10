@@ -92,7 +92,12 @@ function Invoke-DFSessionActivation {
     foreach ($name in $toolDb.Keys) { $script:DFSessionToolDb[$name] = $toolDb[$name] }
     $script:DFSessionRoleWinners = $winners
     Write-DFRoleNotice -RoleWinners $winners -RoleDb $roleDb
-    $skipSetup = @(Get-DFConfig SkipSetup)
+    $context = [pscustomobject]@{
+        RoleWinners = $winners
+        RoleDb      = $roleDb
+        ToolsPath   = $toolsDir
+        SkipSetup   = @(Get-DFConfig SkipSetup)
+    }
 
     $prewarmModules = @(foreach ($tool in $tools) {
         if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
@@ -125,7 +130,7 @@ function Invoke-DFSessionActivation {
             # One tool's failure (a throwing companion, or any error under a
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
-                Invoke-DFToolRegistration -Tool $tool -RoleWinners $winners -ToolsPath $toolsDir -SkipSetup $skipSetup -RoleDb $roleDb
+                Invoke-DFToolRegistration -Tool $tool -Context $context
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name]
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message

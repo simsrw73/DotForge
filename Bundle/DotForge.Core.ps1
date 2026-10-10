@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0673adf5839bca32775cbb781d923a3073963f59100c9185a2446ab8ac953491
+# sources-sha256: 650cd31c5aee566a6ef91e95414ec23ace732010fa81f91d0752134dd079bf36
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.0
@@ -2494,7 +2494,12 @@ function Invoke-DFSessionActivation {
     foreach ($name in $toolDb.Keys) { $script:DFSessionToolDb[$name] = $toolDb[$name] }
     $script:DFSessionRoleWinners = $winners
     Write-DFRoleNotice -RoleWinners $winners -RoleDb $roleDb
-    $skipSetup = @(Get-DFConfig SkipSetup)
+    $context = [pscustomobject]@{
+        RoleWinners = $winners
+        RoleDb      = $roleDb
+        ToolsPath   = $toolsDir
+        SkipSetup   = @(Get-DFConfig SkipSetup)
+    }
 
     $prewarmModules = @(foreach ($tool in $tools) {
         if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
@@ -2527,7 +2532,7 @@ function Invoke-DFSessionActivation {
             # One tool's failure (a throwing companion, or any error under a
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
-                Invoke-DFToolRegistration -Tool $tool -RoleWinners $winners -ToolsPath $toolsDir -SkipSetup $skipSetup -RoleDb $roleDb
+                Invoke-DFToolRegistration -Tool $tool -Context $context
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name]
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
@@ -3489,25 +3494,22 @@ function Invoke-DFToolRegistration {
         companion writes to the output stream passes through to the caller.
     .PARAMETER Tool
         The normalized tool record.
-    .PARAMETER RoleWinners
-        Get-DFRoleWinners result.
-    .PARAMETER ToolsPath
-        The resolved Tools folder holding companions.
-    .PARAMETER SkipSetup
-        Tool names whose one-time setup script must not run.
-    .PARAMETER RoleDb
-        Role definitions (Get-DFRoleDb).
+    .PARAMETER Context
+        What the whole activation shares (Invoke-DFSessionActivation builds it):
+          RoleWinners: Get-DFRoleWinners result.
+          RoleDb: role definitions (Get-DFRoleDb).
+          ToolsPath: the resolved Tools folder holding companions.
+          SkipSetup: tool names whose one-time setup script must not run.
     .OUTPUTS
         None of its own.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][PSCustomObject]$Tool,
-        [Parameter(Mandatory)][hashtable]$RoleWinners,
-        [Parameter(Mandatory)][string]$ToolsPath,
-        [string[]]$SkipSetup = @(),
-        [hashtable]$RoleDb = (Get-DFRoleDb)
+        [Parameter(Mandatory)][PSCustomObject]$Context
     )
+    $RoleWinners = $Context.RoleWinners
+    $RoleDb = $Context.RoleDb
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands
@@ -3563,7 +3565,7 @@ function Invoke-DFToolRegistration {
         }
     }
 
-    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $ToolsPath -SkipSetup $SkipSetup -WonRoles @($wonRoles)
+    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
 }
 
 function Write-DFConflictNotice {
