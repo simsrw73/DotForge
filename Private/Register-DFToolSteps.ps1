@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The per-session steps Invoke-DFSessionActivation runs: resolve role winners,
 # register each tool, and report coreutils conflicts.

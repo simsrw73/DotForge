@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Every relative link and image in the user docs must point at a file that
 # exists, and every #anchor at a heading that exists. External URLs are not
 # fetched.

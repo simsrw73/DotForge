@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # PowerShell Gallery provider (query-cache kind). Uses the v2 OData API — the
 # OData Version field is the source of truth (Find-PSResource normalizes away

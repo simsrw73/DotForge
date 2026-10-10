@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Winget catalog provider (snapshot kind). The winget CLI's slowness is process
 # startup + MSIX verification, not the search — the catalog is just a SQLite

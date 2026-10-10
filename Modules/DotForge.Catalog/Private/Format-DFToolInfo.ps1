@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Pure renderers for DotForge.ToolInfo — same "pure function + [bool]$Color"
 # pattern as Format-DFCliHelpText. Find-DFPackage decides card vs table vs raw

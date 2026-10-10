@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Lazy-loaded, indexed category database for trifle discovery (-Category,
 # -WorksWith, Get-DFCategoryList, the detail card's Category/Related/Alt-to

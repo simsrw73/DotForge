@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Every ```powershell block in the user docs parses, and every block not marked
 # fragment/interactive/network/system runs, as written, in a fresh pwsh with a throwaway
 # home folder: exit code 0, nothing on stderr, and output matching the ```text

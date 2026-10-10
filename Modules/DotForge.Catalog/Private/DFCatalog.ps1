@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Core plumbing for the catalog provider system (trifle / Find-DFPackage).
 #

@@ -47,7 +47,7 @@
     )
     PrivateData       = @{
         PSData = @{
-            Tags         = @('CLI', 'Tools', 'Profile', 'XDG', 'fzf', 'Configuration', 'Windows', 'Shim', 'PSReadLine')
+            Tags         = @('CLI', 'Tools', 'Profile', 'XDG', 'fzf', 'Configuration', 'Windows', 'Shim', 'PSReadLine', 'PSEdition_Core')
             LicenseUri   = 'https://github.com/simsrw73/DotForge/blob/main/LICENSE'
             ProjectUri   = 'https://github.com/simsrw73/DotForge'
             IconUri      = 'https://raw.githubusercontent.com/simsrw73/DotForge/main/assets/dotforge1.png'

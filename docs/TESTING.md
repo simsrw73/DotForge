@@ -2,7 +2,7 @@
 
 ## Test Strategy
 
-- **Tooling:** Pester 6 (`Invoke-Pester tests/` from `pwsh -NoProfile`). 144 test files, ~2,540 tests.
+- **Tooling:** Pester 6 (`Invoke-Pester tests/` from `pwsh -NoProfile`); the development modules are pinned in `build/requirements.psd1` and installed by `build/Install-DFDevDependencies.ps1`. 144 test files, ~2,540 tests.
 - **Unit tests** dot-source every module source file into the test's scope (`Get-DFTestModuleFile` in `tests/TestSupport.ps1`), so `Mock` reaches private functions. External processes and the machine are seams: availability (`Test-DFExecutableOnPath`, `Test-DFModuleOnPath`, `Test-DFToolAvailable`), installs (`Invoke-DFInstallCommand`), the host (`Test-DFInteractiveHost`, `Read-DFInstallChoice`, `Test-DFElevated`), fzf (`Invoke-DFFzf`), PATH (`Update-DFPathFromRegistry`). No test may run a real package manager.
 - **Isolation:** `Set-DFTestXdg` / `Restore-DFTestXdg` put every `XDG_*_HOME` under `$TestDrive` and point `GIT_CONFIG_GLOBAL` at a throwaway file there (sidecars may run `git config --global`); `Set-DFTestConfig` sets session config; `Reset-DFTestSession` clears session state between tests; `Remove-DFTestGlobal` removes test-defined globals.
 - **Contract tests** run a real `Import-Module` in a child `pwsh`: the module split (`ModuleSplit.Tests.ps1`), the core bundle (`CoreBundle.Tests.ps1`), the public surface (`PublicSurface.Tests.ps1`).

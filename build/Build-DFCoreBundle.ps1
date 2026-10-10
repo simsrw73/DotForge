@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Builds Bundle/DotForge.Core.ps1: the startup core (Shared/, Private/, Public/) as one file.

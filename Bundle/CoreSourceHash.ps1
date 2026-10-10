@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Shared by DotForge.psm1 (does Bundle/DotForge.Core.ps1 match the sources?) and
 # build/Build-DFCoreBundle.ps1 (which writes it). One definition, so they can't drift.
 

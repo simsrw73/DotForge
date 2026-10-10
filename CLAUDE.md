@@ -110,7 +110,7 @@ Load module for development:
 Import-Module ./DotForge.psd1 -Force
 ```
 
-Pester 6 (verified with 6.2.0). Pester 5 is no longer supported or tested. Run all tests:
+Pester 6 (verified with 6.2.0). Pester 5 is no longer supported or tested. Install the development modules (Pester, plus PSSQLite and powershell-yaml for the package-universe pipeline) at the versions pinned in `build/requirements.psd1` with `./build/Install-DFDevDependencies.ps1`; a new test or build dependency goes in that file, never in the manifest's `RequiredModules` (`tests/Requirements.Tests.ps1` checks it). Run all tests:
 
 ```powershell
 Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profile interference

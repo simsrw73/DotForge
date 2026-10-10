@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The session's configuration: the hashtable passed to Start-DFSession -Config,
 # stored here once and read only through Get-DFConfig. Nothing reads a global

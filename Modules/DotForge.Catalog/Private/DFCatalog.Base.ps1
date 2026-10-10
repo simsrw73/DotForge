@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The catalog provider registry. Each Private/DFCatalog.<Stem>.ps1 registers one
 # provider with Register-DFCatalogProvider when it is loaded, and everything that

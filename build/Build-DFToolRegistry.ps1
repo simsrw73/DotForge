@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Builds data/tool-registry.json: every shipped tool record, validated and normalized.

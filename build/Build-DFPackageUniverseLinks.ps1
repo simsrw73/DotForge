@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Phase B of the package-universe pipeline: cross-catalog identity clustering.

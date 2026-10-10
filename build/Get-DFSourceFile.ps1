@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Build scripts dot-source DotForge's source files directly (private functions
 # aren't exported). This lists them in load order: Shared/, the core's Private/
 # and Public/, then each on-demand module's. Dot-source the result in the

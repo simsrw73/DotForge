@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # What the current session decided, per requested tool: name -> DotForge.ToolStatus.
 # $null until Start-DFSession (or Register-DFTool) first runs. Get-DFToolStatus reads it.

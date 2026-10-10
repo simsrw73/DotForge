@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # DotForge profile with VS Code terminal fast-path
 # ─────────────────────────────────────────────────────────────────────────────
 # VS Code's integrated terminal doesn't need oh-my-posh or transcripts — just

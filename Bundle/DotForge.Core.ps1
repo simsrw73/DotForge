@@ -1,8 +1,8 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 5f3f9e552b24eb2600fedfeffd389beba81d73223431e0206353084a67dd5471
+# sources-sha256: 5ed61159c844010a6db2e4fa4283f68f099cce394eec4703eeee6f9b4b627c2d
 
 # ---- Shared/ConvertTo-DFPath.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function ConvertTo-DFPath {
     <#
@@ -90,7 +90,7 @@ function Get-DFXdgPath {
 }
 
 # ---- Shared/DFInstallSource.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFSourceManager {
     <#
@@ -281,7 +281,7 @@ function Get-DFInstallBlock {
 }
 
 # ---- Shared/Format-DFInstallCommand.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Format-DFInstallCommand {
     <#
@@ -338,7 +338,7 @@ function Get-DFInstallHint {
 }
 
 # ---- Shared/Get-DFFingerprintCache.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFFingerprintCache {
     <#
@@ -398,7 +398,7 @@ function Get-DFFingerprintCache {
 }
 
 # ---- Shared/Get-DFPackageRef.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFPackageRef {
     <#
@@ -428,7 +428,7 @@ function Get-DFPackageRef {
 }
 
 # ---- Shared/Get-DFToolRegistry.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 $script:DFToolRegistry = $null
 
@@ -484,7 +484,7 @@ function Get-DFToolRegistry {
 }
 
 # ---- Shared/Import-DFToolDb.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 $script:DFToolDb = $null
 
@@ -783,7 +783,7 @@ function ConvertTo-DFToolRecord {
 }
 
 # ---- Shared/Invoke-DFFzf.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFFzf {
     <#
@@ -810,7 +810,7 @@ function Invoke-DFFzf {
 }
 
 # ---- Shared/Invoke-DFPagerExe.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFPagerExe {
     <#
@@ -848,7 +848,7 @@ function Invoke-DFPagerExe {
 }
 
 # ---- Shared/Test-DFOutputPiped.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Test-DFOutputPiped {
     <#
@@ -928,7 +928,7 @@ function Get-DFAnsiPalette {
 }
 
 # ---- Shared/Test-DFToolSchema.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Test-DFToolSchema {
     <#
@@ -1244,7 +1244,7 @@ function Get-DFFieldSuggestion {
 }
 
 # ---- Shared/Write-DFFileAtomic.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Write-DFFileAtomic {
     <#
@@ -1274,7 +1274,7 @@ function Write-DFFileAtomic {
 }
 
 # ---- Private/DFInstallHost.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Test-DFElevated {
     <#
@@ -1337,7 +1337,7 @@ function Read-DFInstallChoice {
 }
 
 # ---- Private/DFSessionConfig.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The session's configuration: the hashtable passed to Start-DFSession -Config,
 # stored here once and read only through Get-DFConfig. Nothing reads a global
@@ -1464,7 +1464,7 @@ function Assert-DFSessionConfigured {
 }
 
 # ---- Private/Expand-DFXdgPath.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Expand-DFXdgPath {
     <#
@@ -1503,7 +1503,7 @@ function Expand-DFXdgPath {
 }
 
 # ---- Private/Get-DFCachedCommandOutput.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFCachedCommandOutput {
     <#
@@ -1621,7 +1621,7 @@ function Resolve-DFExecutableTarget {
 }
 
 # ---- Private/Get-DFConfiguredTheme.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFConfiguredTheme {
     <#
@@ -1692,7 +1692,7 @@ function Resolve-DFThemeFile {
 }
 
 # ---- Private/Get-DFCoreutilsShadowSet.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFCoreutilsShadowSet {
     <#
@@ -1762,7 +1762,7 @@ function Get-DFCoreutilsShadowSet {
 }
 
 # ---- Private/Get-DFGroupDb.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFGroupDb {
     <#
@@ -1794,7 +1794,7 @@ function Get-DFGroupDb {
 }
 
 # ---- Private/Get-DFRoleDb.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 $script:DFRoleDb = $null
 
@@ -1907,7 +1907,7 @@ function ConvertTo-DFRoleRecord {
 }
 
 # ---- Private/Get-DFToolSetupState.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFToolSetupStatePath {
     <#
@@ -1975,7 +1975,7 @@ function Clear-DFToolSetupState {
 }
 
 # ---- Private/Invoke-DFInstallCommand.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Expand-DFInstallArgv {
     <#
@@ -2053,7 +2053,7 @@ function Invoke-DFInstallCommand {
 }
 
 # ---- Private/Invoke-DFInstallPlan.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFInstallPlan {
     <#
@@ -2185,7 +2185,7 @@ function Invoke-DFInstallPlan {
 }
 
 # ---- Private/Invoke-DFPackageManagerPicker.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFPackageManagerPicker {
     <#
@@ -2400,7 +2400,7 @@ function Register-DFPrefillChord {
 }
 
 # ---- Private/Invoke-DFSessionActivation.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # What the current session decided, per requested tool: name -> DotForge.ToolStatus.
 # $null until Start-DFSession (or Register-DFTool) first runs. Get-DFToolStatus reads it.
@@ -2926,7 +2926,7 @@ function Add-DFInstallHint {
 }
 
 # ---- Private/Invoke-DFToolCompanion.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFToolCompanion {
     <#
@@ -3051,7 +3051,7 @@ function Invoke-DFToolCompanion {
 }
 
 # ---- Private/Invoke-DFToolSeed.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFToolSeed {
     <#
@@ -3097,7 +3097,7 @@ function Invoke-DFToolSeed {
 }
 
 # ---- Private/Invoke-DFTopoSort.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFTopoSort {
     <#
@@ -3177,7 +3177,7 @@ function Invoke-DFTopoSort {
 }
 
 # ---- Private/New-DFInstallPlan.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function New-DFInstallPlan {
     <#
@@ -3315,7 +3315,7 @@ function New-DFInstallPlan {
 }
 
 # ---- Private/New-DFToolPickerFunction.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function New-DFToolPickerFunction {
     <#
@@ -3379,7 +3379,7 @@ function New-DFToolPickerFunction {
 }
 
 # ---- Private/Register-DFToolAliases.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Register-DFToolAliases {
     <#
@@ -3441,7 +3441,7 @@ function Register-DFToolAliases {
 }
 
 # ---- Private/Register-DFToolSteps.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The per-session steps Invoke-DFSessionActivation runs: resolve role winners,
 # register each tool, and report coreutils conflicts.
@@ -3709,7 +3709,7 @@ DotForge: coreutils shadows $($conflicts.Count) DotForge command(s) before Power
 }
 
 # ---- Private/Resolve-DFRequestedTools.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Resolve-DFRequestedTools {
     <#
@@ -3824,7 +3824,7 @@ function Expand-DFGroupEntry {
 }
 
 # ---- Private/Resolve-DFThemeName.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Resolve-DFThemeName {
     <#
@@ -3861,7 +3861,7 @@ function Resolve-DFThemeName {
 }
 
 # ---- Private/Resolve-DFToolExecutable.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Resolve-DFToolExecutable {
     <#
@@ -3914,7 +3914,7 @@ function ConvertTo-DFToolExePathToken {
 }
 
 # ---- Private/Set-DFRoleEnv.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFRoleEnvState {
     <#
@@ -3998,7 +3998,7 @@ function Set-DFRoleEnv {
 }
 
 # ---- Private/Set-DFToolXdgConfig.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Set-DFToolXdgConfig {
     <#
@@ -4058,7 +4058,7 @@ function Set-DFToolXdgConfig {
 }
 
 # ---- Private/Start-DFModulePrewarm.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Start-DFModulePrewarm {
     <#
@@ -4154,7 +4154,7 @@ function Start-DFModulePrewarm {
 }
 
 # ---- Private/Test-DFToolAvailable.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 $script:DFToolAvailability = @{}
 
@@ -4278,7 +4278,7 @@ function Test-DFModuleOnPath {
 }
 
 # ---- Private/Update-DFPathFromRegistry.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFRegistryPath {
     <#
@@ -4318,7 +4318,7 @@ function Update-DFPathFromRegistry {
 }
 
 # ---- Private/Write-DFInstallPlan.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Write-DFInstallPlan {
     <#
@@ -4379,7 +4379,7 @@ function Write-DFInstallSummary {
 }
 
 # ---- Private/Write-DFRoleNotice.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Write-DFRoleNotice {
     <#
@@ -4434,7 +4434,7 @@ function Write-DFRoleNotice {
 }
 
 # ---- Public/Add-DFToPath.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Add-DFToPath {
     <#
@@ -4508,7 +4508,7 @@ function Add-DFToPath {
 }
 
 # ---- Public/Complete-DFToolSetup.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Complete-DFToolSetup {
     <#
@@ -4569,7 +4569,7 @@ function Complete-DFToolSetup {
 }
 
 # ---- Public/DFAliases.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Aliases for commands in the on-demand modules (DotForge.Catalog, DotForge.Helpers).
 # They are defined here, in the startup core, so they exist from the first prompt:
@@ -4605,7 +4605,7 @@ Set-Alias -Name top -Value Get-DFTopProcess
 Set-Alias -Name uuidgen -Value New-DFUuid
 
 # ---- Public/DFHelpers.Pager.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFWithPager {
     <#
@@ -4673,7 +4673,7 @@ function Invoke-DFWithPager {
 Set-Alias -Name pg -Value Invoke-DFWithPager
 
 # ---- Public/Find-DFTool.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Find-DFTool {
     <#
@@ -4739,7 +4739,7 @@ function Find-DFTool {
 }
 
 # ---- Public/Get-DFCommandConflict.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFCommandConflict {
     <#
@@ -4893,7 +4893,7 @@ function Get-DFCommandConflict {
 }
 
 # ---- Public/Get-DFConfig.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFConfig {
     <#
@@ -4942,7 +4942,7 @@ function Get-DFConfig {
 }
 
 # ---- Public/Get-DFRole.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFRole {
     <#
@@ -5037,7 +5037,7 @@ function Get-DFRole {
 }
 
 # ---- Public/Get-DFTool.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFTool {
     <#
@@ -5100,7 +5100,7 @@ function Get-DFTool {
 }
 
 # ---- Public/Get-DFToolGroup.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFToolGroup {
     <#
@@ -5141,7 +5141,7 @@ function Get-DFToolGroup {
 }
 
 # ---- Public/Get-DFToolStatus.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Get-DFToolStatus {
     <#
@@ -5195,7 +5195,7 @@ function Get-DFToolStatus {
 }
 
 # ---- Public/Install-DFTool.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Install-DFTool {
     <#
@@ -5324,7 +5324,7 @@ function Install-DFTool {
 }
 
 # ---- Public/Invoke-DFPicker.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFPicker {
     <#
@@ -5463,7 +5463,7 @@ function Invoke-DFPicker {
 }
 
 # ---- Public/Invoke-DFToolSetup.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Invoke-DFToolSetup {
     <#
@@ -5519,7 +5519,7 @@ function Invoke-DFToolSetup {
 }
 
 # ---- Public/New-DFDirectory.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function New-DFDirectory {
     <#
@@ -5557,7 +5557,7 @@ function New-DFDirectory {
 }
 
 # ---- Public/New-DFShim.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function New-DFShim {
     <#
@@ -5712,7 +5712,7 @@ function New-DFShim {
 }
 
 # ---- Public/Register-DFTool.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Register-DFTool {
     <#
@@ -5803,7 +5803,7 @@ function Register-DFTool {
 }
 
 # ---- Public/Start-DFSession.ps1
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 function Start-DFSession {
     <#

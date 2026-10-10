@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Manual dev tool: measures the wall-clock cost of Start-DFSession on

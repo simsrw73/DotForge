@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Aliases for commands in the on-demand modules (DotForge.Catalog, DotForge.Helpers).
 # They are defined here, in the startup core, so they exist from the first prompt:

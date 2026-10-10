@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Every user-facing function must carry complete comment-based help: the
 # module's exported functions, and the global functions each Tools/*.ps1
 # companion defines (fco, wins, glow, ...). Sidecars are parsed, never run, so

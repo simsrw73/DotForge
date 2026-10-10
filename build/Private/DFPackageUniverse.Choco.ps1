@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Chocolatey's community OData feed (community.chocolatey.org/api/v2) was
 # live-tested directly on 2026-07-14 and again on 2026-07-15; several server

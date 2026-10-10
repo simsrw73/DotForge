@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Code probe for bat/honors-config-content:theme. Dispositive test that the

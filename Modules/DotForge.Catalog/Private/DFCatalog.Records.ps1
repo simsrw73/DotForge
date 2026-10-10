@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Constructors for the catalog record types: DotForge.ToolSourceInfo (one
 # catalog's view of a package), DotForge.ToolInfo (the merged, cross-catalog

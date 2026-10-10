@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Lazy-loaded, indexed tool-identity guide: canonical tool -> verified
 # per-catalog package ids, consulted by Resolve-DFCatalogQueryMerge as an

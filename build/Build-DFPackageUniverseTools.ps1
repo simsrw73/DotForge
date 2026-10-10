@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Phase C of the package-universe pipeline: tool merge (cluster flattening).

@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # DotForge standard profile
 # ─────────────────────────────────────────────────────────────────────────────
 # Typical single-developer setup: package manager preference, default-tool role

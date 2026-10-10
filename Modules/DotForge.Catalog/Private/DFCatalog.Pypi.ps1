@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # PyPI catalog provider (query-cache kind). PyPI has NO supported search API —
 # only exact-name lookups via the JSON API work, so multi-word keyword queries

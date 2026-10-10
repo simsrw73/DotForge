@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Runs the Pester suite the way "green" is defined in docs/TESTING.md, and fails when it isn't.

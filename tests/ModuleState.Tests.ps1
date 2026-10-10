@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Module files share one script scope when DotForge is imported, so two files
 # initializing the same $script: variable at load time silently clobber each
 # other (tests that dot-source files one at a time never see it).

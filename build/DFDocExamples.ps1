@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Shared logic for the documentation checks (tests/Docs.Examples.Tests.ps1 and
 # tests/Docs.Links.Tests.ps1). Author-time only: the module never loads this file.
 #

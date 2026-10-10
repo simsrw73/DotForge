@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # data/tool-registry.json holds every shipped tool record, already validated and
 # normalized, so startup doesn't re-check 45 JSON files. If this fails, a tool
 # record changed without regenerating it: run

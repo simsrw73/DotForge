@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 Set-StrictMode -Version Latest
 
 # Author-side conformance library. Dot-sourced by build/Test-DFToolConformance.ps1

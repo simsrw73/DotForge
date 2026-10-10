@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # StrictMode-safe readers for XML nodes (OData feeds: Chocolatey, PowerShell Gallery).
 

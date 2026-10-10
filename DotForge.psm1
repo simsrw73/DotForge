@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # The package catalog and the general helpers are separate modules in Modules/,
 # loaded by PowerShell on first use of one of their commands. Putting Modules/ on

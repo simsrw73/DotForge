@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # GitHub enrichment for trifle's -GitInfo: repo stats + latest release,
 # fetched via gh (authenticated, 5000 req/hr) when available, anonymous REST

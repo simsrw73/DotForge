@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # DotForge minimal profile
 # ─────────────────────────────────────────────────────────────────────────────
 # The simplest possible DotForge setup: import, initialize, register everything.

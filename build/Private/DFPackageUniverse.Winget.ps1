@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # winget-pkgs manifest layout (verified against the live repo, e.g.
 # manifests/m/Microsoft/VisualStudioCode/<version>/):

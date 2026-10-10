@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 
 # Phase C (tool merge) build helpers. Flattens Phase B clusters + singletons

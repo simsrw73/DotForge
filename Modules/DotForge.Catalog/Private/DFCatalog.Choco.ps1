@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Chocolatey community-repository provider (query-cache kind). The OData API is
 # slow and rate-limited, hence the extended 72h TTL set in DFCatalog.ps1.

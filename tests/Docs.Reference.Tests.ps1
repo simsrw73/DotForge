@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # docs/reference.md is generated from comment-based help. If this fails, a
 # function's help changed without regenerating the page: run
 #   ./build/Build-DFReferenceDocs.ps1

@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # crates.io catalog provider (query-cache kind). crates.io REQUIRES a
 # descriptive User-Agent — anonymous requests are rejected.

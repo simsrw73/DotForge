@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # "Release data": a JSON file that ships in data/, can be superseded by a newer
 # copy downloaded from the latest DotForge release into <XDG data>\dotforge\,

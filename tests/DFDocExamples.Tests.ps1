@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Unit tests for build/DFDocExamples.ps1, the logic behind the documentation checks.
 
 BeforeAll {

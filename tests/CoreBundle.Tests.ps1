@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # Bundle/DotForge.Core.ps1 is the startup core (Shared/, Private/, Public/) as one
 # file: dot-sourcing one file is ~0.3 s faster than 58. If this fails, a core
 # source changed without regenerating it: run

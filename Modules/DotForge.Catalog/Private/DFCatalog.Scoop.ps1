@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 
 # Scoop catalog provider (snapshot kind). Never shells out to scoop.exe —
 # buckets are locally cloned git repos of JSON manifests, so search reads them

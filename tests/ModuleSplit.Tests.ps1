@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 # The startup core and the on-demand modules (docs/superpowers/specs/2026-10-10-module-split-design.md).
 # These run a real Import-Module in a child pwsh: auto-loading only happens with real modules.
 

@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.2
 <#
 .SYNOPSIS
     Author-time tool-conformance harness. Reads build/conformance/*.jsonc probe
