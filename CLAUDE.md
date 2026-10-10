@@ -82,7 +82,8 @@ DotForge/
 - **The user's shell runs an installed DotForge, never this checkout.** Never link the checkout into a
   module folder (junction, symlink) or add it to `PSModulePath`. To try work in a real shell, publish a dev
   build to the local gallery: `./build/Publish-DFLocal.ps1` (version `<next patch>-dev<timestamp>`, built from
-  the tracked files including uncommitted edits). Publishing there needs no permission; installing it changes
+  the working tree: uncommitted edits and new files, never gitignored ones). `Start-DFSession` prints a
+  one-line notice when it runs a dev build, so a private test build is never mistaken for a release. Publishing there needs no permission; installing it changes
   the user's shell, so the user runs `./build/Publish-DFLocal.ps1 -Install` (or asks you to). Gallery releases
   still follow Releasing below. `LocalGallery` is `C:\Users\simsr\repos\Local_PSGallery`, registered for
   PSResourceGet; an old PowerShellGet 3.0 beta on this machine shadows PSResourceGet's command names, so

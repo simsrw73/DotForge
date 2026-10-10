@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e90f389feb61fec73a5b6cedb80b9e80c0e974160beb04804840444d43f23937
+# sources-sha256: 8b4a81673c29018ddf9dfffc6491cf1c9602bb7ae5b65de51434c2ce5f35d740
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -4391,6 +4391,37 @@ function Update-DFPathFromRegistry {
     }
 }
 
+# ---- Private/Write-DFDevBuildNotice.ps1
+#Requires -Version 7.2
+
+function Write-DFDevBuildNotice {
+    <#
+    .SYNOPSIS
+        Says, when a session starts, that this DotForge is a private developer build.
+    .DESCRIPTION
+        Dev builds come from build/Publish-DFLocal.ps1 (version <next patch>-dev<timestamp>,
+        installed from a local gallery). One line at session start keeps you from
+        forgetting you are running one. Gallery releases (stable or 'preview') and
+        DotForge run from source files (no module, as in tests) say nothing.
+    .PARAMETER Version
+        The module version. Default: the loaded DotForge module's.
+    .PARAMETER Prerelease
+        The prerelease label. Default: the loaded DotForge module's.
+    .PARAMETER Location
+        Where the module is installed. Default: the loaded DotForge module's folder.
+    .OUTPUTS
+        None. Writes one line to the host.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Version = $ExecutionContext.SessionState.Module.Version,
+        [string]$Prerelease = $ExecutionContext.SessionState.Module.PrivateData.PSData.Prerelease,
+        [string]$Location = $ExecutionContext.SessionState.Module.ModuleBase
+    )
+    if ($Prerelease -notlike 'dev*') { return }
+    Write-Host "DotForge $Version-$Prerelease`: developer build, not a Gallery release ($Location)" -ForegroundColor DarkYellow
+}
+
 # ---- Private/Write-DFInstallPlan.ps1
 #Requires -Version 7.2
 
@@ -5949,6 +5980,7 @@ function Start-DFSession {
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
 
+    Write-DFDevBuildNotice
     Set-DFSessionConfig -Config $Config
     Set-DFXdgEnvironment
 

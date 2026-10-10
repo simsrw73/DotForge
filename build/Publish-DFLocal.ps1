@@ -6,8 +6,8 @@
     Your shell runs an installed DotForge, never this checkout. To try a change
     there without a release, publish a dev build here and install it.
 
-    Copies the tracked files (with their uncommitted edits; untracked files are
-    left out and listed) to a staging folder, stamps a version that sorts above
+    Copies the working tree (tracked files with their uncommitted edits, plus
+    new files git doesn't ignore, which are listed) to a staging folder, stamps a version that sorts above
     the last release (the next patch, prerelease 'dev' + a timestamp, e.g.
     0.7.1-dev20261010183000), rebuilds the core bundle there, and publishes it
     to -Repository. -Install then installs that exact build for the current
@@ -41,8 +41,9 @@ if (-not (& "$psrg\Get-PSResourceRepository" -Name $Repository -ErrorAction Igno
     throw "Repository '$Repository' isn't registered for PSResourceGet. Register it with: Register-PSResourceRepository -Name $Repository -Uri <folder> -Trusted"
 }
 
+# New files are part of the work being tried, so they go in; gitignored ones never do.
 $untracked = @(git -C $repo ls-files --others --exclude-standard)
-if ($untracked) { Write-Warning "Not included (untracked, add them to git first): $($untracked -join ', ')" }
+if ($untracked) { "Including new files not yet in git: $($untracked -join ', ')" }
 
 $manifest = Import-PowerShellDataFile (Join-Path $repo 'DotForge.psd1')
 $base = [version]$manifest.ModuleVersion
@@ -53,7 +54,7 @@ $prerelease = 'dev' + (Get-Date -Format 'yyyyMMddHHmmss')
 $stage = Join-Path ([IO.Path]::GetTempPath()) "dotforge-local-$(Get-Random)"
 $export = Join-Path $stage 'DotForge'
 try {
-    foreach ($file in @(git -C $repo ls-files)) {
+    foreach ($file in @(git -C $repo ls-files) + $untracked) {
         $source = Join-Path $repo $file
         if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { continue }   # deleted in the working tree
         $target = Join-Path $export $file

@@ -60,6 +60,7 @@ function Start-DFSession {
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
 
+    Write-DFDevBuildNotice
     Set-DFSessionConfig -Config $Config
     Set-DFXdgEnvironment
 

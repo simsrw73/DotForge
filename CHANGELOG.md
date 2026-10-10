@@ -4,6 +4,12 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **A notice when you run a developer build:** `Start-DFSession` prints one line naming the version
+  and where it's installed when DotForge is a dev build from `build/Publish-DFLocal.ps1`
+  (`<version>-dev<timestamp>`). Gallery releases print nothing.
+
 ### Fixed
 
 - **Pickers that take a path (eza's file picker) failed every time:** the generated function lost its
