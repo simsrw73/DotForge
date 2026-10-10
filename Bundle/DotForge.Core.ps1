@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e7cc708688f913e825acc3ae6543aec7d7a654b600416c2203c925fb04f47603
+# sources-sha256: 0673adf5839bca32775cbb781d923a3073963f59100c9185a2446ab8ac953491
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.0
@@ -2470,8 +2470,7 @@ function Invoke-DFSessionActivation {
     # excluded without having been requested.
     $groups = Get-DFGroupDb
     $excluded = @(foreach ($excludeEntry in @(Get-DFConfig ExcludeTools)) {
-        if (-not $excludeEntry) { continue }
-        if ($excludeEntry.StartsWith('+')) { $groupName = $excludeEntry.Substring(1); if ($groups.Contains($groupName)) { $groups[$groupName].Tools } } else { $excludeEntry }
+        if ($excludeEntry) { Expand-DFGroupEntry -Entry $excludeEntry -GroupDb $groups }
     })
     $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy -Excluded $excluded @pathArgs
     $edges = $requirements.Edges
@@ -3646,19 +3645,19 @@ function Resolve-DFRequestedTools {
     # Expands one list entry to canonical tool names, warning about unknowns.
     $expand = {
         param([string]$Entry, [string]$Where)
-        if ($Entry.StartsWith('+')) {
-            $g = $Entry.Substring(1)
-            if (-not $GroupDb.Contains($g)) {
-                $s = Get-DFFieldSuggestion -Name $g -Known $groupNames
-                Write-Warning "DotForge: $Where names unknown group '$Entry'$(if ($s) { " — did you mean '+$s'?" }). Run Get-DFToolGroup to list groups."
-                return
-            }
-            foreach ($m in $GroupDb[$g].Tools) { if ($canonical.ContainsKey($m)) { $canonical[$m] } }
+        $isGroup = $Entry.StartsWith('+')
+        if ($isGroup -and -not $GroupDb.Contains($Entry.Substring(1))) {
+            $s = Get-DFFieldSuggestion -Name $Entry.Substring(1) -Known $groupNames
+            Write-Warning "DotForge: $Where names unknown group '$Entry'$(if ($s) { " — did you mean '+$s'?" }). Run Get-DFToolGroup to list groups."
             return
         }
-        if ($canonical.ContainsKey($Entry)) { return $canonical[$Entry] }
-        $s = Get-DFFieldSuggestion -Name $Entry -Known $KnownTools
-        Write-Warning "DotForge: $Where names unknown tool '$Entry'$(if ($s) { " — did you mean '$s'?" })."
+        foreach ($name in @(Expand-DFGroupEntry -Entry $Entry -GroupDb $GroupDb)) {
+            if ($canonical.ContainsKey($name)) { $canonical[$name] }
+            elseif (-not $isGroup) {
+                $s = Get-DFFieldSuggestion -Name $Entry -Known $KnownTools
+                Write-Warning "DotForge: $Where names unknown tool '$Entry'$(if ($s) { " — did you mean '$s'?" })."
+            }
+        }
     }
 
     $entries = [ordered]@{}   # canonical name -> entry
@@ -3686,6 +3685,31 @@ function Resolve-DFRequestedTools {
     }
 
     $entries.Values
+}
+
+function Expand-DFGroupEntry {
+    <#
+    .SYNOPSIS
+        Expands one Tools/ExcludeTools entry: '+group' to its member names, a tool name to itself.
+    .DESCRIPTION
+        The one place a +group entry is expanded. An unknown group expands to
+        nothing; names are returned as the group lists them, unchecked.
+    .PARAMETER Entry
+        A tool name or '+group'.
+    .PARAMETER GroupDb
+        Get-DFGroupDb output.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][string]$Entry,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$GroupDb
+    )
+    if (-not $Entry.StartsWith('+')) { return $Entry }
+    $group = $Entry.Substring(1)
+    if ($GroupDb.Contains($group)) { $GroupDb[$group].Tools }
 }
 
 # ---- Private/Resolve-DFThemeName.ps1

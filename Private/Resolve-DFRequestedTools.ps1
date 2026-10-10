@@ -45,19 +45,19 @@ function Resolve-DFRequestedTools {
     # Expands one list entry to canonical tool names, warning about unknowns.
     $expand = {
         param([string]$Entry, [string]$Where)
-        if ($Entry.StartsWith('+')) {
-            $g = $Entry.Substring(1)
-            if (-not $GroupDb.Contains($g)) {
-                $s = Get-DFFieldSuggestion -Name $g -Known $groupNames
-                Write-Warning "DotForge: $Where names unknown group '$Entry'$(if ($s) { " — did you mean '+$s'?" }). Run Get-DFToolGroup to list groups."
-                return
-            }
-            foreach ($m in $GroupDb[$g].Tools) { if ($canonical.ContainsKey($m)) { $canonical[$m] } }
+        $isGroup = $Entry.StartsWith('+')
+        if ($isGroup -and -not $GroupDb.Contains($Entry.Substring(1))) {
+            $s = Get-DFFieldSuggestion -Name $Entry.Substring(1) -Known $groupNames
+            Write-Warning "DotForge: $Where names unknown group '$Entry'$(if ($s) { " — did you mean '+$s'?" }). Run Get-DFToolGroup to list groups."
             return
         }
-        if ($canonical.ContainsKey($Entry)) { return $canonical[$Entry] }
-        $s = Get-DFFieldSuggestion -Name $Entry -Known $KnownTools
-        Write-Warning "DotForge: $Where names unknown tool '$Entry'$(if ($s) { " — did you mean '$s'?" })."
+        foreach ($name in @(Expand-DFGroupEntry -Entry $Entry -GroupDb $GroupDb)) {
+            if ($canonical.ContainsKey($name)) { $canonical[$name] }
+            elseif (-not $isGroup) {
+                $s = Get-DFFieldSuggestion -Name $Entry -Known $KnownTools
+                Write-Warning "DotForge: $Where names unknown tool '$Entry'$(if ($s) { " — did you mean '$s'?" })."
+            }
+        }
     }
 
     $entries = [ordered]@{}   # canonical name -> entry
@@ -85,4 +85,29 @@ function Resolve-DFRequestedTools {
     }
 
     $entries.Values
+}
+
+function Expand-DFGroupEntry {
+    <#
+    .SYNOPSIS
+        Expands one Tools/ExcludeTools entry: '+group' to its member names, a tool name to itself.
+    .DESCRIPTION
+        The one place a +group entry is expanded. An unknown group expands to
+        nothing; names are returned as the group lists them, unchecked.
+    .PARAMETER Entry
+        A tool name or '+group'.
+    .PARAMETER GroupDb
+        Get-DFGroupDb output.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)][string]$Entry,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$GroupDb
+    )
+    if (-not $Entry.StartsWith('+')) { return $Entry }
+    $group = $Entry.Substring(1)
+    if ($GroupDb.Contains($group)) { $GroupDb[$group].Tools }
 }

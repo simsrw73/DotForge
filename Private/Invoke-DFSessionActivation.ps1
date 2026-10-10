@@ -68,8 +68,7 @@ function Invoke-DFSessionActivation {
     # excluded without having been requested.
     $groups = Get-DFGroupDb
     $excluded = @(foreach ($excludeEntry in @(Get-DFConfig ExcludeTools)) {
-        if (-not $excludeEntry) { continue }
-        if ($excludeEntry.StartsWith('+')) { $groupName = $excludeEntry.Substring(1); if ($groups.Contains($groupName)) { $groups[$groupName].Tools } } else { $excludeEntry }
+        if ($excludeEntry) { Expand-DFGroupEntry -Entry $excludeEntry -GroupDb $groups }
     })
     $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy -Excluded $excluded @pathArgs
     $edges = $requirements.Edges
