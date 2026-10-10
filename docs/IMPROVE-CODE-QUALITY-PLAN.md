@@ -14,7 +14,7 @@ Started 2026-10-10 (the `/improve-code-quality` journey; an earlier, unadopted r
 ## Phase Status
 | Phase | Skill | Status | Artifact | Date |
 |---|---|---|---|---|
-| 1 — Build the safety net | working-with-legacy-code | pending | TESTING.md + TODO.md (GATE) | |
+| 1 — Build the safety net | working-with-legacy-code | done | TESTING.md + TODO.md (GATE) | 2026-10-10 |
 | 2 — Make the code readable | clean-code | pending | TODO.md | |
 | 3 — Apply named refactorings | refactoring-patterns | pending | TODO.md | |
 | 4 — Reduce complexity | software-design-philosophy | pending | TODO.md (Architecture Backlog) | |
@@ -32,6 +32,10 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 |---|---|---|---|
 | 2026-10-10 | Intake | Scope: Phases 1–3, 6, 7 in full; 4 folded into the existing Architecture Backlog; 5 light; 8, 9 and the optional phase skipped. | The user accepted the recommended scope. DotForge is tested already, has no server load and no database writes. |
 | 2026-10-10 | Intake | Artifacts: this tracker and `docs/TESTING.md` only. Debt, smells and reliability findings go to `TODO.md` (one backlog), not `TECH-DEBT.md` / `ARCHITECTURE.md` / `RELIABILITY.md`. | The user had just consolidated all audit documents into `TODO.md`; four new documents would split the backlog again. |
+| 2026-10-10 | 1 | Bugs found while characterizing are pinned as they are and logged, never silently fixed. | Callers may depend on the quirk; a fix is its own deliberate change. (None found in Phase 1.) |
+| 2026-10-10 | 1 | Pinned the three high-priority gaps (tool-record caches, invalid-record activation, git-config guard) before Phase 2; medium/low gaps stay in TESTING.md's backlog until a phase touches them. | Later phases may not touch code in a Gaps column. |
+| 2026-10-10 | 1 | The git-config guard lives in `Set-DFTestXdg`/`Restore-DFTestXdg`, not at `TestSupport.ps1` load. | Setting it at load would leak a throwaway git config into an interactive shell that runs `Invoke-Pester`. |
 
 ## Next Actions
-- [ ] Enter Phase 1: record the safety net and its gaps for the starting module (Claude, 2026-10-10)
+- [x] Phase 1: safety net mapped (92–98% coverage of the starting module), three high gaps pinned and mutation-checked (Claude, 2026-10-10)
+- [ ] Enter Phase 2 (clean-code) on the starting module (Claude)

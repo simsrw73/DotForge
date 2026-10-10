@@ -69,6 +69,8 @@
 - [ ] **trifle `-Readme`: gate the npm tier on repo match** — the npm registry readme currently wins whenever the merged group contains an npm source, so name collisions surface the wrong readme (e.g. `trifle ripgrep -Readme` shows the unrelated npm `ripgrep` wrapper's readme instead of BurntSushi's). Recommended fix from the branch review: use the npm readme only when no GitHub repo resolves, or when the npm detail's `RepositoryUrl` matches the resolved repo; collisions then fall through to the GitHub readme tier.
 - [ ] **trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches sibling catalogs with the full dotted id (only scoop ids split on `/`), so the card misses cross-catalog versions and the installed overlay. Recommended fix: use the matched winget index row's `Name` as the cross-catalog sibling query (trailing-segment-after-dot is wrong — it would yield `MSVC`). Current behavior degrades to a correct single-source card.
 
+- [ ] **`TabCompletionHooks.Tests.ps1` prints errors without failing** — one test mocks `New-DFDirectory` to a no-op, then lets `Tools/carapace.ps1` write its bundled specs into the never-created folder, so `Set-Content` errors scroll past on every run. Let the folder be created (it's under `$TestDrive`) or stub the spec deployment. Found in improve-code-quality Phase 1 (2026-10-10). Test-only.
+
 ## Priority 2 — Architecture Backlog (from the audits)
 
 Consolidated 2026-10-10 from `arch-imp-audit-(claude).md`, `arch-imp-audit.md`, `audit.thermonuclear.md`, `audit.{claude,codex,gemini}.md` and `ToolAcquisitionSpec-Audit.md`, which were then deleted (read them at commit `c1d172a`). Everything else in them was done or resolved. Idle activation is under Features.
