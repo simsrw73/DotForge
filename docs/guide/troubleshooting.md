@@ -21,9 +21,8 @@ Get-DFEnv XDG_CONFIG_HOME
 
 <!-- output: varies -->
 ```text
-DotForge: Environment ready. Package managers: scoop, winget, choco
 PowerShell 7.6.6
-DotForge 0.6.0
+DotForge 0.7.0
 fzf: True
 XDG_CONFIG_HOME=C:\Users\you\.config
 ```

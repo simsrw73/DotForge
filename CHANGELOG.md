@@ -4,6 +4,8 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+## [0.7.0-preview] - 2026-10-10
+
 > **Breaking: your profile needs one change.** DotForge now configures only the tools you ask for,
 > and never installs anything while it loads. Replace `Initialize-DFEnvironment` and
 > `Register-DFTool -All` with one call, and pass your settings to it:

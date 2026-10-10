@@ -45,9 +45,11 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('+core', '+prompt') }
 ```
 
+When every requested tool is installed, it prints nothing. Otherwise it ends with a notice like this:
+
 <!-- output: varies -->
 ```text
-DotForge: Environment ready. Package managers: scoop, winget, choco
+WARNING: DotForge: 2 requested tools aren't installed: bat, eza. Run Install-DFTool -Missing to install them.
 ```
 
 What each line does:
