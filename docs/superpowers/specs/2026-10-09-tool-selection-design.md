@@ -339,6 +339,17 @@ Package managers are never detected at startup. Only `Install-DFTool` and the pa
    - final startup measurement
    - then decide on the idle-activation follow-up
 
+**Slice 4 result (2026-10-10).** The profile, examples and guides were migrated in slices 1–3. Groups reviewed with the user: the language toolchains moved out of `+dev-tools` into `+javascript-dev`, `+python-dev` and `+rust-dev` (the `-dev` suffix because `python` is a tool name). The user's profile dropped posh-git (starship shows git status; carapace completes git) and Terminal-Icons (eza draws its own icons). Startup, the user's config, `pwsh -NoProfile`, median of 7:
+
+| Step | Import | Session | Total |
+| --- | --- | --- | --- |
+| Before slice 4 (45 tools) | 0.68 s | 2.52 s | 3.22 s |
+| File probes for "is it installed?" | 0.67 s | 1.99 s | 2.67 s |
+| Pre-validated tool records (`data/tool-registry.json`) | 0.68 s | 1.76 s | 2.44 s |
+| Final config (no posh-git, no Terminal-Icons; 47 tools) | 0.74 s | 1.52 s | **2.25 s** |
+
+Idle activation (deferring carapace's ~0.3 s until after the first prompt) was not needed for this profile and is left as a TODO.
+
 ## Open items for review
 
 - **The draft group list (section 2):** names and members are the user's call.
