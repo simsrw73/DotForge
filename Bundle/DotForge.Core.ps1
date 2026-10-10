@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: c3e23317b6a947bf11495a8167746737f11584d760b851b341aa48b2bb73cb41
+# sources-sha256: 5906cbfa695171cc244ea369355a1b18441304d87e34463d2a72a6cda527d779
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.0
@@ -2451,7 +2451,7 @@ function Invoke-DFSessionActivation {
     $toolsDir = ConvertTo-DFPath $(if ($ToolsPath) { $ToolsPath } else { Join-Path $PSScriptRoot '../Tools' })
 
     foreach ($e in $Request) {
-        if ($e.Excluded -and -not ($status.Contains($e.Name) -and $status[$e.Name].State -eq 'Active')) {
+        if ($e.Excluded -and -not (Test-DFToolActive $e.Name)) {
             $status[$e.Name] = New-DFToolStatus -Name $e.Name -State Excluded -RequestedBy $e.RequestedBy -Detail 'excluded by ExcludeTools'
         }
     }
@@ -2499,13 +2499,13 @@ function Invoke-DFSessionActivation {
     $skipSetup = @(Get-DFConfig SkipSetup)
 
     $prewarmModules = @(foreach ($t in $tools) {
-        if ($t.type -eq 'module' -and $t.prewarm -and -not ($status.Contains($t.name) -and $status[$t.name].State -eq 'Active') -and
+        if ($t.type -eq 'module' -and $t.prewarm -and -not (Test-DFToolActive $t.name) -and
             (Test-DFToolAvailable -Executable $t.executable -Type 'module')) { $t.executable }
     })
     $prewarmJob = if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
     try {
         foreach ($t in $tools) {
-            if ($status.Contains($t.name) -and $status[$t.name].State -eq 'Active' -and $t.name -notin $Reactivate) { continue }
+            if ((Test-DFToolActive $t.name) -and $t.name -notin $Reactivate) { continue }
             if ($blocked.ContainsKey($t.name)) {
                 $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail $blocked[$t.name]
                 continue
@@ -2514,7 +2514,7 @@ function Invoke-DFSessionActivation {
             # activate, neither can this one. (On a requires cycle, the tool not
             # yet reached has no status, so the cycle doesn't block itself.)
             $unmet = @(foreach ($req in @($t.requires)) {
-                if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and $status[$req].State -ne 'Active') { $req }
+                if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
             })
             if ($unmet) {
                 $status[$t.name] = New-DFToolStatus -Name $t.name -State Missing -RequestedBy $by[$t.name] -Detail "requires $($unmet -join ', '), which is not available"
@@ -2553,7 +2553,7 @@ function Invoke-DFSessionActivation {
     # Install hints are built later, when the status is read (Add-DFInstallHint).
     $script:DFSessionToolsPath = $ToolsPath
 
-    foreach ($t in $tools) { if ($status[$t.name].State -eq 'Active') { $t } }
+    foreach ($t in $tools) { if (Test-DFToolActive $t.name) { $t } }
 }
 
 function New-DFToolStatus {
@@ -2586,6 +2586,22 @@ function New-DFToolStatus {
         Roles       = [string[]]@()
         Detail      = $Detail
     }
+}
+
+function Test-DFToolActive {
+    <#
+    .SYNOPSIS
+        True when the tool is Active in this session.
+    .PARAMETER Name
+        Tool name.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Name)
+    [bool]($script:DFSessionStatus -and $script:DFSessionStatus.Contains($Name) -and
+        $script:DFSessionStatus[$Name].State -eq 'Active')
 }
 
 function Set-DFXdgEnvironment {
