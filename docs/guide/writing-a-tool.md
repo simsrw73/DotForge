@@ -122,7 +122,9 @@ A tool whose record has `installs` is a package manager: `Install-DFTool` uses i
 | `reactivate` | Re-run this manager's companion after it installs something, so a new runtime reaches `PATH` in the same shell (fnm, mise). |
 | `feeds` | How to list and add third-party feeds (buckets, marketplaces) and how a feed-qualified id is written. |
 
-A tool with no `packages` that `requires` another tool is installed by installing that tool: npm comes with node.
+A manager that installs from more than one source gives `installs` as a list of blocks, one per `from`. uv installs PyPI tools (`uv tool install`) and Python itself (`uv python install --default`).
+
+A tool with no `packages` that `requires` another tool is installed by installing that tool: npm comes with node, and pip comes with python.
 
 ## Companion scripts
 

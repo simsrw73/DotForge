@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "taxonomy": {
     "function": [
       "search",
@@ -1042,6 +1042,38 @@
       "interface": "cli",
       "popularity": 0
     },
+    "pip": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "relatedTo": [
+        "pipx",
+        "uv",
+        "python"
+      ],
+      "popularity": 3
+    },
+    "pipx": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "pipx"
+      },
+      "relatedTo": [
+        "pip",
+        "uv"
+      ],
+      "popularity": 2
+    },
     "pnpm": {
       "function": [
         "package-manager"
@@ -1156,6 +1188,42 @@
         "psgallery": "Microsoft.PowerShell.PSResourceGet"
       },
       "popularity": 2
+    },
+    "pymanager": {
+      "function": [
+        "package-manager"
+      ],
+      "worksWith": [
+        "binaries"
+      ],
+      "interface": "cli",
+      "ids": {
+        "winget": "Python.PythonInstallManager"
+      },
+      "relatedTo": [
+        "python",
+        "uv"
+      ],
+      "popularity": 2
+    },
+    "python": {
+      "function": [
+        "language-runtime"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "python",
+        "winget": "Python.Python.3.13"
+      },
+      "relatedTo": [
+        "pip",
+        "uv",
+        "pymanager"
+      ],
+      "popularity": 3
     },
     "rclone": {
       "function": [

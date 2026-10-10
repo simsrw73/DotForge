@@ -1,0 +1,11 @@
+{
+  "name": "pip",
+  "description": "Python package installer (installs into the user site-packages)",
+  "tags": ["python", "dev", "package-manager"],
+  "executable": "pip.exe",
+  "roles": { "python-package-manager": { "priority": 10 } },
+  "requires": ["python"],
+  "installs": { "from": "pypi", "command": ["pip", "install", "--user", "{id}"], "batch": true },
+  "aliases": {},
+  "picker": null
+}

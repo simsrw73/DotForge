@@ -139,7 +139,7 @@ function Invoke-DFCatalogPypiDetailFetch {
         -Tags @(([string]$info.keywords) -split '[,\s]+' -ne '') `
         -RepositoryUrl $repo `
         -DocsUrl $docsUrl `
-        -InstallHint "pipx install $($info.name)" `
+        -InstallHint (Get-DFInstallHint -Source pypi -Id $info.name) `
         -Extra $extra
 }
 

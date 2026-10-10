@@ -99,3 +99,51 @@ Describe 'Resolve-DFInstallSource' {
         (Resolve-DFInstallSource -Tool $db.bare -ToolDb $db -IsAvailable $script:All).Gap | Should -Match 'no package'
     }
 }
+
+Describe 'managers with several installs blocks' {
+    BeforeEach {
+        Set-DFTestConfig $null
+        $script:Db = @{}
+        foreach ($r in @(
+            (Rec '{ "name": "uv", "executable": "uv.exe", "roles": { "version-manager": {}, "python-package-manager": { "priority": 30 } }, "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","--default","{id}"] } ] }'),
+            (Rec '{ "name": "ruff", "executable": "ruff.exe", "packages": { "pypi": "ruff" } }'),
+            (Rec '{ "name": "python", "executable": "python.exe", "packages": { "uv": "3" } }')
+        )) { $script:Db[$r.name] = $r }
+    }
+    AfterEach { Set-DFTestConfig $null }
+    It 'picks the block that installs from the chosen source' {
+        $r = Resolve-DFInstallSource -Tool $script:Db.ruff -ToolDb $script:Db -IsAvailable { param($m) $true }
+        $r.Manager.name | Should -Be 'uv'
+        $r.Block.command | Should -Be @('uv', 'tool', 'install', '{id}')
+        (Resolve-DFInstallSource -Tool $script:Db.python -ToolDb $script:Db -IsAvailable { param($m) $true }).Block.from | Should -Be 'uv'
+    }
+    It 'lists every block''s source in the built-in order' {
+        Get-DFBuiltInSourceOrder -ToolDb $script:Db | Should -Contain 'pypi'
+        Get-DFBuiltInSourceOrder -ToolDb $script:Db | Should -Contain 'uv'
+    }
+}
+
+Describe 'shipped Python managers (install spec, Python tree)' {
+    BeforeAll { $script:Ship = Import-DFToolDb -ToolsPath "$PSScriptRoot/../Tools" -Force }
+    BeforeEach { Set-DFTestConfig $null }
+    It 'serves PyPI with uv, then pipx, then pip' {
+        (Get-DFSourceManager -Source pypi -ToolDb $script:Ship).name | Should -Be @('uv', 'pipx', 'pip')
+    }
+    It 'installs python through pymanager first, then uv, and checks it after the version managers' {
+        $script:Ship.python.install.prefer[0..1] | Should -Be @('pymanager', 'uv')
+        $script:Ship.python.after | Should -Contain 'role:version-manager'
+        $script:Ship.python.roles.PSObject.Properties.Name | Should -Contain 'python-runtime'
+        $script:Ship.pymanager.roles.PSObject.Properties.Name | Should -Contain 'version-manager'
+    }
+    It 'finds pipx whether scoop installed it (pipx.cmd) or pip did (pipx.exe)' {
+        $script:Ship.pipx.executable | Should -Be 'pipx'
+    }
+    It 'makes pip come with python, and pipx need a Python runtime' {
+        $script:Ship.pip.requires | Should -Contain 'python'
+        $script:Ship.pipx.requires | Should -Contain 'role:python-runtime'
+    }
+    It 'gives a PyPI catalog hint from the top PyPI manager' {
+        Mock Import-DFToolDb { $script:Ship }
+        Get-DFInstallHint -Source pypi -Id ruff | Should -Be 'uv tool install ruff'
+    }
+}

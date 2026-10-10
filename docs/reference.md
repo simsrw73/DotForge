@@ -96,11 +96,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -2208,6 +2208,24 @@ Draws the shell prompt. Only one prompt engine may own the prompt function.
 | Kind | single, exclusive |
 | Members | [oh-my-posh](#oh-my-posh-tool), [starship](#starship-tool) |
 
+### python-package-manager role
+
+Installs packages from PyPI. Install-DFTool uses the Defaults choice, else the highest priority (uv, pipx, pip).
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [pip](#pip-tool), [pipx](#pipx-tool), [uv](#uv-tool) |
+
+### python-runtime role
+
+Provides a Python runtime on PATH. Tools that need one declare requires: ["role:python-runtime"].
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [python](#python-tool) |
+
 ### rust-package-manager role
 
 Installs crates from crates.io.
@@ -2251,7 +2269,7 @@ Installs and switches language runtime versions.
 | | |
 | --- | --- |
 | Kind | category |
-| Members | [fnm](#fnm-tool), [mise](#mise-tool), [rustup](#rustup-tool), [uv](#uv-tool) |
+| Members | [fnm](#fnm-tool), [mise](#mise-tool), [pymanager](#pymanager-tool), [rustup](#rustup-tool), [uv](#uv-tool) |
 
 ## Tool records
 
@@ -2718,6 +2736,29 @@ Feature-rich terminal pager with headers, columns and sections
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `ov --quit-if-one-screen` |
 
+### pip tool
+
+Python package installer (installs into the user site-packages)
+
+| | |
+| --- | --- |
+| Detected by | `pip.exe` |
+| Tags | `python`, `dev`, `package-manager` |
+| Requires | `python` |
+| Roles | [`python-package-manager`](#python-package-manager-role) |
+
+### pipx tool
+
+Installs Python applications, each in its own isolated environment
+
+| | |
+| --- | --- |
+| Detected by | `pipx` |
+| Tags | `python`, `dev`, `package-manager` |
+| Install ids | scoop: `pipx`<br>pypi: `pipx` |
+| Requires | `role:python-runtime` |
+| Roles | [`python-package-manager`](#python-package-manager-role) |
+
 ### pnpm tool
 
 Fast, disk-efficient JavaScript package manager
@@ -2805,6 +2846,29 @@ PowerShell module installer (PSResourceGet; installs from the PowerShell Gallery
 | Tags | `powershell`, `package-manager` |
 | Roles | [`powershell-package-manager`](#powershell-package-manager-role) |
 
+### pymanager tool
+
+Python install manager (py): installs and launches Python runtimes
+
+| | |
+| --- | --- |
+| Detected by | `pymanager.exe` |
+| Tags | `python`, `dev`, `version-manager` |
+| Install ids | winget: `Python.PythonInstallManager` |
+| Roles | [`version-manager`](#version-manager-role) |
+
+### python tool
+
+Python runtime
+
+| | |
+| --- | --- |
+| Detected by | `python.exe` |
+| Tags | `python`, `dev`, `runtime` |
+| Install ids | pymanager: `3`<br>uv: `3`<br>mise: `python@3`<br>scoop: `python`<br>winget: `Python.Python.3.13` |
+| Registers after | `role:version-manager` |
+| Roles | [`python-runtime`](#python-runtime-role) |
+
 ### ripgrep tool
 
 Recursively search directories for a regex pattern, respecting gitignore
@@ -2886,7 +2950,7 @@ Extremely fast Python package and project manager
 | XDG method | `env` |
 | XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv`<br>`UV_DATA_DIR` = `${XDG_DATA_HOME}/uv` |
 | Creates | `${XDG_CACHE_HOME}/uv`<br>`${XDG_DATA_HOME}/uv` |
-| Roles | [`version-manager`](#version-manager-role) |
+| Roles | [`python-package-manager`](#python-package-manager-role), [`version-manager`](#version-manager-role) |
 
 ### vcpkg tool
 

@@ -57,6 +57,7 @@ function Invoke-DFInstallPlan {
         $reactivate = [System.Collections.Generic.List[string]]::new()
         foreach ($batch in $stage.Batches) {
             $m = $batch.Manager
+            $blk = $batch.Block
             $ready = @(foreach ($it in $batch.Items) {
                 $d = & $badDep $it
                 if ($d) { & $set $it.Tool 'Skipped' (& $skipFor $d) } else { $it }
@@ -68,34 +69,34 @@ function Invoke-DFInstallPlan {
                 continue
             }
             # Feeds first, each once, and only those the manager doesn't list yet.
-            if ($m.installs.feeds) {
+            if ($blk.feeds) {
                 $feeds = @($ready | Where-Object { $_.Ref.Feed } | ForEach-Object { $_.Ref.Feed } | Sort-Object name -Unique)
                 if ($feeds) {
-                    $listed = (Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $m.installs.feeds.list -Values @{})).Output
+                    $listed = (Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
                     $names = @($listed -split "`r?`n" | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $_ })
                     foreach ($f in $feeds | Where-Object { $_.name -notin $names }) {
-                        $r = Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $m.installs.feeds.add -Values @{ name = $f.name; url = $f.url })
+                        $r = Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
                         if ($r.ExitCode -ne 0) { Write-Warning "DotForge: could not add $($m.name) feed '$($f.name)' ($($f.url))." }
                     }
                 }
             }
             $idOf = {
                 param($it)
-                if ($it.Ref.Feed -and $m.installs.feeds) { $m.installs.feeds.id.Replace('{feed}', $it.Ref.Feed.name).Replace('{id}', $it.Ref.Id) }
+                if ($it.Ref.Feed -and $blk.feeds) { $blk.feeds.id.Replace('{feed}', $it.Ref.Feed.name).Replace('{id}', $it.Ref.Id) }
                 else { $it.Ref.Id }
             }
             # One call for the whole batch when the manager supports it, else one per tool.
             # (A List, not `if { ,$ready }`: statement output would unroll the wrapper.)
             $groups = [System.Collections.Generic.List[object]]::new()
-            if ($m.installs.batch) { $groups.Add($ready) } else { foreach ($it in $ready) { $groups.Add(@($it)) } }
+            if ($blk.batch) { $groups.Add($ready) } else { foreach ($it in $ready) { $groups.Add(@($it)) } }
             foreach ($group in $groups) {
                 $ids = [string[]]@($group | ForEach-Object { & $idOf $_ })
-                $r = if ($m.installs.function) {
+                $r = if ($blk.function) {
                     $fnArgs = @{}
-                    foreach ($p in $m.installs.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
-                    Invoke-DFInstallCommand -Manager $m -Function $m.installs.function -Arguments $fnArgs
+                    foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
+                    Invoke-DFInstallCommand -Manager $m -Function $blk.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $m.installs.command -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
+                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.command -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
                 }
                 foreach ($it in $group) {
                     $t = $ToolDb[$it.Tool]
@@ -107,7 +108,7 @@ function Invoke-DFInstallPlan {
                         & $set $it.Tool 'Failed' "$($m.name) failed: $tail"
                     }
                 }
-                if ($r.ExitCode -eq 0 -and $m.installs.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
+                if ($r.ExitCode -eq 0 -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
             }
         }
         foreach ($p in $stage.Provided) {

@@ -160,7 +160,9 @@ Each `Tools/*.json` must have at minimum:
   an id or `{ id, feed: { name, url } }` (a third-party scoop bucket). Read values only through
   `Get-DFPackageRef`. `install.prefer` (optional) is the tool's own source preference.
 - `installs` (optional): makes the tool a package manager — `from` (its source), `command` (argv,
-  `{id}`) or `function`/`args`, `batch`, `elevate`, `reactivate`, `feeds`. Core never names a manager.
+  `{id}`) or `function`/`args`, `batch`, `elevate`, `reactivate`, `feeds`. A list of blocks when it
+  installs from several sources (uv); records always normalize to a list, read one with
+  `Get-DFInstallBlock -Manager -Source`. Core never names a manager.
 - `xdg.method`: one of `default | env | wrapper | manual` (seed a default config file with `setup.seed`, not an xdg method)
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session

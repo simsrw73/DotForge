@@ -140,9 +140,10 @@ function ConvertTo-DFToolRecord {
         Nested shapes are normalized too: xdg always has method, vars, dirs,
         instructions and compliance; setup, when present, has seed (an object
         mapping destination path template to a file under Tools/, or $null);
-        installs, when present, has from, command (string[] or $null),
-        function, args, batch, elevate and reactivate ($false by default) and
-        feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
+        installs, when present, is a list of blocks (a single object in the
+        JSON becomes a one-block list), each with from, command (string[] or
+        $null), function, args, batch, elevate and reactivate ($false by
+        default) and feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
         present, has prefer (string[]); each alias is
         { command; args[] } with a missing args meaning none; an object picker
         has every field, with preview '', preview_window 'right:60%',
@@ -233,28 +234,31 @@ function ConvertTo-DFToolRecord {
     $setup = & $get $Tool 'setup' $null
     if ($setup) { $setup = [pscustomobject]@{ seed = & $get $setup 'seed' $null } }
 
-    # A package manager's installs block (install spec section 1).
+    # A package manager's installs blocks (install spec section 1): one object,
+    # or a list when it installs from several sources (uv: PyPI tools and Python).
     $installs = & $get $Tool 'installs' $null
-    if ($installs) {
-        $feeds = & $get $installs 'feeds' $null
-        if ($feeds) {
-            $feeds = [pscustomobject]@{
-                list = [string[]]@(& $get $feeds 'list' @())
-                add  = [string[]]@(& $get $feeds 'add' @())
-                id   = & $get $feeds 'id' '{feed}/{id}'
+    if ($null -ne $installs) {
+        $installs = [object[]]@(foreach ($blk in @($installs)) {
+            $feeds = & $get $blk 'feeds' $null
+            if ($feeds) {
+                $feeds = [pscustomobject]@{
+                    list = [string[]]@(& $get $feeds 'list' @())
+                    add  = [string[]]@(& $get $feeds 'add' @())
+                    id   = & $get $feeds 'id' '{feed}/{id}'
+                }
             }
-        }
-        $command = & $get $installs 'command' $null
-        $installs = [pscustomobject]@{
-            from       = & $get $installs 'from' $null
-            command    = $(if ($null -ne $command) { [string[]]@($command) })
-            function   = & $get $installs 'function' $null
-            args       = & $get $installs 'args' $null
-            batch      = [bool](& $get $installs 'batch' $false)
-            elevate    = [bool](& $get $installs 'elevate' $false)
-            reactivate = [bool](& $get $installs 'reactivate' $false)
-            feeds      = $feeds
-        }
+            $command = & $get $blk 'command' $null
+            [pscustomobject]@{
+                from       = & $get $blk 'from' $null
+                command    = $(if ($null -ne $command) { [string[]]@($command) })
+                function   = & $get $blk 'function' $null
+                args       = & $get $blk 'args' $null
+                batch      = [bool](& $get $blk 'batch' $false)
+                elevate    = [bool](& $get $blk 'elevate' $false)
+                reactivate = [bool](& $get $blk 'reactivate' $false)
+                feeds      = $feeds
+            }
+        })
     }
     $install = & $get $Tool 'install' $null
     if ($install) { $install = [pscustomobject]@{ prefer = [string[]]@(& $get $install 'prefer' @()) } }

@@ -80,6 +80,8 @@
   "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." },
   "js-runtime":      { "kind": "category", "description": "Provides a JavaScript runtime on PATH (node, bun). Tools that need one declare requires: [\"role:js-runtime\"]." },
   "elevator":                   { "kind": "category", "description": "Runs a command with administrator rights. Install-DFTool runs a manager that needs admin (choco) through it." },
+  "python-runtime":             { "kind": "category", "description": "Provides a Python runtime on PATH. Tools that need one declare requires: [\"role:python-runtime\"]." },
+  "python-package-manager":     { "kind": "category", "description": "Installs packages from PyPI. Install-DFTool uses the Defaults choice, else the highest priority (uv, pipx, pip)." },
   "js-package-manager":         { "kind": "category", "description": "Installs packages from the npm registry. Install-DFTool uses the Defaults choice, else the highest priority." },
   "rust-package-manager":       { "kind": "category", "description": "Installs crates from crates.io." },
   "powershell-package-manager": { "kind": "category", "description": "Installs modules from the PowerShell Gallery." }

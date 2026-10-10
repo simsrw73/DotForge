@@ -40,6 +40,12 @@ All notable changes to DotForge are documented here.
   `-Force` also replaces an edited seed, after a confirm.
 - **`Start-DFSession` says how each missing tool would be installed** (`Get-DFToolStatus` detail),
   computed only when something is missing.
+- **Python tools install the same way.** New records `python` (the `python-runtime` role), `pymanager`
+  (Python's install manager), `pip` and `pipx`; uv joins `python-package-manager`. PyPI packages
+  install through uv (`uv tool install`), then pipx, then pip (`Defaults['python-package-manager']`
+  changes the order). python installs through pymanager or uv first, so a version manager you have
+  owns it; pip comes with python. A manager's `installs` can now be a list of blocks, one per
+  source (uv installs both PyPI tools and Python). `trifle`'s PyPI install hint uses uv.
 - **`node` and `bun` are the `js-runtime` members.** node installs through your version manager
   (fnm, mise) when you have one; npm comes with node. fnm and mise left `js-runtime`. `after` accepts
   `role:<name>`, so node is checked after any version manager has run.

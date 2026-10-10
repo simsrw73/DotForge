@@ -1,0 +1,12 @@
+{
+  "name": "python",
+  "description": "Python runtime",
+  "tags": ["python", "dev", "runtime"],
+  "executable": "python.exe",
+  "roles": { "python-runtime": { "priority": 20 } },
+  "after": ["role:version-manager"],
+  "packages": { "pymanager": "3", "uv": "3", "mise": "python@3", "scoop": "python", "winget": "Python.Python.3.13" },
+  "install": { "prefer": ["pymanager", "uv"] },
+  "aliases": {},
+  "picker": null
+}

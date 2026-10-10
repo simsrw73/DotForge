@@ -10,13 +10,16 @@ function Format-DFInstallCommand {
         The package id. Omitted: {0} stands in for it (a format string).
     .PARAMETER Feed
         A feed name; the id is then formed by installs.feeds.id.
+    .PARAMETER Source
+        Which installs block to use, for a manager with several. Default: the first.
     .OUTPUTS
         System.String.
     #>
     [CmdletBinding()]
     [OutputType([string])]
-    param([Parameter(Mandatory)][pscustomobject]$Manager, [string]$Id, [string]$Feed)
-    $i = $Manager.installs
+    param([Parameter(Mandatory)][pscustomobject]$Manager, [string]$Id, [string]$Feed, [string]$Source)
+    $i = Get-DFInstallBlock -Manager $Manager -Source $Source
+    if (-not $i) { return }
     $idText = if ($Id) { $Id } else { '{0}' }
     if ($Feed -and $i.feeds) { $idText = $i.feeds.id.Replace('{feed}', $Feed).Replace('{id}', $idText) }
     if ($i.function) {
@@ -48,5 +51,5 @@ function Get-DFInstallHint {
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Id, [string]$Feed)
     $m = Get-DFSourceManager -Source $Source -ToolDb (Import-DFToolDb) | Select-Object -First 1
-    if ($m) { Format-DFInstallCommand -Manager $m -Id $Id -Feed $Feed }
+    if ($m) { Format-DFInstallCommand -Manager $m -Id $Id -Feed $Feed -Source $Source }
 }

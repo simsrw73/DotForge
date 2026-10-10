@@ -50,7 +50,7 @@ Describe 'web detail providers' {
         $d.Tags | Should -Be @('http', 'cli')
         $d.RepositoryUrl | Should -Be 'https://github.com/httpie/cli'
         $d.DocsUrl | Should -Be 'https://httpie.io/docs'
-        $d.InstallHint | Should -Be 'pipx install httpie'
+        $d.InstallHint | Should -Be 'uv tool install httpie'
         $d.Extra['requires_python'] | Should -Be '>=3.7'
         $d.Extra['description_content_type'] | Should -Be 'text/markdown'
     }

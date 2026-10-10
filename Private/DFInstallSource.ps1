@@ -22,7 +22,7 @@ function Get-DFSourceManager {
     param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][hashtable]$ToolDb)
     $chosen = @((Get-DFConfig Defaults -Default @{}).Values)
     $topPriority = { param($m) (@($m.roles.PSObject.Properties.Value | ForEach-Object { $_.priority }) + 0 | Measure-Object -Maximum).Maximum }
-    @($ToolDb.Values | Where-Object { $_.installs -and $_.installs.from -eq $Source } |
+    @($ToolDb.Values | Where-Object { $_.installs -and @($_.installs | Where-Object { $_.from -eq $Source }).Count } |
         Sort-Object @{ Expression = { $_.name -in $chosen }; Descending = $true },
                     @{ Expression = { & $topPriority $_ }; Descending = $true },
                     name)
@@ -43,8 +43,8 @@ function Get-DFBuiltInSourceOrder {
     $managers = @($ToolDb.Values | Where-Object installs)
     $system = @($managers | Where-Object { $_.roles.PSObject.Properties['package-manager'] } |
         Sort-Object @{ Expression = { $_.roles.'package-manager'.priority }; Descending = $true }, name |
-        ForEach-Object { $_.installs.from })
-    $other = @($managers | ForEach-Object { $_.installs.from } | Where-Object { $_ -notin $system } | Sort-Object -Unique)
+        ForEach-Object { $_.installs[0].from })
+    $other = @($managers | ForEach-Object { $_.installs | ForEach-Object { $_.from } } | Where-Object { $_ -notin $system } | Sort-Object -Unique)
     [string[]]@($system + $other | Select-Object -Unique)
 }
 
@@ -109,7 +109,9 @@ function Resolve-DFInstallSource {
         the shell is elevated, or an elevator is installed or planned. When
         not, such a manager is passed over like an unavailable one.
     .OUTPUTS
-        PSCustomObject: Tool, Source, Manager, Ref, Gap, Options, and Sources (the candidate order it walked).
+        PSCustomObject: Tool, Source, Manager, Block (the manager's installs
+        block for Source), Ref, Gap, Options, and Sources (the candidate order
+        it walked).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -123,7 +125,7 @@ function Resolve-DFInstallSource {
         [bool]$CanElevate = $true
     )
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
-    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources }
+    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources }
     if (-not $sources) {
         $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
         $result.Gap = if (-not $have) { 'no package in any source' }
@@ -131,7 +133,7 @@ function Resolve-DFInstallSource {
         return $result
     }
     foreach ($s in $sources) {
-        $managers = @(Get-DFSourceManager -Source $s -ToolDb $ToolDb | Where-Object { $CanElevate -or -not $_.installs.elevate })
+        $managers = @(Get-DFSourceManager -Source $s -ToolDb $ToolDb | Where-Object { $CanElevate -or -not (Get-DFInstallBlock -Manager $_ -Source $s).elevate })
         $pick = if ($Choice[$s]) { $managers | Where-Object name -eq $Choice[$s] | Select-Object -First 1 }
                 else { $managers | Where-Object { $_.name -in $Planned -or (& $IsAvailable $_) } | Select-Object -First 1 }
         if ($pick) {
@@ -141,6 +143,7 @@ function Resolve-DFInstallSource {
             }
             $result.Source = $s
             $result.Manager = $pick
+            $result.Block = Get-DFInstallBlock -Manager $pick -Source $s
             $result.Ref = Get-DFPackageRef $Tool.packages.$s
             return $result
         }
@@ -164,4 +167,23 @@ function Write-DFInstallWarning {
     param([Parameter(Mandatory)][string]$Message)
     if ($script:DFInstallWarned -and -not $script:DFInstallWarned.Add($Message)) { return }
     Write-Warning $Message
+}
+
+function Get-DFInstallBlock {
+    <#
+    .SYNOPSIS
+        Returns a manager's installs block for one source (uv has one for PyPI tools and one for Python).
+    .PARAMETER Manager
+        The manager's tool record.
+    .PARAMETER Source
+        The source. Omitted: the first block.
+    .OUTPUTS
+        PSCustomObject, or nothing when the manager doesn't install from Source.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([Parameter(Mandatory)][pscustomobject]$Manager, [string]$Source)
+    $blocks = @($Manager.installs | Where-Object { $_ })
+    if (-not $Source) { return $blocks | Select-Object -First 1 }
+    $blocks | Where-Object { $_.from -eq $Source } | Select-Object -First 1
 }

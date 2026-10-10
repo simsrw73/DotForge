@@ -11,6 +11,10 @@ Describe 'Format-DFInstallCommand' {
     It 'forms a feed-qualified id' {
         Format-DFInstallCommand -Manager $script:Db.scoop -Id ps-dotenv -Feed insomnia | Should -Be 'scoop install insomnia/ps-dotenv'
     }
+    It 'formats the block for a given source' {
+        Format-DFInstallCommand -Manager $script:Db.uv -Source uv -Id 3 | Should -Be 'uv python install --default 3'
+        Format-DFInstallCommand -Manager $script:Db.uv -Source pypi -Id ruff | Should -Be 'uv tool install ruff'
+    }
     It 'formats a function manager' {
         Format-DFInstallCommand -Manager $script:Db.psresource -Id PSFzf | Should -Match '^Install-PSResource -Name PSFzf'
     }

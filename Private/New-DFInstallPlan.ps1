@@ -82,10 +82,10 @@ function New-DFInstallPlan {
             })
             continue
         }
-        $needsElevator = $r.Manager.installs.elevate -and -not $elevated -and $elevatorPlanned
+        $needsElevator = $r.Block.elevate -and -not $elevated -and $elevatorPlanned
         $deps = @(@($required) + $(if ($want.Contains($r.Manager.name)) { $r.Manager.name }) + $(if ($needsElevator) { $elevatorPlanned.name }) |
             Where-Object { $_ -and $_ -ne $t.name } | Select-Object -Unique)
-        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0 }
+        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Block = $r.Block; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0 }
     }
 
     # Tools that depend (transitively) on a gap can't be installed either.
@@ -120,11 +120,13 @@ function New-DFInstallPlan {
     foreach ($n in @($items.Keys)) { $items[$n].Stage = & $visit $n @() }
 
     $stages = @(foreach ($g in ($items.Values | Group-Object Stage | Sort-Object { [int]$_.Name })) {
-        $batches = @(foreach ($b in ($g.Group | Where-Object Manager | Group-Object { $_.Manager.name })) {
+        # One batch per manager and source: uv's PyPI tools and its Pythons are separate commands.
+        $batches = @(foreach ($b in ($g.Group | Where-Object Manager | Group-Object { "$($_.Manager.name)|$($_.Source)" })) {
             $m = $b.Group[0].Manager
-            $elev = [bool]$m.installs.elevate -and -not $elevated
+            $blk = $b.Group[0].Block
+            $elev = [bool]$blk.elevate -and -not $elevated
             [pscustomobject]@{
-                Manager = $m; Source = $b.Group[0].Source; Items = @($b.Group)
+                Manager = $m; Source = $b.Group[0].Source; Block = $blk; Items = @($b.Group)
                 Elevate = $elev; ElevateWith = $(if ($elev -and $elevator) { $elevator.executable })
             }
         })

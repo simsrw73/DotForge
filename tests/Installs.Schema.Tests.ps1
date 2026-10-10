@@ -22,6 +22,18 @@ Describe 'installs and install (schema)' {
     It 'requires install.prefer to name the tool''s own sources' {
         Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ prefer = @('winget') } } | Should -Match 'install.prefer'
     }
+    It 'accepts a list of blocks, each validated' {
+        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; command = @('uv', 'tool', 'install', '{id}') }, [pscustomobject]@{ from = 'uv'; command = @('uv', 'python', 'install', '{id}') }) } | Should -BeNullOrEmpty
+        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; command = @('x') }, [pscustomobject]@{ command = @('y') }) } | Should -Match 'installs\[1\]\.from'
+    }
+    It 'normalizes installs to a list of blocks' {
+        $one = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "command": ["m","i","{id}"] } }' | ConvertFrom-Json)
+        @($one.installs).Count | Should -Be 1
+        $two = ConvertTo-DFToolRecord ('{ "name": "uv", "executable": "uv", "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","{id}"] } ] }' | ConvertFrom-Json)
+        @($two.installs).Count | Should -Be 2
+        $two.installs[1].from | Should -Be 'uv'
+        $two.installs[1].batch | Should -BeFalse
+    }
     It 'normalizes installs with defaults' {
         $r = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "command": ["m","i","{id}"] } }' | ConvertFrom-Json)
         $r.installs.batch | Should -BeFalse

@@ -243,6 +243,13 @@
       },
       "linkedVia": "curated"
     },
+    "pipx": {
+      "packages": {
+        "scoop": "pipx",
+        "pypi": "pipx"
+      },
+      "linkedVia": "curated"
+    },
     "pnpm": {
       "packages": {
         "scoop": "pnpm",
@@ -276,6 +283,22 @@
       "packages": {
         "psgallery": "PSFzf",
         "scoop": "psfzf"
+      },
+      "linkedVia": "curated"
+    },
+    "pymanager": {
+      "packages": {
+        "winget": "Python.PythonInstallManager"
+      },
+      "linkedVia": "curated"
+    },
+    "python": {
+      "packages": {
+        "pymanager": "3",
+        "uv": "3",
+        "mise": "python@3",
+        "scoop": "python",
+        "winget": "Python.Python.3.13"
       },
       "linkedVia": "curated"
     },

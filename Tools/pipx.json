@@ -1,0 +1,12 @@
+{
+  "name": "pipx",
+  "description": "Installs Python applications, each in its own isolated environment",
+  "tags": ["python", "dev", "package-manager"],
+  "executable": "pipx",
+  "roles": { "python-package-manager": { "priority": 20 } },
+  "requires": ["role:python-runtime"],
+  "packages": { "scoop": "pipx", "pypi": "pipx" },
+  "installs": { "from": "pypi", "command": ["pipx", "install", "{id}"], "batch": true },
+  "aliases": {},
+  "picker": null
+}

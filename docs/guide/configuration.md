@@ -170,7 +170,7 @@ $DFConfig = @{
 
 A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
 
-Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
+Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `python-package-manager` (PyPI: uv, then pipx, then pip), `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
 
 ## Skip a tool
 

@@ -1,0 +1,11 @@
+{
+  "name": "pymanager",
+  "description": "Python install manager (py): installs and launches Python runtimes",
+  "tags": ["python", "dev", "version-manager"],
+  "executable": "pymanager.exe",
+  "roles": { "version-manager": {} },
+  "packages": { "winget": "Python.PythonInstallManager" },
+  "installs": { "from": "pymanager", "command": ["py", "install", "{id}"] },
+  "aliases": {},
+  "picker": null
+}

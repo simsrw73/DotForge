@@ -163,17 +163,20 @@ function Test-DFToolSchema {
         }
     }
     # installs: a package manager's install recipe; install.prefer: this tool's preferred sources.
-    $ins = PSProp $Tool 'installs'
-    if ($null -ne $ins) {
-        if ($ins -isnot [pscustomobject]) {
-            $errs.Add('installs must be an object')
-        } else {
-            if (-not ((PSProp $ins 'from') -is [string] -and (PSProp $ins 'from'))) { $errs.Add('installs.from must name the source this manager installs from') }
+    $insRaw = $Tool.PSObject.Properties['installs']?.Value   # read directly: a helper would unroll [ ... ]
+    if ($null -ne $insRaw) {
+        $isList = $insRaw -is [array]
+        $blocks = @($insRaw)
+        for ($n = 0; $n -lt $blocks.Count; $n++) {
+            $ins = $blocks[$n]
+            $at = if ($isList) { "installs[$n]" } else { 'installs' }
+            if ($ins -isnot [pscustomobject]) { $errs.Add("$at must be an object"); continue }
+            if (-not ((PSProp $ins 'from') -is [string] -and (PSProp $ins 'from'))) { $errs.Add("$at.from must name the source this manager installs from") }
             $cmd = $ins.PSObject.Properties['command']?.Value   # read directly: a helper would unroll ["x"]
             $hasCmd = $null -ne $cmd
             $hasFn = $null -ne (PSProp $ins 'function')
-            if ($hasCmd -eq $hasFn) { $errs.Add('installs needs exactly one of command or function') }
-            if ($hasCmd -and $cmd -isnot [array]) { $errs.Add('installs.command must be an array (argv)') }
+            if ($hasCmd -eq $hasFn) { $errs.Add("$at needs exactly one of command or function") }
+            if ($hasCmd -and $cmd -isnot [array]) { $errs.Add("$at.command must be an array (argv)") }
         }
     }
     $inst = PSProp $Tool 'install'
@@ -241,10 +244,11 @@ function Test-DFToolSchema {
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = PSProp $Tool 'setup'
     if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
-    foreach ($sec in 'installs', 'install') {
-        $o = PSProp $Tool $sec
-        if ($o -is [pscustomobject]) { $sections.Add(@($sec, $o, "$sec.")) }
+    foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
+        if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
+    $o = PSProp $Tool 'install'
+    if ($o -is [pscustomobject]) { $sections.Add(@('install', $o, 'install.')) }
     if ($roles -is [pscustomobject]) {
         foreach ($r in $roles.PSObject.Properties) {
             if ($r.Value -is [pscustomobject]) { $sections.Add(@('role', $r.Value, "roles.$($r.Name).")) }

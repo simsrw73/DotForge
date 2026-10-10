@@ -7,7 +7,7 @@
     "package-manager"
   ],
   "executable": "uv.exe",
-  "roles": { "version-manager": {} },
+  "roles": { "version-manager": {}, "python-package-manager": { "priority": 30 } },
   "packages": {
     "scoop": "uv",
     "winget": "astral-sh.uv"
@@ -24,6 +24,10 @@
       "${XDG_DATA_HOME}/uv"
     ]
   },
+  "installs": [
+    { "from": "pypi", "command": ["uv", "tool", "install", "{id}"] },
+    { "from": "uv", "command": ["uv", "python", "install", "--default", "{id}"] }
+  ],
   "aliases": {},
   "picker": null
 }

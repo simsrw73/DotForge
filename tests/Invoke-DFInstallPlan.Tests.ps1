@@ -150,3 +150,30 @@ Describe 'Test-DFInteractiveHost' {
         Test-DFInteractiveHost -CommandLine @('pwsh', '-noni', '-c', 'x') | Should -BeFalse
     }
 }
+
+Describe 'Invoke-DFInstallPlan with a two-block manager' {
+    BeforeEach {
+        Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
+        $script:Calls = [System.Collections.Generic.List[string]]::new()
+        Mock Invoke-DFInstallCommand { $script:Calls.Add($Argv -join ' '); [pscustomobject]@{ ExitCode = 0; Output = '' } }
+        Mock Update-DFPathFromRegistry { }
+        Mock Register-DFTool { }
+        Mock Test-DFElevated { $false }
+        Mock Test-DFToolAvailable { $true }
+        $script:Db = @{}
+        foreach ($r in @(
+            (Rec '{ "name": "uv", "executable": "uv.exe", "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","--default","{id}"] } ] }'),
+            (Rec '{ "name": "ruff", "executable": "ruff.exe", "packages": { "pypi": "ruff" } }'),
+            (Rec '{ "name": "python", "executable": "python.exe", "packages": { "uv": "3" } }')
+        )) { $script:Db[$r.name] = $r }
+    }
+    AfterEach { Restore-DFTestXdg; Set-DFTestConfig $null }
+    It 'runs each tool with the block for its source, in separate batches' {
+        $avail = { param($m) $m.name -eq 'uv' }
+        $plan = New-DFInstallPlan -Name python, ruff -ToolDb $script:Db -IsAvailable $avail
+        @($plan.Stages[0].Batches).Count | Should -Be 2
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $avail
+        # Same-stage batches are independent, so their order doesn't matter.
+        @($script:Calls | Sort-Object) | Should -Be @('uv python install --default 3', 'uv tool install ruff')
+    }
+}
