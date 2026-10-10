@@ -23,13 +23,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Pester 6 and PSSQLite
+      - name: Install Pester 6 and the build pipeline's modules
         shell: pwsh
         run: |
           # Exact versions, so a new release can't change what CI runs.
           Install-PSResource -Name Pester -Version '6.2.0' -Repository PSGallery -TrustRepository -Scope CurrentUser
-          # The package-universe build pipeline (build/Private/DFPackageUniverse.*) and its tests use PSSQLite.
+          # The package-universe build pipeline (build/Private/DFPackageUniverse.*) and its tests use PSSQLite and powershell-yaml.
           Install-PSResource -Name PSSQLite -Version '1.1.0' -Repository PSGallery -TrustRepository -Scope CurrentUser
+          Install-PSResource -Name powershell-yaml -Version '0.4.12' -Repository PSGallery -TrustRepository -Scope CurrentUser
           Import-Module Pester -RequiredVersion 6.2.0
           "PowerShell $($PSVersionTable.PSVersion); Pester $((Get-Module Pester).Version)"
 
