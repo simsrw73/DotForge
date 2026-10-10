@@ -234,6 +234,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Language toolchains have their own groups.** `+dev-tools` is now jq, micro, mise and chezmoi;
+  `+javascript-dev` (fnm, node, npm), `+python-dev` (uv, python, pip, pipx) and `+rust-dev` (rustup,
+  cargo) are new. A profile that used `+dev-tools` for fnm, uv or rustup adds the matching group.
 - **`packages` is keyed by source** (`crates` and `psgallery` instead of `cargo` and `psresource`),
   the same names the package catalog uses, and a value can be `{ id, feed }` for a third-party feed.
 - **Install hints show each manager's full command** (winget includes `--silent` and the agreement
