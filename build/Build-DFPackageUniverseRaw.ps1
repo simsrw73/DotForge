@@ -5,7 +5,7 @@
     Phase A of the package-universe pipeline: crawls scoop (local buckets),
     winget (via a winget-pkgs GitHub snapshot), and choco (one unfiltered
     OData next-link walk of the whole catalog), writing normalized rows into
-    build/.package-universe/universe.db (raw_packages, pipeline_log).
+    $XDG_CACHE_HOME/dotforge/package-universe/universe.db (raw_packages, pipeline_log).
     Author-side tooling — never loaded by the DotForge module.
 .DESCRIPTION
     All three catalogs are full rebuilds every run; there is no incremental
@@ -13,7 +13,7 @@
     the snapshot download+parse; pass -WingetPkgsSnapshot to reuse an existing
     tree), ~21 min choco (~281 politely-paced requests).
 .PARAMETER DatabasePath
-    SQLite working database path (default: .package-universe/universe.db
+    SQLite working database path (default: $XDG_CACHE_HOME/dotforge/package-universe/universe.db
     next to this script).
 .PARAMETER ScoopRoot
     The scoop root directory (default: Get-DFCatalogScoopRoot's resolution).
@@ -60,7 +60,7 @@
     Full rebuild of all three catalogs, downloading a fresh winget-pkgs
     snapshot. Roughly 50 minutes.
 .EXAMPLE
-    ./build/Build-DFPackageUniverseRaw.ps1 -WingetPkgsSnapshot ./build/.package-universe/winget-pkgs
+    ./build/Build-DFPackageUniverseRaw.ps1 -WingetPkgsSnapshot $HOME/.cache/dotforge/package-universe/winget-pkgs
     Reuses an already-downloaded winget-pkgs tree, skipping the run's most
     expensive step. The iteration-friendly form when working on choco.
 .OUTPUTS
@@ -69,7 +69,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$DatabasePath = (Join-Path $PSScriptRoot '.package-universe/universe.db'),
+    [string]$DatabasePath,
     [string]$ScoopRoot,
     [string]$WingetPkgsSnapshot,
     [int]$ChocoDelayMinMs = 2500,
@@ -84,6 +84,10 @@ param(
     [scriptblock]$ChocoFetchPage,
     [scriptblock]$ChocoSleep
 )
+
+# Working data lives outside the checkout (build/Private/DFPackageUniverse.Paths.ps1 says why).
+. (Join-Path $PSScriptRoot 'Private' 'DFPackageUniverse.Paths.ps1')
+if (-not $DatabasePath) { $DatabasePath = Join-Path (Get-DFPackageUniverseRoot) 'universe.db' }
 
 # Strict by default, and the reused Private/DFCatalog.*.ps1 mappers are written
 # to be strict-safe (they probe for absent feed properties via Get-DFXmlMember

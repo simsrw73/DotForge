@@ -14,9 +14,9 @@ BeforeAll {
     $script:Repo = Split-Path $PSScriptRoot -Parent
     $script:Core = Import-PowerShellDataFile (Join-Path $script:Repo 'DotForge.psd1')
     $script:DevModules = Import-PowerShellDataFile (Join-Path $script:Repo 'build' 'requirements.psd1')
-    # Every script in the repo except the gitignored package-universe clone.
-    $script:Scripts = @(Get-ChildItem $script:Repo -Recurse -File -Include '*.ps1', '*.psm1' |
-        Where-Object { $_.FullName -notmatch '[\\/]\.package-universe[\\/]|[\\/]\.git[\\/]' })
+    # Every tracked script. git ls-files never walks ignored folders, which a recursive
+    # listing does (a large ignored clone made this test take minutes).
+    $script:Scripts = @(git -C $script:Repo ls-files '*.ps1' '*.psm1' | ForEach-Object { Get-Item (Join-Path $script:Repo $_) })
 }
 
 Describe 'Declared requirements' {

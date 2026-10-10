@@ -72,7 +72,7 @@ Install a tool you don't have yet with `Install-DFTool -Name ripgrep`. To run th
 | [Tools](docs/guide/tools.md) | see the 43 tools and the commands each adds |
 | [Pickers and helpers](docs/guide/pickers-and-helpers.md) | use the fuzzy pickers and general commands, and build your own picker |
 | [Completion](docs/guide/completion.md) | set up Tab completion with Carapace, PSFzf or inshellisense |
-| [Package catalog](docs/guide/package-catalog.md) | search every package catalog at once with `trifle` |
+| [Package catalog](docs/guide/package-catalog.md) | search every package catalog at once with `trifle` (experimental) |
 | [Coreutils conflicts](docs/guide/coreutils-conflicts.md) | fix commands that Coreutils for Windows intercepts |
 | [Troubleshooting](docs/guide/troubleshooting.md) | look up any warning or error |
 | [Safety](docs/guide/safety.md) | see everything DotForge reads, writes, runs and sends |

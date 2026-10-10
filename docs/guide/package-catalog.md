@@ -4,6 +4,9 @@
 **Topic:** `trifle` (`Find-DFPackage`), `ftrifle` (`Select-DFPackage`) and `tcats` (`Get-DFCategoryList`), which search every package catalog at once.  
 **Goal:** find a tool, see which catalogs carry it and whether it's installed, and keep the caches warm.
 
+> **Experimental.** `trifle` works and ships with DotForge, but it isn't part of what 1.0 covers: searches
+> can be slow, and its commands and output may still change. It gets attention after 1.0.
+
 ## Quick start
 
 Look a tool up in all seven catalogs at once:

@@ -16,7 +16,7 @@
     helpers -- intended, not incidental.
 .PARAMETER DatabasePath
     Path to the shared SQLite working database (default: the standard
-    build/.package-universe/universe.db next to this script).
+    $XDG_CACHE_HOME/dotforge/package-universe/universe.db).
 .PARAMETER CurationPath
     Path to the curation .jsonc (default: data/package-universe-curation.jsonc).
     A missing file means no curation yet; clustering still runs.
@@ -29,11 +29,15 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$DatabasePath = (Join-Path $PSScriptRoot '.package-universe/universe.db'),
+    [string]$DatabasePath,
     [string]$CurationPath = (Join-Path $PSScriptRoot '../data/package-universe-curation.jsonc'),
     [double]$Threshold = 0.60,
     [int]$FamilySizeThreshold = 5
 )
+
+# Working data lives outside the checkout (build/Private/DFPackageUniverse.Paths.ps1 says why).
+. (Join-Path $PSScriptRoot 'Private' 'DFPackageUniverse.Paths.ps1')
+if (-not $DatabasePath) { $DatabasePath = Join-Path (Get-DFPackageUniverseRoot) 'universe.db' }
 
 Set-StrictMode -Version Latest
 

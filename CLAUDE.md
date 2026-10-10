@@ -89,6 +89,12 @@ DotForge/
   PSResourceGet; an old PowerShellGet 3.0 beta on this machine shadows PSResourceGet's command names, so
   scripts call them module-qualified (`Microsoft.PowerShell.PSResourceGet\Publish-PSResource`).
 - **Use a worktree** (`../DotForge-<topic>`) for risky or parallel work.
+- **Search tracked files only** (`rg`, `git ls-files`, `git grep`): they skip ignored folders. A recursive
+  `Get-ChildItem`/`grep -r` from the repo root can wander into large ignored data. The package-universe
+  pipeline keeps its data (a winget-pkgs clone) in `$XDG_CACHE_HOME/dotforge/package-universe/`, outside
+  the checkout; never put it back in the repo.
+- **`trifle` and the package-universe pipeline are frozen until after 1.0** (`TODO.md`, last section): no
+  feature work there, only fixes for bugs that break something else.
 - **The gate is `build/Test-DFFull.ps1`** (sentinel XDG folders, failed containers, exit 1 on any
   failure). During a change, run it with `-Path` on the test files that cover the code you touched; run
   it on the whole suite before merging.
@@ -178,7 +184,7 @@ Publishing to the PowerShell Gallery follows this exact sequence. **The release 
 5. **Tag** the release commit: `git tag -a v<version> -m "DotForge <version>"` (tag format is `v` + the full prerelease string, e.g. `v0.3.0-preview`).
 6. **Push** `main` and the tag: `git push origin main && git push origin v<version>`.
 7. **GitHub Release**: `gh release create v<version> --title v<version> --prerelease --notes "<CHANGELOG section>"` (drop `--prerelease` for stable releases).
-8. **Publish to PSGallery**: read the API key from the gitignored `.env` (`PSGALLERY_API_KEY=...`) — never hardcode or commit it. **Do not run `Publish-PSResource -Path .` directly against the repo root** — `build/.package-universe/winget-pkgs/` (gitignored, but still on disk once `build/Build-DFPackageUniverseRaw.ps1` has run) is a full clone of the real `microsoft/winget-pkgs` repo, one of the largest repos on GitHub. `Publish-PSResource`/`Compress-PSResource` don't respect `.gitignore` — they copy the entire `-Path` tree to a staging temp dir before packing, so pointing either at `.` hangs for a very long time copying hundreds of thousands of files, with zero error output (confirmed 2026-09-06: reproduced 3× with no output ever, including via `Compress-PSResource` with no network involved at all — an `ESTABLISHED` TCP connection observed via `netstat` during the hang was a red herring, not the cause). Publish from a clean export of only tracked files instead — the exported directory name must equal the module name, since `Publish-PSResource` looks up `<dirname>.psd1`:
+8. **Publish to PSGallery**: read the API key from the gitignored `.env` (`PSGALLERY_API_KEY=...`) — never hardcode or commit it. Publish from a clean export of the tag, never the working tree: the publish command packs everything under `-Path`, ignoring `.gitignore`, so local leftovers would ship (and a large ignored folder once made it hang for hours with no output). The exported folder's name must equal the module name, since the publish command looks for `<folder>.psd1`:
    ```bash
    rm -rf /tmp/DotForge && mkdir -p /tmp/DotForge
    git archive v<version> | tar -x -C /tmp/DotForge
