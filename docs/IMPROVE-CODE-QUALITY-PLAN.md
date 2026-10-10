@@ -17,10 +17,10 @@ Started 2026-10-10 (the `/improve-code-quality` journey; an earlier, unadopted r
 | 1 — Build the safety net | working-with-legacy-code | done | TESTING.md + TODO.md (GATE) | 2026-10-10 |
 | 2 — Make the code readable | clean-code | done (score 7/10; gaps logged with fixes) | TODO.md (Readability) + CLAUDE.md | 2026-10-10 |
 | 3 — Apply named refactorings | refactoring-patterns | done (6 structure-only commits) | TODO.md (Readability) | 2026-10-10 |
-| 4 — Reduce complexity | software-design-philosophy | pending | TODO.md (Architecture Backlog) | |
-| 5 — Draw the architecture boundary | clean-architecture | pending | TESTING.md / this tracker (light) | |
-| 6 — Lock in the habits | pragmatic-programmer | pending | TODO.md + CLAUDE.md | |
-| 7 — Make it survive production | release-it | pending | TODO.md (catalog network calls) | |
+| 4 — Reduce complexity | software-design-philosophy | done (score 8/10; one leak logged) | TODO.md (Architecture Backlog) | 2026-10-10 |
+| 5 — Draw the architecture boundary | clean-architecture | done (light; Layer Map below) | this tracker | 2026-10-10 |
+| 6 — Lock in the habits | pragmatic-programmer | done | TODO.md + CLAUDE.md | 2026-10-10 |
+| 7 — Make it survive production | release-it | in-progress | TODO.md + Integration-Point Audit below | |
 | 8 — Size for real load | system-design | skipped: no server and no request load; one user, one machine | — | 2026-10-10 |
 | 9 — Get the data layer right | ddia-systems | skipped: no database writes; SQLite catalog caches are read-only and rebuilt atomically | — | 2026-10-10 |
 | Optional — Domain language | domain-driven-design | skipped: the domain vocabulary (tool, role, group, source, feed, session) is already settled in the specs | — | 2026-10-10 |
@@ -40,9 +40,39 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 | 2026-10-10 | 2 | No score gate; re-score at the end of the journey. | There is no CI. |
 | 2026-10-10 | 3 | Applied, one commit each, safety-net suites green between steps: Extract Function `Test-DFToolActive`; Rename Variable (full loop-variable names); Replace Output Parameters with a returned result (`Resolve-DFToolRequirements`); Extract Function `Expand-DFGroupEntry` (one home for `+group` expansion); Introduce Parameter Object (the registration context); Extract Function ×6 (the activation's named steps). Done in a worktree, then merged. | The order goes from smallest to largest, so each step's diff stays reviewable; `main` is live in the user's shell. |
 | 2026-10-10 | 3 | No preparatory refactoring for an upcoming feature, and no CI gate list (there is no CI). | Nothing is scheduled to land in the activation code next. |
+| 2026-10-10 | 4 | Activation, registration and the record loader score 8/10: deep entry points (`Start-DFSession -Config`, `Register-DFTool -Name`), "why" comments on every interface. One leak: the `role:<name>` reference syntax is parsed in five places (activation ×3, install plan ×2), and "the requested members of a role" is computed in two. Logged in the Architecture Backlog; no consolidation now. | Small and stable today; the next change to `requires`/`after` syntax is the moment to fold it. The Phase 3 step functions are small but each hides one decision, so no merge back. |
+| 2026-10-10 | 5 | Light pass, no code change. The dependency rule here is the plugin invariant (core never names a tool) and the module split (core ← Shared → on-demand modules); both are test-enforced (`TabCompletionRole.Tests.ps1` "core plugin invariant", `ModuleSplit.Tests.ps1`, the Shared-holds-no-session-state test). Outer details sit behind seams: package managers (`Invoke-DFInstallCommand`), fzf (`Invoke-DFFzf`), availability probes, the host (`Test-DFInteractiveHost`). | Already holds; recorded so later phases don't re-derive it. |
+| 2026-10-10 | 6 | Broken-windows policy: no `TODO`/`FIXME` comments in code (there are none today); a small hack found while touching code is fixed in the same branch, anything bigger becomes a `TODO.md` row with a location. No fixed debt budget: the backlog is worked between features. | Solo project with one backlog; a percentage budget adds process without a team to hold to it. |
+| 2026-10-10 | 6 | Duplicated knowledge found: the `role:` syntax (logged under Phase 4) and the "; "-joined `Detail` text appended in three places (role fallback, role hint, install hint). The repeated `$pathArgs = if ($ToolsPath) …` line is coincidental boilerplate and stays. | DRY applies to knowledge, not text. |
+| 2026-10-10 | 7 | Every HTTP call in the catalog already sets `-TimeoutSec` (10–15 s; the intake note that some lacked one was wrong). The gap is the two `winget` process spawns (`search` fallback, `show`), which have no time limit: a stuck winget hangs `trifle`. Fix now with a bounded process runner. No circuit breaker or retry: one user, every call already fails soft to cached data. Installs (`Invoke-DFInstallCommand`) stay unbounded on purpose: they can be long and interactive. | Timeouts are the non-negotiable part; breakers and bulkheads have nothing to protect at this scale. |
+
+## Layer Map (Phase 5, light)
+
+| Layer | What | May depend on |
+|---|---|---|
+| Tool plugins | `Tools/*.json` + sidecars | the core's public commands, `$DFCurrentTool` |
+| Startup core | `Public/`, `Private/` (session, registration, install) | `Shared/`; never a tool name (test-enforced) |
+| On-demand modules | `Modules/DotForge.Catalog`, `Modules/DotForge.Helpers` | `Shared/` (own copy), the core's public `Get-DFConfig` |
+| Shared | stateless helpers | nothing with session state (test-enforced) |
+| Outer details | package managers, fzf, winget/scoop/choco CLIs, web APIs | reached only through seams |
+
+## Integration-Point Audit (Phase 7)
+
+| Dependency | Timeout | Breaker / retry | Status |
+|---|---|---|---|
+| Chocolatey, PowerShell Gallery feeds | 15 s | none; falls back to cache | ok |
+| crates.io, npm, PyPI APIs | 10 s | none; falls back to cache | ok |
+| GitHub API, release data | 10 s / 15 s | none; falls back to cache | ok |
+| `winget search` (CLI fallback), `winget show` | **none** | none | fix in Phase 7 |
+| Installed-package overlay (`Get-DFCatalogInstalled`) | 10 s overall | none | ok |
+| Package managers during `Install-DFTool` | none, by design | none | ok (interactive, long) |
+| `--help` capture (`Invoke-DFCommandCapture`, Helpers) | none | none | logged: a command that ignores the flag and reads stdin would hang `Show-DFCliHelp` |
 
 ## Next Actions
 - [x] Phase 1: safety net mapped (92–98% coverage of the starting module), three high gaps pinned and mutation-checked (Claude, 2026-10-10)
 - [x] Phase 2: starting module scored 7/10; top ten fixes ranked; conventions adopted (Claude, 2026-10-10)
 - [x] Phase 3: fixes 1–5 and 10 applied as structure-only commits; full suite green (Claude, 2026-10-10)
-- [ ] Phase 4: fold into the TODO.md Architecture Backlog (already scoped at intake); then Phase 5 (light) (Claude)
+- [x] Phase 4: activation/registration/loader scored 8/10; the `role:` syntax leak logged (Claude, 2026-10-10)
+- [x] Phase 5: Layer Map recorded; the dependency rule is already test-enforced (Claude, 2026-10-10)
+- [x] Phase 6: no untracked TODOs; broken-windows policy recorded (Claude, 2026-10-10)
+- [ ] Phase 7: bound the `winget` process spawns with a timeout, test-first (Claude)
