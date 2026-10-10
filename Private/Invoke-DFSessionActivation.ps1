@@ -64,9 +64,6 @@ function Invoke-DFSessionActivation {
         else { $status[$entry.Name] = New-DFToolStatus -Name $entry.Name -State Failed -RequestedBy $entry.RequestedBy -Detail 'its tool record is missing or invalid (see the warning above)' }
     }
 
-    $edges = @{}
-    $blocked = @{}
-    $roleHint = @{}
     # Every excluded name, not just the requested ones: a required tool can be
     # excluded without having been requested.
     $groups = Get-DFGroupDb
@@ -74,8 +71,10 @@ function Invoke-DFSessionActivation {
         if (-not $excludeEntry) { continue }
         if ($excludeEntry.StartsWith('+')) { $groupName = $excludeEntry.Substring(1); if ($groups.Contains($groupName)) { $groups[$groupName].Tools } } else { $excludeEntry }
     })
-    Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy -Excluded $excluded `
-        -Edges $edges -Blocked $blocked -RoleHint $roleHint @pathArgs
+    $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy -Excluded $excluded @pathArgs
+    $edges = $requirements.Edges
+    $blocked = $requirements.Blocked
+    $roleHint = $requirements.RoleHint
 
     # after: ["role:<name>"] orders a tool after every requested member of that role.
     foreach ($record in $records) {
@@ -271,7 +270,7 @@ function Resolve-DFToolRequirements {
             version manager or runtime to use is the user's choice, made by
             listing it in Tools. With no member requested nothing is blocked
             (the runtime can come from outside DotForge, e.g. a standalone
-            node on PATH); the role is recorded in -RoleHint so that, if the
+            node on PATH); the role is recorded in RoleHint so that, if the
             tool turns out to be missing, its detail can name the role.
     .PARAMETER Records
         The requested records. Required tools are appended.
@@ -281,16 +280,13 @@ function Resolve-DFToolRequirements {
         Name -> RequestedBy. Additions are recorded here.
     .PARAMETER Excluded
         Names excluded by ExcludeTools.
-    .PARAMETER Edges
-        Filled: tool name -> names it must come after (for Invoke-DFTopoSort -ExtraEdges).
-    .PARAMETER Blocked
-        Filled: tool name -> why it can't be activated.
-    .PARAMETER RoleHint
-        Filled: tool name -> the required roles none of whose members is requested.
     .PARAMETER ToolsPath
         Tools folder. Default: the module's Tools/.
     .OUTPUTS
-        None.
+        pscustomobject with three hashtables:
+          Edges: tool name -> names it must come after (for Invoke-DFTopoSort -ExtraEdges).
+          Blocked: tool name -> why it can't be activated.
+          RoleHint: tool name -> the required roles none of whose members is requested.
     #>
     [CmdletBinding()]
     param(
@@ -298,11 +294,11 @@ function Resolve-DFToolRequirements {
         [Parameter(Mandatory)][hashtable]$ToolDb,
         [Parameter(Mandatory)][hashtable]$RequestedBy,
         [AllowEmptyCollection()][string[]]$Excluded = @(),
-        [Parameter(Mandatory)][hashtable]$Edges,
-        [Parameter(Mandatory)][hashtable]$Blocked,
-        [Parameter(Mandatory)][hashtable]$RoleHint,
         [string]$ToolsPath
     )
+    $edges = @{}
+    $blocked = @{}
+    $roleHint = @{}
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $add = {
         param($Record, [string]$By)
@@ -321,27 +317,28 @@ function Resolve-DFToolRequirements {
             if ($req -like 'role:*') {
                 $role = $req.Substring(5)
                 $members = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties[$role] })
-                if (-not $members) { $RoleHint[$record.name] = @(@($RoleHint[$record.name]) + $role | Where-Object { $_ }) }
+                if (-not $members) { $roleHint[$record.name] = @(@($roleHint[$record.name]) + $role | Where-Object { $_ }) }
                 foreach ($member in $members) {
-                    if ($member.name -ne $record.name) { $Edges[$record.name] = @(@($Edges[$record.name]) + $member.name | Where-Object { $_ }) }
+                    if ($member.name -ne $record.name) { $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ }) }
                 }
                 continue
             }
             if ($req -in $Excluded) {
-                $Blocked[$record.name] = "requires $req, which is excluded"
+                $blocked[$record.name] = "requires $req, which is excluded"
                 continue
             }
             if (-not $ToolDb.ContainsKey($req)) {
                 $found = Import-DFToolDb -Name $req @pathArgs
                 if (-not $found.Count) {
-                    $Blocked[$record.name] = "requires $req, which has no tool record"
+                    $blocked[$record.name] = "requires $req, which has no tool record"
                     continue
                 }
                 & $add @($found.Values)[0] "requires ($($record.name))"
             }
-            $Edges[$record.name] = @(@($Edges[$record.name]) + $req | Where-Object { $_ })
+            $edges[$record.name] = @(@($edges[$record.name]) + $req | Where-Object { $_ })
         }
     }
+    [pscustomobject]@{ Edges = $edges; Blocked = $blocked; RoleHint = $roleHint }
 }
 
 function Get-DFRoleRequirementHint {
