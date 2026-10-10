@@ -131,6 +131,9 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **A stuck winget could hang `trifle`:** `winget search` (the fallback when winget's index can't
+  be read) and `winget show` ran with no time limit. Both now stop after 30 seconds, and `trifle`
+  carries on with its other sources and cached data.
 - **Tools only on the npm registry (inshellisense) couldn't be installed:** `Install-DFTool` had
   no npm path. npm, pnpm and bun now install them.
 - **One broken tool no longer stops the rest from registering.** A companion that threw, or any

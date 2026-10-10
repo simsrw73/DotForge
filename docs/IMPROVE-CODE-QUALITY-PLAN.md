@@ -20,7 +20,7 @@ Started 2026-10-10 (the `/improve-code-quality` journey; an earlier, unadopted r
 | 4 — Reduce complexity | software-design-philosophy | done (score 8/10; one leak logged) | TODO.md (Architecture Backlog) | 2026-10-10 |
 | 5 — Draw the architecture boundary | clean-architecture | done (light; Layer Map below) | this tracker | 2026-10-10 |
 | 6 — Lock in the habits | pragmatic-programmer | done | TODO.md + CLAUDE.md | 2026-10-10 |
-| 7 — Make it survive production | release-it | in-progress | TODO.md + Integration-Point Audit below | |
+| 7 — Make it survive production | release-it | done (every outbound call bounded, except installs by design) | Integration-Point Audit below + TODO.md | 2026-10-10 |
 | 8 — Size for real load | system-design | skipped: no server and no request load; one user, one machine | — | 2026-10-10 |
 | 9 — Get the data layer right | ddia-systems | skipped: no database writes; SQLite catalog caches are read-only and rebuilt atomically | — | 2026-10-10 |
 | Optional — Domain language | domain-driven-design | skipped: the domain vocabulary (tool, role, group, source, feed, session) is already settled in the specs | — | 2026-10-10 |
@@ -63,7 +63,7 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 | Chocolatey, PowerShell Gallery feeds | 15 s | none; falls back to cache | ok |
 | crates.io, npm, PyPI APIs | 10 s | none; falls back to cache | ok |
 | GitHub API, release data | 10 s / 15 s | none; falls back to cache | ok |
-| `winget search` (CLI fallback), `winget show` | **none** | none | fix in Phase 7 |
+| `winget search` (CLI fallback), `winget show` | 30 s (`Invoke-DFBoundedProcess`, kills the process tree) | none; caller falls back | fixed 2026-10-10 |
 | Installed-package overlay (`Get-DFCatalogInstalled`) | 10 s overall | none | ok |
 | Package managers during `Install-DFTool` | none, by design | none | ok (interactive, long) |
 | `--help` capture (`Invoke-DFCommandCapture`, Helpers) | none | none | logged: a command that ignores the flag and reads stdin would hang `Show-DFCliHelp` |
@@ -75,4 +75,6 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 - [x] Phase 4: activation/registration/loader scored 8/10; the `role:` syntax leak logged (Claude, 2026-10-10)
 - [x] Phase 5: Layer Map recorded; the dependency rule is already test-enforced (Claude, 2026-10-10)
 - [x] Phase 6: no untracked TODOs; broken-windows policy recorded (Claude, 2026-10-10)
-- [ ] Phase 7: bound the `winget` process spawns with a timeout, test-first (Claude)
+- [x] Phase 7: `winget search`/`show` bounded at 30 s through `Invoke-DFBoundedProcess`; output verified identical on real winget (Claude, 2026-10-10)
+- [x] Journey re-score (Phase 2's decision): the starting module goes from 7/10 to 8/10 (names 9, functions 7, comments 9, error handling 8, tests 9, smells 7). What's left to reach 10 is the Readability rows still open in `TODO.md` (splitting `Test-DFToolSchema`, `ConvertTo-DFToolRecord`, `Get-DFRoleWinners`) and the `role:` syntax item.
+- [ ] Optional, any time: the open Readability rows and Architecture Backlog in `TODO.md`; the medium/low items in TESTING.md's Characterization Backlog before touching their code

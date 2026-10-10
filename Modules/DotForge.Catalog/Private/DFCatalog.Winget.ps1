@@ -104,11 +104,16 @@ function Get-DFCatalogWingetIndexPath {
     (Test-Path $indexFile) ? $indexFile : $null
 }
 
+# winget can stall on a source update or a network call; past this, give up
+# (the caller falls back to cached data or reports the source as failed).
+$script:DFWingetTimeoutSeconds = 30
+
 function Invoke-DFCatalogWingetCli {
     <#
     .SYNOPSIS
         Runs `winget search` and returns the raw output lines. Mockable seam
-        for the CLI-parse fallback.
+        for the CLI-parse fallback. Bounded: a winget that hangs is stopped
+        after $script:DFWingetTimeoutSeconds and the call throws.
     .PARAMETER Query
         The search query.
     #>
@@ -121,7 +126,9 @@ function Invoke-DFCatalogWingetCli {
     if (-not (Get-Command winget -ErrorAction Ignore)) {
         throw 'winget.exe is not available'
     }
-    winget search --query $Query --source winget --disable-interactivity 2>$null
+    (Invoke-DFBoundedProcess -FilePath (Get-Command winget -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source `
+        -ArgumentList 'search', '--query', $Query, '--source', 'winget', '--disable-interactivity' `
+        -TimeoutSeconds $script:DFWingetTimeoutSeconds).Lines
 }
 
 function Invoke-DFCatalogWingetCliSearch {
@@ -310,7 +317,7 @@ function Invoke-DFCatalogWingetShowCli {
     <#
     .SYNOPSIS
         Runs `winget show` for an exact package id and returns the raw output
-        lines. Mockable seam.
+        lines. Mockable seam. Bounded like Invoke-DFCatalogWingetCli.
     .PARAMETER PackageId
         The winget package id.
     #>
@@ -323,7 +330,9 @@ function Invoke-DFCatalogWingetShowCli {
     if (-not (Get-Command winget -ErrorAction Ignore)) {
         throw 'winget.exe is not available'
     }
-    winget show --id $PackageId --exact --source winget --disable-interactivity 2>$null
+    (Invoke-DFBoundedProcess -FilePath (Get-Command winget -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source `
+        -ArgumentList 'show', '--id', $PackageId, '--exact', '--source', 'winget', '--disable-interactivity' `
+        -TimeoutSeconds $script:DFWingetTimeoutSeconds).Lines
 }
 
 function ConvertFrom-DFCatalogWingetShow {
