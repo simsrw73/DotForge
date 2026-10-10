@@ -9,10 +9,9 @@ function New-DFToolPickerFunction {
         Reads $Tool.picker (a normalized record from ConvertTo-DFToolRecord)
         and defines a global function that calls Invoke-DFPicker with it.
         When picker.list_accepts_path is true, the function takes a -Path
-        parameter (default '.') appended to the list command, which is split on
-        whitespace (so quoted arguments in the list command are not supported;
-        see TODO.md). No-ops when $Tool has no object picker, or the picker
-        lacks a function/list pair.
+        parameter (default '.') appended to the list command. Quoted arguments
+        in the list command are supported. No-ops when $Tool has no object
+        picker, or the picker lacks a function/list pair.
     .PARAMETER Tool
         The normalized tool record declaring the picker.
     .OUTPUTS
@@ -39,12 +38,17 @@ function New-DFToolPickerFunction {
             -Ansi:$picker.ansi -Header $picker.header -Parse $parse -Action $action
     }.GetNewClosure()
 
+    $list = if ($picker.list_accepts_path) {
+        [scriptblock]::Create("$($picker.list) @args")
+    }
     $fn = if ($picker.list_accepts_path) {
-        $listParts = @($picker.list -split '\s+')
         {
             [CmdletBinding()]
             param([string]$Path = '.')
-            & $show { & $listParts[0] @($listParts[1..($listParts.Count - 1)]) $Path }.GetNewClosure()
+            # A local copy: the inner .GetNewClosure() captures only this scope's variables,
+            # not the outer closure's (the old code's $listParts was $null there).
+            $listToInvoke = $list
+            & $show { & $listToInvoke $Path }.GetNewClosure()
         }.GetNewClosure()
     } else {
         $list = [scriptblock]::Create($picker.list)

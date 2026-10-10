@@ -99,7 +99,10 @@ function New-DFShim {
     # 3. PATH check
     $onPath = $Env:PATH -split [IO.Path]::PathSeparator |
         Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
-        Where-Object { (ConvertTo-DFPath $_) -eq $shimsDir }
+        ForEach-Object {
+            try { ConvertTo-DFPath $_ } catch { }
+        } |
+        Where-Object { $_ -eq $shimsDir }
     if (-not $onPath) {
         Write-Warning "DotForge: '$shimsDir' is not on PATH — shims won't be invocable until it is added"
     }

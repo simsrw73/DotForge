@@ -37,7 +37,7 @@ function Invoke-DFHelp {
     if (Test-DFColorOutput) {
         $p = Get-DFAnsiPalette -Color $true
         $yellow, $reset = $p.Accent, $p.Reset
-        $helpText = $helpText -creplace '(?m)^([A-Z]{2,}(?: [A-Z]+)*)\r?$', "$yellow`$1$reset"
+        $helpText = $helpText -creplace '(?m)^([A-Z][A-Z_]+(?: [A-Z][A-Z_]*)*)\r?$', "$yellow`$1$reset"
     }
 
     $helpText | Invoke-DFWithPager
@@ -77,7 +77,7 @@ function Select-DFCommand {
         -List { Get-Command @gcParams |
             ForEach-Object { '{0,-50} {1,-15} {2}' -f $_.Name, $_.CommandType, $_.Source } } `
         -Header 'Select command  [Enter to output name]' `
-        -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
+        -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String"' `
         -Parse { ($_ -split '\s+')[0] }
 }
 function Select-DFVerb {
@@ -191,7 +191,7 @@ function Select-DFHelpTopic {
         -Delimiter "`t" `
         -WithNth   '1' `
         -Header    'Browse help topics  [Enter to view full help]' `
-        -Preview   'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
+        -Preview   'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String"' `
         -Parse     { ($_ -split "`t", 2)[0] } `
         -Action    { param($topic) Invoke-DFHelp $topic }
 }

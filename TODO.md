@@ -15,20 +15,13 @@ git history, not here. IDs are never reused; the next free one is **T-55**.
 - [ ] **T-4 5 tools lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`).
 - [ ] **T-5 Seed default configs for ripgrep and wget** — use `setup.seed`: `ripgrep` needs `RIPGREP_CONFIG_PATH` and a seeded `ripgreprc`; `wget` needs `WGETRC` and an empty file.
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
-- [ ] **T-7 Help header colorization misses underscored headers** — the regex in `Modules/DotForge.Helpers/Public/DFHelpers.Help.ps1:40` (`[A-Z]{2,}`) skips headers like `ABOUT_ALIAS_PROVIDER`. Allow underscores.
-- [ ] **T-8 `'Out-String" 2>nul' is not recognized`** — the fzf `-Preview` commands in `Modules/DotForge.Helpers/Public/DFHelpers.Help.ps1:80,194` and `DFHelpers.Process.ps1:37` end in CMD-style `2>nul`, which fails when fzf runs previews through PowerShell. Make the redirect shell-neutral.
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (b) exercise a sidecar load through a `..`-bearing `-ToolsPath` in the `Register-DFTool` test; (c) resolve `$ToolsPath` once before `Import-DFToolDb` in `Register-DFTool`; (d) tests use `C:\` literals, so macOS/Linux stays unverified.
-- [ ] **T-11 Fix `list_accepts_path` command splitting** — generated picker functions (`Private/New-DFToolPickerFunction.ps1`) split the list command on whitespace, breaking quoted arguments and single-word commands. Add tests that invoke the generated functions.
-- [ ] **T-12 Harden `New-DFShim` PATH normalization** — a malformed PATH entry can throw during the shims-dir-on-PATH check. Handle it like `Add-DFToPath`.
 - [ ] **T-13 Improve `Install-DFTool` failure diagnostics** — a failed batch reports the last three lines of output; show the full output under `-Verbose`.
-- [ ] **T-14 Make `New-DFDirectory` failures visible** — it suppresses errors (`Public/New-DFDirectory.ps1`), which hides permission/path problems until something fails later.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
 - [ ] **T-17 trifle `-Readme`: gate the npm tier on a repo match** — a name collision shows the wrong readme (`trifle ripgrep -Readme` shows the npm `ripgrep` wrapper's). Use the npm readme only when no GitHub repo resolves, or when its `RepositoryUrl` matches.
 - [ ] **T-18 trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches other catalogs with the full dotted id. Use the matched index row's `Name` instead.
-- [ ] **T-20 `--help` capture has no time limit** — `Invoke-DFCommandCapture` (`Modules/DotForge.Helpers/Private/`) runs `& $Name @Arguments`; a command that ignores the flag and reads stdin hangs `Show-DFCliHelp`. Reuse `Invoke-DFBoundedProcess` when the target is an executable.
-
 ## Priority 2 — Architecture Backlog
 
 From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and the improve-code-quality journey (`docs/IMPROVE-CODE-QUALITY-PLAN.md`).

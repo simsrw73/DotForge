@@ -17,6 +17,17 @@ Describe 'Select-DFProcess' {
         Mock Invoke-DFFzf { $null }
         fps | Should -BeNullOrEmpty
     }
+
+    It 'passes a preview without 2>nul to Invoke-DFPicker' {
+        $script:captured = $null
+        Mock Invoke-DFPicker {
+            $script:captured = $Preview
+            return $null
+        }
+        Select-DFProcess
+        $script:captured | Should -Not -BeNullOrEmpty
+        $script:captured | Should -Not -Match '2>nul'
+    }
 }
 
 Describe 'Get-DFTopProcess' {

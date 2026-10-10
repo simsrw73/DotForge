@@ -8,6 +8,9 @@ Describe 'New-DFToolPickerFunction' {
         Remove-DFTestGlobal -Function 'Select-TestThing'
         Remove-Alias ftt -Force -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'Select-TestPathThing'
+        Remove-DFTestGlobal -Function 'Invoke-TestPickerList'
+        Remove-DFTestGlobal -Function 'Invoke-DFPicker'
+        Remove-Variable -Name 'DFTestCapturedList', 'DFTestListArguments' -Scope Global -ErrorAction Ignore
     }
 
     It 'installs a global function and alias for a simple picker' {
@@ -68,5 +71,53 @@ Describe 'New-DFToolPickerFunction' {
         $cmd = Get-Command Select-TestPathThing -CommandType Function -ErrorAction Ignore
         $cmd | Should -Not -BeNullOrEmpty
         $cmd.Parameters.ContainsKey('Path') | Should -BeTrue
+    }
+
+    It 'passes the path as the only argument to a single-word list command' {
+        function global:Invoke-TestPickerList { $global:DFTestListArguments = @($args) }
+        # The generated picker is a global function, so a global stand-in (not a Mock) is what it calls.
+        Set-Item function:global:Invoke-DFPicker -Value {
+            param([scriptblock]$List)
+            $global:DFTestCapturedList = $List
+        }
+        $tool = '{ "name": "t", "picker": { "function": "Select-TestPathThing", "list": "Invoke-TestPickerList", "list_accepts_path": true } }' | ConvertFrom-Json
+
+        New-DFToolPickerFunction -Tool $tool
+        Select-TestPathThing -Path 'C:\test-path'
+        & $global:DFTestCapturedList
+
+        $global:DFTestListArguments | Should -Be @('C:\test-path')
+    }
+
+    It 'preserves quoted arguments before appending the path to a list command' {
+        function global:Invoke-TestPickerList { $global:DFTestListArguments = @($args) }
+        # The generated picker is a global function, so a global stand-in (not a Mock) is what it calls.
+        Set-Item function:global:Invoke-DFPicker -Value {
+            param([scriptblock]$List)
+            $global:DFTestCapturedList = $List
+        }
+        $tool = '{ "name": "t", "picker": { "function": "Select-TestPathThing", "list": "Invoke-TestPickerList --ignore-glob \"a b\"", "list_accepts_path": true } }' | ConvertFrom-Json
+
+        New-DFToolPickerFunction -Tool $tool
+        Select-TestPathThing -Path 'C:\test-path'
+        & $global:DFTestCapturedList
+
+        $global:DFTestListArguments | Should -Be @('--ignore-glob', 'a b', 'C:\test-path')
+    }
+
+    It 'uses . as the default path for a path-accepting list command' {
+        function global:Invoke-TestPickerList { $global:DFTestListArguments = @($args) }
+        # The generated picker is a global function, so a global stand-in (not a Mock) is what it calls.
+        Set-Item function:global:Invoke-DFPicker -Value {
+            param([scriptblock]$List)
+            $global:DFTestCapturedList = $List
+        }
+        $tool = '{ "name": "t", "picker": { "function": "Select-TestPathThing", "list": "Invoke-TestPickerList", "list_accepts_path": true } }' | ConvertFrom-Json
+
+        New-DFToolPickerFunction -Tool $tool
+        Select-TestPathThing
+        & $global:DFTestCapturedList
+
+        $global:DFTestListArguments | Should -Be @('.')
     }
 }

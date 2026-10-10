@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 5ed61159c844010a6db2e4fa4283f68f099cce394eec4703eeee6f9b4b627c2d
+# sources-sha256: e90f389feb61fec73a5b6cedb80b9e80c0e974160beb04804840444d43f23937
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -780,6 +780,76 @@ function ConvertTo-DFToolRecord {
         if (-not $record.Contains($p.Name) -and $p.Name -ne 'role') { $record[$p.Name] = $p.Value }
     }
     [pscustomobject]$record
+}
+
+# ---- Shared/Invoke-DFBoundedProcess.ps1
+#Requires -Version 7.2
+
+function Invoke-DFBoundedProcess {
+    <#
+    .SYNOPSIS
+        Runs an executable with a time limit and returns its output lines and exit code.
+    .DESCRIPTION
+        For outside programs that can hang (winget waiting on a source update or
+        a stuck network call). Standard output is captured and split into lines
+        the way PowerShell splits a native command's output; standard error is
+        discarded unless -IncludeStandardError is set. A process still running after -TimeoutSeconds is killed with
+        its child processes, and the call throws, naming the command.
+        Output is decoded with [Console]::OutputEncoding, as `& exe` would.
+    .PARAMETER FilePath
+        The executable's full path.
+    .PARAMETER ArgumentList
+        Arguments, each passed as one argument (no quoting needed).
+    .PARAMETER TimeoutSeconds
+        How long to wait before killing the process.
+    .PARAMETER IncludeStandardError
+        Include standard error lines after the standard output lines. The
+        original interleaving of the two streams is not preserved.
+    .OUTPUTS
+        pscustomobject: Lines (string[]), ExitCode (int).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [string[]]$ArgumentList = @(),
+        [Parameter(Mandatory)][ValidateRange(1, 3600)][int]$TimeoutSeconds,
+        [switch]$IncludeStandardError
+    )
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new($FilePath)
+    foreach ($argument in $ArgumentList) { $startInfo.ArgumentList.Add($argument) }
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [Console]::OutputEncoding
+    $startInfo.StandardErrorEncoding = [Console]::OutputEncoding
+
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    try {
+        $process.StandardInput.Close()
+        # Read both streams asynchronously: a full, unread pipe would block the child.
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+            try { $process.Kill($true) } catch { Write-Verbose "DotForge: couldn't kill '$FilePath': $($_.Exception.Message)" }
+            $command = (@([System.IO.Path]::GetFileName($FilePath)) + $ArgumentList) -join ' '
+            throw "DotForge: '$command' did not finish within $TimeoutSeconds s and was stopped."
+        }
+        $process.WaitForExit()   # lets the redirected streams drain
+        $text = $stdout.GetAwaiter().GetResult()
+        $lines = @($text -split '\r?\n')
+        if ($lines.Count -and $lines[-1] -eq '') { $lines = @($lines | Select-Object -SkipLast 1) }
+        if ($IncludeStandardError) {
+            $errorText = $stderr.GetAwaiter().GetResult()
+            $errorLines = @($errorText -split '\r?\n')
+            if ($errorLines.Count -and $errorLines[-1] -eq '') { $errorLines = @($errorLines | Select-Object -SkipLast 1) }
+            $lines = @($lines) + @($errorLines)
+        }
+        [pscustomobject]@{ Lines = [string[]]$lines; ExitCode = $process.ExitCode }
+    } finally {
+        $process.Dispose()
+    }
 }
 
 # ---- Shared/Invoke-DFFzf.ps1
@@ -3326,10 +3396,9 @@ function New-DFToolPickerFunction {
         Reads $Tool.picker (a normalized record from ConvertTo-DFToolRecord)
         and defines a global function that calls Invoke-DFPicker with it.
         When picker.list_accepts_path is true, the function takes a -Path
-        parameter (default '.') appended to the list command, which is split on
-        whitespace (so quoted arguments in the list command are not supported;
-        see TODO.md). No-ops when $Tool has no object picker, or the picker
-        lacks a function/list pair.
+        parameter (default '.') appended to the list command. Quoted arguments
+        in the list command are supported. No-ops when $Tool has no object
+        picker, or the picker lacks a function/list pair.
     .PARAMETER Tool
         The normalized tool record declaring the picker.
     .OUTPUTS
@@ -3356,12 +3425,17 @@ function New-DFToolPickerFunction {
             -Ansi:$picker.ansi -Header $picker.header -Parse $parse -Action $action
     }.GetNewClosure()
 
+    $list = if ($picker.list_accepts_path) {
+        [scriptblock]::Create("$($picker.list) @args")
+    }
     $fn = if ($picker.list_accepts_path) {
-        $listParts = @($picker.list -split '\s+')
         {
             [CmdletBinding()]
             param([string]$Path = '.')
-            & $show { & $listParts[0] @($listParts[1..($listParts.Count - 1)]) $Path }.GetNewClosure()
+            # A local copy: the inner .GetNewClosure() captures only this scope's variables,
+            # not the outer closure's (the old code's $listParts was $null there).
+            $listToInvoke = $list
+            & $show { & $listToInvoke $Path }.GetNewClosure()
         }.GetNewClosure()
     } else {
         $list = [scriptblock]::Create($picker.list)
@@ -5524,12 +5598,11 @@ function Invoke-DFToolSetup {
 function New-DFDirectory {
     <#
     .SYNOPSIS
-        Creates a directory if it does not exist. Idempotent and silent.
+        Creates a directory if it does not exist. Idempotent.
     .DESCRIPTION
         Wraps New-Item -ItemType Directory -Force, creating any missing parent
-        directories. Succeeds silently if the directory already exists, and stays
-        silent on failure too (errors are suppressed), so check with Test-Path
-        when creation must succeed. An absolute path is canonicalized with
+        directories. Succeeds silently if the directory already exists; emits a
+        warning if creation fails. An absolute path is canonicalized with
         ConvertTo-DFPath first; a relative path is created relative to the
         current location. Null or empty paths are skipped. All DotForge
         directory creation uses this function.
@@ -5552,7 +5625,15 @@ function New-DFDirectory {
         # Canonicalize an absolute path (collapses .., native separators); leave a
         # relative path untouched so creating a relative dir stays valid and silent.
         if ([System.IO.Path]::IsPathRooted($Path)) { $Path = ConvertTo-DFPath $Path }
-        New-Item -ItemType Directory -Force -Path $Path -ErrorAction SilentlyContinue | Out-Null
+        try {
+            New-Item -ItemType Directory -Force -Path $Path -ErrorAction Stop | Out-Null
+            if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+                throw [System.IO.IOException]::new("Cannot create '$Path' because a file or directory with the same name already exists.")
+            }
+        }
+        catch {
+            Write-Warning "DotForge: couldn't create '$Path': $($_.Exception.Message)"
+        }
     }
 }
 
@@ -5658,7 +5739,10 @@ function New-DFShim {
     # 3. PATH check
     $onPath = $Env:PATH -split [IO.Path]::PathSeparator |
         Where-Object { $_ -and [IO.Path]::IsPathRooted($_) } |
-        Where-Object { (ConvertTo-DFPath $_) -eq $shimsDir }
+        ForEach-Object {
+            try { ConvertTo-DFPath $_ } catch { }
+        } |
+        Where-Object { $_ -eq $shimsDir }
     if (-not $onPath) {
         Write-Warning "DotForge: '$shimsDir' is not on PATH — shims won't be invocable until it is added"
     }

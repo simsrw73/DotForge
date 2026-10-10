@@ -10,7 +10,7 @@ function Resolve-DFCliHelpFlag {
         because it collides with real flags) and accepts the first candidate whose output
         looks like help and is not an unknown-option error, caching the winner. Returns the
         best-output candidate uncached when none validate cleanly, or $null when every
-        candidate produced no output.
+        candidate produced no output. Stops probing when a command capture times out.
     .PARAMETER Name
         The command name to resolve a help flag for.
     .PARAMETER Force
@@ -54,6 +54,11 @@ function Resolve-DFCliHelpFlag {
 
     foreach ($flag in $candidates) {
         $capture = Invoke-DFCommandCapture -Name $Name -Arguments @($flag)
+        if ($capture.TimedOut) {
+            $best = $null
+            $bestCapture = $null
+            break
+        }
         $text = $capture.Text
         if ([string]::IsNullOrWhiteSpace($text)) { continue }
 

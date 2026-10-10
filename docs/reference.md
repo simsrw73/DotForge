@@ -26,7 +26,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
 | [Invoke-DFToolSetup](#invoke-dftoolsetup) |  | Runs a tool's one-time setup again: its seeded config files, then its setup script. |
 | [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
-| [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent and silent. |
+| [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
@@ -727,13 +727,13 @@ Runs the scriptblock and pages its output through less, using the pg alias.
 
 ### New-DFDirectory
 
-Creates a directory if it does not exist. Idempotent and silent.
+Creates a directory if it does not exist. Idempotent.
 
 ```text
 New-DFDirectory [[-Path] <string>] [<CommonParameters>]
 ```
 
-Wraps New-Item -ItemType Directory -Force, creating any missing parent directories. Succeeds silently if the directory already exists, and stays silent on failure too (errors are suppressed), so check with Test-Path when creation must succeed. An absolute path is canonicalized with ConvertTo-DFPath first; a relative path is created relative to the current location. Null or empty paths are skipped. All DotForge directory creation uses this function.
+Wraps New-Item -ItemType Directory -Force, creating any missing parent directories. Succeeds silently if the directory already exists; emits a warning if creation fails. An absolute path is canonicalized with ConvertTo-DFPath first; a relative path is created relative to the current location. Null or empty paths are skipped. All DotForge directory creation uses this function.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |

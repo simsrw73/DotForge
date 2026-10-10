@@ -46,4 +46,31 @@ Describe 'New-DFDirectory' {
             $w | Should -BeNullOrEmpty
         } finally { Pop-Location }
     }
+
+    It 'emits a warning containing the path and does not throw when a file of the same name already exists' {
+        $filePath = Join-Path $TestDrive 'file-conflict'
+        New-Item -ItemType File -Path $filePath | Out-Null
+        $w = $null
+        New-DFDirectory $filePath -WarningVariable w
+        $w.Count | Should -Be 1
+        $w[0].Message | Should -BeLike "*$filePath*"
+    }
+
+    It 'emits a warning and does not throw when a file exists under ErrorActionPreference Stop' {
+        $filePath = Join-Path $TestDrive 'file-conflict-stop'
+        New-Item -ItemType File -Path $filePath | Out-Null
+        $w = $null
+        $ErrorActionPreference = 'Stop'
+        New-DFDirectory $filePath -WarningVariable w
+        $w.Count | Should -Be 1
+        $w[0].Message | Should -BeLike "*$filePath*"
+    }
+
+    It 'produces no warning when directory already exists' {
+        $dir = Join-Path $TestDrive 'existing-nowarn'
+        New-Item -ItemType Directory -Path $dir | Out-Null
+        $w = $null
+        New-DFDirectory $dir -WarningVariable w
+        $w | Should -BeNullOrEmpty
+    }
 }

@@ -6,6 +6,19 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Pickers that take a path (eza's file picker) failed every time:** the generated function lost its
+  list command inside a nested closure, and it split the command on spaces, so quoted arguments and
+  one-word commands broke. The list command is now parsed by PowerShell, quoting included.
+- **`--help` capture could hang:** `Show-DFCliHelp` ran a program with no time limit, so one that ignored
+  the help flag and waited (on input, a network call) froze the shell. Programs now get 10 seconds, and
+  probing stops at the first timeout.
+- **fzf previews in the help and process pickers failed** with `'Out-String" 2>nul' is not recognized`
+  when fzf ran previews through PowerShell: they ended in CMD-only `2>nul`.
+- **Help headers with underscores** (`ABOUT_ALIAS_PROVIDER`) are colored like other headers.
+- **`New-DFDirectory` failures are visible:** a folder it can't create (a file in the way, no
+  permission) now gives one warning naming it, instead of failing silently until something else broke.
+  It never stops the load, even under `$ErrorActionPreference = 'Stop'`.
+- **A malformed PATH entry could make `New-DFShim` throw:** such entries are now skipped.
 - **The Gallery package is tagged `PSEdition_Core`**, and every script's `#Requires` line now
   matches the manifest's minimum, PowerShell 7.2.
 - **A slow package manager could make `trifle` throw:** when listing installed packages hit its

@@ -34,7 +34,7 @@ function Select-DFProcess {
         -List    { Get-Process | Sort-Object CPU -Descending |
                    ForEach-Object { '{0,-35} {1,7} {2,8:F1} {3,10}' -f $_.Name, $_.Id, $_.CPU, [math]::Round($_.WorkingSet / 1MB) } } `
         -Header  'Select process  [Enter to output object]' `
-        -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Process -Id {2} | Format-List *" 2>nul' `
+        -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Process -Id {2} -ErrorAction Ignore | Format-List *"' `
         -Multi:$Multi `
         -Parse   {
             $parts = ($_ -split '\s+').Where({ $_ })

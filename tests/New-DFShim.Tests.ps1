@@ -109,6 +109,15 @@ Describe 'New-DFShim' {
         $warns | Should -BeNullOrEmpty
     }
 
+    It 'skips malformed PATH entries while recognizing the shims directory' {
+        $malformedPath = 'C:\' + ('a' * 40000)
+        $Env:PATH = $malformedPath + [IO.Path]::PathSeparator + $script:ShimsDir
+
+        { New-DFShim -Name 'myapp' -Target $script:FakeExe -ShimsPath $script:ShimsDir } |
+            Should -Not -Throw
+        Test-Path (Join-Path $script:ShimsDir 'myapp.cmd') | Should -BeTrue
+    }
+
     It 'resolves target from tool DB when -Target is omitted' {
         $toolsDir = Join-Path $TestDrive 'tools'
         New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null

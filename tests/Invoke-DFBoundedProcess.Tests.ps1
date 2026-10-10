@@ -21,6 +21,11 @@ Describe 'Invoke-DFBoundedProcess' {
         $r.Lines | Should -Be @('kept')
     }
 
+    It 'includes stderr lines after stdout when requested' {
+        $r = Invoke-DFBoundedProcess -FilePath $script:Pwsh -ArgumentList '-NoProfile', '-Command', '[Console]::Error.WriteLine("noise"); Write-Output kept' -TimeoutSeconds 30 -IncludeStandardError
+        $r.Lines | Should -Be @('kept', 'noise')
+    }
+
     It 'kills a process that runs past the timeout and throws, naming the command' {
         $marker = "df-bounded-$(Get-Random)"
         $clock = [System.Diagnostics.Stopwatch]::StartNew()

@@ -87,6 +87,17 @@ Describe 'Select-DFCommand' {
         Mock Invoke-DFFzf { $null }
         Select-DFCommand | Should -BeNullOrEmpty
     }
+
+    It 'passes a preview without 2>nul to Invoke-DFPicker' {
+        $script:captured = $null
+        Mock Invoke-DFPicker {
+            $script:captured = $Preview
+            return $null
+        }
+        Select-DFCommand
+        $script:captured | Should -Not -BeNullOrEmpty
+        $script:captured | Should -Not -Match '2>nul'
+    }
 }
 
 Describe 'Invoke-DFHelp regex' {
@@ -123,6 +134,42 @@ Describe 'Invoke-DFHelp regex' {
         Mock Get-Help { "Short description`nsome content" | Out-String }
         $result = Invoke-DFHelp 'anything'
         ($result -join '') | Should -Not -Match "`e\[.*Short"
+    }
+
+    It 'colorizes headers with underscores' {
+        Mock Get-Help { "ABOUT_ALIAS_PROVIDER`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Match "`e\[.*ABOUT_ALIAS_PROVIDER"
+    }
+
+    It 'colorizes multi-word headers containing underscores' {
+        Mock Get-Help { "ABOUT_ALIASES AND_MORE`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Match "`e\[.*ABOUT_ALIASES AND_MORE"
+    }
+
+    It 'does not colorize lines that are only underscores' {
+        Mock Get-Help { "____`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Not -Match "`e\[.*____"
+    }
+
+    It 'colorizes a header whose last word is a single letter' {
+        Mock Get-Help { "PART A`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Match "`e\[.*PART A"
+    }
+
+    It 'does not colorize a line with a word starting with an underscore' {
+        Mock Get-Help { "ABOUT _HIDDEN`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Not -Match "`e\[.*ABOUT _HIDDEN"
+    }
+
+    It 'does not colorize lines starting with an underscore' {
+        Mock Get-Help { "_STARTING_WITH_UNDERSCORE`nsome content" | Out-String }
+        $result = Invoke-DFHelp 'anything'
+        ($result -join '') | Should -Not -Match "`e\[.*_STARTING_WITH_UNDERSCORE"
     }
 }
 
@@ -165,5 +212,17 @@ Describe 'Select-DFHelpTopic' {
         Mock Invoke-DFFzf { $null }
         Select-DFHelpTopic -Force
         Should -Invoke Get-DFHelpTopicList -ParameterFilter { $Force }
+    }
+
+    It 'passes a preview without 2>nul to Invoke-DFPicker' {
+        Mock Get-DFHelpTopicList { @("Get-Process`tCmdlet") }
+        $script:captured = $null
+        Mock Invoke-DFPicker {
+            $script:captured = $Preview
+            return $null
+        }
+        Select-DFHelpTopic
+        $script:captured | Should -Not -BeNullOrEmpty
+        $script:captured | Should -Not -Match '2>nul'
     }
 }

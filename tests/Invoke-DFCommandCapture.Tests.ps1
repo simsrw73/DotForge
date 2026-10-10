@@ -24,5 +24,32 @@ Describe 'Invoke-DFCommandCapture' {
         $r = Invoke-DFCommandCapture -Name 'pwsh' -Arguments @('-NoProfile', '-Command', 'Write-Output x')
         $r.PSObject.Properties.Name | Should -Contain 'Text'
         $r.PSObject.Properties.Name | Should -Contain 'ExitCode'
+        $r.PSObject.Properties.Name | Should -Contain 'TimedOut'
+        $r.TimedOut | Should -BeFalse
+    }
+
+    It 'returns a timeout result for an executable that exceeds its time limit' {
+        $clock = [System.Diagnostics.Stopwatch]::StartNew()
+        $r = Invoke-DFCommandCapture -Name 'pwsh' -Arguments @('-NoProfile', '-Command', 'Start-Sleep 60') -TimeoutSeconds 1
+
+        $r.TimedOut | Should -BeTrue
+        $r.ExitCode | Should -Be -1
+        $r.Text | Should -Be ''
+        $clock.Elapsed.TotalSeconds | Should -BeLessThan 20
+    }
+
+    It 'continues to capture non-executable commands without a timeout' {
+        function Test-DFCaptureFunction { param($Value) "function $Value" }
+
+        $r = Invoke-DFCommandCapture -Name 'Test-DFCaptureFunction' -Arguments @('works')
+
+        $r.Text | Should -Be 'function works'
+        $r.TimedOut | Should -BeFalse
+    }
+
+    It 'reports an executable that fails to run as an error, not a timeout' {
+        Mock Invoke-DFBoundedProcess { throw 'the program could not start' }
+
+        { Invoke-DFCommandCapture -Name 'pwsh' -Arguments @('-NoProfile') } | Should -Throw '*could not start*'
     }
 }

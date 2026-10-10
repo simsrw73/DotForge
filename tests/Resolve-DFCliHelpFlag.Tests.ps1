@@ -94,4 +94,11 @@ Describe 'Resolve-DFCliHelpFlag' {
         Mock Invoke-DFCommandCapture { [pscustomobject]@{ Text = ''; ExitCode = 1 } }
         Resolve-DFCliHelpFlag -Name 'demo' | Should -BeNullOrEmpty
     }
+
+    It 'stops probing when the first help flag capture times out' {
+        Mock Invoke-DFCommandCapture { [pscustomobject]@{ Text = ''; ExitCode = -1; TimedOut = $true } }
+
+        Resolve-DFCliHelpFlag -Name 'demo' | Should -BeNullOrEmpty
+        Should -Invoke Invoke-DFCommandCapture -Times 1 -Exactly
+    }
 }
