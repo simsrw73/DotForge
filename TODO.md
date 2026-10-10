@@ -1,343 +1,81 @@
 # TODO
 
+Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
+(`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
+git history, not here. IDs are never reused; the next free one is **T-55**.
+
 ## Priority 1 — Release Readiness
 
-- [ ] **Promote to stable 1.0.0** — fix all open Problems below, bump `ModuleVersion` to `1.0.0`, remove `Prerelease = 'preview'` from psd1, move CHANGELOG `[Unreleased]` → `[1.0.0]`, republish via `Publish-DotForge.ps1`
-- [ ] **User tool extension guide** — document how users add their own tool JSON records, argument completers, and pickers without forking the module; move into README or a separate `docs/extending.md`
+- [ ] **T-1 Promote to stable 1.0.0** — fix the open Problems below, then follow CLAUDE.md's Releasing steps with `Prerelease` removed.
+- [ ] **T-2 User tool extension guide** — how users add their own tool JSON records, argument completers and pickers without forking the module (a `docs/guide/` page).
 
 ## Priority 2 — Open Problems
 
-- [ ] **Legacy profile fold-in is incomplete — the remainder is silently inactive** — see [the design spec](docs/superpowers/specs/2026-07-15-legacy-profile-fold-in-design.md) for the full audit. `cli_tools_config.ps1` is no longer dot-sourced by any profile, so everything not yet folded in is a **live regression**, not a backlog. Remaining: 12 fzf pickers, 5 uncovered completers, small functions, and 6 tools with no record. Sub-items:
-  - [x] **Restore `fzf` and `delta` env vars** — done 2026-07-15 (`Tools/fzf.json`, `Tools/delta.json`). Caveat: `DELTA_FEATURES=catppuccin-mocha` is a **no-op** — no `[delta "catppuccin-mocha"]` feature is defined in any git config scope and delta silently ignores unknown features. Define it to make it live.
-  - [x] **Decide Carapace vs. a DotForge completion engine** — done 2026-07-15: **carapace adopted**, no engine built. Now a DotForge tool (`Tools/carapace.json` + `.ps1`), picked up by the existing `Register-DFTool -All`; no profile change needed. Covers 11/16 (`eza`, `bat`, `fd`, `rg`, `npm`, `gh`, `glow`, `procs`, `rustup`, `chezmoi`, `winget`). Composes with PSFzf because it registers argument completers and never binds Tab.
-  - [ ] **5 tools still lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`) over reviving a completion engine.
-  - [x] **`"picker": "custom"` is unverified** — done 2026-07-15. **11** tools declared it with no sidecar picker (`gh`, `jq`, `glow`, `docker`, `rustup`, `npm`, `uv`, `chezmoi`, `bitwarden`, `scoop`, and `gsudo`), and `psreadline` under-declared `null` while its sidecar builds `fprl`. Records are now honest and `tests/Tools.PickerDeclaration.Tests.ps1` fails the suite in both directions. The 12 unported pickers remain tracked in the spec (§3).
-  - [ ] **`Register-DFTool` help claims it "registers argument completers"** (`Public/Register-DFTool.ps1:11`) — only indirectly true now, via the carapace sidecar; the wording still implies a schema-driven feature that does not exist. Fix the wording.
-  - [ ] **Seed default configs for ripgrep and wget** — the mechanism exists now (`setup.seed`, independent of `xdg.method`, 2026-10-09): `ripgrep` needs `RIPGREP_CONFIG_PATH` *and* a seeded default `ripgreprc`; `wget` needs `WGETRC` *and* an empty file.
-- [x] **Clipboard tests are flaky — they use the real OS clipboard** — done 2026-07-24: `tests/DFHelpers.Clipboard.Tests.ps1` now mocks `Set-Clipboard`/`Get-Clipboard` (the `Invoke-DFFzf` pattern) instead of round-tripping the real clipboard, asserting the wrapper's join/pipeline logic deterministically. Verified 0 failures across 10 consecutive runs.
-- [ ] **Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` was captured from Coreutils for Windows 2026.6.16 on 2026-07-15. A newer release may add utilities the list lacks, which weakens the dev-time tripwire (never the runtime check, which always reads the live set). Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
-- [x] **`AliasesToExport` is decorative** — done 2026-07-31: all 27 general-helper aliases now
-  created via a bare `Set-Alias` (module scope, no `-Force`), so the manifest's `AliasesToExport`
-  is a genuine export — `(Get-Module DotForge).ExportedAliases` and `Remove-Module` both work
-  correctly now. Tool/picker aliases remain intentionally outside the manifest (see
-  `ToolAcquisitionSpec.md` §9.1) — that split is by design, not the gap this item described.
-- [ ] **Help header colorization misses `ABOUT_ALIAS_PROVIDER`-style headers** — `Invoke-DFHelp` regex matches ALL-CAPS headers but fails when they contain underscores (e.g. `ABOUT_ALIAS_PROVIDER`). Extend the regex to allow underscores.
-- [ ] **`'Out-String" 2>nul' is not recognized`** — error appears in some contexts; investigate source (likely a companion script using CMD-style stderr redirect instead of PowerShell `2>$null`)
-- [ ] **Red `?` on a line by itself in some Help output** — appears at the same indentation as surrounding content; investigate whether it's a broken ANSI sequence or a `Get-Help` rendering artifact
-- [x] **Add `node` and `bun` tool records for the `js-runtime` role** — done 2026-10-09 in slice 3 ([the install spec](docs/superpowers/specs/2026-10-09-install-design.md), section 8): node and bun are the role's members; fnm and mise left it and are install sources for node.
-- [x] **Is posh-git still needed now that starship is the prompt?** — no (2026-10-10): starship shows git status and carapace completes git; the user's profile no longer requests it (nor Terminal-Icons: eza draws its own icons). Both stay available as tools.
-- [ ] **`Error: unknown command "completion" for "oh-my-posh"`** — may be version-specific; verify against current oh-my-posh release and fix or suppress if the subcommand was removed
+- [ ] **T-3 Legacy profile fold-in is incomplete** — see [the design spec](docs/superpowers/specs/2026-07-15-legacy-profile-fold-in-design.md). `cli_tools_config.ps1` is no longer dot-sourced, so whatever isn't folded in is inactive: 12 fzf pickers (spec §3), small functions, and 6 tools with no record.
+- [ ] **T-4 5 tools lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`).
+- [ ] **T-5 Seed default configs for ripgrep and wget** — use `setup.seed`: `ripgrep` needs `RIPGREP_CONFIG_PATH` and a seeded `ripgreprc`; `wget` needs `WGETRC` and an empty file.
+- [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
+- [ ] **T-7 Help header colorization misses underscored headers** — the regex in `Modules/DotForge.Helpers/Public/DFHelpers.Help.ps1:40` (`[A-Z]{2,}`) skips headers like `ABOUT_ALIAS_PROVIDER`. Allow underscores.
+- [ ] **T-8 `'Out-String" 2>nul' is not recognized`** — the fzf `-Preview` commands in `Modules/DotForge.Helpers/Public/DFHelpers.Help.ps1:80,194` and `DFHelpers.Process.ps1:37` end in CMD-style `2>nul`, which fails when fzf runs previews through PowerShell. Make the redirect shell-neutral.
+- [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
+- [ ] **T-10 Path-normalization follow-ups** — (b) exercise a sidecar load through a `..`-bearing `-ToolsPath` in the `Register-DFTool` test; (c) resolve `$ToolsPath` once before `Import-DFToolDb` in `Register-DFTool`; (d) tests use `C:\` literals, so macOS/Linux stays unverified.
+- [ ] **T-11 Fix `list_accepts_path` command splitting** — generated picker functions (`Private/New-DFToolPickerFunction.ps1`) split the list command on whitespace, breaking quoted arguments and single-word commands. Add tests that invoke the generated functions.
+- [ ] **T-12 Harden `New-DFShim` PATH normalization** — a malformed PATH entry can throw during the shims-dir-on-PATH check. Handle it like `Add-DFToPath`.
+- [ ] **T-13 Improve `Install-DFTool` failure diagnostics** — a failed batch reports the last three lines of output; show the full output under `-Verbose`.
+- [ ] **T-14 Make `New-DFDirectory` failures visible** — it suppresses errors (`Public/New-DFDirectory.ps1`), which hides permission/path problems until something fails later.
+- [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
+- [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
+- [ ] **T-17 trifle `-Readme`: gate the npm tier on a repo match** — a name collision shows the wrong readme (`trifle ripgrep -Readme` shows the npm `ripgrep` wrapper's). Use the npm readme only when no GitHub repo resolves, or when its `RepositoryUrl` matches.
+- [ ] **T-18 trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches other catalogs with the full dotted id. Use the matched index row's `Name` instead.
+- [ ] **T-19 `TabCompletionHooks.Tests.ps1` prints errors without failing** — a test mocks `New-DFDirectory` to a no-op, so `Tools/carapace.ps1` writes into a missing folder. Let the folder be created (under `$TestDrive`) or stub the spec deployment.
+- [ ] **T-20 `--help` capture has no time limit** — `Invoke-DFCommandCapture` (`Modules/DotForge.Helpers/Private/`) runs `& $Name @Arguments`; a command that ignores the flag and reads stdin hangs `Show-DFCliHelp`. Reuse `Invoke-DFBoundedProcess` when the target is an executable.
 
-## Priority 2 — Review Follow-ups
+## Priority 2 — Architecture Backlog
 
-- [x] **`Get-DFCategoryDb.Tests.ps1` fixture-isolation bug (found 2026-09-03)** — fixed
-  2026-09-06. Root cause was not the module-level singleton cache (the `-Force`/cache-reset
-  ordering hypothesis was wrong) — `Get-DFCategoryDb`'s refreshed-vs-shipped comparison against
-  `$Env:XDG_DATA_HOME` runs unconditionally even when `-Path` overrides the "shipped" side (by
-  design, per its own doc comment, so tests can exercise the full resolution algorithm). This
-  dev machine has a real `$Env:XDG_DATA_HOME/dotforge/tool-categories.json` from actual DotForge
-  usage, dated newer than the tests' fixed fixture date — so it silently outranked the fixture in
-  every test that didn't isolate `$Env:XDG_DATA_HOME` itself. Confirmed by reproducing standalone
-  (`Invoke-Pester tests/Get-DFCategoryDb.Tests.ps1` alone still failed 9/9 — ruling out cross-file
-  pollution) and by reading the real ambient file directly (`updated` newer than the fixture's
-  `2026-07-01`). Fixed by isolating `$Env:XDG_DATA_HOME` in all three `Describe` blocks in
-  `tests/Get-DFCategoryDb.Tests.ps1` and in `tests/Get-DFCategoryList.Tests.ps1`'s `BeforeEach`
-  (which mocks `Get-DFCategoryDb` but still calls through to the real implementation) — matching
-  the isolation pattern the file's own "refreshed copy" tests already used correctly. Full suite:
-  **1115/0** (previously 1105+/10, tolerated as baseline noise all session). Two of the file's
-  tests ("resolves via plain name as a last resort", "returns `$null` for an unmapped tool") had
-  been silently passing against the wrong (real) data by coincidence — worth knowing if this
-  class of bug recurs elsewhere, since a passing assertion doesn't always mean correct isolation.
-- [x] **Port completion-role tests to Pester 6** — done 2026-07-24. The former completion-stack coverage is now role-hook coverage.
-- [ ] **Path-normalization follow-ups** — from the `ConvertTo-DFPath` branch review (2026-07-24): (a) add a shared test bootstrap that dot-sources the `Private/` dependency graph so a new low-level dependency doesn't require adding its dot-source to every consumer-sourcing test file; (b) strengthen the `Register-DFTool` ToolsPath test to exercise a sidecar load via a `..`-bearing `-ToolsPath` (currently re-tests `ConvertTo-DFPath` directly); (c) resolve `$ToolsPath` once *before* `Import-DFToolDb` in `Register-DFTool` to remove the raw-vs-resolved asymmetry; (d) tests are Windows-only (`C:\` literals) — the macOS/Linux goal is unverified by CI though the runtime code is separator-agnostic.
-- [x] **Stop force-creating global aliases at import time** — done 2026-07-31: all 27 general-helper
-  aliases drop `-Scope Global -Force`. Correction to this item's original framing: real module
-  ownership does NOT change import-time clobbering behavior (verified empirically — a genuinely
-  exported alias still silently overwrites a same-named pre-existing global alias, with no
-  warning, identical to the old `-Force` behavior). That's normal PowerShell module behavior for
-  every module, not a DotForge-specific defect, so it is not addressed. The `copy` alias — the one
-  case that actually needed `-Force` to override a builtin — is renamed to `yank` instead, removing
-  the need for `-Force` entirely rather than working around it.
-- [ ] **Fix `Register-DFTool` `list_accepts_path` command splitting** — generated picker functions split the list command on whitespace, breaking quoted arguments and single-word commands. Add tests that invoke generated picker functions, not just tests that verify they exist.
-- [ ] **Key `Import-DFToolDb` cache by `ToolsPath`** — the current single `$script:DFToolDb` cache can return the wrong registry when callers use different `-ToolsPath` values without `-Force`.
-- [ ] **Harden `New-DFShim` PATH normalization** — malformed PATH entries can throw during the shims-dir-on-PATH check. Match `Add-DFToPath` behavior by safely handling invalid entries.
-- [ ] **Expand tool schema validation** — validate shapes for `packages`, `aliases`, `picker`, `xdg.vars`, `xdg.dirs`, and `after` so malformed records fail early instead of during profile registration.
-- [ ] **Improve `Install-DFTool` failure diagnostics** — a failed batch now reports the last three lines of the manager's output in its result `Detail` (slice 3). Still open: show the full output under `-Verbose`.
-- [ ] **Make `New-DFDirectory` failures visible** — it currently uses `-ErrorAction SilentlyContinue`, which can hide permissions/path issues and cause later failures elsewhere.
-- [ ] **Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation still enumerates all installed modules to compute the fingerprint. Consider a TTL or cheaper fingerprint strategy.
-- [ ] **Add review coverage gaps** — add tests for cache isolation across two `ToolsPath` values, custom package-manager priority after a default lookup, generated `list_accepts_path` functions with single-word and quoted commands, malformed PATH during `New-DFShim`, duplicate tool names, and schema rejection for malformed `aliases`, `picker`, `packages`, and `after`.
-- [ ] **trifle `-Readme`: gate the npm tier on repo match** — the npm registry readme currently wins whenever the merged group contains an npm source, so name collisions surface the wrong readme (e.g. `trifle ripgrep -Readme` shows the unrelated npm `ripgrep` wrapper's readme instead of BurntSushi's). Recommended fix from the branch review: use the npm readme only when no GitHub repo resolves, or when the npm detail's `RepositoryUrl` matches the resolved repo; collisions then fall through to the GitHub readme tier.
-- [ ] **trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches sibling catalogs with the full dotted id (only scoop ids split on `/`), so the card misses cross-catalog versions and the installed overlay. Recommended fix: use the matched winget index row's `Name` as the cross-catalog sibling query (trailing-segment-after-dot is wrong — it would yield `MSVC`). Current behavior degrades to a correct single-source card.
+From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and the improve-code-quality journey (`docs/IMPROVE-CODE-QUALITY-PLAN.md`).
 
-- [ ] **`TabCompletionHooks.Tests.ps1` prints errors without failing** — one test mocks `New-DFDirectory` to a no-op, then lets `Tools/carapace.ps1` write its bundled specs into the never-created folder, so `Set-Content` errors scroll past on every run. Let the folder be created (it's under `$TestDrive`) or stub the spec deployment. Found in improve-code-quality Phase 1 (2026-10-10). Test-only.
+- [ ] **T-21 Declarative tool effects** — themes, executable wrappers and env-var precedence are hand-written in ~30 sidecars. Add declarative fields the core applies with one set of rules (`setup.seed` already covers config files). Large.
+- [ ] **T-22 Finish one package-identity vocabulary** — `build/categories/dotforge-curated.jsonc` copies 47 package ids and `data/tool-identities.json` copies the ids in `Tools/*.json`. The identity guide should ship only what tool records can't say; categories should reference tools by name. `ConvertTo-DFCatalogSource` only lowercases and can be deleted.
+- [ ] **T-23 The catalog cache owns its layout** — providers become fetch + parse; cache paths, freshness and enumeration move behind one interface (`Update-DFPackageCache` and `Get-DFCatalogLocalPackages` reach into the layout). Tests use recorded responses.
+- [ ] **T-24 A build kit for build scripts** — four build scripts dot-source all of `Private/` and call private names; a rename silently breaks a pipeline that can run ~54 minutes. Parked with the package-universe pipeline.
+- [ ] **T-25 Conformance coverage** — probes exist for 3 of ~57 tools (`build/conformance/*.jsonc`).
+- [ ] **T-26 Small cleanups** — companions repeat `Get-Command` lookups `Test-DFToolAvailable` already made (scoop, PSFzf, carapace, gsudo, choco, winget); `mise activate` and `oh-my-posh init` run uncached at every start; session globals with no cleanup (`$global:cdBeforeFnm`, `DFGlowStyle`, `DFDotenvLocationHook`, `DFPSReadLineColors`).
+- [ ] **T-27 One home for the `role:<name>` reference syntax** — parsed in five places (`Private/Invoke-DFSessionActivation.ps1` ×3, `Private/New-DFInstallPlan.ps1` ×2); "the requested members of a role" is computed in `Resolve-DFToolRequirements` and `Get-DFActivationOrder`. Add `ConvertFrom-DFToolReference` and `Get-DFRoleMember`. Do it with the next change to that syntax.
+- [ ] **T-28 Status `Detail` is a "; "-joined string built in three places** — `Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker`, `Add-DFInstallHint`. If a fourth appears, make `Detail` a list rendered once.
+- [ ] **T-29 Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable wrapper (glow, fastfetch so far).
 
-## Priority 2 — Architecture Backlog (from the audits)
+## Priority 2 — Readability
 
-Consolidated 2026-10-10 from `arch-imp-audit-(claude).md`, `arch-imp-audit.md`, `audit.thermonuclear.md`, `audit.{claude,codex,gemini}.md` and `ToolAcquisitionSpec-Audit.md`, which were then deleted (read them at commit `c1d172a`). Everything else in them was done or resolved. Idle activation is under Features.
+From improve-code-quality Phase 2 (starting module now 8/10). Pin the gaps listed in `docs/TESTING.md` before touching these.
 
-- [x] **Split the startup core from on-demand code** — done 2026-10-10: `DotForge.Catalog` and `DotForge.Helpers` auto-load on first use, and the core loads from one bundle. Import 0.70 s -> 0.15 s; startup 2.23 s -> 1.71 s. See `docs/superpowers/specs/2026-10-10-module-split-design.md`.
-- [ ] **Declarative tool effects** — themes, executable wrappers and environment-variable precedence are hand-written in ~30 sidecars (scope rules, `global:` functions, captured `${function:}` blocks). Add declarative fields the core applies with one set of rules; `setup.seed` already covers config files. Strong, large.
-- [ ] **Finish one package-identity vocabulary** — `packages` is keyed by catalog/source name now, but `build/categories/dotforge-curated.jsonc` still copies 47 package ids and `data/tool-identities.json` copies the ids in `Tools/*.json`. The identity guide should ship only what tool records can't say (non-shipped tools, `repo`, `linkedVia`); categories should reference tools by name. `ConvertTo-DFCatalogSource` now only lowercases and can be deleted. Strong.
-- [ ] **The catalog cache owns its layout** — providers become fetch + parse; cache paths, freshness and enumeration move behind one interface (`Update-DFPackageCache` and `Get-DFCatalogLocalPackages` reach into the layout today). Tests use recorded responses. Worth exploring.
-- [ ] **A build kit for build scripts** — four build scripts dot-source all of `Private/` (running provider registration) and call private names; a rename silently breaks a pipeline that can run ~54 minutes. Give them a small named interface plus a test that every function they call exists. Parked with the package-universe pipeline (thermonuclear §11), as are its two taxonomies (`data/package-universe-categories.jsonc` is build-only data shipped in `data/`).
-- [ ] **Conformance coverage** — probes exist for 3 tools (bat, fastfetch, glow) of ~57 (`build/conformance/*.jsonc`). The tool-acquisition standard's acceptance criteria want a ledger record for every shipped tool and a pass/manual verdict for every configuration DotForge applies.
-- [ ] **Small cleanups** — companions repeat `Get-Command` lookups `Test-DFToolAvailable` already made (scoop, PSFzf, carapace, gsudo, choco, winget); `mise activate` and `oh-my-posh init` run uncached at every start (`fnm env` is per session); session globals with no cleanup (`$global:cdBeforeFnm`, `DFGlowStyle`, `DFDotenvLocationHook`, `DFPSReadLineColors`).
-- [ ] **One home for the `role:<name>` reference syntax** — `requires`/`after` entries are parsed with `-like 'role:*'` / `.Substring(5)` in five places (`Private/Invoke-DFSessionActivation.ps1` ×3, `Private/New-DFInstallPlan.ps1` ×2), and "the requested members of a role" is computed in both `Resolve-DFToolRequirements` and `Get-DFActivationOrder`. A small `ConvertFrom-DFToolReference` (→ `{ Kind = 'tool'|'role'; Name }`) and `Get-DFRoleMember` would own both. Found in improve-code-quality Phase 4. Do it with the next change to that syntax.
-- [ ] **Status `Detail` is a "; "-joined string built in three places** — role fallback (`Add-DFRoleOutcomeStatus`), the role hint (`Get-DFActivationBlocker`) and install hints (`Add-DFInstallHint`) each append text. If a fourth appears, make `Detail` a list rendered once. Found in Phase 6.
-- [ ] **`--help` capture has no time limit** — `Invoke-DFCommandCapture` (`Modules/DotForge.Helpers/Private/`) runs `& $Name @Arguments`; a command that ignores the flag and waits on stdin hangs `Show-DFCliHelp`. Reuse the bounded process runner from Phase 7 when the target is an executable. Found in Phase 7.
-- [ ] **Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme-chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable-wrapper for tools that ignore XDG (glow, fastfetch so far).
-
-## Priority 2 — Readability (improve-code-quality Phase 2, 2026-10-10)
-
-Clean-code score of the starting module (registration, activation, record loader): **7/10** (names 7, functions 5, comments 9, error handling 8, tests 9, smells 6). Fixes 1–5 and 10 were done in Phase 3 (2026-10-10, structure-only commits); 6–9 are logged here for later.
-
-- [x] **Split `Invoke-DFSessionActivation` into named steps** (100 lines): collect excluded names, add role ordering, find what blocks a tool (excluded requirement / unmet requirement / not installed), annotate role outcomes.
-- [x] **One home for `+group` expansion** — the activation code re-expands `ExcludeTools` groups separately from `Resolve-DFRequestedTools`; both now call `Expand-DFGroupEntry`.
-- [x] **`Resolve-DFToolRequirements` returns a result object** instead of filling three hashtables passed in (8 parameters).
-- [x] **One `Test-DFToolActive` helper** for the 4 repeated "is it already Active?" checks.
-- [x] **Full names for long-scope loop variables** in the activation code (`$t`, `$e`, `$r`, `$w`, `$by`).
-- [x] **`Invoke-DFToolRegistration` takes one context** instead of 5 parameters (`Private/Register-DFToolSteps.ps1`).
-- [ ] **Split `Test-DFToolSchema`** (206 lines, `Shared/Test-DFToolSchema.ps1`) into one validator per section behind the same interface. Pin the schema error branches listed in `docs/TESTING.md` first.
-- [ ] **Split `ConvertTo-DFToolRecord`** (116 lines, `Shared/Import-DFToolDb.ps1`) into one normalizer per block.
-- [ ] **Split `Get-DFRoleWinners`** (84 lines, `Private/Register-DFToolSteps.ps1`): ranking apart from fallback. Pin "a role member with no record" first.
-- [ ] **`Test-DFToolSchema` returns `{ Valid; Errors; Warnings }`** instead of `[ref]` output parameters. Touches many tests; do it with the split above.
+- [ ] **T-30 Split `Test-DFToolSchema`** (206 lines, `Shared/Test-DFToolSchema.ps1`) into one validator per section behind the same interface.
+- [ ] **T-31 Split `ConvertTo-DFToolRecord`** (116 lines, `Shared/Import-DFToolDb.ps1`) into one normalizer per block.
+- [ ] **T-32 Split `Get-DFRoleWinners`** (84 lines, `Private/Register-DFToolSteps.ps1`): ranking apart from fallback.
+- [ ] **T-33 `Test-DFToolSchema` returns `{ Valid; Errors; Warnings }`** instead of `[ref]` output parameters. Do it with T-30.
 
 ## Priority 3 — Features
 
-- [x] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/
-  `.zimrc`)** — all closed. The clear-cut drift (eza `ll`/`la`, fzf match-mode/previews) and all
-  four "genuinely absent, not drift" gaps (see Added/Changed in `CHANGELOG.md`):
-  - [x] **`direnv`** — done 2026-09-06: new `Tools/direnv.json`/`.ps1`. Natively XDG-compliant
-    (no `xdg.vars` needed); hook uses `LocationChangedAction`, not `function:prompt`, so no
-    ordering dependency on oh-my-posh/zoxide. Initially excluded from the first batch pending a
-    checklist update (a pure shell-hook tool didn't fit the original four-item XDG/defaults/
-    theme/picker checklist); pulled in once the user extended the checklist to six items,
-    explicitly adding shell integrations/hooks and carapace completions.
-  - [x] **Rust toolchain env** (`RUSTUP_HOME`, `CARGO_HOME` under XDG paths) — done 2026-09-06:
-    `Tools/rustup.json` (`xdg.method: "env"`), `Tools/rustup.ps1` (new, adds `$CARGO_HOME/bin`
-    to PATH).
-  - [x] **vcpkg env** (`VCPKG_ROOT`, `VCPKG_DOWNLOADS`) — done 2026-09-06: new
-    `Tools/vcpkg.json`/`.ps1`, plus `build/categories/dotforge-curated.jsonc` and
-    `build/identities/`-derived `data/tool-categories.json`/`data/tool-identities.json`
-    regenerated for the new tool.
-  - [x] **PSReadLine history isn't XDG-relocated.** done 2026-09-06: `HistorySavePath` now
-    `$XDG_STATE_HOME/psreadline/history` (`Tools/psreadline.json` `xdg.dirs` +
-    `Tools/psreadline.ps1`), `MaximumHistoryCount` set to `10000` (new `settings` key).
-- [x] **`LS_COLORS` via `vivid`** — done 2026-09-03: `Tools/vivid.json`/`.ps1`, design
-  `docs/superpowers/specs/2026-09-03-vivid-ls-colors-design.md`, plan
-  `docs/superpowers/plans/2026-09-03-vivid-ls-colors.md`. `eza` (the `listing`-role default)
-  confirmed to read plain `LS_COLORS` directly, so this closes eza's catppuccin gap.
-- [ ] **Role-level behavior specs for competing tools (requested 2026-09-26)**: tools that share a
-  `role` (e.g. `listing`: eza, lsd) each hand-write their own `ls`/`ll`/`la`/`tree` args, so a
-  behavior change has to be repeated per tool in each tool's own flag spelling (2026-09-26: "no
-  hyperlinks, don't quote names" = eza `--no-quotes`, lsd `--literal`). The two tools' aliases
-  have also drifted apart in meaning: lsd's `ll` includes `--all` and its `la` isn't a long
-  listing, while eza's `ll`/`la` match the zsh reference. Goal: describe alias behavior once
-  per role (e.g. `ll` = long + dirs-first + icons + git + unquoted names) and let each tool
-  plugin map those behavior names to its own flags, so the behavior follows whichever tool
-  wins `$DFConfig.Defaults`. Must follow `docs/plugin-architecture.md`: no central tool-keyed
-  table and no `switch ($tool.name)`. Each tool's JSON declares its own behavior-to-flag map,
-  and the role spec lives outside any single tool (or is aggregated at build time). Since roles v2
-  (2026-10-05) the role's aliases live in each tool's `roles.listing.aliases` and the role itself
-  in `data/roles.json`, which is where per-role behavior names would land. Brainstorm and write a
-  spec before building it.
-- [ ] **Onboard more tools into roles (roles v2 follow-ups, requested 2026-10-05)** — the role
-  framework (`docs/superpowers/specs/2026-10-05-roles-v2-design.md`) shipped with only the tools
-  DotForge already had. Each batch is its own small spec or plan:
-  - pager: moor (formerly moar), ov — done 2026-10-05
-  - editor: nano, vim
-  - picker: skim; television doesn't take fzf's command line, so it needs its own adapter or a
-    different role
-  - file-manager (new role): yazi, superfile, broot
-  - project-env: ps-dotenv, mise — done 2026-10-05
-  - system-info: winfetch
-  - url-fetch: httpie, xh, curlie, aria2
-  - suggested new roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs,
-    btop, bottom), disk-usage (dust, dua, gdu), json (jq, jaq, fx, jless), cat (bat), elevation
-    (gsudo), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd),
-    watch (watchexec), code-stats (tokei, scc)
-  - promote `markdown-viewer` from category to single once something in DotForge consumes a winner
-  - ~~retire `PackageManagerOrder`~~ — done 2026-10-09: replaced by `InstallOrder` / `ExcludeSources` / `InstallVia` (install spec)
-- [x] **Per-directory environment tools: alternatives to `direnv`, each zero-config** — done 2026-10-05: ps-dotenv (with `scoopBucket`), mise, and direnv's bash path + bug warning (`docs/superpowers/specs/2026-10-05-project-env-tools-design.md`). Still open: survey other Windows-capable alternatives. Original note (requested
-  2026-10-05)** — `direnv` (`Tools/direnv.json`/`.ps1`) is not usable as shipped on Windows: it
-  needs a `direnv.toml` pointing at Git Bash (`bash_path`), which DotForge never writes, and it
-  is buggy on Windows (it unloads variables it should leave alone). Add competing plugins that
-  each work with no further user config:
-  - **`ps-dotenv`** — the likely pick for the user's own config. It ships from a third-party
-    scoop bucket (`scoop bucket add insomnia https://github.com/insomnimus/scoop-bucket`), and
-    the tool schema/`Install-DFTool` has no way to declare a bucket yet. That needs a
-    declarative per-tool field (plugin invariant: no tool-name special-casing in core).
-  - **`mise`** — covers this job plus much more (tool versions, tasks). Decide how much of mise
-    DotForge configures beyond its env/hook role.
-  - **Others** — survey for more Windows-capable alternatives.
-  - **`direnv`** — fix or document it: write the Git Bash `bash_path` config (via the
-    setup-lifecycle primitive if it touches a user-owned file), and record the variable-unloading
-    bug in `docs/external-dependencies.md` / the conformance ledger.
-  - [x] **Mutual exclusion** — done 2026-10-05 via roles v2: `project-env` is an exclusive role;
-    each plugin puts its hook in `Initialize-DFRoleProjectEnv`, which only the winner runs.
-  - Brainstorm and write a spec before building it.
-- [ ] **Audit theming mechanisms for silent-override risk against the user's own pre-existing
-  config (found 2026-09-04, during the delta catppuccin investigation)** — the governing
-  principle: the user must be able to easily *see* what DotForge changed and have an easy way
-  to *override* it; DotForge must never silently discard a preference the user already set,
-  even as a side effect of "just setting an env var." This is **not** a blanket rule (some
-  cases genuinely have no competing file-based config to clobber) — each tool needs its own
-  explicit weighing, case by case:
-  - **Already right:** `psreadline`'s `Set-PSReadLineOption -Colors` has no competing
-    persistent-file mechanism to silently override — it *is* the only way psreadline theme
-    state is set in a live session, so there's nothing to weigh here.
-  - **Found to be subtly wrong (2026-09-04, during the tool-setup-lifecycle design), fixed
-    2026-09-05:** `mdv`'s `config.yaml` was seeded only when *absent* — but "absent" couldn't
-    be told apart from "DotForge seeded it once, and the user deleted it on purpose." Migrated
-    to the tool-setup-lifecycle primitive (`Tools/mdv.setup.ps1`) rather than patching the
-    presence check in place — see the coverage-audit list's `mdv` entry below.
-  - **Needs weighing:** `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME`, and `vivid`'s `LS_COLORS`
-    all set an env var that — per each tool's own documented precedence — outranks that same
-    tool's file-based config. If a user had already hand-set a theme in `bat.conf`, or already
-    exported `LS_COLORS` themselves before DotForge runs, these currently override it with no
-    visibility into why and no easy per-tool opt-out beyond unregistering the whole tool.
-  - **Decided differently on purpose:** `delta`'s catppuccin wiring (this same investigation)
-    will use an `[include]` line in `~/.gitconfig` specifically *because* `--config <path>`
-    would have replaced delta's entire config resolution outright, not layered on top of it —
-    the more invasive-looking option was actually the more transparent, non-clobbering one here.
-- [x] **One-time tool setup/teardown lifecycle primitive** — design done 2026-09-04, primitive
-  and its first consumer (delta) both done 2026-09-05:
-  `docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md`
-  (`Tools/<name>.setup.ps1` + `Complete-DFToolSetup` + `$XDG_STATE_HOME/dotforge/setup-state.json`,
-  run at most once ever per tool, tracked so a user's later edit/removal is never silently
-  reasserted). `Tools/delta.setup.ps1` is the first consumer. Follow-ups, explicitly deferred
-  out of the design's scope:
-  - [x] Migrate `Tools/mdv.ps1`'s config-seeding to it — done 2026-09-05: closes the
-    presence-check bug noted above. `Tools/mdv.ps1` retired (its whole job moved to
-    `Tools/mdv.setup.ps1`); directory creation was already handled declaratively.
-  - [ ] A real teardown/uninstall command (e.g. `Uninstall-DFToolSetup`) that reads the `actions`
-    record back — needs its own spec once there's more than delta's single `actions` shape to
-    generalize a safe, scoped undo from.
-- [ ] **Startup-perf audit (2026-09-05) follow-up: async/deferred startup** — the module-import
-  half is now implemented (below); `inshellisense`'s session-check deferral remains, still
-  design-only: `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. **Never** apply this to
-  `oh-my-posh` or `fnm` — the audit confirmed deferring `oh-my-posh`'s init reproduces the
-  documented oh-my-posh/zoxide prompt-hook bug (see "oh-my-posh + zoxide prompt hook ordering"
-  above) on every session instead of only after a manual theme switch.
-  - [x] Caching half — done 2026-09-05: `carapace`/`zoxide`/`mdcat`/`scoop-search`'s
-    deterministic init/completion output no longer spawns a process every session. New
-    `Get-DFCachedCommandOutput` (`Private/Get-DFCachedCommandOutput.ps1`), fingerprinted on the
-    resolved executable's own file identity. Measured ~200ms mean reduction in
-    `Register-DFTool -All` on this machine (1451.4ms → 1245.9ms, `build/Measure-DFStartup.ps1`).
-  - [x] Module-import half — done 2026-09-05: `Terminal-Icons`/`PSFzf`/`posh-git` now warm their
-    `Import-Module` cost in a background `Start-ThreadJob` (`Private/Start-DFModulePrewarm.ps1`)
-    before `Register-DFTool`'s per-tool loop reaches each one's own unchanged, synchronous
-    `Import-Module` call — measured ~77% faster on a representative module (282ms → 65ms,
-    reproduced 3/3). `psreadline` is deliberately excluded via a new `Tools/<name>.json`
-    `"prewarm": false` opt-out: its sidecar never re-imports PSReadLine (always pre-loaded by the
-    PS7 host), so prewarming it has no benefit, and it is the module most exposed to the
-    shared-process CLR statics `Start-ThreadJob` implies (PSReadLine's key-handler dispatch table
-    is a process-global static singleton that PSFzf's import touches).
-  - [ ] `inshellisense`'s `is -c` session-check deferral — still out of scope, not yet
-    implemented; a differently-shaped mechanism (a native command's exit code, consumed later
-    inside `Initialize-DFCompletionStack`, not a module import) that was explicitly excluded from
-    the module-import plan above.
-  - [ ] **Real-profile follow-up (found 2026-09-05, analyzing the user's actual `profile.ps1`)**:
-    - [x] Migrate the three PSReadLine lines at the bottom of `profile.ps1` — done 2026-09-06:
-      landed in `Tools/psreadline.ps1`/`Tools/psreadline.json` (the tool's own sidecar), not
-      `Initialize-DFEnvironment` as originally sketched — consistent with this codebase's
-      convention that tool-specific settings live in that tool's own `Tools/<name>.ps1`, never
-      core. `HistorySearchCursorMovesToEnd` is a new `settings` key; `Ctrl+p`/`Ctrl+n` are bound
-      unconditionally, matching how the file's other opinionated defaults (e.g. `bellStyle`)
-      already work. Along the way, also changed the default `EditMode` from `Windows` to `Emacs`
-      (per-user decision) — override with `$DFConfig['PSReadLineEditMode'] = 'Windows'`.
-    - Consider whether the async pre-warm mechanism this item builds should be a general
-      DotForge primitive (not private to `Register-DFTool`'s three module imports), so the
-      user's own `profile.ps1`/`Completers.ps1` could pre-warm its own extra module imports
-      (`powershell-yaml`, `Microsoft.PowerShell.SecretManagement`,
-      `Microsoft.WinGet.CommandNotFound` — measured 88ms + 128ms combined) and the cosmetic
-      `FastFetch` + `Clear-Host` banner (measured 222ms) the same way. Not committed to yet —
-      evaluate during the implementation plan below.
-    - Not itself a DotForge-scope item, but worth the user's own attention: `Start-Transcript`/
-      `Stop-Transcript` in `profile.ps1` cost ~132ms every session (not the recursive prune scan,
-      which is only ~50ms combined) — real, recurring, unconditional per-session cost outside
-      this repo's control.
-- [ ] **Coverage audit (2026-09-03) — catppuccin-mocha status per tool**, to split into their
-  own design/plan cycles (per user decision, not bundled into one workstream):
-  - `mdcat`/`mdv`/`glow` — done, default to catppuccin-mocha out of the box.
-  - [x] `psreadline` — done 2026-09-04: defaulted to `catppuccin-mocha` (was the only themed
-    tool shipping a neutral `dark` default). `Tools/psreadline.ps1`.
-  - [x] `delta` — done 2026-09-05: bundled and deployed catppuccin/delta's `catppuccin.gitconfig`
-    (`Tools/delta.ps1`), and `Tools/delta.setup.ps1` adds the one-time `include.path` entry via
-    the tool-setup-lifecycle primitive above. Also fixed `DELTA_FEATURES` to be `+`-prefixed
-    (additive) along the way — it previously discarded the user's entire `features` list.
-    Design: `docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md` (Section 3 rewritten
-    2026-09-05 to match the shipped primitive instead of its originally-drafted bespoke marker
-    file).
-  - [x] `bat` — done 2026-09-04: `BAT_THEME` set to bat's native `Catppuccin Mocha` (already
-    built in, no external config needed). `Tools/bat.json`/`.ps1`.
-  - [x] `lsd` — closed 2026-09-04, no code needed: confirmed `lsd` reads `LS_COLORS` for
-    filetype-extension coloring — both empirically (`di=` override test) and per its own
-    README FAQ ("How can I set custom color schemes for Windows?"), so it already gets
-    catppuccin-mocha coloring for free once `vivid` is registered, same as `eza`. Documented
-    in `README.md`'s vivid section and `docs/external-dependencies.md`. `lsd`'s *other* color
-    categories (permissions, size, date — its own separate theme system, blocked by the
-    existing `--config-file` panic-on-missing-path issue, see `Tools/lsd.json`) are unaffected
-    and remain a distinct, larger potential follow-up, not part of this item.
-  - `lazygit`, `micro`, `procs` — zero integration; each needs its own investigation into how
-    it can be pointed at a catppuccin-mocha theme/config.
-  - `oh-my-posh` — theme is entirely the user's own profile (`$Env:POSH_THEME`), outside
-    `$DFConfig` — a real gap against the "one system-wide theme" goal, but changing it means
-    deciding how a prompt-engine theme fits the `$DFConfig.Theme` chain; needs its own design.
-  - [x] `fastfetch` — closed 2026-09-06: replaced `Tools/winfetch.json` with `Tools/fastfetch.json`
-    (winfetch is abandoned upstream). Wraps the executable (`xdg.method: "wrapper"`, like `glow`)
-    since fastfetch ignores `XDG_CONFIG_HOME` on Windows; seeds a catppuccin-mocha config and
-    passes it via explicit `--config`. `publicip` deliberately omitted (measured 2.87s cold-path
-    spike). Theming is hardcoded hex in the seeded config, not resolved through
-    `$DFConfig.Theme`/`Resolve-DFThemeName` (static seeded file, not a per-session runtime
-    resolution) — a residual gap if live theme-switching for fastfetch is wanted later.
-    See `docs/superpowers/specs/2026-09-06-fastfetch-tool-swap-design.md`.
-- [ ] **Opt-in/opt-out control over which aliases/functions DotForge binds** — a
-  whitelist/blacklist mechanism (per-alias or per-tool granularity) so users can
-  explicitly control global-namespace pollution instead of DotForge deciding
-  uniformly for everyone. Design sketch (shelved, not implemented): wrap
-  `Set-Alias` in a DotForge-owned function so tools/helpers *declare* an alias
-  without directly creating it; a central function then iterates all
-  declarations and filters per user config (allow-list or deny-list, at either
-  the individual-alias or whole-tool level) before actually binding anything.
-  Open question, unresolved: whether PowerShell's manifest system supports
-  anything resembling "optional/conditional exports" this could piggyback on,
-  or whether it would have to be entirely session-side (declarative data +
-  runtime filtering, no manifest involvement). See
-  `docs/builtin-safety-policy.md` for the related "never silently claim a
-  builtin" policy this would complement.
-- [ ] **Updating and removing tools (`Update-DFTool`, uninstall)** — follow-ups to slice 3 ([the install spec](docs/superpowers/specs/2026-10-09-install-design.md), non-goals). They can reuse its manager `installs` blocks (add `update`/`remove` commands per manager) and the session graph. Requested 2026-10-09.
-- [ ] **PyPI installed overlay: include uv tools** — `trifle`'s installed state for PyPI comes only from `pipx list` (`Private/DFCatalog.Pypi.ps1`), so tools installed with `uv tool install` (now the default PyPI manager) don't show as installed. Add `uv tool list` (or read every `python-package-manager`'s list command from its record). Noted 2026-10-09.
-- [ ] **Idle activation for slow, non-urgent tools** — a tool could declare `"activate": "idle"` and be set up from PowerShell's `OnIdle` event, just after the first prompt. Candidate: carapace (~0.3 s; only needed at the first Tab). Must stay eager: psreadline, PSFzf, starship, fnm and zoxide (they wrap the prompt, keys or `cd`). Trade-off: Tab within the first half-second gets plain completion once. Measurements in the tool-selection spec's slice 4 result. Noted 2026-10-10.
-- [ ] **More tool configs** — add XDG, completions, and pickers for: `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true` for PS7+
-- [ ] **`Invoke-DFMaintenance` and scheduled maintenance guide** — provide a manual, opt-in maintenance command for purging the completion cache, refreshing the help-topic index, and running `scoop cleanup *`; use the last-run timestamp pattern from the existing help-topics cache. DotForge must not create scheduled tasks or perform package updates automatically. Document user-owned Task Scheduler recipes for separately scheduling cache refreshes, cleanups, and explicit package-update workflows, including how to inspect, disable, and remove each task.
-- [ ] **trifle: alternatives / related commands** — deferred from trifle v1. Surface "alternatives" (e.g. ripgrep ↔ other tools tagged `search`) and related commands on the `Find-DFPackage` card. Candidate sources: shared `tags` in `Tools/*.json`, a curated `alternatives` field, or catalog keyword overlap. Revisit together with the name-collision merge wart (npm `bat` vs scoop `bat` currently merge into one row).
-- [ ] **Expand the trifle category-db seed corpus** — currently 73 hand-picked
-  tools (33 curated from `Tools/*.json` + 40 well-known extras). The spec's
-  long-run target is the full CLI-tool-union corpus (~300-500 tools). Growing
-  toward that is pure content authoring — add more `build/categories/*.jsonc`
-  fragments and rerun `build/Build-DFCategoryDb.ps1` — no code changes needed.
-- [ ] **trifle category-db phase 2: automated gathering pipeline** — deferred
-  from the discovery v1 spec (`docs/superpowers/specs/2026-07-05-trifle-discovery-v1-design.md`).
-  Auto-populate/maintain the category database from live external sources:
-  debtags, crates.io/PyPI trove classifiers, Homebrew analytics, Repology
-  identity resolution, GitHub topics, distro package-section mining. Also
-  covers making `popularity` a live, periodically-refreshed metric instead of
-  a build-time editorial tier.
-- [ ] **Grow the tool-identity guide past the 29 curated seed tools** — v1's
-  guide only links tools where `Tools/*.json` already provides multiple
-  known catalog ids to compare (that's what makes automated repo/homepage
-  verification possible in the first place). Of the 33 `Tools/*.json`
-  candidates, 4 (`npm`, `psreadline`, `scoop`, `winget` — catalog/companion
-  tooling, not standalone CLI tools) have an empty `packages` block and get
-  filtered out by `build/Build-DFToolIdentities.ps1`, leaving 29. Growing
-  coverage requires first discovering candidate `(source, packageId)` pairs
-  for not-yet-curated tools — e.g. a future crawl, or mining co-occurrences
-  from live search results over time — deferred alongside the category
-  database's own phase-2 pipeline (`docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md`).
+- [ ] **T-34 Role-level behavior specs for competing tools** — tools sharing a role (eza, lsd for `listing`) each hand-write `ls`/`ll`/`la`/`tree` in their own flags, and the two have drifted (lsd's `ll` includes `--all`). Describe alias behavior once per role in `data/roles.json` and let each tool map behavior names to its own flags. No central tool-keyed table. Brainstorm and spec first.
+- [ ] **T-35 Onboard more tools into roles** — each batch its own small spec: editor (nano, vim); picker (skim; television needs its own adapter); file-manager (yazi, superfile, broot); url-fetch (httpie, xh, curlie, aria2); suggested roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs, btop, bottom), disk-usage (dust, dua, gdu), json (jq, jaq, fx, jless), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd), watch (watchexec), code-stats (tokei, scc). Promote `markdown-viewer` from category to single once something consumes a winner.
+- [ ] **T-36 Survey more per-directory env tools** — beyond ps-dotenv, mise and direnv. Also: write direnv's Git Bash `bash_path` config (setup lifecycle) and record its variable-unloading bug in `docs/external-dependencies.md`.
+- [ ] **T-37 Audit theming for silent overrides of the user's own config** — `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME` and `vivid`'s `LS_COLORS` outrank each tool's own config file, so a theme the user set there is overridden without notice or a per-tool opt-out. Weigh each case; the user must be able to see and override what DotForge changed.
+- [ ] **T-38 Setup teardown** — an `Uninstall-DFToolSetup` that reads the recorded `actions` back. Spec it once there's more than delta's one `actions` shape.
+- [ ] **T-39 Defer inshellisense's session check** — `is -c` runs at every start; see `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. Never defer oh-my-posh or fnm.
+- [ ] **T-40 A general prewarm primitive for the user's own profile** — let a profile prewarm its own module imports (`powershell-yaml`, SecretManagement, `Microsoft.WinGet.CommandNotFound`, ~0.2 s measured) like DotForge's tool prewarm.
+- [ ] **T-41 Catppuccin for lazygit, micro and procs** — no integration yet; each needs its own look at how to point it at a theme.
+- [ ] **T-42 Prompt themes and the `Theme` chain** — oh-my-posh's theme is the user's own `$Env:POSH_THEME`; decide how a prompt engine's theme fits `Theme`. fastfetch's seeded config hardcodes catppuccin hex.
+- [ ] **T-43 Opt-in/opt-out control over which aliases DotForge binds** — allow/deny lists per alias or per tool. Sketch: tools declare aliases; one function filters by config before binding. See `docs/builtin-safety-policy.md`.
+- [ ] **T-44 Updating and removing tools (`Update-DFTool`, uninstall)** — reuse the managers' `installs` blocks (add `update`/`remove` commands) and the session graph. See [the install spec](docs/superpowers/specs/2026-10-09-install-design.md) non-goals.
+- [ ] **T-45 PyPI installed overlay: include uv tools** — `trifle`'s PyPI installed state comes only from `pipx list`; add `uv tool list` (or read each `python-package-manager`'s list command from its record).
+- [ ] **T-46 Idle activation for slow, non-urgent tools** — `"activate": "idle"`, set up from `OnIdle` after the first prompt. Candidate: carapace (~0.3 s). Must stay eager: psreadline, PSFzf, starship, fnm, zoxide.
+- [ ] **T-47 More tool configs** — XDG, completions and pickers for `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true`.
+- [ ] **T-48 `Invoke-DFMaintenance` and a scheduled-maintenance guide** — a manual, opt-in command to purge the completion cache, refresh the help-topic index and run `scoop cleanup *`. DotForge never creates scheduled tasks or updates packages itself; document user-owned Task Scheduler recipes.
+- [ ] **T-49 trifle: alternatives and related commands** — on the `Find-DFPackage` card, from shared `tags`, a curated `alternatives` field, or catalog keyword overlap. Revisit with the name-collision merge (npm `bat` vs scoop `bat`).
+- [ ] **T-50 Expand the trifle category-db corpus** — 73 tools now; the long-run target is ~300–500. Content only: add `build/categories/*.jsonc` fragments and rerun `build/Build-DFCategoryDb.ps1`.
+- [ ] **T-51 trifle category-db phase 2: automated gathering** — debtags, crates.io/PyPI classifiers, Homebrew analytics, Repology, GitHub topics; a live `popularity`. See `docs/superpowers/specs/2026-07-05-trifle-discovery-v1-design.md`.
+- [ ] **T-52 Grow the tool-identity guide past 29 tools** — needs a way to discover candidate `(source, packageId)` pairs for tools not yet curated. See `docs/superpowers/specs/2026-07-06-trifle-tool-identity-guide-design.md`.
 
 ## Priority 4 — Improvements
 
-- [ ] **Dynamic fzf preview sizing** — replace the hardcoded `right:60%` default with sizing derived from content length or terminal width
-- [ ] **PSGallery icon** — add `IconUri` to `PrivateData.PSData` in psd1 for a better gallery page presentation
-- [ ] **$HOME vs $LOCALAPPDATA** — We could allow users to choose between `$HOME` and `$LOCALAPPDATA` for the root of XDG directories.
+- [ ] **T-53 Dynamic fzf preview sizing** — replace the hardcoded `right:60%` with sizing from content length or terminal width.
+- [ ] **T-54 `$HOME` vs `$LOCALAPPDATA`** — let users choose the root of the XDG folders.

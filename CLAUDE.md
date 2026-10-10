@@ -73,6 +73,21 @@ DotForge/
   - One home per rule: never re-implement logic another function already owns (e.g. `+group` expansion); call it.
 - **Startup core vs on-demand code** (`docs/superpowers/specs/2026-10-10-module-split-design.md`): code a shell needs while it starts stays in the core; code only an explicit command needs goes in an on-demand module. A helper both need goes in `Shared/` and must hold no session state (on-demand modules get their own copy); they read session settings through the public `Get-DFConfig`. Paths from an on-demand module's file to repo-root files go up three levels (`Modules/<module>/<folder>`).
 
+## Working Agreement
+
+- **Standing permissions.** After a green full run (`build/Test-DFFull.ps1`), fast-forward the work
+  into `main` and push it without asking. **Ask first** for: tags, releases and Gallery publishes, deleting
+  branches or worktrees you didn't create, force-pushes, rewriting history, and anything touching the
+  user's real profile, git config or installed tools.
+- **Risky work goes in a worktree** (`../DotForge-<topic>`), because the user's shell loads this checkout.
+- **The gate is `build/Test-DFFull.ps1`** (sentinel XDG folders, failed containers, exit 1 on any
+  failure). During a change, run it with `-Path` on the test files that cover the code you touched; run
+  it on the whole suite before merging.
+- **The backlog is `TODO.md`**, open items only, each with an ID (`T-12`). Name the ID in the commit that
+  resolves it (`Closes T-12`) and delete the item in that commit; new items take the next free ID noted
+  at the top of the file. Don't leave `TODO`/`FIXME` comments in code: fix a small hack on the spot,
+  or add a `TODO.md` item with its location.
+
 ## Architecture (3 layers)
 
 Layer 1 — Core Primitives (Phase 1)
