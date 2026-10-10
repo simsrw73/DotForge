@@ -160,7 +160,11 @@ function Invoke-DFDocExample {
     $gitConfig = Join-Path $home_ '.gitconfig'
     New-Item -ItemType File -Path $gitConfig -Force | Out-Null
     $script = Join-Path $box 'example.ps1'
-    Set-Content -Path $script -Value $Code -Encoding utf8
+    # The child writes in its console's code page (437 on many Windows
+    # terminals, which turns an em dash into '-') while we read UTF-8: make it
+    # write UTF-8. Prefixed to the first line so line numbers don't shift.
+    $prefix = '[Console]::OutputEncoding = [Text.Encoding]::UTF8; '
+    Set-Content -Path $script -Value ($prefix + $Code) -Encoding utf8
 
     $psi = [System.Diagnostics.ProcessStartInfo]::new('pwsh')
     foreach ($a in '-NoProfile', '-NonInteractive', '-File', $script) { $psi.ArgumentList.Add($a) }

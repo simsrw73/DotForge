@@ -133,4 +133,9 @@ Describe 'Invoke-DFDocExample' {
         $out[3] | Should -Be 'probe='
         ($out | Where-Object { $_ -like '*DotForge*' } | Select-Object -First 1) | Should -BeLike "$TestDrive*"
     }
+    It 'captures non-ASCII output intact, whatever the console code page' {
+        # The test runner's console may be code page 437, which has no em dash.
+        $r = Invoke-DFDocExample -Code ('"a ' + [char]0x2014 + ' b"') -ModulesRoot $TestDrive -SandboxRoot (Join-Path $TestDrive 'box2')
+        ($r.StdOut -split "`r?`n")[0] | Should -Be ('a ' + [char]0x2014 + ' b')
+    }
 }
