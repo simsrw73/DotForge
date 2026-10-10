@@ -107,21 +107,21 @@ if ($completions.count -eq 0) {
     }
 
     It 'replaces the empty-string sentinel with a bare return when PSFzf is available' {
-        Mock Get-Module { [pscustomobject]@{ Name = 'PSFzf' } } -ParameterFilter { $Name -eq 'PSFzf' }
+        Mock Get-DFRole { [pscustomobject]@{ Winner = 'PSFzf' } }   # PSFzf owns Tab
         . $script:CompanionPath
         $script:Captured | Should -Not -Match 'return ""'
         $script:Captured | Should -Match '(?m)^\s*return\s*$'
     }
 
     It 'replaces the empty-string sentinel with a bare return when PSFzf is absent' {
-        Mock Get-Module { $null } -ParameterFilter { $Name -eq 'PSFzf' }
+        Mock Get-DFRole { [pscustomobject]@{ Winner = 'carapace' } }
         . $script:CompanionPath
         $script:Captured | Should -Not -Match 'return ""'
         $script:Captured | Should -Match '(?m)^\s*return\s*$'
     }
 
     It 'drops whitespace-only items before the trimmed constructor under PSFzf' {
-        Mock Get-Module { [pscustomobject]@{ Name = 'PSFzf' } } -ParameterFilter { $Name -eq 'PSFzf' }
+        Mock Get-DFRole { [pscustomobject]@{ Winner = 'PSFzf' } }   # PSFzf owns Tab
         . $script:CompanionPath
         $script:Captured | Should -Match ([regex]::Escape('Where-Object { ([string]$_.CompletionText).Trim() } | ForEach-Object {'))
         $script:Captured | Should -Match ([regex]::Escape('([string]$_.CompletionText).TrimEnd()'))

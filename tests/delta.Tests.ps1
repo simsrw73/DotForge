@@ -36,6 +36,9 @@ Describe 'delta tool sidecar' {
         $Env:DELTA_FEATURES = $null
         Set-DFTestConfig $null
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\delta.exe' } }
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
 
         Set-DFTestXdg
 

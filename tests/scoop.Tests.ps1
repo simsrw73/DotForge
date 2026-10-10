@@ -2,6 +2,15 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/scoop.ps1'
+    $script:StubbedCmdlets = @()
+    # Pester mocks only commands that exist: stand in for the Scoop module's cmdlets when it isn't installed.
+    foreach ($cmdlet in 'Get-ScoopApp', 'Find-ScoopApp', 'Install-ScoopApp', 'Update-ScoopApp', 'Uninstall-ScoopApp') {
+        if (-not (Get-Command $cmdlet -ErrorAction Ignore)) {
+            # Global, because the pickers under test are global functions; removed in AfterAll.
+            Set-Item "function:global:$cmdlet" { [CmdletBinding()] param([Parameter(Position = 0)]$Query, $Name, $Id, $MatchOption) }
+            $script:StubbedCmdlets += @($cmdlet)
+        }
+    }
     # Real loading sets $DFCurrentTool before dot-sourcing a companion (the sidecar contract); so do these tests.
     $script:DFCurrentTool = ConvertTo-DFToolRecord (Get-Content (Join-Path $PSScriptRoot '../Tools/scoop.json') -Raw | ConvertFrom-Json)
 }
@@ -197,4 +206,8 @@ Describe 'scoop pickers' {
             Should -Invoke Invoke-DFPicker -Times 0
         }
     }
+}
+
+AfterAll {
+    Remove-DFTestGlobal -Function $script:StubbedCmdlets
 }

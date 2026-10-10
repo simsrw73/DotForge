@@ -142,6 +142,7 @@ Get-DFRole | Format-Table Name, Kind, Winner, Reason, Candidates
 
 `Defaults` picks the winner. Here eza gets `ls`, `ll`, `la` and `tree`, and lsd doesn't define them:
 
+<!-- requires: eza, lsd -->
 ```powershell
 $DFConfig = @{ Defaults = @{ listing = 'eza' } }
 Import-Module DotForge

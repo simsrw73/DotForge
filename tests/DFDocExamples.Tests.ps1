@@ -61,6 +61,24 @@ ls
         $script:blocks[3].Expected | Should -Be 'a'
         $script:blocks[3].OutputVaries | Should -BeTrue
     }
+    It 'reads a requires marker as the programs the block needs' {
+        $page = Join-Path $TestDrive 'requires.md'
+        Set-Content -Path $page -Value @'
+<!-- requires: eza, lsd -->
+```powershell
+ls
+```
+
+```powershell
+'plain'
+```
+'@
+        $found = @(Get-DFDocCodeBlock -Path $page)
+        $found[0].Mode | Should -Be 'requires'
+        $found[0].Requires | Should -Be @('eza', 'lsd')
+        $found[1].Mode | Should -Be 'run'
+        $found[1].Requires | Should -BeNullOrEmpty
+    }
     It 'records the 1-based line of the opening fence' {
         $script:blocks[0].Line | Should -Be 3
     }

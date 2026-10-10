@@ -2,6 +2,15 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/winget.ps1'
+    $script:StubbedCmdlets = @()
+    # Pester mocks only commands that exist: stand in for the Microsoft.WinGet.Client module's cmdlets when it isn't installed.
+    foreach ($cmdlet in 'Find-WinGetPackage', 'Get-WinGetPackage', 'Install-WinGetPackage', 'Update-WinGetPackage', 'Uninstall-WinGetPackage') {
+        if (-not (Get-Command $cmdlet -ErrorAction Ignore)) {
+            # Global, because the pickers under test are global functions; removed in AfterAll.
+            Set-Item "function:global:$cmdlet" { [CmdletBinding()] param([Parameter(Position = 0)]$Query, $Name, $Id, $MatchOption) }
+            $script:StubbedCmdlets += @($cmdlet)
+        }
+    }
     # Real loading sets $DFCurrentTool before dot-sourcing a companion (the sidecar contract); so do these tests.
     $script:DFCurrentTool = ConvertTo-DFToolRecord (Get-Content (Join-Path $PSScriptRoot '../Tools/winget.json') -Raw | ConvertFrom-Json)
 
@@ -175,4 +184,8 @@ Describe 'winget companion' {
             Should -Invoke winget -ParameterFilter { $args -contains 'upgrade' -and $args -contains '--all' }
         }
     }
+}
+
+AfterAll {
+    Remove-DFTestGlobal -Function $script:StubbedCmdlets
 }

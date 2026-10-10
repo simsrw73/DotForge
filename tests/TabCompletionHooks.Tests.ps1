@@ -67,7 +67,6 @@ Describe 'tab-completion sidecar hooks' {
     Context 'carapace' {
         BeforeEach {
             Mock Get-DFXdgPath { Join-Path $TestDrive 'xdg-config' }
-            Mock New-DFDirectory { }
             Mock Get-DFCachedCommandOutput { 'return' }
             Mock Invoke-Expression { }
             Mock Get-Command { $null }

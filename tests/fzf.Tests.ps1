@@ -11,6 +11,8 @@ Describe 'fzf tool sidecar' {
         $script:SavedFzfOpts    = $Env:FZF_DEFAULT_OPTS
 
         Remove-Item Env:\FZF_DEFAULT_OPTS -ErrorAction Ignore
+        # The theme is applied whether or not fzf is really installed on this machine.
+        Mock Test-DFExecutableOnPath { $true }
 
         # Point at the real Tools directory
         $script:RealTools = Join-Path $PSScriptRoot '../Tools'

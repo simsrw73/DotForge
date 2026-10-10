@@ -27,7 +27,6 @@ git history, not here. IDs are never reused; the next free one is **T-55**.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
 - [ ] **T-17 trifle `-Readme`: gate the npm tier on a repo match** — a name collision shows the wrong readme (`trifle ripgrep -Readme` shows the npm `ripgrep` wrapper's). Use the npm readme only when no GitHub repo resolves, or when its `RepositoryUrl` matches.
 - [ ] **T-18 trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches other catalogs with the full dotted id. Use the matched index row's `Name` instead.
-- [ ] **T-19 `TabCompletionHooks.Tests.ps1` prints errors without failing** — a test mocks `New-DFDirectory` to a no-op, so `Tools/carapace.ps1` writes into a missing folder. Let the folder be created (under `$TestDrive`) or stub the spec deployment.
 - [ ] **T-20 `--help` capture has no time limit** — `Invoke-DFCommandCapture` (`Modules/DotForge.Helpers/Private/`) runs `& $Name @Arguments`; a command that ignores the flag and reads stdin hangs `Show-DFCliHelp`. Reuse `Invoke-DFBoundedProcess` when the target is an executable.
 
 ## Priority 2 — Architecture Backlog

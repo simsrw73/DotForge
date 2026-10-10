@@ -17,13 +17,14 @@ BeforeDiscovery {
         foreach ($b in Get-DFDocCodeBlock -Path $d) {
             @{
                 Rel = [IO.Path]::GetRelativePath($repo, $b.File) -replace '\\', '/'
-                Line = $b.Line; Code = $b.Code; Mode = $b.Mode
+                Line = $b.Line; Code = $b.Code; Mode = $b.Mode; Requires = $b.Requires
                 Expected = $b.Expected; OutputVaries = $b.OutputVaries
             }
         }
     }
     $script:runnable = @($script:blocks | Where-Object {
-        $_.Mode -eq 'run' -or ($_.Mode -eq 'network' -and $Env:DF_DOCS_NETWORK -eq '1')
+        $_.Mode -eq 'run' -or ($_.Mode -eq 'network' -and $Env:DF_DOCS_NETWORK -eq '1') -or
+        ($_.Mode -eq 'requires' -and -not @($_.Requires | Where-Object { -not (Get-Command $_ -CommandType Application -ErrorAction Ignore) }))
     })
 
     # examples/*.ps1 are whole profiles. A file with a '# docs-test: parse-only'

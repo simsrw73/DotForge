@@ -47,6 +47,8 @@ function Invoke-DFToolSetup {
             if ((Test-Path -LiteralPath $dest) -and $PSCmdlet.ShouldProcess($dest, 'Overwrite with the default')) { Remove-Item -LiteralPath $dest }
         }
     }
+    # Re-running setup is what the command is for, so only -WhatIf stops here; no prompt otherwise.
+    if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
     Clear-DFToolSetupState -Name $Name
     Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
 }

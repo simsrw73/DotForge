@@ -13,6 +13,9 @@
 #   <!-- system -->      changes the machine outside the sandbox (installs,
 #                        elevation, scheduled tasks, global git config,
 #                        clipboard, coreutils-manager): parse only, never run
+#   <!-- requires: eza, lsd -->
+#                        runs real programs: run only when every named
+#                        program is on PATH, otherwise parse only (CI has none)
 #
 # Expected output. A ```text fence right after a run block is compared with the
 # block's stdout (ANSI stripped, trailing whitespace ignored). A line that is
@@ -45,10 +48,16 @@ function Get-DFDocCodeBlock {
             # The marker is the nearest non-blank line above the fence.
             $j = $start - 1
             while ($j -ge 0 -and -not $lines[$j].Trim()) { $j-- }
-            $marker = if ($j -ge 0 -and $lines[$j] -match '^\s*<!--\s*(fragment|interactive|network|system)\s*-->\s*$') { $Matches[1] } else { $null }
+            $marker = $null
+            $requires = @()
+            if ($j -ge 0 -and $lines[$j] -match '^\s*<!--\s*(fragment|interactive|network|system)\s*-->\s*$') { $marker = $Matches[1] }
+            elseif ($j -ge 0 -and $lines[$j] -match '^\s*<!--\s*requires:\s*([^>]+?)\s*-->\s*$') {
+                $marker = 'requires'
+                $requires = @($Matches[1] -split '\s*,\s*' | Where-Object { $_ })
+            }
             $blocks.Add([pscustomobject]@{
                 File = $Path; Line = $start + 1; Lang = $lang; Code = ($body -join "`n")
-                Mode = $marker ?? 'run'; Expected = $null; OutputVaries = $false; EndLine = $i
+                Mode = $marker ?? 'run'; Requires = $requires; Expected = $null; OutputVaries = $false; EndLine = $i
             })
         }
         $i++

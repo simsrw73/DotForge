@@ -81,6 +81,9 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         # otherwise have this test write into its real global git config.
         $Env:GIT_CONFIG_GLOBAL = Join-Path $TestDrive 'gitconfig'
         Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\tool.exe' } }
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
     }
     AfterEach {
         $Env:FZF_DEFAULT_OPTS = $script:SavedFzf

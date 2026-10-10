@@ -6,6 +6,9 @@ BeforeAll {
 
 Describe 'eza/lsd share role: listing (real tool records)' {
     BeforeEach { Reset-DFTestSession;
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
@@ -132,6 +135,9 @@ Export-ModuleMember -Function * -Variable Dotenv
 '@ | Set-Content $script:FakeDotenv
     }
     BeforeEach { Reset-DFTestSession;
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
@@ -185,6 +191,9 @@ Export-ModuleMember -Function * -Variable Dotenv
 
 Describe 'moor/ov/less share role: pager (real tool records)' {
     BeforeEach { Reset-DFTestSession;
+        # These tests fake "installed" with Mock Get-Command / Get-Module; route the PATH and module probes through them.
+        Mock Test-DFExecutableOnPath { [bool](Get-Command $Name -ErrorAction Ignore) }
+        Mock Test-DFModuleOnPath { [bool](Get-Module -ListAvailable -Name $Name -ErrorAction Ignore) }
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null

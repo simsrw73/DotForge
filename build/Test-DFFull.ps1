@@ -6,7 +6,8 @@
     Points every XDG_*_HOME at a fresh, empty sentinel folder, runs the tests,
     and reports passed/failed tests, failed containers (a file that fails
     discovery is neither passed nor failed), and any file the run wrote into a
-    sentinel folder (a test that escaped its $TestDrive isolation). Exits 1 on
+    sentinel folder (a test that escaped its $TestDrive isolation). Runs with
+    $ErrorActionPreference = 'Stop', as GitHub Actions does. Exits 1 on
     any failure, failed container or sentinel file, so CI and agents can gate
     on it. Run it from `pwsh -NoProfile`.
 .PARAMETER Path
@@ -27,6 +28,9 @@ param(
     [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')][string]$Output = 'None'
 )
 
+# GitHub's pwsh steps run with $ErrorActionPreference = 'Stop'; do the same so a local run
+# fails where CI does (and so tests cover profiles that set it).
+$ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $sentinel = Join-Path ([System.IO.Path]::GetTempPath()) "dotforge-sentinel-$(Get-Random)"
 foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {

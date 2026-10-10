@@ -4,6 +4,12 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`Invoke-DFToolSetup -WhatIf` changed state and could fail:** it cleared the tool's setup record
+  before checking `-WhatIf`, and the skipped write then raised an error (a terminating one under
+  `$ErrorActionPreference = 'Stop'`). `-WhatIf` now only reports what it would do.
+
 ## [0.7.0-preview] - 2026-10-10
 
 > **Breaking: your profile needs one change.** DotForge now configures only the tools you ask for,

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: daf2f81f48ba4b5d570048e756e7f1a6a6c2ad09397a9fefbce2effe2167bdca
+# sources-sha256: 5f3f9e552b24eb2600fedfeffd389beba81d73223431e0206353084a67dd5471
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.0
@@ -5512,6 +5512,8 @@ function Invoke-DFToolSetup {
             if ((Test-Path -LiteralPath $dest) -and $PSCmdlet.ShouldProcess($dest, 'Overwrite with the default')) { Remove-Item -LiteralPath $dest }
         }
     }
+    # Re-running setup is what the command is for, so only -WhatIf stops here; no prompt otherwise.
+    if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
     Clear-DFToolSetupState -Name $Name
     Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
 }
