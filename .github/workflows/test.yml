@@ -1,0 +1,33 @@
+name: test
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pester:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester 6
+        shell: pwsh
+        run: |
+          Install-PSResource -Name Pester -Version '[6.2.0,7.0.0)' -Repository PSGallery -TrustRepository -Scope CurrentUser
+          Import-Module Pester -MinimumVersion 6.2.0
+          "PowerShell $($PSVersionTable.PSVersion); Pester $((Get-Module Pester).Version)"
+
+      - name: Run the suite (sentinel XDG folders)
+        shell: pwsh
+        run: ./build/Test-DFFull.ps1

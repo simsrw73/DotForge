@@ -8,7 +8,7 @@
 - **Contract tests** run a real `Import-Module` in a child `pwsh`: the module split (`ModuleSplit.Tests.ps1`), the core bundle (`CoreBundle.Tests.ps1`), the public surface (`PublicSurface.Tests.ps1`).
 - **Shipped-data tests** check every `Tools/*.json`, `data/*.json` and generated file (tool registry, core bundle, reference docs, category and identity data) against its source.
 - **Doc examples** run every unmarked `powershell` block in README, `examples/` and `docs/guide/` in a sandbox and compare its output (`Docs.Examples.Tests.ps1`).
-- **"Green"** means: 0 failed tests **and 0 failed containers** (a file that fails discovery is neither passed nor failed), and a full run with every `XDG_*_HOME` pointed at empty sentinel folders leaves them empty.
+- **"Green"** means: 0 failed tests **and 0 failed containers** (a file that fails discovery is neither passed nor failed), and a full run with every `XDG_*_HOME` pointed at empty sentinel folders leaves them empty. `build/Test-DFFull.ps1` checks all three and exits 1 otherwise; CI runs it on every push.
 
 ## Safety Net Map
 
@@ -35,4 +35,4 @@ Starting module (Phase 1, 2026-10-10): tool registration and session activation,
 
 ## CI Gates
 
-None yet: there is no CI. The gate is the full local run described under "Green", before every commit.
+`.github/workflows/test.yml` runs `build/Test-DFFull.ps1` on `windows-latest` for every push and pull request. Locally, the same script is the gate before a merge.
