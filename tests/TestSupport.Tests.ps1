@@ -82,3 +82,18 @@ Describe 'XDG isolation hygiene' {
         $hits | Should -BeNullOrEmpty -Because 'point XDG folders at $TestDrive with Set-DFTestXdg'
     }
 }
+
+Describe 'TestSupport git isolation' {
+    BeforeAll { . "$PSScriptRoot/TestSupport.ps1" }
+    It 'Set-DFTestXdg points git''s global config at a throwaway file, and Restore-DFTestXdg puts it back' {
+        $before = $Env:GIT_CONFIG_GLOBAL
+        Set-DFTestXdg
+        try {
+            $Env:GIT_CONFIG_GLOBAL | Should -BeLike "$TestDrive*"
+            git config --global dotforge.probe yes
+            git config --global --get dotforge.probe | Should -Be 'yes'
+            Get-Content $Env:GIT_CONFIG_GLOBAL -Raw | Should -Match 'probe = yes'
+        } finally { Restore-DFTestXdg }
+        $Env:GIT_CONFIG_GLOBAL | Should -Be $before
+    }
+}

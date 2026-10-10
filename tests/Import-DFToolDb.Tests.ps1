@@ -111,3 +111,47 @@ Describe 'Import-DFToolDb' {
         $db.Count | Should -Be 0
     }
 }
+
+# Characterization (improve-code-quality Phase 1, 2026-10-10): the caches as they
+# behave today. Both apply only to the module's own Tools/ folder.
+Describe 'Import-DFToolDb caches' {
+    BeforeEach {
+        $script:DFToolDb = $null
+        $script:DFToolRecordCache = @{}
+        # Count file reads; the record content doesn't matter here.
+        Mock Read-DFToolRecordFile { [pscustomobject]@{ name = [IO.Path]::GetFileNameWithoutExtension($Path) } }
+    }
+    AfterEach { $script:DFToolDb = $null; $script:DFToolRecordCache = @{} }
+
+    It 'reads a named record once, then serves it from the per-name cache' {
+        $null = Import-DFToolDb -Name bat
+        $null = Import-DFToolDb -Name bat
+        Should -Invoke Read-DFToolRecordFile -Times 1 -Exactly
+    }
+    It 'serves a named record from a previous full load without reading it again' {
+        $all = Import-DFToolDb
+        $reads = @($all.Keys).Count
+        (Import-DFToolDb -Name bat).bat | Should -Not -BeNullOrEmpty
+        Should -Invoke Read-DFToolRecordFile -Times $reads -Exactly
+    }
+    It 'reuses a full load until -Force' {
+        $first = Import-DFToolDb
+        $second = Import-DFToolDb
+        [object]::ReferenceEquals($first, $second) | Should -BeTrue
+        $third = Import-DFToolDb -Force
+        [object]::ReferenceEquals($first, $third) | Should -BeFalse
+    }
+    It 're-reads a named record with -Force' {
+        $null = Import-DFToolDb -Name bat
+        $null = Import-DFToolDb -Name bat -Force
+        Should -Invoke Read-DFToolRecordFile -Times 2 -Exactly
+    }
+    It 'never caches a load from an explicit -ToolsPath, nor fills the default caches' {
+        $dir = Join-Path $PSScriptRoot '..' 'Tools'
+        $null = Import-DFToolDb -Name bat -ToolsPath $dir
+        $null = Import-DFToolDb -Name bat -ToolsPath $dir
+        Should -Invoke Read-DFToolRecordFile -Times 2 -Exactly
+        $script:DFToolRecordCache.Count | Should -Be 0
+        $script:DFToolDb | Should -BeNullOrEmpty
+    }
+}

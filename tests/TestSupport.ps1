@@ -102,6 +102,11 @@ function Set-DFTestXdg {
         $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
         [Environment]::SetEnvironmentVariable($name, (Join-Path $Root $kind.ToLowerInvariant()), 'Process')
     }
+    # git's global config too: activating delta runs `git config --global`, and no
+    # test may ever change the developer's real one. (Restored with the XDG folders.)
+    $saved['GIT_CONFIG_GLOBAL'] = [Environment]::GetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'Process')
+    New-Item -ItemType Directory -Path $Root -Force | Out-Null
+    [Environment]::SetEnvironmentVariable('GIT_CONFIG_GLOBAL', (Join-Path $Root 'gitconfig'), 'Process')
     $script:DFTestSavedXdg.Push($saved)
 }
 

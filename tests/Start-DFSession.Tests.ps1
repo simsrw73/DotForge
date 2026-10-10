@@ -62,6 +62,19 @@ Describe 'Start-DFSession' {
         $global:DFTestActivated | Should -Be @('beta')
     }
 
+    # Characterization (improve-code-quality Phase 1, 2026-10-10).
+    It 'marks a requested tool whose record can''t be read as Failed, warns, and still loads the rest' {
+        Set-Content (Join-Path $script:Tools 'broken.json') '{ "name": "broken", "executable": '
+        $w = Start-DFSession -Config @{ Tools = @('broken', 'alpha') } -ToolsPath $script:Tools 3>&1 |
+            Where-Object { $_ -is [System.Management.Automation.WarningRecord] } | ForEach-Object { "$_" }
+        ($w -join "`n") | Should -Match 'Failed to parse broken\.json'
+        ($w -join "`n") | Should -Match '1 tool failed to load'
+        (Get-DFToolStatus -Name broken).State | Should -Be 'Failed'
+        (Get-DFToolStatus -Name broken).Detail | Should -Be 'its tool record is missing or invalid (see the warning above)'
+        (Get-DFToolStatus -Name alpha).State | Should -Be 'Active'
+        $global:DFTestActivated | Should -Be @('alpha')
+    }
+
     It 'prints nothing about missing tools when none are missing' {
         Start-DFSession -Config @{ Tools = @('alpha') } -ToolsPath $script:Tools -WarningVariable w 3>$null
         @($w | Where-Object { $_ -match 'not installed' }) | Should -BeNullOrEmpty
