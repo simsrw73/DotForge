@@ -18,7 +18,7 @@ param(
     [string]$OutPath = (Join-Path $PSScriptRoot '../data/tool-categories.json')
 )
 
-. (Join-Path $PSScriptRoot '../Private/Test-DFCategoryDbSchema.ps1')
+. (Join-Path $PSScriptRoot '../Modules/DotForge.Catalog/Private/Test-DFCategoryDbSchema.ps1')
 
 function Read-DFCategoryFragment {
     param([string]$Path)

@@ -171,4 +171,3 @@ function Select-DFPackage {
         -Action { param($name) Find-DFPackage -Query $name }
 }
 
-Set-Alias -Name ftrifle -Value Select-DFPackage

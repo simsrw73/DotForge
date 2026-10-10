@@ -2,7 +2,7 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     # Catalogs exist because their provider files register; load the real ones.
-    Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
+    Get-ChildItem "$PSScriptRoot/../Modules/DotForge.Catalog/Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
         ForEach-Object { . $_.FullName }
 
 

@@ -42,8 +42,6 @@ function Copy-DFToClipboard {
     process { if ($null -ne $InputObject) { $lines.Add($InputObject) } }
     end     { Set-Clipboard -Value ($lines -join "`n") }
 }
-Set-Alias -Name yank -Value Copy-DFToClipboard
-
 function Get-DFFromClipboard {
     <#
     .SYNOPSIS
@@ -73,4 +71,3 @@ function Get-DFFromClipboard {
     param()
     Get-Clipboard
 }
-Set-Alias -Name paste -Value Get-DFFromClipboard

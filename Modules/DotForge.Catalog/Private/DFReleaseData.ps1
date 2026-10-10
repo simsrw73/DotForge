@@ -52,7 +52,7 @@ function Read-DFReleaseData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$FileName,
-        [string]$ShippedPath = (Join-Path $PSScriptRoot '..' 'data' $FileName),
+        [string]$ShippedPath = (Join-Path $PSScriptRoot '..' '..' '..' 'data' $FileName),   # Modules/DotForge.Catalog/Private -> repo root
         [Parameter(Mandatory)][string]$Validator,
         [Parameter(Mandatory)][string]$Label,
         [Parameter(Mandatory)][string]$UnavailableMessage

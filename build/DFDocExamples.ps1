@@ -90,7 +90,7 @@ function New-DFDocModuleCopy {
     param([Parameter(Mandatory)][string]$RepoRoot, [Parameter(Mandatory)][string]$Destination)
     $target = Join-Path $Destination 'DotForge'
     New-Item -ItemType Directory -Path $target -Force | Out-Null
-    foreach ($item in 'DotForge.psd1', 'DotForge.psm1', 'Public', 'Private', 'Tools', 'data') {
+    foreach ($item in 'DotForge.psd1', 'DotForge.psm1', 'Shared', 'Public', 'Private', 'Modules', 'Tools', 'data') {
         Copy-Item -Path (Join-Path $RepoRoot $item) -Destination $target -Recurse -Force
     }
     $Destination

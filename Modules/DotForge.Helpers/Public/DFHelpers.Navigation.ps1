@@ -32,8 +32,6 @@ function Set-DFLocationUp {
     $path = ('../' * $Levels).TrimEnd('/')
     Set-Location $path
 }
-Set-Alias -Name up -Value Set-DFLocationUp
-
 function New-DFDirectoryAndSet {
     <#
     .SYNOPSIS
@@ -65,8 +63,6 @@ function New-DFDirectoryAndSet {
     New-DFDirectory $Path
     Set-Location $Path
 }
-Set-Alias -Name mkcd -Value New-DFDirectoryAndSet
-
 function Select-DFLocation {
     <#
     .SYNOPSIS
@@ -103,4 +99,3 @@ function Select-DFLocation {
         -Header 'Select directory  [Enter to cd]' `
         -Action { param($dir) Set-Location $dir }
 }
-Set-Alias -Name fcd -Value Select-DFLocation

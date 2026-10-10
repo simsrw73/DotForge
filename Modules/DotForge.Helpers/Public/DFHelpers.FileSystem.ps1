@@ -38,8 +38,6 @@ function New-DFFile {
         }
     }
 }
-Set-Alias -Name touch -Value New-DFFile
-
 function Get-DFWhich {
     <#
     .SYNOPSIS
@@ -85,8 +83,6 @@ function Get-DFWhich {
         if ($All) { $found } else { $found | Select-Object -First 1 }
     }
 }
-Set-Alias -Name which -Value Get-DFWhich
-
 function Open-DFItem {
     <#
     .SYNOPSIS
@@ -126,4 +122,3 @@ function Open-DFItem {
         }
     }
 }
-Set-Alias -Name open -Value Open-DFItem

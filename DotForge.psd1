@@ -20,6 +20,7 @@
         'Get-DFRole',
         'Get-DFToolGroup',
         'Start-DFSession',
+        'Get-DFConfig',
         'Get-DFToolStatus',
         'Register-DFTool',
         'Complete-DFToolSetup',
@@ -27,44 +28,9 @@
         'Install-DFTool',
         'Invoke-DFToolSetup',
         'New-DFShim',
-        'Get-DFCommandConflict',
-        # General Helpers — Help & Discovery
-        'Invoke-DFHelp',
-        'Show-DFCliHelp',
-        'Show-DFCliHelpPaged',
-        'Select-DFCommand',
-        'Select-DFVerb',
-        'Select-DFModule',
-        'Select-DFHelpTopic',
-        # General Helpers — Navigation
-        'Set-DFLocationUp',
-        'New-DFDirectoryAndSet',
-        'Select-DFLocation',
-        # General Helpers — File System
-        'New-DFFile',
-        'Get-DFWhich',
-        'Open-DFItem',
-        # General Helpers — Process
-        'Select-DFProcess',
-        'Get-DFTopProcess',
-        # General Helpers — Environment & Profile
-        'Get-DFEnv',
-        'Get-DFPath',
-        'Select-DFEnvVar',
-        'Edit-DFProfile',
-        'Invoke-DFProfileReload',
-        # General Helpers — Clipboard
-        'Copy-DFToClipboard',
-        'Get-DFFromClipboard',
-        # General Helpers — Utility
-        'New-DFUuid',
-        # Catalog Info (trifle)
-        'Find-DFPackage',
-        'Update-DFPackageCache',
-        'Select-DFPackage',
-        'Get-DFCategoryList',
-        'Update-DFCategoryDb',
-        'Update-DFToolIdentityGuide'
+        'Get-DFCommandConflict'
+        # The general helpers and the package catalog are the on-demand modules
+        # Modules/DotForge.Helpers and Modules/DotForge.Catalog; their aliases are exported here.
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

@@ -34,7 +34,7 @@ Describe 'core plugin invariant' {
             [pscustomobject]@{ File = 'DFCatalog.Base.ps1'; Literal = 'scoop'; Reason = 'Scoop catalog bucket-qualified identity key' }
             [pscustomobject]@{ File = 'Find-DFPackage.ps1'; Literal = 'scoop'; Reason = 'Scoop catalog bucket-qualified query' }
         )
-        $occurrences = foreach ($file in Get-ChildItem (Join-Path $root 'Private'), (Join-Path $root 'Public') -Filter '*.ps1') {
+        $occurrences = foreach ($file in Get-ChildItem (Join-Path $root 'Shared'), (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Private'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Public'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Private'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Public') -Filter '*.ps1') {
             $tokens = $null; $errors = $null
             $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
             $nodes = $ast.FindAll({ param($node)

@@ -19,6 +19,7 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Get-DFConfig`** is public: read a setting of the current session, e.g. `Get-DFConfig Theme`.
 - **`Install-DFTool -Missing` installs everything the session reported missing, in one run.** It
   builds a staged plan, so a manager or runtime installs before the tools that need it (fnm, then
   node, then a tool from the npm registry). It never installs anything you didn't ask for: when a
@@ -234,6 +235,12 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **`Import-Module DotForge` is faster** (0.70 s to 0.42 s; startup 2.23 s to 1.95 s with a 47-tool
+  profile). The package catalog (`trifle`) and the general helpers are now separate modules inside
+  DotForge (`DotForge.Catalog`, `DotForge.Helpers`) that PowerShell loads the first time you use one
+  of their commands. Nothing changes in how you call them; every alias is still defined when DotForge
+  loads. `Get-Command -Module DotForge` now lists only the core; use
+  `Get-Command -Module DotForge, DotForge.Catalog, DotForge.Helpers` for everything.
 - **Startup is about a quarter faster** (3.2 s to 2.4 s for a 45-tool profile). Shipped tool
   records are validated once at build time (`data/tool-registry.json`) instead of on every load, and
   "is it installed?" checks look for the file on PATH (or the module's folder) instead of calling

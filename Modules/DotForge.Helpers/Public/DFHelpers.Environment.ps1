@@ -26,8 +26,6 @@ function Get-DFPath {
     param()
     $Env:PATH -split [IO.Path]::PathSeparator
 }
-Set-Alias -Name path -Value Get-DFPath
-
 function Select-DFEnvVar {
     <#
     .SYNOPSIS
@@ -59,8 +57,6 @@ function Select-DFEnvVar {
         -Header    'Select env var  [Enter to output value]' `
         -Parse     { ($_ -split "`t", 2)[1] }
 }
-Set-Alias -Name fenv -Value Select-DFEnvVar
-
 function Edit-DFProfile {
     <#
     .SYNOPSIS
@@ -93,8 +89,6 @@ function Edit-DFProfile {
     }
     & $Env:EDITOR $PROFILE
 }
-Set-Alias -Name ep -Value Edit-DFProfile
-
 function Get-DFEnv {
     <#
     .SYNOPSIS
@@ -149,8 +143,6 @@ function Get-DFEnv {
             }
         }
 }
-Set-Alias -Name env -Value Get-DFEnv
-
 function Invoke-DFProfileReload {
     <#
     .SYNOPSIS
@@ -192,4 +184,3 @@ function Invoke-DFProfileReload {
         Write-Warning "DotForge: `$PROFILE not found at $PROFILE"
     }
 }
-Set-Alias -Name reload -Value Invoke-DFProfileReload

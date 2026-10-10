@@ -46,7 +46,8 @@ Import-Module PSSQLite -ErrorAction Stop
 # Build-DFPackageUniverseRaw.ps1). ../Private supplies ConvertTo-DFNormalizedHomepage;
 # ./Private supplies the DB helpers and the Phase B link helpers.
 if (-not (Get-Command ConvertTo-DFNormalizedHomepage -ErrorAction Ignore)) {
-    Get-ChildItem -Path (Join-Path $PSScriptRoot '../Private') -Filter '*.ps1' | ForEach-Object { . $_.FullName }
+    . (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
+    foreach ($f in Get-DFSourceFile) { . $f }
 }
 if (-not (Get-Command Invoke-DFPackageUniverseLinkBuild -ErrorAction Ignore)) {
     Get-ChildItem -Path (Join-Path $PSScriptRoot 'Private') -Filter '*.ps1' | ForEach-Object { . $_.FullName }

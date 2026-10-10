@@ -2,7 +2,7 @@ BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
     # Catalogs exist because their provider files register; load the real ones.
-    Get-ChildItem "$PSScriptRoot/../Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
+    Get-ChildItem "$PSScriptRoot/../Modules/DotForge.Catalog/Private" -Filter 'DFCatalog.*.ps1' | Where-Object Name -ne 'DFCatalog.Base.ps1' |
         ForEach-Object { . $_.FullName }
 }
 
@@ -112,7 +112,7 @@ function Get-FakeEmptyInstalled {
     }
 
     It 'every registered provider loads and runs in a fresh runspace (its Files list is complete)' {
-        $privateRoot = "$PSScriptRoot/../Private"
+        $privateRoot = "$PSScriptRoot/../Modules/DotForge.Catalog/Private"
         @($script:DFCatalogProviders.Values).Count | Should -Be 7
         $verboseRecords = Invoke-DFCatalogInstalledFetch -Providers @($script:DFCatalogProviders.Values) `
             -PrivateRoot $privateRoot -Verbose 4>&1 |

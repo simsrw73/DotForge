@@ -34,8 +34,12 @@ adding any new alias.
 
 ```
 DotForge/
-├── Public/          # Exported cmdlets and helpers
-├── Private/         # Internal functions
+├── Public/          # The startup core's exported commands (+ DFAliases.ps1: every alias)
+├── Private/         # The core's internal functions
+├── Shared/          # Stateless helpers the core and the on-demand modules both load
+├── Modules/         # On-demand modules, auto-loaded on first use of one of their commands
+│   ├── DotForge.Catalog/   # trifle: package catalogs, identity, categories (Private/, Public/)
+│   └── DotForge.Helpers/   # general helpers: help, navigation, files, env, clipboard
 ├── Tools/           # Per-tool JSON + optional .ps1
 ├── docs/            # Specs and implementation plans
 ├── examples/        # Profile usage examples
@@ -60,7 +64,8 @@ DotForge/
 - **XDG folders come from `Get-DFXdgPath`** (`Private/ConvertTo-DFPath.ps1`): the `XDG_*_HOME` variable if set, else the XDG default under `$HOME`. Never read `$Env:XDG_*` directly or treat an unset one as "disabled". A `function:global:` closure (sidecar wrappers) reaches it, or any private helper, through a captured scriptblock: `$_xdgPath = ${function:Get-DFXdgPath}`, then `& $_xdgPath Cache`.
 - **Settings come from `Start-DFSession -Config` and are read only through `Get-DFConfig -Key -Default`** (`Private/DFSessionConfig.ps1`). Nothing reads a global `$DFConfig`; a test enforces it. Read list settings with `@(Get-DFConfig Tools)`. **A new config key must be added to `$script:DFConfigKeys`** in the same file (a test fails otherwise), so unknown keys can warn.
 - **Tool records are normalized at load** (`ConvertTo-DFToolRecord` in `Private/Import-DFToolDb.ps1`): every known field exists, so read `$tool.type`, `$tool.aliases`, … directly. Only the free-form `settings` object needs defensive reads.
-- **New public functions and aliases** must be added to both `FunctionsToExport` and `AliasesToExport` in `DotForge.psd1` — the psm1 auto-loads them but the manifest controls `Get-Command -Module DotForge` visibility and PSGallery accuracy.
+- **New public functions** go in the `FunctionsToExport` of the module whose `Public/` holds them (`DotForge.psd1`, or `Modules/DotForge.{Catalog,Helpers}/*.psd1`). **Every alias** is defined in `Public/DFAliases.ps1` (or next to a core function) and listed in `DotForge.psd1`'s `AliasesToExport` — never in an on-demand module, because an alias of a not-yet-loaded module loses to a program of the same name on PATH. `tests/ModuleSplit.Tests.ps1` checks both.
+- **Startup core vs on-demand code** (`docs/superpowers/specs/2026-10-10-module-split-design.md`): code a shell needs while it starts stays in the core; code only an explicit command needs goes in an on-demand module. A helper both need goes in `Shared/` and must hold no session state (on-demand modules get their own copy); they read session settings through the public `Get-DFConfig`. Paths from an on-demand module's file to repo-root files go up three levels (`Modules/<module>/<folder>`).
 
 ## Architecture (3 layers)
 
@@ -92,7 +97,7 @@ Invoke-Pester tests/ -Output Detailed  # run from pwsh -NoProfile to avoid profi
 
 **Load the module with the shared loader, never a hand-kept list.** A test's `BeforeAll` starts with
 `. "$PSScriptRoot/TestSupport.ps1"` then `foreach ($f in Get-DFTestModuleFile) { . $f }`, which
-dot-sources every `Private/` and `Public/` file in `DotForge.psm1`'s order (so `Mock` works on private
+dot-sources every source file (`Shared/`, the core's `Private/` and `Public/`, then each on-demand module's) in load order (so `Mock` works on private
 functions without `-ModuleName`). Load a `Tools/*.ps1` companion explicitly after it.
 
 **Isolate every XDG folder a test can write to.** Use `Set-DFTestXdg` in `BeforeEach` and

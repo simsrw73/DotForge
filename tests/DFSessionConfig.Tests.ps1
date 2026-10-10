@@ -91,7 +91,7 @@ Describe 'Session config' {
     Context 'known-key list' {
         It 'lists every key the code reads by name (Get-DFConfig and Get-DFConfiguredTheme -ToolKey)' {
             $root = Split-Path $PSScriptRoot -Parent
-            $read = foreach ($file in Get-ChildItem (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {
+            $read = foreach ($file in Get-ChildItem (Join-Path $root 'Shared'), (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Private'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Public'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Private'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {
                 $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
                 $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and
                         $n.GetCommandName() -in 'Get-DFConfig', 'Get-DFConfiguredTheme' }, $true) | ForEach-Object {
@@ -110,7 +110,7 @@ Describe 'Session config' {
         }
         It 'no code in Private, Public or Tools reads a $DFConfig variable (the migration guard only tests that it exists)' {
             $root = Split-Path $PSScriptRoot -Parent
-            $hits = foreach ($file in Get-ChildItem (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {
+            $hits = foreach ($file in Get-ChildItem (Join-Path $root 'Shared'), (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Private'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Public'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Private'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {
                 $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
                 $ast.FindAll({ param($n)
                         ($n -is [System.Management.Automation.Language.VariableExpressionAst] -and $n.VariablePath.UserPath -match '^(global:)?DFConfig$') -or

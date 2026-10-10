@@ -41,8 +41,6 @@ function Select-DFProcess {
             Get-Process -Id ([int]$parts[1]) -ErrorAction Ignore
         }
 }
-Set-Alias -Name fps -Value Select-DFProcess
-
 function Get-DFTopProcess {
     <#
     .SYNOPSIS
@@ -82,4 +80,3 @@ function Get-DFTopProcess {
             @{N = 'CPU(s)';  E = { [math]::Round($_.CPU, 2) }},
             @{N = 'Mem(MB)'; E = { [math]::Round($_.WorkingSet / 1MB) }}
 }
-Set-Alias -Name top -Value Get-DFTopProcess

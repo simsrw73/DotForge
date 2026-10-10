@@ -17,6 +17,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Complete-DFToolSetup](#complete-dftoolsetup) |  | Records that a tool's one-time setup has completed successfully. |
 | [Find-DFTool](#find-dftool) |  | Searches the DotForge tool registry by wildcard pattern across name, description, and tags. |
 | [Get-DFCommandConflict](#get-dfcommandconflict) |  | Reports DotForge commands that another tool shadows before PowerShell can resolve them. |
+| [Get-DFConfig](#get-dfconfig) |  | Reads one setting of the current DotForge session, or returns -Default when it isn't set. |
 | [Get-DFRole](#get-dfrole) |  | Lists DotForge's tool roles, which tools fill each, and which one is active. |
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
@@ -312,6 +313,51 @@ Get-DFCommandConflict
 Reports conflicts while accepting coreutils' cat over DotForge's bat alias.
 
 **See also:** [coreutils-conflicts](guide/coreutils-conflicts.md)
+
+### Get-DFConfig
+
+Reads one setting of the current DotForge session, or returns -Default when it isn't set.
+
+```text
+Get-DFConfig [-Key] <string> [[-Default] <Object>] [<CommonParameters>]
+```
+
+Reads the configuration Start-DFSession stored for this session. It is read-only: to change a setting, pass a new configuration to Start-DFSession. A missing key or a $null value returns -Default; a configured $false is returned as is. Like any PowerShell command, an array value is written to the pipeline element by element, so read list settings with @(Get-DFConfig Tools).
+
+DotForge's on-demand modules (the package catalog and the general helpers) read session settings through this command.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Key` | string |  | yes |  | The setting name, e.g. 'Theme' or 'Tools'. |
+| `-Default` | Object | `$null` |  |  | Returned when the setting isn't configured. Default: $null. |
+
+**Outputs:** System.Object. The setting's value, or -Default.
+
+**Example 1**
+
+```powershell
+Get-DFConfig Theme
+```
+
+Shows the session's color theme, e.g. catppuccin-mocha.
+
+**Example 2**
+
+```powershell
+@(Get-DFConfig Tools)
+```
+
+Lists the tools and +groups this session was started with.
+
+**Example 3**
+
+```powershell
+Get-DFConfig PSReadLineEditMode -Default Windows
+```
+
+Returns the configured edit mode, or Windows when none is set.
+
+**See also:** [configuration](guide/configuration.md)
 
 ### Get-DFRole
 

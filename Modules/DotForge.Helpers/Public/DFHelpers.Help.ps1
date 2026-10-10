@@ -42,8 +42,6 @@ function Invoke-DFHelp {
 
     $helpText | Invoke-DFWithPager
 }
-Set-Alias -Name hm -Value Invoke-DFHelp
-
 function Select-DFCommand {
     <#
     .SYNOPSIS
@@ -82,8 +80,6 @@ function Select-DFCommand {
         -Preview 'pwsh -NoProfile -NonInteractive -Command "Get-Help {1} -ErrorAction SilentlyContinue | Out-String" 2>nul' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fcmd -Value Select-DFCommand
-
 function Select-DFVerb {
     <#
     .SYNOPSIS
@@ -113,8 +109,6 @@ function Select-DFVerb {
         -Header 'Select verb  [Enter to output]' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fverb -Value Select-DFVerb
-
 function Select-DFModule {
     <#
     .SYNOPSIS
@@ -145,8 +139,6 @@ function Select-DFModule {
         -Header 'Select module  [Enter to output name]' `
         -Parse { ($_ -split '\s+')[0] }
 }
-Set-Alias -Name fmod -Value Select-DFModule
-
 function Select-DFHelpTopic {
     <#
     .SYNOPSIS
@@ -203,8 +195,6 @@ function Select-DFHelpTopic {
         -Parse     { ($_ -split "`t", 2)[0] } `
         -Action    { param($topic) Invoke-DFHelp $topic }
 }
-Set-Alias -Name fh -Value Select-DFHelpTopic
-
 function Show-DFCliHelp {
     <#
     .SYNOPSIS
@@ -283,8 +273,6 @@ function Show-DFCliHelp {
 
     if ($Paged) { $out | Invoke-DFWithPager } else { $out }
 }
-Set-Alias -Name clh -Value Show-DFCliHelp
-
 function Show-DFCliHelpPaged {
     <#
     .SYNOPSIS
@@ -326,4 +314,3 @@ function Show-DFCliHelpPaged {
     if ($Force) { $params.Force = $true }
     Show-DFCliHelp @params
 }
-Set-Alias -Name clhp -Value Show-DFCliHelpPaged

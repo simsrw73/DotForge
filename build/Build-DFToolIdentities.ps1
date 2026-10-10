@@ -41,8 +41,8 @@ if (-not (Get-Command Test-DFToolIdentityGuideSchema -ErrorAction Ignore)) {
     # Private (not exported) per repo convention, so Import-Module alone
     # would not make them visible here — dot-source Private/*.ps1 directly,
     # mirroring how DotForge.psm1 loads them into the module's own session.
-    Get-ChildItem -Path (Join-Path $PSScriptRoot '../Private') -Filter '*.ps1' |
-        ForEach-Object { . $_.FullName }
+    . (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
+    foreach ($f in Get-DFSourceFile) { . $f }
 }
 if (-not $ResolveLinkage) {
     $ResolveLinkage = {

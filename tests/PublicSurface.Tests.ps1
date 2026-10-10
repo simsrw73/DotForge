@@ -3,8 +3,13 @@
 Describe 'Public surface consistency' {
     BeforeAll {
         $script:repo = Split-Path $PSScriptRoot -Parent
-        $script:psd1Path = Join-Path $script:repo 'DotForge.psd1'
-        $script:publicDir = Join-Path $script:repo 'Public'
+        # The core and its on-demand modules: each manifest exports its own Public/ folder.
+        $script:psd1Paths = @(
+            (Join-Path $script:repo 'DotForge.psd1'),
+            (Join-Path $script:repo 'Modules' 'DotForge.Catalog' 'DotForge.Catalog.psd1'),
+            (Join-Path $script:repo 'Modules' 'DotForge.Helpers' 'DotForge.Helpers.psd1')
+        )
+        $script:psd1Path = $script:psd1Paths[0]
         $script:buildScriptPath = Join-Path $script:repo 'build' 'Build-DFReferenceDocs.ps1'
 
         # Normalizes manifest comment headers to reference doc sections
@@ -25,24 +30,14 @@ Describe 'Public surface consistency' {
             }
         }
 
-        # Parse DotForge.psd1 with AST and tokens
-        $tokens = $null
-        $errors = $null
-        $script:manifestAst = [System.Management.Automation.Language.Parser]::ParseFile(
-            $script:psd1Path,
-            [ref]$tokens,
-            [ref]$errors
-        )
+        # The three manifests' exports, as one surface.
+        $script:manifestData = @{
+            FunctionsToExport = @(foreach ($p in $script:psd1Paths) { (Import-PowerShellDataFile $p).FunctionsToExport })
+            AliasesToExport   = (Import-PowerShellDataFile $script:psd1Path).AliasesToExport
+        }
 
-        $manifestHash = $script:manifestAst.FindAll({
-            param($n)
-            $n -is [System.Management.Automation.Language.HashtableAst]
-        }, $true) | Select-Object -First 1
-
-        $script:manifestData = Import-PowerShellDataFile $script:psd1Path
-
-        # Discover functions defined at top level in Public/*.ps1 via PowerShell AST
-        $script:publicFiles = @(Get-ChildItem -Path $script:publicDir -Filter '*.ps1' | Sort-Object Name)
+        # Discover functions defined at top level in each module's Public/*.ps1 via PowerShell AST
+        $script:publicFiles = @(@(foreach ($p in $script:psd1Paths) { Get-ChildItem -Path (Join-Path (Split-Path $p) 'Public') -Filter '*.ps1' }) | Sort-Object Name)
         $script:publicFunctionMap = [ordered]@{} # FunctionName -> FileBaseName
         $script:topLevelFunctions = [System.Collections.Generic.List[string]]::new()
 
@@ -67,23 +62,27 @@ Describe 'Public surface consistency' {
             }
         }
 
-        # Extract FunctionsToExport comment groups from manifest AST & tokens
-        $fteEntry = foreach ($kv in $manifestHash.KeyValuePairs) {
-            if ($kv.Item1.Extent.Text -eq 'FunctionsToExport') { $kv; break }
-        }
-
-        $fteTokens = $tokens | Where-Object {
-            $_.Extent.StartOffset -ge $fteEntry.Item2.Extent.StartOffset -and
-            $_.Extent.EndOffset -le $fteEntry.Item2.Extent.EndOffset
-        }
-
-        $currentGroup = $null
+        # Extract FunctionsToExport comment groups from each manifest's AST & tokens
         $script:manifestFunctionGroups = [ordered]@{}
-        foreach ($t in $fteTokens) {
-            if ($t.Kind -eq [System.Management.Automation.Language.TokenKind]::Comment) {
-                $currentGroup = $t.Text.TrimStart('#').Trim()
-            } elseif ($t.Kind -eq [System.Management.Automation.Language.TokenKind]::StringLiteral) {
-                $script:manifestFunctionGroups[$t.Value] = $currentGroup
+        foreach ($p in $script:psd1Paths) {
+            $tokens = $null
+            $errors = $null
+            $manifestAst = [System.Management.Automation.Language.Parser]::ParseFile($p, [ref]$tokens, [ref]$errors)
+            $manifestHash = $manifestAst.FindAll({ param($n) $n -is [System.Management.Automation.Language.HashtableAst] }, $true) | Select-Object -First 1
+            $fteEntry = foreach ($kv in $manifestHash.KeyValuePairs) {
+                if ($kv.Item1.Extent.Text -eq 'FunctionsToExport') { $kv; break }
+            }
+            $fteTokens = $tokens | Where-Object {
+                $_.Extent.StartOffset -ge $fteEntry.Item2.Extent.StartOffset -and
+                $_.Extent.EndOffset -le $fteEntry.Item2.Extent.EndOffset
+            }
+            $currentGroup = $null
+            foreach ($t in $fteTokens) {
+                if ($t.Kind -eq [System.Management.Automation.Language.TokenKind]::Comment) {
+                    $currentGroup = $t.Text.TrimStart('#').Trim()
+                } elseif ($t.Kind -eq [System.Management.Automation.Language.TokenKind]::StringLiteral) {
+                    $script:manifestFunctionGroups[$t.Value] = $currentGroup
+                }
             }
         }
 
@@ -164,7 +163,8 @@ Describe 'Public surface consistency' {
 
     Context 'Build-DFReferenceDocs sectionByFile coverage (1d)' {
         It 'explicitly maps every Public/*.ps1 file in sectionByFile without silent fallback' {
-            $unmapped = foreach ($file in $script:publicFiles) {
+            # Files that define public functions (DFAliases.ps1 only defines aliases).
+            $unmapped = foreach ($file in $script:publicFiles | Where-Object { $_.BaseName -in $script:publicFunctionMap.Values }) {
                 if (-not $script:sectionByFile.Contains($file.BaseName)) {
                     $file.Name
                 }

@@ -41,33 +41,6 @@ $script:DFRemovedConfigKeys = @{
     CompletionMode = "set Defaults['tab-completion'] = 'inshellisense' to use inshellisense"
 }
 
-function Get-DFConfig {
-    <#
-    .SYNOPSIS
-        Reads one session setting, or returns -Default when it isn't set.
-    .DESCRIPTION
-        Reads the configuration Start-DFSession stored. A missing key or a
-        $null value returns -Default; a configured $false is returned as is.
-        Like any PowerShell command, an array value is written to the pipeline
-        element by element, so read list settings with @(Get-DFConfig Tools).
-    .PARAMETER Key
-        The setting name, e.g. 'Tools'. It must be listed in $script:DFConfigKeys.
-    .PARAMETER Default
-        Returned when the setting isn't configured. Default: $null.
-    .OUTPUTS
-        System.Object.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory, Position = 0)][string]$Key,
-        [Parameter(Position = 1)]$Default = $null
-    )
-    if ($script:DFSessionConfig.Contains($Key) -and $null -ne $script:DFSessionConfig[$Key]) {
-        return $script:DFSessionConfig[$Key]
-    }
-    $Default
-}
-
 function Set-DFSessionConfig {
     <#
     .SYNOPSIS

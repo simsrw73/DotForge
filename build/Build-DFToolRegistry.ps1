@@ -20,7 +20,8 @@ param([string]$OutputPath)
 $repo = Split-Path $PSScriptRoot -Parent
 if (-not $OutputPath) { $OutputPath = Join-Path $repo 'data' 'tool-registry.json' }
 # Private functions aren't exported: load them the way the module does.
-Get-ChildItem (Join-Path $repo 'Private') -Filter '*.ps1' | ForEach-Object { . $_.FullName }
+. (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
+foreach ($f in Get-DFSourceFile) { . $f }
 
 $tools = [ordered]@{}
 foreach ($f in Get-ChildItem (Join-Path $repo 'Tools') -Filter '*.json' | Sort-Object Name) {

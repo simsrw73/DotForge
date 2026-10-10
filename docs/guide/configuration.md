@@ -25,7 +25,7 @@ Start-DFSession -Config $DFConfig
 3. `Defaults` says that eza, not lsd, owns `ls`, `ll`, `la` and `tree`.
 4. `ExcludeTools` leaves lsd unconfigured, even when a group requested it.
 
-A key you don't set keeps its default. A misspelled key warns at startup and names the closest known key.
+A key you don't set keeps its default. A misspelled key warns at startup and names the closest known key. To see what the session is using, read a setting back with `Get-DFConfig`, e.g. `Get-DFConfig Theme`.
 
 ## All settings
 

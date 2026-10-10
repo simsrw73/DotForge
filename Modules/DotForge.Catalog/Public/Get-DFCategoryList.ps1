@@ -51,4 +51,3 @@ function Get-DFCategoryList {
     Format-DFCategoryList -Database (Get-DFCategoryDb) -Facet $Facet -Counts $Counts.IsPresent -Color $color
 }
 
-Set-Alias -Name tcats -Value Get-DFCategoryList

@@ -63,14 +63,17 @@ function Get-DFTestModuleFile {
                 foreach ($f in Get-DFTestModuleFile) { . $f }
             }
         Tools/*.ps1 companions are not included; a test loads its sidecar itself.
+        The on-demand modules (Modules/DotForge.Catalog, Modules/DotForge.Helpers)
+        are loaded into the same scope, so a test can reach any function.
     .OUTPUTS
-        System.String[]. Absolute paths: Private/*.ps1, then Public/*.ps1.
+        System.String[]. Absolute paths: Shared/, Private/, Public/, then each
+        on-demand module's Private/ and Public/.
     #>
     $root = Split-Path $PSScriptRoot -Parent
-    # Same enumeration as DotForge.psm1, so load order (and therefore which
-    # $script: initializer runs first) matches the real module.
-    foreach ($dir in 'Private', 'Public') {
-        (Get-ChildItem -Path (Join-Path $root $dir) -Filter '*.ps1').FullName
+    # Same enumeration as DotForge.psm1 (and the on-demand modules' loaders), so
+    # load order -- and therefore which $script: initializer runs first -- matches.
+    foreach ($dir in Get-DFTestSourceDir) {
+        (Get-ChildItem -Path $dir -Filter '*.ps1').FullName
     }
 }
 
@@ -154,4 +157,18 @@ function Remove-DFTestGlobal {
             if (Get-Alias -Name $n -Scope Global -ErrorAction Ignore) { Remove-Alias -Name $n -Scope Global -Force }
         }
     } $Function $Alias
+}
+
+function Get-DFTestSourceDir {
+    <#
+    .SYNOPSIS
+        Every folder of module source files, in load order: Shared, the core's Private and Public, then each on-demand module's.
+    .OUTPUTS
+        System.String[]. Absolute folder paths.
+    #>
+    $root = Split-Path $PSScriptRoot -Parent
+    foreach ($d in 'Shared', 'Private', 'Public') { Join-Path $root $d }
+    foreach ($m in 'DotForge.Catalog', 'DotForge.Helpers') {
+        foreach ($d in 'Private', 'Public') { Join-Path $root 'Modules' $m $d }
+    }
 }

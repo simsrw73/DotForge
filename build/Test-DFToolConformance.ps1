@@ -36,8 +36,8 @@ Set-StrictMode -Version Latest
 
 # Private helpers (Expand-DFXdgPath / ConvertTo-DFPath) are not exported; dot-source
 # them directly, mirroring build/Build-DFToolIdentities.ps1.
-Get-ChildItem -Path (Join-Path $PSScriptRoot '../Private') -Filter '*.ps1' |
-    ForEach-Object { . $_.FullName }
+. (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
+foreach ($f in Get-DFSourceFile) { . $f }
 . (Join-Path $PSScriptRoot 'DFConformance.ps1')
 
 if (-not $SpawnTool) {

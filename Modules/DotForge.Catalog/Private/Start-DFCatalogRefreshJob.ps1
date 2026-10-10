@@ -43,12 +43,15 @@ function Start-DFCatalogRefreshJob {
         Remove-Job -Force
     if (Get-Job -Name $jobName -ErrorAction Ignore) { return }
 
-    $manifest = Join-Path $PSScriptRoot '..' 'DotForge.psd1'
-    $null = Start-ThreadJob -Name $jobName -ThrottleLimit 4 -ArgumentList $manifest, $Provider, $Query, $Kind -ScriptBlock {
-        param($Manifest, $Provider, $Query, $Kind)
+    # The catalog's providers live in DotForge.Catalog; the core supplies Get-DFConfig.
+    $core = Join-Path $PSScriptRoot '..' '..' '..' 'DotForge.psd1'
+    $manifest = Join-Path $PSScriptRoot '..' 'DotForge.Catalog.psd1'
+    $null = Start-ThreadJob -Name $jobName -ThrottleLimit 4 -ArgumentList $core, $manifest, $Provider, $Query, $Kind -ScriptBlock {
+        param($Core, $Manifest, $Provider, $Query, $Kind)
         try {
+            Import-Module $Core
             Import-Module $Manifest -Force
-            & (Get-Module DotForge) {
+            & (Get-Module DotForge.Catalog) {
                 param($p, $q, $k)
                 $prov = $script:DFCatalogProviders[$p]
                 if (-not $prov) { return }

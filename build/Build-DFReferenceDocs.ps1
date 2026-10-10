@@ -42,6 +42,7 @@ $sectionByFile = [ordered]@{
     'Get-DFToolStatus'           = 'Core'
     'Install-DFTool'             = 'Core'
     'Invoke-DFToolSetup'         = 'Core'
+    'Get-DFConfig'               = 'Core'
     'Invoke-DFPicker'            = 'Core'
     'New-DFDirectory'            = 'Core'
     'New-DFShim'                 = 'Core'
@@ -198,10 +199,13 @@ function Get-AliasMap([string[]]$Files) {
 
 # ── Exported functions ─────────────────────────────────────────────────────────
 Import-Module (Join-Path $repo 'DotForge.psd1') -Force 3>$null
-$publicFiles = @(Get-ChildItem (Join-Path $repo 'Public') -Filter '*.ps1' | ForEach-Object FullName)
+# The core and its on-demand modules, loaded from this checkout.
+$moduleDirs = @($repo, (Join-Path $repo 'Modules' 'DotForge.Catalog'), (Join-Path $repo 'Modules' 'DotForge.Helpers'))
+foreach ($d in $moduleDirs | Select-Object -Skip 1) { Import-Module (Join-Path $d "$(Split-Path $d -Leaf).psd1") -Force 3>$null }
+$publicFiles = @(foreach ($d in $moduleDirs) { Get-ChildItem (Join-Path $d 'Public') -Filter '*.ps1' | ForEach-Object FullName })
 $publicAliases = Get-AliasMap $publicFiles
 
-$exported = foreach ($cmd in Get-Command -Module DotForge -CommandType Function) {
+$exported = foreach ($cmd in Get-Command -Module DotForge, DotForge.Catalog, DotForge.Helpers -CommandType Function) {
     $file = [IO.Path]::GetFileNameWithoutExtension($cmd.ScriptBlock.File)
     [pscustomobject]@{
         Name    = $cmd.Name

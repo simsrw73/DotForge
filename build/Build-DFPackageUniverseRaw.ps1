@@ -114,8 +114,8 @@ Import-Module powershell-yaml -ErrorAction Stop
 # make them visible here — dot-source directly, mirroring how DotForge.psm1
 # loads them into the module's own session (see Build-DFToolIdentities.ps1).
 if (-not (Get-Command Build-DFCatalogScoopIndexData -ErrorAction Ignore)) {
-    Get-ChildItem -Path (Join-Path $PSScriptRoot '../Private') -Filter '*.ps1' |
-        ForEach-Object { . $_.FullName }
+    . (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
+    foreach ($f in Get-DFSourceFile) { . $f }
 }
 if (-not (Get-Command Get-DFPackageUniverseScoopRows -ErrorAction Ignore)) {
     Get-ChildItem -Path (Join-Path $PSScriptRoot 'Private') -Filter '*.ps1' |
