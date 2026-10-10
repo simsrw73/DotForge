@@ -74,6 +74,31 @@ Describe 'Install-DFTool' {
         Should -Invoke Read-DFInstallChoice -Times 1 -ParameterFilter { $Options -contains 'y' }
         $script:Calls | Should -Be @('scoop install pnpm', 'pnpm add -g @microsoft/inshellisense')
     }
+    It 'interactive mode skips its confirmation with -Confirm:$false' {
+        Mock Test-DFInteractiveHost { $true }
+        Mock Read-DFInstallChoice { if ($Options -contains 'pnpm') { 'npm' } else { 'n' } }
+        $null = Install-DFTool -Name ish -Confirm:$false -ToolsPath $script:Tools 3>$null 6>$null
+        Should -Invoke Read-DFInstallChoice -Times 0 -ParameterFilter { $Options -contains 'y' }
+        $script:Calls | Should -Be @('scoop install nodejs', 'npm i -g @microsoft/inshellisense')
+    }
+    It 'warns about InstallVia once, and checks each tool once, however many questions it asks' {
+        Set-DFTestConfig @{ InstallVia = @{ ish = 'crates' } }
+        Mock Test-DFInteractiveHost { $true }
+        Mock Read-DFInstallChoice { if ($Options -contains 'pnpm') { 'npm' } else { 'n' } }
+        $null = Install-DFTool -Name ish -ToolsPath $script:Tools -WarningVariable w 3>$null 6>$null
+        @($w | Where-Object { "$_" -match 'InstallVia' }).Count | Should -Be 1
+        Should -Invoke Test-DFToolAvailable -Times 1 -Exactly -ParameterFilter { $Executable -eq 'pnpm.cmd' }
+    }
+    It 'warns when InstallVia names a source whose manager isn''t installed, then uses the next source' {
+        $glow = Join-Path $script:Tools 'glow.json'
+        '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "winget": "charm.glow" } }' | Set-Content $glow
+        '{ "name": "winget", "executable": "winget.exe", "roles": { "package-manager": { "priority": 20 } }, "installs": { "from": "winget", "command": ["winget","install","{id}"] } }' |
+            Set-Content (Join-Path $script:Tools 'winget.json')
+        Set-DFTestConfig @{ InstallVia = @{ glow = 'winget' } }
+        $null = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools -WarningVariable w 3>$null 6>$null
+        "$w" | Should -Match "InstallVia.*glow.*winget.*not installed"
+        $script:Calls | Should -Be @('scoop install glow')
+    }
     It 'warns that a tool installed by name but not in Tools loads only this session' {
         Start-DFSession -Config @{ Tools = @() } -ToolsPath $script:Tools 3>$null
         $null = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools -WarningVariable w 3>$null 6>$null

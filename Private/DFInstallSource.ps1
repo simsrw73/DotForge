@@ -72,7 +72,7 @@ function Get-DFInstallSourceOrder {
     # (A local named $via would be the $Via parameter: names are case-insensitive.)
     $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
     if ($pinned -and $pinned -notin $have) {
-        Write-Warning "DotForge: InstallVia for $($Tool.name) names '$pinned', which has no package for it; ignoring that."
+        Write-DFInstallWarning "DotForge: InstallVia for $($Tool.name) names '$pinned', which has no package for it; ignoring that."
         $pinned = $null
     }
     $excluded = @(Get-DFConfig ExcludeSources)
@@ -109,7 +109,7 @@ function Resolve-DFInstallSource {
         the shell is elevated, or an elevator is installed or planned. When
         not, such a manager is passed over like an unavailable one.
     .OUTPUTS
-        PSCustomObject: Tool, Source, Manager, Ref, Gap, Options.
+        PSCustomObject: Tool, Source, Manager, Ref, Gap, Options, and Sources (the candidate order it walked).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -122,8 +122,8 @@ function Resolve-DFInstallSource {
         [hashtable]$Via = @{},
         [bool]$CanElevate = $true
     )
-    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Ref = $null; Gap = $null; Options = @() }
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
+    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources }
     if (-not $sources) {
         $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
         $result.Gap = if (-not $have) { 'no package in any source' }
@@ -135,6 +135,10 @@ function Resolve-DFInstallSource {
         $pick = if ($Choice[$s]) { $managers | Where-Object name -eq $Choice[$s] | Select-Object -First 1 }
                 else { $managers | Where-Object { $_.name -in $Planned -or (& $IsAvailable $_) } | Select-Object -First 1 }
         if ($pick) {
+            $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
+            if ($pinned -and $pinned -ne $s -and $pinned -in $sources) {
+                Write-DFInstallWarning "DotForge: InstallVia for $($Tool.name) names '$pinned', whose manager is not installed or requested; installing from $s instead."
+            }
             $result.Source = $s
             $result.Manager = $pick
             $result.Ref = Get-DFPackageRef $Tool.packages.$s
@@ -145,4 +149,19 @@ function Resolve-DFInstallSource {
     $result.Options = [string[]]@(Get-DFSourceManager -Source $first -ToolDb $ToolDb | ForEach-Object { $_.name })
     $result.Gap = "needs a manager for $first ($(if ($result.Options) { $result.Options -join ', ' } else { 'none known' })), and none is installed or requested"
     $result
+}
+
+function Write-DFInstallWarning {
+    <#
+    .SYNOPSIS
+        Writes a planning warning once per Install-DFTool call (its question loop re-plans after every answer).
+    .PARAMETER Message
+        The warning.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Message)
+    if ($script:DFInstallWarned -and -not $script:DFInstallWarned.Add($Message)) { return }
+    Write-Warning $Message
 }

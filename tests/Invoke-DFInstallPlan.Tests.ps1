@@ -10,6 +10,10 @@ Describe 'Expand-DFInstallArgv' {
         Expand-DFInstallArgv -Template 'scoop', 'bucket', 'add', '{name}', '{url}' -Values @{ name = 'x'; url = 'https://u' } |
             Should -Be @('scoop', 'bucket', 'add', 'x', 'https://u')
     }
+    It 'expands {id} inside a token once per id' {
+        Expand-DFInstallArgv -Template 'mise', 'use', '-g', 'node@{id}' -Values @{ ids = @('lts') } | Should -Be @('mise', 'use', '-g', 'node@lts')
+        Expand-DFInstallArgv -Template 'x', 'pkg@{id}' -Values @{ ids = @('a', 'b') } | Should -Be @('x', 'pkg@a', 'pkg@b')
+    }
 }
 
 Describe 'Invoke-DFInstallPlan' {
@@ -98,6 +102,12 @@ Describe 'Invoke-DFInstallPlan' {
         ($r | Where-Object Tool -eq fnm).Result | Should -Be 'Installed'
         ($r | Where-Object Tool -eq glow).Result | Should -Be 'Failed'
         $script:Calls | Should -Contain 'fnm install lts'
+    }
+    It 'says why a dependent was skipped in words' {
+        Mock Test-DFToolAvailable { $Executable -ne 'fnm.exe' }
+        $plan = New-DFInstallPlan -Name fnm, node -ToolDb $script:Db -IsAvailable $script:Avail
+        $r = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        ($r | Where-Object Tool -eq node).Detail | Should -Be "skipped: fnm isn't found yet"
     }
     It 'reports a tool that installed but still isn''t found' {
         Mock Test-DFToolAvailable { $false }

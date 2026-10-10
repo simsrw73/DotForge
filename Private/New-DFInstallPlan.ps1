@@ -63,12 +63,21 @@ function New-DFInstallPlan {
             $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $null; Manager = $null; Ref = $null; ProvidedBy = $required[0]; DependsOn = [string[]]$required; Stage = 0 }
             continue
         }
+        # No packages, and what it comes with isn't being installed: say what to add.
+        $providers = @($t.requires | Where-Object { $_ -and $_ -notlike 'role:*' })
+        if (-not $hasPackages -and $providers) {
+            $gaps.Add([pscustomobject]@{
+                Tool = $t.name; Reason = "comes with $($providers[0]): add $($providers[0]) to install it"
+                Options = @(); Source = $null; Dependents = [string[]]@()
+            })
+            continue
+        }
         $planned = [string[]]@($want | Where-Object { $_ -ne $t.name })
         $r = Resolve-DFInstallSource -Tool $t -ToolDb $ToolDb -IsAvailable $IsAvailable -Planned $planned -Choice $Choice -Via $Via -CanElevate $canElevate
         if ($r.Gap) {
             $gaps.Add([pscustomobject]@{
                 Tool = $t.name; Reason = $r.Gap; Options = $r.Options
-                Source = (Get-DFInstallSourceOrder -Tool $t -ToolDb $ToolDb -Via $Via 3>$null | Select-Object -First 1)
+                Source = ($r.Sources | Select-Object -First 1)
                 Dependents = [string[]]@()
             })
             continue

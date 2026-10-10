@@ -47,7 +47,11 @@ function Invoke-DFInstallPlan {
             if ($result.Contains($d) -and $result[$d].Result -in 'Failed', 'Skipped', 'NotFound') { return $d }
         }
     }
-    $skipFor = { param($d) "skipped: $d $($result[$d].Result.ToLower())" }
+    $skipFor = {
+        param($d)
+        $why = @{ Failed = 'failed'; Skipped = 'was skipped'; NotFound = "isn't found yet" }[$result[$d].Result]
+        "skipped: $d $why"
+    }
 
     foreach ($stage in $Plan.Stages) {
         $reactivate = [System.Collections.Generic.List[string]]::new()

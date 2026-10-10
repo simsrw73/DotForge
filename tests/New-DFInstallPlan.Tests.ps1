@@ -50,6 +50,10 @@ Describe 'New-DFInstallPlan' {
         ($p.Items | Where-Object Tool -eq npm).ProvidedBy | Should -Be 'node'
         ($p.Items | Where-Object Tool -eq ish).DependsOn | Should -Contain 'npm'
     }
+    It 'says a chosen manager comes with a runtime that isn''t planned' {
+        $p = New-DFInstallPlan -Name ish -ToolDb $script:Db -IsAvailable $script:OnlyScoop -Choice @{ npm = 'npm' }
+        ($p.Gaps | Where-Object Tool -eq npm).Reason | Should -Match 'comes with node.*add node'
+    }
     It 'falls back past a preferred source whose manager is neither installed nor requested' {
         $p = New-DFInstallPlan -Name node, npm, ish -ToolDb $script:Db -IsAvailable $script:OnlyScoop
         # node prefers fnm, which isn't installed or requested, so scoop installs it; npm comes with it.

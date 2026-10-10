@@ -498,6 +498,7 @@ Modes:
   - No one to ask and no -UseDefaults (a script): only what needs no
     decision installs; each gap is reported with the tools waiting on it.
   - -WhatIf: the plan only.
+  - -Confirm:$false: interactive, but without the final confirmation.
 ```
 
 Afterwards, new tools are activated in this session. A tool you named that isn't in your Tools setting is active only until the shell closes.

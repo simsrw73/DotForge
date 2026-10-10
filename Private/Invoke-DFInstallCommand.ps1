@@ -5,7 +5,9 @@ function Expand-DFInstallArgv {
     .SYNOPSIS
         Fills a manager's argv template: {id} becomes every id, other {name} tokens come from -Values.
     .PARAMETER Template
-        The argv template from installs.command or installs.feeds.
+        The argv template from installs.command or installs.feeds. A token
+        that is exactly {id} expands to every id; a token containing {id}
+        (pkg@{id}) is repeated once per id.
     .PARAMETER Values
         ids (string[]) plus any other token values (name, url).
     .OUTPUTS
@@ -15,8 +17,11 @@ function Expand-DFInstallArgv {
     [OutputType([string[]])]
     param([Parameter(Mandatory)][string[]]$Template, [Parameter(Mandatory)][hashtable]$Values)
     [string[]]@(foreach ($t in $Template) {
+        $fill = { param($text) [regex]::Replace($text, '\{(\w+)\}', { param($m) [string]$Values[$m.Groups[1].Value] }) }
         if ($t -eq '{id}') { @($Values.ids) }
-        else { [regex]::Replace($t, '\{(\w+)\}', { param($m) [string]$Values[$m.Groups[1].Value] }) }
+        # {id} inside a token (node@{id}) gives one argument per id.
+        elseif ($t.Contains('{id}')) { foreach ($i in @($Values.ids)) { & $fill $t.Replace('{id}', $i) } }
+        else { & $fill $t }
     })
 }
 
