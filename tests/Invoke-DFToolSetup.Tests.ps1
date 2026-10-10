@@ -35,6 +35,24 @@ Describe 'Invoke-DFToolSetup' {
         Test-Path $script:Dest | Should -BeFalse
         (Get-DFToolSetupState).PSObject.Properties['st'] | Should -Not -BeNullOrEmpty
     }
+    It 'honors -Confirm: with no one to answer, nothing is re-seeded' {
+        # -Confirm lowers $ConfirmPreference for every write setup makes, so each one
+        # asks. A child pwsh -NonInteractive turns the prompt into an error instead of
+        # waiting for a person. It shares this test's XDG folders, so the setup record
+        # from BeforeEach stops Start-DFSession from re-seeding.
+        $tools = Join-Path $TestDrive "confirm-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        Copy-Item $script:Tools $tools -Recurse
+        (Get-Content (Join-Path $tools 'st.json') -Raw) -replace '"st\.exe"', '"pwsh"' | Set-Content (Join-Path $tools 'st.json')
+        Remove-Item $script:Dest -ErrorAction Ignore   # $TestDrive persists across this Describe's tests
+        $manifest = Join-Path $PSScriptRoot '..' 'DotForge.psd1'
+        $child = @"
+Import-Module '$manifest'
+Start-DFSession -Config @{ Tools = @('st') } -ToolsPath '$tools' 3>`$null
+Invoke-DFToolSetup -Name st -Confirm -ToolsPath '$tools'
+"@
+        $null = & (Get-Process -Id $PID).Path -NoProfile -NonInteractive -Command $child 2>&1
+        Test-Path $script:Dest | Should -BeFalse
+    }
     It 'refuses a tool that isn''t active in the session' {
         { Invoke-DFToolSetup -Name nope -ToolsPath $script:Tools -ErrorAction Stop } | Should -Throw '*not active*'
     }
