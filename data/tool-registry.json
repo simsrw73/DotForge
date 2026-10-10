@@ -1,0 +1,3027 @@
+{
+  "schemaVersion": 1,
+  "tools": {
+    "bat": {
+      "sha256": "20ede48e8dd3db8cf0e6324bf0ea5316d99e5801c0d932448d22edcc104a0e36",
+      "record": {
+        "name": "bat",
+        "executable": "bat.exe",
+        "type": "exe",
+        "description": "Modern cat replacement with syntax highlighting and Git integration",
+        "tags": [
+          "viewer",
+          "pager",
+          "file"
+        ],
+        "packages": {
+          "scoop": "bat",
+          "winget": "sharkdp.bat",
+          "choco": "bat"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "BAT_CONFIG_PATH": "${XDG_CONFIG_HOME}/bat/bat.conf"
+          },
+          "dirs": [],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": {
+          "BAT_THEME": "Catppuccin Mocha"
+        },
+        "aliases": {
+          "cat": {
+            "command": "bat",
+            "args": [
+              "-pp"
+            ]
+          }
+        },
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": {
+          "catppuccin-mocha": "Catppuccin Mocha"
+        },
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "bitwarden": {
+      "sha256": "a9d231a95e67313511d6865b4ca72b8ca655599d229231c969eeabd57090c2a6",
+      "record": {
+        "name": "bitwarden",
+        "executable": "bw.exe",
+        "type": "exe",
+        "description": "Bitwarden CLI — open-source password manager",
+        "tags": [
+          "security",
+          "secrets",
+          "password"
+        ],
+        "packages": {
+          "scoop": "bitwarden-cli",
+          "winget": "Bitwarden.CLI"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "broot": {
+      "sha256": "099bb0342e0ec8dd8d28354da8bdbd9ac46fe65c678cca9b0b26d489b04701d6",
+      "record": {
+        "name": "broot",
+        "executable": "broot.exe",
+        "type": "exe",
+        "description": "Interactive file browser with fuzzy search",
+        "tags": [
+          "file",
+          "browser",
+          "navigation"
+        ],
+        "packages": {
+          "scoop": "broot",
+          "choco": "broot"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {},
+          "dirs": [
+            "${XDG_CONFIG_HOME}/broot"
+          ],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "bun": {
+      "sha256": "7c1b662e197cd1cf6b54354c838e8251a8b702aa8a6e68f5cfff68b10f7d85d0",
+      "record": {
+        "name": "bun",
+        "executable": "bun.exe",
+        "type": "exe",
+        "description": "Bun JavaScript runtime and package manager",
+        "tags": [
+          "javascript",
+          "dev",
+          "runtime",
+          "package-manager"
+        ],
+        "packages": {
+          "scoop": "bun",
+          "winget": "Oven-sh.Bun",
+          "npm": "bun"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "role:version-manager"
+        ],
+        "requires": [],
+        "roles": {
+          "js-runtime": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "js-package-manager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "npm",
+            "command": [
+              "bun",
+              "add",
+              "-g",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "carapace": {
+      "sha256": "4e8420f6d3d399b456b0d5af512c3d9fc9386f0032360d0d059764f377ce4cfb",
+      "record": {
+        "name": "carapace",
+        "executable": "carapace.exe",
+        "type": "exe",
+        "description": "Multi-shell completion engine — argument completers for 500+ CLI tools",
+        "tags": [
+          "completion",
+          "shell",
+          "productivity"
+        ],
+        "packages": {
+          "scoop": "carapace-bin",
+          "winget": "rsteube.Carapace"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "fnm",
+          "psreadline"
+        ],
+        "requires": [],
+        "roles": {
+          "completion": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "tab-completion": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "cargo": {
+      "sha256": "a87c3f299460b7ab3abeec279ce4adc1189cb97d121dd8b5b969c7a9aaab6ed5",
+      "record": {
+        "name": "cargo",
+        "executable": "cargo.exe",
+        "type": "exe",
+        "description": "Rust package manager (installs crates from crates.io)",
+        "tags": [
+          "rust",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {},
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "rustup"
+        ],
+        "roles": {
+          "rust-package-manager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "crates",
+            "command": [
+              "cargo",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "chezmoi": {
+      "sha256": "42c160c1d20c444a0764769b048cf093cb45c77c9e3bb51a57dc97b24c88f9d6",
+      "record": {
+        "name": "chezmoi",
+        "executable": "chezmoi.exe",
+        "type": "exe",
+        "description": "Manage your dotfiles across multiple diverse machines",
+        "tags": [
+          "dotfiles",
+          "config",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "chezmoi",
+          "winget": "twpayne.chezmoi",
+          "choco": "chezmoi"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "CHEZMOI_CONFIG_DIR": "${XDG_CONFIG_HOME}/chezmoi"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/chezmoi"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {
+          "cz": {
+            "command": "chezmoi",
+            "args": []
+          }
+        },
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "choco": {
+      "sha256": "a984a13afce8bca7d40983f3d41492824041c9676ff10003a8a82a60a897b223",
+      "record": {
+        "name": "choco",
+        "executable": "choco.exe",
+        "type": "exe",
+        "description": "Chocolatey — Windows package manager",
+        "tags": [
+          "package-manager",
+          "windows"
+        ],
+        "packages": {},
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [
+          "gsudo"
+        ],
+        "requires": [],
+        "roles": {
+          "package-manager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "choco",
+            "command": [
+              "choco",
+              "install",
+              "{id}",
+              "-y"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": true,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "curl": {
+      "sha256": "c0880552ef21f2aa0650c39f6203eec6d0a50953abed005c0169d7381d1a5bee",
+      "record": {
+        "name": "curl",
+        "executable": "curl.exe",
+        "type": "exe",
+        "description": "Transfer data with URLs",
+        "tags": [
+          "network",
+          "http",
+          "download"
+        ],
+        "packages": {
+          "scoop": "curl",
+          "winget": "cURL.cURL",
+          "choco": "curl"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "CURL_HOME": "${XDG_CONFIG_HOME}/curl"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/curl"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "url-fetch": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "delta": {
+      "sha256": "e61e1ce92f99e8fbff0c8bd6df1143dc3b42a1a78ec5556b6344263d55ce8944",
+      "record": {
+        "name": "delta",
+        "executable": "delta.exe",
+        "type": "exe",
+        "description": "Syntax-highlighting pager for git diff output",
+        "tags": [
+          "git",
+          "diff",
+          "pager"
+        ],
+        "packages": {
+          "scoop": "delta",
+          "winget": "dandavison.delta",
+          "choco": "delta"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "diff": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "GIT_PAGER": "delta"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "direnv": {
+      "sha256": "1d17108dc1a238f596725aed925c90c04c18605ded64200e33f5b818b0aeea75",
+      "record": {
+        "name": "direnv",
+        "executable": "direnv.exe",
+        "type": "exe",
+        "description": "Loads and unloads environment variables per-directory from .envrc files",
+        "tags": [
+          "environment-vars",
+          "shell-enhancement",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "direnv",
+          "winget": "direnv.direnv"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "project-env": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "docker": {
+      "sha256": "36b89d19d67ad9c074a04ac74995b28f39a4bb3df05f19a45c8b6b0245ef037a",
+      "record": {
+        "name": "docker",
+        "executable": "docker.exe",
+        "type": "exe",
+        "description": "Container runtime and management",
+        "tags": [
+          "container",
+          "dev"
+        ],
+        "packages": {
+          "winget": "Docker.DockerDesktop"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "DOCKER_CONFIG": "${XDG_CONFIG_HOME}/docker"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/docker"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "eza": {
+      "sha256": "83f0222f4e47f4629b925be6db39494f7be1db3e7e56d7253d10c44d077b4a1d",
+      "record": {
+        "name": "eza",
+        "executable": "eza.exe",
+        "type": "exe",
+        "description": "Modern ls replacement with icons, Git integration, and color",
+        "tags": [
+          "file",
+          "directory",
+          "ls"
+        ],
+        "packages": {
+          "scoop": "eza",
+          "winget": "eza-community.eza",
+          "choco": "eza"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": {
+          "function": "Select-File",
+          "alias": "ff",
+          "list": "eza --icons -1 --color=always --no-quotes",
+          "list_accepts_path": true,
+          "preview": "bat --color=always --line-range=:200 {}",
+          "preview_window": "right:60%",
+          "ansi": true,
+          "header": "Select file  [Enter to output path]",
+          "action": "output",
+          "parse": null
+        },
+        "after": [],
+        "requires": [],
+        "roles": {
+          "listing": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": {
+              "ls": {
+                "command": "eza",
+                "args": [
+                  "--color=auto",
+                  "--icons=auto",
+                  "--group-directories-first",
+                  "--no-quotes"
+                ]
+              },
+              "ll": {
+                "command": "eza",
+                "args": [
+                  "--long",
+                  "--group-directories-first",
+                  "--icons=auto",
+                  "--color=auto",
+                  "--git",
+                  "--no-quotes"
+                ]
+              },
+              "la": {
+                "command": "eza",
+                "args": [
+                  "--all",
+                  "--long",
+                  "--group-directories-first",
+                  "--icons=auto",
+                  "--color=auto",
+                  "--git",
+                  "--no-quotes"
+                ]
+              },
+              "tree": {
+                "command": "eza",
+                "args": [
+                  "--tree",
+                  "--no-quotes"
+                ]
+              }
+            },
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "fastfetch": {
+      "sha256": "f4d55fe45bf978e84caa32652f820618865714e8386a479e264ba39cfd1add64",
+      "record": {
+        "name": "fastfetch",
+        "executable": "fastfetch.exe",
+        "type": "exe",
+        "description": "Fast, actively-maintained neofetch-like system information tool",
+        "tags": [
+          "system",
+          "info"
+        ],
+        "packages": {
+          "scoop": "fastfetch",
+          "winget": "Fastfetch-cli.Fastfetch"
+        },
+        "xdg": {
+          "method": "wrapper",
+          "vars": null,
+          "dirs": [],
+          "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc).",
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "system-info": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": {
+          "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc"
+        },
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc"
+          }
+        },
+        "installs": null,
+        "install": null
+      }
+    },
+    "fd": {
+      "sha256": "505fb5d226b2d4733d89fddba04bb459ef0e7d2c7ca648f6fd252350c3dec7ef",
+      "record": {
+        "name": "fd",
+        "executable": "fd.exe",
+        "type": "exe",
+        "description": "Fast and user-friendly alternative to find",
+        "tags": [
+          "file",
+          "search",
+          "find"
+        ],
+        "packages": {
+          "scoop": "fd",
+          "winget": "sharkdp.fd",
+          "choco": "fd"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": {
+          "function": "Select-FdResult",
+          "alias": "ffd",
+          "list": "fd --color=always",
+          "list_accepts_path": false,
+          "preview": "bat --color=always --line-range=:100 {}",
+          "preview_window": "right:60%",
+          "ansi": true,
+          "header": "Select file  [Enter to output path]",
+          "action": "output",
+          "parse": null
+        },
+        "after": [],
+        "requires": [],
+        "roles": {
+          "file-search": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "fnm": {
+      "sha256": "85b79d83c67e11ed3148445171bb0cc081b9a82c35f62a9100ab51efc96a81f6",
+      "record": {
+        "name": "fnm",
+        "executable": "fnm.exe",
+        "type": "exe",
+        "description": "Fast Node.js version manager with automatic per-directory switching",
+        "tags": [
+          "node",
+          "javascript",
+          "version-manager",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "fnm",
+          "winget": "Schniz.fnm",
+          "choco": "fnm"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "FNM_DIR": "${XDG_DATA_HOME}/fnm"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/fnm"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "zoxide"
+        ],
+        "requires": [],
+        "roles": {
+          "version-manager": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "fnm",
+            "command": [
+              "fnm",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": true,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "fzf": {
+      "sha256": "97a2bebdeb863282fb7487f6743c113ec3a185d804b250db01a59028c0b8d58b",
+      "record": {
+        "name": "fzf",
+        "executable": "fzf.exe",
+        "type": "exe",
+        "description": "General-purpose command-line fuzzy finder",
+        "tags": [
+          "fuzzy",
+          "picker",
+          "search"
+        ],
+        "packages": {
+          "scoop": "fzf",
+          "winget": "junegunn.fzf",
+          "choco": "fzf"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": {
+          "FZF_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+          "FZF_DEFAULT_OPTS": "--layout=reverse\n--inline-info\n--height=40%\n--border",
+          "FZF_ALT_C_COMMAND": "fd --type d --strip-cwd-prefix --hidden --follow --exclude .git",
+          "FZF_ALT_C_OPTS": "--preview \"eza --tree --level=2 --color=always {}\"",
+          "FZF_CTRL_T_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+          "FZF_CTRL_T_OPTS": "--preview \"bat -n --color=always {}\" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+        },
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "picker": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "Picker": "fzf"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "gh": {
+      "sha256": "40b0bc44d0060d1e94f6b5623f06e9b4d18c3a9cb29a970b4f74d1014ca68787",
+      "record": {
+        "name": "gh",
+        "executable": "gh.exe",
+        "type": "exe",
+        "description": "GitHub CLI",
+        "tags": [
+          "git",
+          "github",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "gh",
+          "winget": "GitHub.cli",
+          "choco": "gh"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "glow": {
+      "sha256": "3d65c8b1fb5cdbae7a3ea71458eb2e14554c8ac137bdf6073879676f2bc28265",
+      "record": {
+        "name": "glow",
+        "executable": "glow.exe",
+        "type": "exe",
+        "description": "Render Markdown on the CLI",
+        "tags": [
+          "markdown",
+          "viewer",
+          "text"
+        ],
+        "packages": {
+          "scoop": "glow",
+          "choco": "glow"
+        },
+        "xdg": {
+          "method": "wrapper",
+          "vars": null,
+          "dirs": [],
+          "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly.",
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "markdown-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": {
+          "theme": "catppuccin-mocha",
+          "configFile": "${XDG_CONFIG_HOME}/glow/glow.yml"
+        },
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "gsudo": {
+      "sha256": "7d91970754aae202321388132caef7570b4761b2e93576de953fbee3b7ff03cb",
+      "record": {
+        "name": "gsudo",
+        "executable": "gsudo.exe",
+        "type": "exe",
+        "description": "Windows sudo — run commands with elevated privileges without a UAC prompt per command",
+        "tags": [
+          "admin",
+          "elevation",
+          "sudo",
+          "windows"
+        ],
+        "packages": {
+          "scoop": "gsudo",
+          "winget": "gerardog.gsudo",
+          "choco": "gsudo"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "elevator": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "inshellisense": {
+      "sha256": "c41523767acb7de929116ca61ccce6377a4fee843993fa7821066be105f5b5b8",
+      "record": {
+        "name": "inshellisense",
+        "executable": "is",
+        "type": "exe",
+        "description": "AI-powered terminal completion engine",
+        "tags": [
+          "completion",
+          "shell",
+          "productivity"
+        ],
+        "packages": {
+          "npm": "@microsoft/inshellisense"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "psreadline"
+        ],
+        "requires": [
+          "role:js-runtime"
+        ],
+        "roles": {
+          "completion": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "tab-completion": {
+            "priority": 0,
+            "optIn": true,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "jq": {
+      "sha256": "e95d05b938910c66ddeb128d5d87f391ec98b24c5c9721226d4b8614d69ee205",
+      "record": {
+        "name": "jq",
+        "executable": "jq.exe",
+        "type": "exe",
+        "description": "Command-line JSON processor",
+        "tags": [
+          "json",
+          "data",
+          "text"
+        ],
+        "packages": {
+          "scoop": "jq",
+          "winget": "jqlang.jq",
+          "choco": "jq"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "lazygit": {
+      "sha256": "a8805d5b3eaac79d3b4306d9ca4b07d7df3b214fe070fdc733b3381c6d1e935f",
+      "record": {
+        "name": "lazygit",
+        "executable": "lazygit.exe",
+        "type": "exe",
+        "description": "Simple terminal UI for git commands",
+        "tags": [
+          "git",
+          "tui",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "lazygit",
+          "winget": "JesseDuffield.lazygit",
+          "choco": "lazygit"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "LG_CONFIG_FILE": "${XDG_CONFIG_HOME}/lazygit/config.yml"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/lazygit"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {
+          "lg": {
+            "command": "lazygit",
+            "args": []
+          }
+        },
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "less": {
+      "sha256": "05347aa9f981b866d5945bb4e8ae4fc4a15918582275f1c56c44f1487f3ce0b6",
+      "record": {
+        "name": "less",
+        "executable": "less.exe",
+        "type": "exe",
+        "description": "Opposite of more — terminal pager",
+        "tags": [
+          "pager",
+          "viewer"
+        ],
+        "packages": {
+          "scoop": "less",
+          "winget": "jftuga.less",
+          "choco": "less"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "LESSHISTFILE": "${XDG_STATE_HOME}/less/history",
+            "LESSKEYIN": "${XDG_CONFIG_HOME}/less/lesskey"
+          },
+          "dirs": [
+            "${XDG_STATE_HOME}/less",
+            "${XDG_CONFIG_HOME}/less"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": {
+          "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
+        },
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "pager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "PAGER": "${DF_TOOL_EXE}"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [
+          "*\\Git\\usr\\bin\\*"
+        ],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "lsd": {
+      "sha256": "e6d26ce33a5ba95f9250e2ef13697678b9c7232cd38ee6d7d748bde3e5f1e353",
+      "record": {
+        "name": "lsd",
+        "executable": "lsd.exe",
+        "type": "exe",
+        "description": "Modern ls replacement with colors, icons, and tree view",
+        "tags": [
+          "file",
+          "directory",
+          "ls"
+        ],
+        "packages": {
+          "scoop": "lsd",
+          "winget": "lsd-rs.lsd",
+          "choco": "lsd"
+        },
+        "xdg": {
+          "method": "manual",
+          "vars": null,
+          "dirs": [],
+          "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config.",
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "listing": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": {
+              "ls": {
+                "command": "lsd",
+                "args": [
+                  "--color=auto",
+                  "--icon=auto",
+                  "--group-directories-first",
+                  "--literal"
+                ]
+              },
+              "ll": {
+                "command": "lsd",
+                "args": [
+                  "--all",
+                  "--long",
+                  "--header",
+                  "--literal"
+                ]
+              },
+              "la": {
+                "command": "lsd",
+                "args": [
+                  "--all",
+                  "--literal"
+                ]
+              },
+              "tree": {
+                "command": "lsd",
+                "args": [
+                  "--tree",
+                  "--literal"
+                ]
+              }
+            },
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "mdcat": {
+      "sha256": "bb5589ada25da3b32ff744f842f562fea1f113917bb4ae9c50841a30ef0d8599",
+      "record": {
+        "name": "mdcat",
+        "executable": "mdcat.exe",
+        "type": "exe",
+        "description": "cat for markdown — render CommonMark in the terminal",
+        "tags": [
+          "markdown",
+          "viewer",
+          "text"
+        ],
+        "packages": {
+          "scoop": "mdcat",
+          "crates": "mdcat"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": {
+          "MDCAT_THEME": "catppuccin-mocha"
+        },
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "markdown-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "mdv": {
+      "sha256": "69cc8adc89ba648d23530378633b167c685cce8223ecac1da092f02b5ecba631",
+      "record": {
+        "name": "mdv",
+        "executable": "mdv.exe",
+        "type": "exe",
+        "description": "Terminal markdown viewer with themes and syntax highlighting",
+        "tags": [
+          "markdown",
+          "viewer",
+          "text"
+        ],
+        "packages": {
+          "crates": "mdv"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "MDV_CONFIG_PATH": "${XDG_CONFIG_HOME}/mdv"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/mdv"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "markdown-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": {
+          "catppuccin-mocha": "catppuccin"
+        },
+        "settings": {
+          "theme": "catppuccin-mocha"
+        },
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "micro": {
+      "sha256": "49fba2a4be54d5ff4c6c51aad8e2acacadb1de097065433d7c80eb7795be4835",
+      "record": {
+        "name": "micro",
+        "executable": "micro.exe",
+        "type": "exe",
+        "description": "Modern and intuitive terminal-based text editor",
+        "tags": [
+          "editor",
+          "text"
+        ],
+        "packages": {
+          "scoop": "micro",
+          "choco": "micro"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "MICRO_CONF_DIR": "${XDG_CONFIG_HOME}/micro"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/micro"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "editor": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "EDITOR": "micro",
+              "VISUAL": "micro"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "mise": {
+      "sha256": "b015896c912b168858fb97ddf7aedf7c931f8c21c75e68ef5e1a894ee34c46a4",
+      "record": {
+        "name": "mise",
+        "executable": "mise.exe",
+        "type": "exe",
+        "description": "Dev tool versions, environment variables and tasks per project",
+        "tags": [
+          "version-manager",
+          "environment-vars",
+          "dev"
+        ],
+        "packages": {
+          "scoop": "mise",
+          "winget": "jdx.mise",
+          "choco": "mise"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "oh-my-posh",
+          "starship"
+        ],
+        "requires": [],
+        "roles": {
+          "project-env": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "version-manager": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "mise",
+            "command": [
+              "mise",
+              "use",
+              "--global",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": true,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "moor": {
+      "sha256": "658eb83f34d0c1cd0dd70f4b1beb1f303c0b8f3e3755074c03515f825ffbf6a4",
+      "record": {
+        "name": "moor",
+        "executable": "moor.exe",
+        "type": "exe",
+        "description": "Pager that does the right thing without configuration (formerly moar)",
+        "tags": [
+          "pager",
+          "viewer"
+        ],
+        "packages": {
+          "scoop": "moor"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "pager": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "PAGER": "moor"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "node": {
+      "sha256": "d584c20462b1ece43d2da9d83d2e911750c4e32594fa66f990ec90f07af2d81d",
+      "record": {
+        "name": "node",
+        "executable": "node.exe",
+        "type": "exe",
+        "description": "Node.js JavaScript runtime",
+        "tags": [
+          "node",
+          "javascript",
+          "dev",
+          "runtime"
+        ],
+        "packages": {
+          "fnm": "lts",
+          "mise": "node@lts",
+          "scoop": "nodejs-lts",
+          "winget": "OpenJS.NodeJS.LTS",
+          "choco": "nodejs-lts"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "role:version-manager"
+        ],
+        "requires": [],
+        "roles": {
+          "js-runtime": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": {
+          "prefer": [
+            "fnm",
+            "mise"
+          ]
+        }
+      }
+    },
+    "npm": {
+      "sha256": "91c0f232da0acf59266a20145f5697c532049486c70a480d85e3aa01240d7a28",
+      "record": {
+        "name": "npm",
+        "executable": "npm.cmd",
+        "type": "exe",
+        "description": "Node.js package manager",
+        "tags": [
+          "node",
+          "javascript",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {},
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "NPM_CONFIG_USERCONFIG": "${XDG_CONFIG_HOME}/npm/npmrc",
+            "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/npm"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {
+          "nls": {
+            "command": "npm",
+            "args": [
+              "list",
+              "-g",
+              "--depth=0"
+            ]
+          }
+        },
+        "picker": null,
+        "after": [],
+        "requires": [
+          "node"
+        ],
+        "roles": {
+          "js-package-manager": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "npm",
+            "command": [
+              "npm",
+              "install",
+              "-g",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "oh-my-posh": {
+      "sha256": "70f385f7a23995aa6fea0268d6dba0eab96dc32fb7f2f4b22510ed79805886a3",
+      "record": {
+        "name": "oh-my-posh",
+        "executable": "oh-my-posh.exe",
+        "type": "exe",
+        "description": "Cross-shell prompt theme engine with hundreds of built-in themes",
+        "tags": [
+          "prompt",
+          "theme",
+          "display"
+        ],
+        "packages": {
+          "scoop": "oh-my-posh",
+          "winget": "JanDeDobbeleer.OhMyPosh"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "POSH_THEMES_PATH": "${XDG_DATA_HOME}/oh-my-posh/themes"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/oh-my-posh/themes",
+            "${XDG_CONFIG_HOME}/oh-my-posh"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {
+          "prompt": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "ov": {
+      "sha256": "a29c0376b47e6286e90258bb7e12211eca3c95e6ebb1a252cd4eda9364972ac4",
+      "record": {
+        "name": "ov",
+        "executable": "ov.exe",
+        "type": "exe",
+        "description": "Feature-rich terminal pager with headers, columns and sections",
+        "tags": [
+          "pager",
+          "viewer"
+        ],
+        "packages": {
+          "scoop": "ov",
+          "winget": "noborus.ov"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "pager": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "PAGER": "ov --quit-if-one-screen"
+            },
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "pip": {
+      "sha256": "0aa0721c98a355f8f950d7fb1036d99e3aa79e5c7b88b53a988b230b7f82b2e8",
+      "record": {
+        "name": "pip",
+        "executable": "pip.exe",
+        "type": "exe",
+        "description": "Python package installer (installs into the user site-packages)",
+        "tags": [
+          "python",
+          "dev",
+          "package-manager"
+        ],
+        "packages": null,
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "python"
+        ],
+        "roles": {
+          "python-package-manager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "pypi",
+            "command": [
+              "pip",
+              "install",
+              "--user",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "pipx": {
+      "sha256": "c671048705641c63cbc839b7110086d3099b977638c18fde61f02ab860f03602",
+      "record": {
+        "name": "pipx",
+        "executable": "pipx",
+        "type": "exe",
+        "description": "Installs Python applications, each in its own isolated environment",
+        "tags": [
+          "python",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {
+          "scoop": "pipx",
+          "pypi": "pipx"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "role:python-runtime"
+        ],
+        "roles": {
+          "python-package-manager": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "pypi",
+            "command": [
+              "pipx",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "pnpm": {
+      "sha256": "52c7af5a291f057781accbe103290d542c6c82569d1f8d31c5282835c480cac8",
+      "record": {
+        "name": "pnpm",
+        "executable": "pnpm.cmd",
+        "type": "exe",
+        "description": "Fast, disk-efficient JavaScript package manager",
+        "tags": [
+          "javascript",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {
+          "scoop": "pnpm",
+          "winget": "pnpm.pnpm",
+          "npm": "pnpm"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "role:js-runtime"
+        ],
+        "roles": {
+          "js-package-manager": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "npm",
+            "command": [
+              "pnpm",
+              "add",
+              "-g",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "posh-git": {
+      "sha256": "a9a6c4fd2f77ce21f8e78b8a4ca2189b8646cce202e66e18cd1ed6dd50c0e5a4",
+      "record": {
+        "name": "posh-git",
+        "executable": "posh-git",
+        "type": "module",
+        "description": "Git status summary in the PowerShell prompt with tab completion for git commands",
+        "tags": [
+          "git",
+          "prompt",
+          "module"
+        ],
+        "packages": {
+          "psgallery": "posh-git",
+          "scoop": "posh-git"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "procs": {
+      "sha256": "b31d77da61b27a561edb7041e9e26754f06ca3fe0a3de171329cd64a2dc16f18",
+      "record": {
+        "name": "procs",
+        "executable": "procs.exe",
+        "type": "exe",
+        "description": "Modern replacement for ps",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "scoop": "procs",
+          "choco": "procs"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "ps-dotenv": {
+      "sha256": "3682b67d57d4514a8b84e9988c199fafd44adec7069b14f33f5a91fa1153711f",
+      "record": {
+        "name": "ps-dotenv",
+        "executable": "Dotenv",
+        "type": "module",
+        "description": "Loads .env files as you change folders (PowerShell-native direnv alternative)",
+        "tags": [
+          "environment-vars",
+          "shell-enhancement",
+          "dev"
+        ],
+        "packages": {
+          "scoop": {
+            "id": "ps-dotenv",
+            "feed": {
+              "name": "insomnia",
+              "url": "https://github.com/insomnimus/scoop-bucket"
+            }
+          }
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "project-env": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": false,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "PSFzf": {
+      "sha256": "c2077cc22e7d1f34e932322b5a09c416d3b17dbb7f8db003954cdc5c8ba019c1",
+      "record": {
+        "name": "PSFzf",
+        "executable": "PSFzf",
+        "type": "module",
+        "description": "PowerShell wrapper around fzf with PSReadLine key handler integration",
+        "tags": [
+          "fuzzy",
+          "picker",
+          "module"
+        ],
+        "packages": {
+          "psgallery": "PSFzf",
+          "scoop": "psfzf"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "psreadline"
+        ],
+        "requires": [
+          "fzf"
+        ],
+        "roles": {
+          "completion": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "tab-completion": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "psreadline": {
+      "sha256": "f8341d03000529468d9e340709cc5abe7d419d22dff874c74ab4eec7ea63ab04",
+      "record": {
+        "name": "psreadline",
+        "executable": "PSReadLine",
+        "type": "module",
+        "description": "Enhanced command-line editing and syntax highlighting for PowerShell",
+        "tags": [
+          "readline",
+          "completion",
+          "theme",
+          "module"
+        ],
+        "packages": null,
+        "xdg": {
+          "method": "env",
+          "vars": null,
+          "dirs": [
+            "${XDG_STATE_HOME}/psreadline"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {
+          "completion": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": {
+          "editMode": "Emacs",
+          "predictionSource": "HistoryAndPlugin",
+          "predictionViewStyle": "InlineView",
+          "bellStyle": "None",
+          "historyNoDuplicates": true,
+          "historySaveStyle": "SaveIncrementally",
+          "historySearchCursorMovesToEnd": true,
+          "maximumHistoryCount": 10000
+        },
+        "executableExclude": [],
+        "prewarm": false,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "psresource": {
+      "sha256": "2df57ce99d72be90eed0185065a7d74848dfe512793381e0583f9550ac6a1811",
+      "record": {
+        "name": "psresource",
+        "executable": "Microsoft.PowerShell.PSResourceGet",
+        "type": "module",
+        "description": "PowerShell module installer (PSResourceGet; installs from the PowerShell Gallery)",
+        "tags": [
+          "powershell",
+          "package-manager"
+        ],
+        "packages": {},
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "powershell-package-manager": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": false,
+        "setup": null,
+        "installs": [
+          {
+            "from": "psgallery",
+            "command": null,
+            "function": "Install-PSResource",
+            "args": {
+              "Name": "{id}",
+              "Scope": "CurrentUser",
+              "TrustRepository": true
+            },
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "pymanager": {
+      "sha256": "b2f1bc4a4c649a48363373aa39f2307dc2683dff0a152a37699540d48c8493a0",
+      "record": {
+        "name": "pymanager",
+        "executable": "pymanager.exe",
+        "type": "exe",
+        "description": "Python install manager (py): installs and launches Python runtimes",
+        "tags": [
+          "python",
+          "dev",
+          "version-manager"
+        ],
+        "packages": {
+          "winget": "Python.PythonInstallManager"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "version-manager": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "pymanager",
+            "command": [
+              "py",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "python": {
+      "sha256": "8f8d1a430425a1d649e3bc880af2f6cdf34dcd83eba3a6c23cb965af3f618d6f",
+      "record": {
+        "name": "python",
+        "executable": "python.exe",
+        "type": "exe",
+        "description": "Python runtime",
+        "tags": [
+          "python",
+          "dev",
+          "runtime"
+        ],
+        "packages": {
+          "pymanager": "3",
+          "uv": "3",
+          "mise": "python@3",
+          "scoop": "python",
+          "winget": "Python.Python.3.13"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "role:version-manager"
+        ],
+        "requires": [],
+        "roles": {
+          "python-runtime": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": {
+          "prefer": [
+            "pymanager",
+            "uv"
+          ]
+        }
+      }
+    },
+    "ripgrep": {
+      "sha256": "76ddea8cff546903f4fbbc4f03618640233190455575917a88de976bc1d811a1",
+      "record": {
+        "name": "ripgrep",
+        "executable": "rg.exe",
+        "type": "exe",
+        "description": "Recursively search directories for a regex pattern, respecting gitignore",
+        "tags": [
+          "search",
+          "grep",
+          "text"
+        ],
+        "packages": {
+          "scoop": "ripgrep",
+          "winget": "BurntSushi.ripgrep.MSVC",
+          "choco": "ripgrep"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "RIPGREP_CONFIG_PATH": "${XDG_CONFIG_HOME}/ripgrep/ripgreprc"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/ripgrep"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {
+          "grep": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "rustup": {
+      "sha256": "dd687712f8d5db230fcaaad6a79bbfdbe7c33619941932a9c30e5198d91c479f",
+      "record": {
+        "name": "rustup",
+        "executable": "rustup.exe",
+        "type": "exe",
+        "description": "Rust toolchain installer and version manager",
+        "tags": [
+          "rust",
+          "dev",
+          "toolchain"
+        ],
+        "packages": {
+          "scoop": "rustup",
+          "winget": "Rustlang.Rustup"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "RUSTUP_HOME": "${XDG_DATA_HOME}/rustup",
+            "CARGO_HOME": "${XDG_DATA_HOME}/cargo"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/rustup",
+            "${XDG_DATA_HOME}/cargo"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "version-manager": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "scoop": {
+      "sha256": "968ea6fd47400262f1eea36980201b54bc404dfe9c7946b2f1ca71556e69ae74",
+      "record": {
+        "name": "scoop",
+        "executable": "scoop.cmd",
+        "type": "exe",
+        "description": "Windows command-line installer",
+        "tags": [
+          "package-manager",
+          "windows"
+        ],
+        "packages": {},
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {
+          "package-manager": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "scoop",
+            "command": [
+              "scoop",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": true,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": {
+              "list": [
+                "scoop",
+                "bucket",
+                "list"
+              ],
+              "add": [
+                "scoop",
+                "bucket",
+                "add",
+                "{name}",
+                "{url}"
+              ],
+              "id": "{feed}/{id}"
+            }
+          }
+        ],
+        "install": null
+      }
+    },
+    "starship": {
+      "sha256": "2ca994b9545a4ffef24d2049f9d8d7956059b7899c6b1d550c368745894be757",
+      "record": {
+        "name": "starship",
+        "executable": "starship.exe",
+        "type": "exe",
+        "description": "Fast, minimal, cross-shell prompt configured with a single TOML file",
+        "tags": [
+          "prompt",
+          "theme",
+          "display"
+        ],
+        "packages": {
+          "scoop": "starship",
+          "winget": "Starship.Starship"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "STARSHIP_CONFIG": "${XDG_CONFIG_HOME}/starship/starship.toml",
+            "STARSHIP_CACHE": "${XDG_CACHE_HOME}/starship"
+          },
+          "dirs": [
+            "${XDG_CACHE_HOME}/starship"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "prompt": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "Terminal-Icons": {
+      "sha256": "c05b4519ce3ba8cf748131e16837cd4a645b32d1739588362c900247e4819d47",
+      "record": {
+        "name": "Terminal-Icons",
+        "executable": "Terminal-Icons",
+        "type": "module",
+        "description": "Adds Nerd Font file and folder icons to terminal output (ls, eza, etc.)",
+        "tags": [
+          "icons",
+          "display",
+          "module"
+        ],
+        "packages": {
+          "psgallery": "Terminal-Icons"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "uv": {
+      "sha256": "5ae6faa659da1842e892ecbd35a921fddc6b5422938542d92c66fba4ab177807",
+      "record": {
+        "name": "uv",
+        "executable": "uv.exe",
+        "type": "exe",
+        "description": "Extremely fast Python package and project manager",
+        "tags": [
+          "python",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {
+          "scoop": "uv",
+          "winget": "astral-sh.uv"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv",
+            "UV_DATA_DIR": "${XDG_DATA_HOME}/uv"
+          },
+          "dirs": [
+            "${XDG_CACHE_HOME}/uv",
+            "${XDG_DATA_HOME}/uv"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "version-manager": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          },
+          "python-package-manager": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "pypi",
+            "command": [
+              "uv",
+              "tool",
+              "install",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          },
+          {
+            "from": "uv",
+            "command": [
+              "uv",
+              "python",
+              "install",
+              "--default",
+              "{id}"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "vcpkg": {
+      "sha256": "8f04e8e66df46509e4a6da3c90f00fbd3fdc64ca8b2a3afc50ccaf95891f83c4",
+      "record": {
+        "name": "vcpkg",
+        "executable": "vcpkg.exe",
+        "type": "exe",
+        "description": "C/C++ library package manager",
+        "tags": [
+          "cpp",
+          "dev",
+          "package-manager"
+        ],
+        "packages": {
+          "scoop": "vcpkg"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "VCPKG_ROOT": "${XDG_DATA_HOME}/vcpkg",
+            "VCPKG_DOWNLOADS": "${XDG_CACHE_HOME}/vcpkg/downloads"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/vcpkg",
+            "${XDG_CACHE_HOME}/vcpkg/downloads"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "vivid": {
+      "sha256": "d48f0dc99aae5f6032948b1b4dde818661c742a21d67b76fadc12f2d53c227c4",
+      "record": {
+        "name": "vivid",
+        "executable": "vivid.exe",
+        "type": "exe",
+        "description": "Themeable LS_COLORS generator",
+        "tags": [
+          "color",
+          "theme",
+          "listing"
+        ],
+        "packages": {
+          "scoop": "vivid",
+          "winget": "sharkdp.vivid"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": {
+          "theme": "catppuccin-mocha"
+        },
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "wget": {
+      "sha256": "48cc7b64fec58131d28a04e5b3e550b4501c72c9e0f77cb4959d510edf30b3a7",
+      "record": {
+        "name": "wget",
+        "executable": "wget.exe",
+        "type": "exe",
+        "description": "Non-interactive network downloader",
+        "tags": [
+          "network",
+          "download"
+        ],
+        "packages": {
+          "scoop": "wget",
+          "choco": "wget"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "WGETRC": "${XDG_CONFIG_HOME}/wget/wgetrc"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/wget"
+          ],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "url-fetch": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
+    "winget": {
+      "sha256": "984c03140d81263dc7f7fbde79b730893d30172edf9f404285f7281d8010e1d0",
+      "record": {
+        "name": "winget",
+        "executable": "winget.exe",
+        "type": "exe",
+        "description": "Windows Package Manager — install, upgrade, and configure applications",
+        "tags": [
+          "package-manager",
+          "windows"
+        ],
+        "packages": {},
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {
+          "package-manager": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": [
+          {
+            "from": "winget",
+            "command": [
+              "winget",
+              "install",
+              "--id",
+              "{id}",
+              "--exact",
+              "--silent",
+              "--accept-source-agreements",
+              "--accept-package-agreements"
+            ],
+            "function": null,
+            "args": null,
+            "batch": false,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
+          }
+        ],
+        "install": null
+      }
+    },
+    "zoxide": {
+      "sha256": "f057f4d05a54d9ab391798adae6f61c27b05a0cff2fa1dc468697436284c36dc",
+      "record": {
+        "name": "zoxide",
+        "executable": "zoxide.exe",
+        "type": "exe",
+        "description": "Smarter cd that learns your most-used directories",
+        "tags": [
+          "navigation",
+          "cd",
+          "directory"
+        ],
+        "packages": {
+          "scoop": "zoxide",
+          "winget": "ajeetdsouza.zoxide",
+          "choco": "zoxide"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "_ZO_DATA_DIR": "${XDG_DATA_HOME}/zoxide"
+          },
+          "dirs": [],
+          "instructions": null,
+          "compliance": "partial"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": {
+          "function": "Select-Directory",
+          "alias": "fzo",
+          "list": "zoxide query --list",
+          "list_accepts_path": false,
+          "preview": "eza --icons --color=always {}",
+          "preview_window": "right:60%",
+          "ansi": false,
+          "header": "Select directory  [Enter to cd]",
+          "action": "Set-Location {}",
+          "parse": null
+        },
+        "after": [
+          "oh-my-posh",
+          "starship"
+        ],
+        "requires": [],
+        "roles": {
+          "navigation": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    }
+  }
+}

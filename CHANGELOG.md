@@ -234,6 +234,10 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Startup is about a quarter faster** (3.2 s to 2.4 s for a 45-tool profile). Shipped tool
+  records are validated once at build time (`data/tool-registry.json`) instead of on every load, and
+  "is it installed?" checks look for the file on PATH (or the module's folder) instead of calling
+  `Get-Command`/`Get-Module`.
 - **Language toolchains have their own groups.** `+dev-tools` is now jq, micro, mise and chezmoi;
   `+javascript-dev` (fnm, node, npm), `+python-dev` (uv, python, pip, pipx) and `+rust-dev` (rustup,
   cargo) are new. A profile that used `+dev-tools` for fnm, uv or rustup adds the matching group.

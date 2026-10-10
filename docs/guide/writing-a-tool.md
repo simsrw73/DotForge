@@ -202,7 +202,10 @@ From the repository root:
 ```powershell
 Invoke-Pester tests/ -Output Detailed
 ./build/Build-DFReferenceDocs.ps1
+./build/Build-DFToolRegistry.ps1
 ```
+
+`Build-DFToolRegistry.ps1` stores your validated record in `data/tool-registry.json`, so loading it at startup skips the checks. Until you run it, your tool still loads the slower way, from its JSON.
 
 1. Watch for warnings when DotForge loads your tool.
    - The tool database skips a record, with a warning naming the problem, when:

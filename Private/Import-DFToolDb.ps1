@@ -85,7 +85,11 @@ function Read-DFToolRecordFile {
     param([Parameter(Mandatory)][string]$Path)
     $leaf = Split-Path $Path -Leaf
     try {
-        $tool = Get-Content $Path -Raw | ConvertFrom-Json
+        $text = [IO.File]::ReadAllText($Path)
+        # Unchanged shipped record: already validated and normalized at build time.
+        $entry = (Get-DFToolRegistry)[[IO.Path]::GetFileNameWithoutExtension($Path)]
+        if ($entry -and $entry.sha256 -eq (Get-DFToolRecordHash -Text $text)) { return $entry.record }
+        $tool = $text | ConvertFrom-Json
     } catch {
         Write-Warning "DotForge: Failed to parse $leaf`: $($_.Exception.Message)"
         return $null
