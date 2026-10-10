@@ -84,6 +84,21 @@ Consolidated 2026-10-10 from `arch-imp-audit-(claude).md`, `arch-imp-audit.md`, 
 - [ ] **Small cleanups** — companions repeat `Get-Command` lookups `Test-DFToolAvailable` already made (scoop, PSFzf, carapace, gsudo, choco, winget); `mise activate` and `oh-my-posh init` run uncached at every start (`fnm env` is per session); session globals with no cleanup (`$global:cdBeforeFnm`, `DFGlowStyle`, `DFDotenvLocationHook`, `DFPSReadLineColors`).
 - [ ] **Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme-chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable-wrapper for tools that ignore XDG (glow, fastfetch so far).
 
+## Priority 2 — Readability (improve-code-quality Phase 2, 2026-10-10)
+
+Clean-code score of the starting module (registration, activation, record loader): **7/10** (names 7, functions 5, comments 9, error handling 8, tests 9, smells 6). Fixes 1–5 and 10 are scheduled for Phase 3; 6–9 are logged here for later.
+
+- [ ] **Split `Invoke-DFSessionActivation` into named steps** (100 lines): collect excluded names, add role ordering, find what blocks a tool (excluded requirement / unmet requirement / not installed), annotate role outcomes. Phase 3.
+- [ ] **One home for `+group` expansion** — the activation code re-expands `ExcludeTools` groups separately from `Resolve-DFRequestedTools`. Phase 3.
+- [ ] **`Resolve-DFToolRequirements` returns a result object** instead of filling three hashtables passed in (8 parameters). Phase 3.
+- [ ] **One `Test-DFToolActive` helper** for the 4 repeated "is it already Active?" checks. Phase 3.
+- [ ] **Full names for long-scope loop variables** in the activation code (`$t`, `$e`, `$r`, `$w`, `$by`). Phase 3.
+- [ ] **`Invoke-DFToolRegistration` takes one context** instead of 5 parameters (`Private/Register-DFToolSteps.ps1`). Phase 3.
+- [ ] **Split `Test-DFToolSchema`** (206 lines, `Shared/Test-DFToolSchema.ps1`) into one validator per section behind the same interface. Pin the schema error branches listed in `docs/TESTING.md` first.
+- [ ] **Split `ConvertTo-DFToolRecord`** (116 lines, `Shared/Import-DFToolDb.ps1`) into one normalizer per block.
+- [ ] **Split `Get-DFRoleWinners`** (84 lines, `Private/Register-DFToolSteps.ps1`): ranking apart from fallback. Pin "a role member with no record" first.
+- [ ] **`Test-DFToolSchema` returns `{ Valid; Errors; Warnings }`** instead of `[ref]` output parameters. Touches many tests; do it with the split above.
+
 ## Priority 3 — Features
 
 - [x] **zsh-parity gaps (found 2026-09-06, comparing against the user's real `~/.zshrc`/`.zshenv`/

@@ -15,7 +15,7 @@ Started 2026-10-10 (the `/improve-code-quality` journey; an earlier, unadopted r
 | Phase | Skill | Status | Artifact | Date |
 |---|---|---|---|---|
 | 1 — Build the safety net | working-with-legacy-code | done | TESTING.md + TODO.md (GATE) | 2026-10-10 |
-| 2 — Make the code readable | clean-code | pending | TODO.md | |
+| 2 — Make the code readable | clean-code | done (score 7/10; gaps logged with fixes) | TODO.md (Readability) + CLAUDE.md | 2026-10-10 |
 | 3 — Apply named refactorings | refactoring-patterns | pending | TODO.md | |
 | 4 — Reduce complexity | software-design-philosophy | pending | TODO.md (Architecture Backlog) | |
 | 5 — Draw the architecture boundary | clean-architecture | pending | TESTING.md / this tracker (light) | |
@@ -35,7 +35,11 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 | 2026-10-10 | 1 | Bugs found while characterizing are pinned as they are and logged, never silently fixed. | Callers may depend on the quirk; a fix is its own deliberate change. (None found in Phase 1.) |
 | 2026-10-10 | 1 | Pinned the three high-priority gaps (tool-record caches, invalid-record activation, git-config guard) before Phase 2; medium/low gaps stay in TESTING.md's backlog until a phase touches them. | Later phases may not touch code in a Gaps column. |
 | 2026-10-10 | 1 | The git-config guard lives in `Set-DFTestXdg`/`Restore-DFTestXdg`, not at `TestSupport.ps1` load. | Setting it at load would leak a throwaway git config into an interactive shell that runs `Invoke-Pester`. |
+| 2026-10-10 | 2 | Apply fixes 1–5 and 10 in Phase 3 (activation steps, one `+group` expansion, a requirements result object, `Test-DFToolActive`, full loop-variable names, a registration context); log 6–9 (splitting `Test-DFToolSchema`, `ConvertTo-DFToolRecord`, `Get-DFRoleWinners`; a schema result object) in `TODO.md`. | 1–5 and 10 sit in the highest-churn code and are fully covered by the safety net; 6–9 are larger, and 9 churns many tests. |
+| 2026-10-10 | 2 | Four readability rules go in CLAUDE.md's Conventions: full names for long-lived variables, result objects over output parameters, split functions past ~60 lines, one home per rule. | Recorded where every agent reads them. |
+| 2026-10-10 | 2 | No score gate; re-score at the end of the journey. | There is no CI. |
 
 ## Next Actions
 - [x] Phase 1: safety net mapped (92–98% coverage of the starting module), three high gaps pinned and mutation-checked (Claude, 2026-10-10)
-- [ ] Enter Phase 2 (clean-code) on the starting module (Claude)
+- [x] Phase 2: starting module scored 7/10; top ten fixes ranked; conventions adopted (Claude, 2026-10-10)
+- [ ] Phase 3: apply fixes 1–5 and 10 as structure-only commits, tests green between each (Claude)

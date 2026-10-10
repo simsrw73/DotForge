@@ -66,6 +66,11 @@ DotForge/
 - **Settings come from `Start-DFSession -Config` and are read only through `Get-DFConfig -Key -Default`** (`Private/DFSessionConfig.ps1`). Nothing reads a global `$DFConfig`; a test enforces it. Read list settings with `@(Get-DFConfig Tools)`. **A new config key must be added to `$script:DFConfigKeys`** in the same file (a test fails otherwise), so unknown keys can warn.
 - **Tool records are normalized at load** (`ConvertTo-DFToolRecord` in `Private/Import-DFToolDb.ps1`): every known field exists, so read `$tool.type`, `$tool.aliases`, … directly. Only the free-form `settings` object needs defensive reads.
 - **New public functions** go in the `FunctionsToExport` of the module whose `Public/` holds them (`DotForge.psd1`, or `Modules/DotForge.{Catalog,Helpers}/*.psd1`). **Every alias** is defined in `Public/DFAliases.ps1` (or next to a core function) and listed in `DotForge.psd1`'s `AliasesToExport` — never in an on-demand module, because an alias of a not-yet-loaded module loses to a program of the same name on PATH. `tests/ModuleSplit.Tests.ps1` checks both.
+- **Readability rules** (adopted 2026-10-10):
+  - A variable that lives across more than ~10 lines gets a full name (`$tool`, `$winner`), not `$t`/`$w`.
+  - A function returns a result object; it doesn't fill hashtables or `[ref]` parameters its caller passes in.
+  - A function past ~60 lines is split into named steps, so the top function reads as a list of them.
+  - One home per rule: never re-implement logic another function already owns (e.g. `+group` expansion); call it.
 - **Startup core vs on-demand code** (`docs/superpowers/specs/2026-10-10-module-split-design.md`): code a shell needs while it starts stays in the core; code only an explicit command needs goes in an on-demand module. A helper both need goes in `Shared/` and must hold no session state (on-demand modules get their own copy); they read session settings through the public `Get-DFConfig`. Paths from an on-demand module's file to repo-root files go up three levels (`Modules/<module>/<folder>`).
 
 ## Architecture (3 layers)
