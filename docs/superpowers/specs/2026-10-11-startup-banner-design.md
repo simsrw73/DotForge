@@ -28,11 +28,20 @@ Disk 860 EVO 1TB   SSD · 97% life · 38°C · 70,634 h
 Disk WD10EZEX      HDD · no bad sectors · 29°C · 84,115 h
 ```
 
-1. The first line prints as soon as `Start-DFSession` starts, so the user knows something is happening.
+1. The screen is cleared (unless `BannerClear = $false`), then the first line prints as soon as
+   `Start-DFSession` starts, so the user knows something is happening.
 2. The rest prints when `Start-DFSession` finishes (after the tools load), one line every `BannerLineDelay`
    milliseconds (default 8, `0` prints at once), like a printer.
 3. With fastfetch but no smartmontools there are no drive lines; with neither, only the first line.
 4. Shown only in an interactive console host: not with `-NonInteractive`, not when output is redirected.
+
+## Colors and style
+
+DotForge's own lines (the first line and every filled placeholder) look like fastfetch's: the key and
+output colors and the separator come from the fastfetch config in use (`display.color.keys`,
+`display.color.output`, `display.separator`), so they follow the user's config and the catppuccin theme
+DotForge seeds. With no fastfetch config, the seeded default's colors are used. A failing drive line uses
+catppuccin red `#f38ba8`.
 
 ## Drive lines (smartctl, no admin rights)
 
@@ -112,8 +121,9 @@ Core never names fastfetch or smartctl. A tool record declares a banner part:
 | `ShowBanner` | `$false` | Show the banner |
 | `BannerLineDelay` | `8` | Milliseconds between lines; `0` prints at once |
 | `BannerWait` | `300` | Longest wait, in ms, for an unfinished part at the end |
+| `BannerClear` | `$true` | Clear the screen before the first line; `$false` keeps scrollback |
 
-All three go in `$script:DFConfigKeys`.
+All four go in `$script:DFConfigKeys`.
 
 ## Tools and data
 
