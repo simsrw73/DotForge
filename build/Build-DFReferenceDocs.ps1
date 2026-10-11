@@ -49,6 +49,7 @@ $sectionByFile = [ordered]@{
     'New-DFDirectory'            = 'Core'
     'New-DFShim'                 = 'Core'
     'Register-DFTool'            = 'Core'
+    'New-DFTool'                 = 'Core'
     'DFHelpers.Help'             = 'Help and discovery'
     'DFHelpers.Navigation'       = 'Navigation'
     'DFHelpers.FileSystem'       = 'Files'

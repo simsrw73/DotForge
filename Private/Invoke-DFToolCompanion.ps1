@@ -22,7 +22,9 @@ function Invoke-DFToolCompanion {
     .PARAMETER Tool
         The tool record whose companion(s) to run.
     .PARAMETER ToolsPath
-        The resolved Tools/ directory to look for companions in.
+        The resolved Tools/ directory, for a record with no folder of its own
+        (one built without the loader). A loaded record's companions are
+        next to its JSON (Get-DFToolFolder), which may be the user's folder.
     .PARAMETER SkipSetup
         Tool names (the SkipSetup setting) whose one-time setup step (seeds and
         script) must never run.
@@ -64,12 +66,13 @@ function Invoke-DFToolCompanion {
     $__dfCall = @{
         Tool      = $Tool
         Name      = $Tool.name
-        Companion = Join-Path $ToolsPath "$($Tool.name).ps1"
-        Setup     = Join-Path $ToolsPath "$($Tool.name).setup.ps1"
+        Folder    = Get-DFToolFolder -Tool $Tool -Default $ToolsPath
         SkipSetup = @($SkipSetup)
         WonRoles  = @($WonRoles)
         SetupOnly = [bool]$SetupOnly
     }
+    $__dfCall.Companion = Join-Path $__dfCall.Folder "$($Tool.name).ps1"
+    $__dfCall.Setup = Join-Path $__dfCall.Folder "$($Tool.name).setup.ps1"
     $__dfCall.HasCompanion = Test-Path $__dfCall.Companion -PathType Leaf
 
     # The one-time setup step runs first, so the companion can rely on what it
@@ -81,7 +84,7 @@ function Invoke-DFToolCompanion {
         $__dfCall.Name -notin $__dfCall.SkipSetup -and
         -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
         try {
-            $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $ToolsPath)
+            $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
             if ($__dfCall.HasSetupScript) {
                 $DFCurrentTool = $__dfCall.Tool
                 . ($__dfCall.Setup)

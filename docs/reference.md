@@ -28,6 +28,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-DFWithPager](#invoke-dfwithpager) | `pg` | Pipes output through the pager named by $Env:Pager, or prints it when none is set. |
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
+| [New-DFTool](#new-dftool) |  | Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
@@ -415,7 +416,7 @@ Get-DFTool [-Name <string>] [-ToolsPath <string>] [<CommonParameters>]
 Get-DFTool [-Tag <string>] [-ToolsPath <string>] [<CommonParameters>]
 ```
 
-Returns tool records from the JSON tool database (one per Tools/\*.json file), whether or not the tool is installed. With no parameters, returns every known tool, in no particular order. Use -Name for an exact lookup or -Tag to filter by capability tag (e.g. 'fuzzy', 'prompt', 'git').
+Returns tool records from the JSON tool database (one per Tools/\*.json file, plus your own records in $XDG_CONFIG_HOME\\dotforge\\tools), whether or not the tool is installed. A record's source is builtin or user, and its folder is where it was read from. With no parameters, returns every known tool, in no particular order. Use -Name for an exact lookup or -Tag to filter by capability tag (e.g. 'fuzzy', 'prompt', 'git').
 
 Each record is the parsed JSON: name, executable, description, tags, packages, xdg, aliases, picker, and any other fields the tool declares. Read-only; changes nothing.
 
@@ -450,6 +451,14 @@ Get-DFTool | Select-Object name, description
 ```
 
 Lists all registered tools with their descriptions.
+
+**Example 4**
+
+```powershell
+Get-DFTool | Where-Object source -eq user
+```
+
+Lists your own tool records, including any that replace a shipped one.
 
 **See also:** [tools](guide/tools.md)
 
@@ -819,6 +828,52 @@ New-DFShim -Name ripgrep -WhatIf
 Shows what would be created without writing any file.
 
 **See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
+
+### New-DFTool
+
+Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it.
+
+```text
+New-DFTool [-Name] <string> [-Executable <string>] [-Companion] [-Force] [-WhatIf] [-Confirm] [<CommonParameters>]
+
+New-DFTool -From <string> [-Force] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+DotForge loads the records in your tools folder ($XDG_CONFIG_HOME\\dotforge\\tools) along with the ones it ships, and a record there replaces the shipped record of the same name.
+
+With -Name, writes a starter &lt;name&gt;.json: the executable found on PATH (or a PowerShell module, which makes it a module tool), its description, and empty tags, aliases and picker to fill in. With -Companion, also writes a &lt;name&gt;.ps1 companion whose picker and completer examples are commented out.
+
+With -From, copies a shipped tool's record, companion, setup and manage scripts and data folder, so you can change them. Your copy replaces DotForge's, so DotForge's later fixes to that tool don't reach you; delete the copy to go back.
+
+Existing files are kept unless you pass -Force. After writing, it prints how to load the tool. See the "Your own tools" guide.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The tool's name; also the file name (&lt;name&gt;.json). |
+| `-Executable` | string |  |  |  | The program that must be on PATH, when its name differs from the tool's (e.g. -Name ripgrep -Executable rg). |
+| `-Companion` | switch |  |  |  | Also write a &lt;name&gt;.ps1 companion skeleton. |
+| `-From` | string |  | yes |  | A shipped tool to copy into your folder. |
+| `-Force` | switch |  |  |  | Replace files that already exist. |
+
+**Outputs:** System.IO.FileSystemInfo. The files and folders written.
+
+**Example 1**
+
+```powershell
+New-DFTool -Name lazygit -Companion
+```
+
+Writes lazygit.json and lazygit.ps1 to your tools folder, ready to edit.
+
+**Example 2**
+
+```powershell
+New-DFTool -From bat
+```
+
+Copies DotForge's bat record and companion to your tools folder, where your edits replace them.
+
+**See also:** [your-own-tools](guide/your-own-tools.md)
 
 ### Register-DFTool
 

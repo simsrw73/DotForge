@@ -15,13 +15,14 @@ function Import-DFManagerOps {
     .PARAMETER Manager
         The manager's tool record.
     .PARAMETER ToolsPath
-        The Tools folder.
+        The Tools folder, for a record with no folder of its own; a loaded
+        record's manage file is next to its JSON.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][pscustomobject]$Manager, [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
-    $path = Join-Path $ToolsPath "$($Manager.name).manage.ps1"
+    $path = Join-Path (Get-DFToolFolder -Tool $Manager -Default $ToolsPath) "$($Manager.name).manage.ps1"
     if (-not $script:DFManagerOpsLoaded.Add($path) -or -not (Test-Path -LiteralPath $path)) { return }
     # Dot-sourcing here would define the functions in this function's scope
     # only; define each one at script scope instead.

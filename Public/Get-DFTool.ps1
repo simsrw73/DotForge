@@ -6,7 +6,9 @@ function Get-DFTool {
         Queries the DotForge tool registry.
     .DESCRIPTION
         Returns tool records from the JSON tool database (one per Tools/*.json
-        file), whether or not the tool is installed. With no parameters, returns
+        file, plus your own records in $XDG_CONFIG_HOME\dotforge\tools), whether
+        or not the tool is installed. A record's source is builtin or user, and
+        its folder is where it was read from. With no parameters, returns
         every known tool, in no particular order. Use -Name for an exact lookup
         or -Tag to filter by capability tag (e.g. 'fuzzy', 'prompt', 'git').
 
@@ -33,6 +35,10 @@ function Get-DFTool {
         Get-DFTool | Select-Object name, description
 
         Lists all registered tools with their descriptions.
+    .EXAMPLE
+        Get-DFTool | Where-Object source -eq user
+
+        Lists your own tool records, including any that replace a shipped one.
     .OUTPUTS
         PSCustomObject — one or more tool registry records.
     .LINK

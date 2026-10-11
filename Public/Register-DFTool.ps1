@@ -83,6 +83,9 @@ function Register-DFTool {
 
     # Tools you name are re-applied even if already active (e.g. after a config change).
     $reapply = @(foreach ($e in @(Resolve-DFRequestedTools -Tools $Name -GroupDb (Get-DFGroupDb) -KnownTools @(Get-DFToolNames @pathArgs) 3>$null)) { $e.Name })
+    # ...and read again from disk, so a record you edited or copied to your own folder takes effect.
+    # Warnings come from the activation's read below.
+    if ($reapply) { $null = Import-DFToolDb -Name $reapply -Force @pathArgs 3>$null }
     $active = @(Invoke-DFSessionActivation -Request $request.ToArray() -Reactivate $reapply @pathArgs)
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) { Write-DFConflictNotice -Tools $active }
     Write-DFSessionNotice

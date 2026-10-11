@@ -22,6 +22,8 @@ Describe 'data/tool-registry.json' {
     It 'gives each tool the same record as reading its JSON the slow way' {
         foreach ($f in Get-ChildItem (Join-Path $script:Repo 'Tools') -Filter '*.json') {
             $slow = ConvertTo-DFToolRecord (Get-Content $f.FullName -Raw | ConvertFrom-Json)
+            $slow.folder = ConvertTo-DFPath $f.DirectoryName
+            $slow.source = 'builtin'
             $fast = Read-DFToolRecordFile -Path $f.FullName
             ($fast | ConvertTo-Json -Depth 20 -Compress) | Should -Be ($slow | ConvertTo-Json -Depth 20 -Compress) -Because $f.Name
         }

@@ -2,6 +2,23 @@
 
 $script:DFToolDb = $null
 
+function Get-DFUserToolsPath {
+    <#
+    .SYNOPSIS
+        Returns the user's own tools folder: dotforge\tools under XDG_CONFIG_HOME.
+    .DESCRIPTION
+        Records there load with the shipped ones (Import-DFToolDb); a user
+        record replaces the shipped record of the same name. The folder may
+        not exist.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    ConvertTo-DFPath (Join-Path (Get-DFXdgPath Config) 'dotforge' 'tools')
+}
+
 function Import-DFToolDb {
     <#
     .SYNOPSIS
@@ -9,13 +26,20 @@ function Import-DFToolDb {
         Validates each file with Test-DFToolSchema; invalid files are skipped with a warning.
         Valid records are normalized with ConvertTo-DFToolRecord, so every known
         field exists and callers use plain property access.
+    .DESCRIPTION
+        At the default location, the user's own folder (Get-DFUserToolsPath)
+        is read after the shipped one, and a valid user record replaces the
+        shipped record of the same name. Each record's folder and source
+        ('builtin' or 'user') say where its JSON, and so its companion files,
+        came from.
     .PARAMETER ToolsPath
         Path to the tools directory. Defaults to the module's Tools/ folder.
         Pass an explicit path in tests to control which JSON files are loaded.
         Supplying this parameter always forces a fresh, uncached read and never
         populates the shared cache -- only calls using the default location
         participate in caching, so a caller with its own directory never sees
-        (or clobbers) another caller's registry.
+        (or clobbers) another caller's registry. It also leaves the user's
+        folder out.
     .PARAMETER Force
         Clears the cache and reloads from disk. Has no effect when -ToolsPath is also
         supplied -- that call is always uncached regardless of -Force.
@@ -29,6 +53,8 @@ function Import-DFToolDb {
     )
 
     $explicitToolsPath = $PSBoundParameters.ContainsKey('ToolsPath')
+    $userTools = if (-not $explicitToolsPath) { Get-DFUserToolsPath }
+    if ($userTools -and -not (Test-Path $userTools -PathType Container)) { $userTools = $null }
 
     if ($Name) {
         # Only the requested records: one file read each (record name = file name,
@@ -41,14 +67,24 @@ function Import-DFToolDb {
                 elseif ($script:DFToolRecordCache.ContainsKey($n)) { $record = $script:DFToolRecordCache[$n] }
             }
             if (-not $record) {
-                $file = Join-Path $ToolsPath "$n.json"
-                if (-not (Test-Path $file -PathType Leaf)) {
-                    Write-Warning "DotForge: no tool record for '$n' ($file)."
-                    continue
+                if ($userTools) {
+                    $userFile = Join-Path $userTools "$n.json"
+                    if (Test-Path $userFile -PathType Leaf) { $record = Read-DFToolRecordFile -Path $userFile -Source user }
                 }
-                $record = Read-DFToolRecordFile -Path $file
+                if (-not $record) {
+                    $file = Join-Path $ToolsPath "$n.json"
+                    if (-not (Test-Path $file -PathType Leaf)) {
+                        Write-Warning "DotForge: no tool record for '$n' ($file)."
+                        continue
+                    }
+                    $record = Read-DFToolRecordFile -Path $file
+                }
                 if (-not $record) { continue }
-                if (-not $explicitToolsPath) { $script:DFToolRecordCache[$record.name] = $record }
+                if (-not $explicitToolsPath) {
+                    $script:DFToolRecordCache[$record.name] = $record
+                    # A fresh read (-Force) also replaces the full load's copy, which lookups prefer.
+                    if ($script:DFToolDb) { $script:DFToolDb[$record.name] = $record }
+                }
             }
             $db[$record.name] = $record
         }
@@ -65,6 +101,12 @@ function Import-DFToolDb {
             if ($record) { $db[$record.name] = $record }
         }
     }
+    if ($userTools) {
+        foreach ($file in Get-ChildItem $userTools -Filter '*.json' -File -ErrorAction Ignore) {
+            $record = Read-DFToolRecordFile -Path $file.FullName -Source user
+            if ($record) { $db[$record.name] = $record }
+        }
+    }
 
     if (-not $explicitToolsPath) { $script:DFToolDb = $db }
     return $db
@@ -78,29 +120,65 @@ function Read-DFToolRecordFile {
         Reads, validates and normalizes one tool JSON file; warns and returns $null when it's invalid.
     .PARAMETER Path
         The tool JSON file.
+    .PARAMETER Source
+        builtin (default) or user: stored on the record, with the file's folder.
     .OUTPUTS
         pscustomobject (a ConvertTo-DFToolRecord record), or $null.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Path)
+    param([Parameter(Mandatory)][string]$Path, [ValidateSet('builtin', 'user')][string]$Source = 'builtin')
     $leaf = Split-Path $Path -Leaf
+    $record = $null
     try {
         $text = [IO.File]::ReadAllText($Path)
         # Unchanged shipped record: already validated and normalized at build time.
+        # A copy, so setting folder and source never changes the shared registry object.
         $entry = (Get-DFToolRegistry)[[IO.Path]::GetFileNameWithoutExtension($Path)]
-        if ($entry -and $entry.sha256 -eq (Get-DFToolRecordHash -Text $text)) { return $entry.record }
-        $tool = $text | ConvertFrom-Json
+        if ($entry -and $entry.sha256 -eq (Get-DFToolRecordHash -Text $text)) { $record = $entry.record.PSObject.Copy() }
+        else { $tool = $text | ConvertFrom-Json }
     } catch {
         Write-Warning "DotForge: Failed to parse $leaf`: $($_.Exception.Message)"
         return $null
     }
-    $schema = Test-DFToolSchema -Tool $tool
-    if (-not $schema.Valid) {
-        Write-Warning "DotForge: $leaf schema errors: $($schema.Errors -join '; ')"
+    if (-not $record) {
+        $schema = Test-DFToolSchema -Tool $tool
+        if (-not $schema.Valid) {
+            Write-Warning "DotForge: $leaf schema errors: $($schema.Errors -join '; ')"
+            return $null
+        }
+        foreach ($w in $schema.Warnings) { Write-Warning "DotForge: $leaf`: $w" }
+        $record = ConvertTo-DFToolRecord $tool
+    }
+    # Records are looked up by file name (Import-DFToolDb -Name), so a user record named
+    # differently would load only some of the time, or stand in for another tool.
+    if ($Source -eq 'user' -and $record.name -ne [IO.Path]::GetFileNameWithoutExtension($Path)) {
+        Write-Warning "DotForge: $leaf names its tool '$($record.name)', so it is skipped; name the file $($record.name).json."
         return $null
     }
-    foreach ($w in $schema.Warnings) { Write-Warning "DotForge: $leaf`: $w" }
-    ConvertTo-DFToolRecord $tool
+    $record.folder = ConvertTo-DFPath (Split-Path $Path -Parent)
+    $record.source = $Source
+    $record
+}
+
+function Get-DFToolFolder {
+    <#
+    .SYNOPSIS
+        The folder holding a tool's companion, setup, manage and seed files: the folder its record was read from.
+    .DESCRIPTION
+        A user record's files sit next to it in the user's folder, a shipped
+        record's in Tools/. A record built without the loader (tests) has no
+        folder, and gets -Default.
+    .PARAMETER Tool
+        The tool record.
+    .PARAMETER Default
+        The folder for a record with none.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [string]$Default)
+    $Tool.PSObject.Properties['folder']?.Value ?? $Default
 }
 
 function Get-DFToolNames {
@@ -111,14 +189,17 @@ function Get-DFToolNames {
         Reads no file: a record's name equals its file name (tests enforce it),
         so request resolution can validate names without loading records.
     .PARAMETER ToolsPath
-        The tools folder. Default: the module's Tools/.
+        The tools folder. Default: the module's Tools/, plus the user's own
+        folder (Get-DFUserToolsPath).
     .OUTPUTS
         System.String[].
     #>
     [CmdletBinding()]
     [OutputType([string[]])]
     param([string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
-    @(Get-ChildItem $ToolsPath -Filter '*.json' -File -ErrorAction Ignore | ForEach-Object BaseName)
+    $folders = @($ToolsPath)
+    if (-not $PSBoundParameters.ContainsKey('ToolsPath')) { $folders += Get-DFUserToolsPath }
+    @(Get-ChildItem $folders -Filter '*.json' -File -ErrorAction Ignore | ForEach-Object BaseName | Sort-Object -Unique)
 }
 
 function Get-DFToolRecordProperty {
@@ -352,7 +433,9 @@ function ConvertTo-DFToolRecord {
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
             packages / xdg / env / aliases / picker / themeMap /
-            settings / setup $null, roles an empty object, executableExclude @()
+            settings / setup $null, roles an empty object, executableExclude @(),
+            folder / source $null (the loader sets them: where the JSON was
+            read from, and 'builtin' or 'user')
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -416,6 +499,9 @@ function ConvertTo-DFToolRecord {
         setup             = $setup
         installs          = $installs
         install           = $install
+        # Set by the loader (Read-DFToolRecordFile) from where the JSON was read, never by the JSON.
+        folder            = $null
+        source            = $null
     }
 
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.

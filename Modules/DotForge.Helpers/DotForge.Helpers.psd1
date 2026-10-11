@@ -38,7 +38,9 @@
         'Copy-DFToClipboard',
         'Get-DFFromClipboard',
         # General Helpers — Utility
-        'New-DFUuid'
+        'New-DFUuid',
+        # Layer 3 — Tool Operations: your own tools
+        'New-DFTool'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

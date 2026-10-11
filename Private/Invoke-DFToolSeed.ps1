@@ -14,7 +14,8 @@ function Invoke-DFToolSeed {
     .PARAMETER Tool
         The tool record. A record without setup.seed seeds nothing.
     .PARAMETER ToolsPath
-        The Tools/ folder the seed sources are relative to.
+        The folder the seed sources are relative to, for a record with no folder
+        of its own; a loaded record's seeds are next to its JSON.
     .OUTPUTS
         System.Collections.Hashtable. One setup action per seed: type
         'seedConfig', path, and created ($false when an existing file was kept).
@@ -27,6 +28,7 @@ function Invoke-DFToolSeed {
     )
     $seed = $Tool.PSObject.Properties['setup']?.Value?.seed
     if (-not $seed) { return }
+    $ToolsPath = Get-DFToolFolder -Tool $Tool -Default $ToolsPath
     foreach ($s in $seed.PSObject.Properties) {
         $dest = ConvertTo-DFPath (Expand-DFXdgPath $s.Name)
         $src = Join-Path $ToolsPath $s.Value
