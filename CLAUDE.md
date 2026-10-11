@@ -209,6 +209,12 @@ Each `Tools/*.json` must have at minimum:
   `Get-DFInstallBlock -Manager -Source`. Core never names a manager.
 - `xdg.method`: one of `default | env | wrapper | manual` (seed a default config file with `setup.seed`, not an xdg method)
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
+- `xdg.native`: the tool's own default locations for each relocated config, data or state path (keyed
+  by the `xdg.vars` variable, seed target, or target template), so a user's existing config is never
+  hidden: a requested tool with content there is left inactive (`Conflict`) until
+  `Resolve-DFToolConflict -Move | -Adopt`. `[]` when the default is the XDG location; `{ paths, move:
+  false, guide }` for one DotForge must not move. `tests/ToolNative.Coverage.Tests.ps1` enforces it.
+  Design: `docs/superpowers/specs/2026-10-11-config-ownership-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings (fzf options, `LESS`, theme names, …). Applied unconditionally by
   `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through

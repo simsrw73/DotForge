@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: fa333b37a50a7e39ee889f434f272db31e2621df4fe7aba3bf4c4a856451c154
+# sources-sha256: cc4f81ce90342b5b8adbdbab23a4ac97656d42e576fe565c1e8bbe0d1cf0295b
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -479,6 +479,51 @@ function Find-DFToolConflict {
         }
     }
     [pscustomobject]@{ Conflicts = @($conflicts); Complete = $complete }
+}
+
+function Invoke-DFPendingRemoval {
+    <#
+    .SYNOPSIS
+        Retries removing a moved tool's old copies, once the new location still holds every moved file.
+    .DESCRIPTION
+        Checks sizes only (hashes were checked when the files moved; hashing a
+        large folder on every load would be too slow). A changed or missing
+        file keeps that old copy and warns: the user checks it, deletes the old
+        copy themselves, and runs Resolve-DFToolConflict <tool> -Done. A copy
+        still in use warns and is retried on the next load.
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Ownership
+        Read-DFToolOwnership result; the tool's pending list is updated in it.
+    .OUTPUTS
+        System.Boolean: whether the tool's entry changed.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][hashtable]$Ownership)
+    $entry = $Ownership[$Name]
+    $before = @($entry.pending)
+    $left = @(foreach ($item in $before) {
+        $changed = @(foreach ($file in @($item.Files)) {
+            $path = if ($file.Path) { Join-Path $item.Target $file.Path } else { $item.Target }
+            $info = Get-Item -LiteralPath $path -Force -ErrorAction Ignore
+            if (-not $info -or $info.Length -ne $file.Length) { $path }
+        })
+        if ($changed) {
+            Write-Warning "DotForge: $Name's moved config changed since the move ($($changed -join ', ')), so $($item.OldPath) was kept. Check it, delete $($item.OldPath) yourself, then run Resolve-DFToolConflict $Name -Done."
+            $item
+            continue
+        }
+        try { Remove-DFItemToBin -Path $item.OldPath }
+        catch {
+            Write-Warning "DotForge: $($item.OldPath) is still in use, so DotForge tries again on the next load. To stop this, delete it yourself and run Resolve-DFToolConflict $Name -Done."
+            $item
+        }
+    })
+    # Items only ever leave the list, so an unchanged count means nothing changed.
+    if ($left.Count -eq $before.Count) { return $false }
+    if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
+    $true
 }
 
 # ---- Shared/Expand-DFXdgPath.ps1
@@ -4056,6 +4101,9 @@ function Select-DFOwnedRecord {
         if ($readable -and $check.Complete -and -not $ownership.ContainsKey($record.name) -and @(Get-DFToolRelocation -Tool $record)) {
             $ownership[$record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
             $changed = $true
+        }
+        if ($readable -and $ownership.ContainsKey($record.name) -and $ownership[$record.name].PSObject.Properties['pending']) {
+            if (Invoke-DFPendingRemoval -Name $record.name -Ownership $ownership) { $changed = $true }
         }
         $kept.Add($record)
     }

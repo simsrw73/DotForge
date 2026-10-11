@@ -199,6 +199,49 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('delta'); SkipSetup = @('delta') }
 ```
 
+## When DotForge finds your existing config
+
+Why: you already use a tool, and its config or data is in the tool's own default place. DotForge points tools at XDG folders (bat's config at `$XDG_CONFIG_HOME\bat\bat.conf`, zoxide's database under `$XDG_DATA_HOME`), so taking over would hide what you have.
+
+DotForge never does that on its own:
+
+1. A tool you don't list in `Tools` is never touched.
+2. A tool you list, with nothing in its old location, is DotForge's from then on.
+3. A tool you list that still has config or data in its old location is left alone entirely (no variables, aliases, pickers or setup) until you decide. Each load warns:
+
+<!-- fragment -->
+
+```text
+WARNING: DotForge: bat isn't active: your existing config at C:\Users\you\AppData\Roaming\bat\config would be hidden. Run Resolve-DFToolConflict bat -Move (or -Adopt), or remove bat from Tools.
+```
+
+`Get-DFToolStatus -Conflict` lists every tool waiting on you. You have three choices:
+
+| You want | Run |
+| --- | --- |
+| DotForge to move the config for you | `Resolve-DFToolConflict bat -Move` |
+| DotForge to take over without moving anything (you moved or merged it yourself, or don't need the old copy) | `Resolve-DFToolConflict bat -Adopt` |
+| DotForge to leave the tool alone | Remove it from `Tools` |
+
+Then load it with `Register-DFTool -Name bat`, or open a new shell.
+
+### What `-Move` does
+
+<!-- fragment -->
+
+```powershell
+Resolve-DFToolConflict bat -Move -WhatIf   # shows the plan, changes nothing
+Resolve-DFToolConflict bat -Move
+```
+
+1. **It checks first, and changes nothing if any check fails.** The XDG location must be empty, the tool must not be running, and no text file in the old location and no environment variable (PATH included) may name the old location: a hook script with a hard-coded path would break after the move, so it is listed as `file:line` for you to change.
+2. **It copies, then verifies.** Files are copied to a staging folder beside the XDG location, every file's size and SHA-256 hash is compared with the original, and only then is the staging folder renamed into place.
+3. **It moves the old copy out of the way, recoverably.** The old location is renamed to `<name>.dotforge-moved`, then sent to the Recycle Bin on Windows. A file in use (an open editor, a running shell) stays put: DotForge retries on each later load, checks the new location still matches what it moved, and warns until it's done. `Resolve-DFToolConflict bat -Done` stops the retries once you've dealt with it yourself.
+
+A few locations DotForge never moves, because the tool keeps absolute paths inside them (rustup's `~\.rustup` and `~\.cargo`, vcpkg's root, oh-my-posh's installed themes). The warning names the tool's own instructions instead; follow them, then run `-Adopt`.
+
+DotForge's variables apply inside the PowerShell sessions it starts. A program you run from cmd, Git Bash or Explorer still uses the old location.
+
 ## Prefer a package manager
 
 ```powershell
@@ -256,6 +299,9 @@ Set these in your profile, before or after importing DotForge:
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |
 | `PAGER was '<value>' but $DFConfig.Defaults.pager is '<tool>'` | you set the variable and also chose a different tool | Remove one of the two settings. |
+| `<tool> isn't active: your existing config at <path> would be hidden` | the tool's own config location has your config, and DotForge hasn't been told it may take over | See [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
+| `<path> names the old location; change it to <path>` from `Resolve-DFToolConflict -Move` | a config file refers to the folder being moved | Edit that line to the new location, then run `-Move` again. |
+| `<path> is still in use; DotForge tries again on the next load` | a moved tool's old copy was open | Close what holds it and open a new shell; or delete it yourself and run `Resolve-DFToolConflict <tool> -Done`. |
 | Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after session start | Use `PSReadLineEditMode` in the session configuration. |
 
 More on the [troubleshooting page](troubleshooting.md).

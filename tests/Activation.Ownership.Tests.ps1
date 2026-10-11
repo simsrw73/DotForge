@@ -101,4 +101,45 @@ Describe 'Activation and config ownership' {
         (Get-DFToolStatus ownc).Roles | Should -Contain 'navigation'
         (Get-DFToolStatus owna).Roles | Should -Not -Contain 'navigation'
     }
+
+    # A move whose old copy was in use leaves it pending; later loads retry.
+    Context 'pending removals' {
+        BeforeEach {
+            $script:Old = ConvertTo-DFPath (Join-Path $script:FakeHome '.owna')
+            $script:Target = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
+            New-Item -ItemType Directory -Force $script:Target, $script:Old | Out-Null
+            Set-Content (Join-Path $script:Target 'cfg') 'v'
+            Set-Content (Join-Path $script:Old 'cfg') 'v'
+            $length = (Get-Item (Join-Path $script:Target 'cfg')).Length
+            Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'move'; pending = @(
+                [pscustomobject]@{ OldPath = $script:Old; Target = $script:Target
+                    Files = @([pscustomobject]@{ Path = 'cfg'; Length = $length; Hash = 'h' }) }) } }
+        }
+        It 'removes the old copy and clears pending' {
+            Mock Remove-DFItemToBin { }
+            Register-DFTool -Name owna 3>$null
+            Should -Invoke Remove-DFItemToBin -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
+            (Read-DFToolOwnership)['owna'].PSObject.Properties['pending'] | Should -BeNullOrEmpty
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+        }
+        It 'keeps pending and warns while the old copy is still in use' {
+            Mock Remove-DFItemToBin { throw 'in use' }
+            Register-DFTool -Name owna -WarningVariable warnings 3>$null
+            "$warnings" | Should -Match ([regex]::Escape($script:Old))
+            (Read-DFToolOwnership)['owna'].pending | Should -Not -BeNullOrEmpty
+        }
+        It 'keeps the old copy, and says so, when the new one changed size' {
+            Mock Remove-DFItemToBin { }
+            Set-Content (Join-Path $script:Target 'cfg') 'much longer now'
+            Register-DFTool -Name owna -WarningVariable warnings 3>$null
+            Should -Invoke Remove-DFItemToBin -Times 0 -Exactly
+            "$warnings" | Should -Match '-Done'
+        }
+        It 'does nothing for an owned tool with no pending removals' {
+            Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'clean' } }
+            Mock Invoke-DFPendingRemoval { throw 'called' }
+            Register-DFTool -Name owna 3>$null
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+        }
+    }
 }

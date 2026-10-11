@@ -80,6 +80,27 @@ To keep the tool for yourself, put the file in your own tools folder instead: se
 
 Non-path values (flags, theme names) belong in `env`, not `xdg.vars`.
 
+### `xdg.native`
+
+Where the tool keeps its config, data or state when DotForge doesn't relocate it, so DotForge can find a user's existing config before hiding it ([When DotForge finds your existing config](configuration.md#when-dotforge-finds-your-existing-config)). One entry per relocated path, keyed by its `xdg.vars` variable, its `setup.seed` target, or (for a path a wrapper or companion sets) the target template itself:
+
+<!-- fragment -->
+
+```json
+"xdg": {
+  "method": "env",
+  "vars": { "BAT_CONFIG_PATH": "${XDG_CONFIG_HOME}/bat/bat.conf" },
+  "native": {
+    "BAT_CONFIG_PATH": ["${APPDATA}/bat/config", "${HOME}/.config/bat/config"]
+  }
+}
+```
+
+1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}` or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
+2. Use `[]` when the tool's own default already is the XDG location.
+3. When DotForge must not move a location itself, use `{ "paths": [...], "move": false, "guide": "<how to move it, with a link>" }`.
+4. Caches need no entry. `tests/ToolNative.Coverage.Tests.ps1` fails when a relocated config, data or state path has none.
+
 ### `picker`
 
 An object describes one picker; a list of objects (`"picker": [ { … }, { … } ]`) gives the tool several, as docker's `fdc` and `fdi`. A picker that needs more than these fields lives in the companion `.ps1`, calls `Invoke-DFPicker`, and the record says `"picker": "custom"`.

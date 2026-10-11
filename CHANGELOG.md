@@ -16,6 +16,13 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **DotForge never hides config you already have.** A tool you list in `Tools` whose own default
+  location still holds your config or data (bat's `%APPDATA%\bat\config`, zoxide's database, your
+  PowerShell history, …) is left alone entirely, with a warning on each load, until you decide:
+  `Resolve-DFToolConflict <tool> -Move` checks that nothing refers to the old location, copies it to
+  the XDG location, verifies every file, and moves the old copy to the Recycle Bin (a file in use is
+  retried on later loads); `-Adopt` takes over without moving anything. `Get-DFToolStatus -Conflict`
+  lists the tools waiting. Tool records declare their old locations in `xdg.native`.
 - **Your own tools, without forking DotForge:** tool records in `$XDG_CONFIG_HOME\dotforge\tools` load
   with DotForge's own, and one with a shipped tool's name replaces that tool. Their companion, setup
   and manage scripts and data files are read from the same folder. `New-DFTool -Name` starts a record

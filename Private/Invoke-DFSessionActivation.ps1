@@ -429,6 +429,9 @@ function Select-DFOwnedRecord {
             $ownership[$record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
             $changed = $true
         }
+        if ($readable -and $ownership.ContainsKey($record.name) -and $ownership[$record.name].PSObject.Properties['pending']) {
+            if (Invoke-DFPendingRemoval -Name $record.name -Ownership $ownership) { $changed = $true }
+        }
         $kept.Add($record)
     }
     if ($changed) { Save-DFToolOwnership -Ownership $ownership }

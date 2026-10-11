@@ -17,7 +17,6 @@ git history, not here. IDs are never reused; the next free one is **T-62**.
 - [ ] **T-10 Path-normalization follow-ups** — (d) tests use `C:\` literals, so macOS/Linux stays unverified.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
-- [ ] **T-61 Never orphan a user's existing tool config** — a tool in `Tools` whose own default location already holds config or data must not be pointed at XDG paths unless the user hands it over. Design: [docs/superpowers/specs/2026-10-11-config-ownership-design.md](docs/superpowers/specs/2026-10-11-config-ownership-design.md).
 
 ## Priority 2 — Architecture Backlog
 
