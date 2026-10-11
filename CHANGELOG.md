@@ -16,6 +16,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Remove-DFTool`:** removes a tool's package through the manager it came from, then lists what is
+  left: config files DotForge seeded, changes its one-time setup recorded, and its entry in your `Tools`.
+  A tool another active tool requires is refused unless you pass `-Force`; `-IncludeDependents` removes
+  the dependents too, dependents first, after one confirmation. A package manager that still has
+  packages installed needs `-Force`, and its packages stay.
 - **`Update-DFTool`:** shows which of your tools have updates (Tool, Manager, Installed, Update), and
   with `-All` or `-Name` updates them through the manager each one came from. It finds that manager by
   asking only the managers of the tool's own sources, in install precedence. Runtimes owned by a version

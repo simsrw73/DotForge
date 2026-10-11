@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 50b6143f340453fcf5bc7f53caad64b6ca2869415c0777013eec38bb0223810f
+# sources-sha256: 7550028a0f17640194ba725d57e3ae50ed4a1a96aedea3eec03735521e9f1b13
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2373,6 +2373,70 @@ function ConvertTo-DFRoleRecord {
         return
     }
     $record
+}
+
+# ---- Private/Get-DFToolDependent.ps1
+#Requires -Version 7.2
+
+function Get-DFToolDependent {
+    <#
+    .SYNOPSIS
+        The active tools that can't work without a tool: they require it, or require a role it is the only active member of.
+    .DESCRIPTION
+        Only active tools count. A tool requiring "role:<r>" depends on the
+        tool when the tool is the only active member of <r>; with another
+        active member, the role stays filled. With -Transitive, follows the
+        requires chains and returns every dependent, deepest first, so
+        removing them in that order never leaves a tool without what it needs.
+    .PARAMETER Name
+        The tool.
+    .PARAMETER ToolDb
+        Name -> tool record.
+    .PARAMETER Active
+        Names of the session's active tools.
+    .PARAMETER Transitive
+        Follow requires chains.
+    .OUTPUTS
+        System.String[]. Tool names.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][hashtable]$ToolDb,
+        [string[]]$Active = @(),
+        [switch]$Transitive
+    )
+    $direct = {
+        param($target)
+        $record = $ToolDb[$target]
+        $soleRoles = @(if ($record) {
+            foreach ($role in $record.roles.PSObject.Properties.Name) {
+                $members = @($Active | Where-Object { $ToolDb[$_] -and $ToolDb[$_].roles.PSObject.Properties[$role] })
+                if ($members.Count -eq 1) { "role:$role" }
+            }
+        })
+        foreach ($other in $Active) {
+            if ($other -eq $target -or -not $ToolDb[$other]) { continue }
+            $needs = @($ToolDb[$other].requires)
+            if ($target -in $needs -or @($needs | Where-Object { $_ -in $soleRoles }).Count) { $other }
+        }
+    }
+    if (-not $Transitive) { return [string[]]@(& $direct $Name) }
+
+    # Post-order walk: a dependent's own dependents come before it.
+    $ordered = [System.Collections.Generic.List[string]]::new()
+    $visit = $null
+    $visit = {
+        param($target, $path)
+        foreach ($dependent in & $direct $target) {
+            if ($dependent -in $path -or $ordered.Contains($dependent)) { continue }
+            & $visit $dependent (@($path) + $dependent)
+            $ordered.Add($dependent)
+        }
+    }
+    & $visit $Name @($Name)
+    [string[]]$ordered.ToArray()
 }
 
 # ---- Private/Get-DFToolSetupState.ps1
@@ -5155,6 +5219,78 @@ function Write-DFInstallSummary {
     }
 }
 
+# ---- Private/Write-DFRemoveLeftover.ps1
+#Requires -Version 7.2
+
+function Get-DFManagerPackage {
+    <#
+    .SYNOPSIS
+        The package ids a package manager still has installed; nothing for a tool that isn't a manager.
+    .PARAMETER Manager
+        A tool record.
+    .PARAMETER ToolsPath
+        The Tools folder (for Tools/<manager>.manage.ps1).
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([pscustomobject]$Manager, [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
+    if (-not $Manager -or -not $Manager.installs) { return }
+    Import-DFManagerOps -Manager $Manager -ToolsPath $ToolsPath
+    foreach ($block in $Manager.installs) { Get-DFManagerInstalled -Manager $Manager -Block $block | ForEach-Object { $_.Id } }
+}
+
+function Set-DFRemovedToolStatus {
+    <#
+    .SYNOPSIS
+        Marks a removed tool Missing in this session's status ("removed by Remove-DFTool").
+    .PARAMETER Name
+        The tool.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    if (-not $script:DFSessionStatus) { return }
+    $requestedBy = if ($script:DFSessionStatus.Contains($Name)) { $script:DFSessionStatus[$Name].RequestedBy }
+    $script:DFSessionStatus[$Name] = New-DFToolStatus -Name $Name -State Missing -RequestedBy $requestedBy -Detail 'removed by Remove-DFTool'
+}
+
+function Write-DFRemoveLeftover {
+    <#
+    .SYNOPSIS
+        Lists what a removed tool left behind: seeded config files, recorded setup changes, and its Tools entry.
+    .DESCRIPTION
+        DotForge removes only the package. Seeded files are listed when they
+        still exist; setup changes are listed as the tool's setup recorded
+        them (core doesn't know how to undo them). The setup record itself is
+        kept, so a reinstall doesn't run setup again.
+    .PARAMETER Tool
+        The removed tool's record.
+    .OUTPUTS
+        None. Writes to the host.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    $lines = [System.Collections.Generic.List[string]]::new()
+    if ($Tool.setup.seed) {
+        foreach ($seed in $Tool.setup.seed.PSObject.Properties) {
+            $path = ConvertTo-DFPath (Expand-DFXdgPath $seed.Name)
+            if (Test-Path -LiteralPath $path) { $lines.Add("config file DotForge seeded: $path") }
+        }
+    }
+    $record = (Get-DFToolSetupState).PSObject.Properties[$Tool.name]?.Value
+    foreach ($action in @(${record}?.actions | Where-Object { $_ })) {
+        $lines.Add("change its setup made: $(@($action.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ' ')")
+    }
+    if ($Tool.name -in @(Get-DFConfig Tools)) { $lines.Add("remove '$($Tool.name)' from Tools in your profile") }
+    elseif ($script:DFSessionStatus -and $script:DFSessionStatus.Contains($Tool.name)) { $lines.Add("add '$($Tool.name)' to ExcludeTools in your profile (a group requests it)") }
+    Write-Host "DotForge removed $($Tool.name). Left behind:"
+    foreach ($line in $lines) { Write-Host "  $line" }
+    Write-Host '  its aliases and functions stay until you open a new shell'
+}
+
 # ---- Private/Write-DFRoleNotice.ps1
 #Requires -Version 7.2
 
@@ -6587,6 +6723,104 @@ function Register-DFTool {
     $active = @(Invoke-DFSessionActivation -Request $request.ToArray() -Reactivate $reapply @pathArgs)
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) { Write-DFConflictNotice -Tools $active }
     Write-DFSessionNotice
+}
+
+# ---- Public/Remove-DFTool.ps1
+#Requires -Version 7.2
+
+function Remove-DFTool {
+    <#
+    .SYNOPSIS
+        Removes tools through the package manager each one came from, then lists what DotForge left behind.
+    .DESCRIPTION
+        Each tool's manager is found by asking the managers of its own sources
+        (as Update-DFTool does). Only the package is removed.
+
+        Dependents: a tool that another active tool requires (directly, or as
+        the only active member of a required role) is refused, naming the
+        dependents. -Force removes it anyway. -IncludeDependents follows the
+        requires chains and removes the dependents too, dependents first,
+        after one confirmation for the whole list.
+
+        A package manager that still has packages installed is always refused
+        unless you pass -Force, and the packages it installed are never removed
+        with it.
+
+        Afterwards it lists what is left: config files DotForge seeded, the
+        changes a tool's one-time setup recorded, and the tool's entry in your
+        Tools setting (DotForge never edits your profile). The setup record is
+        kept, so a reinstall doesn't run setup again. The tool shows as Missing
+        in Get-DFToolStatus; its aliases and functions stay until you open a
+        new shell.
+    .PARAMETER Name
+        Tools to remove.
+    .PARAMETER Force
+        Remove a tool other tools require, or a manager that still has packages.
+    .PARAMETER IncludeDependents
+        Also remove the active tools that require these, dependents first.
+    .PARAMETER ToolsPath
+        Tools folder. Default: the module's Tools/.
+    .EXAMPLE
+        Remove-DFTool -Name glow
+
+        Asks once, removes glow through the manager that installed it, and lists its leftovers.
+    .EXAMPLE
+        Remove-DFTool -Name fzf -IncludeDependents -WhatIf
+
+        Shows that PSFzf would be removed first, then fzf, without removing anything.
+    .OUTPUTS
+        PSCustomObject per tool: Tool, Result (Removed, Refused, NotInstalled, Failed, Skipped), Detail.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory, Position = 0)][string[]]$Name,
+        [switch]$Force,
+        [switch]$IncludeDependents,
+        [string]$ToolsPath
+    )
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $db = Import-DFToolDb @pathArgs
+    $active = @(Get-DFToolStatus 3>$null | Where-Object State -eq 'Active' | ForEach-Object { $_.Name })
+    $refuse = { param($tool, $detail) [pscustomobject]@{ Tool = $tool; Result = 'Refused'; Detail = $detail } }
+
+    # The removal order: each name after its dependents (with -IncludeDependents).
+    $order = [System.Collections.Generic.List[string]]::new()
+    foreach ($toolName in $Name) {
+        if (-not $db[$toolName]) { Write-Warning "DotForge: unknown tool '$toolName'."; continue }
+        $dependents = @(Get-DFToolDependent -Name $toolName -ToolDb $db -Active $active -Transitive:$IncludeDependents)
+        if ($dependents -and -not $Force -and -not $IncludeDependents) {
+            & $refuse $toolName "required by $($dependents -join ', '): use -IncludeDependents to remove them too, or -Force"
+            continue
+        }
+        $chain = @(if ($IncludeDependents) { $dependents }) + $toolName
+        $busy = @(foreach ($member in $chain) { Get-DFManagerPackage -Manager $db[$member] @pathArgs | ForEach-Object { [pscustomobject]@{ Manager = $member; Id = $_ } } })
+        if ($busy -and -not $Force) {
+            $first = $busy[0].Manager
+            & $refuse $toolName "$first still has packages installed: $(@($busy | Where-Object Manager -eq $first).Id -join ', ') (use -Force to remove it anyway)"
+            continue
+        }
+        foreach ($member in $chain) { if (-not $order.Contains($member)) { $order.Add($member) } }
+    }
+    if (-not $order.Count -or -not $PSCmdlet.ShouldProcess($order -join ', ', 'Remove (in this order)')) { return }
+
+    $cache = @{}
+    foreach ($toolName in $order) {
+        $found = Find-DFToolSource -Tool $db[$toolName] -ToolDb $db -Cache $cache @pathArgs
+        if (-not $found.Manager) {
+            [pscustomobject]@{ Tool = $toolName; Result = 'NotInstalled'; Detail = $found.Detail }
+            continue
+        }
+        $outcome = @(Invoke-DFManagerOperation -Operation remove -Found $found -Ids @($found.Id) -ToolDb $db)[0]
+        $result = ConvertTo-DFManagerResult -Tool $toolName -Outcome $outcome -Manager $found.Manager.name -Success 'Removed'
+        if ($result.Result -eq 'Removed') {
+            Set-DFRemovedToolStatus -Name $toolName
+            Write-DFRemoveLeftover -Tool $db[$toolName]
+        }
+        $result
+    }
 }
 
 # ---- Public/Start-DFSession.ps1

@@ -27,6 +27,7 @@
         # Layer 3 — Tool Operations
         'Install-DFTool',
         'Update-DFTool',
+        'Remove-DFTool',
         'Invoke-DFToolSetup',
         'New-DFShim',
         'Get-DFCommandConflict'

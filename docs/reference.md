@@ -29,6 +29,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFDirectory](#new-dfdirectory) |  | Creates a directory if it does not exist. Idempotent. |
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
+| [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 | [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
 
@@ -864,6 +865,49 @@ Register-DFTool +git
 Adds every tool in the +git group (delta, gh, lazygit) to this session.
 
 **See also:** [configuration](guide/configuration.md), [safety](guide/safety.md)
+
+### Remove-DFTool
+
+Removes tools through the package manager each one came from, then lists what DotForge left behind.
+
+```text
+Remove-DFTool [-Name] <string[]> [-Force] [-IncludeDependents] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Each tool's manager is found by asking the managers of its own sources (as Update-DFTool does). Only the package is removed.
+
+Dependents: a tool that another active tool requires (directly, or as the only active member of a required role) is refused, naming the dependents. -Force removes it anyway. -IncludeDependents follows the requires chains and removes the dependents too, dependents first, after one confirmation for the whole list.
+
+A package manager that still has packages installed is always refused unless you pass -Force, and the packages it installed are never removed with it.
+
+Afterwards it lists what is left: config files DotForge seeded, the changes a tool's one-time setup recorded, and the tool's entry in your Tools setting (DotForge never edits your profile). The setup record is kept, so a reinstall doesn't run setup again. The tool shows as Missing in Get-DFToolStatus; its aliases and functions stay until you open a new shell.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  | yes |  | Tools to remove. |
+| `-Force` | switch |  |  |  | Remove a tool other tools require, or a manager that still has packages. |
+| `-IncludeDependents` | switch |  |  |  | Also remove the active tools that require these, dependents first. |
+| `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
+
+**Outputs:** PSCustomObject per tool: Tool, Result (Removed, Refused, NotInstalled, Failed, Skipped), Detail.
+
+**Example 1**
+
+```powershell
+Remove-DFTool -Name glow
+```
+
+Asks once, removes glow through the manager that installed it, and lists its leftovers.
+
+**Example 2**
+
+```powershell
+Remove-DFTool -Name fzf -IncludeDependents -WhatIf
+```
+
+Shows that PSFzf would be removed first, then fzf, without removing anything.
+
+**See also:** [getting-started](guide/getting-started.md)
 
 ### Start-DFSession
 
