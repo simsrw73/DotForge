@@ -6,7 +6,7 @@
   "roles": { "js-runtime": { "priority": 10 }, "js-package-manager": { "priority": 10 } },
   "after": ["role:version-manager"],
   "packages": { "scoop": "bun", "winget": "Oven-sh.Bun", "npm": "bun" },
-  "installs": { "from": "npm", "install": ["bun", "add", "-g", "{id}"], "batch": true },
+  "installs": { "from": "npm", "install": ["bun", "add", "-g", "{id}"], "batch": true, "update": ["bun", "add", "-g", "{id}@latest"], "remove": ["bun", "remove", "-g", "{id}"], "list": "Get-DFBunInstalled" },
   "aliases": {},
   "picker": null
 }

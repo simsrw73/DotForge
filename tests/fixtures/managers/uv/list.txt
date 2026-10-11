@@ -1,0 +1,5 @@
+basedpyright v1.40.2
+- basedpyright
+- basedpyright-langserver
+glances v4.5.7
+- glances

@@ -1,0 +1,6 @@
+
+Name       Installed Version Latest Version Missing Dependencies Info
+----       ----------------- -------------- -------------------- ----
+git        2.56.0            2.57.0                              
+fzf        0.74.4            0.75.0                              
+nodejs-lts 22.1.0                                                Held package

@@ -132,7 +132,7 @@
       }
     },
     "bun": {
-      "sha256": "3a4be5973405c4e695ff495ebf53b286387fbc7b563d7fb958e9c47ee06dd883",
+      "sha256": "0065b8273f902a85b4e63d974f955384fb7300cd74437cc3b556a74d051a0948",
       "record": {
         "name": "bun",
         "executable": "bun.exe",
@@ -187,9 +187,19 @@
               "-g",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
+            "update": [
+              "bun",
+              "add",
+              "-g",
+              "{id}@latest"
+            ],
+            "remove": [
+              "bun",
+              "remove",
+              "-g",
+              "{id}"
+            ],
+            "list": "Get-DFBunInstalled",
             "outdated": null,
             "function": null,
             "args": null,
@@ -259,7 +269,7 @@
       }
     },
     "cargo": {
-      "sha256": "5a56d20376e8bb8d2d294c5884659e84cc85e00b05b70ea9cde24b999c4839b9",
+      "sha256": "551108dd3007107d8ee32f0f738ec1fb60bf7cbef4c8fb7859240876373b85ac",
       "record": {
         "name": "cargo",
         "executable": "cargo.exe",
@@ -301,9 +311,18 @@
               "install",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
+            "update": [
+              "cargo",
+              "install",
+              "--force",
+              "{id}"
+            ],
+            "remove": [
+              "cargo",
+              "uninstall",
+              "{id}"
+            ],
+            "list": "Get-DFCargoInstalled",
             "outdated": null,
             "function": null,
             "args": null,
@@ -365,7 +384,7 @@
       }
     },
     "choco": {
-      "sha256": "c560ced2cd65a4a9bdf022a4906884f563b73de22418eed6529deb901b9d743b",
+      "sha256": "d6c4decdbe55fb58c16631907a22833b17e6d4175602111f6125bd39f7059297",
       "record": {
         "name": "choco",
         "executable": "choco.exe",
@@ -413,10 +432,20 @@
               "{id}",
               "-y"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "choco",
+              "upgrade",
+              "{id}",
+              "-y"
+            ],
+            "remove": [
+              "choco",
+              "uninstall",
+              "{id}",
+              "-y"
+            ],
+            "list": "Get-DFChocoInstalled",
+            "outdated": "Get-DFChocoOutdated",
             "function": null,
             "args": null,
             "batch": true,
@@ -1695,7 +1724,7 @@
       }
     },
     "npm": {
-      "sha256": "c0a7def11f439680db0b65195cb741d98312f0708b3bf863178140ba9bd91903",
+      "sha256": "4dfa5db6931e314dafa0d330a328713434b23defd63edc8734debe345b2f8426",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -1759,10 +1788,20 @@
               "-g",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "npm",
+              "install",
+              "-g",
+              "{id}@latest"
+            ],
+            "remove": [
+              "npm",
+              "uninstall",
+              "-g",
+              "{id}"
+            ],
+            "list": "Get-DFNpmInstalled",
+            "outdated": "Get-DFNpmOutdated",
             "function": null,
             "args": null,
             "batch": true,
@@ -1873,7 +1912,7 @@
       }
     },
     "pip": {
-      "sha256": "789ef1c0f67424639c2e1090384669cec7def5aefae17731affc2fac4a02908e",
+      "sha256": "828f7e360834755ac3371e851411a97928ab746969552c74b1dc4da0e33dc1af",
       "record": {
         "name": "pip",
         "executable": "pip.exe",
@@ -1916,10 +1955,21 @@
               "--user",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "pip",
+              "install",
+              "--user",
+              "--upgrade",
+              "{id}"
+            ],
+            "remove": [
+              "pip",
+              "uninstall",
+              "-y",
+              "{id}"
+            ],
+            "list": "Get-DFPipInstalled",
+            "outdated": "Get-DFPipOutdated",
             "function": null,
             "args": null,
             "batch": true,
@@ -1932,7 +1982,7 @@
       }
     },
     "pipx": {
-      "sha256": "9156eb72695dd529ecf1fa8f3ae2895b83d7da914b85a53dfc1cfbc62ac1ba11",
+      "sha256": "74a360377d5cb7b445b3d8bc9247107155e49c601561427db50f107af0f5f60e",
       "record": {
         "name": "pipx",
         "executable": "pipx",
@@ -1977,9 +2027,17 @@
               "install",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
+            "update": [
+              "pipx",
+              "upgrade",
+              "{id}"
+            ],
+            "remove": [
+              "pipx",
+              "uninstall",
+              "{id}"
+            ],
+            "list": "Get-DFPipxInstalled",
             "outdated": null,
             "function": null,
             "args": null,
@@ -1993,7 +2051,7 @@
       }
     },
     "pnpm": {
-      "sha256": "f46fdb888619c53e25904c364759325f6bf34a9d3004c100e0f9f42c87dcce94",
+      "sha256": "8326f6637602112802306e20fae68d0bca4e3d978f9887fb10c6e92ae8fea551",
       "record": {
         "name": "pnpm",
         "executable": "pnpm.cmd",
@@ -2040,10 +2098,20 @@
               "-g",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "pnpm",
+              "add",
+              "-g",
+              "{id}@latest"
+            ],
+            "remove": [
+              "pnpm",
+              "remove",
+              "-g",
+              "{id}"
+            ],
+            "list": "Get-DFPnpmInstalled",
+            "outdated": "Get-DFPnpmOutdated",
             "function": null,
             "args": null,
             "batch": true,
@@ -2295,7 +2363,7 @@
       }
     },
     "psresource": {
-      "sha256": "2df57ce99d72be90eed0185065a7d74848dfe512793381e0583f9550ac6a1811",
+      "sha256": "7c37a1c970f6305209deaeca70831bc435375f17de0159347dac94f45303fbb4",
       "record": {
         "name": "psresource",
         "executable": "Microsoft.PowerShell.PSResourceGet",
@@ -2330,9 +2398,22 @@
           {
             "from": "psgallery",
             "install": null,
-            "update": null,
-            "remove": null,
-            "list": null,
+            "update": {
+              "function": "Update-PSResource",
+              "args": {
+                "Name": "{id}",
+                "Scope": "CurrentUser",
+                "TrustRepository": true
+              }
+            },
+            "remove": {
+              "function": "Uninstall-PSResource",
+              "args": {
+                "Name": "{id}",
+                "Scope": "CurrentUser"
+              }
+            },
+            "list": "Get-DFPSResourceInstalled",
             "outdated": null,
             "function": "Install-PSResource",
             "args": {
@@ -2561,7 +2642,7 @@
       }
     },
     "scoop": {
-      "sha256": "02d480a6f0bdb8011c1fc9296cc6c33941c7d5e21c27d685c68abf034742e89d",
+      "sha256": "325465eec61e0dad5475e9d9cb15e0fa4dd4e99334824e8adadafda1e0bc2b8b",
       "record": {
         "name": "scoop",
         "executable": "scoop.cmd",
@@ -2606,10 +2687,18 @@
               "install",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "scoop",
+              "update",
+              "{id}"
+            ],
+            "remove": [
+              "scoop",
+              "uninstall",
+              "{id}"
+            ],
+            "list": "Get-DFScoopInstalled",
+            "outdated": "Get-DFScoopOutdated",
             "function": null,
             "args": null,
             "batch": true,
@@ -2724,7 +2813,7 @@
       }
     },
     "uv": {
-      "sha256": "67a1ea3e4db1f915d4847d40df871f0878faf3a48419a7f712688b748a5fe128",
+      "sha256": "04415c52f5da25953fe380dc507fe2f5022d91d926ae00863b74e604f4208a4a",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -2787,9 +2876,19 @@
               "install",
               "{id}"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
+            "update": [
+              "uv",
+              "tool",
+              "upgrade",
+              "{id}"
+            ],
+            "remove": [
+              "uv",
+              "tool",
+              "uninstall",
+              "{id}"
+            ],
+            "list": "Get-DFUvInstalled",
             "outdated": null,
             "function": null,
             "args": null,
@@ -2955,7 +3054,7 @@
       }
     },
     "winget": {
-      "sha256": "0dcd7cb5a4348cc49f0fe9095db2a693fae7b27a93e94e413bcb6e91043f19cd",
+      "sha256": "b822821549e7ffd502c6fb6f270acfc1794383dface20ec49b85c1008ea30014",
       "record": {
         "name": "winget",
         "executable": "winget.exe",
@@ -3005,10 +3104,26 @@
               "--accept-source-agreements",
               "--accept-package-agreements"
             ],
-            "update": null,
-            "remove": null,
-            "list": null,
-            "outdated": null,
+            "update": [
+              "winget",
+              "upgrade",
+              "--id",
+              "{id}",
+              "--exact",
+              "--silent",
+              "--accept-source-agreements",
+              "--accept-package-agreements"
+            ],
+            "remove": [
+              "winget",
+              "uninstall",
+              "--id",
+              "{id}",
+              "--exact",
+              "--silent"
+            ],
+            "list": "Get-DFWingetInstalled",
+            "outdated": "Get-DFWingetOutdated",
             "function": null,
             "args": null,
             "batch": false,

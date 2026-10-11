@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "@fission-ai/openspec": {
+      "version": "1.14.1"
+    },
+    "@google/gemini-cli": {
+      "version": "0.63.0"
+    },
+    "@microsoft/inshellisense": {
+      "version": "0.0.4"
+    },
+    "commitizen": {
+      "version": "4.3.2"
+    },
+    "prettier": {
+      "version": "3.9.9"
+    }
+  }
+}

@@ -6,7 +6,7 @@
   "roles": { "rust-package-manager": { "priority": 10 } },
   "requires": ["rustup"],
   "packages": {},
-  "installs": { "from": "crates", "install": ["cargo", "install", "{id}"], "batch": true },
+  "installs": { "from": "crates", "install": ["cargo", "install", "{id}"], "update": ["cargo", "install", "--force", "{id}"], "remove": ["cargo", "uninstall", "{id}"], "list": "Get-DFCargoInstalled", "batch": true },
   "aliases": {},
   "picker": null
 }

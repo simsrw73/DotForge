@@ -25,7 +25,7 @@
     ]
   },
   "installs": [
-    { "from": "pypi", "install": ["uv", "tool", "install", "{id}"] },
+    { "from": "pypi", "install": ["uv", "tool", "install", "{id}"], "update": ["uv", "tool", "upgrade", "{id}"], "remove": ["uv", "tool", "uninstall", "{id}"], "list": "Get-DFUvInstalled" },
     { "from": "uv", "install": ["uv", "python", "install", "--default", "{id}"] }
   ],
   "aliases": {},

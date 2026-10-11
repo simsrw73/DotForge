@@ -1,0 +1,7 @@
+Installed apps:
+
+Name          Version    Source
+----          -------    ------
+7zip          26.04      main
+aria2         1.37.0-1   main
+bat           0.26.1     main

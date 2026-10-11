@@ -1,0 +1,4 @@
+Name                    Id                         Version    Available
+--------------------------------------------------------------------------
+RipGrep MSVC            BurntSushi.ripgrep.MSVC    15.2.0     15.3.0
+Neovim                  Neovim.Neovim              0.12.5     0.12.6

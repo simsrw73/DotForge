@@ -11,7 +11,7 @@
   "requires": ["node"],
   "packages": {},
   "roles": { "js-package-manager": { "priority": 30 } },
-  "installs": { "from": "npm", "install": ["npm", "install", "-g", "{id}"], "batch": true },
+  "installs": { "from": "npm", "install": ["npm", "install", "-g", "{id}"], "batch": true, "update": ["npm", "install", "-g", "{id}@latest"], "remove": ["npm", "uninstall", "-g", "{id}"], "list": "Get-DFNpmInstalled", "outdated": "Get-DFNpmOutdated" },
   "xdg": {
     "compliance": "partial",
     "method": "env",

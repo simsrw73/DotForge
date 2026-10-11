@@ -8,7 +8,7 @@
   "executable": "scoop.cmd",
   "roles": { "package-manager": { "priority": 30 } },
   "packages": {},
-  "installs": { "from": "scoop", "install": ["scoop", "install", "{id}"], "batch": true, "feeds": { "list": ["scoop", "bucket", "list"], "add": ["scoop", "bucket", "add", "{name}", "{url}"], "id": "{feed}/{id}" } },
+  "installs": { "from": "scoop", "install": ["scoop", "install", "{id}"], "update": ["scoop", "update", "{id}"], "remove": ["scoop", "uninstall", "{id}"], "list": "Get-DFScoopInstalled", "outdated": "Get-DFScoopOutdated", "batch": true, "feeds": { "list": ["scoop", "bucket", "list"], "add": ["scoop", "bucket", "add", "{name}", "{url}"], "id": "{feed}/{id}" } },
   "xdg": {
     "compliance": "none",
     "method": "default"

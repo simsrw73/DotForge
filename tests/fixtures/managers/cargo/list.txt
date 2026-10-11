@@ -1,0 +1,4 @@
+choose v1.3.7:
+    choose.exe
+wpmctl v0.1.0 (https://github.com/LGUG2Z/wpm#38728307):
+    wpmctl.exe

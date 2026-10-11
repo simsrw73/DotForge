@@ -1,0 +1,5 @@
+Name              Id                         Version
+------------------------------------------------------
+RipGrep MSVC      BurntSushi.ripgrep.MSVC    15.2.0
+Neovim            Neovim.Neovim              0.12.5
+Visual Studio Code Microsoft.VisualStudioCode 1.140.0
