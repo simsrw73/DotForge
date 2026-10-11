@@ -102,6 +102,14 @@ Where the tool keeps its config, data or state when DotForge doesn't relocate it
 4. When a `settings` field can point the tool somewhere else (glow's `configFile`), add `"setting": "configFile"` to the object form: that value, when set, is the target.
 5. Caches need no entry. `tests/ToolNative.Coverage.Tests.ps1` fails when a relocated config, data or state path has none.
 
+### `banner`
+
+Adds lines to the [startup banner](configuration.md#startup-banner): `"banner": { "script": "<tool>.banner.ps1", "body": true, "fills": ["publicip"] }`.
+
+1. `script` is a file next to the record. DotForge dot-sources it and it outputs one object with script blocks: `Style` (optional: `@{ KeyColor; OutputColor; Separator }`), `Work` (background jobs: `@{ Name; ScriptBlock; ArgumentList }`, run in a runspace with only their arguments) and `Complete` (`param($Results, $Context)`: returns `@{ Body = lines or $null; Fills = @{ <name> = items } }`, where an item is `@{ Key; Value; Alert }`).
+2. `body: true` makes the part's `Body` the banner (fastfetch does this); a `fills` name fills the body's `@DF:<name>@` placeholder lines.
+3. `Complete` gets only the jobs that finished in time. DotForge caches fills and uses the last known values when a job is late. See `Tools/fastfetch.banner.ps1` and `Tools/smartmontools.banner.ps1`.
+
 ### `picker`
 
 An object describes one picker; a list of objects (`"picker": [ { … }, { … } ]`) gives the tool several, as docker's `fdc` and `fdi`. A picker that needs more than these fields lives in the companion `.ps1`, calls `Invoke-DFPicker`, and the record says `"picker": "custom"`.

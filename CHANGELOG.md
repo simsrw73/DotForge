@@ -16,6 +16,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **A startup banner:** `Start-DFSession -Config @{ ShowBanner = $true }` clears the screen and prints
+  one line at once; fastfetch, a health line per drive (smartmontools' `smartctl`, no admin rights:
+  life, temperature, hours, data written, in red when something's wrong) and the public IP are gathered
+  in the background while tools load, then print a line at a time. Never waits on the network; late
+  values show the last known one, marked `(cached)`. `BannerLineDelay`, `BannerWait` and `BannerClear`
+  tune it. smartmontools is a new tool; it and fastfetch join `+core`. The default fastfetch config
+  drops the Packages and physical-disk lines and gains `@DF:publicip@` / `@DF:drives@` placeholders.
+  Tool records can add banner lines with a `banner` field.
 - **DotForge never hides config you already have.** A tool you list in `Tools` whose own default
   location still holds your config or data (bat's `%APPDATA%\bat\config`, zoxide's database, your
   PowerShell history, …) is left alone entirely, with a warning on each load, until you decide:

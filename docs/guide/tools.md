@@ -8,7 +8,7 @@
 
 ## Groups
 
-Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget.
+Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less, fastfetch, smartmontools; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget.
 
 ## Quick start
 
@@ -51,7 +51,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Completion | carapace, inshellisense |
 | Files and folders | bat, broot, eza, fd, lsd, ripgrep, vivid |
 | Text and data | glow, jq, mdcat, mdv |
-| System | fastfetch, gsudo, procs |
+| System | fastfetch, gsudo, procs, smartmontools |
 | Network | curl, wget |
 | Containers | docker |
 | Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
@@ -198,6 +198,7 @@ glow hello.md
 
 1. `$global:DFGlowStyle` switches glow's style for the rest of the session.
 2. fastfetch's config file is created from DotForge's template the first time, then left for you to edit.
+3. fastfetch and smartmontools make up the [startup banner](configuration.md#startup-banner): `ShowBanner = $true`. smartmontools adds no commands of its own; its `smartctl` reads each drive's health for the banner.
 
 ### gsudo
 

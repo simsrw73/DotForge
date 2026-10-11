@@ -53,11 +53,11 @@ Import-Module DotForge
 # directory tracking for the rest of that session — known limitation).
 Start-DFSession -Config $DFConfig
 
-# ── Optional: lightweight system-info banner ──────────────────────────────────
-# Uncomment to show a one-shot system summary at the top of every new shell.
-# The bundled fastfetch config has no logo and skips network-dependent
-# modules, so this stays fast even on a cold shell.
-# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }
+# ── Optional: startup banner ──────────────────────────────────────────────────
+# Add ShowBanner = $true to $DFConfig above for a system summary when the shell
+# opens: fastfetch, one health line per drive (smartmontools) and the public IP,
+# gathered in the background while tools load and printed a line at a time.
+# See docs/guide/configuration.md#startup-banner.
 
 # ── General helpers now available ─────────────────────────────────────────────
 # Importing DotForge also exposes helper aliases, e.g.:

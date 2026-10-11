@@ -46,6 +46,10 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
 | `IgnoreConflicts` | string[] | none | Commands left out of the coreutils warning. See [Coreutils conflicts](coreutils-conflicts.md). |
 | `SkipConflictCheck` | bool | `$false` | `$true` turns the coreutils check off. |
+| `ShowBanner` | bool | `$false` | Show the startup banner. See [Startup banner](#startup-banner). |
+| `BannerLineDelay` | int | `8` | Milliseconds between banner lines; `0` prints at once. |
+| `BannerWait` | int | `300` | Longest wait, in milliseconds, for an unfinished banner line before its last known value is used. |
+| `BannerClear` | bool | `$true` | Clear the screen before the banner; `$false` keeps your scrollback. |
 
 DotForge reads the hashtable you pass to `Start-DFSession -Config`, so a change takes effect the next time you call it (or in a new shell).
 
@@ -199,6 +203,40 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('delta'); SkipSetup = @('delta') }
 ```
 
+## Startup banner
+
+Why: a system summary when a shell opens, printed a line at a time like a boot screen, without slowing startup.
+
+<!-- fragment -->
+
+```powershell
+Start-DFSession -Config @{ Tools = @('+core'); ShowBanner = $true }
+```
+
+<!-- fragment -->
+
+```text
+DotForge  0.7.0 · loading 31 tools…
+OS  Windows 11 Pro (26H2) x86_64
+...
+Local IP (Ethernet)  192.168.99.20/24 (Ethernet)
+Public IP  203.0.113.4
+Disk (C:\)  C:\ (NTFS): 824.22 GiB / 930.62 GiB (89%)
+Disk 990 PRO 2TB   NVMe · 99% life · 46°C · 14,014 h · 28 TB written
+Disk WD10EZEX      HDD · no bad sectors · 29°C · 84,115 h
+```
+
+1. The screen clears and the first line prints at once (`BannerClear = $false` keeps your scrollback).
+2. fastfetch, the drive checks and the public-IP lookup run in the background while your tools load; the rest prints when the load ends, `BannerLineDelay` milliseconds apart.
+3. **Drive lines** come from smartmontools' `smartctl`, which reads drive health without admin rights: an SSD's remaining life, a hard drive's bad-sector count, temperature, hours powered on, and data written. A line turns red, with the reason, when a drive's self-check fails, media errors or bad sectors appear, or its life drops under 10%.
+4. **Public IP** comes from `api.ipify.org` with a 2-second limit, so a slow network never holds up the shell.
+5. A line whose check isn't back within `BannerWait` shows its last known value, marked `(cached)`, or is left out the first time.
+6. fastfetch and smartmontools are in `+core`. Without smartmontools there are no drive lines; without fastfetch only the first line prints. The banner shows only in an interactive console, never in scripts or redirected output.
+
+**Moving lines.** Your fastfetch config decides where the extra lines go: `{ "type": "custom", "key": "Public IP", "format": "@DF:publicip@" }` and `{ "type": "custom", "key": "Disk", "format": "@DF:drives@" }`. Move or delete those entries. DotForge's default config has them; a config you already have doesn't, so add them, or delete your config and run `Invoke-DFToolSetup fastfetch -Force` for the new default (which also drops the Packages and physical-disk lines). Running `fastfetch` by hand fills them from the last known values.
+
+**Colors** follow your fastfetch config (`display.color.keys`, `display.color.output`, `display.separator`).
+
 ## When DotForge finds your existing config
 
 Why: you already use a tool, and its config or data is in the tool's own default place. DotForge points tools at XDG folders (bat's config at `$XDG_CONFIG_HOME\bat\bat.conf`, zoxide's database under `$XDG_DATA_HOME`), so taking over would hide what you have.
@@ -302,6 +340,8 @@ Set these in your profile, before or after importing DotForge:
 | `<tool> isn't active: your existing config at <path> would be hidden` | the tool's own config location has your config, and DotForge hasn't been told it may take over | See [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
 | `<path> names the old location; change it to <path>` from `Resolve-DFToolConflict -Move` | a config file refers to the folder being moved | Edit that line to the new location, then run `-Move` again. |
 | `<path> is still in use; DotForge tries again on the next load` | a moved tool's old copy was open | Close what holds it and open a new shell; or delete it yourself and run `Resolve-DFToolConflict <tool> -Done`. |
+| No drive lines in the banner | smartmontools isn't installed, or isn't in `Tools` | `Install-DFTool smartmontools`, and keep `+core` (or `smartmontools`) in `Tools`. |
+| `@DF:...` text from fastfetch, or no Public IP line | an older fastfetch config without the placeholders, or one run outside DotForge | Add the placeholder entries shown in [Startup banner](#startup-banner). |
 | Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after session start | Use `PSReadLineEditMode` in the session configuration. |
 
 More on the [troubleshooting page](troubleshooting.md).

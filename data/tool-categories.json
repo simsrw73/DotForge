@@ -1335,6 +1335,20 @@
       ],
       "popularity": 1
     },
+    "smartmontools": {
+      "function": [
+        "system-info"
+      ],
+      "worksWith": [
+        "filesystem"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "smartmontools",
+        "winget": "smartmontools.smartmontools"
+      },
+      "popularity": 1
+    },
     "starship": {
       "function": [
         "prompt"

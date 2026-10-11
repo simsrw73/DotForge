@@ -8,6 +8,6 @@ Import-Module DotForge
 
 Start-DFSession -Config @{ Tools = @('+core') }  # sets XDG dirs and configures the requested group
 
-# Optional lightweight system-info banner: see examples/02-standard.ps1's
-# "Optional: lightweight system-info banner" section.
-# if (Get-Command fastfetch.exe -ErrorAction Ignore) { fastfetch }
+# Optional system summary at startup (fastfetch, drive health, public IP), printed
+# a line at a time: add ShowBanner = $true to the config. See
+# docs/guide/configuration.md#startup-banner.

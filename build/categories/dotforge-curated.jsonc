@@ -175,6 +175,10 @@
     "ids": { "psgallery": "posh-git", "scoop": "posh-git" },
     "relatedTo": ["oh-my-posh"], "popularity": 1
   },
+  "smartmontools": {
+    "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
+    "ids": { "scoop": "smartmontools", "winget": "smartmontools.smartmontools" }, "popularity": 1
+  },
   "procs": {
     "function": ["process-monitor"], "worksWith": ["processes"], "interface": "cli",
     "alternativeTo": ["ps"],
