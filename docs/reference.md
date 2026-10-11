@@ -30,6 +30,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
+| [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
 
 **Help and discovery**
 
@@ -925,6 +926,60 @@ Start-DFSession -Config $DFConfig
 ```
 
 Keeps the configuration in a variable of your own. DotForge doesn't read the variable itself, only what you pass.
+
+**See also:** [getting-started](guide/getting-started.md)
+
+### Update-DFTool
+
+Shows which of your tools have updates, and updates them through the manager each came from.
+
+```text
+Update-DFTool [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Update-DFTool [-Name] <string[]> [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Update-DFTool -All [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Each tool's manager is found by asking the managers of its own sources; a tool installed through two managers is reported under the first one found, in install precedence (InstallVia, the tool's install.prefer, InstallOrder, DotForge's order).
+
+With no -Name or -All, shows a table for the session's active tools (Tool, Manager, Installed, Update: the newer version, "up to date", "unknown" when the manager can't say, or why the tool can't be updated) and changes nothing.
+
+-All updates every active tool that has an update, plus the unknowns (the manager does nothing for one that is current). -Name does the same for the named tools. Tools are updated in one call per manager where the manager allows it. A manager that needs administrator rights gets them the way Install-DFTool does.
+
+Runtimes that a version manager owns (node through fnm or mise, Python through uv or pymanager) aren't updated here: the table names the manager to use.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  | yes |  | Tools to update. |
+| `-All` | switch |  | yes |  | Update every active tool that has an update. |
+| `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
+
+**Outputs:** DotForge.ToolUpdate (bare), or PSCustomObject per tool: Tool, Result (Updated, Failed, Skipped), Detail.
+
+**Example 1**
+
+```powershell
+Update-DFTool
+```
+
+Shows the update table for the session's tools.
+
+**Example 2**
+
+```powershell
+Update-DFTool -All -WhatIf
+```
+
+Shows which managers would update which tools, without running them.
+
+**Example 3**
+
+```powershell
+Update-DFTool -Name fzf, bat
+```
+
+Updates fzf and bat.
 
 **See also:** [getting-started](guide/getting-started.md)
 

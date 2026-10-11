@@ -16,6 +16,10 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`Update-DFTool`:** shows which of your tools have updates (Tool, Manager, Installed, Update), and
+  with `-All` or `-Name` updates them through the manager each one came from. It finds that manager by
+  asking only the managers of the tool's own sources, in install precedence. Runtimes owned by a version
+  manager (node through fnm) name the manager to use instead.
 - **A notice when you run a developer build:** `Start-DFSession` prints one line naming the version
   and where it's installed when DotForge is a dev build from `build/Publish-DFLocal.ps1`
   (`<version>-dev<timestamp>`). Gallery releases print nothing.

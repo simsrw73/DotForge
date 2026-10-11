@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 5ff39c15c8dca3af407be80b8f32c5e57876b7a62dab069a9b9e6f8117b0098e
+# sources-sha256: 50b6143f340453fcf5bc7f53caad64b6ca2869415c0777013eec38bb0223810f
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2443,6 +2443,89 @@ function Clear-DFToolSetupState {
     Write-DFFileAtomic -Path (Get-DFToolSetupStatePath) -Value ($state | ConvertTo-Json -Depth 10)
 }
 
+# ---- Private/Get-DFToolUpdate.ps1
+#Requires -Version 7.2
+
+function New-DFToolUpdate {
+    <#
+    .SYNOPSIS
+        Creates one DotForge.ToolUpdate row, shown as Tool, Manager, Installed, Update.
+    .PARAMETER Tool
+        Tool name.
+    .PARAMETER Found
+        Find-DFToolSource's result.
+    .PARAMETER State
+        Outdated, UpToDate, Unknown, NotFound or Runtime.
+    .PARAMETER Available
+        The newer version, for Outdated.
+    .PARAMETER Update
+        What the Update column says.
+    .OUTPUTS
+        DotForge.ToolUpdate.
+    #>
+    [CmdletBinding()]
+    param([string]$Tool, [pscustomobject]$Found, [string]$State, [string]$Available, [string]$Update)
+    $row = [pscustomobject]@{
+        PSTypeName = 'DotForge.ToolUpdate'
+        Tool       = $Tool
+        Manager    = $Found.Manager.name
+        Installed  = $Found.Installed
+        Available  = $Available
+        State      = $State
+        Update     = $Update
+        Found      = $Found
+    }
+    # Four default columns, so it shows as a table.
+    $display = [System.Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]@('Tool', 'Manager', 'Installed', 'Update'))
+    $row.PSObject.Members.Add([System.Management.Automation.PSMemberSet]::new('PSStandardMembers', [System.Management.Automation.PSMemberInfo[]]@($display)))
+    $row
+}
+
+function Get-DFToolUpdate {
+    <#
+    .SYNOPSIS
+        For each tool: the manager it came from, its installed version, and whether an update is available.
+    .DESCRIPTION
+        Finds each tool's manager (Find-DFToolSource), then asks that
+        manager's outdated function once per command run. State is Outdated
+        (with Available), UpToDate, Unknown (the manager can't say what is
+        outdated), NotFound, or Runtime (its manager declares no update: a
+        version manager such as fnm owns it).
+    .PARAMETER Name
+        Tool names.
+    .PARAMETER ToolDb
+        Name -> tool record; must include the manager records.
+    .PARAMETER ToolsPath
+        The Tools folder (for Tools/<manager>.manage.ps1).
+    .OUTPUTS
+        DotForge.ToolUpdate.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)][string[]]$Name,
+        [Parameter(Mandatory)][hashtable]$ToolDb,
+        [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools')
+    )
+    $cache = @{}
+    foreach ($toolName in $Name) {
+        $tool = $ToolDb[$toolName]
+        if (-not $tool) { Write-Warning "DotForge: unknown tool '$toolName'."; continue }
+        $found = Find-DFToolSource -Tool $tool -ToolDb $ToolDb -Cache $cache -ToolsPath $ToolsPath
+        if (-not $found.Manager) { New-DFToolUpdate -Tool $toolName -Found $found -State NotFound -Update $found.Detail; continue }
+        $manager = $found.Manager.name
+        if (-not $found.Block.update) {
+            New-DFToolUpdate -Tool $toolName -Found $found -State Runtime -Update "managed by $($manager): update it with $manager"
+            continue
+        }
+        if (-not $found.Block.outdated) { New-DFToolUpdate -Tool $toolName -Found $found -State Unknown -Update 'unknown'; continue }
+        $row = Get-DFManagerInstalled -Manager $found.Manager -Block $found.Block -Operation outdated -Cache $cache |
+            Where-Object { $_.Id -eq $found.Id } | Select-Object -First 1
+        if ($row) { New-DFToolUpdate -Tool $toolName -Found $found -State Outdated -Available $row.Available -Update $row.Available }
+        else { New-DFToolUpdate -Tool $toolName -Found $found -State UpToDate -Update 'up to date' }
+    }
+}
+
 # ---- Private/Invoke-DFInstallPlan.ps1
 #Requires -Version 7.2
 
@@ -2623,6 +2706,64 @@ function Invoke-DFManagerBatch {
             Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Function $spec.function -Arguments $arguments
         }
         foreach ($id in $group) { [pscustomobject]@{ Id = $id; ExitCode = $r.ExitCode; Output = $r.Output } }
+    }
+}
+
+function Invoke-DFManagerOperation {
+    <#
+    .SYNOPSIS
+        Updates or removes packages through the manager Find-DFToolSource found, asking for administrator rights when its block needs them.
+    .PARAMETER Operation
+        update or remove.
+    .PARAMETER Found
+        Find-DFToolSource's result for the first tool (Manager, Block).
+    .PARAMETER Ids
+        The installed package ids.
+    .PARAMETER ToolDb
+        Name -> tool record (for the elevator role).
+    .OUTPUTS
+        PSCustomObject per id: Id, ExitCode, Output.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)][ValidateSet('update', 'remove')][string]$Operation,
+        [Parameter(Mandatory)][pscustomobject]$Found,
+        [Parameter(Mandatory)][string[]]$Ids,
+        [Parameter(Mandatory)][hashtable]$ToolDb
+    )
+    $elevation = if ($Found.Block.elevate) {
+        $method = Get-DFElevationMethod -ToolDb $ToolDb
+        if ($method.Method -ne 'Direct') { $method }
+    }
+    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation
+}
+
+function ConvertTo-DFManagerResult {
+    <#
+    .SYNOPSIS
+        Turns one Invoke-DFManagerBatch outcome into a result row: the success word, Skipped (the manager can't do it), or Failed with its last lines.
+    .PARAMETER Tool
+        Tool name.
+    .PARAMETER Outcome
+        One Invoke-DFManagerBatch result.
+    .PARAMETER Manager
+        The manager's name.
+    .PARAMETER Success
+        The Result for exit code 0 (Updated, Removed).
+    .OUTPUTS
+        PSCustomObject: Tool, Result, Detail.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([string]$Tool, [pscustomobject]$Outcome, [string]$Manager, [string]$Success)
+    switch ($Outcome.ExitCode) {
+        0 { [pscustomobject]@{ Tool = $Tool; Result = $Success; Detail = "via $Manager" } }
+        -1 { [pscustomobject]@{ Tool = $Tool; Result = 'Skipped'; Detail = $Outcome.Output } }
+        default {
+            $tail = @("$($Outcome.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
+            [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = "$Manager failed: $tail" }
+        }
     }
 }
 
@@ -6536,4 +6677,88 @@ function Start-DFSession {
         Write-DFConflictNotice -Tools $active
     }
     Write-DFSessionNotice
+}
+
+# ---- Public/Update-DFTool.ps1
+#Requires -Version 7.2
+
+function Update-DFTool {
+    <#
+    .SYNOPSIS
+        Shows which of your tools have updates, and updates them through the manager each came from.
+    .DESCRIPTION
+        Each tool's manager is found by asking the managers of its own sources;
+        a tool installed through two managers is reported under the first one
+        found, in install precedence (InstallVia, the tool's install.prefer,
+        InstallOrder, DotForge's order).
+
+        With no -Name or -All, shows a table for the session's active tools
+        (Tool, Manager, Installed, Update: the newer version, "up to date",
+        "unknown" when the manager can't say, or why the tool can't be
+        updated) and changes nothing.
+
+        -All updates every active tool that has an update, plus the unknowns
+        (the manager does nothing for one that is current). -Name does the same
+        for the named tools. Tools are updated in one call per manager where
+        the manager allows it. A manager that needs administrator rights gets
+        them the way Install-DFTool does.
+
+        Runtimes that a version manager owns (node through fnm or mise, Python
+        through uv or pymanager) aren't updated here: the table names the
+        manager to use.
+    .PARAMETER Name
+        Tools to update.
+    .PARAMETER All
+        Update every active tool that has an update.
+    .PARAMETER ToolsPath
+        Tools folder. Default: the module's Tools/.
+    .EXAMPLE
+        Update-DFTool
+
+        Shows the update table for the session's tools.
+    .EXAMPLE
+        Update-DFTool -All -WhatIf
+
+        Shows which managers would update which tools, without running them.
+    .EXAMPLE
+        Update-DFTool -Name fzf, bat
+
+        Updates fzf and bat.
+    .OUTPUTS
+        DotForge.ToolUpdate (bare), or PSCustomObject per tool: Tool, Result (Updated, Failed, Skipped), Detail.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
+    #>
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Show')]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory, ParameterSetName = 'Name', Position = 0)][string[]]$Name,
+        [Parameter(Mandatory, ParameterSetName = 'All')][switch]$All,
+        [string]$ToolsPath
+    )
+    $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
+    $db = Import-DFToolDb @pathArgs
+    $targets = if ($Name) { $Name } else { @(Get-DFToolStatus 3>$null | Where-Object State -eq 'Active' | ForEach-Object { $_.Name }) }
+    if (-not $targets) { Write-Host 'DotForge: no active tools. Start-DFSession configures the tools you request.'; return }
+    $rows = @(Get-DFToolUpdate -Name $targets -ToolDb $db @pathArgs)
+    if ($PSCmdlet.ParameterSetName -eq 'Show') { return $rows }
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    foreach ($row in $rows | Where-Object State -notin 'Outdated', 'Unknown') {
+        $results.Add([pscustomobject]@{ Tool = $row.Tool; Result = 'Skipped'; Detail = $row.Update })
+    }
+    $toUpdate = @($rows | Where-Object State -in 'Outdated', 'Unknown')
+    if (-not $toUpdate) { Write-Host 'Everything is up to date.'; return $results.ToArray() }
+
+    foreach ($group in $toUpdate | Group-Object { "$($_.Found.Manager.name)|$($_.Found.Source)" }) {
+        $found = $group.Group[0].Found
+        $tools = @($group.Group.Tool)
+        if (-not $PSCmdlet.ShouldProcess("$($tools -join ', ') through $($found.Manager.name)", 'Update')) { continue }
+        $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
+        for ($n = 0; $n -lt $tools.Count; $n++) {
+            $results.Add((ConvertTo-DFManagerResult -Tool $tools[$n] -Outcome $outcomes[$n] -Manager $found.Manager.name -Success 'Updated'))
+        }
+        if ($found.Block.reactivate -and @($outcomes | Where-Object ExitCode -eq 0).Count) { Register-DFTool -Name $found.Manager.name @pathArgs 3>$null }
+    }
+    $results.ToArray()
 }

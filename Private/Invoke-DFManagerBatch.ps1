@@ -60,3 +60,61 @@ function Invoke-DFManagerBatch {
         foreach ($id in $group) { [pscustomobject]@{ Id = $id; ExitCode = $r.ExitCode; Output = $r.Output } }
     }
 }
+
+function Invoke-DFManagerOperation {
+    <#
+    .SYNOPSIS
+        Updates or removes packages through the manager Find-DFToolSource found, asking for administrator rights when its block needs them.
+    .PARAMETER Operation
+        update or remove.
+    .PARAMETER Found
+        Find-DFToolSource's result for the first tool (Manager, Block).
+    .PARAMETER Ids
+        The installed package ids.
+    .PARAMETER ToolDb
+        Name -> tool record (for the elevator role).
+    .OUTPUTS
+        PSCustomObject per id: Id, ExitCode, Output.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)][ValidateSet('update', 'remove')][string]$Operation,
+        [Parameter(Mandatory)][pscustomobject]$Found,
+        [Parameter(Mandatory)][string[]]$Ids,
+        [Parameter(Mandatory)][hashtable]$ToolDb
+    )
+    $elevation = if ($Found.Block.elevate) {
+        $method = Get-DFElevationMethod -ToolDb $ToolDb
+        if ($method.Method -ne 'Direct') { $method }
+    }
+    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation
+}
+
+function ConvertTo-DFManagerResult {
+    <#
+    .SYNOPSIS
+        Turns one Invoke-DFManagerBatch outcome into a result row: the success word, Skipped (the manager can't do it), or Failed with its last lines.
+    .PARAMETER Tool
+        Tool name.
+    .PARAMETER Outcome
+        One Invoke-DFManagerBatch result.
+    .PARAMETER Manager
+        The manager's name.
+    .PARAMETER Success
+        The Result for exit code 0 (Updated, Removed).
+    .OUTPUTS
+        PSCustomObject: Tool, Result, Detail.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([string]$Tool, [pscustomobject]$Outcome, [string]$Manager, [string]$Success)
+    switch ($Outcome.ExitCode) {
+        0 { [pscustomobject]@{ Tool = $Tool; Result = $Success; Detail = "via $Manager" } }
+        -1 { [pscustomobject]@{ Tool = $Tool; Result = 'Skipped'; Detail = $Outcome.Output } }
+        default {
+            $tail = @("$($Outcome.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
+            [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = "$Manager failed: $tail" }
+        }
+    }
+}
