@@ -61,6 +61,8 @@ function Register-DFTool {
         [Parameter(Mandatory, Position = 0)][string[]]$Name,
         [string]$ToolsPath
     )
+    if ($ToolsPath) { $ToolsPath = ConvertTo-DFPath $ToolsPath }
+
     # An old-style global $DFConfig is no longer read; say so instead of silently
     # dropping its settings (some of them, like SkipSetup, are protections).
     Assert-DFSessionConfigured

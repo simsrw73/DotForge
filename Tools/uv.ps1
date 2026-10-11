@@ -40,8 +40,11 @@ function global:Select-UvVenv {
         Get-ChildItem -LiteralPath $root -Recurse -Depth 4 -Filter 'pyvenv.cfg' -File -Force -ErrorAction Ignore | ForEach-Object FullName
     } -Preview $preview -Header 'Select Python venv  [Enter to activate it]' -Action {
         param($cfg)
-        $activate = Join-Path (Split-Path $cfg) $(if ($IsWindows) { 'Scripts' } else { 'bin' }) 'Activate.ps1'
-        if (Test-Path -LiteralPath $activate) { & $activate }
+        $activateDir = Join-Path (Split-Path $cfg) $(if ($IsWindows) { 'Scripts' } else { 'bin' })
+        # Linux venvs name it activate.ps1; match either case.
+        $activate = (Get-ChildItem -LiteralPath $activateDir -File -Force -ErrorAction Ignore |
+            Where-Object Name -ieq 'activate.ps1' | Select-Object -First 1)?.FullName
+        if ($activate) { & $activate }
         else { Write-Warning "DotForge: $(Split-Path $cfg) has no Activate.ps1." }
     }
 }

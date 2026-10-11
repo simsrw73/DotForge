@@ -169,6 +169,20 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Variable CompanionLoaded -Scope Global -ErrorAction Ignore
     }
 
+    It 'dot-sources a companion through a ToolsPath containing ..' {
+        Mock Get-Command { [PSCustomObject]@{ Path = 'C:\fake\testtool.exe' } }
+        $subdir = Join-Path $script:TmpTools 'sub'
+        New-Item -ItemType Directory -Force -Path $subdir | Out-Null
+        '$global:CompanionLoaded = $true' |
+            Set-Content (Join-Path $script:TmpTools 'testtool.ps1')
+        $toolsPathWithParent = Join-Path $subdir '..'
+
+        Register-DFTool -Name 'testtool' -ToolsPath $toolsPathWithParent
+
+        $Global:CompanionLoaded | Should -BeTrue
+        Remove-Variable CompanionLoaded -Scope Global -ErrorAction Ignore
+    }
+
     It 'warns and keeps registering later tools when one tool''s companion throws, even under ErrorActionPreference Stop' {
         '{ "name": "aaa-broken", "executable": "broken.exe", "aliases": {} }' |
             Set-Content (Join-Path $script:TmpTools 'aaa-broken.json')

@@ -189,10 +189,12 @@ Describe 'New-DFShim' {
     }
 
     It 'expands a ~ in ShimsPath to $HOME' {
-        $shim = Join-Path $HOME '.local' 'bin' 'dftilde.cmd'
-        try {
-            New-DFShim -Name 'dftilde' -Target $script:FakeExe -ShimsPath '~/.local/bin' 3>$null
-            Test-Path $shim | Should -BeTrue
-        } finally { Remove-Item $shim -ErrorAction Ignore }
+        $expected = Join-Path $HOME '.local' 'bin'
+        Mock New-DFDirectory {}
+
+        New-DFShim -Name 'dftilde' -Target $script:FakeExe -ShimsPath '~/.local/bin' -WhatIf 3>$null
+
+        Should -Invoke New-DFDirectory -Times 1 -ParameterFilter { $Path -eq $expected }
+        Test-Path (Join-Path $expected 'dftilde.cmd') | Should -BeFalse
     }
 }

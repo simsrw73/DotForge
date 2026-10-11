@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: c465ec57faf5dfd271e831d27624e4f50a8e390a2bb2612e064ca85d504f9df9
+# sources-sha256: 88083389ac511cf37ddf7b74aa4e0b43da49dae30dd076791d6fce70786251c1
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -6938,6 +6938,8 @@ function Register-DFTool {
         [Parameter(Mandatory, Position = 0)][string[]]$Name,
         [string]$ToolsPath
     )
+    if ($ToolsPath) { $ToolsPath = ConvertTo-DFPath $ToolsPath }
+
     # An old-style global $DFConfig is no longer read; say so instead of silently
     # dropping its settings (some of them, like SkipSetup, are protections).
     Assert-DFSessionConfigured

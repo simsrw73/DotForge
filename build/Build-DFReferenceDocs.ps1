@@ -289,7 +289,8 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
     if ($req) { & $add 'Requires' ((@($req) | ForEach-Object { & $code $_ }) -join ', ') }
     $deps = & $prop $Tool 'after'
     if ($deps) { & $add 'Registers after' ((@($deps) | ForEach-Object { & $code $_ }) -join ', ') }
-    $seed = (& $prop $Tool 'setup')?.PSObject.Properties['seed']?.Value
+    $setup = & $prop $Tool 'setup'
+    $seed = if ($setup) { $setup.PSObject.Properties['seed']?.Value }
     if ($seed) { & $add 'Seeds once' ((@($seed.PSObject.Properties.Name) | ForEach-Object { & $code $_ }) -join '<br>') }
     $roles = & $prop $Tool 'roles'
     $roleNames = @(if ($roles) { $roles.PSObject.Properties.Name })

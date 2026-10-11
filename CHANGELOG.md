@@ -49,6 +49,11 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`fvenv` found no `activate.ps1` on Linux:** venvs there name it in lowercase; the picker now matches
+  either case.
+- **`Register-DFTool -ToolsPath` with a `..` in it** is resolved once, before the tool records are read.
+- **The reference-docs build printed `Cannot index into a null array` about 55 times;** output was unchanged.
+- **A `New-DFShim` test wrote `~/.local/bin/dftilde.cmd` into the real home folder;** it no longer writes there.
 - **Installing PowerShell modules through PSResourceGet passed the module names as `-TrustRepository`:**
   any argument equal to `true` matched the `{id}` placeholder (PowerShell compares `$true -eq '{id}'` as
   true). Only a text argument that is exactly `{id}` is replaced now.
