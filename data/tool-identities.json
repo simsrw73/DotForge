@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-09-06",
+  "updated": "2026-10-11",
   "tools": {
     "bat": {
       "packages": {
@@ -216,6 +216,12 @@
     "moor": {
       "packages": {
         "scoop": "moor"
+      },
+      "linkedVia": "curated"
+    },
+    "nano": {
+      "packages": {
+        "scoop": "nano"
       },
       "linkedVia": "curated"
     },

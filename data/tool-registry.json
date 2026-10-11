@@ -1738,6 +1738,42 @@
         "install": null
       }
     },
+    "nano": {
+      "sha256": "76e4edf11949dbd2e7f9e4252870636aa0105f179ab9586b9d3b5fde791c7394",
+      "record": {
+        "name": "nano",
+        "executable": "nano.exe",
+        "type": "exe",
+        "description": "Small, simple terminal text editor (GNU nano)",
+        "tags": [
+          "editor",
+          "text"
+        ],
+        "packages": {
+          "scoop": "nano"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": "nano 2.9 and later read $XDG_CONFIG_HOME/nano/nanorc on their own. NANORC is not a variable nano reads.",
+          "compliance": "full"
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "installs": null,
+        "install": null
+      }
+    },
     "node": {
       "sha256": "d584c20462b1ece43d2da9d83d2e911750c4e32594fa66f990ec90f07af2d81d",
       "record": {

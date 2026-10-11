@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-59**.
+git history, not here. IDs are never reused; the next free one is **T-60**.
 
 ## Priority 1 — Release Readiness
 
@@ -11,12 +11,12 @@ git history, not here. IDs are never reused; the next free one is **T-59**.
 
 ## Priority 2 — Open Problems
 
-- [ ] **T-3 Legacy profile fold-in is incomplete** — see [the design spec](docs/superpowers/specs/2026-07-15-legacy-profile-fold-in-design.md). `cli_tools_config.ps1` is no longer dot-sourced, so whatever isn't folded in is inactive: 12 fzf pickers (spec §3), small functions, and 6 tools with no record.
 - [ ] **T-4 5 tools lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`).
 - [ ] **T-5 Seed default configs for ripgrep and wget** — use `setup.seed`: `ripgrep` needs `RIPGREP_CONFIG_PATH` and a seeded `ripgreprc`; `wget` needs `WGETRC` and an empty file.
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (b) exercise a sidecar load through a `..`-bearing `-ToolsPath` in the `Register-DFTool` test; (c) resolve `$ToolsPath` once before `Import-DFToolDb` in `Register-DFTool`; (d) tests use `C:\` literals, so macOS/Linux stays unverified.
+- [ ] **T-59 `New-DFShim` test writes to the real home folder** — `tests/New-DFShim.Tests.ps1` ('expands a ~ in ShimsPath to $HOME') creates `~/.local/bin/dftilde.cmd` for real; a concurrent run failed on it once (2026-10-11). Check the expansion without writing there.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
 ## Priority 2 — Architecture Backlog

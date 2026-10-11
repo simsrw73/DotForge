@@ -1,0 +1,19 @@
+{
+  "name": "nano",
+  "description": "Small, simple terminal text editor (GNU nano)",
+  "tags": [
+    "editor",
+    "text"
+  ],
+  "executable": "nano.exe",
+  "packages": {
+    "scoop": "nano"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "default",
+    "instructions": "nano 2.9 and later read $XDG_CONFIG_HOME/nano/nanorc on their own. NANORC is not a variable nano reads."
+  },
+  "aliases": {},
+  "picker": null
+}

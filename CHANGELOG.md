@@ -16,6 +16,15 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Eleven fuzzy pickers from the old profile, reviewed rather than copied:** `fjq` (a live jq
+  playground), `fgl` (Markdown in glow), `fvenv` (activate a Python venv), `fns` (run a `package.json`
+  script with the project's own manager), `fbw` (copy a Bitwarden password, cleared after 30 s), `czf`
+  (edit a chezmoi file, from any folder), `frtc` (rustup default toolchain), `fdc` and `fdi` (docker
+  containers and images), `fpr` and `fgi` (GitHub pull requests and issues). Each is defined when its
+  tool is registered; see the tools guide.
+- **A tool record may declare several pickers:** `picker` takes a list of declarative objects.
+- **nano:** a tool record. nano finds `$XDG_CONFIG_HOME/nano/nanorc` on its own.
+- **A picker with nothing to list says "Nothing to pick from."** instead of opening an empty fzf.
 - **`Remove-DFTool`:** removes a tool's package through the manager it came from, then lists what is
   left: config files DotForge seeded, changes its one-time setup recorded, and its entry in your `Tools`.
   A tool another active tool requires is refused unless you pass `-Force` or name the dependents too

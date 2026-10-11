@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: dd05d4135166e508f3693e12a87aee6fa31d8e75f0b10e15eec64ba80489d692
+# sources-sha256: e90b1ddda6d1b0c39dc960194520298dbf2467be35205cfecc40439d9d98b28f
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -706,7 +706,21 @@ function ConvertTo-DFRoleMap {
 function ConvertTo-DFPickerBlock {
     <#
     .SYNOPSIS
-        Normalizes a declarative picker object; null and "custom" pass through.
+        Normalizes declarative pickers (one object or a list) to a list; null and "custom" pass through.
+    .PARAMETER RawPicker
+        See the synopsis.
+    #>
+    param($RawPicker)
+
+    if ($null -eq $RawPicker -or $RawPicker -is [string]) { return $RawPicker }
+    # The comma keeps a one-element list from unrolling into its element.
+    , [object[]]@(foreach ($picker in @($RawPicker)) { ConvertTo-DFPickerEntry $picker })
+}
+
+function ConvertTo-DFPickerEntry {
+    <#
+    .SYNOPSIS
+        Normalizes one declarative picker object: every field exists, with its default.
     .PARAMETER RawPicker
         See the synopsis.
     #>
@@ -1354,35 +1368,49 @@ function Get-DFPickerSchemaError ([PSCustomObject]$Tool) {
     .SYNOPSIS
         Schema errors in picker, including action and parse code that does not compile.
     #>
-    # picker: null, "custom" (the companion defines its own), or a declarative object.
-    $picker = Get-DFSchemaProperty $Tool 'picker'
-    if ($picker -is [string] -and $picker -ne 'custom') {
-        "picker must be null, ""custom"" or an object (got ""$picker"")"
-    } elseif ($null -ne $picker -and $picker -isnot [string]) {
-        if ($picker -isnot [pscustomobject]) {
-            'picker must be null, "custom" or an object'
-        } else {
-            foreach ($req in 'function', 'list') {
-                $v = Get-DFSchemaProperty $picker $req
-                if ($v -isnot [string] -or -not $v) { "picker.$req is required (a string)" }
-            }
-            foreach ($b in 'ansi', 'list_accepts_path') {
-                $v = Get-DFSchemaProperty $picker $b
-                if ($null -ne $v -and $v -isnot [bool]) { "picker.$b must be a boolean (true/false, not a string)" }
-            }
-            # These become scriptblocks when the picker is built; catch a syntax error
-            # here, at load, instead of when the profile runs.
-            $action = Get-DFSchemaProperty $picker 'action'
-            if ($action -is [string] -and $action -and $action -ne 'output') {
-                try { $null = [scriptblock]::Create('param($v) ' + $action.Replace('{}', '$v')) }
-                catch { "picker.action is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
-            }
-            $parse = Get-DFSchemaProperty $picker 'parse'
-            if ($parse -is [string] -and $parse) {
-                try { $null = [scriptblock]::Create($parse) }
-                catch { "picker.parse is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
-            }
-        }
+    # picker: null, "custom" (the companion defines its own), a declarative object, or a list of them.
+    # Read directly: a function's output would unroll a one-element list into its object.
+    $picker = $Tool.PSObject.Properties['picker']?.Value
+    if ($null -eq $picker) { return }
+    $shape = 'picker must be null, "custom", an object or a list of objects'
+    if ($picker -is [string]) {
+        if ($picker -ne 'custom') { "$shape (got ""$picker"")" }
+        return
+    }
+    $isList = $picker -is [System.Collections.IList]
+    if (-not $isList -and $picker -isnot [pscustomobject]) { return $shape }
+    $entries = @($picker)
+    for ($n = 0; $n -lt $entries.Count; $n++) {
+        $prefix = if ($isList) { "picker[$n]" } else { 'picker' }
+        if ($entries[$n] -isnot [pscustomobject]) { "$prefix must be an object"; continue }
+        Get-DFPickerEntryError -Picker $entries[$n] -Prefix $prefix
+    }
+}
+
+function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
+    <#
+    .SYNOPSIS
+        Schema errors in one declarative picker, each starting with Prefix (picker or picker[n]).
+    #>
+    foreach ($req in 'function', 'list') {
+        $v = Get-DFSchemaProperty $Picker $req
+        if ($v -isnot [string] -or -not $v) { "$Prefix.$req is required (a string)" }
+    }
+    foreach ($b in 'ansi', 'list_accepts_path') {
+        $v = Get-DFSchemaProperty $Picker $b
+        if ($null -ne $v -and $v -isnot [bool]) { "$Prefix.$b must be a boolean (true/false, not a string)" }
+    }
+    # These become scriptblocks when the picker is built; catch a syntax error
+    # here, at load, instead of when the profile runs.
+    $action = Get-DFSchemaProperty $Picker 'action'
+    if ($action -is [string] -and $action -and $action -ne 'output') {
+        try { $null = [scriptblock]::Create('param($v) ' + $action.Replace('{}', '$v')) }
+        catch { "$Prefix.action is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
+    }
+    $parse = Get-DFSchemaProperty $Picker 'parse'
+    if ($parse -is [string] -and $parse) {
+        try { $null = [scriptblock]::Create($parse) }
+        catch { "$Prefix.parse is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
     }
 }
 
@@ -1410,7 +1438,14 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))
+    $picker = $Tool.PSObject.Properties['picker']?.Value
     if ($picker -is [pscustomobject]) { $sections.Add(@('picker', $picker, 'picker.')) }
+    elseif ($picker -is [System.Collections.IList]) {
+        $entries = @($picker)
+        for ($n = 0; $n -lt $entries.Count; $n++) {
+            if ($entries[$n] -is [pscustomobject]) { $sections.Add(@('picker', $entries[$n], "picker[$n].")) }
+        }
+    }
     $xdg = Get-DFSchemaProperty $Tool 'xdg'
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = Get-DFSchemaProperty $Tool 'setup'
@@ -4136,17 +4171,18 @@ function New-DFInstallPlan {
 function New-DFToolPickerFunction {
     <#
     .SYNOPSIS
-        Builds and installs one tool's declarative fzf picker as a global
-        function (and alias, if declared).
+        Builds and installs a tool's declarative fzf pickers as global
+        functions (and aliases, where declared).
     .DESCRIPTION
-        Reads $Tool.picker (a normalized record from ConvertTo-DFToolRecord)
-        and defines a global function that calls Invoke-DFPicker with it.
+        Reads $Tool.picker (one object, or a list of them, as a normalized
+        record has) and defines, for each, a global function that calls
+        Invoke-DFPicker with it.
         When picker.list_accepts_path is true, the function takes a -Path
         parameter (default '.') appended to the list command. Quoted arguments
-        in the list command are supported. No-ops when $Tool has no object
-        picker, or the picker lacks a function/list pair.
+        in the list command are supported. Skips a null or "custom" picker,
+        and a picker that lacks a function/list pair.
     .PARAMETER Tool
-        The normalized tool record declaring the picker.
+        The normalized tool record declaring the pickers.
     .OUTPUTS
         None
     #>
@@ -4156,8 +4192,26 @@ function New-DFToolPickerFunction {
         [PSCustomObject]$Tool
     )
 
-    $picker = $Tool.picker
-    if ($picker -isnot [PSCustomObject] -or -not ($picker.function -and $picker.list)) { return }
+    if ($Tool.picker -is [string]) { return }
+    foreach ($picker in @($Tool.picker)) {
+        if ($picker -is [PSCustomObject] -and $picker.function -and $picker.list) { Set-DFPickerFunction -Picker $picker }
+    }
+}
+
+function Set-DFPickerFunction {
+    <#
+    .SYNOPSIS
+        Defines one declarative picker's global function, and its alias if declared.
+    .PARAMETER Picker
+        One declarative picker object (function and list set).
+    .OUTPUTS
+        None
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][PSCustomObject]$Picker)
+
+    # A fresh scope per picker, so each function's closure captures its own values.
+    $picker = $Picker
 
     # Everything except the list source is the same for both shapes, so the
     # Invoke-DFPicker call is built once. GetNewClosure captures these locals.
@@ -5856,8 +5910,8 @@ function Get-DFCommandConflict {
                 $owned.AddRange([string[]]@($role.Value.aliases.PSObject.Properties.Name))
             }
         }
-        if ($tool.picker -is [PSCustomObject] -and $tool.picker.alias) {
-            $owned.Add([string]$tool.picker.alias)
+        foreach ($picker in @($tool.picker)) {
+            if ($picker -is [PSCustomObject] -and $picker.alias) { $owned.Add([string]$picker.alias) }
         }
     }
 
@@ -6442,6 +6496,7 @@ function Invoke-DFPicker {
     if ($FzfArgs)   { $pickerArgs.AddRange([string[]]$FzfArgs) }
 
     $items = @(& $List)
+    if (-not $items.Count) { Write-Host 'Nothing to pick from.'; return }
     $selected = Invoke-DFFzf -InputItems $items -FzfArgs $pickerArgs
     if (-not $selected) { return }
 

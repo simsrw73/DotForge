@@ -36,6 +36,11 @@ Describe 'posh-git pickers' {
             @{ Line = '?? new file.txt';          Path = 'new file.txt' }
             @{ Line = 'R  old.ps1 -> renamed.ps1'; Path = 'renamed.ps1' }
         ) {
+            $script:statusLine = $Line
+            Mock git {
+                if ($args[0] -eq 'status') { $script:statusLine }
+                elseif ($args[0] -eq 'add') { $script:added.Add($args[1]) }
+            }
             Mock Invoke-DFFzf { $Line }
             Select-GitFile | Out-Null
             $script:added | Should -Be @($Path)

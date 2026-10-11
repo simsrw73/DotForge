@@ -22,7 +22,7 @@ function global:Select-NpmScript {
     .OUTPUTS
         The script's output.
     .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     param()

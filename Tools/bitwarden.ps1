@@ -30,7 +30,7 @@ function global:Select-BwItem {
     .OUTPUTS
         None. The password goes to the clipboard only.
     .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     param([ValidateSet('login', 'note', 'card', 'identity', 'all')][string]$Type = 'all')

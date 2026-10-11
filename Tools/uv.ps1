@@ -28,7 +28,7 @@ function global:Select-UvVenv {
     .OUTPUTS
         None.
     .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     param([Parameter(Position = 0)][string]$Path = '.')

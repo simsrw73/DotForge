@@ -138,6 +138,10 @@
     "function": ["editor"], "worksWith": ["text", "code"], "interface": "tui",
     "ids": { "scoop": "micro" }, "popularity": 1
   },
+  "nano": {
+    "function": ["editor"], "worksWith": ["text"], "interface": "tui",
+    "ids": { "scoop": "nano" }, "popularity": 1
+  },
   "mise": {
     "function": ["shell-enhancement", "task-runner", "package-manager"], "worksWith": ["environment-vars", "binaries"],
     "interface": "cli", "ids": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },

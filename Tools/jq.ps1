@@ -32,7 +32,7 @@ function global:Select-JsonPath {
     .OUTPUTS
         System.String. jq's output for the chosen filter.
     .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
     [OutputType([string])]

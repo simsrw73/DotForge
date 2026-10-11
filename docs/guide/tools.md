@@ -56,7 +56,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Containers | docker |
 | Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
 | Prompt | oh-my-posh, starship |
-| Editor | micro |
+| Editor | micro, nano |
 | Fuzzy finding and navigation | fzf, zoxide |
 | Pager | moor, ov, less (one sets `PAGER`; see below) |
 | Package managers | choco, npm, scoop, winget |
@@ -68,22 +68,29 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Tool | Commands and keys |
 | --- | --- |
 | bat | `cat` → `bat -pp` |
-| chezmoi | `cz` |
+| bitwarden | `fbw` picks a vault item and copies its password, clearing the clipboard after 30 s |
+| chezmoi | `cz`; `czf` picks a managed file and runs `chezmoi edit` on it |
 | choco | `cins`, `crm`, `cup` pickers; `Ctrl+G` `C` |
+| docker | `fdc` opens a shell in a running container; `fdi` outputs an image's `repo:tag` |
 | eza | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role); `ff` file picker |
 | fd | `ffd` file picker |
 | fnm | `cd` also switches Node versions |
+| gh | `fpr` checks out a pull request; `fgi` opens an issue in the browser (both preview it) |
+| glow | `fgl` picks a Markdown file and reads it in glow |
 | gsudo | `sudo` → gsudo; `please` re-runs the last command elevated |
+| jq | `fjq` live jq playground: type a filter, see its output, Enter runs it |
 | lazygit | `lg` |
 | lsd | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role; see [roles](configuration.md#choose-a-tool-for-each-role)) |
-| npm | `nls` → `npm list -g --depth=0` |
+| npm | `nls` → `npm list -g --depth=0`; `fns` runs a `package.json` script with the project's manager |
 | oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |
 | procs | `fkill` process picker |
 | PSFzf | `Ctrl+T` (insert a path), `Ctrl+R` (history), `Alt+C` (change folder), fuzzy Tab |
 | psreadline | `fprl` color theme picker; `Ctrl+P` / `Ctrl+N` history search |
 | ripgrep | `frg` search-and-open picker |
+| rustup | `frtc` picks the default toolchain |
 | scoop | `sins`, `srm`, `sup` pickers; `Ctrl+G` `S` |
+| uv | `fvenv` activates a Python venv below the current folder |
 | vivid | `fls` directory-color theme picker |
 | winget | `wins`, `wrm`, `wup` pickers; `Ctrl+G` `W` |
 | zoxide | `cd` jumps to frequent folders, `cdi` picks one; `fzo` folder picker |

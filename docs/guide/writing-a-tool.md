@@ -60,7 +60,7 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 | `xdg` | | How the tool's files move to XDG folders; see below. |
 | `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
-| `picker` | | A declarative fzf picker; see below. |
+| `picker` | | A declarative fzf picker, or a list of them; see below. |
 | `after` | | Tools (`"zoxide"`) or roles (`"role:version-manager"`) this one is registered after, when both are requested. Ordering only: it requests nothing. |
 | `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members; it never picks a member for the user, and never blocks. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
@@ -81,6 +81,8 @@ To add the tool to DotForge for real, put the file in the repository's `Tools\` 
 Non-path values (flags, theme names) belong in `env`, not `xdg.vars`.
 
 ### `picker`
+
+An object describes one picker; a list of objects (`"picker": [ { … }, { … } ]`) gives the tool several, as docker's `fdc` and `fdi`. A picker that needs more than these fields lives in the companion `.ps1`, calls `Invoke-DFPicker`, and the record says `"picker": "custom"`.
 
 | Field | Meaning |
 | --- | --- |

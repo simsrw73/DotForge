@@ -99,7 +99,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -109,6 +109,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 | Command | Alias | Tool | Summary |
 | --- | --- | --- | --- |
+| [Select-BwItem](#select-bwitem) | `fbw` | bitwarden | Fuzzy-picks a Bitwarden vault item and copies its password, clearing the clipboard after 30 seconds. |
 | [Assert-DFChoco](#assert-dfchoco) |  | choco | Returns $true when choco is on PATH; otherwise warns and returns $false. |
 | [Invoke-ChocoUpdate](#invoke-chocoupdate) | `cup` | choco | Fuzzy-picks outdated Chocolatey packages and upgrades them. |
 | [Invoke-DFChocoElevated](#invoke-dfchocoelevated) |  | choco | Runs choco with the given arguments, elevated through gsudo when available. |
@@ -118,9 +119,12 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Set-LocationWithFnm](#set-locationwithfnm) |  | fnm | Changes directory (through zoxide when it is registered) and switches Node versions for the new directory. |
 | [Invoke-DFApplyFzfTheme](#invoke-dfapplyfzftheme) |  | fzf | Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS. |
 | [glow](#glow) |  | glow | Runs glow with DotForge's config file and the current session style. |
+| [Read-MarkdownFile](#read-markdownfile) | `fgl` | glow | Fuzzy-picks a Markdown file below a folder and reads it in glow's pager. |
 | [Resolve-DFGlowStyle](#resolve-dfglowstyle) |  | glow | Resolves a glow style name to the value handed to glow's -s flag. |
 | [please](#please) |  | gsudo | Re-runs the previous command elevated, through gsudo. |
 | [Start-DFInshellisense](#start-dfinshellisense) |  | inshellisense | Starts an inshellisense session in this shell unless one is already running. |
+| [Select-JsonPath](#select-jsonpath) | `fjq` | jq | A live jq playground: type a filter in fzf, watch its output, and press Enter to run it. |
+| [Select-NpmScript](#select-npmscript) | `fns` | npm | Fuzzy-picks a script from the nearest package.json and runs it with the project's package manager. |
 | [Select-PoshTheme](#select-poshtheme) | `fpot` | oh-my-posh | Fuzzy-picks an oh-my-posh theme with a live prompt preview and applies it to this session. |
 | [Select-GitBranch](#select-gitbranch) | `fco` | posh-git | Fuzzy-picks a git branch, local or remote, and checks it out. |
 | [Select-GitFile](#select-gitfile) | `fga` | posh-git | Fuzzy-picks changed files and stages them with git add. |
@@ -134,6 +138,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-ScoopUpdate](#invoke-scoopupdate) | `sup` | scoop | Fuzzy-picks installed scoop apps and updates them. |
 | [Remove-ScoopPackage](#remove-scooppackage) | `srm` | scoop | Fuzzy-picks an installed scoop app and uninstalls it. |
 | [Select-ScoopPackage](#select-scooppackage) | `sins` | scoop | Searches scoop buckets, fuzzy-picks an app, and returns or runs its install command. |
+| [Select-UvVenv](#select-uvvenv) | `fvenv` | uv | Fuzzy-picks a Python virtual environment below a folder and activates it. |
 | [Invoke-DFApplyLSColorsTheme](#invoke-dfapplylscolorstheme) |  | vivid | Resolves and applies an LS_COLORS value for the named vivid theme. |
 | [Select-LSColorsTheme](#select-lscolorstheme) | `fls` | vivid | Fuzzy-picks a vivid LS_COLORS theme with a live preview and applies it to this session. |
 | [Assert-DFWingetModule](#assert-dfwingetmodule) |  | winget | Returns $true when the Microsoft.WinGet.Client module is available; otherwise warns and returns $false. |
@@ -2445,6 +2450,8 @@ Bitwarden CLI — open-source password manager
 | Tags | `security`, `secrets`, `password` |
 | Install ids | scoop: `bitwarden-cli`<br>winget: `Bitwarden.CLI` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
+| Companion | [`Tools/bitwarden.ps1`](#bitwarden-companion) |
 
 ### broot tool
 
@@ -2508,6 +2515,7 @@ Manage your dotfiles across multiple diverse machines
 | XDG variables | `CHEZMOI_CONFIG_DIR` = `${XDG_CONFIG_HOME}/chezmoi` |
 | Creates | `${XDG_CONFIG_HOME}/chezmoi` |
 | Aliases | `cz` → `chezmoi` |
+| Picker | `czf` (Edit-DotFile): lists `chezmoi managed --path-style absolute --include files`; Enter runs `chezmoi edit {}` |
 
 ### choco tool
 
@@ -2518,6 +2526,7 @@ Chocolatey — Windows package manager
 | Detected by | `choco.exe` |
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Registers after | `gsudo` |
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/choco.ps1`](#choco-companion) |
@@ -2575,6 +2584,7 @@ Container runtime and management
 | XDG method | `env` |
 | XDG variables | `DOCKER_CONFIG` = `${XDG_CONFIG_HOME}/docker` |
 | Creates | `${XDG_CONFIG_HOME}/docker` |
+| Pickers | `fdc` (Select-DockerContainer): lists `docker ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}'`; Enter runs `docker exec -it {} sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'`<br>`fdi` (Select-DockerImage): lists `docker images --format '{{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}'`; Enter outputs the selection |
 
 ### eza tool
 
@@ -2658,6 +2668,7 @@ GitHub CLI
 | Tags | `git`, `github`, `dev` |
 | Install ids | scoop: `gh`<br>winget: `GitHub.cli`<br>choco: `gh` |
 | XDG method | `default` |
+| Pickers | `fpr` (Select-GHPr): lists `gh pr list --json number,title,author | ConvertFrom-Json | ForEach-Object { "$($_.number)'t$($_.title) ($($_.author.login))" }`; Enter runs `gh pr checkout {}`<br>`fgi` (Select-GHIssue): lists `gh issue list --json number,title | ConvertFrom-Json | ForEach-Object { "$($_.number)'t$($_.title)" }`; Enter runs `gh issue view {} --web` |
 
 ### glow tool
 
@@ -2669,6 +2680,7 @@ Render Markdown on the CLI
 | Tags | `markdown`, `viewer`, `text` |
 | Install ids | scoop: `glow`<br>choco: `glow` |
 | XDG method | `wrapper` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | [`Tools/glow.ps1`](#glow-companion) |
 
@@ -2710,6 +2722,8 @@ Command-line JSON processor
 | Tags | `json`, `data`, `text` |
 | Install ids | scoop: `jq`<br>winget: `jqlang.jq`<br>choco: `jq` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
+| Companion | [`Tools/jq.ps1`](#jq-companion) |
 
 ### lazygit tool
 
@@ -2826,6 +2840,17 @@ Pager that does the right thing without configuration (formerly moar)
 | Sets, as the pager tool | `PAGER` = `moor` |
 | Companion | `Tools/moor.ps1` |
 
+### nano tool
+
+Small, simple terminal text editor (GNU nano)
+
+| | |
+| --- | --- |
+| Detected by | `nano.exe` |
+| Tags | `editor`, `text` |
+| Install ids | scoop: `nano` |
+| XDG method | `default` |
+
 ### node tool
 
 Node.js JavaScript runtime
@@ -2850,8 +2875,10 @@ Node.js package manager
 | XDG variables | `NPM_CONFIG_USERCONFIG` = `${XDG_CONFIG_HOME}/npm/npmrc`<br>`NODE_REPL_HISTORY` = `${XDG_DATA_HOME}/node_repl_history` |
 | Creates | `${XDG_CONFIG_HOME}/npm` |
 | Aliases | `nls` → `npm list -g --depth=0` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Requires | `node` |
 | Roles | [`js-package-manager`](#js-package-manager-role) |
+| Companion | [`Tools/npm.ps1`](#npm-companion) |
 
 ### oh-my-posh tool
 
@@ -2865,6 +2892,7 @@ Cross-shell prompt theme engine with hundreds of built-in themes
 | XDG method | `env` |
 | XDG variables | `POSH_THEMES_PATH` = `${XDG_DATA_HOME}/oh-my-posh/themes` |
 | Creates | `${XDG_DATA_HOME}/oh-my-posh/themes`<br>`${XDG_CONFIG_HOME}/oh-my-posh` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`prompt`](#prompt-role) |
 | Companion | [`Tools/oh-my-posh.ps1`](#oh-my-posh-companion) |
 
@@ -2926,6 +2954,7 @@ Git status summary in the PowerShell prompt with tab completion for git commands
 | Tags | `git`, `prompt`, `module` |
 | Install ids | psgallery: `posh-git`<br>scoop: `posh-git` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/posh-git.ps1`](#posh-git-companion) |
 
 ### procs tool
@@ -2938,6 +2967,7 @@ Modern replacement for ps
 | Tags | `system`, `process`, `monitor` |
 | Install ids | scoop: `procs`<br>choco: `procs` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/procs.ps1`](#procs-companion) |
 
 ### ps-dotenv tool
@@ -2978,6 +3008,7 @@ Enhanced command-line editing and syntax highlighting for PowerShell
 | Tags | `readline`, `completion`, `theme`, `module` |
 | XDG method | `env` |
 | Creates | `${XDG_STATE_HOME}/psreadline` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`completion`](#completion-role) |
 | Companion | [`Tools/psreadline.ps1`](#psreadline-companion) |
 
@@ -3026,6 +3057,7 @@ Recursively search directories for a regex pattern, respecting gitignore
 | XDG method | `env` |
 | XDG variables | `RIPGREP_CONFIG_PATH` = `${XDG_CONFIG_HOME}/ripgrep/ripgreprc` |
 | Creates | `${XDG_CONFIG_HOME}/ripgrep` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`grep`](#grep-role) |
 | Companion | [`Tools/ripgrep.ps1`](#ripgrep-companion) |
 
@@ -3041,6 +3073,7 @@ Rust toolchain installer and version manager
 | XDG method | `env` |
 | XDG variables | `RUSTUP_HOME` = `${XDG_DATA_HOME}/rustup`<br>`CARGO_HOME` = `${XDG_DATA_HOME}/cargo` |
 | Creates | `${XDG_DATA_HOME}/rustup`<br>`${XDG_DATA_HOME}/cargo` |
+| Picker | `frtc` (Select-RustupToolchain): lists `rustup toolchain list`; Enter runs `rustup default {}` |
 | Roles | [`version-manager`](#version-manager-role) |
 | Companion | `Tools/rustup.ps1` |
 
@@ -3053,6 +3086,7 @@ Windows command-line installer
 | Detected by | `scoop.cmd` |
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/scoop.ps1`](#scoop-companion) |
 
@@ -3095,7 +3129,9 @@ Extremely fast Python package and project manager
 | XDG method | `env` |
 | XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv`<br>`UV_DATA_DIR` = `${XDG_DATA_HOME}/uv` |
 | Creates | `${XDG_CACHE_HOME}/uv`<br>`${XDG_DATA_HOME}/uv` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`python-package-manager`](#python-package-manager-role), [`version-manager`](#version-manager-role) |
+| Companion | [`Tools/uv.ps1`](#uv-companion) |
 
 ### vcpkg tool
 
@@ -3121,6 +3157,7 @@ Themeable LS_COLORS generator
 | Tags | `color`, `theme`, `listing` |
 | Install ids | scoop: `vivid`<br>winget: `sharkdp.vivid` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/vivid.ps1`](#vivid-companion) |
 
 ### wget tool
@@ -3146,6 +3183,7 @@ Windows Package Manager — install, upgrade, and configure applications
 | Detected by | `winget.exe` |
 | Tags | `package-manager`, `windows` |
 | XDG method | `default` |
+| Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/winget.ps1`](#winget-companion) |
 
@@ -3168,6 +3206,36 @@ Smarter cd that learns your most-used directories
 ## Tool companion functions
 
 These are defined when their tool is registered (`Register-DFTool`), not when the module is imported. Each needs its tool installed.
+
+### bitwarden companion
+
+#### Select-BwItem
+
+Alias: `fbw`
+
+Fuzzy-picks a Bitwarden vault item and copies its password, clearing the clipboard after 30 seconds.
+
+Checks bw status first: a vault that is logged out or locked gets the command to fix it, and nothing is listed. Otherwise lists the vault's items (name and username; no secrets), and Enter copies the chosen item's password to the clipboard. After 30 seconds a background thread job clears the clipboard, but only if it still holds that password, so something you copied since is left alone. An item with no password (a secure note, a card) gets a warning.
+
+Windows clipboard history (Win+V) and clipboard sync may keep their own copy of the password; turn them off if that matters to you.
+
+Defined by DotForge's bitwarden companion. Requires fzf (or $Env:Picker) and an unlocked vault (BW_SESSION set, e.g. $Env:BW_SESSION = bw unlock --raw).
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Type` | string | `'all'` |  |  | List only this kind of item: login, note, card, identity, or all (default). Allowed: login, note, card, identity, all. |
+
+**Outputs:** None. The password goes to the clipboard only.
+
+**Example 1**
+
+```powershell
+fbw -Type login
+```
+
+Picks a login and copies its password for 30 seconds.
+
+**See also:** [tools](guide/tools.md)
 
 ### choco companion
 
@@ -3423,6 +3491,32 @@ Renders piped Markdown.
 
 **See also:** [tools](guide/tools.md)
 
+#### Read-MarkdownFile
+
+Alias: `fgl`
+
+Fuzzy-picks a Markdown file below a folder and reads it in glow's pager.
+
+Lists \*.md files below -Path (with fd when it is installed, else Get-ChildItem), previews each rendered in the session's glow style ($global:DFGlowStyle), and opens the chosen one with glow -p.
+
+Defined by DotForge's glow companion. Requires fzf (or $Env:Picker).
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Path` | string | `'.'` |  |  | The folder to search. Default: the current folder. |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+fgl docs
+```
+
+Picks a Markdown file under docs and reads it in glow.
+
+**See also:** [tools](guide/tools.md)
+
 #### Resolve-DFGlowStyle
 
 Resolves a glow style name to the value handed to glow's -s flag.
@@ -3493,6 +3587,70 @@ Start-DFInshellisense
 Starts inshellisense in the current shell.
 
 **See also:** [completion](guide/completion.md)
+
+### jq companion
+
+#### Select-JsonPath
+
+Alias: `fjq`
+
+A live jq playground: type a filter in fzf, watch its output, and press Enter to run it.
+
+Opens fzf on a JSON file with the query box as the jq filter (starting at '.'). The preview shows jq's output for the filter as you type it; Enter runs the filter on the file and writes jq's output to the pipeline. Esc runs nothing.
+
+Without -Path, first picks a \*.json file below the current folder (with fd when it is installed, else Get-ChildItem).
+
+A filter that contains double quotes may not preview correctly, but Enter passes it to jq unchanged.
+
+Defined by DotForge's jq companion. Requires fzf (or $Env:Picker).
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Path` | string |  |  |  | The JSON file. When omitted, you pick one. |
+
+**Outputs:** System.String. jq's output for the chosen filter.
+
+**Example 1**
+
+```powershell
+fjq package.json
+```
+
+Opens the playground on package.json; type .dependencies and press Enter to print them.
+
+**Example 2**
+
+```powershell
+$names = fjq data.json
+```
+
+Captures the output of the filter you settle on.
+
+**See also:** [tools](guide/tools.md)
+
+### npm companion
+
+#### Select-NpmScript
+
+Alias: `fns`
+
+Fuzzy-picks a script from the nearest package.json and runs it with the project's package manager.
+
+Finds package.json in the current folder or the nearest parent, lists its scripts with each one's command line in the preview, and runs the chosen script from the package's folder. The manager is the project's own, judged by the lockfile next to package.json: pnpm for pnpm-lock.yaml, bun for bun.lock or bun.lockb, yarn for yarn.lock, else npm.
+
+Defined by DotForge's npm companion. Requires fzf (or $Env:Picker).
+
+**Outputs:** The script's output.
+
+**Example 1**
+
+```powershell
+fns
+```
+
+Picks a script such as build or test and runs it.
+
+**See also:** [tools](guide/tools.md)
 
 ### oh-my-posh companion
 
@@ -3837,6 +3995,42 @@ sins ripgrep
 ```
 
 Pick ripgrep and press Enter to get: scoop install ripgrep
+
+**See also:** [tools](guide/tools.md)
+
+### uv companion
+
+#### Select-UvVenv
+
+Alias: `fvenv`
+
+Fuzzy-picks a Python virtual environment below a folder and activates it.
+
+Finds pyvenv.cfg files up to 4 levels below -Path (any venv: uv, python -m venv, virtualenv), previews each one (its Python version and how it was made), and runs the chosen venv's Activate.ps1, which sets VIRTUAL_ENV and PATH and defines deactivate.
+
+Defined by DotForge's uv companion. Requires fzf (or $Env:Picker).
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Path` | string | `'.'` |  |  | The folder to search. Default: the current folder, so the venv of the project you are in shows at once; pass ~ to search your whole home folder. |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+fvenv
+```
+
+Picks a venv in the current project and activates it.
+
+**Example 2**
+
+```powershell
+fvenv ~
+```
+
+Searches every venv under your home folder.
 
 **See also:** [tools](guide/tools.md)
 
