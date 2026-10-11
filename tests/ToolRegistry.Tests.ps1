@@ -31,7 +31,7 @@ Describe 'data/tool-registry.json' {
 Describe 'Read-DFToolRecordFile and the registry' {
     BeforeEach { $script:DFToolRegistry = $null }
     It 'uses the registry for an unchanged shipped record, without validating it' {
-        Mock Test-DFToolSchema { $true }
+        Mock Test-DFToolSchema { [pscustomobject]@{ Valid = $true; Errors = [string[]]@(); Warnings = [string[]]@() } }
         $r = Read-DFToolRecordFile -Path (Join-Path $script:Repo 'Tools' 'bat.json')
         $r.name | Should -Be 'bat'
         Should -Invoke Test-DFToolSchema -Times 0
@@ -46,7 +46,7 @@ Describe 'Read-DFToolRecordFile and the registry' {
         $p = Join-Path $TestDrive 'crlf' 'bat.json'
         New-Item -ItemType Directory (Split-Path $p) -Force | Out-Null
         [IO.File]::WriteAllText($p, ((Get-Content (Join-Path $script:Repo 'Tools' 'bat.json') -Raw) -replace '\r?\n', "`r`n"))
-        Mock Test-DFToolSchema { $true }
+        Mock Test-DFToolSchema { [pscustomobject]@{ Valid = $true; Errors = [string[]]@(); Warnings = [string[]]@() } }
         $null = Read-DFToolRecordFile -Path $p
         Should -Invoke Test-DFToolSchema -Times 0
     }

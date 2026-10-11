@@ -3,9 +3,7 @@ BeforeAll {
     foreach ($f in Get-DFTestModuleFile) { . $f }
     function script:Get-Errs([hashtable]$Extra) {
         $t = [pscustomobject](@{ name = 't'; executable = 't.exe' } + $Extra)
-        $errs = @(); $warns = @()
-        $null = Test-DFToolSchema -Tool $t -Errors ([ref]$errs) -Warnings ([ref]$warns)
-        $errs
+        (Test-DFToolSchema -Tool $t).Errors
     }
     $script:Db = Import-DFToolDb -ToolsPath "$PSScriptRoot/../Tools" -Force
 }

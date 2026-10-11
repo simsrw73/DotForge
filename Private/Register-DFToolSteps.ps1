@@ -3,6 +3,153 @@
 # The per-session steps Invoke-DFSessionActivation runs: resolve role winners,
 # register each tool, and report coreutils conflicts.
 
+function Write-DFDefaultsRoleWarning {
+    <#
+    .SYNOPSIS
+        Warns about Defaults entries that name an unknown role or a category (which has no winner).
+    .PARAMETER Defaults
+        The session Defaults hashtable.
+    .PARAMETER RoleDb
+        Role definitions (Get-DFRoleDb).
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][hashtable]$Defaults,
+        [Parameter(Mandatory)][hashtable]$RoleDb
+    )
+    foreach ($roleName in @($Defaults.Keys)) {
+        if (-not $RoleDb.ContainsKey($roleName)) {
+            Write-Warning "DotForge: Defaults['$roleName'] names an unknown role — ignoring. See Get-DFRole for the list."
+        } elseif ($RoleDb[$roleName].kind -eq 'category') {
+            Write-Warning "DotForge: Defaults['$roleName']: '$roleName' is a category, which has no winner — every member is configured. Ignoring."
+        }
+    }
+}
+
+function Get-DFRoleCandidates {
+    <#
+    .SYNOPSIS
+        Builds a mapping of single-kind roles to their candidate tools in the registration set.
+    .PARAMETER Tools
+        The tools being registered in this call.
+    .PARAMETER RoleDb
+        Role definitions (Get-DFRoleDb).
+    .PARAMETER Defaults
+        The session Defaults hashtable (for optIn evaluation).
+    .OUTPUTS
+        System.Collections.Hashtable. Role name -> List[object] of candidate tools.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [AllowEmptyCollection()][object[]]$Tools = @(),
+        [Parameter(Mandatory)][hashtable]$RoleDb,
+        [hashtable]$Defaults = @{}
+    )
+    # One pass over the registration set builds role -> candidates; this runs
+    # at every startup, so it avoids a pipeline per role. Topo-sorting an
+    # empty set can hand back a lone $null, hence the null check.
+    $candidatesByRole = @{}
+    foreach ($tool in $Tools) {
+        if (-not $tool) { continue }
+        $available = $null
+        foreach ($rp in $tool.roles.PSObject.Properties) {
+            $roleName = $rp.Name
+            if (-not $RoleDb.ContainsKey($roleName)) {
+                # Stay quiet when no definitions loaded at all (Get-DFRoleDb already
+                # warned), and for a legacy v1 role string, which was free-form.
+                if ($RoleDb.Count -and -not $rp.Value.legacy) { Write-Warning "DotForge: $($tool.name) declares unknown role '$roleName' — ignored." }
+                continue
+            }
+            if ($RoleDb[$roleName].kind -ne 'single') { continue }
+            # optIn is generic role metadata: an optional member joins the
+            # candidate set only when the user selected it for this role.
+            if ($rp.Value.optIn -and $Defaults[$roleName] -ine $tool.name) { continue }
+            if ($null -eq $available) { $available = Test-DFToolAvailable -Executable $tool.executable -Type $tool.type }
+            if (-not $available) { continue }
+            if (-not $candidatesByRole.ContainsKey($roleName)) { $candidatesByRole[$roleName] = [System.Collections.Generic.List[object]]::new() }
+            $candidatesByRole[$roleName].Add($tool)
+        }
+    }
+    $candidatesByRole
+}
+
+function Select-DFRoleWinner {
+    <#
+    .SYNOPSIS
+        Picks the winner object for one single-kind role among its candidates.
+    .PARAMETER Role
+        The single-kind role name.
+    .PARAMETER Candidates
+        The candidates for this role.
+    .PARAMETER Preferred
+        The tool name the user requested in Defaults for this role, or $null.
+    .PARAMETER ToolDb
+        The tool database (for membership checks of Defaults entries).
+    .OUTPUTS
+        pscustomobject or $null. Role, Winner, Reason, Candidates, Ranked, Preferred.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Role,
+        [AllowEmptyCollection()][object[]]$Candidates = @(),
+        [string]$Preferred,
+        [Parameter(Mandatory)][hashtable]$ToolDb
+    )
+    $winner = $null
+    $reason = $null
+    $chosen = $Preferred
+    if (-not [string]::IsNullOrWhiteSpace($chosen)) {
+        $chosenTool = $ToolDb[$chosen]
+        if (-not $chosenTool) {
+            # A role is only ever filled by a tool the user asked for.
+            Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not requested in Tools — using priority. Add '$chosen' to Tools to use it."
+        } elseif (-not $chosenTool.roles.PSObject.Properties[$Role]) {
+            $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$Role]) { $t.name } }) | Sort-Object
+            Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not a $Role tool (requested ones: $($members -join ', ')) — using priority."
+        } else {
+            # Report the tool's own spelling, not the user's (names compare case-insensitively).
+            foreach ($c in $Candidates) { if ($c.name -eq $chosen) { $winner = $c.name; $reason = 'Defaults'; break } }
+        }
+    }
+    if ($Candidates.Count -eq 0) { return $null }
+    # Rank by priority (highest first), ties by name. An insertion sort over
+    # the usual one to three candidates; no pipeline, since this runs at startup.
+    $ranked = [System.Collections.Generic.List[object]]::new()
+    foreach ($c in $Candidates) {
+        $i = 0
+        while ($i -lt $ranked.Count) {
+            $o = $ranked[$i]
+            $cp = $c.roles.$Role.priority
+            $op = $o.roles.$Role.priority
+            if ($cp -gt $op -or ($cp -eq $op -and [string]::Compare($c.name, $o.name, [System.StringComparison]::OrdinalIgnoreCase) -lt 0)) { break }
+            $i++
+        }
+        $ranked.Insert($i, $c)
+    }
+    # The user's preferred member, when it is requested and really in the role.
+    $preferredMember = if (-not [string]::IsNullOrWhiteSpace($chosen) -and $ToolDb[$chosen] -and
+        $ToolDb[$chosen].roles.PSObject.Properties[$Role]) { $ToolDb[$chosen].name }
+    if (-not $winner) {
+        $winner = $ranked[0].name
+        # The preferred tool is requested but unavailable: another requested
+        # tool stands in, and the end-of-load notice says so.
+        $reason = if ($preferredMember) { 'fallback' } elseif ($Candidates.Count -eq 1) { 'sole' } else { 'priority' }
+    }
+    $names = [string[]]@(foreach ($c in $Candidates) { $c.name })
+    [array]::Sort($names, [System.StringComparer]::OrdinalIgnoreCase)
+    [pscustomobject]@{
+        Role       = $Role
+        Winner     = $winner
+        Reason     = $reason
+        Candidates = $names
+        Ranked     = [string[]]@(foreach ($c in $ranked) { $c.name })
+        Preferred  = $preferredMember
+    }
+}
+
 function Get-DFRoleWinners {
     <#
     .SYNOPSIS
@@ -41,93 +188,16 @@ function Get-DFRoleWinners {
     $winners = @{}
     $defaults = Get-DFConfig Defaults -Default @{}
 
-    foreach ($roleName in @($defaults.Keys)) {
-        if (-not $RoleDb.ContainsKey($roleName)) {
-            Write-Warning "DotForge: Defaults['$roleName'] names an unknown role — ignoring. See Get-DFRole for the list."
-        } elseif ($RoleDb[$roleName].kind -eq 'category') {
-            Write-Warning "DotForge: Defaults['$roleName']: '$roleName' is a category, which has no winner — every member is configured. Ignoring."
-        }
-    }
+    Write-DFDefaultsRoleWarning -Defaults $defaults -RoleDb $RoleDb
 
-    # One pass over the registration set builds role -> candidates; this runs
-    # at every startup, so it avoids a pipeline per role. Topo-sorting an
-    # empty set can hand back a lone $null, hence the null check.
-    $candidatesByRole = @{}
-    foreach ($t in $Tools) {
-        if (-not $t) { continue }
-        $available = $null
-        foreach ($rp in $t.roles.PSObject.Properties) {
-            $rn = $rp.Name
-            if (-not $RoleDb.ContainsKey($rn)) {
-                # Stay quiet when no definitions loaded at all (Get-DFRoleDb already
-                # warned), and for a legacy v1 role string, which was free-form.
-                if ($RoleDb.Count -and -not $rp.Value.legacy) { Write-Warning "DotForge: $($t.name) declares unknown role '$rn' — ignored." }
-                continue
-            }
-            if ($RoleDb[$rn].kind -ne 'single') { continue }
-            # optIn is generic role metadata: an optional member joins the
-            # candidate set only when the user selected it for this role.
-            if ($rp.Value.optIn -and $defaults[$rn] -ine $t.name) { continue }
-            if ($null -eq $available) { $available = Test-DFToolAvailable -Executable $t.executable -Type $t.type }
-            if (-not $available) { continue }
-            if (-not $candidatesByRole.ContainsKey($rn)) { $candidatesByRole[$rn] = [System.Collections.Generic.List[object]]::new() }
-            $candidatesByRole[$rn].Add($t)
-        }
-    }
+    $candidatesByRole = Get-DFRoleCandidates -Tools $Tools -RoleDb $RoleDb -Defaults $defaults
 
     foreach ($roleName in @($RoleDb.Keys)) {
         if ($RoleDb[$roleName].kind -ne 'single') { continue }
         $candidates = if ($candidatesByRole.ContainsKey($roleName)) { $candidatesByRole[$roleName] } else { @() }
-
-        $winner = $null
-        $reason = $null
-        $chosen = $defaults[$roleName]
-        if (-not [string]::IsNullOrWhiteSpace($chosen)) {
-            $chosenTool = $ToolDb[$chosen]
-            if (-not $chosenTool) {
-                # A role is only ever filled by a tool the user asked for.
-                Write-Warning "DotForge: Defaults['$roleName'] names '$chosen', which is not requested in Tools — using priority. Add '$chosen' to Tools to use it."
-            } elseif (-not $chosenTool.roles.PSObject.Properties[$roleName]) {
-                $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$roleName]) { $t.name } }) | Sort-Object
-                Write-Warning "DotForge: Defaults['$roleName'] names '$chosen', which is not a $roleName tool (requested ones: $($members -join ', ')) — using priority."
-            } else {
-                # Report the tool's own spelling, not the user's (names compare case-insensitively).
-                foreach ($c in $candidates) { if ($c.name -eq $chosen) { $winner = $c.name; $reason = 'Defaults'; break } }
-            }
-        }
-        if ($candidates.Count -eq 0) { continue }
-        # Rank by priority (highest first), ties by name. An insertion sort over
-        # the usual one to three candidates; no pipeline, since this runs at startup.
-        $ranked = [System.Collections.Generic.List[object]]::new()
-        foreach ($c in $candidates) {
-            $i = 0
-            while ($i -lt $ranked.Count) {
-                $o = $ranked[$i]
-                $cp = $c.roles.$roleName.priority
-                $op = $o.roles.$roleName.priority
-                if ($cp -gt $op -or ($cp -eq $op -and [string]::Compare($c.name, $o.name, [System.StringComparison]::OrdinalIgnoreCase) -lt 0)) { break }
-                $i++
-            }
-            $ranked.Insert($i, $c)
-        }
-        # The user's preferred member, when it is requested and really in the role.
-        $preferred = if (-not [string]::IsNullOrWhiteSpace($chosen) -and $ToolDb[$chosen] -and
-            $ToolDb[$chosen].roles.PSObject.Properties[$roleName]) { $ToolDb[$chosen].name }
-        if (-not $winner) {
-            $winner = $ranked[0].name
-            # The preferred tool is requested but unavailable: another requested
-            # tool stands in, and the end-of-load notice says so.
-            $reason = if ($preferred) { 'fallback' } elseif ($candidates.Count -eq 1) { 'sole' } else { 'priority' }
-        }
-        $names = [string[]]@(foreach ($c in $candidates) { $c.name })
-        [array]::Sort($names, [System.StringComparer]::OrdinalIgnoreCase)
-        $winners[$roleName] = [pscustomobject]@{
-            Role       = $roleName
-            Winner     = $winner
-            Reason     = $reason
-            Candidates = $names
-            Ranked     = [string[]]@(foreach ($c in $ranked) { $c.name })
-            Preferred  = $preferred
+        $winnerObject = Select-DFRoleWinner -Role $roleName -Candidates $candidates -Preferred $defaults[$roleName] -ToolDb $ToolDb
+        if ($winnerObject) {
+            $winners[$roleName] = $winnerObject
         }
     }
     $winners

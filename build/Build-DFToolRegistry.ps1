@@ -27,9 +27,9 @@ $tools = [ordered]@{}
 foreach ($f in Get-ChildItem (Join-Path $repo 'Tools') -Filter '*.json' | Sort-Object Name) {
     $text = [IO.File]::ReadAllText($f.FullName)
     $raw = $text | ConvertFrom-Json
-    $errs = @(); $warns = @()
-    if (-not (Test-DFToolSchema -Tool $raw -Errors ([ref]$errs) -Warnings ([ref]$warns)) -or $warns) {
-        throw "Build-DFToolRegistry: $($f.Name): $(@($errs) + @($warns) -join '; ')"
+    $schema = Test-DFToolSchema -Tool $raw
+    if (-not $schema.Valid -or $schema.Warnings) {
+        throw "Build-DFToolRegistry: $($f.Name): $(@($schema.Errors) + @($schema.Warnings) -join '; ')"
     }
     $tools[$f.BaseName] = [ordered]@{ sha256 = Get-DFToolRecordHash -Text $text; record = ConvertTo-DFToolRecord $raw }
 }

@@ -10,19 +10,19 @@ Describe 'Test-DFToolSchema' {
                 name       = 'mytool'
                 executable = 'mytool.exe'
             }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeTrue
-            $errors | Should -BeNullOrEmpty
+            $result = Test-DFToolSchema -Tool $tool
+            $result.Valid | Should -BeTrue
+            $result.Errors | Should -BeNullOrEmpty
         }
 
         It 'passes a tool with type = "exe"' {
             $tool = [PSCustomObject]@{ name = 't'; executable = 't.exe'; type = 'exe' }
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$null) | Should -BeTrue
+            (Test-DFToolSchema -Tool $tool).Valid | Should -BeTrue
         }
 
         It 'passes a tool with type = "module"' {
             $tool = [PSCustomObject]@{ name = 't'; executable = 't'; type = 'module' }
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$null) | Should -BeTrue
+            (Test-DFToolSchema -Tool $tool).Valid | Should -BeTrue
         }
 
         It 'passes a fully populated valid record' {
@@ -41,23 +41,23 @@ Describe 'Test-DFToolSchema' {
                 aliases = [PSCustomObject]@{}
                 picker  = $null
             }
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$null) | Should -BeTrue
+            (Test-DFToolSchema -Tool $tool).Valid | Should -BeTrue
         }
     }
 
     Context 'invalid records' {
         It 'fails when name is missing' {
             $tool = [PSCustomObject]@{ executable = 'tool.exe' }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'name' } | Should -Not -BeNullOrEmpty
+            $result = Test-DFToolSchema -Tool $tool
+            $result.Valid | Should -BeFalse
+            $result.Errors | Where-Object { $_ -match 'name' } | Should -Not -BeNullOrEmpty
         }
 
         It 'fails when executable is missing' {
             $tool = [PSCustomObject]@{ name = 'mytool' }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'executable' } | Should -Not -BeNullOrEmpty
+            $result = Test-DFToolSchema -Tool $tool
+            $result.Valid | Should -BeFalse
+            $result.Errors | Where-Object { $_ -match 'executable' } | Should -Not -BeNullOrEmpty
         }
 
         It 'fails when xdg.method is not a valid value' {
@@ -66,76 +66,74 @@ Describe 'Test-DFToolSchema' {
                 executable = 'mytool.exe'
                 xdg        = [PSCustomObject]@{ method = 'invalid' }
             }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'xdg.method' } | Should -Not -BeNullOrEmpty
+            $result = Test-DFToolSchema -Tool $tool
+            $result.Valid | Should -BeFalse
+            $result.Errors | Where-Object { $_ -match 'xdg.method' } | Should -Not -BeNullOrEmpty
         }
 
         It 'fails when type is not a valid value' {
             $tool = [PSCustomObject]@{ name = 't'; executable = 't.exe'; type = 'binary' }
-            $errors = @()
-            Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) | Should -BeFalse
-            $errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
+            $result = Test-DFToolSchema -Tool $tool
+            $result.Valid | Should -BeFalse
+            $result.Errors | Where-Object { $_ -match 'type' } | Should -Not -BeNullOrEmpty
         }
 
         It 'rejects the old scoopBucket, pointing at a feed in packages' {
             $t = '{ "name": "t", "executable": "t.exe", "scoopBucket": { "name": "x", "url": "u" } }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'scoopBucket was replaced'
+            $result = Test-DFToolSchema -Tool $t
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'scoopBucket was replaced'
         }
 
         It 'accepts a packages value that is an id or { id, feed }, and rejects a feed without a url' {
             foreach ($ok in '"g"', '{ "id": "g", "feed": { "name": "b", "url": "https://u" } }', '{ "id": "g" }') {
-                $errs = @()
-                Test-DFToolSchema -Tool ("{ ""name"": ""t"", ""executable"": ""t.exe"", ""packages"": { ""scoop"": $ok } }" | ConvertFrom-Json) -Errors ([ref]$errs) | Should -BeTrue -Because $ok
+                (Test-DFToolSchema -Tool ("{ ""name"": ""t"", ""executable"": ""t.exe"", ""packages"": { ""scoop"": $ok } }" | ConvertFrom-Json)).Valid | Should -BeTrue -Because $ok
             }
-            $errs = @()
-            Test-DFToolSchema -Tool ('{ "name": "t", "executable": "t.exe", "packages": { "scoop": { "id": "g", "feed": { "name": "b" } } } }' | ConvertFrom-Json) -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'packages.scoop'
+            $result = Test-DFToolSchema -Tool ('{ "name": "t", "executable": "t.exe", "packages": { "scoop": { "id": "g", "feed": { "name": "b" } } } }' | ConvertFrom-Json)
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'packages.scoop'
         }
 
         It 'accepts a one-element executableExclude array' {
             $t = '{ "name": "t", "executable": "t.exe", "executableExclude": ["*\\Git\\usr\\bin\\*"] }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeTrue -Because "$errs"
+            $result = Test-DFToolSchema -Tool $t
+            $result.Valid | Should -BeTrue -Because "$($result.Errors)"
         }
 
         It 'rejects an executableExclude that is not an array of strings' {
             $t = '{ "name": "t", "executable": "t.exe", "executableExclude": "x" }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'executableExclude'
+            $result = Test-DFToolSchema -Tool $t
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'executableExclude'
         }
 
         It 'rejects roles that is not an object' {
             $t = '{ "name": "t", "executable": "t.exe", "roles": ["listing"] }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'roles'
+            $result = Test-DFToolSchema -Tool $t
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'roles'
         }
 
         It 'rejects a non-integer role priority' {
             $t = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "priority": "high" } } }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeFalse
-            "$errs" | Should -Match 'priority'
+            $result = Test-DFToolSchema -Tool $t
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'priority'
         }
 
         It 'accepts an integer role priority and an empty role block' {
             $t = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "priority": 10 }, "grep": {} } }' | ConvertFrom-Json
-            $errs = @()
-            Test-DFToolSchema -Tool $t -Errors ([ref]$errs) | Should -BeTrue
+            (Test-DFToolSchema -Tool $t).Valid | Should -BeTrue
         }
 
         It 'accepts a boolean role optIn and rejects another type' {
             $valid = '{ "name": "t", "executable": "t.exe", "roles": { "optional": { "optIn": true } } }' | ConvertFrom-Json
             $invalid = '{ "name": "t", "executable": "t.exe", "roles": { "optional": { "optIn": "yes" } } }' | ConvertFrom-Json
-            $errors = @()
-            Test-DFToolSchema -Tool $valid -Errors ([ref]$errors) | Should -BeTrue -Because "$errors"
-            $errors = @()
-            Test-DFToolSchema -Tool $invalid -Errors ([ref]$errors) | Should -BeFalse
-            "$errors" | Should -Match 'optIn'
+            $result = Test-DFToolSchema -Tool $valid
+            $result.Valid | Should -BeTrue -Because "$($result.Errors)"
+            $result = Test-DFToolSchema -Tool $invalid
+            $result.Valid | Should -BeFalse
+            "$($result.Errors)" | Should -Match 'optIn'
         }
     }
 
@@ -144,9 +142,7 @@ Describe 'Test-DFToolSchema' {
             function script:Get-SchemaErrors($Extra) {
                 $tool = [pscustomobject]@{ name = 't'; executable = 't.exe' }
                 foreach ($k in $Extra.Keys) { $tool | Add-Member -NotePropertyName $k -NotePropertyValue $Extra[$k] }
-                $errs = @()
-                $null = Test-DFToolSchema -Tool $tool -Errors ([ref]$errs)
-                "$errs"
+                "$((Test-DFToolSchema -Tool $tool).Errors)"
             }
             $script:Picker = { param([hashtable]$p) [pscustomobject](@{ function = 'Select-T'; list = 't list' } + $p) }
         }
@@ -176,6 +172,9 @@ Describe 'Test-DFToolSchema' {
             Get-SchemaErrors @{ aliases = [pscustomobject]@{ bad = 'x' } } | Should -Match 'aliases.bad'
             Get-SchemaErrors @{ aliases = [pscustomobject]@{ bad = [pscustomobject]@{ command = 'x'; args = @(1, [pscustomobject]@{}) } } } |
                 Should -Match 'aliases.bad'
+        }
+        It 'rejects aliases that is not an object with its current message' {
+            Get-SchemaErrors @{ aliases = 'bad' } | Should -BeExactly 'aliases must be an object keyed by alias name'
         }
         It 'checks role-block aliases and env with the same rules' {
             $roles = [pscustomobject]@{ listing = [pscustomobject]@{ aliases = [pscustomobject]@{ ls = [pscustomobject]@{ args = @() } } } }
@@ -208,14 +207,26 @@ Describe 'Test-DFToolSchema' {
             Get-SchemaErrors @{ prewarm = $false } | Should -BeNullOrEmpty
             Get-SchemaErrors @{ prewarm = 'false' } | Should -Match 'prewarm'
         }
+        It 'rejects a non-object installs block with its current message' {
+            Get-SchemaErrors @{ installs = 'bad' } | Should -BeExactly 'installs must be an object'
+        }
+        It 'rejects a non-array installs command with its current message' {
+            Get-SchemaErrors @{ installs = [pscustomobject]@{ from = 'source'; command = 'install' } } |
+                Should -BeExactly 'installs.command must be an array (argv)'
+        }
+        It 'rejects malformed requires with its current message' {
+            Get-SchemaErrors @{ requires = 'source' } |
+                Should -BeExactly 'requires must be an array of tool names or role:<role> entries'
+        }
+        It 'rejects an invalid picker type with its current message' {
+            Get-SchemaErrors @{ picker = $true } | Should -BeExactly 'picker must be null, "custom" or an object'
+        }
     }
 
     Context 'typo warnings' {
         BeforeAll {
             function script:Get-SchemaWarnings([pscustomobject]$Tool) {
-                $errs = @(); $warns = @()
-                $null = Test-DFToolSchema -Tool $Tool -Errors ([ref]$errs) -Warnings ([ref]$warns)
-                $warns
+                (Test-DFToolSchema -Tool $Tool).Warnings
             }
         }
 
@@ -223,6 +234,9 @@ Describe 'Test-DFToolSchema' {
             $w = Get-SchemaWarnings ([pscustomobject]@{ name = 't'; executable = 't.exe'; requirs = @('x'); themMap = [pscustomobject]@{} })
             "$w" | Should -Match "requirs.*requires"
             "$w" | Should -Match "themMap.*themeMap"
+        }
+        It 'uses the known spelling for an exact-case typo match' {
+            Get-DFFieldSuggestion -Name 'NAME' -Known @('name') | Should -BeExactly 'name'
         }
         It 'checks inside picker, xdg and role blocks too' {
             $tool = [pscustomobject]@{
@@ -241,8 +255,7 @@ Describe 'Test-DFToolSchema' {
                 Should -BeNullOrEmpty
         }
         It 'keeps the tool valid when it only has warnings' {
-            $errs = @(); $warns = @()
-            Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; requirs = @() }) -Errors ([ref]$errs) -Warnings ([ref]$warns) |
+            (Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; requirs = @() })).Valid |
                 Should -BeTrue
         }
     }
@@ -288,9 +301,8 @@ Describe 'Shipped tool JSON files' {
 
     It '<Name>.json passes schema validation with no errors and no warnings' -ForEach $shipped {
         $tool = Get-Content $Path -Raw | ConvertFrom-Json
-        $errors = @(); $warnings = @()
-        Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) -Warnings ([ref]$warnings) |
-            Should -BeTrue -Because ($errors -join '; ')
-        $warnings | Should -BeNullOrEmpty
+        $result = Test-DFToolSchema -Tool $tool
+        $result.Valid | Should -BeTrue -Because ($result.Errors -join '; ')
+        $result.Warnings | Should -BeNullOrEmpty
     }
 }

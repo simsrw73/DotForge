@@ -88,6 +88,23 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.aliases.c.args) | Should -Be @('-p', 'q')
     }
 
+    It 'normalizes each installs block when a tool declares a list' {
+        $raw = '{ "name": "t", "executable": "t", "installs": [
+                    { "from": "npm", "command": ["npm", "install", "{id}"], "batch": true },
+                    { "from": "pypi", "function": "Install-Package", "args": { "Name": "{id}" }, "reactivate": true }
+                ] }' | ConvertFrom-Json
+        $r = ConvertTo-DFToolRecord $raw
+
+        @($r.installs).Count | Should -Be 2
+        $r.installs[0].from | Should -Be 'npm'
+        @($r.installs[0].command) | Should -Be @('npm', 'install', '{id}')
+        $r.installs[0].batch | Should -BeTrue
+        $r.installs[1].from | Should -Be 'pypi'
+        $r.installs[1].function | Should -Be 'Install-Package'
+        $r.installs[1].reactivate | Should -BeTrue
+        $r.installs[1].elevate | Should -BeFalse
+    }
+
     It 'defaults the declarative picker fields, and leaves a non-object picker alone' {
         $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t", "picker": { "function": "F", "list": "ls" } }' | ConvertFrom-Json)
         $r.picker.preview_window    | Should -Be 'right:60%'

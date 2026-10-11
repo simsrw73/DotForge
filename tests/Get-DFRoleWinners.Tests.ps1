@@ -79,6 +79,14 @@ Describe 'Get-DFRoleWinners' {
         "$warn" | Should -Match "Defaults\['prompt'\].*starship.*not requested"
     }
 
+    It 'uses priority when a tool declaring the role has no tool record in ToolDb' {
+        $script:Installed += 'ghost.exe'
+        $noRecordTool = New-RoleTool 'ghost' @{ prompt = [pscustomobject]@{ priority = 5 } }
+        $w = Get-DFRoleWinners -ToolDb $script:Db -Tools ($script:All + $noRecordTool) -RoleDb $script:RoleDb
+        $w['prompt'].Winner | Should -Be 'omp'
+        $w['prompt'].Candidates | Should -Contain 'ghost'
+    }
+
     It 'never mentions the old global $DFConfig in its messages' {
         Set-DFTestConfig @{ Defaults = @{ nosuchrole = 'omp'; prompt = 'less' } }
         $null = Get-DFRoleWinners -ToolDb $script:Db -Tools $script:All -RoleDb $script:RoleDb -WarningVariable warn -WarningAction SilentlyContinue

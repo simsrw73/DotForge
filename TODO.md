@@ -31,15 +31,6 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-28 Status `Detail` is a "; "-joined string built in three places** — `Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker`, `Add-DFInstallHint`. If a fourth appears, make `Detail` a list rendered once.
 - [ ] **T-29 Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable wrapper (glow, fastfetch so far).
 
-## Priority 2 — Readability
-
-From improve-code-quality Phase 2 (starting module now 8/10). Pin the gaps listed in `docs/TESTING.md` before touching these.
-
-- [ ] **T-30 Split `Test-DFToolSchema`** (206 lines, `Shared/Test-DFToolSchema.ps1`) into one validator per section behind the same interface.
-- [ ] **T-31 Split `ConvertTo-DFToolRecord`** (116 lines, `Shared/Import-DFToolDb.ps1`) into one normalizer per block.
-- [ ] **T-32 Split `Get-DFRoleWinners`** (84 lines, `Private/Register-DFToolSteps.ps1`): ranking apart from fallback.
-- [ ] **T-33 `Test-DFToolSchema` returns `{ Valid; Errors; Warnings }`** instead of `[ref]` output parameters. Do it with T-30.
-
 ## Priority 3 — Features
 
 - [ ] **T-34 Role-level behavior specs for competing tools** — tools sharing a role (eza, lsd for `listing`) each hand-write `ls`/`ll`/`la`/`tree` in their own flags, and the two have drifted (lsd's `ll` includes `--all`). Describe alias behavior once per role in `data/roles.json` and let each tool map behavior names to its own flags. No central tool-keyed table. Brainstorm and spec first.

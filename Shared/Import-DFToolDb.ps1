@@ -94,12 +94,12 @@ function Read-DFToolRecordFile {
         Write-Warning "DotForge: Failed to parse $leaf`: $($_.Exception.Message)"
         return $null
     }
-    $errors = @(); $warnings = @()
-    if (-not (Test-DFToolSchema -Tool $tool -Errors ([ref]$errors) -Warnings ([ref]$warnings))) {
-        Write-Warning "DotForge: $leaf schema errors: $($errors -join '; ')"
+    $schema = Test-DFToolSchema -Tool $tool
+    if (-not $schema.Valid) {
+        Write-Warning "DotForge: $leaf schema errors: $($schema.Errors -join '; ')"
         return $null
     }
-    foreach ($w in $warnings) { Write-Warning "DotForge: $leaf`: $w" }
+    foreach ($w in $schema.Warnings) { Write-Warning "DotForge: $leaf`: $w" }
     ConvertTo-DFToolRecord $tool
 }
 
@@ -119,6 +119,191 @@ function Get-DFToolNames {
     [OutputType([string[]])]
     param([string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
     @(Get-ChildItem $ToolsPath -Filter '*.json' -File -ErrorAction Ignore | ForEach-Object BaseName)
+}
+
+function Get-DFToolRecordProperty {
+    <#
+    .SYNOPSIS
+        Reads a property of a parsed JSON object, or a default when it is absent (StrictMode-safe).
+    .PARAMETER Object
+        See the synopsis.
+    .PARAMETER Name
+        See the synopsis.
+    .PARAMETER Default
+        See the synopsis.
+    #>
+    param($Object, [string]$Name, $Default)
+
+    $property = $Object.PSObject.Properties[$Name]
+    if ($property) { $property.Value } else { $Default }
+}
+
+function ConvertTo-DFXdgBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool record's xdg block: every field present.
+    .PARAMETER RawXdg
+        See the synopsis.
+    #>
+    param($RawXdg)
+
+    if (-not $RawXdg) { return $null }
+
+    [pscustomobject]@{
+        method       = Get-DFToolRecordProperty $RawXdg 'method' $null
+        vars         = Get-DFToolRecordProperty $RawXdg 'vars' $null
+        dirs         = @(Get-DFToolRecordProperty $RawXdg 'dirs' @())
+        instructions = Get-DFToolRecordProperty $RawXdg 'instructions' $null
+        compliance   = Get-DFToolRecordProperty $RawXdg 'compliance' $null
+    }
+}
+
+function ConvertTo-DFAliasMap {
+    <#
+    .SYNOPSIS
+        Normalizes an aliases map (top level or a role block's): command and args per alias.
+    .PARAMETER RawAliases
+        See the synopsis.
+    #>
+    param($RawAliases)
+
+    if (-not $RawAliases) { return $null }
+
+    $normalized = [ordered]@{}
+    foreach ($alias in $RawAliases.PSObject.Properties) {
+        $rawArgs = Get-DFToolRecordProperty $alias.Value 'args' $null
+        $normalized[$alias.Name] = [pscustomobject]@{
+            command = Get-DFToolRecordProperty $alias.Value 'command' $null
+            # @() around the whole if: a one-element array assigned from an
+            # if-expression would otherwise unwrap to a bare string.
+            args    = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
+        }
+    }
+    [pscustomobject]$normalized
+}
+
+function ConvertTo-DFRoleMap {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's roles, reading the legacy v1 role string as a priority-0 membership.
+    .PARAMETER Tool
+        See the synopsis.
+    #>
+    param([pscustomobject]$Tool)
+
+    $roles = [ordered]@{}
+    $rawRoles = Get-DFToolRecordProperty $Tool 'roles' $null
+    if ($rawRoles) {
+        foreach ($role in $rawRoles.PSObject.Properties) {
+            $roles[$role.Name] = [pscustomobject]@{
+                priority = [int](Get-DFToolRecordProperty $role.Value 'priority' 0)
+                optIn    = [bool](Get-DFToolRecordProperty $role.Value 'optIn' $false)
+                aliases  = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $role.Value 'aliases' $null)
+                env      = Get-DFToolRecordProperty $role.Value 'env' $null
+                legacy   = $false
+            }
+        }
+    }
+
+    # Role v1 declared a single "role" string; read it as a priority-0 membership.
+    # legacy marks it so registration keeps v1 behavior: no hook expected, and a
+    # loser's top-level aliases that the role reserves are left out.
+    $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
+    if ($legacyRole -and -not $roles.Contains($legacyRole)) {
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; legacy = $true }
+    }
+
+    [pscustomobject]$roles
+}
+
+function ConvertTo-DFPickerBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a declarative picker object; null and "custom" pass through.
+    .PARAMETER RawPicker
+        See the synopsis.
+    #>
+    param($RawPicker)
+
+    if ($RawPicker -isnot [pscustomobject]) { return $RawPicker }
+
+    [pscustomobject]@{
+        function          = Get-DFToolRecordProperty $RawPicker 'function' $null
+        alias             = Get-DFToolRecordProperty $RawPicker 'alias' $null
+        list              = Get-DFToolRecordProperty $RawPicker 'list' $null
+        list_accepts_path = [bool](Get-DFToolRecordProperty $RawPicker 'list_accepts_path' $false)
+        preview           = Get-DFToolRecordProperty $RawPicker 'preview' ''
+        preview_window    = Get-DFToolRecordProperty $RawPicker 'preview_window' 'right:60%'
+        ansi              = [bool](Get-DFToolRecordProperty $RawPicker 'ansi' $false)
+        header            = Get-DFToolRecordProperty $RawPicker 'header' ''
+        action            = Get-DFToolRecordProperty $RawPicker 'action' $null
+        parse             = Get-DFToolRecordProperty $RawPicker 'parse' $null
+    }
+}
+
+function ConvertTo-DFSetupBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool record's setup block.
+    .PARAMETER RawSetup
+        See the synopsis.
+    #>
+    param($RawSetup)
+
+    if (-not $RawSetup) { return $null }
+
+    [pscustomobject]@{ seed = Get-DFToolRecordProperty $RawSetup 'seed' $null }
+}
+
+function ConvertTo-DFInstallsBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a package manager's installs blocks into a list (one object or several).
+    .PARAMETER RawInstalls
+        See the synopsis.
+    #>
+    param($RawInstalls)
+
+    if ($null -eq $RawInstalls) { return $null }
+
+    # A package manager's installs blocks (install spec section 1): one object,
+    # or a list when it installs from several sources (uv: PyPI tools and Python).
+    $normalized = [object[]]@(foreach ($block in @($RawInstalls)) {
+        $feeds = Get-DFToolRecordProperty $block 'feeds' $null
+        if ($feeds) {
+            $feeds = [pscustomobject]@{
+                list = [string[]]@(Get-DFToolRecordProperty $feeds 'list' @())
+                add  = [string[]]@(Get-DFToolRecordProperty $feeds 'add' @())
+                id   = Get-DFToolRecordProperty $feeds 'id' '{feed}/{id}'
+            }
+        }
+        $command = Get-DFToolRecordProperty $block 'command' $null
+        [pscustomobject]@{
+            from       = Get-DFToolRecordProperty $block 'from' $null
+            command    = $(if ($null -ne $command) { [string[]]@($command) })
+            function   = Get-DFToolRecordProperty $block 'function' $null
+            args       = Get-DFToolRecordProperty $block 'args' $null
+            batch      = [bool](Get-DFToolRecordProperty $block 'batch' $false)
+            elevate    = [bool](Get-DFToolRecordProperty $block 'elevate' $false)
+            reactivate = [bool](Get-DFToolRecordProperty $block 'reactivate' $false)
+            feeds      = $feeds
+        }
+    })
+    Write-Output -NoEnumerate $normalized
+}
+
+function ConvertTo-DFInstallBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool record's install block (its preferred sources).
+    .PARAMETER RawInstall
+        See the synopsis.
+    #>
+    param($RawInstall)
+
+    if (-not $RawInstall) { return $null }
+
+    [pscustomobject]@{ prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @()) }
 }
 
 function ConvertTo-DFToolRecord {
@@ -168,130 +353,42 @@ function ConvertTo-DFToolRecord {
     [OutputType([pscustomobject])]
     param([Parameter(Mandatory, Position = 0)][pscustomobject]$Tool)
 
-    $get = { param($obj, $name, $default) $p = $obj.PSObject.Properties[$name]; if ($p) { $p.Value } else { $default } }
-
-    $xdg = & $get $Tool 'xdg' $null
-    if ($xdg) {
-        $xdg = [pscustomobject]@{
-            method         = & $get $xdg 'method' $null
-            vars           = & $get $xdg 'vars' $null
-            dirs           = @(& $get $xdg 'dirs' @())
-            instructions   = & $get $xdg 'instructions' $null
-            compliance     = & $get $xdg 'compliance' $null
-        }
-    }
-
-    $normalizeAliases = {
-        param($raw)
-        if (-not $raw) { return $null }
-        $normalized = [ordered]@{}
-        foreach ($a in $raw.PSObject.Properties) {
-            $rawArgs = & $get $a.Value 'args' $null
-            $normalized[$a.Name] = [pscustomobject]@{
-                command = & $get $a.Value 'command' $null
-                # @() around the whole if: a one-element array assigned from an
-                # if-expression would otherwise unwrap to a bare string.
-                args    = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
-            }
-        }
-        [pscustomobject]$normalized
-    }
-    $aliases = & $normalizeAliases (& $get $Tool 'aliases' $null)
-
-    $roles = [ordered]@{}
-    $rawRoles = & $get $Tool 'roles' $null
-    if ($rawRoles) {
-        foreach ($r in $rawRoles.PSObject.Properties) {
-            $roles[$r.Name] = [pscustomobject]@{
-                priority = [int](& $get $r.Value 'priority' 0)
-                optIn    = [bool](& $get $r.Value 'optIn' $false)
-                aliases  = & $normalizeAliases (& $get $r.Value 'aliases' $null)
-                env      = & $get $r.Value 'env' $null
-                legacy   = $false
-            }
-        }
-    }
-    # Role v1 declared a single "role" string; read it as a priority-0 membership.
-    # legacy marks it so registration keeps v1 behavior: no hook expected, and a
-    # loser's top-level aliases that the role reserves are left out.
-    $legacyRole = & $get $Tool 'role' $null
-    if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; legacy = $true }
-    }
-
-    $picker = & $get $Tool 'picker' $null
-    if ($picker -is [pscustomobject]) {
-        $picker = [pscustomobject]@{
-            function          = & $get $picker 'function' $null
-            alias             = & $get $picker 'alias' $null
-            list              = & $get $picker 'list' $null
-            list_accepts_path = [bool](& $get $picker 'list_accepts_path' $false)
-            preview           = & $get $picker 'preview' ''
-            preview_window    = & $get $picker 'preview_window' 'right:60%'
-            ansi              = [bool](& $get $picker 'ansi' $false)
-            header            = & $get $picker 'header' ''
-            action            = & $get $picker 'action' $null
-            parse             = & $get $picker 'parse' $null
-        }
-    }
-
-    $setup = & $get $Tool 'setup' $null
-    if ($setup) { $setup = [pscustomobject]@{ seed = & $get $setup 'seed' $null } }
-
-    # A package manager's installs blocks (install spec section 1): one object,
-    # or a list when it installs from several sources (uv: PyPI tools and Python).
-    $installs = & $get $Tool 'installs' $null
-    if ($null -ne $installs) {
-        $installs = [object[]]@(foreach ($blk in @($installs)) {
-            $feeds = & $get $blk 'feeds' $null
-            if ($feeds) {
-                $feeds = [pscustomobject]@{
-                    list = [string[]]@(& $get $feeds 'list' @())
-                    add  = [string[]]@(& $get $feeds 'add' @())
-                    id   = & $get $feeds 'id' '{feed}/{id}'
-                }
-            }
-            $command = & $get $blk 'command' $null
-            [pscustomobject]@{
-                from       = & $get $blk 'from' $null
-                command    = $(if ($null -ne $command) { [string[]]@($command) })
-                function   = & $get $blk 'function' $null
-                args       = & $get $blk 'args' $null
-                batch      = [bool](& $get $blk 'batch' $false)
-                elevate    = [bool](& $get $blk 'elevate' $false)
-                reactivate = [bool](& $get $blk 'reactivate' $false)
-                feeds      = $feeds
-            }
-        })
-    }
-    $install = & $get $Tool 'install' $null
-    if ($install) { $install = [pscustomobject]@{ prefer = [string[]]@(& $get $install 'prefer' @()) } }
+    $xdg = ConvertTo-DFXdgBlock (Get-DFToolRecordProperty $Tool 'xdg' $null)
+    $aliases = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $Tool 'aliases' $null)
+    $roles = ConvertTo-DFRoleMap $Tool
+    $picker = ConvertTo-DFPickerBlock (Get-DFToolRecordProperty $Tool 'picker' $null)
+    $setup = ConvertTo-DFSetupBlock (Get-DFToolRecordProperty $Tool 'setup' $null)
+    $installs = ConvertTo-DFInstallsBlock (Get-DFToolRecordProperty $Tool 'installs' $null)
+    $install = ConvertTo-DFInstallBlock (Get-DFToolRecordProperty $Tool 'install' $null)
 
     $record = [ordered]@{
-        name        = $Tool.name
-        executable  = $Tool.executable
-        type        = & $get $Tool 'type' 'exe'
-        description = & $get $Tool 'description' ''
-        tags        = [object[]]@(& $get $Tool 'tags' @())
-        packages    = & $get $Tool 'packages' $null
-        xdg         = $xdg
-        env         = & $get $Tool 'env' $null
-        aliases     = $aliases
-        picker      = $picker
-        after       = [object[]]@(& $get $Tool 'after' @())
-        requires    = [object[]]@(& $get $Tool 'requires' @())
-        roles       = [pscustomobject]$roles
-        themeMap    = & $get $Tool 'themeMap' $null
-        settings    = & $get $Tool 'settings' $null
-        executableExclude = [object[]]@(& $get $Tool 'executableExclude' @())
-        prewarm     = [bool](& $get $Tool 'prewarm' $true)
-        setup       = $setup
-        installs    = $installs
-        install     = $install
+        name              = $Tool.name
+        executable        = $Tool.executable
+        type              = Get-DFToolRecordProperty $Tool 'type' 'exe'
+        description       = Get-DFToolRecordProperty $Tool 'description' ''
+        tags              = [object[]]@(Get-DFToolRecordProperty $Tool 'tags' @())
+        packages          = Get-DFToolRecordProperty $Tool 'packages' $null
+        xdg               = $xdg
+        env               = Get-DFToolRecordProperty $Tool 'env' $null
+        aliases           = $aliases
+        picker            = $picker
+        after             = [object[]]@(Get-DFToolRecordProperty $Tool 'after' @())
+        requires          = [object[]]@(Get-DFToolRecordProperty $Tool 'requires' @())
+        roles             = $roles
+        themeMap          = Get-DFToolRecordProperty $Tool 'themeMap' $null
+        settings          = Get-DFToolRecordProperty $Tool 'settings' $null
+        executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
+        prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
+        setup             = $setup
+        installs          = $installs
+        install           = $install
     }
+
     # Keep fields DotForge doesn't model, so tool authors can carry extra data.
-    foreach ($p in $Tool.PSObject.Properties) {
-        if (-not $record.Contains($p.Name) -and $p.Name -ne 'role') { $record[$p.Name] = $p.Value }
+    foreach ($property in $Tool.PSObject.Properties) {
+        if (-not $record.Contains($property.Name) -and $property.Name -ne 'role') {
+            $record[$property.Name] = $property.Value
+        }
     }
     [pscustomobject]$record
 }
