@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 7550028a0f17640194ba725d57e3ae50ed4a1a96aedea3eec03735521e9f1b13
+# sources-sha256: 0e48eb2f3d908447aef6862ba6db2ef08fc526079dc87f5d92ffc27c148c79a5
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2919,7 +2919,9 @@ function Invoke-DFManagerCommand {
     # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
     # never sets an exit code: don't read a stale one from an earlier command.
     $global:LASTEXITCODE = 0
-    $out = & $exe @rest 2>&1 | Out-String
+    # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
+    # warning stream (scoop's "Installed apps:"), which would print mid-command.
+    $out = & $exe @rest *>&1 | Out-String
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }
 

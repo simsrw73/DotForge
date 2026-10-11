@@ -85,6 +85,8 @@ function Invoke-DFManagerCommand {
     # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
     # never sets an exit code: don't read a stale one from an earlier command.
     $global:LASTEXITCODE = 0
-    $out = & $exe @rest 2>&1 | Out-String
+    # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
+    # warning stream (scoop's "Installed apps:"), which would print mid-command.
+    $out = & $exe @rest *>&1 | Out-String
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }

@@ -16,6 +16,17 @@ Describe 'Invoke-DFManagerCommand' {
             (Invoke-DFManagerCommand -Operation install -Manager ([pscustomobject]@{ name = 'dffakemgr' }) -Argv 'dffakemgr', 'install', 'x').ExitCode | Should -Be 0
         } finally { $Env:Path = $saved }
     }
+    It 'captures what an in-process shim writes to the host (scoop''s "Installed apps:"), instead of printing it' {
+        $bin = Join-Path $TestDrive "hostshim-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        New-Item -ItemType Directory $bin | Out-Null
+        'param() Write-Host "Installed apps:"; Write-Warning "bucket out of date"; "row"' | Set-Content (Join-Path $bin 'dfhostmgr.ps1')
+        $saved = $Env:Path
+        try {
+            $Env:Path = "$bin;$Env:Path"
+            $r = Invoke-DFManagerCommand -Operation list -Manager ([pscustomobject]@{ name = 'dfhostmgr' }) -Argv 'dfhostmgr', 'list' 3>$null
+            $r.Output | Should -BeLike '*Installed apps:*row*'
+        } finally { $Env:Path = $saved }
+    }
     It 'calls a function operation with its arguments' {
         function script:Update-DFFake { param($Name) "updated $Name" }
         $r = Invoke-DFManagerCommand -Operation update -Manager $script:Mgr -Function Update-DFFake -Arguments @{ Name = 'a' }
