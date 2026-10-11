@@ -277,10 +277,14 @@ function ConvertTo-DFInstallsBlock {
                 id   = Get-DFToolRecordProperty $feeds 'id' '{feed}/{id}'
             }
         }
-        $command = Get-DFToolRecordProperty $block 'command' $null
+        $install = Get-DFToolRecordProperty $block 'install' $null
         [pscustomobject]@{
             from       = Get-DFToolRecordProperty $block 'from' $null
-            command    = $(if ($null -ne $command) { [string[]]@($command) })
+            install    = $(if ($null -ne $install) { [string[]]@($install) })
+            update     = ConvertTo-DFManagerOperation (Get-DFToolRecordProperty $block 'update' $null)
+            remove     = ConvertTo-DFManagerOperation (Get-DFToolRecordProperty $block 'remove' $null)
+            list       = Get-DFToolRecordProperty $block 'list' $null
+            outdated   = Get-DFToolRecordProperty $block 'outdated' $null
             function   = Get-DFToolRecordProperty $block 'function' $null
             args       = Get-DFToolRecordProperty $block 'args' $null
             batch      = [bool](Get-DFToolRecordProperty $block 'batch' $false)
@@ -290,6 +294,22 @@ function ConvertTo-DFInstallsBlock {
         }
     })
     Write-Output -NoEnumerate $normalized
+}
+
+function ConvertTo-DFManagerOperation {
+    <#
+    .SYNOPSIS
+        Normalizes an installs block's update or remove: $null, an argv (string[]), or { function; args }.
+    .PARAMETER RawOperation
+        See the synopsis.
+    #>
+    param($RawOperation)
+    if ($null -eq $RawOperation) { return $null }
+    if ($RawOperation -is [array]) { return ,[string[]]@($RawOperation) }
+    [pscustomobject]@{
+        function = Get-DFToolRecordProperty $RawOperation 'function' $null
+        args     = Get-DFToolRecordProperty $RawOperation 'args' $null
+    }
 }
 
 function ConvertTo-DFInstallBlock {
@@ -330,7 +350,7 @@ function ConvertTo-DFToolRecord {
         instructions and compliance; setup, when present, has seed (an object
         mapping destination path template to a file under Tools/, or $null);
         installs, when present, is a list of blocks (a single object in the
-        JSON becomes a one-block list), each with from, command (string[] or
+        JSON becomes a one-block list), each with from, install (string[] or
         $null), function, args, batch, elevate and reactivate ($false by
         default) and feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
         present, has prefer (string[]); each alias is

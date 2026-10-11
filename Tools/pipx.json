@@ -6,7 +6,7 @@
   "roles": { "python-package-manager": { "priority": 20 } },
   "requires": ["role:python-runtime"],
   "packages": { "scoop": "pipx", "pypi": "pipx" },
-  "installs": { "from": "pypi", "command": ["pipx", "install", "{id}"], "batch": true },
+  "installs": { "from": "pypi", "install": ["pipx", "install", "{id}"], "batch": true },
   "aliases": {},
   "picker": null
 }

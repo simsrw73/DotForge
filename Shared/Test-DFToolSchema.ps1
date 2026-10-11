@@ -204,11 +204,23 @@ function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
             $at = if ($isList) { "installs[$n]" } else { 'installs' }
             if ($ins -isnot [pscustomobject]) { "$at must be an object"; continue }
             if (-not ((Get-DFSchemaProperty $ins 'from') -is [string] -and (Get-DFSchemaProperty $ins 'from'))) { "$at.from must name the source this manager installs from" }
-            $cmd = $ins.PSObject.Properties['command']?.Value   # read directly: a helper would unroll ["x"]
-            $hasCmd = $null -ne $cmd
+            $renamed = [bool]$ins.PSObject.Properties['command']
+            if ($renamed) { "$at.command was renamed to $at.install" }
+            $install = $ins.PSObject.Properties['install']?.Value   # read directly: a helper would unroll ["x"]
+            $hasInstall = $null -ne $install
             $hasFn = $null -ne (Get-DFSchemaProperty $ins 'function')
-            if ($hasCmd -eq $hasFn) { "$at needs exactly one of command or function" }
-            if ($hasCmd -and $cmd -isnot [array]) { "$at.command must be an array (argv)" }
+            if ($hasInstall -eq $hasFn -and -not $renamed) { "$at needs exactly one of install or function" }
+            if ($hasInstall -and $install -isnot [array]) { "$at.install must be an array (argv)" }
+            foreach ($op in 'update', 'remove') {
+                $value = $ins.PSObject.Properties[$op]?.Value
+                if ($null -eq $value -or $value -is [array]) { continue }
+                $isFunction = $value -is [pscustomobject] -and (Get-DFSchemaProperty $value 'function') -is [string]
+                if (-not $isFunction) { "$at.$op must be an array (argv) or { function, args }" }
+            }
+            foreach ($op in 'list', 'outdated') {
+                $value = $ins.PSObject.Properties[$op]?.Value
+                if ($null -ne $value -and $value -isnot [string]) { "$at.$op must be a function name" }
+            }
         }
     }
     $inst = Get-DFSchemaProperty $Tool 'install'
@@ -274,7 +286,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
         setup  = 'seed'
-        installs = 'from', 'command', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
+        installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
     }

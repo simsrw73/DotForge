@@ -5,9 +5,9 @@ BeforeAll {
         $dir = Join-Path $TestDrive "it-$([guid]::NewGuid().ToString('N').Substring(0,6))"
         New-Item -ItemType Directory $dir | Out-Null
         @{
-            scoop = '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true } }'
-            npm   = '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "packages": { "scoop": "nodejs" }, "installs": { "from": "npm", "command": ["npm","i","-g","{id}"], "batch": true } }'
-            pnpm  = '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "packages": { "scoop": "pnpm" }, "installs": { "from": "npm", "command": ["pnpm","add","-g","{id}"], "batch": true } }'
+            scoop = '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true } }'
+            npm   = '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "packages": { "scoop": "nodejs" }, "installs": { "from": "npm", "install": ["npm","i","-g","{id}"], "batch": true } }'
+            pnpm  = '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "packages": { "scoop": "pnpm" }, "installs": { "from": "npm", "install": ["pnpm","add","-g","{id}"], "batch": true } }'
             glow  = '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" } }'
             ish   = '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }'
         }.GetEnumerator() | ForEach-Object { Set-Content (Join-Path $dir "$($_.Key).json") $_.Value }
@@ -92,7 +92,7 @@ Describe 'Install-DFTool' {
     It 'warns when InstallVia names a source whose manager isn''t installed, then uses the next source' {
         $glow = Join-Path $script:Tools 'glow.json'
         '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "winget": "charm.glow" } }' | Set-Content $glow
-        '{ "name": "winget", "executable": "winget.exe", "roles": { "package-manager": { "priority": 20 } }, "installs": { "from": "winget", "command": ["winget","install","{id}"] } }' |
+        '{ "name": "winget", "executable": "winget.exe", "roles": { "package-manager": { "priority": 20 } }, "installs": { "from": "winget", "install": ["winget","install","{id}"] } }' |
             Set-Content (Join-Path $script:Tools 'winget.json')
         Set-DFTestConfig @{ InstallVia = @{ glow = 'winget' } }
         $null = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools -WarningVariable w 3>$null 6>$null

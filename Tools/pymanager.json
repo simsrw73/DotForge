@@ -5,7 +5,7 @@
   "executable": "pymanager.exe",
   "roles": { "version-manager": {} },
   "packages": { "winget": "Python.PythonInstallManager" },
-  "installs": { "from": "pymanager", "command": ["py", "install", "{id}"] },
+  "installs": { "from": "pymanager", "install": ["py", "install", "{id}"] },
   "aliases": {},
   "picker": null
 }

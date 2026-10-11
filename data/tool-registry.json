@@ -132,7 +132,7 @@
       }
     },
     "bun": {
-      "sha256": "7c1b662e197cd1cf6b54354c838e8251a8b702aa8a6e68f5cfff68b10f7d85d0",
+      "sha256": "3a4be5973405c4e695ff495ebf53b286387fbc7b563d7fb958e9c47ee06dd883",
       "record": {
         "name": "bun",
         "executable": "bun.exe",
@@ -181,12 +181,16 @@
         "installs": [
           {
             "from": "npm",
-            "command": [
+            "install": [
               "bun",
               "add",
               "-g",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -255,7 +259,7 @@
       }
     },
     "cargo": {
-      "sha256": "a87c3f299460b7ab3abeec279ce4adc1189cb97d121dd8b5b969c7a9aaab6ed5",
+      "sha256": "5a56d20376e8bb8d2d294c5884659e84cc85e00b05b70ea9cde24b999c4839b9",
       "record": {
         "name": "cargo",
         "executable": "cargo.exe",
@@ -292,11 +296,15 @@
         "installs": [
           {
             "from": "crates",
-            "command": [
+            "install": [
               "cargo",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -357,7 +365,7 @@
       }
     },
     "choco": {
-      "sha256": "a984a13afce8bca7d40983f3d41492824041c9676ff10003a8a82a60a897b223",
+      "sha256": "c560ced2cd65a4a9bdf022a4906884f563b73de22418eed6529deb901b9d743b",
       "record": {
         "name": "choco",
         "executable": "choco.exe",
@@ -399,12 +407,16 @@
         "installs": [
           {
             "from": "choco",
-            "command": [
+            "install": [
               "choco",
               "install",
               "{id}",
               "-y"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -810,7 +822,7 @@
       }
     },
     "fnm": {
-      "sha256": "85b79d83c67e11ed3148445171bb0cc081b9a82c35f62a9100ab51efc96a81f6",
+      "sha256": "a8c48a314b774a27a53c07666b71c6b356a41c12bb46ac872139ea48e1aa6051",
       "record": {
         "name": "fnm",
         "executable": "fnm.exe",
@@ -862,11 +874,15 @@
         "installs": [
           {
             "from": "fnm",
-            "command": [
+            "install": [
               "fnm",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,
@@ -1505,7 +1521,7 @@
       }
     },
     "mise": {
-      "sha256": "b015896c912b168858fb97ddf7aedf7c931f8c21c75e68ef5e1a894ee34c46a4",
+      "sha256": "dfbc9a96bbdd167e285c0e4acc92233da301290dd04fa7b3878651b8ccb269f1",
       "record": {
         "name": "mise",
         "executable": "mise.exe",
@@ -1560,12 +1576,16 @@
         "installs": [
           {
             "from": "mise",
-            "command": [
+            "install": [
               "mise",
               "use",
               "--global",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,
@@ -1675,7 +1695,7 @@
       }
     },
     "npm": {
-      "sha256": "91c0f232da0acf59266a20145f5697c532049486c70a480d85e3aa01240d7a28",
+      "sha256": "c0a7def11f439680db0b65195cb741d98312f0708b3bf863178140ba9bd91903",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -1733,12 +1753,16 @@
         "installs": [
           {
             "from": "npm",
-            "command": [
+            "install": [
               "npm",
               "install",
               "-g",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -1849,7 +1873,7 @@
       }
     },
     "pip": {
-      "sha256": "0aa0721c98a355f8f950d7fb1036d99e3aa79e5c7b88b53a988b230b7f82b2e8",
+      "sha256": "789ef1c0f67424639c2e1090384669cec7def5aefae17731affc2fac4a02908e",
       "record": {
         "name": "pip",
         "executable": "pip.exe",
@@ -1886,12 +1910,16 @@
         "installs": [
           {
             "from": "pypi",
-            "command": [
+            "install": [
               "pip",
               "install",
               "--user",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -1904,7 +1932,7 @@
       }
     },
     "pipx": {
-      "sha256": "c671048705641c63cbc839b7110086d3099b977638c18fde61f02ab860f03602",
+      "sha256": "9156eb72695dd529ecf1fa8f3ae2895b83d7da914b85a53dfc1cfbc62ac1ba11",
       "record": {
         "name": "pipx",
         "executable": "pipx",
@@ -1944,11 +1972,15 @@
         "installs": [
           {
             "from": "pypi",
-            "command": [
+            "install": [
               "pipx",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -1961,7 +1993,7 @@
       }
     },
     "pnpm": {
-      "sha256": "52c7af5a291f057781accbe103290d542c6c82569d1f8d31c5282835c480cac8",
+      "sha256": "f46fdb888619c53e25904c364759325f6bf34a9d3004c100e0f9f42c87dcce94",
       "record": {
         "name": "pnpm",
         "executable": "pnpm.cmd",
@@ -2002,12 +2034,16 @@
         "installs": [
           {
             "from": "npm",
-            "command": [
+            "install": [
               "pnpm",
               "add",
               "-g",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -2293,7 +2329,11 @@
         "installs": [
           {
             "from": "psgallery",
-            "command": null,
+            "install": null,
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": "Install-PSResource",
             "args": {
               "Name": "{id}",
@@ -2310,7 +2350,7 @@
       }
     },
     "pymanager": {
-      "sha256": "b2f1bc4a4c649a48363373aa39f2307dc2683dff0a152a37699540d48c8493a0",
+      "sha256": "222de35c007dc969d10e3725de2fd00cb280ccdd2b4d3e5dfe143f13202eb554",
       "record": {
         "name": "pymanager",
         "executable": "pymanager.exe",
@@ -2347,11 +2387,15 @@
         "installs": [
           {
             "from": "pymanager",
-            "command": [
+            "install": [
               "py",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,
@@ -2517,7 +2561,7 @@
       }
     },
     "scoop": {
-      "sha256": "968ea6fd47400262f1eea36980201b54bc404dfe9c7946b2f1ca71556e69ae74",
+      "sha256": "02d480a6f0bdb8011c1fc9296cc6c33941c7d5e21c27d685c68abf034742e89d",
       "record": {
         "name": "scoop",
         "executable": "scoop.cmd",
@@ -2557,11 +2601,15 @@
         "installs": [
           {
             "from": "scoop",
-            "command": [
+            "install": [
               "scoop",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": true,
@@ -2676,7 +2724,7 @@
       }
     },
     "uv": {
-      "sha256": "5ae6faa659da1842e892ecbd35a921fddc6b5422938542d92c66fba4ab177807",
+      "sha256": "67a1ea3e4db1f915d4847d40df871f0878faf3a48419a7f712688b748a5fe128",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -2733,12 +2781,16 @@
         "installs": [
           {
             "from": "pypi",
-            "command": [
+            "install": [
               "uv",
               "tool",
               "install",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,
@@ -2748,13 +2800,17 @@
           },
           {
             "from": "uv",
-            "command": [
+            "install": [
               "uv",
               "python",
               "install",
               "--default",
               "{id}"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,
@@ -2899,7 +2955,7 @@
       }
     },
     "winget": {
-      "sha256": "984c03140d81263dc7f7fbde79b730893d30172edf9f404285f7281d8010e1d0",
+      "sha256": "0dcd7cb5a4348cc49f0fe9095db2a693fae7b27a93e94e413bcb6e91043f19cd",
       "record": {
         "name": "winget",
         "executable": "winget.exe",
@@ -2939,7 +2995,7 @@
         "installs": [
           {
             "from": "winget",
-            "command": [
+            "install": [
               "winget",
               "install",
               "--id",
@@ -2949,6 +3005,10 @@
               "--accept-source-agreements",
               "--accept-package-agreements"
             ],
+            "update": null,
+            "remove": null,
+            "list": null,
+            "outdated": null,
             "function": null,
             "args": null,
             "batch": false,

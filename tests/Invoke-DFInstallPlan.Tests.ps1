@@ -32,10 +32,10 @@ Describe 'Invoke-DFInstallPlan' {
         Mock Test-DFElevated { $false }
         $script:Db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true, "feeds": { "list": ["scoop","bucket","list"], "add": ["scoop","bucket","add","{name}","{url}"], "id": "{feed}/{id}" } } }'),
-            (Rec '{ "name": "choco", "executable": "choco.exe", "installs": { "from": "choco", "command": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'),
+            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true, "feeds": { "list": ["scoop","bucket","list"], "add": ["scoop","bucket","add","{name}","{url}"], "id": "{feed}/{id}" } } }'),
+            (Rec '{ "name": "choco", "executable": "choco.exe", "installs": { "from": "choco", "install": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'),
             (Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} } }'),
-            (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "command": ["fnm","install","{id}"], "reactivate": true } }'),
+            (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"], "reactivate": true } }'),
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "choco": "glow" } }'),
             (Rec '{ "name": "dotenv", "executable": "Dotenv", "type": "module", "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://u" } } } }')
@@ -162,7 +162,7 @@ Describe 'Invoke-DFInstallPlan with a two-block manager' {
         Mock Test-DFToolAvailable { $true }
         $script:Db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "uv", "executable": "uv.exe", "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","--default","{id}"] } ] }'),
+            (Rec '{ "name": "uv", "executable": "uv.exe", "installs": [ { "from": "pypi", "install": ["uv","tool","install","{id}"] }, { "from": "uv", "install": ["uv","python","install","--default","{id}"] } ] }'),
             (Rec '{ "name": "ruff", "executable": "ruff.exe", "packages": { "pypi": "ruff" } }'),
             (Rec '{ "name": "python", "executable": "python.exe", "packages": { "uv": "3" } }')
         )) { $script:Db[$r.name] = $r }

@@ -5,7 +5,7 @@ function Expand-DFInstallArgv {
     .SYNOPSIS
         Fills a manager's argv template: {id} becomes every id, other {name} tokens come from -Values.
     .PARAMETER Template
-        The argv template from installs.command or installs.feeds. A token
+        The argv template from installs.install or installs.feeds. A token
         that is exactly {id} expands to every id; a token containing {id}
         (pkg@{id}) is repeated once per id.
     .PARAMETER Values

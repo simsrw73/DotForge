@@ -25,8 +25,8 @@
     ]
   },
   "installs": [
-    { "from": "pypi", "command": ["uv", "tool", "install", "{id}"] },
-    { "from": "uv", "command": ["uv", "python", "install", "--default", "{id}"] }
+    { "from": "pypi", "install": ["uv", "tool", "install", "{id}"] },
+    { "from": "uv", "install": ["uv", "python", "install", "--default", "{id}"] }
   ],
   "aliases": {},
   "picker": null

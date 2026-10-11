@@ -210,9 +210,9 @@ Describe 'Test-DFToolSchema' {
         It 'rejects a non-object installs block with its current message' {
             Get-SchemaErrors @{ installs = 'bad' } | Should -BeExactly 'installs must be an object'
         }
-        It 'rejects a non-array installs command with its current message' {
-            Get-SchemaErrors @{ installs = [pscustomobject]@{ from = 'source'; command = 'install' } } |
-                Should -BeExactly 'installs.command must be an array (argv)'
+        It 'rejects a non-array installs install with its current message' {
+            Get-SchemaErrors @{ installs = [pscustomobject]@{ from = 'source'; install = 'install' } } |
+                Should -BeExactly 'installs.install must be an array (argv)'
         }
         It 'rejects malformed requires with its current message' {
             Get-SchemaErrors @{ requires = 'source' } |

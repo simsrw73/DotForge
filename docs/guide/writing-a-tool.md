@@ -102,7 +102,7 @@ A tool whose record has `installs` is a package manager: `Install-DFTool` uses i
 ```json
 "installs": {
   "from": "scoop",
-  "command": ["scoop", "install", "{id}"],
+  "install": ["scoop", "install", "{id}"],
   "batch": true,
   "feeds": {
     "list": ["scoop", "bucket", "list"],
@@ -115,8 +115,10 @@ A tool whose record has `installs` is a package manager: `Install-DFTool` uses i
 | Field | What it means |
 | --- | --- |
 | `from` | The source it installs from: its own name for a system manager (`scoop`), or a registry several managers share (`npm` for npm, pnpm and bun). Which of those does the work is a role (`js-package-manager`): the user's `Defaults` choice, else the highest priority. |
-| `command` | The install command as an argv. `{id}` is the package id; with `batch`, it expands to every id in the batch. |
-| `function` / `args` | Instead of `command`, a PowerShell command and its parameters (`Install-PSResource` with `Name = "{id}"`). A `true` argument is a switch. |
+| `install` | The install command as an argv. `{id}` is the package id; with `batch`, it expands to every id in the batch. |
+| `function` / `args` | Instead of `install`, a PowerShell command and its parameters (`Install-PSResource` with `Name = "{id}"`). A `true` argument is a switch. |
+| `update` / `remove` | How to update or remove a package: an argv like `install`, or `{ "function": ..., "args": { ... } }`. Without one, DotForge says it can't update or remove through this manager. |
+| `list` / `outdated` | Names of functions in `Tools/<manager>.manage.ps1` that report what the manager has installed and what has an update. |
 | `batch` | It can install several ids in one call. |
 | `elevate` | It needs an elevated shell (choco). Unless the shell is elevated, DotForge runs it through the `elevator` role's tool (gsudo) when one is installed or being installed in the same run; otherwise it uses the tool's next source. |
 | `reactivate` | Re-run this manager's companion after it installs something, so a new runtime reaches `PATH` in the same shell (fnm, mise). |

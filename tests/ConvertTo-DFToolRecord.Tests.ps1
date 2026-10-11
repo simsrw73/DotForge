@@ -90,14 +90,14 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'normalizes each installs block when a tool declares a list' {
         $raw = '{ "name": "t", "executable": "t", "installs": [
-                    { "from": "npm", "command": ["npm", "install", "{id}"], "batch": true },
+                    { "from": "npm", "install": ["npm", "install", "{id}"], "batch": true },
                     { "from": "pypi", "function": "Install-Package", "args": { "Name": "{id}" }, "reactivate": true }
                 ] }' | ConvertFrom-Json
         $r = ConvertTo-DFToolRecord $raw
 
         @($r.installs).Count | Should -Be 2
         $r.installs[0].from | Should -Be 'npm'
-        @($r.installs[0].command) | Should -Be @('npm', 'install', '{id}')
+        @($r.installs[0].install) | Should -Be @('npm', 'install', '{id}')
         $r.installs[0].batch | Should -BeTrue
         $r.installs[1].from | Should -Be 'pypi'
         $r.installs[1].function | Should -Be 'Install-Package'

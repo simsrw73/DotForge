@@ -5,10 +5,10 @@ BeforeAll {
     function script:New-ChainDb {
         $db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true } }'),
-            (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "roles": { "version-manager": {} }, "installs": { "from": "fnm", "command": ["fnm","install","{id}"], "reactivate": true } }'),
+            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true } }'),
+            (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "roles": { "version-manager": {} }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"], "reactivate": true } }'),
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts", "scoop": "nodejs-lts" }, "install": { "prefer": ["fnm"] }, "roles": { "js-runtime": {} } }'),
-            (Rec '{ "name": "npm", "executable": "npm.cmd", "requires": ["node"], "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "command": ["npm","i","-g","{id}"], "batch": true } }'),
+            (Rec '{ "name": "npm", "executable": "npm.cmd", "requires": ["node"], "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "install": ["npm","i","-g","{id}"], "batch": true } }'),
             (Rec '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" } }')
         )) { $db[$r.name] = $r }
@@ -74,7 +74,7 @@ Describe 'New-DFInstallPlan and elevation' {
         Set-DFTestConfig @{ InstallVia = @{ glow = 'choco' } }
         Mock Test-DFElevated { $false }
         $script:Db = New-ChainDb
-        $script:Db.choco = Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "command": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'
+        $script:Db.choco = Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "install": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'
         $script:Db.gsudo = Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} }, "packages": { "scoop": "gsudo" } }'
         $script:Db.glow = Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "choco": "glow", "scoop": "glow" } }'
     }

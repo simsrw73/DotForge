@@ -5,11 +5,11 @@ BeforeAll {
     function script:New-Db {
         $db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "command": ["scoop","install","{id}"], "batch": true } }'),
-            (Rec '{ "name": "winget", "executable": "winget.exe", "roles": { "package-manager": { "priority": 20 } }, "installs": { "from": "winget", "command": ["winget","install","{id}"] } }'),
-            (Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "command": ["choco","install","{id}"], "elevate": true } }'),
-            (Rec '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "command": ["npm","i","-g","{id}"] } }'),
-            (Rec '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "installs": { "from": "npm", "command": ["pnpm","add","-g","{id}"] } }'),
+            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "roles": { "package-manager": { "priority": 30 } }, "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true } }'),
+            (Rec '{ "name": "winget", "executable": "winget.exe", "roles": { "package-manager": { "priority": 20 } }, "installs": { "from": "winget", "install": ["winget","install","{id}"] } }'),
+            (Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "install": ["choco","install","{id}"], "elevate": true } }'),
+            (Rec '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "install": ["npm","i","-g","{id}"] } }'),
+            (Rec '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "installs": { "from": "npm", "install": ["pnpm","add","-g","{id}"] } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "winget": "charm.glow", "choco": "glow" }, "install": { "prefer": ["winget"] } }'),
             (Rec '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }')
         )) { $db[$r.name] = $r }
@@ -105,7 +105,7 @@ Describe 'managers with several installs blocks' {
         Set-DFTestConfig $null
         $script:Db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "uv", "executable": "uv.exe", "roles": { "version-manager": {}, "python-package-manager": { "priority": 30 } }, "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","--default","{id}"] } ] }'),
+            (Rec '{ "name": "uv", "executable": "uv.exe", "roles": { "version-manager": {}, "python-package-manager": { "priority": 30 } }, "installs": [ { "from": "pypi", "install": ["uv","tool","install","{id}"] }, { "from": "uv", "install": ["uv","python","install","--default","{id}"] } ] }'),
             (Rec '{ "name": "ruff", "executable": "ruff.exe", "packages": { "pypi": "ruff" } }'),
             (Rec '{ "name": "python", "executable": "python.exe", "packages": { "uv": "3" } }')
         )) { $script:Db[$r.name] = $r }
@@ -114,7 +114,7 @@ Describe 'managers with several installs blocks' {
     It 'picks the block that installs from the chosen source' {
         $r = Resolve-DFInstallSource -Tool $script:Db.ruff -ToolDb $script:Db -IsAvailable { param($m) $true }
         $r.Manager.name | Should -Be 'uv'
-        $r.Block.command | Should -Be @('uv', 'tool', 'install', '{id}')
+        $r.Block.install | Should -Be @('uv', 'tool', 'install', '{id}')
         (Resolve-DFInstallSource -Tool $script:Db.python -ToolDb $script:Db -IsAvailable { param($m) $true }).Block.from | Should -Be 'uv'
     }
     It 'lists every block''s source in the built-in order' {

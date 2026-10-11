@@ -31,7 +31,7 @@ function Format-DFInstallCommand {
         })
         return (@($i.function) + $fnArgs) -join ' '
     }
-    (@($i.command | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
+    (@($i.install | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
 }
 
 function Get-DFInstallHint {

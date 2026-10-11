@@ -96,7 +96,7 @@ function Invoke-DFInstallPlan {
                     foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
                     Invoke-DFInstallCommand -Manager $m -Function $blk.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.command -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
+                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
                 }
                 foreach ($it in $group) {
                     $t = $ToolDb[$it.Tool]

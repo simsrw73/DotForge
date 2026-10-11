@@ -9,35 +9,72 @@ BeforeAll {
 }
 
 Describe 'installs and install (schema)' {
-    It 'accepts a command manager and a function manager' {
-        Get-Errs @{ installs = [pscustomobject]@{ from = 'x'; command = @('x', 'install', '{id}') } } | Should -BeNullOrEmpty
+    It 'accepts an install-argv manager and a function manager' {
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'x'; install = @('x', 'install', '{id}') } } | Should -BeNullOrEmpty
         Get-Errs @{ installs = [pscustomobject]@{ from = 'psgallery'; function = 'Install-PSResource'; args = [pscustomobject]@{ Name = '{id}' } } } | Should -BeNullOrEmpty
     }
-    It 'requires from, and exactly one of command or function' {
-        Get-Errs @{ installs = [pscustomobject]@{ command = @('x') } } | Should -Match 'installs.from'
-        Get-Errs @{ installs = [pscustomobject]@{ from = 'x' } } | Should -Match 'command or function'
+    It 'requires from, and exactly one of install or function' {
+        Get-Errs @{ installs = [pscustomobject]@{ install = @('x') } } | Should -Match 'installs.from'
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'x' } } | Should -Match 'install or function'
     }
     It 'requires install.prefer to name the tool''s own sources' {
         Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ prefer = @('winget') } } | Should -Match 'install.prefer'
     }
     It 'accepts a list of blocks, each validated' {
-        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; command = @('uv', 'tool', 'install', '{id}') }, [pscustomobject]@{ from = 'uv'; command = @('uv', 'python', 'install', '{id}') }) } | Should -BeNullOrEmpty
-        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; command = @('x') }, [pscustomobject]@{ command = @('y') }) } | Should -Match 'installs\[1\]\.from'
+        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; install = @('uv', 'tool', 'install', '{id}') }, [pscustomobject]@{ from = 'uv'; install = @('uv', 'python', 'install', '{id}') }) } | Should -BeNullOrEmpty
+        Get-Errs @{ installs = @([pscustomobject]@{ from = 'pypi'; install = @('x') }, [pscustomobject]@{ install = @('y') }) } | Should -Match 'installs\[1\]\.from'
     }
     It 'normalizes installs to a list of blocks' {
-        $one = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "command": ["m","i","{id}"] } }' | ConvertFrom-Json)
+        $one = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "install": ["m","i","{id}"] } }' | ConvertFrom-Json)
         @($one.installs).Count | Should -Be 1
-        $two = ConvertTo-DFToolRecord ('{ "name": "uv", "executable": "uv", "installs": [ { "from": "pypi", "command": ["uv","tool","install","{id}"] }, { "from": "uv", "command": ["uv","python","install","{id}"] } ] }' | ConvertFrom-Json)
+        $two = ConvertTo-DFToolRecord ('{ "name": "uv", "executable": "uv", "installs": [ { "from": "pypi", "install": ["uv","tool","install","{id}"] }, { "from": "uv", "install": ["uv","python","install","{id}"] } ] }' | ConvertFrom-Json)
         @($two.installs).Count | Should -Be 2
         $two.installs[1].from | Should -Be 'uv'
         $two.installs[1].batch | Should -BeFalse
     }
     It 'normalizes installs with defaults' {
-        $r = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "command": ["m","i","{id}"] } }' | ConvertFrom-Json)
+        $r = ConvertTo-DFToolRecord ('{ "name": "m", "executable": "m", "installs": { "from": "m", "install": ["m","i","{id}"] } }' | ConvertFrom-Json)
         $r.installs.batch | Should -BeFalse
         $r.installs.elevate | Should -BeFalse
         $r.installs.feeds | Should -BeNullOrEmpty
         $r.install | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'installs operations' {
+    It 'rejects the old command field, naming the new one' {
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'scoop'; command = @('scoop', 'install', '{id}') } } | Should -Match 'installs.command was renamed to installs.install'
+    }
+    It 'accepts install, update and remove argv, and list/outdated function names' {
+        Get-Errs @{ installs = [pscustomobject]@{
+            from = 'scoop'; install = @('scoop', 'install', '{id}'); update = @('scoop', 'update', '{id}')
+            remove = @('scoop', 'uninstall', '{id}'); list = 'Get-DFScoopInstalled'; outdated = 'Get-DFScoopOutdated' } } | Should -BeNullOrEmpty
+    }
+    It 'accepts update and remove as a function with args' {
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'psgallery'; function = 'Install-PSResource'; args = [pscustomobject]@{ Name = '{id}' }
+            update = [pscustomobject]@{ function = 'Update-PSResource'; args = [pscustomobject]@{ Name = '{id}' } } } } | Should -BeNullOrEmpty
+    }
+    It 'rejects an update that is neither argv nor a function' {
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'x'; install = @('x'); update = 'x update' } } | Should -Match 'installs.update must be an array \(argv\) or \{ function, args \}'
+    }
+    It 'rejects a list that is not a function name' {
+        Get-Errs @{ installs = [pscustomobject]@{ from = 'scoop'; install = @('scoop', 'install', '{id}'); list = @('scoop', 'list') } } | Should -Match 'installs.list must be a function name'
+    }
+    It 'normalizes every installs operation' {
+        $raw = '{ "name": "m", "executable": "m.exe", "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "update": ["scoop","update","{id}"], "list": "Get-X" } }' | ConvertFrom-Json
+        $b = @((ConvertTo-DFToolRecord $raw).installs)[0]
+        $b.install | Should -Be @('scoop', 'install', '{id}')
+        $b.update | Should -Be @('scoop', 'update', '{id}')
+        $b.remove | Should -BeNullOrEmpty
+        $b.list | Should -Be 'Get-X'
+        $b.outdated | Should -BeNullOrEmpty
+        $b.PSObject.Properties['command'] | Should -BeNullOrEmpty
+    }
+    It 'normalizes a function operation to { function; args }' {
+        $raw = '{ "name": "m", "executable": "m", "installs": { "from": "psgallery", "function": "Install-PSResource", "remove": { "function": "Uninstall-PSResource", "args": { "Name": "{id}" } } } }' | ConvertFrom-Json
+        $b = @((ConvertTo-DFToolRecord $raw).installs)[0]
+        $b.remove.function | Should -Be 'Uninstall-PSResource'
+        $b.remove.args.Name | Should -Be '{id}'
     }
 }
 

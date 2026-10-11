@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 6b509be8205a91fa0c9f3d7b308a0cfd0aa039e16a8bab5c1acd1d26407dfbcc
+# sources-sha256: 8035cedc2c2b21aef58705ca71440d02ab7bf0ea9bdb7102326c84201f777cb7
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -314,7 +314,7 @@ function Format-DFInstallCommand {
         })
         return (@($i.function) + $fnArgs) -join ' '
     }
-    (@($i.command | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
+    (@($i.install | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
 }
 
 function Get-DFInstallHint {
@@ -763,10 +763,14 @@ function ConvertTo-DFInstallsBlock {
                 id   = Get-DFToolRecordProperty $feeds 'id' '{feed}/{id}'
             }
         }
-        $command = Get-DFToolRecordProperty $block 'command' $null
+        $install = Get-DFToolRecordProperty $block 'install' $null
         [pscustomobject]@{
             from       = Get-DFToolRecordProperty $block 'from' $null
-            command    = $(if ($null -ne $command) { [string[]]@($command) })
+            install    = $(if ($null -ne $install) { [string[]]@($install) })
+            update     = ConvertTo-DFManagerOperation (Get-DFToolRecordProperty $block 'update' $null)
+            remove     = ConvertTo-DFManagerOperation (Get-DFToolRecordProperty $block 'remove' $null)
+            list       = Get-DFToolRecordProperty $block 'list' $null
+            outdated   = Get-DFToolRecordProperty $block 'outdated' $null
             function   = Get-DFToolRecordProperty $block 'function' $null
             args       = Get-DFToolRecordProperty $block 'args' $null
             batch      = [bool](Get-DFToolRecordProperty $block 'batch' $false)
@@ -776,6 +780,22 @@ function ConvertTo-DFInstallsBlock {
         }
     })
     Write-Output -NoEnumerate $normalized
+}
+
+function ConvertTo-DFManagerOperation {
+    <#
+    .SYNOPSIS
+        Normalizes an installs block's update or remove: $null, an argv (string[]), or { function; args }.
+    .PARAMETER RawOperation
+        See the synopsis.
+    #>
+    param($RawOperation)
+    if ($null -eq $RawOperation) { return $null }
+    if ($RawOperation -is [array]) { return ,[string[]]@($RawOperation) }
+    [pscustomobject]@{
+        function = Get-DFToolRecordProperty $RawOperation 'function' $null
+        args     = Get-DFToolRecordProperty $RawOperation 'args' $null
+    }
 }
 
 function ConvertTo-DFInstallBlock {
@@ -816,7 +836,7 @@ function ConvertTo-DFToolRecord {
         instructions and compliance; setup, when present, has seed (an object
         mapping destination path template to a file under Tools/, or $null);
         installs, when present, is a list of blocks (a single object in the
-        JSON becomes a one-block list), each with from, command (string[] or
+        JSON becomes a one-block list), each with from, install (string[] or
         $null), function, args, batch, elevate and reactivate ($false by
         default) and feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
         present, has prefer (string[]); each alias is
@@ -1301,11 +1321,23 @@ function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
             $at = if ($isList) { "installs[$n]" } else { 'installs' }
             if ($ins -isnot [pscustomobject]) { "$at must be an object"; continue }
             if (-not ((Get-DFSchemaProperty $ins 'from') -is [string] -and (Get-DFSchemaProperty $ins 'from'))) { "$at.from must name the source this manager installs from" }
-            $cmd = $ins.PSObject.Properties['command']?.Value   # read directly: a helper would unroll ["x"]
-            $hasCmd = $null -ne $cmd
+            $renamed = [bool]$ins.PSObject.Properties['command']
+            if ($renamed) { "$at.command was renamed to $at.install" }
+            $install = $ins.PSObject.Properties['install']?.Value   # read directly: a helper would unroll ["x"]
+            $hasInstall = $null -ne $install
             $hasFn = $null -ne (Get-DFSchemaProperty $ins 'function')
-            if ($hasCmd -eq $hasFn) { "$at needs exactly one of command or function" }
-            if ($hasCmd -and $cmd -isnot [array]) { "$at.command must be an array (argv)" }
+            if ($hasInstall -eq $hasFn -and -not $renamed) { "$at needs exactly one of install or function" }
+            if ($hasInstall -and $install -isnot [array]) { "$at.install must be an array (argv)" }
+            foreach ($op in 'update', 'remove') {
+                $value = $ins.PSObject.Properties[$op]?.Value
+                if ($null -eq $value -or $value -is [array]) { continue }
+                $isFunction = $value -is [pscustomobject] -and (Get-DFSchemaProperty $value 'function') -is [string]
+                if (-not $isFunction) { "$at.$op must be an array (argv) or { function, args }" }
+            }
+            foreach ($op in 'list', 'outdated') {
+                $value = $ins.PSObject.Properties[$op]?.Value
+                if ($null -ne $value -and $value -isnot [string]) { "$at.$op must be a function name" }
+            }
         }
     }
     $inst = Get-DFSchemaProperty $Tool 'install'
@@ -1371,7 +1403,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
         setup  = 'seed'
-        installs = 'from', 'command', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
+        installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
     }
@@ -2231,7 +2263,7 @@ function Expand-DFInstallArgv {
     .SYNOPSIS
         Fills a manager's argv template: {id} becomes every id, other {name} tokens come from -Values.
     .PARAMETER Template
-        The argv template from installs.command or installs.feeds. A token
+        The argv template from installs.install or installs.feeds. A token
         that is exactly {id} expands to every id; a token containing {id}
         (pkg@{id}) is repeated once per id.
     .PARAMETER Values
@@ -2400,7 +2432,7 @@ function Invoke-DFInstallPlan {
                     foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
                     Invoke-DFInstallCommand -Manager $m -Function $blk.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.command -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
+                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
                 }
                 foreach ($it in $group) {
                     $t = $ToolDb[$it.Tool]
