@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-56**.
+git history, not here. IDs are never reused; the next free one is **T-58**.
 
 ## Priority 1 — Release Readiness
 
@@ -38,12 +38,13 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-36 Survey more per-directory env tools** — beyond ps-dotenv, mise and direnv. Also: write direnv's Git Bash `bash_path` config (setup lifecycle) and record its variable-unloading bug in `docs/external-dependencies.md`.
 - [ ] **T-37 Audit theming for silent overrides of the user's own config** — `bat`'s `BAT_THEME`, `mdcat`'s `MDCAT_THEME` and `vivid`'s `LS_COLORS` outrank each tool's own config file, so a theme the user set there is overridden without notice or a per-tool opt-out. Weigh each case; the user must be able to see and override what DotForge changed.
 - [ ] **T-38 Setup teardown** — an `Uninstall-DFToolSetup` that reads the recorded `actions` back. Spec it once there's more than delta's one `actions` shape.
+- [ ] **T-56 Purge for Remove-DFTool** — delete seeded files unchanged since seeding; undo setup changes a tool's setup declares how to undo.
+- [ ] **T-57 Build-DFReferenceDocs null setup noise** — `build/Build-DFReferenceDocs.ps1:288` prints `Cannot index into a null array` about 55 times on every run (`(& $prop $Tool 'setup')?.PSObject...` on a null setup); output is still correct.
 - [ ] **T-39 Defer inshellisense's session check** — `is -c` runs at every start; see `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. Never defer oh-my-posh or fnm.
 - [ ] **T-40 A general prewarm primitive for the user's own profile** — let a profile prewarm its own module imports (`powershell-yaml`, SecretManagement, `Microsoft.WinGet.CommandNotFound`, ~0.2 s measured) like DotForge's tool prewarm.
 - [ ] **T-41 Catppuccin for lazygit, micro and procs** — no integration yet; each needs its own look at how to point it at a theme.
 - [ ] **T-42 Prompt themes and the `Theme` chain** — oh-my-posh's theme is the user's own `$Env:POSH_THEME`; decide how a prompt engine's theme fits `Theme`. fastfetch's seeded config hardcodes catppuccin hex.
 - [ ] **T-43 Opt-in/opt-out control over which aliases DotForge binds** — allow/deny lists per alias or per tool. Sketch: tools declare aliases; one function filters by config before binding. See `docs/builtin-safety-policy.md`.
-- [ ] **T-44 Updating and removing tools (`Update-DFTool`, uninstall)** — reuse the managers' `installs` blocks (add `update`/`remove` commands) and the session graph. See [the install spec](docs/superpowers/specs/2026-10-09-install-design.md) non-goals.
 - [ ] **T-46 Idle activation for slow, non-urgent tools** — `"activate": "idle"`, set up from `OnIdle` after the first prompt. Candidate: carapace (~0.3 s). Must stay eager: psreadline, PSFzf, starship, fnm, zoxide.
 - [ ] **T-47 More tool configs** — XDG, completions and pickers for `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true`.
 - [ ] **T-48 `Invoke-DFMaintenance` and a scheduled-maintenance guide** — a manual, opt-in command to purge the completion cache, refresh the help-topic index and run `scoop cleanup *`. DotForge never creates scheduled tasks or updates packages itself; document user-owned Task Scheduler recipes.

@@ -166,6 +166,50 @@ Install-DFTool -Missing
 3. `-UseDefaults` answers every question with the default and doesn't ask for confirmation. From a script with no one to ask, and no `-UseDefaults`, only the tools that need no decision are installed; the rest are reported with the reason.
 4. New tools are configured in the current session right away. `Install-DFTool -Name ripgrep` installs one tool by name; add it to `Tools` to load it in future shells.
 
+## Updating and removing tools
+
+To see updates for the active tools in your session, run the following command:
+
+<!-- system -->
+
+```powershell
+Update-DFTool
+```
+
+The table shows `Tool`, `Manager`, `Installed`, and `Update`. The update column says `up to date`, `unknown`, or shows the available version. A runtime that a version manager owns (node through fnm or mise, Python through uv or pymanager) isn't updated here; the column names the manager to update it with.
+
+To update every active tool with an available update, run the following command:
+
+<!-- system -->
+
+```powershell
+Update-DFTool -All
+```
+
+Use `-Name` to update selected tools. Use `-WhatIf` to show the update plan without changing packages:
+
+<!-- system -->
+
+```powershell
+Update-DFTool -Name fzf, bat -WhatIf
+```
+
+DotForge asks only the managers in the tool's own `packages` sources. It asks them in install precedence order. If a tool is installed through two managers, the table shows the first manager that reports it.
+
+To remove a package, run the following command:
+
+<!-- system -->
+
+```powershell
+Remove-DFTool -Name glow
+```
+
+`Remove-DFTool` removes only the package. If another active tool depends on it, DotForge refuses and names the dependents. Use `-Force` to remove the requested tool anyway. Use `-IncludeDependents` to remove dependents first; DotForge shows the order and asks once for the whole removal.
+
+A manager that still has packages installed also needs `-Force`. DotForge lists those packages and never removes them as dependents. After a removal, DotForge reports seeded files, recorded setup changes, and the tool's entry in your `Tools` setting. It keeps the setup record, so reinstalling does not run setup twice. Aliases and functions stay in the current shell until you open a new one.
+
+Some managers need administrator rights (choco). In an elevated shell the command just runs. Otherwise DotForge runs it through gsudo when it is installed, else through Windows' `sudo` when it is on in inline mode, else in a separate administrator window, which shows one UAC prompt and reports only whether the command succeeded. When no one can answer the prompt (a scheduled task, `-NonInteractive`), an install uses the tool's next source, and an update or removal reports that it needs administrator rights.
+
 ## Next steps
 
 - [Configuration](configuration.md): every configuration key, themes, and choosing which tool fills each role.

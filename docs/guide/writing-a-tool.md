@@ -128,6 +128,12 @@ A manager that installs from more than one source gives `installs` as a list of 
 
 A tool with no `packages` that `requires` another tool is installed by installing that tool: npm comes with node, and pip comes with python.
 
+### `Tools/<manager>.manage.ps1`
+
+Add this companion when a manager supports `list` or `outdated`. It defines the functions named by those fields. Each function accepts `-Manager` and returns objects with `Id`, `Installed`, and `Available`. `Id` must exactly match the value that the manager's `packages` source writes. Use an empty `Available` value for `list`.
+
+Run the manager only through `Invoke-DFManagerCommand`. Never throw when its output cannot be parsed. Return no rows for output that you cannot parse. DotForge loads these companions on demand, not at startup. Test each parser against recorded manager output in `tests/fixtures/managers/<manager>/`.
+
 ## Companion scripts
 
 When JSON isn't enough, add `Tools/<name>.ps1`. `Register-DFTool` dot-sources it after applying the record:
