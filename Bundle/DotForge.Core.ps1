@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e91869c29b60f5adfd8bfdfd6116165ada8a2de42cb2887114f3c2760f6f5021
+# sources-sha256: b3c3788f7d0a273e7cefa0d7bf33ad1b69a07ec374476c4e5fa4952b4ddcb680
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3653,6 +3653,9 @@ function Invoke-DFSessionActivation {
 
     $requirements = Resolve-DFToolRequirements -Records $records -ToolDb $toolDb -RequestedBy $requestedBy `
         -Excluded @(Get-DFExcludedToolNames) @pathArgs
+    # A tool whose old config location still holds the user's config is left
+    # alone entirely until they resolve it (Resolve-DFToolConflict).
+    $records = Select-DFOwnedRecord -Records $records -RequestedBy $requestedBy -Reactivate $Reactivate
     $tools = @(Get-DFActivationOrder -Records $records -ToolDb $toolDb -RequirementEdges $requirements.Edges)
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $toolDb -Tools $tools -RoleDb $roleDb
@@ -3864,7 +3867,8 @@ function New-DFToolStatus {
     .PARAMETER Name
         Tool name.
     .PARAMETER State
-        Active, Missing, Failed or Excluded.
+        Active, Missing, Failed, Excluded or Conflict (its old config location
+        holds the user's config; see Resolve-DFToolConflict).
     .PARAMETER RequestedBy
         'Tools', '+group', or what else requested it.
     .PARAMETER Detail
@@ -3875,7 +3879,7 @@ function New-DFToolStatus {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][ValidateSet('Active', 'Missing', 'Failed', 'Excluded')][string]$State,
+        [Parameter(Mandatory)][ValidateSet('Active', 'Missing', 'Failed', 'Excluded', 'Conflict')][string]$State,
         [string]$RequestedBy,
         [string]$Detail
     )
@@ -3958,6 +3962,68 @@ function Write-DFSessionNotice {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
     }
+    foreach ($conflicted in @($all | Where-Object State -eq 'Conflict')) {
+        $name = $conflicted.Name
+        $paths = @($conflicted.Conflicts.OldPaths) -join ', '
+        $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
+        $how = if ($guides) { "$($guides -join ' ') Then run Resolve-DFToolConflict $name -Adopt" }
+               else { "Run Resolve-DFToolConflict $name -Move (or -Adopt)" }
+        Write-Warning "DotForge: $name isn't active: your existing config at $paths would be hidden. $how, or remove $name from Tools."
+    }
+}
+
+function Select-DFOwnedRecord {
+    <#
+    .SYNOPSIS
+        Drops requested tools whose config DotForge would hide, recording their Conflict status; records the rest as owned.
+    .DESCRIPTION
+        Only installed tools that aren't already active are checked. A tool
+        with no conflict, a complete check and a relocated path is recorded as
+        owned (how: clean), all in one write. A tool in conflict gets status
+        Conflict and is left out of the run: no variables, setup, companion,
+        aliases or role. See
+        docs/superpowers/specs/2026-10-11-config-ownership-design.md.
+    .PARAMETER Records
+        The requested records (after Resolve-DFToolRequirements).
+    .PARAMETER RequestedBy
+        Name -> RequestedBy.
+    .PARAMETER Reactivate
+        Names re-registered on purpose (checked even when active).
+    .OUTPUTS
+        System.Collections.Generic.List[object]: the records to activate.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Records,
+        [Parameter(Mandatory)][hashtable]$RequestedBy,
+        [AllowEmptyCollection()][string[]]$Reactivate = @()
+    )
+    $kept = [System.Collections.Generic.List[object]]::new()
+    $ownership = Read-DFToolOwnership
+    # Unreadable: still check (nothing owned), but never write over the file.
+    $readable = $null -ne $ownership
+    if (-not $readable) { $ownership = @{} }
+    $changed = $false
+    foreach ($record in $Records) {
+        $skip = ((Test-DFToolActive $record.name) -and $record.name -notin $Reactivate) -or
+            -not (Test-DFToolAvailable -Executable $record.executable -Type $record.type)
+        if ($skip) { $kept.Add($record); continue }
+        $check = Find-DFToolConflict -Tool $record -Ownership $ownership
+        if ($check.Conflicts) {
+            $paths = @($check.Conflicts.OldPaths) -join ', '
+            $status = New-DFToolStatus -Name $record.name -State Conflict -RequestedBy $RequestedBy[$record.name] -Detail "your existing config at $paths would be hidden"
+            $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+            $script:DFSessionStatus[$record.name] = $status
+            continue
+        }
+        if ($readable -and $check.Complete -and -not $ownership.ContainsKey($record.name) -and @(Get-DFToolRelocation -Tool $record)) {
+            $ownership[$record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
+            $changed = $true
+        }
+        $kept.Add($record)
+    }
+    if ($changed) { Save-DFToolOwnership -Ownership $ownership }
+    , $kept
 }
 
 function Resolve-DFToolRequirements {
@@ -6550,10 +6616,12 @@ function Get-DFToolStatus {
         One object per requested (or excluded) tool:
             Name         the tool
             State        Active, Missing (not installed), Failed (setup or
-                         activation threw), or Excluded (by ExcludeTools)
+                         activation threw), Excluded (by ExcludeTools), or
+                         Conflict (its old config location holds your config;
+                         see Resolve-DFToolConflict)
             RequestedBy  Tools, the +group that requested it, or Register-DFTool
             Roles        roles it won this session, e.g. prompt
-            Detail       why it is Missing or Failed, or the tool standing in for it
+            Detail       why it is Missing, Failed or in Conflict, or the tool standing in for it
         It reports what already happened, so it is instant. Pipe -Missing
         into Install-DFTool to install those tools.
     .PARAMETER Name
@@ -6562,6 +6630,9 @@ function Get-DFToolStatus {
         Only tools that aren't installed.
     .PARAMETER Failed
         Only tools that failed to load.
+    .PARAMETER Conflict
+        Only tools left inactive because their old config location holds your
+        config. Resolve-DFToolConflict hands one over to DotForge.
     .EXAMPLE
         Get-DFToolStatus
 
@@ -6570,6 +6641,10 @@ function Get-DFToolStatus {
         Get-DFToolStatus -Missing
 
         Lists the requested tools that aren't installed; Install-DFTool -Missing installs them.
+    .EXAMPLE
+        Get-DFToolStatus -Conflict
+
+        Lists the requested tools DotForge left alone because your existing config would be hidden.
     .OUTPUTS
         DotForge.ToolStatus objects.
     #>
@@ -6578,7 +6653,8 @@ function Get-DFToolStatus {
     param(
         [Parameter(Position = 0)][string[]]$Name,
         [switch]$Missing,
-        [switch]$Failed
+        [switch]$Failed,
+        [switch]$Conflict
     )
     if (-not $script:DFSessionStatus) {
         Write-Warning 'DotForge: no session yet. Start-DFSession -Config @{ Tools = @(...) } configures the tools you request.'
@@ -6589,6 +6665,7 @@ function Get-DFToolStatus {
         if ($Name -and $s.Name -notin $Name) { continue }
         if ($Missing -and $s.State -ne 'Missing') { continue }
         if ($Failed -and $s.State -ne 'Failed') { continue }
+        if ($Conflict -and $s.State -ne 'Conflict') { continue }
         $s
     }
 }

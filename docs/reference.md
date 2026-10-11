@@ -499,17 +499,19 @@ Shows which tools +core requests.
 Shows what this session's Start-DFSession decided for each requested tool.
 
 ```text
-Get-DFToolStatus [[-Name] <string[]>] [-Missing] [-Failed] [<CommonParameters>]
+Get-DFToolStatus [[-Name] <string[]>] [-Missing] [-Failed] [-Conflict] [<CommonParameters>]
 ```
 
 ```text
 One object per requested (or excluded) tool:
     Name         the tool
     State        Active, Missing (not installed), Failed (setup or
-                 activation threw), or Excluded (by ExcludeTools)
+                 activation threw), Excluded (by ExcludeTools), or
+                 Conflict (its old config location holds your config;
+                 see Resolve-DFToolConflict)
     RequestedBy  Tools, the +group that requested it, or Register-DFTool
     Roles        roles it won this session, e.g. prompt
-    Detail       why it is Missing or Failed, or the tool standing in for it
+    Detail       why it is Missing, Failed or in Conflict, or the tool standing in for it
 It reports what already happened, so it is instant. Pipe -Missing
 into Install-DFTool to install those tools.
 ```
@@ -519,6 +521,7 @@ into Install-DFTool to install those tools.
 | `-Name` | string[] |  |  |  | Only these tools. |
 | `-Missing` | switch |  |  |  | Only tools that aren't installed. |
 | `-Failed` | switch |  |  |  | Only tools that failed to load. |
+| `-Conflict` | switch |  |  |  | Only tools left inactive because their old config location holds your config. Resolve-DFToolConflict hands one over to DotForge. |
 
 **Outputs:** DotForge.ToolStatus objects.
 
@@ -537,6 +540,14 @@ Get-DFToolStatus -Missing
 ```
 
 Lists the requested tools that aren't installed; Install-DFTool -Missing installs them.
+
+**Example 3**
+
+```powershell
+Get-DFToolStatus -Conflict
+```
+
+Lists the requested tools DotForge left alone because your existing config would be hidden.
 
 ### Install-DFTool
 

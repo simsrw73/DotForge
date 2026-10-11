@@ -93,3 +93,13 @@ Describe 'Config ownership detection' {
         Get-Content $path -Raw | Should -Match 'not json'
     }
 }
+
+Describe 'Set-DFTestXdg isolates old config locations' {
+    BeforeEach { Set-DFTestXdg }
+    AfterEach { Restore-DFTestXdg }
+    It 'points every native root under the test folder' {
+        foreach ($name in 'HOME', 'APPDATA', 'LOCALAPPDATA') {
+            Get-DFNativeRoot -Name $name | Should -BeLike "$TestDrive*"
+        }
+    }
+}

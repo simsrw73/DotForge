@@ -84,7 +84,10 @@ function Set-DFTestXdg {
     .DESCRIPTION
         An unset XDG variable means the real default folder under $HOME
         (Get-DFXdgPath), so a test that can reach any cache/state/config/data
-        writer must redirect all four. Pair with Restore-DFTestXdg:
+        writer must redirect all four. It also points the HOME, APPDATA and
+        LOCALAPPDATA roots of tools' old config locations (Get-DFNativeRoot)
+        under Root, so the developer's real config never affects a test.
+        Pair with Restore-DFTestXdg:
             BeforeEach { Set-DFTestXdg }
             AfterEach  { Restore-DFTestXdg }
         Folders are not created; DotForge creates what it writes.
@@ -107,6 +110,14 @@ function Set-DFTestXdg {
     $saved['GIT_CONFIG_GLOBAL'] = [Environment]::GetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'Process')
     New-Item -ItemType Directory -Path $Root -Force | Out-Null
     [Environment]::SetEnvironmentVariable('GIT_CONFIG_GLOBAL', (Join-Path $Root 'gitconfig'), 'Process')
+    # And the roots a tool's old config locations hang off (${HOME}, ${APPDATA},
+    # ${LOCALAPPDATA}): activation looks there for config it would hide, and
+    # what is in the developer's real home must never change a test's outcome.
+    # $HOME is read-only, so the lookup is mocked. A test mocking it again wins.
+    if (Get-Command Get-DFNativeRoot -CommandType Function -ErrorAction Ignore) {
+        $script:DFTestNativeRoot = Join-Path $Root 'native'
+        Mock Get-DFNativeRoot { Join-Path $script:DFTestNativeRoot $Name }
+    }
     $script:DFTestSavedXdg.Push($saved)
 }
 
