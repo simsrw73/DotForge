@@ -18,7 +18,7 @@
       "MDV_CONFIG_PATH": "${XDG_CONFIG_HOME}/mdv"
     },
     "native": {
-      "MDV_CONFIG_PATH": ["${APPDATA}/mdv", "${HOME}/.config/mdv", "${HOME}/Library/Application Support/mdv"]
+      "MDV_CONFIG_PATH": []
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/mdv"

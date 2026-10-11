@@ -9,8 +9,9 @@ $script:DFTestSavedXdg = [System.Collections.Generic.Stack[hashtable]]::new()
 # Tools' old config locations (${HOME}, ${APPDATA}, ${LOCALAPPDATA}) resolve
 # under the test drive for every test file: activation looks there for config
 # it would hide, and the developer's real config must never change a test's
-# outcome. Get-DFNativeRoot reads this; a test that needs other roots mocks it.
-$Env:DF_TEST_NATIVE_ROOT = Join-Path $TestDrive 'native-roots'
+# outcome. Get-DFNativeRoot reads this script variable (an environment variable
+# could outlive the run in a live shell); a test that needs other roots mocks it.
+$script:DFTestNativeRoot = Join-Path $TestDrive 'native-roots'
 
 function Set-DFTestConfig {
     <#

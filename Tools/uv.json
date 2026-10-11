@@ -16,15 +16,10 @@
     "compliance": "partial",
     "method": "env",
     "vars": {
-      "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv",
-      "UV_DATA_DIR": "${XDG_DATA_HOME}/uv"
-    },
-    "native": {
-      "UV_DATA_DIR": ["${HOME}/.local/share/uv", "${APPDATA}/uv/data", "${HOME}/.uv"]
+      "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv"
     },
     "dirs": [
-      "${XDG_CACHE_HOME}/uv",
-      "${XDG_DATA_HOME}/uv"
+      "${XDG_CACHE_HOME}/uv"
     ]
   },
   "installs": [

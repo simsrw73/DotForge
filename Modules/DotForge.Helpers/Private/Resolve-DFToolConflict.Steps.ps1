@@ -255,6 +255,12 @@ function Get-DFMoveProblem {
             "$($conflict.Key): $($conflict.Target) already has files; merge them yourself, or run Resolve-DFToolConflict $($Tool.name) -Adopt."
         }
         $old = @($conflict.OldPaths)[0]
+        # A junction or symbolic link keeps an absolute target (fnm's default
+        # alias points inside its own folder): copying it would leave it
+        # pointing at the old copy.
+        $links = @(@(Get-Item -LiteralPath $old -Force) + @(Get-ChildItem -LiteralPath $old -Recurse -Force -ErrorAction Ignore) |
+            Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint } | ForEach-Object FullName)
+        foreach ($link in $links) { "$link is a link, which DotForge can't move safely; move $old yourself, then run Resolve-DFToolConflict $($Tool.name) -Adopt." }
         $spellings = Get-DFPathSpelling -Path $old
         foreach ($reference in @(Find-DFOldPathReference -Root $old -Spelling $spellings)) {
             "$reference names the old location; change it to $($conflict.Target), then run this again."

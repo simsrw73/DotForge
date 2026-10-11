@@ -75,6 +75,13 @@ Describe 'Move checks' {
         $script:Conflicts[0].Guide = 'Use the mover.'
         Get-DFMoveProblem -Tool $script:Tool -Conflicts $script:Conflicts | Should -Match 'Use the mover'
     }
+    It 'refuses a location that holds a link (fnm keeps its default alias as one)' {
+        $elsewhere = Join-Path $TestDrive 'elsewhere'
+        New-Item -ItemType Directory -Force $elsewhere | Out-Null
+        $type = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+        New-Item -ItemType $type -Path (Join-Path $script:Old 'default') -Target $elsewhere | Out-Null
+        Get-DFMoveProblem -Tool $script:Tool -Conflicts $script:Conflicts | Should -Match 'link'
+    }
     It 'refuses two old locations with content for one path' {
         $script:Conflicts[0].OldPaths = @($script:Conflicts[0].OldPaths) + (Join-Path $TestDrive 'other')
         Get-DFMoveProblem -Tool $script:Tool -Conflicts $script:Conflicts | Should -Match 'keep one'

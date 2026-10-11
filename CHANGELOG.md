@@ -23,6 +23,9 @@ All notable changes to DotForge are documented here.
   the XDG location, verifies every file, and moves the old copy to the Recycle Bin (a file in use is
   retried on later loads); `-Adopt` takes over without moving anything. `Get-DFToolStatus -Conflict`
   lists the tools waiting. Tool records declare their old locations in `xdg.native`.
+  **If you already use DotForge:** a tool whose old location still holds files next to the XDG copy
+  DotForge has been using (most often PowerShell's own history file) is left inactive after the
+  upgrade until you run `Resolve-DFToolConflict <tool> -Adopt` once; the warning says so.
 - **Your own tools, without forking DotForge:** tool records in `$XDG_CONFIG_HOME\dotforge\tools` load
   with DotForge's own, and one with a shipped tool's name replaces that tool. Their companion, setup
   and manage scripts and data files are read from the same folder. `New-DFTool -Name` starts a record
@@ -56,6 +59,8 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **micro's config folder was never moved:** its record set `MICRO_CONF_DIR`; micro reads `MICRO_CONFIG_HOME`.
+- **uv's record set `UV_DATA_DIR`, which uv ignores;** it is gone. uv's cache still moves with `UV_CACHE_DIR`.
 - **`fvenv` found no `activate.ps1` on Linux:** venvs there name it in lowercase; the picker now matches
   either case.
 - **`Register-DFTool -ToolsPath` with a `..` in it** is resolved once, before the tool records are read.

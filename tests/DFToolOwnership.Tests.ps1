@@ -84,6 +84,17 @@ Describe 'Config ownership detection' {
     It 'reads a missing ownership file as empty' {
         (Read-DFToolOwnership).Count | Should -Be 0
     }
+    It 'returns null when the ownership file cannot be read' {
+        $path = Get-DFToolOwnershipPath
+        New-DFDirectory (Split-Path $path) | Out-Null
+        Set-Content $path '{ "t": { "how": "move" } }'
+        Mock Get-Content { Write-Error 'The process cannot access the file because it is being used by another process.' }
+        # Warns and returns null; never an error that stops a load, never an empty table that a save would write over the file.
+        $ErrorActionPreference = 'Continue'   # a shell's default; the suite may run with Stop
+        $result = Read-DFToolOwnership -WarningVariable warnings 2>$null 3>$null
+        $null -eq $result | Should -BeTrue
+        "$warnings" | Should -Match ownership
+    }
     It 'returns null for a corrupt ownership file, warns, and leaves the file alone' {
         $path = Get-DFToolOwnershipPath
         New-DFDirectory (Split-Path $path) | Out-Null
@@ -91,6 +102,23 @@ Describe 'Config ownership detection' {
         Read-DFToolOwnership -WarningVariable warnings 3>$null | Should -BeNullOrEmpty
         "$warnings" | Should -Match 'ownership'
         Get-Content $path -Raw | Should -Match 'not json'
+    }
+}
+
+Describe 'Get-DFNativeRoot outside the test suite' {
+    It 'ignores a leftover DF_TEST_NATIVE_ROOT environment variable' {
+        # A variable can outlive a test run in a live shell; only the test
+        # loader's own script variable may redirect the roots.
+        $savedEnv = $Env:DF_TEST_NATIVE_ROOT
+        $savedVar = Get-Variable -Name DFTestNativeRoot -Scope Script -ValueOnly -ErrorAction Ignore
+        try {
+            $Env:DF_TEST_NATIVE_ROOT = Join-Path $TestDrive 'leaked'
+            Remove-Variable -Name DFTestNativeRoot -Scope Script -ErrorAction Ignore
+            Get-DFNativeRoot -Name HOME | Should -Be $HOME
+        } finally {
+            $Env:DF_TEST_NATIVE_ROOT = $savedEnv
+            if ($null -ne $savedVar) { $script:DFTestNativeRoot = $savedVar }
+        }
     }
 }
 

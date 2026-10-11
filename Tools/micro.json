@@ -15,10 +15,10 @@
     "compliance": "partial",
     "method": "env",
     "vars": {
-      "MICRO_CONF_DIR": "${XDG_CONFIG_HOME}/micro"
+      "MICRO_CONFIG_HOME": "${XDG_CONFIG_HOME}/micro"
     },
     "native": {
-      "MICRO_CONF_DIR": ["${APPDATA}/micro", "${HOME}/.config/micro", "${HOME}/Library/Application Support/micro"]
+      "MICRO_CONFIG_HOME": ["${HOME}/.config/micro"]
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/micro"

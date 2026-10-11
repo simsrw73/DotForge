@@ -102,6 +102,24 @@ Describe 'Activation and config ownership' {
         (Get-DFToolStatus owna).Roles | Should -Not -Contain 'navigation'
     }
 
+    It 'checks a tool that only reaches PATH during the load' {
+        # fnm puts node and npm on PATH only when its companion runs: the tool
+        # isn't installed when the load starts, but is when its turn comes.
+        New-OldConfig owna
+        $script:AvailableCalls = 0
+        Mock Test-DFToolAvailable { $script:AvailableCalls++; $script:AvailableCalls -gt 1 }
+        Register-DFTool -Name owna 3>$null
+        (Get-DFToolStatus owna).State | Should -Be 'Conflict'
+        $Env:OWN_A | Should -BeNullOrEmpty
+    }
+    It 'points to -Adopt, not -Move, when the XDG location already has files too' {
+        New-OldConfig owna
+        New-Item -ItemType File -Force (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg') | Out-Null
+        Register-DFTool -Name owna -WarningVariable warnings 3>$null
+        "$warnings" | Should -Match 'Resolve-DFToolConflict owna -Adopt'
+        "$warnings" | Should -Not -Match '-Move'
+    }
+
     # A move whose old copy was in use leaves it pending; later loads retry.
     Context 'pending removals' {
         BeforeEach {

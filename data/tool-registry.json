@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "tools": {
     "bat": {
-      "sha256": "e8323d3bab98b0e87102fec130f230425688dca1d809b2cf60dd8c9a7e353682",
+      "sha256": "2cab3bff554fbcc248c5f952ca1ce376024d7e47c6228a78fbc85432b285af50",
       "record": {
         "name": "bat",
         "executable": "bat.exe",
@@ -30,7 +30,8 @@
             "BAT_CONFIG_PATH": {
               "paths": [
                 "${APPDATA}/bat/config",
-                "${HOME}/.config/bat/config"
+                "${HOME}/.config/bat/config",
+                "${XDG_CONFIG_HOME}/bat/config"
               ],
               "move": true,
               "guide": null
@@ -1197,7 +1198,7 @@
       }
     },
     "glow": {
-      "sha256": "458fb63c41935fd4588db7b0175e7a99af148f6d1e7127a7de5fb89760c1f599",
+      "sha256": "36538c29ad1e2e6473da31ee9573d49d1e0460525b5bb128907ca7cbec1b8b15",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1221,6 +1222,7 @@
           "native": {
             "${XDG_CONFIG_HOME}/glow/glow.yml": {
               "paths": [
+                "${LOCALAPPDATA}/glow/Config/glow.yml",
                 "${APPDATA}/glow/glow.yml",
                 "${HOME}/.config/glow/glow.yml",
                 "${HOME}/Library/Application Support/glow/glow.yml"
@@ -1411,7 +1413,7 @@
       }
     },
     "lazygit": {
-      "sha256": "c39551ded307f22db93de25f2a810a66a5b18bea53dd7d8bb6e46eeb3dd38b0d",
+      "sha256": "9f803ed80979d0248105b668651b6415c1b0e4e724520e2ce33561111b64d106",
       "record": {
         "name": "lazygit",
         "executable": "lazygit.exe",
@@ -1440,6 +1442,8 @@
           "native": {
             "LG_CONFIG_FILE": {
               "paths": [
+                "${APPDATA}/jesseduffield/lazygit/config.yml",
+                "${HOME}/.config/jesseduffield/lazygit/config.yml",
                 "${LOCALAPPDATA}/lazygit/config.yml",
                 "${APPDATA}/lazygit/config.yml",
                 "${HOME}/.config/lazygit/config.yml",
@@ -1473,7 +1477,7 @@
       }
     },
     "less": {
-      "sha256": "f9fed1239c3d78be89f6cfa2f9a938274c6e3af966259dfb7074f9adb6dad371",
+      "sha256": "aaf5f99d63e89fcbe6045113ac863fa97e50b3b838ad4ff66307e8a448f8f082",
       "record": {
         "name": "less",
         "executable": "less.exe",
@@ -1513,6 +1517,7 @@
             },
             "LESSKEYIN": {
               "paths": [
+                "${HOME}/.config/lesskey",
                 "${XDG_CONFIG_HOME}/lesskey",
                 "${HOME}/.lesskey",
                 "${HOME}/_lesskey"
@@ -1688,7 +1693,7 @@
       }
     },
     "mdv": {
-      "sha256": "1362af9b38f318ee6771f04574d2199c49c3ac20b7eb76a3d2aeea627fca7e8e",
+      "sha256": "fc36bdea813bd52e73a4f4fd96fbde6c44d7dc162ff59571fefe0ae269cd0218",
       "record": {
         "name": "mdv",
         "executable": "mdv.exe",
@@ -1714,11 +1719,7 @@
           "compliance": "partial",
           "native": {
             "MDV_CONFIG_PATH": {
-              "paths": [
-                "${APPDATA}/mdv",
-                "${HOME}/.config/mdv",
-                "${HOME}/Library/Application Support/mdv"
-              ],
+              "paths": [],
               "move": true,
               "guide": null
             }
@@ -1754,7 +1755,7 @@
       }
     },
     "micro": {
-      "sha256": "7fef5a2f08c827b183e7042105b27b2fa2bd2bd1dd652f9a36a3c12d378eeeb8",
+      "sha256": "18006e9d0f6eda68b23f8ad3bf12aee5e46614aff09953c7df2c03100cab1bae",
       "record": {
         "name": "micro",
         "executable": "micro.exe",
@@ -1771,7 +1772,7 @@
         "xdg": {
           "method": "env",
           "vars": {
-            "MICRO_CONF_DIR": "${XDG_CONFIG_HOME}/micro"
+            "MICRO_CONFIG_HOME": "${XDG_CONFIG_HOME}/micro"
           },
           "dirs": [
             "${XDG_CONFIG_HOME}/micro"
@@ -1779,11 +1780,9 @@
           "instructions": null,
           "compliance": "partial",
           "native": {
-            "MICRO_CONF_DIR": {
+            "MICRO_CONFIG_HOME": {
               "paths": [
-                "${APPDATA}/micro",
-                "${HOME}/.config/micro",
-                "${HOME}/Library/Application Support/micro"
+                "${HOME}/.config/micro"
               ],
               "move": true,
               "guide": null
@@ -2674,7 +2673,7 @@
       }
     },
     "psreadline": {
-      "sha256": "3e02996108145ba7566019eb891d2411db7a525d69406491796aa5966efdd5c4",
+      "sha256": "192c4399ddb1a114e3123a5f0375ba4e11ed078a77a3a5bac01b5a0a1f8a48c5",
       "record": {
         "name": "psreadline",
         "executable": "PSReadLine",
@@ -2699,7 +2698,8 @@
             "${XDG_STATE_HOME}/psreadline/history": {
               "paths": [
                 "${APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt",
-                "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt"
+                "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt",
+                "${XDG_DATA_HOME}/powershell/PSReadLine/ConsoleHost_history.txt"
               ],
               "move": true,
               "guide": null
@@ -3254,7 +3254,7 @@
       }
     },
     "uv": {
-      "sha256": "b31cb96e22aa8234a3640a53f4f43ca0a490dd04c601ee169752377244070143",
+      "sha256": "50a61c2d29e7638c7fdd09c79f19a526754924dfa6117b51742ba56337c8ca62",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -3272,26 +3272,14 @@
         "xdg": {
           "method": "env",
           "vars": {
-            "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv",
-            "UV_DATA_DIR": "${XDG_DATA_HOME}/uv"
+            "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv"
           },
           "dirs": [
-            "${XDG_CACHE_HOME}/uv",
-            "${XDG_DATA_HOME}/uv"
+            "${XDG_CACHE_HOME}/uv"
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": {
-            "UV_DATA_DIR": {
-              "paths": [
-                "${HOME}/.local/share/uv",
-                "${APPDATA}/uv/data",
-                "${HOME}/.uv"
-              ],
-              "move": true,
-              "guide": null
-            }
-          }
+          "native": null
         },
         "env": null,
         "aliases": {},

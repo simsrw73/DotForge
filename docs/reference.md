@@ -2931,7 +2931,7 @@ Modern and intuitive terminal-based text editor
 | Tags | `editor`, `text` |
 | Install ids | scoop: `micro`<br>choco: `micro` |
 | XDG method | `env` |
-| XDG variables | `MICRO_CONF_DIR` = `${XDG_CONFIG_HOME}/micro` |
+| XDG variables | `MICRO_CONFIG_HOME` = `${XDG_CONFIG_HOME}/micro` |
 | Creates | `${XDG_CONFIG_HOME}/micro` |
 | Roles | [`editor`](#editor-role) |
 | Sets, as the editor tool | `EDITOR` = `micro`<br>`VISUAL` = `micro` |
@@ -3251,8 +3251,8 @@ Extremely fast Python package and project manager
 | Tags | `python`, `dev`, `package-manager` |
 | Install ids | scoop: `uv`<br>winget: `astral-sh.uv` |
 | XDG method | `env` |
-| XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv`<br>`UV_DATA_DIR` = `${XDG_DATA_HOME}/uv` |
-| Creates | `${XDG_CACHE_HOME}/uv`<br>`${XDG_DATA_HOME}/uv` |
+| XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv` |
+| Creates | `${XDG_CACHE_HOME}/uv` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`python-package-manager`](#python-package-manager-role), [`version-manager`](#version-manager-role) |
 | Companion | [`Tools/uv.ps1`](#uv-companion) |

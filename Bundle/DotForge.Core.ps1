@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: cc4f81ce90342b5b8adbdbab23a4ac97656d42e576fe565c1e8bbe0d1cf0295b
+# sources-sha256: 0d5450ed48bf295c8b8a9868eef1174759d64f0b4ed3d9650006bd803c2f590e
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -294,9 +294,10 @@ function Get-DFNativeRoot {
     .SYNOPSIS
         The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
     .DESCRIPTION
-        The one place those roots are read. The test suite sets
-        DF_TEST_NATIVE_ROOT (tests/TestSupport.ps1) so no test looks in the
-        developer's real home; unset, the real roots are used.
+        The one place those roots are read. The test suite's loader sets the
+        script variable DFTestNativeRoot (tests/TestSupport.ps1), so no test
+        looks in the developer's real home. It is a script variable, never an
+        environment variable, so it can't outlive a test run in a live shell.
     .PARAMETER Name
         HOME, APPDATA or LOCALAPPDATA.
     .OUTPUTS
@@ -305,7 +306,8 @@ function Get-DFNativeRoot {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
-    if ($Env:DF_TEST_NATIVE_ROOT) { return Join-Path $Env:DF_TEST_NATIVE_ROOT $Name }
+    $testRoot = Get-Variable -Name DFTestNativeRoot -Scope Script -ValueOnly -ErrorAction Ignore
+    if ($testRoot) { return Join-Path $testRoot $Name }
     switch ($Name) {
         'HOME' { $HOME }
         'APPDATA' { $Env:APPDATA }
@@ -403,9 +405,10 @@ function Read-DFToolOwnership {
     .SYNOPSIS
         Reads which tools DotForge owns the config of, keyed by tool name.
     .DESCRIPTION
-        A missing file is an empty table. A file that isn't valid JSON warns
-        and returns $null: callers then record nothing, so the file is never
-        overwritten with less than it held.
+        A missing file is an empty table. A file that can't be read (in use,
+        no access) or isn't a JSON object warns and returns $null: callers
+        then record nothing, so the file is never overwritten with less than
+        it held.
     .OUTPUTS
         System.Collections.Hashtable (name -> entry with since, how and an
         optional pending list), or $null.
@@ -414,9 +417,11 @@ function Read-DFToolOwnership {
     param()
     $path = Get-DFToolOwnershipPath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @{} }
-    try { $data = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
-    catch {
-        Write-Warning "DotForge: $path isn't valid JSON, so tool ownership can't be read or recorded. Fix or delete it."
+    try {
+        $data = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if ($data -isnot [System.Collections.IDictionary]) { throw 'it holds no JSON object' }
+    } catch {
+        Write-Warning "DotForge: $path can't be read ($($_.Exception.Message)), so tool ownership can't be read or recorded. Fix or delete it."
         return $null
     }
     $table = @{}
@@ -454,8 +459,8 @@ function Find-DFToolConflict {
     .PARAMETER Ownership
         Read-DFToolOwnership result.
     .OUTPUTS
-        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target, Move,
-        Guide) and Complete.
+        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target,
+        TargetHasContent, Move, Guide) and Complete.
     #>
     [CmdletBinding()]
     param(
@@ -475,7 +480,11 @@ function Find-DFToolConflict {
             if (Test-DFPathHasContent -Path $old) { $old }
         })
         if ($found) {
-            [pscustomobject]@{ Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target; Move = $reloc.Native.move; Guide = $reloc.Native.guide }
+            [pscustomobject]@{
+                Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target
+                TargetHasContent = Test-DFPathHasContent -Path $reloc.Target
+                Move = $reloc.Native.move; Guide = $reloc.Native.guide
+            }
         }
     }
     [pscustomobject]@{ Conflicts = @($conflicts); Complete = $complete }
@@ -3737,7 +3746,8 @@ function Invoke-DFSessionActivation {
         -Excluded @(Get-DFExcludedToolNames) @pathArgs
     # A tool whose old config location still holds the user's config is left
     # alone entirely until they resolve it (Resolve-DFToolConflict).
-    $records = Select-DFOwnedRecord -Records $records -RequestedBy $requestedBy -Reactivate $Reactivate
+    $owned = Select-DFOwnedRecord -Records $records -RequestedBy $requestedBy -Reactivate $Reactivate
+    $records = $owned.Records
     $tools = @(Get-DFActivationOrder -Records $records -ToolDb $toolDb -RequirementEdges $requirements.Edges)
     $roleDb = Get-DFRoleDb
     $winners = Get-DFRoleWinners -ToolDb $toolDb -Tools $tools -RoleDb $roleDb
@@ -3761,6 +3771,10 @@ function Invoke-DFSessionActivation {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail $blocker
                 continue
             }
+            # Installed only now (an earlier companion put it on PATH, as fnm does
+            # for node and npm): its ownership check couldn't run before.
+            if ($owned.State.Unchecked.Contains($tool.name) -and
+                -not (Test-DFToolOwnership -Record $tool -State $owned.State -RequestedBy $requestedBy)) { continue }
             # One tool's failure (a throwing companion, or any error under a
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
@@ -3772,6 +3786,7 @@ function Invoke-DFSessionActivation {
         }
     } finally {
         if ($prewarmJob) { $prewarmJob | Remove-Job -Force -ErrorAction Ignore }
+        if ($owned.State.Changed) { Save-DFToolOwnership -Ownership $owned.State.Table }
     }
 
     Add-DFRoleOutcomeStatus -RoleWinners $winners
@@ -4048,7 +4063,9 @@ function Write-DFSessionNotice {
         $name = $conflicted.Name
         $paths = @($conflicted.Conflicts.OldPaths) -join ', '
         $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
+        $inUse = @($conflicted.Conflicts | Where-Object TargetHasContent | ForEach-Object Target)
         $how = if ($guides) { "$($guides -join ' ') Then run Resolve-DFToolConflict $name -Adopt" }
+               elseif ($inUse) { "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $name -Adopt" }
                else { "Run Resolve-DFToolConflict $name -Move (or -Adopt)" }
         Write-Warning "DotForge: $name isn't active: your existing config at $paths would be hidden. $how, or remove $name from Tools."
     }
@@ -4059,11 +4076,12 @@ function Select-DFOwnedRecord {
     .SYNOPSIS
         Drops requested tools whose config DotForge would hide, recording their Conflict status; records the rest as owned.
     .DESCRIPTION
-        Only installed tools that aren't already active are checked. A tool
-        with no conflict, a complete check and a relocated path is recorded as
-        owned (how: clean), all in one write. A tool in conflict gets status
-        Conflict and is left out of the run: no variables, setup, companion,
-        aliases or role. See
+        Runs before activation order and roles, so a tool in conflict gets no
+        role and blocks the tools that require it. Only installed tools that
+        aren't already active are checked here; one that isn't installed yet
+        is listed in State.Unchecked and checked by the activation loop when
+        its turn comes (an earlier companion may put it on PATH). Ownership
+        changes are saved once, after the loop. See
         docs/superpowers/specs/2026-10-11-config-ownership-design.md.
     .PARAMETER Records
         The requested records (after Resolve-DFToolRequirements).
@@ -4072,7 +4090,8 @@ function Select-DFOwnedRecord {
     .PARAMETER Reactivate
         Names re-registered on purpose (checked even when active).
     .OUTPUTS
-        System.Collections.Generic.List[object]: the records to activate.
+        pscustomobject: Records (List[object], the records to activate) and
+        State (Test-DFToolOwnership's state: Table, Readable, Changed, Unchecked).
     #>
     [CmdletBinding()]
     param(
@@ -4080,37 +4099,71 @@ function Select-DFOwnedRecord {
         [Parameter(Mandatory)][hashtable]$RequestedBy,
         [AllowEmptyCollection()][string[]]$Reactivate = @()
     )
+    $table = Read-DFToolOwnership
+    $state = [pscustomobject]@{
+        # Unreadable: still check (nothing owned), but never write over the file.
+        Table     = if ($null -ne $table) { $table } else { @{} }
+        Readable  = $null -ne $table
+        Changed   = $false
+        Unchecked = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    }
     $kept = [System.Collections.Generic.List[object]]::new()
-    $ownership = Read-DFToolOwnership
-    # Unreadable: still check (nothing owned), but never write over the file.
-    $readable = $null -ne $ownership
-    if (-not $readable) { $ownership = @{} }
-    $changed = $false
     foreach ($record in $Records) {
-        $skip = ((Test-DFToolActive $record.name) -and $record.name -notin $Reactivate) -or
-            -not (Test-DFToolAvailable -Executable $record.executable -Type $record.type)
-        if ($skip) { $kept.Add($record); continue }
-        $check = Find-DFToolConflict -Tool $record -Ownership $ownership
-        if ($check.Conflicts) {
-            $paths = @($check.Conflicts.OldPaths) -join ', '
-            $status = New-DFToolStatus -Name $record.name -State Conflict -RequestedBy $RequestedBy[$record.name] -Detail "your existing config at $paths would be hidden"
-            $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
-            $script:DFSessionStatus[$record.name] = $status
+        if ((Test-DFToolActive $record.name) -and $record.name -notin $Reactivate) { $kept.Add($record); continue }
+        if (-not (Test-DFToolAvailable -Executable $record.executable -Type $record.type)) {
+            $null = $state.Unchecked.Add($record.name)
+            $kept.Add($record)
             continue
         }
-        if ($readable -and $check.Complete -and -not $ownership.ContainsKey($record.name) -and @(Get-DFToolRelocation -Tool $record)) {
-            $ownership[$record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
-            $changed = $true
-        }
-        if ($readable -and $ownership.ContainsKey($record.name) -and $ownership[$record.name].PSObject.Properties['pending']) {
-            if (Invoke-DFPendingRemoval -Name $record.name -Ownership $ownership) { $changed = $true }
-        }
-        $kept.Add($record)
+        if (Test-DFToolOwnership -Record $record -State $state -RequestedBy $RequestedBy) { $kept.Add($record) }
     }
-    if ($changed) { Save-DFToolOwnership -Ownership $ownership }
-    , $kept
+    [pscustomobject]@{ Records = $kept; State = $state }
 }
 
+function Test-DFToolOwnership {
+    <#
+    .SYNOPSIS
+        Checks one installed tool against the ownership table: false (and status Conflict) when its old config location holds the user's config.
+    .DESCRIPTION
+        A tool with no conflict, a complete check and a relocated path is
+        recorded as owned (how: clean). An owned tool's unfinished removals
+        from Resolve-DFToolConflict -Move are retried. Changes go into
+        State.Table and set State.Changed; the caller saves them.
+    .PARAMETER Record
+        The tool record.
+    .PARAMETER State
+        Select-DFOwnedRecord's State.
+    .PARAMETER RequestedBy
+        Name -> RequestedBy.
+    .OUTPUTS
+        System.Boolean: whether the tool may be activated.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Record,
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][hashtable]$RequestedBy
+    )
+    $table = $State.Table
+    $check = Find-DFToolConflict -Tool $Record -Ownership $table
+    if ($check.Conflicts) {
+        $paths = @($check.Conflicts.OldPaths) -join ', '
+        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden"
+        $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+        $script:DFSessionStatus[$Record.name] = $status
+        return $false
+    }
+    if (-not $State.Readable) { return $true }
+    if ($check.Complete -and -not $table.ContainsKey($Record.name) -and @(Get-DFToolRelocation -Tool $Record)) {
+        $table[$Record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
+        $State.Changed = $true
+    }
+    if ($table.ContainsKey($Record.name) -and $table[$Record.name].PSObject.Properties['pending']) {
+        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $State.Changed = $true }
+    }
+    $true
+}
 function Resolve-DFToolRequirements {
     <#
     .SYNOPSIS

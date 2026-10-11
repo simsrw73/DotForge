@@ -13,7 +13,8 @@
     "native": {
       "${XDG_STATE_HOME}/psreadline/history": [
         "${APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt",
-        "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt"
+        "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt",
+        "${XDG_DATA_HOME}/powershell/PSReadLine/ConsoleHost_history.txt"
       ]
     }
   },

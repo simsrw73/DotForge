@@ -11,9 +11,10 @@ function Get-DFNativeRoot {
     .SYNOPSIS
         The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
     .DESCRIPTION
-        The one place those roots are read. The test suite sets
-        DF_TEST_NATIVE_ROOT (tests/TestSupport.ps1) so no test looks in the
-        developer's real home; unset, the real roots are used.
+        The one place those roots are read. The test suite's loader sets the
+        script variable DFTestNativeRoot (tests/TestSupport.ps1), so no test
+        looks in the developer's real home. It is a script variable, never an
+        environment variable, so it can't outlive a test run in a live shell.
     .PARAMETER Name
         HOME, APPDATA or LOCALAPPDATA.
     .OUTPUTS
@@ -22,7 +23,8 @@ function Get-DFNativeRoot {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
-    if ($Env:DF_TEST_NATIVE_ROOT) { return Join-Path $Env:DF_TEST_NATIVE_ROOT $Name }
+    $testRoot = Get-Variable -Name DFTestNativeRoot -Scope Script -ValueOnly -ErrorAction Ignore
+    if ($testRoot) { return Join-Path $testRoot $Name }
     switch ($Name) {
         'HOME' { $HOME }
         'APPDATA' { $Env:APPDATA }
@@ -120,9 +122,10 @@ function Read-DFToolOwnership {
     .SYNOPSIS
         Reads which tools DotForge owns the config of, keyed by tool name.
     .DESCRIPTION
-        A missing file is an empty table. A file that isn't valid JSON warns
-        and returns $null: callers then record nothing, so the file is never
-        overwritten with less than it held.
+        A missing file is an empty table. A file that can't be read (in use,
+        no access) or isn't a JSON object warns and returns $null: callers
+        then record nothing, so the file is never overwritten with less than
+        it held.
     .OUTPUTS
         System.Collections.Hashtable (name -> entry with since, how and an
         optional pending list), or $null.
@@ -131,9 +134,11 @@ function Read-DFToolOwnership {
     param()
     $path = Get-DFToolOwnershipPath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @{} }
-    try { $data = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
-    catch {
-        Write-Warning "DotForge: $path isn't valid JSON, so tool ownership can't be read or recorded. Fix or delete it."
+    try {
+        $data = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if ($data -isnot [System.Collections.IDictionary]) { throw 'it holds no JSON object' }
+    } catch {
+        Write-Warning "DotForge: $path can't be read ($($_.Exception.Message)), so tool ownership can't be read or recorded. Fix or delete it."
         return $null
     }
     $table = @{}
@@ -171,8 +176,8 @@ function Find-DFToolConflict {
     .PARAMETER Ownership
         Read-DFToolOwnership result.
     .OUTPUTS
-        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target, Move,
-        Guide) and Complete.
+        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target,
+        TargetHasContent, Move, Guide) and Complete.
     #>
     [CmdletBinding()]
     param(
@@ -192,7 +197,11 @@ function Find-DFToolConflict {
             if (Test-DFPathHasContent -Path $old) { $old }
         })
         if ($found) {
-            [pscustomobject]@{ Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target; Move = $reloc.Native.move; Guide = $reloc.Native.guide }
+            [pscustomobject]@{
+                Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target
+                TargetHasContent = Test-DFPathHasContent -Path $reloc.Target
+                Move = $reloc.Native.move; Guide = $reloc.Native.guide
+            }
         }
     }
     [pscustomobject]@{ Conflicts = @($conflicts); Complete = $complete }

@@ -31,14 +31,14 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | lazygit | `LG_CONFIG_FILE` | `$XDG_CONFIG_HOME\lazygit\config.yml` |
 | less | `LESSHISTFILE`, `LESSKEY` | `$XDG_STATE_HOME\less\history`, `$XDG_CONFIG_HOME\less\lesskey` |
 | mdv | `MDV_CONFIG_PATH` | `$XDG_CONFIG_HOME\mdv` |
-| micro | `MICRO_CONF_DIR` | `$XDG_CONFIG_HOME\micro` |
+| micro | `MICRO_CONFIG_HOME` | `$XDG_CONFIG_HOME\micro` |
 | npm | `NPM_CONFIG_USERCONFIG`, `NODE_REPL_HISTORY` | `$XDG_CONFIG_HOME\npm\npmrc`, `$XDG_DATA_HOME\node_repl_history` |
 | oh-my-posh | `POSH_THEMES_PATH` | `$XDG_DATA_HOME\oh-my-posh\themes` |
 | PSReadLine | history file (`HistorySavePath`) | `$XDG_STATE_HOME\psreadline\history` |
 | ripgrep | `RIPGREP_CONFIG_PATH` | `$XDG_CONFIG_HOME\ripgrep\ripgreprc` |
 | rustup | `RUSTUP_HOME`, `CARGO_HOME` | `$XDG_DATA_HOME\rustup`, `$XDG_DATA_HOME\cargo` (toolchains and installed crates) |
 | starship | `STARSHIP_CONFIG`, `STARSHIP_CACHE` | `$XDG_CONFIG_HOME\starship\starship.toml`, `$XDG_CACHE_HOME\starship` |
-| uv | `UV_CACHE_DIR`, `UV_DATA_DIR` | `$XDG_CACHE_HOME\uv`, `$XDG_DATA_HOME\uv` |
+| uv | `UV_CACHE_DIR` | `$XDG_CACHE_HOME\uv` |
 | vcpkg | `VCPKG_ROOT`, `VCPKG_DOWNLOADS` | `$XDG_DATA_HOME\vcpkg`, `$XDG_CACHE_HOME\vcpkg\downloads` |
 | wget | `WGETRC` | `$XDG_CONFIG_HOME\wget\wgetrc` |
 | zoxide | `_ZO_DATA_DIR` | `$XDG_DATA_HOME\zoxide` (folder history) |
