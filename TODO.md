@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-58**.
+git history, not here. IDs are never reused; the next free one is **T-59**.
 
 ## Priority 1 — Release Readiness
 
@@ -40,6 +40,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-38 Setup teardown** — an `Uninstall-DFToolSetup` that reads the recorded `actions` back. Spec it once there's more than delta's one `actions` shape.
 - [ ] **T-56 Purge for Remove-DFTool** — delete seeded files unchanged since seeding; undo setup changes a tool's setup declares how to undo.
 - [ ] **T-57 Build-DFReferenceDocs null setup noise** — `build/Build-DFReferenceDocs.ps1:288` prints `Cannot index into a null array` about 55 times on every run (`(& $prop $Tool 'setup')?.PSObject...` on a null setup); output is still correct.
+- [ ] **T-58 Update/remove polish (from the T-44 review)** — `Remove-DFTool fzf, PSFzf` refuses fzf unless `-IncludeDependents` (leave named tools out of the dependents); it confirms before detecting, so `-WhatIf` doesn't show the manager; `Update-DFTool -Name typo` prints "Everything is up to date."; RunAs quoting of an argument ending in `\` or empty; `Tools/winget.manage.ps1` and `Tools/psresource.manage.ps1` call `Get-WinGetPackage`/`Get-InstalledPSResource` outside `Invoke-DFManagerCommand`; the winget CLI-fallback fixtures are hand-written (spinner ``, localized headers); choco v1's `list` lists remote packages and reboot codes 3010/1641 count as failures; `Import-DFManagerOps` drops `function f($x)` parameters.
 - [ ] **T-39 Defer inshellisense's session check** — `is -c` runs at every start; see `docs/superpowers/specs/2026-09-05-startup-perf-audit.md`. Never defer oh-my-posh or fnm.
 - [ ] **T-40 A general prewarm primitive for the user's own profile** — let a profile prewarm its own module imports (`powershell-yaml`, SecretManagement, `Microsoft.WinGet.CommandNotFound`, ~0.2 s measured) like DotForge's tool prewarm.
 - [ ] **T-41 Catppuccin for lazygit, micro and procs** — no integration yet; each needs its own look at how to point it at a theme.
