@@ -11,7 +11,9 @@ function Get-DFNativeRoot {
     .SYNOPSIS
         The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
     .DESCRIPTION
-        The one place those roots are read ($HOME is read-only, so tests mock this).
+        The one place those roots are read. The test suite sets
+        DF_TEST_NATIVE_ROOT (tests/TestSupport.ps1) so no test looks in the
+        developer's real home; unset, the real roots are used.
     .PARAMETER Name
         HOME, APPDATA or LOCALAPPDATA.
     .OUTPUTS
@@ -20,6 +22,7 @@ function Get-DFNativeRoot {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
+    if ($Env:DF_TEST_NATIVE_ROOT) { return Join-Path $Env:DF_TEST_NATIVE_ROOT $Name }
     switch ($Name) {
         'HOME' { $HOME }
         'APPDATA' { $Env:APPDATA }

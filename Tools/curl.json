@@ -19,6 +19,10 @@
     "vars": {
       "CURL_HOME": "${XDG_CONFIG_HOME}/curl"
     },
+    "native": {
+      "CURL_HOME": [],
+      "${XDG_CONFIG_HOME}/curl/.curlrc": ["${HOME}/.curlrc", "${HOME}/_curlrc", "${APPDATA}/.curlrc", "${APPDATA}/_curlrc"]
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/curl"
     ]

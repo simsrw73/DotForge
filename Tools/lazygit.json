@@ -18,6 +18,9 @@
     "vars": {
       "LG_CONFIG_FILE": "${XDG_CONFIG_HOME}/lazygit/config.yml"
     },
+    "native": {
+      "LG_CONFIG_FILE": ["${LOCALAPPDATA}/lazygit/config.yml", "${APPDATA}/lazygit/config.yml", "${HOME}/.config/lazygit/config.yml", "${HOME}/Library/Application Support/lazygit/config.yml"]
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/lazygit"
     ]

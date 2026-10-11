@@ -20,6 +20,9 @@
     "vars": {
       "_ZO_DATA_DIR": "${XDG_DATA_HOME}/zoxide"
     },
+    "native": {
+      "_ZO_DATA_DIR": ["${XDG_DATA_HOME}/zoxide", "${HOME}/.local/share/zoxide", "${LOCALAPPDATA}/zoxide", "${HOME}/Library/Application Support/zoxide"]
+    },
     "dirs": []
   },
   "aliases": {},

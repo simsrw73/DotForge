@@ -19,6 +19,10 @@
       "NPM_CONFIG_USERCONFIG": "${XDG_CONFIG_HOME}/npm/npmrc",
       "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history"
     },
+    "native": {
+      "NPM_CONFIG_USERCONFIG": ["${HOME}/.npmrc"],
+      "NODE_REPL_HISTORY": ["${HOME}/.node_repl_history"]
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/npm"
     ]

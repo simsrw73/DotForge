@@ -18,6 +18,13 @@
     "vars": {
       "POSH_THEMES_PATH": "${XDG_DATA_HOME}/oh-my-posh/themes"
     },
+    "native": {
+      "POSH_THEMES_PATH": {
+        "paths": ["${LOCALAPPDATA}/Programs/oh-my-posh/themes"],
+        "move": false,
+        "guide": "That folder holds the themes oh-my-posh installed, and your prompt config may name it: copy the themes you use to $XDG_DATA_HOME/oh-my-posh/themes and point your config there."
+      }
+    },
     "dirs": [
       "${XDG_DATA_HOME}/oh-my-posh/themes",
       "${XDG_CONFIG_HOME}/oh-my-posh"

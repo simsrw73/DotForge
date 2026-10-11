@@ -9,7 +9,13 @@
   "xdg": {
     "compliance": "partial",
     "method": "env",
-    "dirs": ["${XDG_STATE_HOME}/psreadline"]
+    "dirs": ["${XDG_STATE_HOME}/psreadline"],
+    "native": {
+      "${XDG_STATE_HOME}/psreadline/history": [
+        "${APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt",
+        "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt"
+      ]
+    }
   },
   "settings": {
     "editMode":                    "Emacs",

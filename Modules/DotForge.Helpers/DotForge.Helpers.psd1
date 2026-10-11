@@ -40,7 +40,8 @@
         # General Helpers — Utility
         'New-DFUuid',
         # Layer 3 — Tool Operations: your own tools
-        'New-DFTool'
+        'New-DFTool',
+        'Resolve-DFToolConflict'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

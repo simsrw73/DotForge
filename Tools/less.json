@@ -20,6 +20,10 @@
       "LESSHISTFILE": "${XDG_STATE_HOME}/less/history",
       "LESSKEYIN": "${XDG_CONFIG_HOME}/less/lesskey"
     },
+    "native": {
+      "LESSHISTFILE": ["${XDG_STATE_HOME}/lesshst", "${XDG_DATA_HOME}/lesshst", "${HOME}/.lesshst", "${HOME}/_lesshst"],
+      "LESSKEYIN": ["${XDG_CONFIG_HOME}/lesskey", "${HOME}/.lesskey", "${HOME}/_lesskey"]
+    },
     "dirs": [
       "${XDG_STATE_HOME}/less",
       "${XDG_CONFIG_HOME}/less"

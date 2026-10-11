@@ -18,6 +18,9 @@
     "vars": {
       "CHEZMOI_CONFIG_DIR": "${XDG_CONFIG_HOME}/chezmoi"
     },
+    "native": {
+      "CHEZMOI_CONFIG_DIR": []
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/chezmoi"
     ]

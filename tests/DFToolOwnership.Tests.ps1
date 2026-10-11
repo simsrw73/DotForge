@@ -94,10 +94,8 @@ Describe 'Config ownership detection' {
     }
 }
 
-Describe 'Set-DFTestXdg isolates old config locations' {
-    BeforeEach { Set-DFTestXdg }
-    AfterEach { Restore-DFTestXdg }
-    It 'points every native root under the test folder' {
+Describe 'The test suite never looks in the real old config locations' {
+    It 'points every native root under the test drive' {
         foreach ($name in 'HOME', 'APPDATA', 'LOCALAPPDATA') {
             Get-DFNativeRoot -Name $name | Should -BeLike "$TestDrive*"
         }

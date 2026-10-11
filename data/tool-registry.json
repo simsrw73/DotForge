@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "tools": {
     "bat": {
-      "sha256": "20ede48e8dd3db8cf0e6324bf0ea5316d99e5801c0d932448d22edcc104a0e36",
+      "sha256": "e8323d3bab98b0e87102fec130f230425688dca1d809b2cf60dd8c9a7e353682",
       "record": {
         "name": "bat",
         "executable": "bat.exe",
@@ -26,7 +26,16 @@
           "dirs": [],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "BAT_CONFIG_PATH": {
+              "paths": [
+                "${APPDATA}/bat/config",
+                "${HOME}/.config/bat/config"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": {
           "BAT_THEME": "Catppuccin Mocha"
@@ -351,7 +360,7 @@
       }
     },
     "chezmoi": {
-      "sha256": "c15c340f4d6d5a7cdd964ab47cde34a07be78b6791a4d505c30a1a94412e7810",
+      "sha256": "f8f0b6adec4e494fc14d477e1add4b7355b57650258f6400cb2cdfbaaa30232a",
       "record": {
         "name": "chezmoi",
         "executable": "chezmoi.exe",
@@ -377,7 +386,13 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "CHEZMOI_CONFIG_DIR": {
+              "paths": [],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {
@@ -492,7 +507,7 @@
       }
     },
     "curl": {
-      "sha256": "c0880552ef21f2aa0650c39f6203eec6d0a50953abed005c0169d7381d1a5bee",
+      "sha256": "69e304b0950355e31d499c5c658a0bf28694f299e7e12d9858cae8b3bc262b51",
       "record": {
         "name": "curl",
         "executable": "curl.exe",
@@ -518,7 +533,23 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "CURL_HOME": {
+              "paths": [],
+              "move": true,
+              "guide": null
+            },
+            "${XDG_CONFIG_HOME}/curl/.curlrc": {
+              "paths": [
+                "${HOME}/.curlrc",
+                "${HOME}/_curlrc",
+                "${APPDATA}/.curlrc",
+                "${APPDATA}/_curlrc"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -647,7 +678,7 @@
       }
     },
     "docker": {
-      "sha256": "0401cc42a56d83b3408484e3a464ca1069a5d62db7cb79a3f053157326f64113",
+      "sha256": "e8d7dfdac7cb738b423bc06c9e3ff4fabd1dbbaf7d3f39d572b063ab0f3b86bd",
       "record": {
         "name": "docker",
         "executable": "docker.exe",
@@ -670,7 +701,15 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "DOCKER_CONFIG": {
+              "paths": [
+                "${HOME}/.docker"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -818,7 +857,7 @@
       }
     },
     "fastfetch": {
-      "sha256": "f4d55fe45bf978e84caa32652f820618865714e8386a479e264ba39cfd1add64",
+      "sha256": "0e07052eb72206ac699b37816ebfb0519796f501f3cd1e33412528c63a350525",
       "record": {
         "name": "fastfetch",
         "executable": "fastfetch.exe",
@@ -838,7 +877,17 @@
           "dirs": [],
           "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc).",
           "compliance": "none",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": {
+              "paths": [
+                "${HOME}/.config/fastfetch/config.jsonc",
+                "${APPDATA}/fastfetch/config.jsonc",
+                "${HOME}/Library/Preferences/fastfetch/config.jsonc"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -935,7 +984,7 @@
       }
     },
     "fnm": {
-      "sha256": "a8c48a314b774a27a53c07666b71c6b356a41c12bb46ac872139ea48e1aa6051",
+      "sha256": "3971cd928729286a7c458947e961975f4091c19e5a7c78a53f7e1c4e457739fc",
       "record": {
         "name": "fnm",
         "executable": "fnm.exe",
@@ -962,7 +1011,18 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "FNM_DIR": {
+              "paths": [
+                "${HOME}/.fnm",
+                "${APPDATA}/fnm",
+                "${HOME}/.local/share/fnm",
+                "${HOME}/Library/Application Support/fnm"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -1137,7 +1197,7 @@
       }
     },
     "glow": {
-      "sha256": "becf13626dc7c79509902027f3ed8e214687fb8ed69de0dda9f3e27bb0e8ad5f",
+      "sha256": "458fb63c41935fd4588db7b0175e7a99af148f6d1e7127a7de5fb89760c1f599",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1158,7 +1218,17 @@
           "dirs": [],
           "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly.",
           "compliance": "none",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/glow/glow.yml": {
+              "paths": [
+                "${APPDATA}/glow/glow.yml",
+                "${HOME}/.config/glow/glow.yml",
+                "${HOME}/Library/Application Support/glow/glow.yml"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -1341,7 +1411,7 @@
       }
     },
     "lazygit": {
-      "sha256": "a8805d5b3eaac79d3b4306d9ca4b07d7df3b214fe070fdc733b3381c6d1e935f",
+      "sha256": "c39551ded307f22db93de25f2a810a66a5b18bea53dd7d8bb6e46eeb3dd38b0d",
       "record": {
         "name": "lazygit",
         "executable": "lazygit.exe",
@@ -1367,7 +1437,18 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "LG_CONFIG_FILE": {
+              "paths": [
+                "${LOCALAPPDATA}/lazygit/config.yml",
+                "${APPDATA}/lazygit/config.yml",
+                "${HOME}/.config/lazygit/config.yml",
+                "${HOME}/Library/Application Support/lazygit/config.yml"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {
@@ -1392,7 +1473,7 @@
       }
     },
     "less": {
-      "sha256": "05347aa9f981b866d5945bb4e8ae4fc4a15918582275f1c56c44f1487f3ce0b6",
+      "sha256": "f9fed1239c3d78be89f6cfa2f9a938274c6e3af966259dfb7074f9adb6dad371",
       "record": {
         "name": "less",
         "executable": "less.exe",
@@ -1419,7 +1500,27 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "LESSHISTFILE": {
+              "paths": [
+                "${XDG_STATE_HOME}/lesshst",
+                "${XDG_DATA_HOME}/lesshst",
+                "${HOME}/.lesshst",
+                "${HOME}/_lesshst"
+              ],
+              "move": true,
+              "guide": null
+            },
+            "LESSKEYIN": {
+              "paths": [
+                "${XDG_CONFIG_HOME}/lesskey",
+                "${HOME}/.lesskey",
+                "${HOME}/_lesskey"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": {
           "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
@@ -1587,7 +1688,7 @@
       }
     },
     "mdv": {
-      "sha256": "69cc8adc89ba648d23530378633b167c685cce8223ecac1da092f02b5ecba631",
+      "sha256": "1362af9b38f318ee6771f04574d2199c49c3ac20b7eb76a3d2aeea627fca7e8e",
       "record": {
         "name": "mdv",
         "executable": "mdv.exe",
@@ -1611,7 +1712,17 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "MDV_CONFIG_PATH": {
+              "paths": [
+                "${APPDATA}/mdv",
+                "${HOME}/.config/mdv",
+                "${HOME}/Library/Application Support/mdv"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -1643,7 +1754,7 @@
       }
     },
     "micro": {
-      "sha256": "49fba2a4be54d5ff4c6c51aad8e2acacadb1de097065433d7c80eb7795be4835",
+      "sha256": "7fef5a2f08c827b183e7042105b27b2fa2bd2bd1dd652f9a36a3c12d378eeeb8",
       "record": {
         "name": "micro",
         "executable": "micro.exe",
@@ -1667,7 +1778,17 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "MICRO_CONF_DIR": {
+              "paths": [
+                "${APPDATA}/micro",
+                "${HOME}/.config/micro",
+                "${HOME}/Library/Application Support/micro"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -1919,7 +2040,7 @@
       }
     },
     "npm": {
-      "sha256": "a8e1deb21a8ff906d1cc96357cba1241fb833913f7d2e5ebd2f081c5494156f6",
+      "sha256": "de76e127763376845d8bb7aaaf756e2602507e58bac4dedc371f91c5e7332e8c",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -1943,7 +2064,22 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "NPM_CONFIG_USERCONFIG": {
+              "paths": [
+                "${HOME}/.npmrc"
+              ],
+              "move": true,
+              "guide": null
+            },
+            "NODE_REPL_HISTORY": {
+              "paths": [
+                "${HOME}/.node_repl_history"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {
@@ -2012,7 +2148,7 @@
       }
     },
     "oh-my-posh": {
-      "sha256": "70f385f7a23995aa6fea0268d6dba0eab96dc32fb7f2f4b22510ed79805886a3",
+      "sha256": "fd65366934e19a8de0590bd28c2b9bdef1aa568dc8a4b9d81fcde33128627d60",
       "record": {
         "name": "oh-my-posh",
         "executable": "oh-my-posh.exe",
@@ -2038,7 +2174,15 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "POSH_THEMES_PATH": {
+              "paths": [
+                "${LOCALAPPDATA}/Programs/oh-my-posh/themes"
+              ],
+              "move": false,
+              "guide": "That folder holds the themes oh-my-posh installed, and your prompt config may name it: copy the themes you use to $XDG_DATA_HOME/oh-my-posh/themes and point your config there."
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -2530,7 +2674,7 @@
       }
     },
     "psreadline": {
-      "sha256": "f8341d03000529468d9e340709cc5abe7d419d22dff874c74ab4eec7ea63ab04",
+      "sha256": "3e02996108145ba7566019eb891d2411db7a525d69406491796aa5966efdd5c4",
       "record": {
         "name": "psreadline",
         "executable": "PSReadLine",
@@ -2551,7 +2695,16 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "${XDG_STATE_HOME}/psreadline/history": {
+              "paths": [
+                "${APPDATA}/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt",
+                "${HOME}/.local/share/powershell/PSReadLine/ConsoleHost_history.txt"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -2770,7 +2923,7 @@
       }
     },
     "ripgrep": {
-      "sha256": "76ddea8cff546903f4fbbc4f03618640233190455575917a88de976bc1d811a1",
+      "sha256": "471ac98a32eeeca3b950feb3638aaf5183ec6f36b5afbfff83f46023bfce88e9",
       "record": {
         "name": "ripgrep",
         "executable": "rg.exe",
@@ -2796,7 +2949,13 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "RIPGREP_CONFIG_PATH": {
+              "paths": [],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -2824,7 +2983,7 @@
       }
     },
     "rustup": {
-      "sha256": "3f01d5d22eb6f62bfade4d3472bc45f91b98d0fa4d9efd36db25740963014f0c",
+      "sha256": "8deeb7e9e37515fd7a7cf9b84c1b151b0dfbf8f8a48e583a848ab45c4325b71d",
       "record": {
         "name": "rustup",
         "executable": "rustup.exe",
@@ -2851,7 +3010,22 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "RUSTUP_HOME": {
+              "paths": [
+                "${HOME}/.rustup"
+              ],
+              "move": false,
+              "guide": "rustup keeps absolute paths inside; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+            },
+            "CARGO_HOME": {
+              "paths": [
+                "${HOME}/.cargo"
+              ],
+              "move": false,
+              "guide": "Cargo home is part of rustup's installation layout; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -2978,7 +3152,7 @@
       }
     },
     "starship": {
-      "sha256": "2ca994b9545a4ffef24d2049f9d8d7956059b7899c6b1d550c368745894be757",
+      "sha256": "bb951f0c2ea35e3eb8aa31493e3f6c8439ca7d04ad127d719a8217a94a35117e",
       "record": {
         "name": "starship",
         "executable": "starship.exe",
@@ -3004,7 +3178,15 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "STARSHIP_CONFIG": {
+              "paths": [
+                "${HOME}/.config/starship.toml"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -3072,7 +3254,7 @@
       }
     },
     "uv": {
-      "sha256": "08e2fbef26479f47d4a6aa6d12158c2094ecbc6844b7298e2d03e37a55905ae8",
+      "sha256": "b31cb96e22aa8234a3640a53f4f43ca0a490dd04c601ee169752377244070143",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -3099,7 +3281,17 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "UV_DATA_DIR": {
+              "paths": [
+                "${HOME}/.local/share/uv",
+                "${APPDATA}/uv/data",
+                "${HOME}/.uv"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -3184,7 +3376,7 @@
       }
     },
     "vcpkg": {
-      "sha256": "8f04e8e66df46509e4a6da3c90f00fbd3fdc64ca8b2a3afc50ccaf95891f83c4",
+      "sha256": "b77179c0b98452a9cb01b230f40c59ebfcf0379deb18730c2be2717b39bb537e",
       "record": {
         "name": "vcpkg",
         "executable": "vcpkg.exe",
@@ -3210,7 +3402,15 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "VCPKG_ROOT": {
+              "paths": [
+                "${HOME}/vcpkg"
+              ],
+              "move": false,
+              "guide": "vcpkg roots are chosen when you clone it; follow https://learn.microsoft.com/vcpkg/get_started/get-started to relocate it."
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -3273,7 +3473,7 @@
       }
     },
     "wget": {
-      "sha256": "48cc7b64fec58131d28a04e5b3e550b4501c72c9e0f77cb4959d510edf30b3a7",
+      "sha256": "c2320238c05f1658e844256e9ad5e1088a651a7a00b67ab0cbeb98911c78fb7f",
       "record": {
         "name": "wget",
         "executable": "wget.exe",
@@ -3297,7 +3497,15 @@
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "WGETRC": {
+              "paths": [
+                "${HOME}/.wgetrc"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -3410,7 +3618,7 @@
       }
     },
     "zoxide": {
-      "sha256": "f057f4d05a54d9ab391798adae6f61c27b05a0cff2fa1dc468697436284c36dc",
+      "sha256": "173dea6c8b042a6fc227f6896c89d807f96ca96a221a71230cad1e20f4e0a224",
       "record": {
         "name": "zoxide",
         "executable": "zoxide.exe",
@@ -3434,7 +3642,18 @@
           "dirs": [],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "_ZO_DATA_DIR": {
+              "paths": [
+                "${XDG_DATA_HOME}/zoxide",
+                "${HOME}/.local/share/zoxide",
+                "${LOCALAPPDATA}/zoxide",
+                "${HOME}/Library/Application Support/zoxide"
+              ],
+              "move": true,
+              "guide": null
+            }
+          }
         },
         "env": null,
         "aliases": {},

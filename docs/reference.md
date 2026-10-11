@@ -31,6 +31,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFTool](#new-dftool) |  | Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
+| [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Hands a tool's config over to DotForge when its old config location still holds your config. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 | [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
 
@@ -979,6 +980,63 @@ Remove-DFTool -Name fzf -IncludeDependents -WhatIf
 Shows that PSFzf would be removed first, then fzf, without removing anything.
 
 **See also:** [getting-started](guide/getting-started.md)
+
+### Resolve-DFToolConflict
+
+Hands a tool's config over to DotForge when its old config location still holds your config.
+
+```text
+Resolve-DFToolConflict [-Name] <string> -Move [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Resolve-DFToolConflict [-Name] <string> -Adopt [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Resolve-DFToolConflict [-Name] <string> -Done [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+DotForge leaves a requested tool inactive (Get-DFToolStatus -Conflict) while the tool's own default location holds config or data that its XDG locations would hide. This command resolves that, one of three ways:
+
+-Move copies the old config to the XDG location, then moves the old copy out of the way. It runs only when every check passes, and otherwise changes nothing and lists what to fix: the XDG location must be empty, the tool must not be running, no text file or environment variable may name the old location, and the tool must allow DotForge to move it. Every copied file is checked by size and SHA-256. The old copy is renamed to &lt;name&gt;.dotforge-moved, then (on Windows) sent to the Recycle Bin. A file in use is retried on later loads.
+
+-Adopt records that DotForge owns the tool's config and moves nothing: use it when you've moved or merged the config yourself, or don't need the old copy.
+
+-Done clears a move's unfinished removals after you've dealt with them yourself.
+
+Ownership is recorded in $XDG_STATE_HOME\\dotforge\\ownership.json. From then on DotForge configures the tool in its sessions and ignores anything left in the old location. Programs started outside a DotForge session keep using the old location.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The tool. |
+| `-Move` | switch |  | yes |  | Copy the old config to the XDG location, check it, then move the old copy out of the way. |
+| `-Adopt` | switch |  | yes |  | Record ownership without moving anything. |
+| `-Done` | switch |  | yes |  | Clear a move's unfinished removals, keeping ownership. |
+
+**Outputs:** DotForge.ConflictResult: Tool, Action (Move, Adopt, Done or AlreadyOwned), Moved (the new locations), Pending (old copies still to remove) and Problems (why a move didn't run).
+
+**Example 1**
+
+```powershell
+Resolve-DFToolConflict bat -Move -WhatIf
+```
+
+Shows what would be moved, without changing anything.
+
+**Example 2**
+
+```powershell
+Resolve-DFToolConflict bat -Move
+```
+
+Moves bat's config from its old location to $XDG_CONFIG_HOME\\bat, then loads it with Register-DFTool -Name bat.
+
+**Example 3**
+
+```powershell
+Resolve-DFToolConflict starship -Adopt
+```
+
+You've already moved starship.toml yourself: DotForge takes over starship's config.
+
+**See also:** [configuration](guide/configuration.md)
 
 ### Start-DFSession
 

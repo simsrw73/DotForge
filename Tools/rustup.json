@@ -19,6 +19,18 @@
       "RUSTUP_HOME": "${XDG_DATA_HOME}/rustup",
       "CARGO_HOME": "${XDG_DATA_HOME}/cargo"
     },
+    "native": {
+      "RUSTUP_HOME": {
+        "paths": ["${HOME}/.rustup"],
+        "move": false,
+        "guide": "rustup keeps absolute paths inside; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+      },
+      "CARGO_HOME": {
+        "paths": ["${HOME}/.cargo"],
+        "move": false,
+        "guide": "Cargo home is part of rustup's installation layout; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+      }
+    },
     "dirs": [
       "${XDG_DATA_HOME}/rustup",
       "${XDG_DATA_HOME}/cargo"

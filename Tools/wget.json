@@ -17,6 +17,9 @@
     "vars": {
       "WGETRC": "${XDG_CONFIG_HOME}/wget/wgetrc"
     },
+    "native": {
+      "WGETRC": ["${HOME}/.wgetrc"]
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/wget"
     ]

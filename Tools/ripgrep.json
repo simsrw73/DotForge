@@ -19,6 +19,9 @@
     "vars": {
       "RIPGREP_CONFIG_PATH": "${XDG_CONFIG_HOME}/ripgrep/ripgreprc"
     },
+    "native": {
+      "RIPGREP_CONFIG_PATH": []
+    },
     "dirs": [
       "${XDG_CONFIG_HOME}/ripgrep"
     ]

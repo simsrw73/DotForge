@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: b3c3788f7d0a273e7cefa0d7bf33ad1b69a07ec374476c4e5fa4952b4ddcb680
+# sources-sha256: fa333b37a50a7e39ee889f434f272db31e2621df4fe7aba3bf4c4a856451c154
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -294,7 +294,9 @@ function Get-DFNativeRoot {
     .SYNOPSIS
         The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
     .DESCRIPTION
-        The one place those roots are read ($HOME is read-only, so tests mock this).
+        The one place those roots are read. The test suite sets
+        DF_TEST_NATIVE_ROOT (tests/TestSupport.ps1) so no test looks in the
+        developer's real home; unset, the real roots are used.
     .PARAMETER Name
         HOME, APPDATA or LOCALAPPDATA.
     .OUTPUTS
@@ -303,6 +305,7 @@ function Get-DFNativeRoot {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
+    if ($Env:DF_TEST_NATIVE_ROOT) { return Join-Path $Env:DF_TEST_NATIVE_ROOT $Name }
     switch ($Name) {
         'HOME' { $HOME }
         'APPDATA' { $Env:APPDATA }
@@ -1394,6 +1397,40 @@ function Invoke-DFPagerExe {
     }
     [string[]] $pagerArgs = if ($rest) { $rest -split '\s+' } else { @() }
     $Lines | & $program @pagerArgs
+}
+
+# ---- Shared/Remove-DFItemToBin.ps1
+#Requires -Version 7.2
+
+function Remove-DFItemToBin {
+    <#
+    .SYNOPSIS
+        Moves an old config file or folder out of the tool's way, recoverably.
+    .DESCRIPTION
+        Renames it to <leaf>.dotforge-moved first: that fails cleanly, with no
+        window, when anything inside is in use. On Windows the renamed item
+        then goes to the Recycle Bin; if that step fails, the renamed copy
+        stays where it is, which still counts as removed.
+    .PARAMETER Path
+        The old location.
+    .OUTPUTS
+        None. Throws when the rename fails.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+    $movedName = (Split-Path $Path -Leaf) + '.dotforge-moved'
+    $moved = Join-Path (Split-Path $Path) $movedName
+    Rename-Item -LiteralPath $Path -NewName $movedName -ErrorAction Stop
+    if (-not $IsWindows) { return }
+    try {
+        Add-Type -AssemblyName Microsoft.VisualBasic
+        $ui = [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs
+        $bin = [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin
+        if (Test-Path -LiteralPath $moved -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($moved, $ui, $bin) }
+        else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($moved, $ui, $bin) }
+    } catch {
+        Write-Verbose "DotForge: $moved stays where it is: $($_.Exception.Message)"
+    }
 }
 
 # ---- Shared/Test-DFOutputPiped.ps1

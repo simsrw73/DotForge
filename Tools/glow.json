@@ -15,6 +15,9 @@
   "xdg": {
     "compliance": "none",
     "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/glow/glow.yml": ["${APPDATA}/glow/glow.yml", "${HOME}/.config/glow/glow.yml", "${HOME}/Library/Application Support/glow/glow.yml"]
+    },
     "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly."
   },
   "settings": {
