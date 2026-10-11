@@ -236,7 +236,31 @@ function ConvertTo-DFXdgBlock {
         dirs         = @(Get-DFToolRecordProperty $RawXdg 'dirs' @())
         instructions = Get-DFToolRecordProperty $RawXdg 'instructions' $null
         compliance   = Get-DFToolRecordProperty $RawXdg 'compliance' $null
+        native       = ConvertTo-DFNativeMap (Get-DFToolRecordProperty $RawXdg 'native' $null)
     }
+}
+
+function ConvertTo-DFNativeMap {
+    <#
+    .SYNOPSIS
+        Normalizes xdg.native: each key's old locations as { paths, move, guide }.
+    .PARAMETER RawNative
+        See the synopsis.
+    #>
+    param($RawNative)
+
+    if (-not $RawNative) { return $null }
+    $map = [ordered]@{}
+    foreach ($p in $RawNative.PSObject.Properties) {
+        $map[$p.Name] = if ($p.Value -is [pscustomobject]) {
+            [pscustomobject]@{
+                paths = [string[]]@(Get-DFToolRecordProperty $p.Value 'paths' @())
+                move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
+                guide = Get-DFToolRecordProperty $p.Value 'guide' $null
+            }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null } }
+    }
+    [pscustomobject]$map
 }
 
 function ConvertTo-DFAliasMap {

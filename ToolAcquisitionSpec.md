@@ -66,7 +66,7 @@ to the next only when a conformance probe (§4) shows the higher rung does not w
 
 Path templating: `xdg.vars`/`xdg.dirs`/`config_path` values MAY use the tokens `${XDG_CONFIG_HOME}`,
 `${XDG_DATA_HOME}`, `${XDG_STATE_HOME}`, `${XDG_CACHE_HOME}`, expanded by
-`Private/Expand-DFXdgPath.ps1` (case-sensitive `-creplace`; exact `${…}` form only). `XDG_BIN_HOME` is
+`Shared/Expand-DFXdgPath.ps1` (case-sensitive `-creplace`; exact `${…}` form only). `XDG_BIN_HOME` is
 **not** a supported token. **`xdg.vars` values are `${XDG_*}` path templates only.** Non-path
 environment variables (flag strings, tool options, `LESS`, theme names, …) belong in the
 tool's top-level **`env`** block, applied unconditionally by `Register-DFTool` (also via

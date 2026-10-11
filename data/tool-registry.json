@@ -25,7 +25,8 @@
           },
           "dirs": [],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": {
           "BAT_THEME": "Catppuccin Mocha"
@@ -76,7 +77,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -118,7 +120,8 @@
             "${XDG_CONFIG_HOME}/broot"
           ],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -241,7 +244,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -372,7 +376,8 @@
             "${XDG_CONFIG_HOME}/chezmoi"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {
@@ -426,7 +431,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -511,7 +517,8 @@
             "${XDG_CONFIG_HOME}/curl"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -560,7 +567,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -610,7 +618,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -660,7 +669,8 @@
             "${XDG_CONFIG_HOME}/docker"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -726,7 +736,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -826,7 +837,8 @@
           "vars": null,
           "dirs": [],
           "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc).",
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -881,7 +893,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -948,7 +961,8 @@
             "${XDG_DATA_HOME}/fnm"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1018,7 +1032,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": {
           "FZF_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
@@ -1076,7 +1091,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1141,7 +1157,8 @@
           "vars": null,
           "dirs": [],
           "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly.",
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1194,7 +1211,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1241,7 +1259,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1301,7 +1320,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1346,7 +1366,8 @@
             "${XDG_CONFIG_HOME}/lazygit"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {
@@ -1397,7 +1418,8 @@
             "${XDG_CONFIG_HOME}/less"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": {
           "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
@@ -1452,7 +1474,8 @@
           "vars": null,
           "dirs": [],
           "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config.",
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1533,7 +1556,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": {
           "MDCAT_THEME": "catppuccin-mocha"
@@ -1586,7 +1610,8 @@
             "${XDG_CONFIG_HOME}/mdv"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1641,7 +1666,8 @@
             "${XDG_CONFIG_HOME}/micro"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1693,7 +1719,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1769,7 +1796,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1817,7 +1845,8 @@
           "vars": null,
           "dirs": [],
           "instructions": "nano 2.9 and later read $XDG_CONFIG_HOME/nano/nanorc on their own. NANORC is not a variable nano reads.",
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -1913,7 +1942,8 @@
             "${XDG_CONFIG_HOME}/npm"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {
@@ -2007,7 +2037,8 @@
             "${XDG_CONFIG_HOME}/oh-my-posh"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2054,7 +2085,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2322,7 +2354,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2362,7 +2395,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2407,7 +2441,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "full"
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2455,7 +2490,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2514,7 +2550,8 @@
             "${XDG_STATE_HOME}/psreadline"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2758,7 +2795,8 @@
             "${XDG_CONFIG_HOME}/ripgrep"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2812,7 +2850,8 @@
             "${XDG_DATA_HOME}/cargo"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2869,7 +2908,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -2963,7 +3003,8 @@
             "${XDG_CACHE_HOME}/starship"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3010,7 +3051,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3056,7 +3098,8 @@
             "${XDG_DATA_HOME}/uv"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3166,7 +3209,8 @@
             "${XDG_CACHE_HOME}/vcpkg/downloads"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3206,7 +3250,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3251,7 +3296,8 @@
             "${XDG_CONFIG_HOME}/wget"
           ],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3295,7 +3341,8 @@
           "vars": null,
           "dirs": [],
           "instructions": null,
-          "compliance": "none"
+          "compliance": "none",
+          "native": null
         },
         "env": null,
         "aliases": {},
@@ -3386,7 +3433,8 @@
           },
           "dirs": [],
           "instructions": null,
-          "compliance": "partial"
+          "compliance": "partial",
+          "native": null
         },
         "env": null,
         "aliases": {},

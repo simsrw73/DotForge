@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 88083389ac511cf37ddf7b74aa4e0b43da49dae30dd076791d6fce70786251c1
+# sources-sha256: e91869c29b60f5adfd8bfdfd6116165ada8a2de42cb2887114f3c2760f6f5021
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -278,6 +278,243 @@ function Get-DFInstallBlock {
     $blocks = @($Manager.installs | Where-Object { $_ })
     if (-not $Source) { return $blocks | Select-Object -First 1 }
     $blocks | Where-Object { $_.from -eq $Source } | Select-Object -First 1
+}
+
+# ---- Shared/DFToolOwnership.ps1
+#Requires -Version 7.2
+
+# Config ownership: DotForge points a requested tool at XDG locations only
+# once it owns that tool's config, so a user's existing config is never
+# silently hidden. Stateless: the startup core and Resolve-DFToolConflict
+# (DotForge.Helpers) both read the ownership file through these functions.
+# See docs/superpowers/specs/2026-10-11-config-ownership-design.md.
+
+function Get-DFNativeRoot {
+    <#
+    .SYNOPSIS
+        The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
+    .DESCRIPTION
+        The one place those roots are read ($HOME is read-only, so tests mock this).
+    .PARAMETER Name
+        HOME, APPDATA or LOCALAPPDATA.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
+    switch ($Name) {
+        'HOME' { $HOME }
+        'APPDATA' { $Env:APPDATA }
+        'LOCALAPPDATA' { $Env:LOCALAPPDATA }
+    }
+}
+
+function Expand-DFNativePath {
+    <#
+    .SYNOPSIS
+        Expands an xdg.native path template, or returns $null when a root it names is unset.
+    .PARAMETER Template
+        e.g. '${APPDATA}/bat/config'.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Template)
+    $path = $Template
+    foreach ($root in 'HOME', 'APPDATA', 'LOCALAPPDATA') {
+        $token = '${' + $root + '}'
+        if (-not $path.Contains($token)) { continue }
+        $value = Get-DFNativeRoot -Name $root
+        if (-not $value) { return $null }
+        $path = $path.Replace($token, $value)
+    }
+    if ($path -cmatch '\$\{XDG_') { return Expand-DFXdgPath $path }
+    ConvertTo-DFPath $path
+}
+
+function Get-DFToolRelocation {
+    <#
+    .SYNOPSIS
+        The config, data and state paths DotForge points a tool at: its xdg.vars, seeds and native target keys.
+    .DESCRIPTION
+        Caches are left out: losing one costs nothing. Each result carries the
+        key's xdg.native entry, or $null when the record declares none.
+    .PARAMETER Tool
+        A normalized tool record.
+    .OUTPUTS
+        pscustomobject: Key, Target (canonical path), Native.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][PSCustomObject]$Tool)
+    $keep = '^\$\{XDG_(CONFIG|DATA|STATE)_HOME\}'
+    $native = $Tool.xdg?.native
+    $seen = @{}
+    $emit = {
+        param([string]$Key, [string]$Template)
+        if ($seen.ContainsKey($Key)) { return }
+        $seen[$Key] = $true
+        [pscustomobject]@{ Key = $Key; Target = Expand-DFXdgPath $Template; Native = $(if ($native) { $native.PSObject.Properties[$Key]?.Value }) }
+    }
+    if ($Tool.xdg?.method -eq 'env' -and $Tool.xdg.vars) {
+        foreach ($p in $Tool.xdg.vars.PSObject.Properties) { if ($p.Value -cmatch $keep) { & $emit $p.Name $p.Value } }
+    }
+    $seed = if ($Tool.setup) { $Tool.setup.PSObject.Properties['seed']?.Value }
+    if ($seed) { foreach ($p in $seed.PSObject.Properties) { & $emit $p.Name $p.Name } }
+    if ($native) { foreach ($p in $native.PSObject.Properties) { if ($p.Name -cmatch $keep) { & $emit $p.Name $p.Name } } }
+}
+
+function Test-DFPathHasContent {
+    <#
+    .SYNOPSIS
+        True for a file, or a folder with at least one file anywhere below it.
+    .PARAMETER Path
+        The path to check.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Path)
+    if (Test-Path -LiteralPath $Path -PathType Leaf) { return $true }
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return $false }
+    [bool](Get-ChildItem -LiteralPath $Path -File -Recurse -Force -ErrorAction Ignore | Select-Object -First 1)
+}
+
+function Get-DFToolOwnershipPath {
+    <#
+    .SYNOPSIS
+        The ownership state file: $XDG_STATE_HOME\dotforge\ownership.json.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    Join-Path (Get-DFXdgPath State) 'dotforge' 'ownership.json'
+}
+
+function Read-DFToolOwnership {
+    <#
+    .SYNOPSIS
+        Reads which tools DotForge owns the config of, keyed by tool name.
+    .DESCRIPTION
+        A missing file is an empty table. A file that isn't valid JSON warns
+        and returns $null: callers then record nothing, so the file is never
+        overwritten with less than it held.
+    .OUTPUTS
+        System.Collections.Hashtable (name -> entry with since, how and an
+        optional pending list), or $null.
+    #>
+    [CmdletBinding()]
+    param()
+    $path = Get-DFToolOwnershipPath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @{} }
+    try { $data = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
+    catch {
+        Write-Warning "DotForge: $path isn't valid JSON, so tool ownership can't be read or recorded. Fix or delete it."
+        return $null
+    }
+    $table = @{}
+    foreach ($name in @($data.Keys)) { $table[$name] = [pscustomobject]$data[$name] }
+    $table
+}
+
+function Save-DFToolOwnership {
+    <#
+    .SYNOPSIS
+        Writes the ownership table atomically.
+    .PARAMETER Ownership
+        Tool name -> entry.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership)
+    Write-DFFileAtomic -Path (Get-DFToolOwnershipPath) -Value ($Ownership | ConvertTo-Json -Depth 10)
+}
+
+function Find-DFToolConflict {
+    <#
+    .SYNOPSIS
+        Finds a requested tool's old locations that hold content DotForge would hide.
+    .DESCRIPTION
+        An owned tool is not checked (no file-system calls). For each relocated
+        path (Get-DFToolRelocation), an old location with content is a conflict
+        unless it is the target or inside it. A variable already set in the
+        process is the user's choice, which DotForge leaves alone, so it is
+        skipped and Complete is false: the tool can't be recorded as owned on
+        that check.
+    .PARAMETER Tool
+        A normalized tool record.
+    .PARAMETER Ownership
+        Read-DFToolOwnership result.
+    .OUTPUTS
+        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target, Move,
+        Guide) and Complete.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Tool,
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership
+    )
+    if ($Ownership.ContainsKey($Tool.name)) { return [pscustomobject]@{ Conflicts = @(); Complete = $true } }
+    $complete = $true
+    $sep = [IO.Path]::DirectorySeparatorChar
+    $conflicts = foreach ($reloc in @(Get-DFToolRelocation -Tool $Tool)) {
+        if ($reloc.Key -cnotmatch '^\$\{' -and [Environment]::GetEnvironmentVariable($reloc.Key, 'Process')) { $complete = $false; continue }
+        if (-not $reloc.Native) { continue }
+        $found = @(foreach ($template in $reloc.Native.paths) {
+            $old = Expand-DFNativePath $template
+            if (-not $old) { continue }
+            if ($old -eq $reloc.Target -or $old.StartsWith($reloc.Target + $sep, [StringComparison]::OrdinalIgnoreCase)) { continue }
+            if (Test-DFPathHasContent -Path $old) { $old }
+        })
+        if ($found) {
+            [pscustomobject]@{ Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target; Move = $reloc.Native.move; Guide = $reloc.Native.guide }
+        }
+    }
+    [pscustomobject]@{ Conflicts = @($conflicts); Complete = $complete }
+}
+
+# ---- Shared/Expand-DFXdgPath.ps1
+#Requires -Version 7.2
+
+function Expand-DFXdgPath {
+    <#
+    .SYNOPSIS
+        Expands ${XDG_*} placeholder tokens in a template string to their
+        actual environment variable values.
+    .DESCRIPTION
+        Replaces ${XDG_CONFIG_HOME}, ${XDG_DATA_HOME}, ${XDG_STATE_HOME} and
+        ${XDG_CACHE_HOME} (case-sensitive) with the current env var values.
+        A template that contained a token is a path, so the result is
+        canonicalized with ConvertTo-DFPath. A template with no token (flag
+        strings like LESS or FZF_DEFAULT_OPTS) is returned byte-for-byte.
+        Used for every value in a tool's xdg.vars and env blocks.
+    .PARAMETER Template
+        The string to expand, e.g. '${XDG_CONFIG_HOME}/bat'.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Template)
+
+    $expanded = $Template `
+        -creplace '\$\{XDG_CONFIG_HOME\}', { Get-DFXdgPath Config } `
+        -creplace '\$\{XDG_DATA_HOME\}',   { Get-DFXdgPath Data } `
+        -creplace '\$\{XDG_STATE_HOME\}',  { Get-DFXdgPath State } `
+        -creplace '\$\{XDG_CACHE_HOME\}',  { Get-DFXdgPath Cache }
+
+    # Normalize ONLY when an XDG token was present: a token-bearing value is always a
+    # filesystem path. Token-less values are literal flag strings (LESS, FZF_*, ...)
+    # and must pass through byte-for-byte. See docs/external-dependencies.md.
+    if ($Template -cmatch '\$\{XDG_(CONFIG|DATA|STATE|CACHE)_HOME\}') {
+        return ConvertTo-DFPath $expanded
+    }
+    $expanded
 }
 
 # ---- Shared/Format-DFInstallCommand.ps1
@@ -723,7 +960,31 @@ function ConvertTo-DFXdgBlock {
         dirs         = @(Get-DFToolRecordProperty $RawXdg 'dirs' @())
         instructions = Get-DFToolRecordProperty $RawXdg 'instructions' $null
         compliance   = Get-DFToolRecordProperty $RawXdg 'compliance' $null
+        native       = ConvertTo-DFNativeMap (Get-DFToolRecordProperty $RawXdg 'native' $null)
     }
+}
+
+function ConvertTo-DFNativeMap {
+    <#
+    .SYNOPSIS
+        Normalizes xdg.native: each key's old locations as { paths, move, guide }.
+    .PARAMETER RawNative
+        See the synopsis.
+    #>
+    param($RawNative)
+
+    if (-not $RawNative) { return $null }
+    $map = [ordered]@{}
+    foreach ($p in $RawNative.PSObject.Properties) {
+        $map[$p.Name] = if ($p.Value -is [pscustomobject]) {
+            [pscustomobject]@{
+                paths = [string[]]@(Get-DFToolRecordProperty $p.Value 'paths' @())
+                move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
+                guide = Get-DFToolRecordProperty $p.Value 'guide' $null
+            }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null } }
+    }
+    [pscustomobject]$map
 }
 
 function ConvertTo-DFAliasMap {
@@ -1500,6 +1761,31 @@ function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
     }
 }
 
+function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in xdg.native: each key names something DotForge relocates; move is a boolean; move false needs a guide.
+    #>
+    $xdg = Get-DFSchemaProperty $Tool 'xdg'
+    $native = Get-DFSchemaProperty $xdg 'native'
+    if ($null -eq $native) { return }
+    if ($native -isnot [pscustomobject]) { return 'xdg.native must be an object' }
+    $vars = @((Get-DFSchemaProperty $xdg 'vars')?.PSObject.Properties.Name)
+    $seeds = @((Get-DFSchemaProperty (Get-DFSchemaProperty $Tool 'setup') 'seed')?.PSObject.Properties.Name)
+    foreach ($p in $native.PSObject.Properties) {
+        if ($p.Name -cnotin $vars -and $p.Name -cnotin $seeds -and $p.Name -cnotmatch '^\$\{XDG_(CONFIG|DATA|STATE)_HOME\}') {
+            "xdg.native key '$($p.Name)' must name an xdg.vars variable, a setup.seed target, or start with `${XDG_CONFIG_HOME}, `${XDG_DATA_HOME} or `${XDG_STATE_HOME}"
+        }
+        $entry = $p.Value
+        if ($entry -is [pscustomobject]) {
+            $move = Get-DFSchemaProperty $entry 'move'
+            if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
+            if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
+            if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
+        } elseif (@($entry | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name) must be a list of paths or an object" }
+    }
+}
+
 function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -1516,7 +1802,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
                  'prewarm', 'role', 'requires', 'setup', 'installs', 'install'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
-        xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
+        xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
@@ -1592,6 +1878,7 @@ function Test-DFToolSchema {
         Get-DFAliasAndMapSchemaError $Tool
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
+        Get-DFNativeSchemaError $Tool
         Get-DFInstallsSchemaError $Tool
         Get-DFActivationSchemaError $Tool
         Get-DFPickerSchemaError $Tool
@@ -1864,45 +2151,6 @@ function Assert-DFSessionConfigured {
     $script:DFLegacyConfigWarned = $true
     Write-Warning ("DotForge: a global `$DFConfig was found but is no longer read, so none of its settings apply " +
         "(including SkipSetup, DotenvSafeMode and DotenvApprovedDirs). Pass it explicitly: Start-DFSession -Config `$DFConfig")
-}
-
-# ---- Private/Expand-DFXdgPath.ps1
-#Requires -Version 7.2
-
-function Expand-DFXdgPath {
-    <#
-    .SYNOPSIS
-        Expands ${XDG_*} placeholder tokens in a template string to their
-        actual environment variable values.
-    .DESCRIPTION
-        Replaces ${XDG_CONFIG_HOME}, ${XDG_DATA_HOME}, ${XDG_STATE_HOME} and
-        ${XDG_CACHE_HOME} (case-sensitive) with the current env var values.
-        A template that contained a token is a path, so the result is
-        canonicalized with ConvertTo-DFPath. A template with no token (flag
-        strings like LESS or FZF_DEFAULT_OPTS) is returned byte-for-byte.
-        Used for every value in a tool's xdg.vars and env blocks.
-    .PARAMETER Template
-        The string to expand, e.g. '${XDG_CONFIG_HOME}/bat'.
-    .OUTPUTS
-        System.String.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param([Parameter(Mandatory)][string]$Template)
-
-    $expanded = $Template `
-        -creplace '\$\{XDG_CONFIG_HOME\}', { Get-DFXdgPath Config } `
-        -creplace '\$\{XDG_DATA_HOME\}',   { Get-DFXdgPath Data } `
-        -creplace '\$\{XDG_STATE_HOME\}',  { Get-DFXdgPath State } `
-        -creplace '\$\{XDG_CACHE_HOME\}',  { Get-DFXdgPath Cache }
-
-    # Normalize ONLY when an XDG token was present: a token-bearing value is always a
-    # filesystem path. Token-less values are literal flag strings (LESS, FZF_*, ...)
-    # and must pass through byte-for-byte. See docs/external-dependencies.md.
-    if ($Template -cmatch '\$\{XDG_(CONFIG|DATA|STATE|CACHE)_HOME\}') {
-        return ConvertTo-DFPath $expanded
-    }
-    $expanded
 }
 
 # ---- Private/Find-DFToolSource.ps1

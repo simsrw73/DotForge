@@ -282,6 +282,31 @@ function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
     }
 }
 
+function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in xdg.native: each key names something DotForge relocates; move is a boolean; move false needs a guide.
+    #>
+    $xdg = Get-DFSchemaProperty $Tool 'xdg'
+    $native = Get-DFSchemaProperty $xdg 'native'
+    if ($null -eq $native) { return }
+    if ($native -isnot [pscustomobject]) { return 'xdg.native must be an object' }
+    $vars = @((Get-DFSchemaProperty $xdg 'vars')?.PSObject.Properties.Name)
+    $seeds = @((Get-DFSchemaProperty (Get-DFSchemaProperty $Tool 'setup') 'seed')?.PSObject.Properties.Name)
+    foreach ($p in $native.PSObject.Properties) {
+        if ($p.Name -cnotin $vars -and $p.Name -cnotin $seeds -and $p.Name -cnotmatch '^\$\{XDG_(CONFIG|DATA|STATE)_HOME\}') {
+            "xdg.native key '$($p.Name)' must name an xdg.vars variable, a setup.seed target, or start with `${XDG_CONFIG_HOME}, `${XDG_DATA_HOME} or `${XDG_STATE_HOME}"
+        }
+        $entry = $p.Value
+        if ($entry -is [pscustomobject]) {
+            $move = Get-DFSchemaProperty $entry 'move'
+            if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
+            if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
+            if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
+        } elseif (@($entry | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name) must be a list of paths or an object" }
+    }
+}
+
 function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -298,7 +323,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
                  'prewarm', 'role', 'requires', 'setup', 'installs', 'install'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
-        xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance'
+        xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
@@ -374,6 +399,7 @@ function Test-DFToolSchema {
         Get-DFAliasAndMapSchemaError $Tool
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
+        Get-DFNativeSchemaError $Tool
         Get-DFInstallsSchemaError $Tool
         Get-DFActivationSchemaError $Tool
         Get-DFPickerSchemaError $Tool
