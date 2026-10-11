@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 9fd7bcea9e24496e25d4adce1f57aba607310b710913768fb0dcca3b28ce3de8
+# sources-sha256: e3a364e0c761e1e29b0a3e0b3e355b8cdb2ce7da0b6302162626e3f5fea1fd3a
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2137,14 +2137,50 @@ $script:DFBannerShown = $false
 function Test-DFBannerHost {
     <#
     .SYNOPSIS
-        Whether the banner may print: an interactive console host whose output isn't redirected.
+        Whether the banner may print: an interactive console shell (not one started to run a command or script) whose output isn't redirected.
     .OUTPUTS
         System.Boolean.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
     param()
-    (Test-DFInteractiveHost) -and -not [Console]::IsOutputRedirected
+    (Test-DFInteractiveHost) -and -not [Console]::IsOutputRedirected -and (Test-DFReplStart)
+}
+
+function Test-DFReplStart {
+    <#
+    .SYNOPSIS
+        Whether pwsh was started as an interactive shell, not to run a command or a script.
+    .DESCRIPTION
+        `pwsh -c ...`, `pwsh -File x.ps1`, `pwsh x.ps1` and `pwsh -EncodedCommand ...`
+        run something and exit, so they get no banner (and don't clear the
+        screen of the shell they were typed in), unless -NoExit keeps them
+        open. Parameter names may be shortened, as pwsh allows.
+    .PARAMETER CommandLine
+        The process's arguments, the program first. Default: [Environment]::GetCommandLineArgs().
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([string[]]$CommandLine = [Environment]::GetCommandLineArgs())
+    $isPrefix = { param([string]$Arg, [string]$Name, [int]$Min) $Arg.Length -ge $Min -and $Name.StartsWith($Arg, [StringComparison]::OrdinalIgnoreCase) }
+    $runs = $false
+    $noExit = $false
+    $skipValue = $false
+    foreach ($arg in @($CommandLine | Select-Object -Skip 1)) {
+        if ($skipValue) { $skipValue = $false; continue }
+        if ($arg -notmatch '^[-/](.+)$') { $runs = $true; break }   # a script path
+        $name = $Matches[1] -replace ':.*$', ''
+        if (& $isPrefix $name 'noexit' 3) { $noExit = $true; continue }
+        if ($name -ieq 'c' -or (& $isPrefix $name 'command' 3) -or $name -ieq 'f' -or (& $isPrefix $name 'file' 2) -or
+            $name -ieq 'e' -or $name -ieq 'ec' -or (& $isPrefix $name 'encodedcommand' 3)) { $runs = $true; break }
+        # Options that take a value: skip the value, so it isn't read as a script path.
+        foreach ($valued in 'executionpolicy', 'ep', 'workingdirectory', 'wd', 'windowstyle', 'settingsfile', 'configurationname', 'custompipename', 'inputformat', 'outputformat') {
+            if ($name -ieq $valued -or ($valued.Length -gt 3 -and (& $isPrefix $name $valued 3))) { $skipValue = $true; break }
+        }
+    }
+    -not $runs -or $noExit
 }
 
 function Get-DFBannerCachePath {
@@ -2267,6 +2303,12 @@ function Show-DFBanner {
         $fills = Merge-DFBannerCache -Fills $fills -Names @($State.Parts | ForEach-Object { $_.Tool.banner.fills })
         if ($body) {
             Write-DFBannerLines -Lines @(Merge-DFBannerBody -Body $body -Fills $fills -Style $State.Style) -DelayMs (Get-DFConfig BannerLineDelay -Default 8)
+        } else {
+            $late = @($State.Parts | Where-Object { $_.Tool.banner.body } | ForEach-Object { $_.Tool.name })
+            if ($late) {
+                $wait = Get-DFConfig BannerWait -Default 300
+                Write-DFBannerLines -Lines @(Format-DFBannerLine -Key 'DotForge' -Value "$($late -join ', ') wasn't ready within BannerWait ($wait ms); raise BannerWait or make it faster" -Style $State.Style) -DelayMs 0
+            }
         }
     } catch {
         Write-Warning "DotForge: the banner failed: $($_.Exception.Message)"
@@ -2491,8 +2533,10 @@ function Start-DFBannerWork {
     .SYNOPSIS
         Starts the banner parts' background jobs in one runspace pool, so they run while tools load.
     .PARAMETER Work
-        Items with Name, ScriptBlock and ArgumentList. A script block runs in a
-        fresh runspace: it sees its arguments, not the caller's variables.
+        Items with Name, ScriptBlock and ArgumentList, and optionally Partial
+        ($true: what the job has output so far is used when it isn't done in
+        time). A script block runs in a fresh runspace: it sees its arguments,
+        not the caller's variables.
     .OUTPUTS
         A handle for Receive-DFBannerWork.
     #>
@@ -2507,7 +2551,12 @@ function Start-DFBannerWork {
         $shell.RunspacePool = $pool
         $null = $shell.AddScript($item.ScriptBlock.ToString())
         foreach ($argument in @($item.ArgumentList)) { $null = $shell.AddArgument($argument) }
-        [pscustomobject]@{ Name = $item.Name; PowerShell = $shell; Async = $shell.BeginInvoke() }
+        $output = [System.Management.Automation.PSDataCollection[psobject]]::new()
+        $partial = [bool]($item -is [System.Collections.IDictionary] -and $item['Partial'])
+        [pscustomobject]@{
+            Name = $item.Name; PowerShell = $shell; Output = $output; Partial = $partial
+            Async = $shell.BeginInvoke([System.Management.Automation.PSDataCollection[psobject]]$null, $output)
+        }
     }
     [pscustomobject]@{ Pool = $pool; Jobs = @($jobs) }
 }
@@ -2522,7 +2571,8 @@ function Receive-DFBannerWork {
         Longest total wait.
     .OUTPUTS
         System.Collections.Hashtable: job name -> its output. A job that threw
-        or wasn't done in time is left out.
+        is left out; so is one not done in time, unless it is marked Partial
+        and has output something.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)]$Handle, [int]$WaitMs)
@@ -2532,18 +2582,20 @@ function Receive-DFBannerWork {
         $left = [int][Math]::Max(0, ($deadline - [DateTime]::UtcNow).TotalMilliseconds)
         if ($job.Async.AsyncWaitHandle.WaitOne($left)) {
             try {
-                $output = $job.PowerShell.EndInvoke($job.Async)
+                $job.PowerShell.EndInvoke($job.Async) | Out-Null
                 if ($job.PowerShell.HadErrors) { Write-Verbose "DotForge: banner job $($job.Name) failed: $($job.PowerShell.Streams.Error | Select-Object -First 1)" }
-                else { $results[$job.Name] = @($output) }
+                else { $results[$job.Name] = @($job.Output) }
             } catch {
                 Write-Verbose "DotForge: banner job $($job.Name) failed: $($_.Exception.Message)"
             }
             $job.PowerShell.Dispose()
         } else {
-            # Not done: stop it in the background; never wait for it here.
-            $null = $job.PowerShell.BeginStop($null, $null)
+            # Not done: keep what a Partial job has output so far, and leave the
+            # job running (it stops itself; see the part). Never wait for it here.
+            if ($job.Partial -and $job.Output.Count) { $results[$job.Name] = @($job.Output.ReadAll()) }
         }
     }
+    # Closing the pool lets unfinished jobs end on their own; it never blocks here.
     if ($Handle.Pool) { $null = $Handle.Pool.BeginClose($null, $null) }
     $results
 }

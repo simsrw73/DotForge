@@ -31,3 +31,17 @@ Describe 'Banner background work' {
         (Receive-DFBannerWork -Handle (Start-DFBannerWork -Work @()) -WaitMs 100).Count | Should -Be 0
     }
 }
+
+Describe 'Partial results' {
+    It 'returns what a job marked Partial emitted before the wait ran out' {
+        $handle = Start-DFBannerWork -Work @(@{ Name = 'p'; Partial = $true; ArgumentList = @(); ScriptBlock = { 'first'; Start-Sleep -Seconds 5; 'second' } })
+        Start-Sleep -Milliseconds 300
+        $results = Receive-DFBannerWork -Handle $handle -WaitMs 100
+        $results['p'] | Should -Be @('first')
+    }
+    It 'returns nothing for an unfinished job not marked Partial' {
+        $handle = Start-DFBannerWork -Work @(@{ Name = 'w'; ArgumentList = @(); ScriptBlock = { 'first'; Start-Sleep -Seconds 5 } })
+        Start-Sleep -Milliseconds 300
+        (Receive-DFBannerWork -Handle $handle -WaitMs 100).ContainsKey('w') | Should -BeFalse
+    }
+}

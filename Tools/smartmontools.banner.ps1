@@ -57,25 +57,67 @@ $_smartLine = {
 [pscustomobject]@{
     Work = {
         param($Context)
-        @(@{ Name = 'drives'; ArgumentList = @(); ScriptBlock = {
-            # Every drive at once: each smartctl is its own process.
-            $devices = foreach ($line in @(smartctl --scan 2>$null)) {
-                if ($line -match '^(\S+)\s+-d\s+(\S+)') { , @($Matches[1], $Matches[2]) }
-            }
-            $processes = foreach ($device in $devices) {
-                $info = [Diagnostics.ProcessStartInfo]::new('smartctl', "-j -a -d $($device[1]) $($device[0])")
+        # Resolved here, through PATH only: started by bare name, smartctl would
+        # also be looked for in the current folder first.
+        $smartctl = (Get-Command smartctl.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
+        if (-not $smartctl) { return @() }
+        # Partial: the drives that answered in time are shown even while another is still being read.
+        @(@{ Name = 'drives'; Partial = $true; ArgumentList = @($smartctl, 4000); ScriptBlock = {
+            param([string]$Smartctl, [int]$TimeoutMs)
+            $devices = @(foreach ($line in @(& $Smartctl --scan 2>$null)) {
+                if ($line -match '^(\S+)\s+-d\s+(\S+)') { [pscustomobject]@{ Device = $Matches[1]; Type = $Matches[2] } }
+            })
+            [pscustomobject]@{ Kind = 'devices'; Devices = [string[]]@($devices.Device) }
+            # Every drive at once, each its own process; each is output as it answers.
+            $running = [System.Collections.Generic.List[object]]::new()
+            foreach ($device in $devices) {
+                $info = [Diagnostics.ProcessStartInfo]::new($Smartctl, "-j -a -d $($device.Type) $($device.Device)")
                 $info.RedirectStandardOutput = $true
+                $info.RedirectStandardError = $true
                 $info.UseShellExecute = $false
                 $info.CreateNoWindow = $true
-                [Diagnostics.Process]::Start($info)
+                try {
+                    $process = [Diagnostics.Process]::Start($info)
+                    $running.Add([pscustomobject]@{ Device = $device.Device; Process = $process
+                        Out = $process.StandardOutput.ReadToEndAsync(); Err = $process.StandardError.ReadToEndAsync() })
+                } catch { [pscustomobject]@{ Kind = 'drive'; Device = $device.Device; Json = $null } }
             }
-            foreach ($process in $processes) { $process.StandardOutput.ReadToEnd(); $process.WaitForExit() }
+            $deadline = [DateTime]::UtcNow.AddMilliseconds($TimeoutMs)
+            while ($running.Count) {
+                foreach ($entry in @($running)) {
+                    $timedOut = [DateTime]::UtcNow -ge $deadline
+                    if (-not $entry.Process.HasExited -and -not $timedOut) { continue }
+                    $json = $null
+                    if ($entry.Process.HasExited) { $json = $entry.Out.GetAwaiter().GetResult() }
+                    else { try { $entry.Process.Kill($true) } catch { } }   # a hung drive: never leave it running
+                    [pscustomobject]@{ Kind = 'drive'; Device = $entry.Device; Json = $json }
+                    $entry.Process.Dispose()
+                    $null = $running.Remove($entry)
+                }
+                if ($running.Count) { Start-Sleep -Milliseconds 20 }
+            }
         } })
     }
 
     Complete = {
         param($Results, $Context)
-        $lines = @(foreach ($json in @($Results['drives'])) { if ($json) { & $_smartLine $json } })
+        $items = @($Results['drives'])
+        $devices = @($items | Where-Object { $_ -isnot [string] -and $_.Kind -eq 'devices' } | ForEach-Object Devices)
+        $answered = @{}
+        $lines = [System.Collections.Generic.List[object]]::new()
+        foreach ($item in $items) {
+            # A plain JSON string is a drive with no device name (as recorded in tests).
+            $json = if ($item -is [string]) { $item } elseif ($item.Kind -eq 'drive') { $item.Json } else { continue }
+            if ($item -isnot [string]) { $answered[$item.Device] = $true }
+            if (-not $json) { continue }
+            try { $line = & $_smartLine $json } catch { $line = $null }
+            if ($line) { $lines.Add($line) }
+        }
+        # A drive that didn't answer is named, not hidden behind an old healthy value.
+        foreach ($device in $devices) {
+            $missing = -not $answered.ContainsKey($device) -or -not @($items | Where-Object { $_ -isnot [string] -and $_.Kind -eq 'drive' -and $_.Device -eq $device -and $_.Json })
+            if ($missing) { $lines.Add([pscustomobject]@{ Model = $device; Value = 'no answer yet'; Alert = $false }) }
+        }
         $width = ($lines | ForEach-Object { $_.Model.Length } | Measure-Object -Maximum).Maximum
         [pscustomobject]@{
             Body  = $null

@@ -137,3 +137,50 @@ Describe 'The banner field in tool records' {
         "$errors" | Should -Match 'banner.fills'
     }
 }
+
+Describe 'Only an interactive shell gets the banner' {
+    It '<line> starts an interactive shell: <repl>' -ForEach @(
+        @{ line = 'pwsh'; repl = $true }
+        @{ line = 'pwsh -NoLogo'; repl = $true }
+        @{ line = 'pwsh -l -wd C:\work'; repl = $true }
+        @{ line = 'pwsh -ExecutionPolicy Bypass'; repl = $true }
+        @{ line = 'pwsh -NoExit -Command Set-Location C:\'; repl = $true }
+        @{ line = 'pwsh -c Get-Date'; repl = $false }
+        @{ line = 'pwsh -Command Get-Date'; repl = $false }
+        @{ line = 'pwsh -File build.ps1'; repl = $false }
+        @{ line = 'pwsh build.ps1'; repl = $false }
+        @{ line = 'pwsh -ec ZQBjAGgAbwA='; repl = $false }
+        @{ line = 'pwsh -NoProfile -wd C:\x script.ps1'; repl = $false }
+    ) {
+        Test-DFReplStart -CommandLine ($line -split ' ') | Should -Be $repl
+    }
+}
+
+Describe 'A banner body that is not ready in time' {
+    BeforeEach {
+        Set-DFTestXdg
+        Reset-DFTestSession
+        $script:DFToolDb = $null
+        $script:DFToolRecordCache = @{}
+        Remove-Item (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
+        $script:UserTools = Join-Path $Env:XDG_CONFIG_HOME 'dotforge' 'tools'
+        New-Item -ItemType Directory -Force $script:UserTools | Out-Null
+        Set-DFTestConfig @{ ShowBanner = $true; BannerLineDelay = 0; BannerWait = 100; BannerClear = $false }
+        Mock Test-DFBannerHost { $true }
+        $script:Printed = [System.Collections.Generic.List[string]]::new()
+        Mock Write-DFBannerLines { foreach ($line in $Lines) { $script:Printed.Add(($line -replace "$([char]27)\[[0-9;]*m", '')) } }
+    }
+    AfterEach { Set-DFTestConfig $null; $script:DFToolDb = $null; $script:DFToolRecordCache = @{}; Restore-DFTestXdg }
+
+    It 'says which tool was late and how to give it more time' {
+        Write-BannerPart slowbody '{ "script": "slowbody.banner.ps1", "body": true }' @'
+[pscustomobject]@{
+    Work = { param($Context) @(@{ Name = 'body'; ScriptBlock = { Start-Sleep -Seconds 5; 'x' }; ArgumentList = @() }) }
+    Complete = { param($Results, $Context) [pscustomobject]@{ Body = $(if ($Results.ContainsKey('body')) { @($Results['body']) }); Fills = @{} } }
+}
+'@
+        Show-DFBanner -State (Start-DFBanner -Tools slowbody)
+        @($script:Printed).Count | Should -Be 2
+        $script:Printed[1] | Should -Match 'slowbody.*BannerWait'
+    }
+}

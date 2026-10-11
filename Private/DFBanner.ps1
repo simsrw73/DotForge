@@ -14,14 +14,50 @@ $script:DFBannerShown = $false
 function Test-DFBannerHost {
     <#
     .SYNOPSIS
-        Whether the banner may print: an interactive console host whose output isn't redirected.
+        Whether the banner may print: an interactive console shell (not one started to run a command or script) whose output isn't redirected.
     .OUTPUTS
         System.Boolean.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
     param()
-    (Test-DFInteractiveHost) -and -not [Console]::IsOutputRedirected
+    (Test-DFInteractiveHost) -and -not [Console]::IsOutputRedirected -and (Test-DFReplStart)
+}
+
+function Test-DFReplStart {
+    <#
+    .SYNOPSIS
+        Whether pwsh was started as an interactive shell, not to run a command or a script.
+    .DESCRIPTION
+        `pwsh -c ...`, `pwsh -File x.ps1`, `pwsh x.ps1` and `pwsh -EncodedCommand ...`
+        run something and exit, so they get no banner (and don't clear the
+        screen of the shell they were typed in), unless -NoExit keeps them
+        open. Parameter names may be shortened, as pwsh allows.
+    .PARAMETER CommandLine
+        The process's arguments, the program first. Default: [Environment]::GetCommandLineArgs().
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([string[]]$CommandLine = [Environment]::GetCommandLineArgs())
+    $isPrefix = { param([string]$Arg, [string]$Name, [int]$Min) $Arg.Length -ge $Min -and $Name.StartsWith($Arg, [StringComparison]::OrdinalIgnoreCase) }
+    $runs = $false
+    $noExit = $false
+    $skipValue = $false
+    foreach ($arg in @($CommandLine | Select-Object -Skip 1)) {
+        if ($skipValue) { $skipValue = $false; continue }
+        if ($arg -notmatch '^[-/](.+)$') { $runs = $true; break }   # a script path
+        $name = $Matches[1] -replace ':.*$', ''
+        if (& $isPrefix $name 'noexit' 3) { $noExit = $true; continue }
+        if ($name -ieq 'c' -or (& $isPrefix $name 'command' 3) -or $name -ieq 'f' -or (& $isPrefix $name 'file' 2) -or
+            $name -ieq 'e' -or $name -ieq 'ec' -or (& $isPrefix $name 'encodedcommand' 3)) { $runs = $true; break }
+        # Options that take a value: skip the value, so it isn't read as a script path.
+        foreach ($valued in 'executionpolicy', 'ep', 'workingdirectory', 'wd', 'windowstyle', 'settingsfile', 'configurationname', 'custompipename', 'inputformat', 'outputformat') {
+            if ($name -ieq $valued -or ($valued.Length -gt 3 -and (& $isPrefix $name $valued 3))) { $skipValue = $true; break }
+        }
+    }
+    -not $runs -or $noExit
 }
 
 function Get-DFBannerCachePath {
@@ -144,6 +180,12 @@ function Show-DFBanner {
         $fills = Merge-DFBannerCache -Fills $fills -Names @($State.Parts | ForEach-Object { $_.Tool.banner.fills })
         if ($body) {
             Write-DFBannerLines -Lines @(Merge-DFBannerBody -Body $body -Fills $fills -Style $State.Style) -DelayMs (Get-DFConfig BannerLineDelay -Default 8)
+        } else {
+            $late = @($State.Parts | Where-Object { $_.Tool.banner.body } | ForEach-Object { $_.Tool.name })
+            if ($late) {
+                $wait = Get-DFConfig BannerWait -Default 300
+                Write-DFBannerLines -Lines @(Format-DFBannerLine -Key 'DotForge' -Value "$($late -join ', ') wasn't ready within BannerWait ($wait ms); raise BannerWait or make it faster" -Style $State.Style) -DelayMs 0
+            }
         }
     } catch {
         Write-Warning "DotForge: the banner failed: $($_.Exception.Message)"

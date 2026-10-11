@@ -74,3 +74,57 @@ Describe 'Tools/smartmontools.json' {
         (Get-Content "$PSScriptRoot/../data/groups.json" -Raw | ConvertFrom-Json).core.tools | Should -Contain 'fastfetch'
     }
 }
+
+# The background job itself, against a stand-in smartctl (a .cmd file): the
+# device list, one result per drive as it answers, and a hung drive killed.
+Describe 'smartmontools banner job' -Skip:(-not $IsWindows) {
+    BeforeAll {
+        function New-FakeSmartctl([string[]]$ScanLines, [hashtable]$JsonByDevice, [string]$HangDevice) {
+            $dir = Join-Path $TestDrive "fake-$([guid]::NewGuid())"
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            $scan = Join-Path $dir 'scan.txt'
+            Set-Content $scan $ScanLines
+            $lines = @('@echo off', "if `"%1`"==`"--scan`" (type `"$scan`" & exit /b 0)")
+            foreach ($device in $JsonByDevice.Keys) { $lines += "if `"%5`"==`"$device`" (type `"$($JsonByDevice[$device])`" & exit /b 0)" }
+            if ($HangDevice) { $lines += "if `"%5`"==`"$HangDevice`" (ping -n 30 127.0.0.1 >nul & exit /b 0)" }
+            $exe = Join-Path $dir 'smartctl.cmd'
+            Set-Content $exe ($lines -join "`r`n")
+            $exe
+        }
+        function Invoke-DrivesJob([string]$Exe, [int]$TimeoutMs = 4000) {
+            Mock Get-Command { [pscustomobject]@{ Source = $Exe } } -ParameterFilter { $Name -eq 'smartctl.exe' }
+            $job = @(& $script:Part.Work ([pscustomobject]@{}))[0]
+            & $job.ScriptBlock $job.ArgumentList[0] $TimeoutMs
+        }
+        $script:Nvme = Join-Path $script:Fx 'smartctl-nvme-990.json'
+        $script:Hdd = Join-Path $script:Fx 'smartctl-hdd-wd.json'
+    }
+
+    It 'checks the only drive of a one-drive machine' {
+        $exe = New-FakeSmartctl -ScanLines '/dev/sda -d nvme # /dev/sda, NVMe device' -JsonByDevice @{ '/dev/sda' = $script:Nvme }
+        $out = @(Invoke-DrivesJob $exe)
+        @($out | Where-Object Kind -eq 'drive').Count | Should -Be 1
+        $fill = (& $script:Part.Complete @{ drives = $out } ([pscustomobject]@{})).Fills.drives
+        @($fill).Count | Should -Be 1
+        $fill[0].Key.TrimEnd() | Should -Be 'Disk 990 PRO 2TB'
+    }
+    It 'checks every drive of a several-drive machine' {
+        $exe = New-FakeSmartctl -ScanLines '/dev/sda -d nvme # a', '/dev/sdb -d ata # b' -JsonByDevice @{ '/dev/sda' = $script:Nvme; '/dev/sdb' = $script:Hdd }
+        @((& $script:Part.Complete @{ drives = @(Invoke-DrivesJob $exe) } ([pscustomobject]@{})).Fills.drives).Count | Should -Be 2
+    }
+    It 'kills a drive that hangs, and still reports the others' {
+        $exe = New-FakeSmartctl -ScanLines '/dev/sda -d nvme # a', '/dev/sdb -d ata # b' -JsonByDevice @{ '/dev/sda' = $script:Nvme } -HangDevice '/dev/sdb'
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        $out = @(Invoke-DrivesJob $exe -TimeoutMs 800)
+        $sw.ElapsedMilliseconds | Should -BeLessThan 5000
+        $fill = (& $script:Part.Complete @{ drives = $out } ([pscustomobject]@{})).Fills.drives
+        @($fill).Count | Should -Be 2
+        ($fill | Where-Object { $_.Key -match '/dev/sdb' }).Value | Should -Match 'no answer'
+    }
+    It 'runs smartctl by its full path, and does nothing when it isn''t installed' {
+        Mock Get-Command { [pscustomobject]@{ Source = 'C:\tools\smartctl.exe' } } -ParameterFilter { $Name -eq 'smartctl.exe' }
+        @(& $script:Part.Work ([pscustomobject]@{}))[0].ArgumentList[0] | Should -Be 'C:\tools\smartctl.exe'
+        Mock Get-Command { } -ParameterFilter { $Name -eq 'smartctl.exe' }
+        @(& $script:Part.Work ([pscustomobject]@{})).Count | Should -Be 0
+    }
+}

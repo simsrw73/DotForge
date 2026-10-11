@@ -237,6 +237,8 @@ Disk WD10EZEX      HDD · no bad sectors · 29°C · 84,115 h
 
 **Colors** follow your fastfetch config (`display.color.keys`, `display.color.output`, `display.separator`).
 
+**Speed.** The banner prints fastfetch's output only if fastfetch has finished by the time your tools have loaded, plus `BannerWait`. Slow fastfetch modules (`packages`, `publicip`, `weather`) can miss that; you then see a line saying so instead of the banner. Remove them from your fastfetch config (DotForge's default has none), or raise `BannerWait`. A drive that doesn't answer in time shows `no answer yet`; one that hangs is stopped after 4 seconds. The banner skips shells started to run a command or a script (`pwsh -c ...`, `pwsh -File ...`).
+
 ## When DotForge finds your existing config
 
 Why: you already use a tool, and its config or data is in the tool's own default place. DotForge points tools at XDG folders (bat's config at `$XDG_CONFIG_HOME\bat\bat.conf`, zoxide's database under `$XDG_DATA_HOME`), so taking over would hide what you have.
