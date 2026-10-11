@@ -35,7 +35,7 @@ function Get-DFToolDependent {
         $soleRoles = @(if ($record) {
             foreach ($role in $record.roles.PSObject.Properties.Name) {
                 $members = @($Active | Where-Object { $ToolDb[$_] -and $ToolDb[$_].roles.PSObject.Properties[$role] })
-                if ($members.Count -eq 1) { "role:$role" }
+                if ($members.Count -eq 1 -and $members[0] -eq $target) { "role:$role" }
             }
         })
         foreach ($other in $Active) {

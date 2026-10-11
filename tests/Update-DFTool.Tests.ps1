@@ -4,6 +4,20 @@ BeforeAll {
     function script:Rec([string]$Json) { ConvertTo-DFToolRecord ($Json | ConvertFrom-Json) }
 }
 
+Describe 'Get-DFToolUpdate with the shipped records' {
+    It 'reports node installed through fnm as a runtime fnm manages' {
+        $db = Import-DFToolDb -ToolsPath "$PSScriptRoot/../Tools" -Force
+        Set-DFTestConfig @{ InstallOrder = @('fnm') }
+        try {
+            Mock Test-DFToolAvailable { $Executable -in 'fnm.exe', 'node.exe', 'fnm', 'node' }
+            Mock Invoke-DFManagerCommand { [pscustomobject]@{ ExitCode = 0; Output = '' } }
+            $row = Get-DFToolUpdate -Name node -ToolDb $db
+            $row.State | Should -Be 'Runtime'
+            $row.Update | Should -Be 'managed by fnm: update it with fnm'
+        } finally { Set-DFTestConfig $null }
+    }
+}
+
 Describe 'Update-DFTool' {
     BeforeEach {
         Reset-DFTestSession
@@ -84,6 +98,20 @@ Describe 'Update-DFTool' {
         $r = Update-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Failed'
         $r.Detail | Should -Be 'scoop failed: line1 / ERROR: network down'
+    }
+    It 'checks each tool again after a batched update fails partway' {
+        $script:Db.ripgrep = Rec '{ "name": "ripgrep", "executable": "rg.exe", "packages": { "scoop": "ripgrep" } }'
+        $script:Where.ripgrep = 'scoop'
+        Mock Get-DFToolStatus { foreach ($n in 'fzf', 'ripgrep') { New-DFToolStatus -Name $n -State Active } }
+        $script:AfterUpdate = $false
+        Mock Get-DFManagerInstalled {
+            if ($script:AfterUpdate) { [pscustomobject]@{ Id = 'ripgrep'; Installed = '1.0'; Available = '1.1' } }
+            else { [pscustomobject]@{ Id = 'fzf'; Installed = '1.0'; Available = '1.1' }; [pscustomobject]@{ Id = 'ripgrep'; Installed = '1.0'; Available = '1.1' } }
+        }
+        Mock Invoke-DFManagerBatch { $script:AfterUpdate = $true; foreach ($i in $Ids) { [pscustomobject]@{ Id = $i; ExitCode = 1; Output = 'ripgrep: hash mismatch' } } }
+        $r = @(Update-DFTool -Name fzf, ripgrep -Confirm:$false)
+        ($r | Where-Object Tool -eq fzf).Result | Should -Be 'Updated'
+        ($r | Where-Object Tool -eq ripgrep).Result | Should -Be 'Failed'
     }
     It 'asks for admin rights for a manager that needs them' {
         $script:Db.scoop.installs[0].elevate = $true

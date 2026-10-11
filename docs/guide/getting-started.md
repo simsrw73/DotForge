@@ -206,7 +206,7 @@ Remove-DFTool -Name glow
 
 `Remove-DFTool` removes only the package. If another active tool depends on it, DotForge refuses and names the dependents. Use `-Force` to remove the requested tool anyway. Use `-IncludeDependents` to remove dependents first; DotForge shows the order and asks once for the whole removal.
 
-A manager that still has packages installed also needs `-Force`. DotForge lists those packages and never removes them as dependents. After a removal, DotForge reports seeded files, recorded setup changes, and the tool's entry in your `Tools` setting. It keeps the setup record, so reinstalling does not run setup twice. Aliases and functions stay in the current shell until you open a new one.
+A manager that still has packages installed also needs `-Force`. DotForge lists those packages and never removes them as dependents. A version manager (fnm, mise) always needs `-Force`, because it can't list what it installed. After a removal, DotForge reports seeded files, recorded setup changes, and the tool's entry in your `Tools` setting. It keeps the setup record, so reinstalling does not run setup twice. Aliases and functions stay in the current shell until you open a new one.
 
 Some managers need administrator rights (choco). In an elevated shell the command just runs. Otherwise DotForge runs it through gsudo when it is installed, else through Windows' `sudo` when it is on in inline mode, else in a separate administrator window, which shows one UAC prompt and reports only whether the command succeeded. When no one can answer the prompt (a scheduled task, `-NonInteractive`), an install uses the tool's next source, and an update or removal reports that it needs administrator rights.
 

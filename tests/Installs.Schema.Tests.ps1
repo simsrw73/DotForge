@@ -79,6 +79,15 @@ Describe 'installs operations' {
 }
 
 Describe 'shipped managers' {
+    It 'updates crates without --force, which would rebuild every crate every time' {
+        $script:Db['cargo'].installs[0].update | Should -Not -Contain '--force'
+    }
+    It 'calls PSResourceGet by module-qualified name (an old PowerShellGet can shadow it)' {
+        $block = $script:Db['psresource'].installs[0]
+        $block.function | Should -BeLike 'Microsoft.PowerShell.PSResourceGet\*'
+        $block.update.function | Should -BeLike 'Microsoft.PowerShell.PSResourceGet\*'
+        $block.remove.function | Should -BeLike 'Microsoft.PowerShell.PSResourceGet\*'
+    }
     It 'gives every source used in packages a manager whose installs.from names it' {
         $from = @($script:Db.Values | Where-Object installs | ForEach-Object { $_.installs.from })
         $used = @($script:Db.Values | Where-Object packages | ForEach-Object { $_.packages.PSObject.Properties.Name }) | Sort-Object -Unique

@@ -118,3 +118,38 @@ function ConvertTo-DFManagerResult {
         }
     }
 }
+
+function Resolve-DFPartialUpdate {
+    <#
+    .SYNOPSIS
+        After a batched update fails, asks the manager again which tools it did update.
+    .DESCRIPTION
+        One failing id fails a whole batched call, though the other tools may
+        have updated. When a batch of several ids failed, the manager's
+        outdated list (or its installed list, when it has no outdated) is read
+        afresh: a tool no longer outdated, or whose installed version changed,
+        gets exit code 0. Other outcomes are returned unchanged.
+    .PARAMETER Found
+        Find-DFToolSource's result for the batch's manager (Manager, Block).
+    .PARAMETER Rows
+        The batch's DotForge.ToolUpdate rows, in the order of -Outcomes.
+    .PARAMETER Outcomes
+        Invoke-DFManagerBatch's results.
+    .OUTPUTS
+        PSCustomObject per id: Id, ExitCode, Output.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([pscustomobject]$Found, [object[]]$Rows, [object[]]$Outcomes)
+    $failed = @($Outcomes | Where-Object { $_.ExitCode -notin 0, -1 })
+    if (-not ($Found.Block.batch -and $Rows.Count -gt 1 -and $failed)) { return $Outcomes }
+    $operation = if ($Found.Block.outdated) { 'outdated' } else { 'list' }
+    $after = @(Get-DFManagerInstalled -Manager $Found.Manager -Block $Found.Block -Operation $operation)
+    for ($n = 0; $n -lt $Outcomes.Count; $n++) {
+        $outcome = $Outcomes[$n]
+        if ($outcome.ExitCode -in 0, -1) { $outcome; continue }
+        $now = $after | Where-Object Id -eq $Rows[$n].Found.Id | Select-Object -First 1
+        $updated = if ($operation -eq 'outdated') { -not $now } else { $now -and $Rows[$n].Installed -and $now.Installed -ne $Rows[$n].Installed }
+        if ($updated) { [pscustomobject]@{ Id = $outcome.Id; ExitCode = 0; Output = $outcome.Output } } else { $outcome }
+    }
+}

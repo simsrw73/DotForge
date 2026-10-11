@@ -16,7 +16,8 @@ function Remove-DFTool {
 
         A package manager that still has packages installed is always refused
         unless you pass -Force, and the packages it installed are never removed
-        with it.
+        with it. So is a version manager (fnm, mise), which can't list what it
+        installed.
 
         Afterwards it lists what is left: config files DotForge seeded, the
         changes a tool's one-time setup recorded, and the tool's entry in your
@@ -71,7 +72,10 @@ function Remove-DFTool {
         $busy = @(foreach ($member in $chain) { Get-DFManagerPackage -Manager $db[$member] @pathArgs | ForEach-Object { [pscustomobject]@{ Manager = $member; Id = $_ } } })
         if ($busy -and -not $Force) {
             $first = $busy[0].Manager
-            & $refuse $toolName "$first still has packages installed: $(@($busy | Where-Object Manager -eq $first).Id -join ', ') (use -Force to remove it anyway)"
+            $ids = @($busy | Where-Object Manager -eq $first | ForEach-Object Id)
+            $detail = if ('?' -in $ids) { "can't tell what $first has installed (use -Force to remove it anyway)" }
+                else { "$first still has packages installed: $($ids -join ', ') (use -Force to remove it anyway)" }
+            & $refuse $toolName $detail
             continue
         }
         foreach ($member in $chain) { if (-not $order.Contains($member)) { $order.Add($member) } }

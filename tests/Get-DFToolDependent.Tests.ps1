@@ -27,6 +27,9 @@ Describe 'Get-DFToolDependent' {
     It 'counts the only active member of a required role' {
         Get-DFToolDependent -Name node -ToolDb $script:Db -Active node, inshellisense | Should -Be @('inshellisense')
     }
+    It 'does not blame a tool that is not the role''s active member' {
+        Get-DFToolDependent -Name bun -ToolDb $script:Db -Active node, inshellisense | Should -BeNullOrEmpty
+    }
     It 'does not count a role member when another member is active' {
         Get-DFToolDependent -Name node -ToolDb $script:Db -Active node, bun, inshellisense | Should -BeNullOrEmpty
     }

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0e48eb2f3d908447aef6862ba6db2ef08fc526079dc87f5d92ffc27c148c79a5
+# sources-sha256: 3a21e66a3eb36199c4023b4cba03608e9865bc7213ccaee749a93a1e3aa869a6
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -312,7 +312,8 @@ function Format-DFInstallCommand {
             elseif ($p.Value -eq '{id}') { "-$($p.Name) $idText" }
             else { "-$($p.Name) $($p.Value)" }
         })
-        return (@($i.function) + $fnArgs) -join ' '
+        # Shown to the user: the command name without its module qualifier.
+        return (@($i.function -replace '^[\w.]+\\', '') + $fnArgs) -join ' '
     }
     (@($i.install | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
 }
@@ -1870,7 +1871,9 @@ function Find-DFToolSource {
         ExcludeSources left out, since a tool may have been installed through
         it before. Managers that aren't installed are skipped. The first
         manager whose list has the tool's id (or its feed-qualified id) wins,
-        so a tool installed twice is reported under the first one found.
+        so a tool installed twice is reported under the first one found. A
+        manager that declares no list (a version manager such as fnm) gets
+        the tool only when no listing manager has it and the tool is installed.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -1893,12 +1896,17 @@ function Find-DFToolSource {
     $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
     $sources = @(@(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb 3>$null) + $have | Select-Object -Unique)
     $asked = [System.Collections.Generic.List[string]]::new()
+    $unlisted = $null
     foreach ($source in $sources) {
         $ref = Get-DFPackageRef $Tool.packages.$source
         foreach ($manager in Get-DFSourceManager -Source $source -ToolDb $ToolDb) {
             if (-not (Test-DFToolAvailable -Executable $manager.executable -Type $manager.type)) { continue }
             $block = Get-DFInstallBlock -Manager $manager -Source $source
             if (-not $asked.Contains($manager.name)) { $asked.Add($manager.name) }
+            if (-not $block.list) {
+                if (-not $unlisted) { $unlisted = [pscustomobject]@{ Source = $source; Manager = $manager; Block = $block; Id = $ref.Id } }
+                continue
+            }
             Import-DFManagerOps -Manager $manager -ToolsPath $ToolsPath
             $ids = @($ref.Id) + @(if ($ref.Feed -and $block.feeds) { $block.feeds.id.Replace('{feed}', $ref.Feed.name).Replace('{id}', $ref.Id) })
             $row = Get-DFManagerInstalled -Manager $manager -Block $block -Cache $Cache | Where-Object { $_.Id -in $ids } | Select-Object -First 1
@@ -1907,7 +1915,13 @@ function Find-DFToolSource {
             }
         }
     }
-    $detail = if ($asked.Count) { "not installed through any of: $($asked -join ', ')" } else { "no manager for $($sources -join ', ') is installed" }
+    # A version manager (fnm, mise) can't list what it installed by the tool's
+    # id (node's is "lts"), so an installed tool no listing manager claims is
+    # credited to the first installed one, in precedence.
+    if ($unlisted -and (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type)) {
+        return [pscustomobject]@{ Tool = $Tool.name; Source = $unlisted.Source; Manager = $unlisted.Manager; Block = $unlisted.Block; Id = $unlisted.Id; Installed = $null; Detail = "via $($unlisted.Manager.name) (it can't list what it installed)" }
+    }
+    $detail = if (-not $sources) { 'its record lists no packages' } elseif ($asked.Count) { "not installed through any of: $($asked -join ', ')" } else { "no manager for $($sources -join ', ') is installed" }
     [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Id = $null; Installed = $null; Detail = $detail }
 }
 
@@ -2413,7 +2427,7 @@ function Get-DFToolDependent {
         $soleRoles = @(if ($record) {
             foreach ($role in $record.roles.PSObject.Properties.Name) {
                 $members = @($Active | Where-Object { $ToolDb[$_] -and $ToolDb[$_].roles.PSObject.Properties[$role] })
-                if ($members.Count -eq 1) { "role:$role" }
+                if ($members.Count -eq 1 -and $members[0] -eq $target) { "role:$role" }
             }
         })
         foreach ($other in $Active) {
@@ -2831,6 +2845,41 @@ function ConvertTo-DFManagerResult {
     }
 }
 
+function Resolve-DFPartialUpdate {
+    <#
+    .SYNOPSIS
+        After a batched update fails, asks the manager again which tools it did update.
+    .DESCRIPTION
+        One failing id fails a whole batched call, though the other tools may
+        have updated. When a batch of several ids failed, the manager's
+        outdated list (or its installed list, when it has no outdated) is read
+        afresh: a tool no longer outdated, or whose installed version changed,
+        gets exit code 0. Other outcomes are returned unchanged.
+    .PARAMETER Found
+        Find-DFToolSource's result for the batch's manager (Manager, Block).
+    .PARAMETER Rows
+        The batch's DotForge.ToolUpdate rows, in the order of -Outcomes.
+    .PARAMETER Outcomes
+        Invoke-DFManagerBatch's results.
+    .OUTPUTS
+        PSCustomObject per id: Id, ExitCode, Output.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([pscustomobject]$Found, [object[]]$Rows, [object[]]$Outcomes)
+    $failed = @($Outcomes | Where-Object { $_.ExitCode -notin 0, -1 })
+    if (-not ($Found.Block.batch -and $Rows.Count -gt 1 -and $failed)) { return $Outcomes }
+    $operation = if ($Found.Block.outdated) { 'outdated' } else { 'list' }
+    $after = @(Get-DFManagerInstalled -Manager $Found.Manager -Block $Found.Block -Operation $operation)
+    for ($n = 0; $n -lt $Outcomes.Count; $n++) {
+        $outcome = $Outcomes[$n]
+        if ($outcome.ExitCode -in 0, -1) { $outcome; continue }
+        $now = $after | Where-Object Id -eq $Rows[$n].Found.Id | Select-Object -First 1
+        $updated = if ($operation -eq 'outdated') { -not $now } else { $now -and $Rows[$n].Installed -and $now.Installed -ne $Rows[$n].Installed }
+        if ($updated) { [pscustomobject]@{ Id = $outcome.Id; ExitCode = 0; Output = $outcome.Output } } else { $outcome }
+    }
+}
+
 # ---- Private/Invoke-DFManagerCommand.ps1
 #Requires -Version 7.2
 
@@ -2912,7 +2961,14 @@ function Invoke-DFManagerCommand {
     if ($method -eq 'RunAs') {
         # Start-Process joins -ArgumentList with spaces, so quote what would split.
         $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
-        $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru
+        try {
+            $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
+        } catch {
+            # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
+            $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
+            $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
+            return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+        }
         return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
     }
     $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
@@ -2921,7 +2977,13 @@ function Invoke-DFManagerCommand {
     $global:LASTEXITCODE = 0
     # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
     # warning stream (scoop's "Installed apps:"), which would print mid-command.
-    $out = & $exe @rest *>&1 | Out-String
+    $items = & $exe @rest *>&1
+    # list and outdated output is parsed: keep stderr and warnings out of it
+    # (pip's "[notice] A new release of pip is available" would break its JSON).
+    if ($Operation -in 'list', 'outdated') {
+        $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+    }
+    $out = $items | Out-String
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }
 
@@ -5233,14 +5295,18 @@ function Get-DFManagerPackage {
     .PARAMETER ToolsPath
         The Tools folder (for Tools/<manager>.manage.ps1).
     .OUTPUTS
-        System.String[].
+        System.String[]. '?' stands for a block that can't list what it installed.
     #>
     [CmdletBinding()]
     [OutputType([string[]])]
     param([pscustomobject]$Manager, [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
     if (-not $Manager -or -not $Manager.installs) { return }
     Import-DFManagerOps -Manager $Manager -ToolsPath $ToolsPath
-    foreach ($block in $Manager.installs) { Get-DFManagerInstalled -Manager $Manager -Block $block | ForEach-Object { $_.Id } }
+    foreach ($block in $Manager.installs) {
+        # A block with no list can't say what it holds: count that as "something".
+        if (-not $block.list) { '?'; continue }
+        Get-DFManagerInstalled -Manager $Manager -Block $block | ForEach-Object { $_.Id }
+    }
 }
 
 function Set-DFRemovedToolStatus {
@@ -6746,7 +6812,8 @@ function Remove-DFTool {
 
         A package manager that still has packages installed is always refused
         unless you pass -Force, and the packages it installed are never removed
-        with it.
+        with it. So is a version manager (fnm, mise), which can't list what it
+        installed.
 
         Afterwards it lists what is left: config files DotForge seeded, the
         changes a tool's one-time setup recorded, and the tool's entry in your
@@ -6801,7 +6868,10 @@ function Remove-DFTool {
         $busy = @(foreach ($member in $chain) { Get-DFManagerPackage -Manager $db[$member] @pathArgs | ForEach-Object { [pscustomobject]@{ Manager = $member; Id = $_ } } })
         if ($busy -and -not $Force) {
             $first = $busy[0].Manager
-            & $refuse $toolName "$first still has packages installed: $(@($busy | Where-Object Manager -eq $first).Id -join ', ') (use -Force to remove it anyway)"
+            $ids = @($busy | Where-Object Manager -eq $first | ForEach-Object Id)
+            $detail = if ('?' -in $ids) { "can't tell what $first has installed (use -Force to remove it anyway)" }
+                else { "$first still has packages installed: $($ids -join ', ') (use -Force to remove it anyway)" }
+            & $refuse $toolName $detail
             continue
         }
         foreach ($member in $chain) { if (-not $order.Contains($member)) { $order.Add($member) } }
@@ -6991,6 +7061,7 @@ function Update-DFTool {
         $tools = @($group.Group.Tool)
         if (-not $PSCmdlet.ShouldProcess("$($tools -join ', ') through $($found.Manager.name)", 'Update')) { continue }
         $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
+        $outcomes = @(Resolve-DFPartialUpdate -Found $found -Rows @($group.Group) -Outcomes $outcomes)
         for ($n = 0; $n -lt $tools.Count; $n++) {
             $results.Add((ConvertTo-DFManagerResult -Tool $tools[$n] -Outcome $outcomes[$n] -Manager $found.Manager.name -Success 'Updated'))
         }

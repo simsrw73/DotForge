@@ -269,7 +269,7 @@
       }
     },
     "cargo": {
-      "sha256": "551108dd3007107d8ee32f0f738ec1fb60bf7cbef4c8fb7859240876373b85ac",
+      "sha256": "b4d964b68c0b20ec7ab60ba30534f0cf9732350ebf2506bed18a76cc69e9caad",
       "record": {
         "name": "cargo",
         "executable": "cargo.exe",
@@ -314,7 +314,6 @@
             "update": [
               "cargo",
               "install",
-              "--force",
               "{id}"
             ],
             "remove": [
@@ -2363,7 +2362,7 @@
       }
     },
     "psresource": {
-      "sha256": "7c37a1c970f6305209deaeca70831bc435375f17de0159347dac94f45303fbb4",
+      "sha256": "10c57998f7a533791fbab7ea1d73d80e73413cdcfb3346960c04833f5387f468",
       "record": {
         "name": "psresource",
         "executable": "Microsoft.PowerShell.PSResourceGet",
@@ -2399,7 +2398,7 @@
             "from": "psgallery",
             "install": null,
             "update": {
-              "function": "Update-PSResource",
+              "function": "Microsoft.PowerShell.PSResourceGet\\Update-PSResource",
               "args": {
                 "Name": "{id}",
                 "Scope": "CurrentUser",
@@ -2407,7 +2406,7 @@
               }
             },
             "remove": {
-              "function": "Uninstall-PSResource",
+              "function": "Microsoft.PowerShell.PSResourceGet\\Uninstall-PSResource",
               "args": {
                 "Name": "{id}",
                 "Scope": "CurrentUser"
@@ -2415,7 +2414,7 @@
             },
             "list": "Get-DFPSResourceInstalled",
             "outdated": null,
-            "function": "Install-PSResource",
+            "function": "Microsoft.PowerShell.PSResourceGet\\Install-PSResource",
             "args": {
               "Name": "{id}",
               "Scope": "CurrentUser",

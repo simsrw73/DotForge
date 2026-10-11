@@ -29,7 +29,8 @@ function Format-DFInstallCommand {
             elseif ($p.Value -eq '{id}') { "-$($p.Name) $idText" }
             else { "-$($p.Name) $($p.Value)" }
         })
-        return (@($i.function) + $fnArgs) -join ' '
+        # Shown to the user: the command name without its module qualifier.
+        return (@($i.function -replace '^[\w.]+\\', '') + $fnArgs) -join ' '
     }
     (@($i.install | ForEach-Object { if ($_ -eq '{id}') { $idText } else { $_ } })) -join ' '
 }

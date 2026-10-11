@@ -9,14 +9,18 @@ function Get-DFManagerPackage {
     .PARAMETER ToolsPath
         The Tools folder (for Tools/<manager>.manage.ps1).
     .OUTPUTS
-        System.String[].
+        System.String[]. '?' stands for a block that can't list what it installed.
     #>
     [CmdletBinding()]
     [OutputType([string[]])]
     param([pscustomobject]$Manager, [string]$ToolsPath = (Join-Path $PSScriptRoot '../Tools'))
     if (-not $Manager -or -not $Manager.installs) { return }
     Import-DFManagerOps -Manager $Manager -ToolsPath $ToolsPath
-    foreach ($block in $Manager.installs) { Get-DFManagerInstalled -Manager $Manager -Block $block | ForEach-Object { $_.Id } }
+    foreach ($block in $Manager.installs) {
+        # A block with no list can't say what it holds: count that as "something".
+        if (-not $block.list) { '?'; continue }
+        Get-DFManagerInstalled -Manager $Manager -Block $block | ForEach-Object { $_.Id }
+    }
 }
 
 function Set-DFRemovedToolStatus {

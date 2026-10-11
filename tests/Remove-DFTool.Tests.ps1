@@ -73,6 +73,13 @@ Describe 'Remove-DFTool' {
         $null = Remove-DFTool -Name scoop -Force -IncludeDependents -Confirm:$false
         $script:Removed | Should -Be @('ScoopInstaller.Scoop')
     }
+    It 'refuses a manager that cannot list what it installed, unless -Force' {
+        $script:Db.fnm = Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"] } }'
+        $r = Remove-DFTool -Name fnm -Confirm:$false
+        $r.Result | Should -Be 'Refused'
+        $r.Detail | Should -Be "can't tell what fnm has installed (use -Force to remove it anyway)"
+        (Remove-DFTool -Name fnm -Force -Confirm:$false).Result | Should -Be 'Removed'
+    }
     It 'marks the tool Missing and reports what is left behind' {
         $seeded = Join-Path $Env:XDG_CONFIG_HOME 'glow/glow.yml'
         New-Item -ItemType File -Path $seeded -Force | Out-Null

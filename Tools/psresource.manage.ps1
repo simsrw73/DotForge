@@ -12,7 +12,7 @@ function Get-DFPSResourceInstalledRaw {
     [CmdletBinding()]
     param()
 
-    Get-InstalledPSResource -Scope CurrentUser
+    Microsoft.PowerShell.PSResourceGet\Get-InstalledPSResource -Scope CurrentUser
 }
 
 function Get-DFPSResourceInstalled {

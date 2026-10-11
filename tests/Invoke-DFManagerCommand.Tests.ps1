@@ -27,6 +27,26 @@ Describe 'Invoke-DFManagerCommand' {
             $r.Output | Should -BeLike '*Installed apps:*row*'
         } finally { $Env:Path = $saved }
     }
+    It 'keeps stderr out of list and outdated output (pip''s upgrade notice), but not out of install output' {
+        $bin = Join-Path $TestDrive "errshim-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        New-Item -ItemType Directory $bin | Out-Null
+        # A native program, like pip: its stderr arrives as error records.
+        "@echo [notice] A new release of pip is available 1>&2`r`n@echo []" | Set-Content (Join-Path $bin 'dferrmgr.cmd')
+        $saved = $Env:Path
+        try {
+            $Env:Path = "$bin;$Env:Path"
+            $listed = Invoke-DFManagerCommand -Operation list -Manager ([pscustomobject]@{ name = 'dferrmgr' }) -Argv 'dferrmgr', 'list'
+            $listed.Output.Trim() | Should -Be '[]'
+            $installed = Invoke-DFManagerCommand -Operation install -Manager ([pscustomobject]@{ name = 'dferrmgr' }) -Argv 'dferrmgr', 'install'
+            $installed.Output | Should -BeLike '*A new release of pip*'
+        } finally { $Env:Path = $saved }
+    }
+    It 'reports a declined administrator prompt' {
+        Mock Start-Process { throw [System.ComponentModel.Win32Exception]::new(1223) }
+        $r = Invoke-DFManagerCommand -Operation remove -Manager $script:Mgr -Argv 'm', 'uninstall', 'x' -Elevation ([pscustomobject]@{ Method = 'RunAs' })
+        $r.ExitCode | Should -Be 1223
+        $r.Output | Should -BeLike 'the administrator prompt was declined or failed: *'
+    }
     It 'calls a function operation with its arguments' {
         function script:Update-DFFake { param($Name) "updated $Name" }
         $r = Invoke-DFManagerCommand -Operation update -Manager $script:Mgr -Function Update-DFFake -Arguments @{ Name = 'a' }

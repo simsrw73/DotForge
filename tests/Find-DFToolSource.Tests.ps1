@@ -72,6 +72,33 @@ Describe 'Find-DFToolSource' {
         function script:Get-FakeScoopInstalled { param($Manager) [pscustomobject]@{ Id = 'insomnia/ps-dotenv'; Installed = '1'; Available = $null } }
         (Find-DFToolSource -Tool $tool -ToolDb $script:Db).Id | Should -Be 'insomnia/ps-dotenv'
     }
+    It 'attributes an installed runtime to a version manager that cannot list, when no listing manager has it' {
+        $script:Db.fnm = Rec '{ "name": "fnm", "executable": "fnm.exe", "installs": { "from": "fnm", "install": ["fnm","install","{id}"] } }'
+        $node = Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts", "scoop": "nodejs-lts" } }'
+        Set-DFTestConfig @{ InstallOrder = @('fnm', 'scoop') }
+        function script:Get-FakeScoopInstalled { param($Manager) }
+        $r = Find-DFToolSource -Tool $node -ToolDb $script:Db
+        $r.Manager.name | Should -Be 'fnm'
+        $r.Source | Should -Be 'fnm'
+        $r.Detail | Should -Be "via fnm (it can't list what it installed)"
+    }
+    It 'prefers a listing manager that has the runtime' {
+        $script:Db.fnm = Rec '{ "name": "fnm", "executable": "fnm.exe", "installs": { "from": "fnm", "install": ["fnm","install","{id}"] } }'
+        $node = Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts", "scoop": "nodejs-lts" } }'
+        Set-DFTestConfig @{ InstallOrder = @('fnm', 'scoop') }
+        function script:Get-FakeScoopInstalled { param($Manager) [pscustomobject]@{ Id = 'nodejs-lts'; Installed = '22'; Available = $null } }
+        (Find-DFToolSource -Tool $node -ToolDb $script:Db).Manager.name | Should -Be 'scoop'
+    }
+    It 'does not attribute a runtime that is not installed' {
+        $script:Db.fnm = Rec '{ "name": "fnm", "executable": "fnm.exe", "installs": { "from": "fnm", "install": ["fnm","install","{id}"] } }'
+        $node = Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'
+        Mock Test-DFToolAvailable { $false } -ParameterFilter { $Executable -eq 'node.exe' }
+        (Find-DFToolSource -Tool $node -ToolDb $script:Db).Manager | Should -BeNullOrEmpty
+    }
+    It 'says when a tool lists no packages' {
+        $tool = Rec '{ "name": "npm", "executable": "npm.cmd" }'
+        (Find-DFToolSource -Tool $tool -ToolDb $script:Db).Detail | Should -Be 'its record lists no packages'
+    }
     It 'asks a manager once per command run, however many tools' {
         $cache = @{}
         Mock Get-FakeScoopInstalled { [pscustomobject]@{ Id = 'ripgrep'; Installed = '1'; Available = $null } }

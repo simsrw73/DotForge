@@ -78,7 +78,14 @@ function Invoke-DFManagerCommand {
     if ($method -eq 'RunAs') {
         # Start-Process joins -ArgumentList with spaces, so quote what would split.
         $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
-        $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru
+        try {
+            $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
+        } catch {
+            # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
+            $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
+            $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
+            return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+        }
         return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
     }
     $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
@@ -87,6 +94,12 @@ function Invoke-DFManagerCommand {
     $global:LASTEXITCODE = 0
     # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
     # warning stream (scoop's "Installed apps:"), which would print mid-command.
-    $out = & $exe @rest *>&1 | Out-String
+    $items = & $exe @rest *>&1
+    # list and outdated output is parsed: keep stderr and warnings out of it
+    # (pip's "[notice] A new release of pip is available" would break its JSON).
+    if ($Operation -in 'list', 'outdated') {
+        $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+    }
+    $out = $items | Out-String
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }

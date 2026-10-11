@@ -84,7 +84,9 @@ function Find-DFToolSource {
         ExcludeSources left out, since a tool may have been installed through
         it before. Managers that aren't installed are skipped. The first
         manager whose list has the tool's id (or its feed-qualified id) wins,
-        so a tool installed twice is reported under the first one found.
+        so a tool installed twice is reported under the first one found. A
+        manager that declares no list (a version manager such as fnm) gets
+        the tool only when no listing manager has it and the tool is installed.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -107,12 +109,17 @@ function Find-DFToolSource {
     $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
     $sources = @(@(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb 3>$null) + $have | Select-Object -Unique)
     $asked = [System.Collections.Generic.List[string]]::new()
+    $unlisted = $null
     foreach ($source in $sources) {
         $ref = Get-DFPackageRef $Tool.packages.$source
         foreach ($manager in Get-DFSourceManager -Source $source -ToolDb $ToolDb) {
             if (-not (Test-DFToolAvailable -Executable $manager.executable -Type $manager.type)) { continue }
             $block = Get-DFInstallBlock -Manager $manager -Source $source
             if (-not $asked.Contains($manager.name)) { $asked.Add($manager.name) }
+            if (-not $block.list) {
+                if (-not $unlisted) { $unlisted = [pscustomobject]@{ Source = $source; Manager = $manager; Block = $block; Id = $ref.Id } }
+                continue
+            }
             Import-DFManagerOps -Manager $manager -ToolsPath $ToolsPath
             $ids = @($ref.Id) + @(if ($ref.Feed -and $block.feeds) { $block.feeds.id.Replace('{feed}', $ref.Feed.name).Replace('{id}', $ref.Id) })
             $row = Get-DFManagerInstalled -Manager $manager -Block $block -Cache $Cache | Where-Object { $_.Id -in $ids } | Select-Object -First 1
@@ -121,6 +128,12 @@ function Find-DFToolSource {
             }
         }
     }
-    $detail = if ($asked.Count) { "not installed through any of: $($asked -join ', ')" } else { "no manager for $($sources -join ', ') is installed" }
+    # A version manager (fnm, mise) can't list what it installed by the tool's
+    # id (node's is "lts"), so an installed tool no listing manager claims is
+    # credited to the first installed one, in precedence.
+    if ($unlisted -and (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type)) {
+        return [pscustomobject]@{ Tool = $Tool.name; Source = $unlisted.Source; Manager = $unlisted.Manager; Block = $unlisted.Block; Id = $unlisted.Id; Installed = $null; Detail = "via $($unlisted.Manager.name) (it can't list what it installed)" }
+    }
+    $detail = if (-not $sources) { 'its record lists no packages' } elseif ($asked.Count) { "not installed through any of: $($asked -join ', ')" } else { "no manager for $($sources -join ', ') is installed" }
     [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Id = $null; Installed = $null; Detail = $detail }
 }

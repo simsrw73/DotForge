@@ -7,7 +7,7 @@
   "prewarm": false,
   "roles": { "powershell-package-manager": { "priority": 10 } },
   "packages": {},
-  "installs": { "from": "psgallery", "function": "Install-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser", "TrustRepository": true }, "update": { "function": "Update-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser", "TrustRepository": true } }, "remove": { "function": "Uninstall-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser" } }, "list": "Get-DFPSResourceInstalled", "batch": true },
+  "installs": { "from": "psgallery", "function": "Microsoft.PowerShell.PSResourceGet\\Install-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser", "TrustRepository": true }, "update": { "function": "Microsoft.PowerShell.PSResourceGet\\Update-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser", "TrustRepository": true } }, "remove": { "function": "Microsoft.PowerShell.PSResourceGet\\Uninstall-PSResource", "args": { "Name": "{id}", "Scope": "CurrentUser" } }, "list": "Get-DFPSResourceInstalled", "batch": true },
   "aliases": {},
   "picker": null
 }

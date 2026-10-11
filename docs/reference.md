@@ -878,7 +878,7 @@ Each tool's manager is found by asking the managers of its own sources (as Updat
 
 Dependents: a tool that another active tool requires (directly, or as the only active member of a required role) is refused, naming the dependents. -Force removes it anyway. -IncludeDependents follows the requires chains and removes the dependents too, dependents first, after one confirmation for the whole list.
 
-A package manager that still has packages installed is always refused unless you pass -Force, and the packages it installed are never removed with it.
+A package manager that still has packages installed is always refused unless you pass -Force, and the packages it installed are never removed with it. So is a version manager (fnm, mise), which can't list what it installed.
 
 Afterwards it lists what is left: config files DotForge seeded, the changes a tool's one-time setup recorded, and the tool's entry in your Tools setting (DotForge never edits your profile). The setup record is kept, so a reinstall doesn't run setup again. The tool shows as Missing in Get-DFToolStatus; its aliases and functions stay until you open a new shell.
 
