@@ -30,6 +30,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-27 One home for the `role:<name>` reference syntax** — parsed in five places (`Private/Invoke-DFSessionActivation.ps1` ×3, `Private/New-DFInstallPlan.ps1` ×2); "the requested members of a role" is computed in `Resolve-DFToolRequirements` and `Get-DFActivationOrder`. Add `ConvertFrom-DFToolReference` and `Get-DFRoleMember`. Do it with the next change to that syntax.
 - [ ] **T-28 Status `Detail` is a "; "-joined string built in three places** — `Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker`, `Add-DFInstallHint`. If a fourth appears, make `Detail` a list rendered once.
 - [ ] **T-29 Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable wrapper (glow, fastfetch so far).
+- [ ) **T-?? Convert users' tool configs - If a user aleady uses a tool that we support and has it configured, eg a config file or theme, and we change it to support XDG paths, then that config is orphaned. we need to make that does not happen under any scenario unless the user specifically requests that.
 
 ## Priority 3 — Features
 
