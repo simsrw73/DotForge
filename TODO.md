@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-60**.
+git history, not here. IDs are never reused; the next free one is **T-61**.
 
 ## Priority 1 — Release Readiness
 
@@ -17,6 +17,7 @@ git history, not here. IDs are never reused; the next free one is **T-60**.
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (b) exercise a sidecar load through a `..`-bearing `-ToolsPath` in the `Register-DFTool` test; (c) resolve `$ToolsPath` once before `Import-DFToolDb` in `Register-DFTool`; (d) tests use `C:\` literals, so macOS/Linux stays unverified.
 - [ ] **T-59 `New-DFShim` test writes to the real home folder** — `tests/New-DFShim.Tests.ps1` ('expands a ~ in ShimsPath to $HOME') creates `~/.local/bin/dftilde.cmd` for real; a concurrent run failed on it once (2026-10-11). Check the expansion without writing there.
+- [ ] **T-60 `fvenv` on Linux** — uv and virtualenv write `bin/activate.ps1` in lowercase, so `Tools/uv.ps1`'s `Test-Path .../bin/Activate.ps1` misses them on a case-sensitive file system; match the name case-insensitively. Windows is unaffected.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
 ## Priority 2 — Architecture Backlog

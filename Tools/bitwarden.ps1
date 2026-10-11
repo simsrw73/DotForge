@@ -11,9 +11,11 @@ function global:Select-BwItem {
         Checks bw status first: a vault that is logged out or locked gets the
         command to fix it, and nothing is listed. Otherwise lists the vault's
         items (name and username; no secrets), and Enter copies the chosen
-        item's password to the clipboard. After 30 seconds a background
-        thread job clears the clipboard, but only if it still holds that
-        password, so something you copied since is left alone. An item with
+        item's password to the clipboard. After 30 seconds DotForge clears
+        the clipboard, but only if it still holds that
+        password, so something you copied since is left alone. The clearing
+        runs in a separate hidden process (given only a hash of the password),
+        so it still happens if you close the shell first. An item with
         no password (a secure note, a card) gets a warning.
 
         Windows clipboard history (Win+V) and clipboard sync may keep their own
@@ -59,11 +61,19 @@ function global:Select-BwItem {
             if (-not $secret) { Write-Warning "DotForge: '$($names[$id])' has no password."; return }
             Set-Clipboard -Value $secret
             Write-Host "Copied the password for '$($names[$id])'; the clipboard clears in 30 s."
-            $null = Start-ThreadJob -ArgumentList $secret, 30 -ScriptBlock {
-                param($copied, $seconds)
-                Start-Sleep -Seconds $seconds
-                if ((Get-Clipboard -Raw) -ceq $copied) { Set-Clipboard -Value $null }
-            }
+            # A separate hidden process does the clearing, so it still happens when this shell
+            # closes first. It gets only a hash of the password, and compares hashes.
+            $clear = @'
+Start-Sleep -Seconds 30
+$text = Get-Clipboard -Raw
+if ($text) {
+    $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($text.TrimEnd("`r", "`n"))))
+    if ($hash -eq 'SECRET_HASH') { Set-Clipboard -Value $null }
+}
+'@.Replace('SECRET_HASH', [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($secret))))
+            $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($clear))
+            Start-Process -FilePath (Get-Process -Id $PID).Path -WindowStyle Hidden `
+                -ArgumentList '-NoProfile', '-NonInteractive', '-EncodedCommand', $encoded
         }
 }
 Set-Alias -Name fbw -Value Select-BwItem -Scope Global -Force

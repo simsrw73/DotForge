@@ -3215,7 +3215,7 @@ Alias: `fbw`
 
 Fuzzy-picks a Bitwarden vault item and copies its password, clearing the clipboard after 30 seconds.
 
-Checks bw status first: a vault that is logged out or locked gets the command to fix it, and nothing is listed. Otherwise lists the vault's items (name and username; no secrets), and Enter copies the chosen item's password to the clipboard. After 30 seconds a background thread job clears the clipboard, but only if it still holds that password, so something you copied since is left alone. An item with no password (a secure note, a card) gets a warning.
+Checks bw status first: a vault that is logged out or locked gets the command to fix it, and nothing is listed. Otherwise lists the vault's items (name and username; no secrets), and Enter copies the chosen item's password to the clipboard. After 30 seconds DotForge clears the clipboard, but only if it still holds that password, so something you copied since is left alone. The clearing runs in a separate hidden process (given only a hash of the password), so it still happens if you close the shell first. An item with no password (a secure note, a card) gets a warning.
 
 Windows clipboard history (Win+V) and clipboard sync may keep their own copy of the password; turn them off if that matters to you.
 

@@ -181,7 +181,7 @@ Describe 'Companion pickers' {
             $script:Lines['bw list'] = '[{"id":"i1","name":"GitHub","type":1,"login":{"username":"ann"}},{"id":"i2","name":"Recovery codes","type":2}]'
             $script:Lines['bw get'] = 'S3cret!'
             Mock Set-Clipboard { }
-            Mock Start-ThreadJob { $script:Job = @{ ScriptBlock = $ScriptBlock; ArgumentList = $ArgumentList } }
+            Mock Start-Process { $script:Clear = @{ FilePath = $FilePath; ArgumentList = @($ArgumentList); WindowStyle = $WindowStyle } }
             Import-Companion bitwarden
         }
         It 'copies the chosen login''s password, and nothing secret reaches the output or the list' {
@@ -193,16 +193,20 @@ Describe 'Companion pickers' {
             ($out -join ' ') | Should -Not -BeLike '*S3cret*'
             ($script:Fzf.Args -join ' ') | Should -Not -BeLike '*S3cret*'
         }
-        It 'clears the clipboard later only if it still holds the password' {
+        It 'clears the clipboard from a separate hidden process that holds only a hash of the password' {
             $script:Replies.Enqueue("GitHub`tann`ti1")
             fbw
+            $script:Clear.WindowStyle | Should -Be 'Hidden'
+            $encoded = $script:Clear.ArgumentList[$script:Clear.ArgumentList.IndexOf('-EncodedCommand') + 1]
+            $command = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($encoded))
+            ($script:Clear.ArgumentList -join ' ') + $command | Should -Not -BeLike '*S3cret*'
+            # Run the clear script here, with the clipboard and the wait mocked.
             Mock Start-Sleep { }
-            $jobArgs = @($script:Job.ArgumentList)
-            Mock Get-Clipboard { 'S3cret!' }
-            & $script:Job.ScriptBlock @jobArgs
+            Mock Get-Clipboard { "S3cret!`r`n" }
+            & ([scriptblock]::Create($command))
             Should -Invoke Set-Clipboard -Times 1 -ParameterFilter { $null -eq $Value }
             Mock Get-Clipboard { 'something the user copied' }
-            & $script:Job.ScriptBlock @jobArgs
+            & ([scriptblock]::Create($command))
             Should -Invoke Set-Clipboard -Times 1 -ParameterFilter { $null -eq $Value }
         }
         It 'says how to unlock a locked vault, without listing anything' {
