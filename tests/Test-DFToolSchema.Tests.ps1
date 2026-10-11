@@ -158,6 +158,12 @@ Describe 'Test-DFToolSchema' {
             Get-SchemaErrors @{ picker = [pscustomobject]@{ function = 'Select-T' } } | Should -Match 'picker.list'
             Get-SchemaErrors @{ picker = [pscustomobject]@{ list = 't list' } } | Should -Match 'picker.function'
         }
+        It 'accepts a list of pickers, and names the element at fault' {
+            Get-SchemaErrors @{ picker = @((& $script:Picker @{}), [pscustomobject]@{ function = 'Select-U'; list = 'u' }) } | Should -BeNullOrEmpty
+            Get-SchemaErrors @{ picker = @((& $script:Picker @{}), [pscustomobject]@{ list = 'u' }) } | Should -BeExactly 'picker[1].function is required (a string)'
+            Get-SchemaErrors @{ picker = @((& $script:Picker @{}), 'custom') } | Should -BeExactly 'picker[1] must be an object'
+            Get-SchemaErrors @{ picker = @((& $script:Picker @{ ansi = 'no' })) } | Should -Match 'picker\[0\]\.ansi'
+        }
         It 'rejects picker booleans written as strings' {
             Get-SchemaErrors @{ picker = (& $script:Picker @{ ansi = 'false' }) } | Should -Match 'picker.ansi'
             Get-SchemaErrors @{ picker = (& $script:Picker @{ list_accepts_path = 'true' }) } | Should -Match 'picker.list_accepts_path'
@@ -219,7 +225,7 @@ Describe 'Test-DFToolSchema' {
                 Should -BeExactly 'requires must be an array of tool names or role:<role> entries'
         }
         It 'rejects an invalid picker type with its current message' {
-            Get-SchemaErrors @{ picker = $true } | Should -BeExactly 'picker must be null, "custom" or an object'
+            Get-SchemaErrors @{ picker = $true } | Should -BeExactly 'picker must be null, "custom", an object or a list of objects'
         }
     }
 
@@ -249,6 +255,13 @@ Describe 'Test-DFToolSchema' {
             $w | Should -Match 'preview_windows.*preview_window'
             $w | Should -Match 'varz.*vars'
             $w | Should -Match 'priorty.*priority'
+        }
+        It 'checks each picker in a list' {
+            $tool = [pscustomobject]@{
+                name = 't'; executable = 't.exe'
+                picker = @([pscustomobject]@{ function = 'A'; list = 'a' }, [pscustomobject]@{ function = 'B'; list = 'b'; headr = 'x' })
+            }
+            "$(Get-SchemaWarnings $tool)" | Should -Match "picker\[1\]\.headr.*picker\[1\]\.header"
         }
         It 'does not warn about extra fields that resemble nothing known (tool authors may carry data)' {
             Get-SchemaWarnings ([pscustomobject]@{ name = 't'; executable = 't.exe'; homepage = 'https://x'; notes = 'n' }) |

@@ -1,6 +1,7 @@
 # Legacy Profile Fold-In — Design
 
-**Status:** Draft
+**Status:** Superseded for §3, §5 and §6 by `2026-10-11-legacy-pickers-design.md` (T-3); §2's
+remaining completions are T-4 and §4's seeding is T-5.
 **Date:** 2026-07-15
 **Source:** `~/OneDrive/Documents/PowerShell/ProfileModules/cli_tools_config.ps1`
 

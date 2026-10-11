@@ -236,35 +236,49 @@ function Get-DFPickerSchemaError ([PSCustomObject]$Tool) {
     .SYNOPSIS
         Schema errors in picker, including action and parse code that does not compile.
     #>
-    # picker: null, "custom" (the companion defines its own), or a declarative object.
-    $picker = Get-DFSchemaProperty $Tool 'picker'
-    if ($picker -is [string] -and $picker -ne 'custom') {
-        "picker must be null, ""custom"" or an object (got ""$picker"")"
-    } elseif ($null -ne $picker -and $picker -isnot [string]) {
-        if ($picker -isnot [pscustomobject]) {
-            'picker must be null, "custom" or an object'
-        } else {
-            foreach ($req in 'function', 'list') {
-                $v = Get-DFSchemaProperty $picker $req
-                if ($v -isnot [string] -or -not $v) { "picker.$req is required (a string)" }
-            }
-            foreach ($b in 'ansi', 'list_accepts_path') {
-                $v = Get-DFSchemaProperty $picker $b
-                if ($null -ne $v -and $v -isnot [bool]) { "picker.$b must be a boolean (true/false, not a string)" }
-            }
-            # These become scriptblocks when the picker is built; catch a syntax error
-            # here, at load, instead of when the profile runs.
-            $action = Get-DFSchemaProperty $picker 'action'
-            if ($action -is [string] -and $action -and $action -ne 'output') {
-                try { $null = [scriptblock]::Create('param($v) ' + $action.Replace('{}', '$v')) }
-                catch { "picker.action is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
-            }
-            $parse = Get-DFSchemaProperty $picker 'parse'
-            if ($parse -is [string] -and $parse) {
-                try { $null = [scriptblock]::Create($parse) }
-                catch { "picker.parse is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
-            }
-        }
+    # picker: null, "custom" (the companion defines its own), a declarative object, or a list of them.
+    # Read directly: a function's output would unroll a one-element list into its object.
+    $picker = $Tool.PSObject.Properties['picker']?.Value
+    if ($null -eq $picker) { return }
+    $shape = 'picker must be null, "custom", an object or a list of objects'
+    if ($picker -is [string]) {
+        if ($picker -ne 'custom') { "$shape (got ""$picker"")" }
+        return
+    }
+    $isList = $picker -is [System.Collections.IList]
+    if (-not $isList -and $picker -isnot [pscustomobject]) { return $shape }
+    $entries = @($picker)
+    for ($n = 0; $n -lt $entries.Count; $n++) {
+        $prefix = if ($isList) { "picker[$n]" } else { 'picker' }
+        if ($entries[$n] -isnot [pscustomobject]) { "$prefix must be an object"; continue }
+        Get-DFPickerEntryError -Picker $entries[$n] -Prefix $prefix
+    }
+}
+
+function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
+    <#
+    .SYNOPSIS
+        Schema errors in one declarative picker, each starting with Prefix (picker or picker[n]).
+    #>
+    foreach ($req in 'function', 'list') {
+        $v = Get-DFSchemaProperty $Picker $req
+        if ($v -isnot [string] -or -not $v) { "$Prefix.$req is required (a string)" }
+    }
+    foreach ($b in 'ansi', 'list_accepts_path') {
+        $v = Get-DFSchemaProperty $Picker $b
+        if ($null -ne $v -and $v -isnot [bool]) { "$Prefix.$b must be a boolean (true/false, not a string)" }
+    }
+    # These become scriptblocks when the picker is built; catch a syntax error
+    # here, at load, instead of when the profile runs.
+    $action = Get-DFSchemaProperty $Picker 'action'
+    if ($action -is [string] -and $action -and $action -ne 'output') {
+        try { $null = [scriptblock]::Create('param($v) ' + $action.Replace('{}', '$v')) }
+        catch { "$Prefix.action is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
+    }
+    $parse = Get-DFSchemaProperty $Picker 'parse'
+    if ($parse -is [string] -and $parse) {
+        try { $null = [scriptblock]::Create($parse) }
+        catch { "$Prefix.parse is not valid PowerShell: $($_.Exception.InnerException.Message ?? $_.Exception.Message)" }
     }
 }
 
@@ -292,7 +306,14 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))
+    $picker = $Tool.PSObject.Properties['picker']?.Value
     if ($picker -is [pscustomobject]) { $sections.Add(@('picker', $picker, 'picker.')) }
+    elseif ($picker -is [System.Collections.IList]) {
+        $entries = @($picker)
+        for ($n = 0; $n -lt $entries.Count; $n++) {
+            if ($entries[$n] -is [pscustomobject]) { $sections.Add(@('picker', $entries[$n], "picker[$n].")) }
+        }
+    }
     $xdg = Get-DFSchemaProperty $Tool 'xdg'
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = Get-DFSchemaProperty $Tool 'setup'

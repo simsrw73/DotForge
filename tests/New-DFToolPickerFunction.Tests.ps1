@@ -31,6 +31,17 @@ Describe 'New-DFToolPickerFunction' {
         (Get-Alias ftt).Definition | Should -Be 'Select-TestThing'
     }
 
+    It 'installs every picker in a list' {
+        $tool = @'
+{ "name": "t", "picker": [
+    { "alias": "ftt", "function": "Select-TestThing", "list": "echo one" },
+    { "function": "Select-TestPathThing", "list": "echo two" } ] }
+'@ | ConvertFrom-Json
+        New-DFToolPickerFunction -Tool $tool
+        (Get-Alias ftt).Definition | Should -Be 'Select-TestThing'
+        (Get-Command Select-TestPathThing -CommandType Function -ErrorAction Ignore) | Should -Not -BeNullOrEmpty
+    }
+
     It 'does not create an alias when picker.alias is absent' {
         $tool = @'
 { "name": "t", "picker": { "function": "Select-TestThing", "list": "echo one" } }

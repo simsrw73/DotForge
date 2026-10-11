@@ -116,8 +116,8 @@ function Get-DFCommandConflict {
                 $owned.AddRange([string[]]@($role.Value.aliases.PSObject.Properties.Name))
             }
         }
-        if ($tool.picker -is [PSCustomObject] -and $tool.picker.alias) {
-            $owned.Add([string]$tool.picker.alias)
+        foreach ($picker in @($tool.picker)) {
+            if ($picker -is [PSCustomObject] -and $picker.alias) { $owned.Add([string]$picker.alias) }
         }
     }
 

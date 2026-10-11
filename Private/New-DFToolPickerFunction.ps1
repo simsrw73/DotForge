@@ -3,17 +3,18 @@
 function New-DFToolPickerFunction {
     <#
     .SYNOPSIS
-        Builds and installs one tool's declarative fzf picker as a global
-        function (and alias, if declared).
+        Builds and installs a tool's declarative fzf pickers as global
+        functions (and aliases, where declared).
     .DESCRIPTION
-        Reads $Tool.picker (a normalized record from ConvertTo-DFToolRecord)
-        and defines a global function that calls Invoke-DFPicker with it.
+        Reads $Tool.picker (one object, or a list of them, as a normalized
+        record has) and defines, for each, a global function that calls
+        Invoke-DFPicker with it.
         When picker.list_accepts_path is true, the function takes a -Path
         parameter (default '.') appended to the list command. Quoted arguments
-        in the list command are supported. No-ops when $Tool has no object
-        picker, or the picker lacks a function/list pair.
+        in the list command are supported. Skips a null or "custom" picker,
+        and a picker that lacks a function/list pair.
     .PARAMETER Tool
-        The normalized tool record declaring the picker.
+        The normalized tool record declaring the pickers.
     .OUTPUTS
         None
     #>
@@ -23,8 +24,26 @@ function New-DFToolPickerFunction {
         [PSCustomObject]$Tool
     )
 
-    $picker = $Tool.picker
-    if ($picker -isnot [PSCustomObject] -or -not ($picker.function -and $picker.list)) { return }
+    if ($Tool.picker -is [string]) { return }
+    foreach ($picker in @($Tool.picker)) {
+        if ($picker -is [PSCustomObject] -and $picker.function -and $picker.list) { Set-DFPickerFunction -Picker $picker }
+    }
+}
+
+function Set-DFPickerFunction {
+    <#
+    .SYNOPSIS
+        Defines one declarative picker's global function, and its alias if declared.
+    .PARAMETER Picker
+        One declarative picker object (function and list set).
+    .OUTPUTS
+        None
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][PSCustomObject]$Picker)
+
+    # A fresh scope per picker, so each function's closure captures its own values.
+    $picker = $Picker
 
     # Everything except the list source is the same for both shapes, so the
     # Invoke-DFPicker call is built once. GetNewClosure captures these locals.

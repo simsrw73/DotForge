@@ -219,7 +219,21 @@ function ConvertTo-DFRoleMap {
 function ConvertTo-DFPickerBlock {
     <#
     .SYNOPSIS
-        Normalizes a declarative picker object; null and "custom" pass through.
+        Normalizes declarative pickers (one object or a list) to a list; null and "custom" pass through.
+    .PARAMETER RawPicker
+        See the synopsis.
+    #>
+    param($RawPicker)
+
+    if ($null -eq $RawPicker -or $RawPicker -is [string]) { return $RawPicker }
+    # The comma keeps a one-element list from unrolling into its element.
+    , [object[]]@(foreach ($picker in @($RawPicker)) { ConvertTo-DFPickerEntry $picker })
+}
+
+function ConvertTo-DFPickerEntry {
+    <#
+    .SYNOPSIS
+        Normalizes one declarative picker object: every field exists, with its default.
     .PARAMETER RawPicker
         See the synopsis.
     #>

@@ -107,16 +107,24 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'defaults the declarative picker fields, and leaves a non-object picker alone' {
         $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t", "picker": { "function": "F", "list": "ls" } }' | ConvertFrom-Json)
-        $r.picker.preview_window    | Should -Be 'right:60%'
-        $r.picker.preview           | Should -Be ''
-        $r.picker.header            | Should -Be ''
-        $r.picker.ansi              | Should -BeFalse
-        $r.picker.list_accepts_path | Should -BeFalse
+        $r.picker -is [System.Collections.IList] | Should -BeTrue -Because 'a declarative picker normalizes to a list'
+        $r.picker.Count                | Should -Be 1
+        $r.picker[0].preview_window    | Should -Be 'right:60%'
+        $r.picker[0].preview           | Should -Be ''
+        $r.picker[0].header            | Should -Be ''
+        $r.picker[0].ansi              | Should -BeFalse
+        $r.picker[0].list_accepts_path | Should -BeFalse
         foreach ($p in 'alias', 'action', 'parse') {
-            $r.picker.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "picker.$p must exist"
+            $r.picker[0].PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "picker.$p must exist"
         }
         (ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t", "picker": "custom" }' | ConvertFrom-Json)).picker |
             Should -Be 'custom'
+    }
+
+    It 'normalizes a list of pickers in order' {
+        $r = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t", "picker": [ { "function": "A", "list": "a" }, { "function": "B", "list": "b" } ] }' | ConvertFrom-Json)
+        $r.picker.function | Should -Be @('A', 'B')
+        $r.picker[1].preview_window | Should -Be 'right:60%'
     }
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
@@ -129,7 +137,7 @@ Describe 'ConvertTo-DFToolRecord' {
                 foreach ($f in $fields) { $null = $r.$f }
                 if ($r.xdg) { $null = $r.xdg.method, $r.xdg.vars, $r.xdg.dirs, $r.xdg.instructions, $r.xdg.compliance }
                 if ($r.setup) { $null = $r.setup.seed }
-                if ($r.picker -is [pscustomobject]) { $null = $r.picker.function, $r.picker.list, $r.picker.alias, $r.picker.action, $r.picker.parse }
+                if ($r.picker -and $r.picker -isnot [string]) { foreach ($p in @($r.picker)) { $null = $p.function, $p.list, $p.alias, $p.action, $p.parse } }
                 if ($r.aliases) { foreach ($a in $r.aliases.PSObject.Properties) { $null = $a.Value.command, $a.Value.args } }
             } | Should -Not -Throw -Because $file.Name
         }

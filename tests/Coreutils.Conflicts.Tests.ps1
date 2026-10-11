@@ -43,8 +43,8 @@ BeforeAll {
                 if ($roleAliases) { $script:OwnedNames.AddRange([string[]]@($roleAliases.PSObject.Properties.Name)) }
             }
         }
-        $picker = $tool.PSObject.Properties['picker']?.Value
-        if ($picker -is [PSCustomObject]) {
+        foreach ($picker in @($tool.PSObject.Properties['picker']?.Value)) {
+            if ($picker -isnot [PSCustomObject]) { continue }
             $pAlias = $picker.PSObject.Properties['alias']?.Value
             if ($pAlias) { $script:OwnedNames.Add([string]$pAlias) }
         }

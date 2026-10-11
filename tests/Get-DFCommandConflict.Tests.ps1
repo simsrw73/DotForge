@@ -59,6 +59,16 @@ Describe 'Get-DFCommandConflict' {
         $c.Command | Should -Not -Contain 'ls'
     }
 
+    It 'owns every alias in a list of pickers' {
+        @'
+{ "name": "twotool", "executable": "twotool.exe", "xdg": { "compliance": "none", "method": "default" },
+  "picker": [ { "alias": "fone", "function": "Select-One", "list": "x" }, { "alias": "ftwo", "function": "Select-Two", "list": "y" } ] }
+'@ | Set-Content (Join-Path $script:TmpTools 'twotool.json')
+        $script:DFToolDb = $null
+        Mock Get-DFCoreutilsShadowSet { [string[]]@('ftwo') }
+        (@(Get-DFCommandConflict -ToolsPath $script:TmpTools)).Command | Should -Contain 'ftwo'
+    }
+
     It 'picks up a newly added tool alias with no code change' {
         # The owned-name set is derived from the tool database, so a future tool that
         # declares a colliding alias is covered automatically.

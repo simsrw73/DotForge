@@ -276,11 +276,13 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
             $cmd = (@($_.Value.command) + @($_.Value.PSObject.Properties['args']?.Value) | Where-Object { $_ }) -join ' '
             "$(& $code $_.Name) → $(& $code $cmd)" }) -join '<br>')
     }
-    $picker = & $prop $Tool 'picker'
-    if ($picker -is [pscustomobject]) {
-        $action = & $prop $picker 'action'
-        $what = if ($action -eq 'output') { 'outputs the selection' } else { 'runs ' + (& $code $action) }
-        & $add 'Picker' "$(& $code (& $prop $picker 'alias')) ($(& $prop $picker 'function')): lists $(& $code (& $prop $picker 'list')); Enter $what"
+    $pickers = @(& $prop $Tool 'picker' | Where-Object { $_ -is [pscustomobject] })
+    if ($pickers) {
+        & $add $(if ($pickers.Count -gt 1) { 'Pickers' } else { 'Picker' }) (($pickers | ForEach-Object {
+            $action = & $prop $_ 'action'
+            $what = if ($action -eq 'output') { 'outputs the selection' } else { 'runs ' + (& $code $action) }
+            "$(& $code (& $prop $_ 'alias')) ($(& $prop $_ 'function')): lists $(& $code (& $prop $_ 'list')); Enter $what"
+        }) -join '<br>')
     }
     $req = & $prop $Tool 'requires'
     if ($req) { & $add 'Requires' ((@($req) | ForEach-Object { & $code $_ }) -join ', ') }
