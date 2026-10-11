@@ -335,7 +335,7 @@
       }
     },
     "chezmoi": {
-      "sha256": "42c160c1d20c444a0764769b048cf093cb45c77c9e3bb51a57dc97b24c88f9d6",
+      "sha256": "c15c340f4d6d5a7cdd964ab47cde34a07be78b6791a4d505c30a1a94412e7810",
       "record": {
         "name": "chezmoi",
         "executable": "chezmoi.exe",
@@ -369,7 +369,20 @@
             "args": []
           }
         },
-        "picker": null,
+        "picker": [
+          {
+            "function": "Edit-DotFile",
+            "alias": "czf",
+            "list": "chezmoi managed --path-style absolute --include files",
+            "list_accepts_path": false,
+            "preview": "bat --color=always --line-range=:200 {}",
+            "preview_window": "right:60%",
+            "ansi": false,
+            "header": "Select dotfile  [Enter to chezmoi edit]",
+            "action": "chezmoi edit {}",
+            "parse": null
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {},
@@ -603,7 +616,7 @@
       }
     },
     "docker": {
-      "sha256": "36b89d19d67ad9c074a04ac74995b28f39a4bb3df05f19a45c8b6b0245ef037a",
+      "sha256": "0401cc42a56d83b3408484e3a464ca1069a5d62db7cb79a3f053157326f64113",
       "record": {
         "name": "docker",
         "executable": "docker.exe",
@@ -629,7 +642,32 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": [
+          {
+            "function": "Select-DockerContainer",
+            "alias": "fdc",
+            "list": "docker ps --format '{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}'",
+            "list_accepts_path": false,
+            "preview": "docker logs --tail 50 {1}",
+            "preview_window": "right:60%:wrap",
+            "ansi": false,
+            "header": "Select running container  [Enter to open a shell in it]",
+            "action": "docker exec -it {} sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'",
+            "parse": "($_ -split '\\s+')[0]"
+          },
+          {
+            "function": "Select-DockerImage",
+            "alias": "fdi",
+            "list": "docker images --format '{{.Repository}}:{{.Tag}}\\t{{.ID}}\\t{{.Size}}'",
+            "list_accepts_path": false,
+            "preview": "docker image history {2}",
+            "preview_window": "right:60%",
+            "ansi": false,
+            "header": "Select image  [Enter to output repo:tag]",
+            "action": "output",
+            "parse": "$f = $_ -split '\\s+'; if ($f[0] -like '*<none>*') { $f[1] } else { $f[0] }"
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {},
@@ -668,18 +706,20 @@
         },
         "env": null,
         "aliases": {},
-        "picker": {
-          "function": "Select-File",
-          "alias": "ff",
-          "list": "eza --icons -1 --color=always --no-quotes",
-          "list_accepts_path": true,
-          "preview": "bat --color=always --line-range=:200 {}",
-          "preview_window": "right:60%",
-          "ansi": true,
-          "header": "Select file  [Enter to output path]",
-          "action": "output",
-          "parse": null
-        },
+        "picker": [
+          {
+            "function": "Select-File",
+            "alias": "ff",
+            "list": "eza --icons -1 --color=always --no-quotes",
+            "list_accepts_path": true,
+            "preview": "bat --color=always --line-range=:200 {}",
+            "preview_window": "right:60%",
+            "ansi": true,
+            "header": "Select file  [Enter to output path]",
+            "action": "output",
+            "parse": null
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {
@@ -817,18 +857,20 @@
         },
         "env": null,
         "aliases": {},
-        "picker": {
-          "function": "Select-FdResult",
-          "alias": "ffd",
-          "list": "fd --color=always",
-          "list_accepts_path": false,
-          "preview": "bat --color=always --line-range=:100 {}",
-          "preview_window": "right:60%",
-          "ansi": true,
-          "header": "Select file  [Enter to output path]",
-          "action": "output",
-          "parse": null
-        },
+        "picker": [
+          {
+            "function": "Select-FdResult",
+            "alias": "ffd",
+            "list": "fd --color=always",
+            "list_accepts_path": false,
+            "preview": "bat --color=always --line-range=:100 {}",
+            "preview_window": "right:60%",
+            "ansi": true,
+            "header": "Select file  [Enter to output path]",
+            "action": "output",
+            "parse": null
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {
@@ -979,7 +1021,7 @@
       }
     },
     "gh": {
-      "sha256": "40b0bc44d0060d1e94f6b5623f06e9b4d18c3a9cb29a970b4f74d1014ca68787",
+      "sha256": "6ca080c527eedaaa1b193c71f63a125624807171173c5a6ef5620298d269b8dd",
       "record": {
         "name": "gh",
         "executable": "gh.exe",
@@ -1004,7 +1046,32 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": [
+          {
+            "function": "Select-GHPr",
+            "alias": "fpr",
+            "list": "gh pr list --json number,title,author | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title) ($($_.author.login))\" }",
+            "list_accepts_path": false,
+            "preview": "gh pr view {1}",
+            "preview_window": "right:60%:wrap",
+            "ansi": false,
+            "header": "Select pull request  [Enter to check it out]",
+            "action": "gh pr checkout {}",
+            "parse": "($_ -split '\\s+')[0]"
+          },
+          {
+            "function": "Select-GHIssue",
+            "alias": "fgi",
+            "list": "gh issue list --json number,title | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title)\" }",
+            "list_accepts_path": false,
+            "preview": "gh issue view {1}",
+            "preview_window": "right:60%:wrap",
+            "ansi": false,
+            "header": "Select issue  [Enter to open it in the browser]",
+            "action": "gh issue view {} --web",
+            "parse": "($_ -split '\\s+')[0]"
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {},
@@ -2589,7 +2656,7 @@
       }
     },
     "rustup": {
-      "sha256": "dd687712f8d5db230fcaaad6a79bbfdbe7c33619941932a9c30e5198d91c479f",
+      "sha256": "3f01d5d22eb6f62bfade4d3472bc45f91b98d0fa4d9efd36db25740963014f0c",
       "record": {
         "name": "rustup",
         "executable": "rustup.exe",
@@ -2619,7 +2686,20 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": [
+          {
+            "function": "Select-RustupToolchain",
+            "alias": "frtc",
+            "list": "rustup toolchain list",
+            "list_accepts_path": false,
+            "preview": "",
+            "preview_window": "right:60%",
+            "ansi": false,
+            "header": "Select Rust toolchain  [Enter to make it the default]",
+            "action": "rustup default {}",
+            "parse": "($_ -split '\\s+')[0]"
+          }
+        ],
         "after": [],
         "requires": [],
         "roles": {
@@ -3162,18 +3242,20 @@
         },
         "env": null,
         "aliases": {},
-        "picker": {
-          "function": "Select-Directory",
-          "alias": "fzo",
-          "list": "zoxide query --list",
-          "list_accepts_path": false,
-          "preview": "eza --icons --color=always {}",
-          "preview_window": "right:60%",
-          "ansi": false,
-          "header": "Select directory  [Enter to cd]",
-          "action": "Set-Location {}",
-          "parse": null
-        },
+        "picker": [
+          {
+            "function": "Select-Directory",
+            "alias": "fzo",
+            "list": "zoxide query --list",
+            "list_accepts_path": false,
+            "preview": "eza --icons --color=always {}",
+            "preview_window": "right:60%",
+            "ansi": false,
+            "header": "Select directory  [Enter to cd]",
+            "action": "Set-Location {}",
+            "parse": null
+          }
+        ],
         "after": [
           "oh-my-posh",
           "starship"

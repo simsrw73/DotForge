@@ -116,6 +116,7 @@ function Invoke-DFPicker {
     if ($FzfArgs)   { $pickerArgs.AddRange([string[]]$FzfArgs) }
 
     $items = @(& $List)
+    if (-not $items.Count) { Write-Host 'Nothing to pick from.'; return }
     $selected = Invoke-DFFzf -InputItems $items -FzfArgs $pickerArgs
     if (-not $selected) { return }
 

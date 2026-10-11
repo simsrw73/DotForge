@@ -72,12 +72,13 @@ work in docs/superpowers/specs/2026-07-15-legacy-profile-fold-in-design.md.
         $unlisted | Should -BeNullOrEmpty -Because "$detail. Set `"picker`": `"custom`" so the record matches reality."
     }
 
-    It 'uses only a supported picker shape: null, "custom", or an object' {
+    It 'uses only a supported picker shape: null, "custom", an object, or a list of objects' {
         foreach ($tool in $script:Tools) {
             $ok = ($null -eq $tool.Picker) -or
                   ($tool.Picker -is [PSCustomObject]) -or
+                  ($tool.Picker -is [array] -and @($tool.Picker | Where-Object { $_ -isnot [PSCustomObject] }).Count -eq 0) -or
                   ($tool.Picker -is [string] -and $tool.Picker -eq 'custom')
-            $ok | Should -BeTrue -Because "$($tool.File) has picker '$($tool.Picker)'; Register-DFTool only understands null, 'custom', or an object"
+            $ok | Should -BeTrue -Because "$($tool.File) has picker '$($tool.Picker)'; Register-DFTool only understands null, 'custom', an object, or a list of objects"
         }
     }
 

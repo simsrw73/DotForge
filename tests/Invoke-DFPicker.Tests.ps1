@@ -4,6 +4,14 @@ BeforeAll {
 }
 
 Describe 'Invoke-DFPicker' {
+    It 'says there is nothing to pick, and opens no fzf, when the list is empty' {
+        Mock Invoke-DFFzf { 'x' }
+        Mock Write-Host { }
+        Invoke-DFPicker -List { } -Action { throw 'no action expected' }
+        Should -Invoke Invoke-DFFzf -Times 0
+        Should -Invoke Write-Host -Times 1 -ParameterFilter { $Object -eq 'Nothing to pick from.' }
+    }
+
     It 'outputs the selected item when no Action is given' {
         Mock Invoke-DFFzf { 'selected-item' }
         $result = Invoke-DFPicker -List { 'item1'; 'item2' } -Header 'Test'

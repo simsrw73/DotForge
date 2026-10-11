@@ -20,5 +20,26 @@
     ]
   },
   "aliases": {},
-  "picker": null
+  "picker": [
+    {
+      "alias": "fdc",
+      "function": "Select-DockerContainer",
+      "list": "docker ps --format '{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}'",
+      "preview": "docker logs --tail 50 {1}",
+      "preview_window": "right:60%:wrap",
+      "header": "Select running container  [Enter to open a shell in it]",
+      "parse": "($_ -split '\\s+')[0]",
+      "action": "docker exec -it {} sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'"
+    },
+    {
+      "alias": "fdi",
+      "function": "Select-DockerImage",
+      "list": "docker images --format '{{.Repository}}:{{.Tag}}\\t{{.ID}}\\t{{.Size}}'",
+      "preview": "docker image history {2}",
+      "preview_window": "right:60%",
+      "header": "Select image  [Enter to output repo:tag]",
+      "parse": "$f = $_ -split '\\s+'; if ($f[0] -like '*<none>*') { $f[1] } else { $f[0] }",
+      "action": "output"
+    }
+  ]
 }

@@ -25,5 +25,12 @@
     ]
   },
   "aliases": {},
-  "picker": null
+  "picker": {
+    "alias": "frtc",
+    "function": "Select-RustupToolchain",
+    "list": "rustup toolchain list",
+    "header": "Select Rust toolchain  [Enter to make it the default]",
+    "parse": "($_ -split '\\s+')[0]",
+    "action": "rustup default {}"
+  }
 }

@@ -17,5 +17,26 @@
     "method": "default"
   },
   "aliases": {},
-  "picker": null
+  "picker": [
+    {
+      "alias": "fpr",
+      "function": "Select-GHPr",
+      "list": "gh pr list --json number,title,author | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title) ($($_.author.login))\" }",
+      "preview": "gh pr view {1}",
+      "preview_window": "right:60%:wrap",
+      "header": "Select pull request  [Enter to check it out]",
+      "parse": "($_ -split '\\s+')[0]",
+      "action": "gh pr checkout {}"
+    },
+    {
+      "alias": "fgi",
+      "function": "Select-GHIssue",
+      "list": "gh issue list --json number,title | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title)\" }",
+      "preview": "gh issue view {1}",
+      "preview_window": "right:60%:wrap",
+      "header": "Select issue  [Enter to open it in the browser]",
+      "parse": "($_ -split '\\s+')[0]",
+      "action": "gh issue view {} --web"
+    }
+  ]
 }

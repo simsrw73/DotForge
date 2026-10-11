@@ -28,5 +28,13 @@
       "args": []
     }
   },
-  "picker": null
+  "picker": {
+    "alias": "czf",
+    "function": "Edit-DotFile",
+    "list": "chezmoi managed --path-style absolute --include files",
+    "preview": "bat --color=always --line-range=:200 {}",
+    "preview_window": "right:60%",
+    "header": "Select dotfile  [Enter to chezmoi edit]",
+    "action": "chezmoi edit {}"
+  }
 }
