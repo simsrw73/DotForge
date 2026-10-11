@@ -76,6 +76,7 @@ Install a tool you don't have yet with `Install-DFTool -Name ripgrep`. To run th
 | [Coreutils conflicts](docs/guide/coreutils-conflicts.md) | fix commands that Coreutils for Windows intercepts |
 | [Troubleshooting](docs/guide/troubleshooting.md) | look up any warning or error |
 | [Safety](docs/guide/safety.md) | see everything DotForge reads, writes, runs and sends |
+| [Your own tools](docs/guide/your-own-tools.md) | add a tool DotForge doesn't ship, or change a shipped one, without forking |
 | [Writing a tool record](docs/guide/writing-a-tool.md) | add or change a tool |
 | [Reference](docs/reference.md) | look up any command, parameter or tool record |
 | [Examples](examples/README.md) | start from a complete profile |

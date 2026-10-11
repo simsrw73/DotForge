@@ -16,6 +16,12 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Your own tools, without forking DotForge:** tool records in `$XDG_CONFIG_HOME\dotforge\tools` load
+  with DotForge's own, and one with a shipped tool's name replaces that tool. Their companion, setup
+  and manage scripts and data files are read from the same folder. `New-DFTool -Name` starts a record
+  (program and description filled in, optional companion skeleton); `New-DFTool -From` copies a
+  shipped tool there to change it. `Get-DFTool` shows each record's `source` (`builtin` or `user`).
+  See the new [Your own tools](docs/guide/your-own-tools.md) guide.
 - **Eleven fuzzy pickers from the old profile, reviewed rather than copied:** `fjq` (a live jq
   playground), `fgl` (Markdown in glow), `fvenv` (activate a Python venv), `fns` (run a `package.json`
   script with the project's own manager), `fbw` (copy a Bitwarden password, cleared after 30 s), `czf`

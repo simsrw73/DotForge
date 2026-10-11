@@ -7,7 +7,6 @@ git history, not here. IDs are never reused; the next free one is **T-61**.
 ## Priority 1 — Release Readiness
 
 - [ ] **T-1 Promote to stable 1.0.0** — fix the open Problems below, then follow CLAUDE.md's Releasing steps with `Prerelease` removed. `trifle` stays experimental and outside 1.0 (see After 1.0 at the end).
-- [ ] **T-2 User tool extension guide** — how users add their own tool JSON records, argument completers and pickers without forking the module (a `docs/guide/` page).
 
 ## Priority 2 — Open Problems
 

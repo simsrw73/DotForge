@@ -42,7 +42,7 @@ where.exe
 2. The `env` block sets `WHEREEXE_DEMO` for the session.
 3. The `aliases` block defines `wh`. Without `args` (or with `"args": []`) it's a plain alias; with arguments it becomes a small function that adds them.
 
-To add the tool to DotForge for real, put the file in the repository's `Tools\` folder and run the tests (see [Check your work](#check-your-work)).
+To keep the tool for yourself, put the file in your own tools folder instead: see [Your own tools](your-own-tools.md). To add it to DotForge for everyone, put it in the repository's `Tools\` folder and run the tests (see [Check your work](#check-your-work)).
 
 ## The record
 
