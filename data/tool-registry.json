@@ -54,7 +54,7 @@
       }
     },
     "bitwarden": {
-      "sha256": "a9d231a95e67313511d6865b4ca72b8ca655599d229231c969eeabd57090c2a6",
+      "sha256": "6574534879f7557bbc38072e8156f6f453a24d0c1a9e7c04121d4e4c2a1634bf",
       "record": {
         "name": "bitwarden",
         "executable": "bw.exe",
@@ -78,7 +78,7 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": "custom",
         "after": [],
         "requires": [],
         "roles": {},
@@ -1085,7 +1085,7 @@
       }
     },
     "glow": {
-      "sha256": "3d65c8b1fb5cdbae7a3ea71458eb2e14554c8ac137bdf6073879676f2bc28265",
+      "sha256": "becf13626dc7c79509902027f3ed8e214687fb8ed69de0dda9f3e27bb0e8ad5f",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1109,7 +1109,7 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": "custom",
         "after": [],
         "requires": [],
         "roles": {
@@ -1238,7 +1238,7 @@
       }
     },
     "jq": {
-      "sha256": "e95d05b938910c66ddeb128d5d87f391ec98b24c5c9721226d4b8614d69ee205",
+      "sha256": "d7398cdd87572878909f68209f24fe07054e51f007767ee940e348b9efc43521",
       "record": {
         "name": "jq",
         "executable": "jq.exe",
@@ -1263,7 +1263,7 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": "custom",
         "after": [],
         "requires": [],
         "roles": {},
@@ -1790,7 +1790,7 @@
       }
     },
     "npm": {
-      "sha256": "4dfa5db6931e314dafa0d330a328713434b23defd63edc8734debe345b2f8426",
+      "sha256": "a8e1deb21a8ff906d1cc96357cba1241fb833913f7d2e5ebd2f081c5494156f6",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -1826,7 +1826,7 @@
             ]
           }
         },
-        "picker": null,
+        "picker": "custom",
         "after": [],
         "requires": [
           "node"
@@ -2892,7 +2892,7 @@
       }
     },
     "uv": {
-      "sha256": "04415c52f5da25953fe380dc507fe2f5022d91d926ae00863b74e604f4208a4a",
+      "sha256": "08e2fbef26479f47d4a6aa6d12158c2094ecbc6844b7298e2d03e37a55905ae8",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -2922,7 +2922,7 @@
         },
         "env": null,
         "aliases": {},
-        "picker": null,
+        "picker": "custom",
         "after": [],
         "requires": [],
         "roles": {

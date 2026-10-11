@@ -29,5 +29,5 @@
     { "from": "uv", "install": ["uv", "python", "install", "--default", "{id}"] }
   ],
   "aliases": {},
-  "picker": null
+  "picker": "custom"
 }

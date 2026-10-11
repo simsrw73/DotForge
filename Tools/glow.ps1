@@ -14,7 +14,7 @@
 #
 # Reads: $DFConfig.GlowTheme, then $DFConfig.Theme, then settings.theme in glow.json;
 # settings.configFile (default ${XDG_CONFIG_HOME}/glow/glow.yml).
-# Defines: glow (wrapper), Resolve-DFGlowStyle, $global:DFGlowStyle.
+# Defines: glow (wrapper), Resolve-DFGlowStyle, $global:DFGlowStyle, Read-MarkdownFile (alias fgl).
 # Writes: creates the config file's directory only; glow.yml itself is yours.
 
 # 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.
@@ -116,3 +116,35 @@ Set-Item -Path 'function:global:glow' -Value ({
         & glow.exe --config $_cfg -s $_s @args
     }
 }.GetNewClosure())
+
+# 5. The fgl picker. A closure, so the preview can pass glow.exe the same --config as the wrapper.
+Set-Item -Path 'function:global:Read-MarkdownFile' -Value ({
+    <#
+    .SYNOPSIS
+        Fuzzy-picks a Markdown file below a folder and reads it in glow's pager.
+    .DESCRIPTION
+        Lists *.md files below -Path (with fd when it is installed, else
+        Get-ChildItem), previews each rendered in the session's glow style
+        ($global:DFGlowStyle), and opens the chosen one with glow -p.
+
+        Defined by DotForge's glow companion. Requires fzf (or $Env:Picker).
+    .PARAMETER Path
+        The folder to search. Default: the current folder.
+    .EXAMPLE
+        fgl docs
+
+        Picks a Markdown file under docs and reads it in glow.
+    .OUTPUTS
+        None.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+    #>
+    [CmdletBinding()]
+    param([Parameter(Position = 0)][string]$Path = '.')
+    $style = if ($global:DFGlowStyle) { $global:DFGlowStyle } else { 'auto' }
+    $list = if (Get-Command fd -ErrorAction Ignore) { { fd --type f --extension md . $Path }.GetNewClosure() }
+        else { { Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*.md' -ErrorAction Ignore | ForEach-Object FullName }.GetNewClosure() }
+    Invoke-DFPicker -List $list -Preview "glow.exe --config ""$_cfg"" -s ""$style"" {}" `
+        -Header 'Select Markdown file  [Enter to read it in glow]' -Action { param($file) glow -p $file }
+}.GetNewClosure())
+Set-Alias -Name fgl -Value Read-MarkdownFile -Scope Global -Force

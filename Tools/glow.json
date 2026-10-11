@@ -22,5 +22,5 @@
     "configFile": "${XDG_CONFIG_HOME}/glow/glow.yml"
   },
   "aliases": {},
-  "picker": null
+  "picker": "custom"
 }
