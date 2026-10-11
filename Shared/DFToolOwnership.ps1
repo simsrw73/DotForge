@@ -62,7 +62,9 @@ function Get-DFToolRelocation {
         The config, data and state paths DotForge points a tool at: its xdg.vars, seeds and native target keys.
     .DESCRIPTION
         Caches are left out: losing one costs nothing. Each result carries the
-        key's xdg.native entry, or $null when the record declares none.
+        key's xdg.native entry, or $null when the record declares none. When
+        that entry names a setting (glow's configFile) and the record's
+        settings set it, that value is the target.
     .PARAMETER Tool
         A normalized tool record.
     .OUTPUTS
@@ -77,7 +79,10 @@ function Get-DFToolRelocation {
         param([string]$Key, [string]$Template)
         if ($seen.ContainsKey($Key)) { return }
         $seen[$Key] = $true
-        [pscustomobject]@{ Key = $Key; Target = Expand-DFXdgPath $Template; Native = $(if ($native) { $native.PSObject.Properties[$Key]?.Value }) }
+        $entry = if ($native) { $native.PSObject.Properties[$Key]?.Value }
+        $override = if ($entry -and $entry.setting -and $Tool.settings) { $Tool.settings.PSObject.Properties[$entry.setting]?.Value }
+        $target = if ($override) { ConvertTo-DFPath (Expand-DFXdgPath $override) } else { Expand-DFXdgPath $Template }
+        [pscustomobject]@{ Key = $Key; Target = $target; Native = $entry }
     }
     if ($Tool.xdg?.method -eq 'env' -and $Tool.xdg.vars) {
         foreach ($p in $Tool.xdg.vars.PSObject.Properties) { if ($p.Value -cmatch $keep) { & $emit $p.Name $p.Value } }
@@ -149,17 +154,36 @@ function Read-DFToolOwnership {
 function Save-DFToolOwnership {
     <#
     .SYNOPSIS
-        Writes the ownership table atomically.
+        Writes the ownership table atomically; with -Name, merges only those tools' entries into the file as it is now.
+    .DESCRIPTION
+        Two shells can load at once, and Resolve-DFToolConflict can run while a
+        shell loads. With -Name, the file is read again just before writing and
+        only the named tools' entries are taken from Ownership (a name missing
+        from it is removed), so another shell's records are kept. A file that
+        can't be read then is left alone. Without -Name, Ownership replaces the
+        whole file.
     .PARAMETER Ownership
         Tool name -> entry.
+    .PARAMETER Name
+        The tools whose entries this caller changed.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership)
-    Write-DFFileAtomic -Path (Get-DFToolOwnershipPath) -Value ($Ownership | ConvertTo-Json -Depth 10)
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership,
+        [string[]]$Name
+    )
+    $table = $Ownership
+    if ($PSBoundParameters.ContainsKey('Name')) {
+        $table = Read-DFToolOwnership
+        if ($null -eq $table) { return }
+        foreach ($toolName in $Name) {
+            if ($Ownership.ContainsKey($toolName)) { $table[$toolName] = $Ownership[$toolName] } else { $table.Remove($toolName) }
+        }
+    }
+    Write-DFFileAtomic -Path (Get-DFToolOwnershipPath) -Value ($table | ConvertTo-Json -Depth 10)
 }
-
 function Find-DFToolConflict {
     <#
     .SYNOPSIS
@@ -210,13 +234,14 @@ function Find-DFToolConflict {
 function Invoke-DFPendingRemoval {
     <#
     .SYNOPSIS
-        Retries removing a moved tool's old copies, once the new location still holds every moved file.
+        Retries moving a moved tool's old copies aside, once the new location still holds every moved file.
     .DESCRIPTION
         Checks sizes only (hashes were checked when the files moved; hashing a
         large folder on every load would be too slow). A changed or missing
         file keeps that old copy and warns: the user checks it, deletes the old
         copy themselves, and runs Resolve-DFToolConflict <tool> -Done. A copy
-        still in use warns and is retried on the next load.
+        that can't be renamed yet (in use) warns, with the reason, and is
+        retried on the next load. A renamed copy is never deleted.
     .PARAMETER Name
         The tool.
     .PARAMETER Ownership
@@ -240,9 +265,11 @@ function Invoke-DFPendingRemoval {
             $item
             continue
         }
-        try { Remove-DFItemToBin -Path $item.OldPath }
-        catch {
-            Write-Warning "DotForge: $($item.OldPath) is still in use, so DotForge tries again on the next load. To stop this, delete it yourself and run Resolve-DFToolConflict $Name -Done."
+        try {
+            $aside = Rename-DFOldCopy -Path $item.OldPath
+            Write-Host "DotForge: $Name's old copy is now $aside; delete it when you're satisfied."
+        } catch {
+            Write-Warning "DotForge: couldn't move $($item.OldPath) aside ($($_.Exception.Message)), so DotForge tries again on the next load. To stop this, move it yourself and run Resolve-DFToolConflict $Name -Done."
             $item
         }
     })

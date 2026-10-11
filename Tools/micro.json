@@ -18,7 +18,7 @@
       "MICRO_CONFIG_HOME": "${XDG_CONFIG_HOME}/micro"
     },
     "native": {
-      "MICRO_CONFIG_HOME": ["${HOME}/.config/micro"]
+      "MICRO_CONFIG_HOME": ["${HOME}/.config/micro", "${APPDATA}/micro", "${HOME}/Library/Application Support/micro"]
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/micro"

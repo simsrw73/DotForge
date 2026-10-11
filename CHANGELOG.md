@@ -20,7 +20,7 @@ All notable changes to DotForge are documented here.
   location still holds your config or data (bat's `%APPDATA%\bat\config`, zoxide's database, your
   PowerShell history, …) is left alone entirely, with a warning on each load, until you decide:
   `Resolve-DFToolConflict <tool> -Move` checks that nothing refers to the old location, copies it to
-  the XDG location, verifies every file, and moves the old copy to the Recycle Bin (a file in use is
+  the XDG location, verifies every file, and renames the old copy to `<name>.dotforge-moved`, never deleting it (a copy in use is
   retried on later loads); `-Adopt` takes over without moving anything. `Get-DFToolStatus -Conflict`
   lists the tools waiting. Tool records declare their old locations in `xdg.native`.
   **If you already use DotForge:** a tool whose old location still holds files next to the XDG copy

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0d5450ed48bf295c8b8a9868eef1174759d64f0b4ed3d9650006bd803c2f590e
+# sources-sha256: 386eb170a6926491860317f568ce7e185a71332ad25a1beed9f717e79e50b4db
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -345,7 +345,9 @@ function Get-DFToolRelocation {
         The config, data and state paths DotForge points a tool at: its xdg.vars, seeds and native target keys.
     .DESCRIPTION
         Caches are left out: losing one costs nothing. Each result carries the
-        key's xdg.native entry, or $null when the record declares none.
+        key's xdg.native entry, or $null when the record declares none. When
+        that entry names a setting (glow's configFile) and the record's
+        settings set it, that value is the target.
     .PARAMETER Tool
         A normalized tool record.
     .OUTPUTS
@@ -360,7 +362,10 @@ function Get-DFToolRelocation {
         param([string]$Key, [string]$Template)
         if ($seen.ContainsKey($Key)) { return }
         $seen[$Key] = $true
-        [pscustomobject]@{ Key = $Key; Target = Expand-DFXdgPath $Template; Native = $(if ($native) { $native.PSObject.Properties[$Key]?.Value }) }
+        $entry = if ($native) { $native.PSObject.Properties[$Key]?.Value }
+        $override = if ($entry -and $entry.setting -and $Tool.settings) { $Tool.settings.PSObject.Properties[$entry.setting]?.Value }
+        $target = if ($override) { ConvertTo-DFPath (Expand-DFXdgPath $override) } else { Expand-DFXdgPath $Template }
+        [pscustomobject]@{ Key = $Key; Target = $target; Native = $entry }
     }
     if ($Tool.xdg?.method -eq 'env' -and $Tool.xdg.vars) {
         foreach ($p in $Tool.xdg.vars.PSObject.Properties) { if ($p.Value -cmatch $keep) { & $emit $p.Name $p.Value } }
@@ -432,17 +437,36 @@ function Read-DFToolOwnership {
 function Save-DFToolOwnership {
     <#
     .SYNOPSIS
-        Writes the ownership table atomically.
+        Writes the ownership table atomically; with -Name, merges only those tools' entries into the file as it is now.
+    .DESCRIPTION
+        Two shells can load at once, and Resolve-DFToolConflict can run while a
+        shell loads. With -Name, the file is read again just before writing and
+        only the named tools' entries are taken from Ownership (a name missing
+        from it is removed), so another shell's records are kept. A file that
+        can't be read then is left alone. Without -Name, Ownership replaces the
+        whole file.
     .PARAMETER Ownership
         Tool name -> entry.
+    .PARAMETER Name
+        The tools whose entries this caller changed.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership)
-    Write-DFFileAtomic -Path (Get-DFToolOwnershipPath) -Value ($Ownership | ConvertTo-Json -Depth 10)
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership,
+        [string[]]$Name
+    )
+    $table = $Ownership
+    if ($PSBoundParameters.ContainsKey('Name')) {
+        $table = Read-DFToolOwnership
+        if ($null -eq $table) { return }
+        foreach ($toolName in $Name) {
+            if ($Ownership.ContainsKey($toolName)) { $table[$toolName] = $Ownership[$toolName] } else { $table.Remove($toolName) }
+        }
+    }
+    Write-DFFileAtomic -Path (Get-DFToolOwnershipPath) -Value ($table | ConvertTo-Json -Depth 10)
 }
-
 function Find-DFToolConflict {
     <#
     .SYNOPSIS
@@ -493,13 +517,14 @@ function Find-DFToolConflict {
 function Invoke-DFPendingRemoval {
     <#
     .SYNOPSIS
-        Retries removing a moved tool's old copies, once the new location still holds every moved file.
+        Retries moving a moved tool's old copies aside, once the new location still holds every moved file.
     .DESCRIPTION
         Checks sizes only (hashes were checked when the files moved; hashing a
         large folder on every load would be too slow). A changed or missing
         file keeps that old copy and warns: the user checks it, deletes the old
         copy themselves, and runs Resolve-DFToolConflict <tool> -Done. A copy
-        still in use warns and is retried on the next load.
+        that can't be renamed yet (in use) warns, with the reason, and is
+        retried on the next load. A renamed copy is never deleted.
     .PARAMETER Name
         The tool.
     .PARAMETER Ownership
@@ -523,9 +548,11 @@ function Invoke-DFPendingRemoval {
             $item
             continue
         }
-        try { Remove-DFItemToBin -Path $item.OldPath }
-        catch {
-            Write-Warning "DotForge: $($item.OldPath) is still in use, so DotForge tries again on the next load. To stop this, delete it yourself and run Resolve-DFToolConflict $Name -Done."
+        try {
+            $aside = Rename-DFOldCopy -Path $item.OldPath
+            Write-Host "DotForge: $Name's old copy is now $aside; delete it when you're satisfied."
+        } catch {
+            Write-Warning "DotForge: couldn't move $($item.OldPath) aside ($($_.Exception.Message)), so DotForge tries again on the next load. To stop this, move it yourself and run Resolve-DFToolConflict $Name -Done."
             $item
         }
     })
@@ -1024,7 +1051,7 @@ function ConvertTo-DFXdgBlock {
 function ConvertTo-DFNativeMap {
     <#
     .SYNOPSIS
-        Normalizes xdg.native: each key's old locations as { paths, move, guide }.
+        Normalizes xdg.native: each key's old locations as { paths, move, guide, setting }.
     .PARAMETER RawNative
         See the synopsis.
     #>
@@ -1038,8 +1065,9 @@ function ConvertTo-DFNativeMap {
                 paths = [string[]]@(Get-DFToolRecordProperty $p.Value 'paths' @())
                 move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
                 guide = Get-DFToolRecordProperty $p.Value 'guide' $null
+                setting = Get-DFToolRecordProperty $p.Value 'setting' $null
             }
-        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null } }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null } }
     }
     [pscustomobject]$map
 }
@@ -1453,38 +1481,35 @@ function Invoke-DFPagerExe {
     $Lines | & $program @pagerArgs
 }
 
-# ---- Shared/Remove-DFItemToBin.ps1
+# ---- Shared/Rename-DFOldCopy.ps1
 #Requires -Version 7.2
 
-function Remove-DFItemToBin {
+function Rename-DFOldCopy {
     <#
     .SYNOPSIS
-        Moves an old config file or folder out of the tool's way, recoverably.
+        Moves a moved tool's old config out of the tool's way by renaming it next to where it was.
     .DESCRIPTION
-        Renames it to <leaf>.dotforge-moved first: that fails cleanly, with no
-        window, when anything inside is in use. On Windows the renamed item
-        then goes to the Recycle Bin; if that step fails, the renamed copy
-        stays where it is, which still counts as removed.
+        Renames it to <name>.dotforge-moved, or <name>.dotforge-moved-2, -3, ...
+        when an earlier copy holds that name. Nothing is deleted and no window
+        opens: the user deletes the renamed copy when satisfied. The rename
+        fails cleanly when anything inside is in use.
     .PARAMETER Path
         The old location.
     .OUTPUTS
-        None. Throws when the rename fails.
+        System.String: the renamed copy's path. Throws when the rename fails.
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param([Parameter(Mandatory)][string]$Path)
-    $movedName = (Split-Path $Path -Leaf) + '.dotforge-moved'
-    $moved = Join-Path (Split-Path $Path) $movedName
-    Rename-Item -LiteralPath $Path -NewName $movedName -ErrorAction Stop
-    if (-not $IsWindows) { return }
-    try {
-        Add-Type -AssemblyName Microsoft.VisualBasic
-        $ui = [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs
-        $bin = [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin
-        if (Test-Path -LiteralPath $moved -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($moved, $ui, $bin) }
-        else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($moved, $ui, $bin) }
-    } catch {
-        Write-Verbose "DotForge: $moved stays where it is: $($_.Exception.Message)"
+    $parent = Split-Path $Path
+    $name = (Split-Path $Path -Leaf) + '.dotforge-moved'
+    $n = 1
+    while (Test-Path -LiteralPath (Join-Path $parent $name)) {
+        $n++
+        $name = (Split-Path $Path -Leaf) + ".dotforge-moved-$n"
     }
+    Rename-Item -LiteralPath $Path -NewName $name -ErrorAction Stop
+    Join-Path $parent $name
 }
 
 # ---- Shared/Test-DFOutputPiped.ps1
@@ -1873,6 +1898,8 @@ function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
             if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
             if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
             if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
+            $setting = Get-DFSchemaProperty $entry 'setting'
+            if ($null -ne $setting -and $setting -isnot [string]) { "xdg.native.$($p.Name).setting must name a settings field" }
         } elseif (@($entry | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name) must be a list of paths or an object" }
     }
 }
@@ -3786,7 +3813,7 @@ function Invoke-DFSessionActivation {
         }
     } finally {
         if ($prewarmJob) { $prewarmJob | Remove-Job -Force -ErrorAction Ignore }
-        if ($owned.State.Changed) { Save-DFToolOwnership -Ownership $owned.State.Table }
+        Complete-DFToolOwnership -State $owned.State
     }
 
     Add-DFRoleOutcomeStatus -RoleWinners $winners
@@ -4059,7 +4086,8 @@ function Write-DFSessionNotice {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
     }
-    foreach ($conflicted in @($all | Where-Object State -eq 'Conflict')) {
+    foreach ($conflicted in @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })) {
+        $conflicted.Warned = $true
         $name = $conflicted.Name
         $paths = @($conflicted.Conflicts.OldPaths) -join ', '
         $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
@@ -4091,7 +4119,8 @@ function Select-DFOwnedRecord {
         Names re-registered on purpose (checked even when active).
     .OUTPUTS
         pscustomobject: Records (List[object], the records to activate) and
-        State (Test-DFToolOwnership's state: Table, Readable, Changed, Unchecked).
+        State (Test-DFToolOwnership's state: Table, Readable, Changed,
+        Unchecked, Clean).
     #>
     [CmdletBinding()]
     param(
@@ -4104,8 +4133,10 @@ function Select-DFOwnedRecord {
         # Unreadable: still check (nothing owned), but never write over the file.
         Table     = if ($null -ne $table) { $table } else { @{} }
         Readable  = $null -ne $table
-        Changed   = $false
+        Changed   = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Unchecked = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Clean     = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Reactivate = $Reactivate
     }
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($record in $Records) {
@@ -4126,9 +4157,10 @@ function Test-DFToolOwnership {
         Checks one installed tool against the ownership table: false (and status Conflict) when its old config location holds the user's config.
     .DESCRIPTION
         A tool with no conflict, a complete check and a relocated path is
-        recorded as owned (how: clean). An owned tool's unfinished removals
-        from Resolve-DFToolConflict -Move are retried. Changes go into
-        State.Table and set State.Changed; the caller saves them.
+        listed in State.Clean, to be recorded as owned (how: clean) if it ends
+        up active (Complete-DFToolOwnership). An owned tool's unfinished
+        removals from Resolve-DFToolConflict -Move are retried. Changes go into
+        State.Table and their names into State.Changed.
     .PARAMETER Record
         The tool record.
     .PARAMETER State
@@ -4151,19 +4183,47 @@ function Test-DFToolOwnership {
         $paths = @($check.Conflicts.OldPaths) -join ', '
         $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden"
         $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+        # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
+        # re-checks every requested tool, but warns again only for one it names.
+        $previous = $script:DFSessionStatus[$Record.name]
+        $warned = $Record.name -notin $State.Reactivate -and $previous -and $previous.State -eq 'Conflict' -and
+            $previous.PSObject.Properties['Warned'] -and $previous.Warned
+        $status | Add-Member -NotePropertyName Warned -NotePropertyValue ([bool]$warned)
         $script:DFSessionStatus[$Record.name] = $status
         return $false
     }
     if (-not $State.Readable) { return $true }
     if ($check.Complete -and -not $table.ContainsKey($Record.name) -and @(Get-DFToolRelocation -Tool $Record)) {
-        $table[$Record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
-        $State.Changed = $true
+        $null = $State.Clean.Add($Record.name)
     }
     if ($table.ContainsKey($Record.name) -and $table[$Record.name].PSObject.Properties['pending']) {
-        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $State.Changed = $true }
+        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $null = $State.Changed.Add($Record.name) }
     }
     $true
 }
+function Complete-DFToolOwnership {
+    <#
+    .SYNOPSIS
+        Records as owned the checked tools that ended up active, then saves the ownership table if anything changed.
+    .DESCRIPTION
+        A tool that was blocked or failed isn't recorded: the user may keep
+        using it outside DotForge, and its config must still be found later.
+    .PARAMETER State
+        Select-DFOwnedRecord's State.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][PSCustomObject]$State)
+    if (-not $State.Readable) { return }
+    foreach ($name in $State.Clean) {
+        if (-not (Test-DFToolActive $name)) { continue }
+        $State.Table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
+        $null = $State.Changed.Add($name)
+    }
+    if ($State.Changed.Count) { Save-DFToolOwnership -Ownership $State.Table -Name @($State.Changed) }
+}
+
 function Resolve-DFToolRequirements {
     <#
     .SYNOPSIS

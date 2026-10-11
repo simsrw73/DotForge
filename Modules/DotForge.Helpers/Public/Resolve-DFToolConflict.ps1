@@ -9,15 +9,15 @@ function Resolve-DFToolConflict {
         while the tool's own default location holds config or data that its
         XDG locations would hide. This command resolves that, one of three ways:
 
-        -Move copies the old config to the XDG location, then moves the old
-        copy out of the way. It runs only when every check passes, and
+        -Move copies the old config to the XDG location, then renames the old
+        copy out of the tool's way. It runs only when every check passes, and
         otherwise changes nothing and lists what to fix: the XDG location
         must be empty, the tool must not be running, no text file or
         environment variable may name the old location, and the tool must
         allow DotForge to move it. Every copied file is checked by size and
-        SHA-256. The old copy is renamed to <name>.dotforge-moved, then (on
-        Windows) sent to the Recycle Bin. A file in use is retried on later
-        loads.
+        SHA-256. The old copy is renamed to <name>.dotforge-moved next to where
+        it was, never deleted: delete it yourself when you're satisfied. A copy
+        that can't be renamed yet (a file in use) is retried on later loads.
 
         -Adopt records that DotForge owns the tool's config and moves
         nothing: use it when you've moved or merged the config yourself, or
@@ -33,7 +33,7 @@ function Resolve-DFToolConflict {
     .PARAMETER Name
         The tool.
     .PARAMETER Move
-        Copy the old config to the XDG location, check it, then move the old copy out of the way.
+        Copy the old config to the XDG location, check it, then rename the old copy to <name>.dotforge-moved.
     .PARAMETER Adopt
         Record ownership without moving anything.
     .PARAMETER Done
@@ -52,8 +52,9 @@ function Resolve-DFToolConflict {
         You've already moved starship.toml yourself: DotForge takes over starship's config.
     .OUTPUTS
         DotForge.ConflictResult: Tool, Action (Move, Adopt, Done or
-        AlreadyOwned), Moved (the new locations), Pending (old copies still to
-        remove) and Problems (why a move didn't run).
+        AlreadyOwned), Moved (the new locations), Aside (where the old copies
+        went), Pending (old copies still to rename) and Problems (why a move
+        didn't run).
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>
@@ -84,7 +85,7 @@ function Resolve-DFToolConflict {
     if ($Adopt) {
         if ($PSCmdlet.ShouldProcess($Name, 'Record that DotForge owns its config (nothing is moved)')) {
             $ownership[$Name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'adopt' }
-            Save-DFToolOwnership -Ownership $ownership
+            Save-DFToolOwnership -Ownership $ownership -Name $Name
             Write-Host "DotForge now owns $Name's config. Load it with: Register-DFTool -Name $Name"
         }
         return $result

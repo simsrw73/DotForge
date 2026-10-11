@@ -20,6 +20,7 @@ function New-DFConflictResult {
         Tool       = $Tool
         Action     = $Action
         Moved      = [string[]]@()
+        Aside      = [string[]]@()
         Pending    = [string[]]@()
         Problems   = [string[]]@()
     }
@@ -49,7 +50,7 @@ function Complete-DFConflictPending {
     $Result.Pending = [string[]]@($entry.pending | ForEach-Object OldPath)
     if ($Cmdlet.ShouldProcess($Name, "Stop retrying the removal of $($Result.Pending -join ', ')")) {
         $entry.PSObject.Properties.Remove('pending')
-        Save-DFToolOwnership -Ownership $Ownership
+        Save-DFToolOwnership -Ownership $Ownership -Name $Name
         $Result.Pending = [string[]]@()
     }
     $Result
@@ -83,21 +84,25 @@ function Invoke-DFConflictMove {
         return $Result
     }
     $plan = ($conflicts | ForEach-Object { "$(@($_.OldPaths)[0]) -> $($_.Target)" }) -join '; '
-    if (-not $Cmdlet.ShouldProcess($Tool.name, "Move $plan, then move the old copies out of the way")) { return $Result }
+    if (-not $Cmdlet.ShouldProcess($Tool.name, "Move $plan, then rename the old copies to <name>.dotforge-moved")) { return $Result }
 
     $pending = Copy-DFConflictLocation -Conflicts $conflicts
     $Result.Moved = [string[]]@($pending.Target)
     # Recorded before anything is removed, so a crash leaves a record of what moved.
     $Ownership[$Tool.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'move'; pending = @($pending) }
-    Save-DFToolOwnership -Ownership $Ownership
+    Save-DFToolOwnership -Ownership $Ownership -Name $Tool.name
     $left = @(foreach ($item in $pending) {
-        try { Remove-DFItemToBin -Path $item.OldPath } catch { $item }
+        try { $Result.Aside = [string[]](@($Result.Aside) + (Rename-DFOldCopy -Path $item.OldPath)) }
+        catch {
+            Write-Warning "DotForge: couldn't move $($item.OldPath) aside ($($_.Exception.Message)); DotForge tries again on the next load."
+            $item
+        }
     })
     $entry = $Ownership[$Tool.name]
     if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
-    Save-DFToolOwnership -Ownership $Ownership
+    Save-DFToolOwnership -Ownership $Ownership -Name $Tool.name
     $Result.Pending = [string[]]@($left | ForEach-Object OldPath)
-    if ($left) { Write-Warning "DotForge: $($Result.Pending -join ', ') is in use; DotForge removes it on a later load." }
+    foreach ($aside in $Result.Aside) { Write-Host "Your old copy is now $aside; delete it when you're satisfied." }
     Write-Host "DotForge now owns $($Tool.name)'s config. Load it with: Register-DFTool -Name $($Tool.name)"
     $Result
 }
@@ -199,6 +204,21 @@ function Get-DFPathSpelling {
     @($forms | ForEach-Object { $_; $_.Replace('\', '/') } | Select-Object -Unique)
 }
 
+function Get-DFPathPattern {
+    <#
+    .SYNOPSIS
+        Case-insensitive patterns matching each spelling as a whole path: what follows it must end the path or continue it with a separator.
+    .DESCRIPTION
+        So ~\.fnm matches ~\.fnm\aliases and "~\.fnm" but not ~\.fnm-old.
+    .PARAMETER Spelling
+        Get-DFPathSpelling result.
+    .OUTPUTS
+        System.String[].
+    #>
+    param([Parameter(Mandatory)][string[]]$Spelling)
+    foreach ($form in $Spelling) { '(?i)' + [regex]::Escape($form) + '(?=$|[\\/;:,"''`\s)\]])' }
+}
+
 function Find-DFOldPathReference {
     <#
     .SYNOPSIS
@@ -222,7 +242,7 @@ function Find-DFOldPathReference {
         $stream = [IO.File]::Open($file.FullName, 'Open', 'Read', 'ReadWrite')
         try { $null = $stream.Read($head, 0, $head.Length) } finally { $stream.Dispose() }
         if ($head -contains 0) { continue }
-        foreach ($hit in @(Select-String -LiteralPath $file.FullName -SimpleMatch -Pattern $Spelling -ErrorAction Ignore)) {
+        foreach ($hit in @(Select-String -LiteralPath $file.FullName -Pattern (Get-DFPathPattern -Spelling $Spelling) -ErrorAction Ignore)) {
             "$($file.FullName):$($hit.LineNumber)"
         }
     }
@@ -265,11 +285,12 @@ function Get-DFMoveProblem {
         foreach ($reference in @(Find-DFOldPathReference -Root $old -Spelling $spellings)) {
             "$reference names the old location; change it to $($conflict.Target), then run this again."
         }
+        $patterns = Get-DFPathPattern -Spelling $spellings
         foreach ($scope in 'User', 'Process') {
             $vars = [Environment]::GetEnvironmentVariables($scope)
             foreach ($key in $vars.Keys) {
                 $value = "$($vars[$key])"
-                if (@($spellings | Where-Object { $value.IndexOf($_, [StringComparison]::OrdinalIgnoreCase) -ge 0 })) {
+                if (@($patterns | Where-Object { $value -match $_ })) {
                     "the environment variable $key names $old; change it first."
                 }
             }

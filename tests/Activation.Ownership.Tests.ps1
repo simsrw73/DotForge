@@ -120,6 +120,27 @@ Describe 'Activation and config ownership' {
         "$warnings" | Should -Not -Match '-Move'
     }
 
+    It 'records ownership only for tools that end up active' {
+        # ownb has no old config, but requires owna, which is in conflict.
+        New-OldConfig owna
+        Register-DFTool -Name ownb 3>$null
+        (Get-DFToolStatus ownb).State | Should -Be 'Missing'
+        (Read-DFToolOwnership).ContainsKey('ownb') | Should -BeFalse
+    }
+    It 'warns about a conflict once, not again on a later Register-DFTool' {
+        Write-OwnRecord ownc OWN_C
+        New-OldConfig owna
+        Register-DFTool -Name owna 3>$null
+        Register-DFTool -Name ownc -WarningVariable warnings 3>$null
+        "$warnings" | Should -Not -Match "owna isn't active"
+    }
+    It 'warns again when you name the conflicted tool again' {
+        New-OldConfig owna
+        Register-DFTool -Name owna 3>$null
+        Register-DFTool -Name owna -WarningVariable warnings 3>$null
+        "$warnings" | Should -Match "owna isn't active"
+    }
+
     # A move whose old copy was in use leaves it pending; later loads retry.
     Context 'pending removals' {
         BeforeEach {
@@ -133,24 +154,27 @@ Describe 'Activation and config ownership' {
                 [pscustomobject]@{ OldPath = $script:Old; Target = $script:Target
                     Files = @([pscustomobject]@{ Path = 'cfg'; Length = $length; Hash = 'h' }) }) } }
         }
-        It 'removes the old copy and clears pending' {
-            Mock Remove-DFItemToBin { }
+        It 'moves the old copy aside, says where, and clears pending' {
+            Mock Rename-DFOldCopy { "$Path.dotforge-moved" }
+            Mock Write-Host { }
             Register-DFTool -Name owna 3>$null
-            Should -Invoke Remove-DFItemToBin -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
+            Should -Invoke Write-Host -ParameterFilter { "$Object" -match [regex]::Escape("$script:Old.dotforge-moved") }
+            Should -Invoke Rename-DFOldCopy -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
             (Read-DFToolOwnership)['owna'].PSObject.Properties['pending'] | Should -BeNullOrEmpty
             (Get-DFToolStatus owna).State | Should -Be 'Active'
         }
         It 'keeps pending and warns while the old copy is still in use' {
-            Mock Remove-DFItemToBin { throw 'in use' }
+            Mock Rename-DFOldCopy { throw 'Access to the path is denied.' }
             Register-DFTool -Name owna -WarningVariable warnings 3>$null
             "$warnings" | Should -Match ([regex]::Escape($script:Old))
+            "$warnings" | Should -Match 'Access to the path is denied'
             (Read-DFToolOwnership)['owna'].pending | Should -Not -BeNullOrEmpty
         }
         It 'keeps the old copy, and says so, when the new one changed size' {
-            Mock Remove-DFItemToBin { }
+            Mock Rename-DFOldCopy { }
             Set-Content (Join-Path $script:Target 'cfg') 'much longer now'
             Register-DFTool -Name owna -WarningVariable warnings 3>$null
-            Should -Invoke Remove-DFItemToBin -Times 0 -Exactly
+            Should -Invoke Rename-DFOldCopy -Times 0 -Exactly
             "$warnings" | Should -Match '-Done'
         }
         It 'does nothing for an owned tool with no pending removals' {

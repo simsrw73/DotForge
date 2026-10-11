@@ -104,7 +104,7 @@ function Invoke-DFSessionActivation {
         }
     } finally {
         if ($prewarmJob) { $prewarmJob | Remove-Job -Force -ErrorAction Ignore }
-        if ($owned.State.Changed) { Save-DFToolOwnership -Ownership $owned.State.Table }
+        Complete-DFToolOwnership -State $owned.State
     }
 
     Add-DFRoleOutcomeStatus -RoleWinners $winners
@@ -377,7 +377,8 @@ function Write-DFSessionNotice {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
     }
-    foreach ($conflicted in @($all | Where-Object State -eq 'Conflict')) {
+    foreach ($conflicted in @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })) {
+        $conflicted.Warned = $true
         $name = $conflicted.Name
         $paths = @($conflicted.Conflicts.OldPaths) -join ', '
         $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
@@ -409,7 +410,8 @@ function Select-DFOwnedRecord {
         Names re-registered on purpose (checked even when active).
     .OUTPUTS
         pscustomobject: Records (List[object], the records to activate) and
-        State (Test-DFToolOwnership's state: Table, Readable, Changed, Unchecked).
+        State (Test-DFToolOwnership's state: Table, Readable, Changed,
+        Unchecked, Clean).
     #>
     [CmdletBinding()]
     param(
@@ -422,8 +424,10 @@ function Select-DFOwnedRecord {
         # Unreadable: still check (nothing owned), but never write over the file.
         Table     = if ($null -ne $table) { $table } else { @{} }
         Readable  = $null -ne $table
-        Changed   = $false
+        Changed   = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Unchecked = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Clean     = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Reactivate = $Reactivate
     }
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($record in $Records) {
@@ -444,9 +448,10 @@ function Test-DFToolOwnership {
         Checks one installed tool against the ownership table: false (and status Conflict) when its old config location holds the user's config.
     .DESCRIPTION
         A tool with no conflict, a complete check and a relocated path is
-        recorded as owned (how: clean). An owned tool's unfinished removals
-        from Resolve-DFToolConflict -Move are retried. Changes go into
-        State.Table and set State.Changed; the caller saves them.
+        listed in State.Clean, to be recorded as owned (how: clean) if it ends
+        up active (Complete-DFToolOwnership). An owned tool's unfinished
+        removals from Resolve-DFToolConflict -Move are retried. Changes go into
+        State.Table and their names into State.Changed.
     .PARAMETER Record
         The tool record.
     .PARAMETER State
@@ -469,19 +474,47 @@ function Test-DFToolOwnership {
         $paths = @($check.Conflicts.OldPaths) -join ', '
         $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden"
         $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+        # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
+        # re-checks every requested tool, but warns again only for one it names.
+        $previous = $script:DFSessionStatus[$Record.name]
+        $warned = $Record.name -notin $State.Reactivate -and $previous -and $previous.State -eq 'Conflict' -and
+            $previous.PSObject.Properties['Warned'] -and $previous.Warned
+        $status | Add-Member -NotePropertyName Warned -NotePropertyValue ([bool]$warned)
         $script:DFSessionStatus[$Record.name] = $status
         return $false
     }
     if (-not $State.Readable) { return $true }
     if ($check.Complete -and -not $table.ContainsKey($Record.name) -and @(Get-DFToolRelocation -Tool $Record)) {
-        $table[$Record.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
-        $State.Changed = $true
+        $null = $State.Clean.Add($Record.name)
     }
     if ($table.ContainsKey($Record.name) -and $table[$Record.name].PSObject.Properties['pending']) {
-        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $State.Changed = $true }
+        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $null = $State.Changed.Add($Record.name) }
     }
     $true
 }
+function Complete-DFToolOwnership {
+    <#
+    .SYNOPSIS
+        Records as owned the checked tools that ended up active, then saves the ownership table if anything changed.
+    .DESCRIPTION
+        A tool that was blocked or failed isn't recorded: the user may keep
+        using it outside DotForge, and its config must still be found later.
+    .PARAMETER State
+        Select-DFOwnedRecord's State.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][PSCustomObject]$State)
+    if (-not $State.Readable) { return }
+    foreach ($name in $State.Clean) {
+        if (-not (Test-DFToolActive $name)) { continue }
+        $State.Table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'clean' }
+        $null = $State.Changed.Add($name)
+    }
+    if ($State.Changed.Count) { Save-DFToolOwnership -Ownership $State.Table -Name @($State.Changed) }
+}
+
 function Resolve-DFToolRequirements {
     <#
     .SYNOPSIS

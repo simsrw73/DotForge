@@ -99,7 +99,8 @@ Where the tool keeps its config, data or state when DotForge doesn't relocate it
 1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}` or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
 2. Use `[]` when the tool's own default already is the XDG location.
 3. When DotForge must not move a location itself, use `{ "paths": [...], "move": false, "guide": "<how to move it, with a link>" }`.
-4. Caches need no entry. `tests/ToolNative.Coverage.Tests.ps1` fails when a relocated config, data or state path has none.
+4. When a `settings` field can point the tool somewhere else (glow's `configFile`), add `"setting": "configFile"` to the object form: that value, when set, is the target.
+5. Caches need no entry. `tests/ToolNative.Coverage.Tests.ps1` fails when a relocated config, data or state path has none.
 
 ### `picker`
 

@@ -303,6 +303,8 @@ function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
             if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
             if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
             if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
+            $setting = Get-DFSchemaProperty $entry 'setting'
+            if ($null -ne $setting -and $setting -isnot [string]) { "xdg.native.$($p.Name).setting must name a settings field" }
         } elseif (@($entry | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name) must be a list of paths or an object" }
     }
 }

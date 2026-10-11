@@ -14,7 +14,7 @@ Describe 'Resolve-DFToolConflict' {
         Remove-Item $script:FakeHome, (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
         Mock Get-DFNativeRoot { if ($Name -eq 'HOME') { $script:FakeHome } }
         Mock Get-Process { }
-        Mock Remove-DFItemToBin { }
+        Mock Rename-DFOldCopy { }
         Mock Write-Host { }
         $script:UserTools = Join-Path $Env:XDG_CONFIG_HOME 'dotforge' 'tools'
         New-Item -ItemType Directory -Force $script:UserTools | Out-Null

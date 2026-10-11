@@ -22,6 +22,15 @@ Describe 'xdg.native' {
         $entry.move | Should -BeFalse
         $entry.guide | Should -Be 'do x'
     }
+    It 'keeps the setting that can override the target' {
+        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); setting = 'configFile' } }
+        (ConvertTo-DFToolRecord (New-NativeRecord $raw)).xdg.native.T_CONF.setting | Should -Be 'configFile'
+        (Test-DFToolSchema (New-NativeRecord $raw)).Errors | Should -BeNullOrEmpty
+    }
+    It 'rejects a setting that is not text' {
+        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); setting = 3 } }
+        (Test-DFToolSchema (New-NativeRecord $raw)).Errors | Should -Match 'setting'
+    }
     It 'is null when absent' {
         (ConvertTo-DFToolRecord (New-NativeRecord $null)).xdg.native | Should -BeNullOrEmpty
     }

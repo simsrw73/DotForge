@@ -243,7 +243,7 @@ function ConvertTo-DFXdgBlock {
 function ConvertTo-DFNativeMap {
     <#
     .SYNOPSIS
-        Normalizes xdg.native: each key's old locations as { paths, move, guide }.
+        Normalizes xdg.native: each key's old locations as { paths, move, guide, setting }.
     .PARAMETER RawNative
         See the synopsis.
     #>
@@ -257,8 +257,9 @@ function ConvertTo-DFNativeMap {
                 paths = [string[]]@(Get-DFToolRecordProperty $p.Value 'paths' @())
                 move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
                 guide = Get-DFToolRecordProperty $p.Value 'guide' $null
+                setting = Get-DFToolRecordProperty $p.Value 'setting' $null
             }
-        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null } }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null } }
     }
     [pscustomobject]$map
 }

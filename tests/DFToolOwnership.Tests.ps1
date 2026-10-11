@@ -33,6 +33,15 @@ Describe 'Config ownership detection' {
             setup = [pscustomobject]@{ seed = [pscustomobject]@{ '${XDG_CONFIG_HOME}/w/w.conf' = 'w/w.conf' } } })
         (Get-DFToolRelocation -Tool $tool).Key | Should -Be @('${XDG_CONFIG_HOME}/w/w.conf', '${XDG_STATE_HOME}/w/history')
     }
+    It 'uses the target a setting names instead of the default (glow''s configFile)' {
+        $tool = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'w'; executable = 'w.exe'
+            settings = [pscustomobject]@{ configFile = (Join-Path $script:FakeHome '.w.yml') }
+            xdg = [pscustomobject]@{ method = 'wrapper'; native = [pscustomobject]@{
+                '${XDG_CONFIG_HOME}/w/w.yml' = [pscustomobject]@{ paths = @('${HOME}/.w.yml'); setting = 'configFile' } } } })
+        Set-Content (Join-Path (New-Item -ItemType Directory -Force $script:FakeHome) '.w.yml') 'mine'
+        (Get-DFToolRelocation -Tool $tool).Target | Should -Be (ConvertTo-DFPath (Join-Path $script:FakeHome '.w.yml'))
+        (Find-DFToolConflict -Tool $tool -Ownership @{}).Conflicts | Should -BeNullOrEmpty
+    }
     It 'finds no conflict when the old locations are absent' {
         (Find-DFToolConflict -Tool $script:Tool -Ownership @{}).Conflicts | Should -BeNullOrEmpty
     }
@@ -80,6 +89,23 @@ Describe 'Config ownership detection' {
     It 'round-trips the ownership file' {
         Save-DFToolOwnership -Ownership @{ t = [pscustomobject]@{ since = 'x'; how = 'adopt' } }
         (Read-DFToolOwnership)['t'].how | Should -Be 'adopt'
+    }
+    It 'keeps entries another shell recorded after this one read the file' {
+        Save-DFToolOwnership -Ownership @{ a = [pscustomobject]@{ since = 'x'; how = 'clean' } }
+        $mine = Read-DFToolOwnership
+        # Another shell adopts b meanwhile.
+        Save-DFToolOwnership -Ownership @{ a = [pscustomobject]@{ since = 'x'; how = 'clean' }; b = [pscustomobject]@{ since = 'y'; how = 'adopt' } }
+        $mine['c'] = [pscustomobject]@{ since = 'z'; how = 'clean' }
+        Save-DFToolOwnership -Ownership $mine -Name c
+        $now = Read-DFToolOwnership
+        @($now.Keys | Sort-Object) | Should -Be @('a', 'b', 'c')
+    }
+    It 'removes an entry this shell dropped, and only that one' {
+        Save-DFToolOwnership -Ownership @{ a = [pscustomobject]@{ how = 'clean' }; b = [pscustomobject]@{ how = 'adopt' } }
+        $mine = Read-DFToolOwnership
+        $mine.Remove('a')
+        Save-DFToolOwnership -Ownership $mine -Name a
+        @((Read-DFToolOwnership).Keys) | Should -Be @('b')
     }
     It 'reads a missing ownership file as empty' {
         (Read-DFToolOwnership).Count | Should -Be 0

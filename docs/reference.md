@@ -995,7 +995,7 @@ Resolve-DFToolConflict [-Name] <string> -Done [-WhatIf] [-Confirm] [<CommonParam
 
 DotForge leaves a requested tool inactive (Get-DFToolStatus -Conflict) while the tool's own default location holds config or data that its XDG locations would hide. This command resolves that, one of three ways:
 
--Move copies the old config to the XDG location, then moves the old copy out of the way. It runs only when every check passes, and otherwise changes nothing and lists what to fix: the XDG location must be empty, the tool must not be running, no text file or environment variable may name the old location, and the tool must allow DotForge to move it. Every copied file is checked by size and SHA-256. The old copy is renamed to &lt;name&gt;.dotforge-moved, then (on Windows) sent to the Recycle Bin. A file in use is retried on later loads.
+-Move copies the old config to the XDG location, then renames the old copy out of the tool's way. It runs only when every check passes, and otherwise changes nothing and lists what to fix: the XDG location must be empty, the tool must not be running, no text file or environment variable may name the old location, and the tool must allow DotForge to move it. Every copied file is checked by size and SHA-256. The old copy is renamed to &lt;name&gt;.dotforge-moved next to where it was, never deleted: delete it yourself when you're satisfied. A copy that can't be renamed yet (a file in use) is retried on later loads.
 
 -Adopt records that DotForge owns the tool's config and moves nothing: use it when you've moved or merged the config yourself, or don't need the old copy.
 
@@ -1006,11 +1006,11 @@ Ownership is recorded in $XDG_STATE_HOME\\dotforge\\ownership.json. From then on
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string |  | yes |  | The tool. |
-| `-Move` | switch |  | yes |  | Copy the old config to the XDG location, check it, then move the old copy out of the way. |
+| `-Move` | switch |  | yes |  | Copy the old config to the XDG location, check it, then rename the old copy to &lt;name&gt;.dotforge-moved. |
 | `-Adopt` | switch |  | yes |  | Record ownership without moving anything. |
 | `-Done` | switch |  | yes |  | Clear a move's unfinished removals, keeping ownership. |
 
-**Outputs:** DotForge.ConflictResult: Tool, Action (Move, Adopt, Done or AlreadyOwned), Moved (the new locations), Pending (old copies still to remove) and Problems (why a move didn't run).
+**Outputs:** DotForge.ConflictResult: Tool, Action (Move, Adopt, Done or AlreadyOwned), Moved (the new locations), Aside (where the old copies went), Pending (old copies still to rename) and Problems (why a move didn't run).
 
 **Example 1**
 

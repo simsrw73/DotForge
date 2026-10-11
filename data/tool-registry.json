@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "tools": {
     "bat": {
-      "sha256": "2cab3bff554fbcc248c5f952ca1ce376024d7e47c6228a78fbc85432b285af50",
+      "sha256": "a46ecd6c1c1b11002ffd148d8daeaf90df61e7d3fd2e943245a96bdca81e9cea",
       "record": {
         "name": "bat",
         "executable": "bat.exe",
@@ -31,10 +31,12 @@
               "paths": [
                 "${APPDATA}/bat/config",
                 "${HOME}/.config/bat/config",
-                "${XDG_CONFIG_HOME}/bat/config"
+                "${XDG_CONFIG_HOME}/bat/config",
+                "${HOME}/Library/Application Support/bat/config"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -361,7 +363,7 @@
       }
     },
     "chezmoi": {
-      "sha256": "f8f0b6adec4e494fc14d477e1add4b7355b57650258f6400cb2cdfbaaa30232a",
+      "sha256": "eb5040c3f3f4c83eac78676a67d1a857788510aa2cc28dd7ac7bfc5c93c4589a",
       "record": {
         "name": "chezmoi",
         "executable": "chezmoi.exe",
@@ -389,9 +391,12 @@
           "compliance": "partial",
           "native": {
             "CHEZMOI_CONFIG_DIR": {
-              "paths": [],
+              "paths": [
+                "${HOME}/.config/chezmoi"
+              ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -508,7 +513,7 @@
       }
     },
     "curl": {
-      "sha256": "69e304b0950355e31d499c5c658a0bf28694f299e7e12d9858cae8b3bc262b51",
+      "sha256": "427f3160d2886c4bf7d49528ad87041f9fe7dc519a299db29fdb1f6553372fe0",
       "record": {
         "name": "curl",
         "executable": "curl.exe",
@@ -538,17 +543,8 @@
             "CURL_HOME": {
               "paths": [],
               "move": true,
-              "guide": null
-            },
-            "${XDG_CONFIG_HOME}/curl/.curlrc": {
-              "paths": [
-                "${HOME}/.curlrc",
-                "${HOME}/_curlrc",
-                "${APPDATA}/.curlrc",
-                "${APPDATA}/_curlrc"
-              ],
-              "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -708,7 +704,8 @@
                 "${HOME}/.docker"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -858,7 +855,7 @@
       }
     },
     "fastfetch": {
-      "sha256": "0e07052eb72206ac699b37816ebfb0519796f501f3cd1e33412528c63a350525",
+      "sha256": "c4f96e5a56379cb82da79e5d94677fa6aae3303f6250dc753698a4d693c6776c",
       "record": {
         "name": "fastfetch",
         "executable": "fastfetch.exe",
@@ -883,10 +880,13 @@
               "paths": [
                 "${HOME}/.config/fastfetch/config.jsonc",
                 "${APPDATA}/fastfetch/config.jsonc",
+                "${LOCALAPPDATA}/fastfetch/config.jsonc",
+                "${HOME}/fastfetch/config.jsonc",
                 "${HOME}/Library/Preferences/fastfetch/config.jsonc"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": "configPath"
             }
           }
         },
@@ -1021,7 +1021,8 @@
                 "${HOME}/Library/Application Support/fnm"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -1198,7 +1199,7 @@
       }
     },
     "glow": {
-      "sha256": "36538c29ad1e2e6473da31ee9573d49d1e0460525b5bb128907ca7cbec1b8b15",
+      "sha256": "679bd86ea0658a397ff2b0c84144e703a7975606eb02cf7dbe4565b18f47c5ef",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1223,12 +1224,12 @@
             "${XDG_CONFIG_HOME}/glow/glow.yml": {
               "paths": [
                 "${LOCALAPPDATA}/glow/Config/glow.yml",
-                "${APPDATA}/glow/glow.yml",
                 "${HOME}/.config/glow/glow.yml",
-                "${HOME}/Library/Application Support/glow/glow.yml"
+                "${HOME}/Library/Preferences/glow/glow.yml"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": "configFile"
             }
           }
         },
@@ -1450,7 +1451,8 @@
                 "${HOME}/Library/Application Support/lazygit/config.yml"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -1513,7 +1515,8 @@
                 "${HOME}/_lesshst"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             },
             "LESSKEYIN": {
               "paths": [
@@ -1523,7 +1526,8 @@
                 "${HOME}/_lesskey"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -1721,7 +1725,8 @@
             "MDV_CONFIG_PATH": {
               "paths": [],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -1755,7 +1760,7 @@
       }
     },
     "micro": {
-      "sha256": "18006e9d0f6eda68b23f8ad3bf12aee5e46614aff09953c7df2c03100cab1bae",
+      "sha256": "409290c033727c2e6ab1dcece85e7e3c8d5909d254f9a2993a878b33b29705cb",
       "record": {
         "name": "micro",
         "executable": "micro.exe",
@@ -1782,10 +1787,13 @@
           "native": {
             "MICRO_CONFIG_HOME": {
               "paths": [
-                "${HOME}/.config/micro"
+                "${HOME}/.config/micro",
+                "${APPDATA}/micro",
+                "${HOME}/Library/Application Support/micro"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -2069,14 +2077,16 @@
                 "${HOME}/.npmrc"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             },
             "NODE_REPL_HISTORY": {
               "paths": [
                 "${HOME}/.node_repl_history"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -2179,7 +2189,8 @@
                 "${LOCALAPPDATA}/Programs/oh-my-posh/themes"
               ],
               "move": false,
-              "guide": "That folder holds the themes oh-my-posh installed, and your prompt config may name it: copy the themes you use to $XDG_DATA_HOME/oh-my-posh/themes and point your config there."
+              "guide": "That folder holds the themes oh-my-posh installed, and your prompt config may name it: copy the themes you use to $XDG_DATA_HOME/oh-my-posh/themes and point your config there.",
+              "setting": null
             }
           }
         },
@@ -2702,7 +2713,8 @@
                 "${XDG_DATA_HOME}/powershell/PSReadLine/ConsoleHost_history.txt"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -2953,7 +2965,8 @@
             "RIPGREP_CONFIG_PATH": {
               "paths": [],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -3016,14 +3029,16 @@
                 "${HOME}/.rustup"
               ],
               "move": false,
-              "guide": "rustup keeps absolute paths inside; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+              "guide": "rustup keeps absolute paths inside; follow https://rust-lang.github.io/rustup/installation/index.html to move it.",
+              "setting": null
             },
             "CARGO_HOME": {
               "paths": [
                 "${HOME}/.cargo"
               ],
               "move": false,
-              "guide": "Cargo home is part of rustup's installation layout; follow https://rust-lang.github.io/rustup/installation/index.html to move it."
+              "guide": "Cargo home is part of rustup's installation layout; follow https://rust-lang.github.io/rustup/installation/index.html to move it.",
+              "setting": null
             }
           }
         },
@@ -3184,7 +3199,8 @@
                 "${HOME}/.config/starship.toml"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -3396,7 +3412,8 @@
                 "${HOME}/vcpkg"
               ],
               "move": false,
-              "guide": "vcpkg roots are chosen when you clone it; follow https://learn.microsoft.com/vcpkg/get_started/get-started to relocate it."
+              "guide": "vcpkg roots are chosen when you clone it; follow https://learn.microsoft.com/vcpkg/get_started/get-started to relocate it.",
+              "setting": null
             }
           }
         },
@@ -3491,7 +3508,8 @@
                 "${HOME}/.wgetrc"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -3639,7 +3657,8 @@
                 "${HOME}/Library/Application Support/zoxide"
               ],
               "move": true,
-              "guide": null
+              "guide": null,
+              "setting": null
             }
           }
         },

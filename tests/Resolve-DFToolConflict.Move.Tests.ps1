@@ -70,6 +70,12 @@ Describe 'Move checks' {
         try { Get-DFMoveProblem -Tool $script:Tool -Conflicts $script:Conflicts | Should -Match 'DF_TEST_OLDREF' }
         finally { Remove-Item Env:DF_TEST_OLDREF }
     }
+    It 'does not mistake a longer name for the old location' {
+        Set-Content (Join-Path $script:Old 'rc') 'include ~/.owna-old/more'
+        $Env:DF_TEST_OLDREF = "x;$script:Old-old\bin"
+        try { Get-DFMoveProblem -Tool $script:Tool -Conflicts $script:Conflicts | Should -BeNullOrEmpty }
+        finally { Remove-Item Env:DF_TEST_OLDREF }
+    }
     It 'refuses a location marked move false, giving its guide' {
         $script:Conflicts[0].Move = $false
         $script:Conflicts[0].Guide = 'Use the mover.'
@@ -93,7 +99,7 @@ Describe 'Move' {
         Initialize-MoveCase
         Mock Get-DFNativeRoot { if ($Name -eq 'HOME') { $script:FakeHome } }
         Mock Get-Process { }
-        Mock Remove-DFItemToBin { }
+        Mock Rename-DFOldCopy { "$Path.dotforge-moved" }
         Mock Write-Host { }
     }
     AfterEach { Restore-DFTestXdg }
@@ -101,11 +107,13 @@ Describe 'Move' {
     It 'copies, records ownership and removes the old copy' {
         $result = Resolve-DFToolConflict owna -Move -Confirm:$false
         Get-Content (Join-Path $script:Target 'cfg') | Should -Be 'v=1'
-        Should -Invoke Remove-DFItemToBin -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
+        Should -Invoke Rename-DFOldCopy -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
         $entry = (Read-DFToolOwnership)['owna']
         $entry.how | Should -Be 'move'
         $entry.PSObject.Properties['pending'] | Should -BeNullOrEmpty
         $result.Moved | Should -Be @($script:Target)
+        $result.Aside | Should -Be @("$script:Old.dotforge-moved")
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match [regex]::Escape("$script:Old.dotforge-moved") }
         Test-Path "$script:Target.dotforge-staging" | Should -BeFalse
     }
     It 'moves a single file to a target with a different name' {
@@ -120,7 +128,7 @@ Describe 'Move' {
         $result = Resolve-DFToolConflict owna -Move -Confirm:$false 3>$null
         $result.Problems | Should -Match 'already has files'
         (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
-        Should -Invoke Remove-DFItemToBin -Times 0 -Exactly
+        Should -Invoke Rename-DFOldCopy -Times 0 -Exactly
     }
     It 'removes staging and records nothing when a copy does not verify' {
         Mock Get-FileHash { [pscustomobject]@{ Hash = [guid]::NewGuid().ToString() } }
@@ -142,9 +150,10 @@ Describe 'Move' {
         Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'ownb') | Should -BeFalse
         (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
     }
-    It 'records an old copy that is in use as pending' {
-        Mock Remove-DFItemToBin { throw 'in use' }
-        $result = Resolve-DFToolConflict owna -Move -Confirm:$false 3>$null
+    It 'records an old copy it could not rename as pending, naming the reason' {
+        Mock Rename-DFOldCopy { throw 'Access to the path is denied.' }
+        $result = Resolve-DFToolConflict owna -Move -Confirm:$false -WarningVariable warnings 3>$null
+        "$warnings" | Should -Match 'Access to the path is denied'
         (Read-DFToolOwnership)['owna'].pending[0].OldPath | Should -Be $script:Old
         $result.Pending | Should -Be @($script:Old)
     }
