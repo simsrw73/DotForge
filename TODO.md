@@ -20,6 +20,8 @@ git history, not here. IDs are never reused; the next free one is **T-61**.
 - [ ] **T-60 `fvenv` on Linux** — uv and virtualenv write `bin/activate.ps1` in lowercase, so `Tools/uv.ps1`'s `Test-Path .../bin/Activate.ps1` misses them on a case-sensitive file system; match the name case-insensitively. Windows is unaffected.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
+- [ ] **T-?? Convert users' tool configs - If a user aleady uses a tool that we support and has it configured, eg a config file or theme, and we change it to support XDG paths, then that config is orphaned. we need to make that does not happen under any scenario unless the user specifically requests that.
+
 ## Priority 2 — Architecture Backlog
 
 From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and the improve-code-quality journey (`docs/IMPROVE-CODE-QUALITY-PLAN.md`).
@@ -30,7 +32,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-27 One home for the `role:<name>` reference syntax** — parsed in five places (`Private/Invoke-DFSessionActivation.ps1` ×3, `Private/New-DFInstallPlan.ps1` ×2); "the requested members of a role" is computed in `Resolve-DFToolRequirements` and `Get-DFActivationOrder`. Add `ConvertFrom-DFToolReference` and `Get-DFRoleMember`. Do it with the next change to that syntax.
 - [ ] **T-28 Status `Detail` is a "; "-joined string built in three places** — `Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker`, `Add-DFInstallHint`. If a fourth appears, make `Detail` a list rendered once.
 - [ ] **T-29 Wait for a third case (rule of three)** — a shared `Get-DFToolTheme` for the theme chain + `themeMap` pair repeated in 9 sidecars; a declarative XDG executable wrapper (glow, fastfetch so far).
-- [ ) **T-?? Convert users' tool configs - If a user aleady uses a tool that we support and has it configured, eg a config file or theme, and we change it to support XDG paths, then that config is orphaned. we need to make that does not happen under any scenario unless the user specifically requests that.
+
 
 ## Priority 3 — Features
 
