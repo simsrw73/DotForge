@@ -39,7 +39,8 @@ function New-DFBannerStyle {
     [CmdletBinding()]
     param([string]$KeyColor, [string]$OutputColor, [string]$Separator = '  ')
     [pscustomobject]@{
-        Key       = ConvertTo-DFAnsiColor $KeyColor
+        # Bold colored keys, as fastfetch prints them; no codes at all without a color.
+        Key       = $(if ($keyColor = ConvertTo-DFAnsiColor $KeyColor) { "$([char]27)[1m$keyColor" } else { '' })
         Output    = ConvertTo-DFAnsiColor $OutputColor
         # catppuccin red: a failing drive line.
         Alert     = ConvertTo-DFAnsiColor '#f38ba8'
@@ -120,9 +121,12 @@ function Write-DFBannerLines {
     #>
     [CmdletBinding()]
     param([AllowEmptyCollection()][string[]]$Lines, [int]$DelayMs)
+    # A console that isn't UTF-8 shows the banner's ·, ° and … as garbage.
+    $plain = [Console]::OutputEncoding.CodePage -ne 65001
     $first = $true
     foreach ($line in $Lines) {
         if (-not $first -and $DelayMs -gt 0) { Start-Sleep -Milliseconds $DelayMs }
+        if ($plain) { $line = $line.Replace('·', '-').Replace('°', '').Replace('…', '...') }
         [Console]::WriteLine($line)
         $first = $false
     }

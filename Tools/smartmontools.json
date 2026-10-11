@@ -1,0 +1,12 @@
+{
+  "name": "smartmontools",
+  "description": "Reads drive health (SMART); DotForge's startup banner shows a line per drive",
+  "tags": ["system", "disk"],
+  "executable": "smartctl.exe",
+  "packages": {
+    "scoop": "smartmontools",
+    "winget": "smartmontools.smartmontools"
+  },
+  "banner": { "script": "smartmontools.banner.ps1", "fills": ["drives"] },
+  "aliases": {}
+}

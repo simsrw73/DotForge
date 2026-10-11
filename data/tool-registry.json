@@ -868,7 +868,7 @@
       }
     },
     "fastfetch": {
-      "sha256": "c4f96e5a56379cb82da79e5d94677fa6aae3303f6250dc753698a4d693c6776c",
+      "sha256": "9003aec0988636ed2c20289460afbbcd0284c7af614950bb46d6696b37061781",
       "record": {
         "name": "fastfetch",
         "executable": "fastfetch.exe",
@@ -928,7 +928,13 @@
             "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc"
           }
         },
-        "banner": null,
+        "banner": {
+          "script": "fastfetch.banner.ps1",
+          "body": true,
+          "fills": [
+            "publicip"
+          ]
+        },
         "installs": null,
         "install": null,
         "folder": null,
@@ -3210,6 +3216,46 @@
             }
           }
         ],
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "smartmontools": {
+      "sha256": "1bb9203b4824c86edb8506ee344645970bb7d7b1f53d39c65448e579b53de1da",
+      "record": {
+        "name": "smartmontools",
+        "executable": "smartctl.exe",
+        "type": "exe",
+        "description": "Reads drive health (SMART); DotForge's startup banner shows a line per drive",
+        "tags": [
+          "system",
+          "disk"
+        ],
+        "packages": {
+          "scoop": "smartmontools",
+          "winget": "smartmontools.smartmontools"
+        },
+        "xdg": null,
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": {
+          "script": "smartmontools.banner.ps1",
+          "body": false,
+          "fills": [
+            "drives"
+          ]
+        },
+        "installs": null,
         "install": null,
         "folder": null,
         "source": null

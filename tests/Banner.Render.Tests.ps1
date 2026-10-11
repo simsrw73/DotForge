@@ -18,7 +18,7 @@ Describe 'Banner rendering' {
     It 'formats a line with key, separator and value colors' {
         $style = New-DFBannerStyle -KeyColor '#cba6f7' -OutputColor '#cdd6f4' -Separator '  '
         Format-DFBannerLine -Key 'Disk' -Value 'ok' -Style $style |
-            Should -Be "$($script:E)[38;2;203;166;247mDisk$($script:E)[0m  $($script:E)[38;2;205;214;244mok$($script:E)[0m"
+            Should -Be "$($script:E)[1m$($script:E)[38;2;203;166;247mDisk$($script:E)[0m  $($script:E)[38;2;205;214;244mok$($script:E)[0m"
     }
     It 'uses the alert color for an alert line' {
         $style = New-DFBannerStyle -KeyColor '' -OutputColor ''
@@ -50,6 +50,17 @@ Describe 'Banner rendering' {
         try { Write-DFBannerLines -Lines 'a', 'b' -DelayMs 0 } finally { [Console]::SetOut($old) }
         $out.ToString() -split "`r?`n" | Where-Object { $_ } | Should -Be @('a', 'b')
         Should -Invoke Start-Sleep -Times 0 -Exactly
+    }
+    It 'falls back to plain ASCII when the console is not UTF-8' {
+        $old = [Console]::Out
+        $oldEncoding = [Console]::OutputEncoding
+        $out = [System.IO.StringWriter]::new()
+        try {
+            [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding(437)
+            [Console]::SetOut($out)
+            Write-DFBannerLines -Lines 'NVMe · 99% life · 46°C', 'loading 3 tools…' -DelayMs 0
+        } finally { [Console]::SetOut($old); [Console]::OutputEncoding = $oldEncoding }
+        $out.ToString() -split "`r?`n" | Where-Object { $_ } | Should -Be @('NVMe - 99% life - 46C', 'loading 3 tools...')
     }
     It 'pauses between lines, not before the first' {
         Mock Start-Sleep { }

@@ -3,10 +3,11 @@
   "logo": { "type": "none" },
   "display": { "separator": "  ", "color": { "keys": "#cba6f7", "output": "#cdd6f4" } },
   "modules": [
-    "os", "host", "kernel", "uptime", "packages", "shell", "terminal",
+    "os", "host", "kernel", "uptime", "shell", "terminal",
     "cpu", "gpu", { "type": "memory", "format": "{used} / {total} ({percentage})" },
     "display", { "type": "localip", "format": "{ipv4} ({ifname})" },
+    { "type": "custom", "key": "Public IP", "format": "@DF:publicip@" },
     { "type": "disk", "format": "{mountpoint} ({filesystem}): {size-used} / {size-total} ({size-percentage})" },
-    { "type": "physicaldisk", "hideVirtual": true, "hideUnused": true, "format": "{name} ({physical-type}, {interconnect}): {size}" }
+    { "type": "custom", "key": "Disk", "format": "@DF:drives@" }
   ]
 }

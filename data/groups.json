@@ -1,6 +1,6 @@
 {
   "core": {
-    "description": "Everyday shell improvements: line editing, fuzzy finding, listing, viewing, searching, smarter cd, completion and paging",
+    "description": "Everyday shell improvements: line editing, fuzzy finding, listing, viewing, searching, smarter cd, completion, paging, and the system summary for the startup banner",
     "tools": [
       "psreadline",
       "PSFzf",
@@ -11,7 +11,9 @@
       "ripgrep",
       "zoxide",
       "carapace",
-      "less"
+      "less",
+      "fastfetch",
+      "smartmontools"
     ]
   },
   "prompt": {

@@ -11,6 +11,12 @@
 $_settings = $DFCurrentTool.settings
 $_cfgRaw   = $_settings.PSObject.Properties['configPath']?.Value ?? '${XDG_CONFIG_HOME}/fastfetch/config.jsonc'
 $_cfg      = Expand-DFXdgPath $_cfgRaw
+# The startup banner's placeholders (@DF:publicip@, @DF:drives@) are filled from
+# the banner cache when fastfetch runs by hand; the banner part knows the colors.
+$_ffPart     = . (Join-Path $PSScriptRoot 'fastfetch.banner.ps1')
+$_ffStyleOf  = $_ffPart.Style
+$_ffTool     = $DFCurrentTool
+$_ffComplete = ${function:Complete-DFBannerBody}
 
 # The themed default config is seeded once by the setup step (setup.seed in
 # fastfetch.json), not here: a config the user deletes stays deleted.
@@ -44,8 +50,15 @@ Set-Item -Path 'function:global:fastfetch' -Value ({
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     $cfgArgs = if (Test-Path -LiteralPath $_cfg -PathType Leaf) { '--config', $_cfg } else { @() }
+    $placeholders = $cfgArgs -and (Select-String -LiteralPath $_cfg -Pattern '@DF:' -SimpleMatch -Quiet)
     if ($MyInvocation.ExpectingInput) {
         $input | & fastfetch.exe @cfgArgs @args
+    } elseif ($placeholders) {
+        # Keep colors when the output goes to the screen; fastfetch drops them when captured.
+        $color = if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength -or [Console]::IsOutputRedirected) { @() } else { @('--pipe', 'false') }
+        $body = @(& fastfetch.exe @cfgArgs @color @args)
+        $styleValues = try { & $_ffStyleOf ([pscustomobject]@{ Tool = $_ffTool }) } catch { @{} }
+        & $_ffComplete -Body $body -StyleValues $styleValues
     } else {
         & fastfetch.exe @cfgArgs @args
     }

@@ -179,6 +179,29 @@ function Merge-DFBannerCache {
     $all
 }
 
+function Complete-DFBannerBody {
+    <#
+    .SYNOPSIS
+        Fills a body's @DF:<name>@ placeholders from the banner cache (values marked "(cached)") and removes the rest.
+    .DESCRIPTION
+        For a banner-style body printed outside the startup banner, such as
+        fastfetch run by hand, so placeholder text never shows.
+    .PARAMETER Body
+        The lines.
+    .PARAMETER StyleValues
+        KeyColor, OutputColor and Separator for New-DFBannerStyle.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([AllowEmptyCollection()][string[]]$Body, [hashtable]$StyleValues = @{})
+    $names = @(foreach ($line in $Body) { if ($line -match '@DF:([\w-]+)@') { $Matches[1] } })
+    if (-not $names) { return $Body }
+    $fills = Merge-DFBannerCache -Fills @{} -Names $names
+    Merge-DFBannerBody -Body $Body -Fills $fills -Style (New-DFBannerStyle @StyleValues)
+}
+
 function Read-DFBannerCache {
     <#
     .SYNOPSIS

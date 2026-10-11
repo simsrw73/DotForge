@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 9eda4c132ca59b2c77ee60d4303edef420294a72b542c3c5b956b962b0a10df6
+# sources-sha256: 9fd7bcea9e24496e25d4adce1f57aba607310b710913768fb0dcca3b28ce3de8
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2302,6 +2302,29 @@ function Merge-DFBannerCache {
     $all
 }
 
+function Complete-DFBannerBody {
+    <#
+    .SYNOPSIS
+        Fills a body's @DF:<name>@ placeholders from the banner cache (values marked "(cached)") and removes the rest.
+    .DESCRIPTION
+        For a banner-style body printed outside the startup banner, such as
+        fastfetch run by hand, so placeholder text never shows.
+    .PARAMETER Body
+        The lines.
+    .PARAMETER StyleValues
+        KeyColor, OutputColor and Separator for New-DFBannerStyle.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([AllowEmptyCollection()][string[]]$Body, [hashtable]$StyleValues = @{})
+    $names = @(foreach ($line in $Body) { if ($line -match '@DF:([\w-]+)@') { $Matches[1] } })
+    if (-not $names) { return $Body }
+    $fills = Merge-DFBannerCache -Fills @{} -Names $names
+    Merge-DFBannerBody -Body $Body -Fills $fills -Style (New-DFBannerStyle @StyleValues)
+}
+
 function Read-DFBannerCache {
     <#
     .SYNOPSIS
@@ -2362,7 +2385,8 @@ function New-DFBannerStyle {
     [CmdletBinding()]
     param([string]$KeyColor, [string]$OutputColor, [string]$Separator = '  ')
     [pscustomobject]@{
-        Key       = ConvertTo-DFAnsiColor $KeyColor
+        # Bold colored keys, as fastfetch prints them; no codes at all without a color.
+        Key       = $(if ($keyColor = ConvertTo-DFAnsiColor $KeyColor) { "$([char]27)[1m$keyColor" } else { '' })
         Output    = ConvertTo-DFAnsiColor $OutputColor
         # catppuccin red: a failing drive line.
         Alert     = ConvertTo-DFAnsiColor '#f38ba8'
@@ -2443,9 +2467,12 @@ function Write-DFBannerLines {
     #>
     [CmdletBinding()]
     param([AllowEmptyCollection()][string[]]$Lines, [int]$DelayMs)
+    # A console that isn't UTF-8 shows the banner's ·, ° and … as garbage.
+    $plain = [Console]::OutputEncoding.CodePage -ne 65001
     $first = $true
     foreach ($line in $Lines) {
         if (-not $first -and $DelayMs -gt 0) { Start-Sleep -Milliseconds $DelayMs }
+        if ($plain) { $line = $line.Replace('·', '-').Replace('°', '').Replace('…', '...') }
         [Console]::WriteLine($line)
         $first = $false
     }
