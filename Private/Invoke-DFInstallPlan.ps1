@@ -82,30 +82,21 @@ function Invoke-DFInstallPlan {
                 else { $it.Ref.Id }
             }
             # One call for the whole batch when the manager supports it, else one per tool.
-            # (A List, not `if { ,$ready }`: statement output would unroll the wrapper.)
-            $groups = [System.Collections.Generic.List[object]]::new()
-            if ($blk.batch) { $groups.Add($ready) } else { foreach ($it in $ready) { $groups.Add(@($it)) } }
-            foreach ($group in $groups) {
-                $ids = [string[]]@($group | ForEach-Object { & $idOf $_ })
-                $r = if ($blk.function) {
-                    $fnArgs = @{}
-                    foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
-                    Invoke-DFManagerCommand -Operation install -Manager $m -Function $blk.function -Arguments $fnArgs
-                } else {
-                    Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevation $batch.Elevation
+            $ids = [string[]]@($ready | ForEach-Object { & $idOf $_ })
+            $results = @(Invoke-DFManagerBatch -Operation install -Manager $m -Block $blk -Ids $ids -Elevation $batch.Elevation)
+            $batched = $blk.batch -and $ready.Count -gt 1
+            for ($n = 0; $n -lt $ready.Count; $n++) {
+                $it = $ready[$n]; $r = $results[$n]
+                $t = $ToolDb[$it.Tool]
+                # A failed batch may still have installed some of its tools.
+                $ok = $r.ExitCode -eq 0 -or ($batched -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
+                if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
+                else {
+                    $tail = @("$($r.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
+                    & $set $it.Tool 'Failed' "$($m.name) failed: $tail"
                 }
-                foreach ($it in $group) {
-                    $t = $ToolDb[$it.Tool]
-                    # A failed batch may still have installed some of its tools.
-                    $ok = $r.ExitCode -eq 0 -or ($group.Count -gt 1 -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
-                    if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
-                    else {
-                        $tail = @("$($r.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
-                        & $set $it.Tool 'Failed' "$($m.name) failed: $tail"
-                    }
-                }
-                if ($r.ExitCode -eq 0 -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
             }
+            if (@($results | Where-Object ExitCode -eq 0).Count -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
         }
         foreach ($p in $stage.Provided) {
             $d = & $badDep $p

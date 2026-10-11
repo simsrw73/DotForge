@@ -22,6 +22,9 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Installing PowerShell modules through PSResourceGet passed the module names as `-TrustRepository`:**
+  any argument equal to `true` matched the `{id}` placeholder (PowerShell compares `$true -eq '{id}'` as
+  true). Only a text argument that is exactly `{id}` is replaced now.
 - **Pickers that take a path (eza's file picker) failed every time:** the generated function lost its
   list command inside a nested closure, and it split the command on spaces, so quoted arguments and
   one-word commands broke. The list command is now parsed by PowerShell, quoting included.
