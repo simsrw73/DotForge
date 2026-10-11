@@ -1062,6 +1062,8 @@ Start-DFSession is DotForge's profile entry point:
      the command that installs them.
 ```
 
+With ShowBanner, it clears the screen (unless BannerClear is $false) and prints one line at once; slow banner work (fastfetch, drive health, the public IP) runs in the background while tools load, and the banner prints a line at a time when the load ends.
+
 Tools that aren't requested are never looked at. Nothing is installed: run Install-DFTool -Missing for that. Calling Start-DFSession again applies the new config and activates newly requested tools; a tool no longer requested stays active until you open a new shell.
 
 ```text

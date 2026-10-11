@@ -1,0 +1,68 @@
+#Requires -Version 7.2
+
+# The startup banner's background jobs: one runspace pool, started before tools
+# load and collected when Start-DFSession ends. A runspace pool needs no module
+# import (ThreadJob would add to startup). See
+# docs/superpowers/specs/2026-10-11-startup-banner-design.md.
+
+function Start-DFBannerWork {
+    <#
+    .SYNOPSIS
+        Starts the banner parts' background jobs in one runspace pool, so they run while tools load.
+    .PARAMETER Work
+        Items with Name, ScriptBlock and ArgumentList. A script block runs in a
+        fresh runspace: it sees its arguments, not the caller's variables.
+    .OUTPUTS
+        A handle for Receive-DFBannerWork.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Work)
+    $count = @($Work).Count
+    if (-not $count) { return [pscustomobject]@{ Pool = $null; Jobs = @() } }
+    $pool = [runspacefactory]::CreateRunspacePool(1, $count)
+    $pool.Open()
+    $jobs = foreach ($item in $Work) {
+        $shell = [powershell]::Create()
+        $shell.RunspacePool = $pool
+        $null = $shell.AddScript($item.ScriptBlock.ToString())
+        foreach ($argument in @($item.ArgumentList)) { $null = $shell.AddArgument($argument) }
+        [pscustomobject]@{ Name = $item.Name; PowerShell = $shell; Async = $shell.BeginInvoke() }
+    }
+    [pscustomobject]@{ Pool = $pool; Jobs = @($jobs) }
+}
+
+function Receive-DFBannerWork {
+    <#
+    .SYNOPSIS
+        Collects the background jobs that finish within WaitMs; stops the rest without waiting for them.
+    .PARAMETER Handle
+        Start-DFBannerWork result.
+    .PARAMETER WaitMs
+        Longest total wait.
+    .OUTPUTS
+        System.Collections.Hashtable: job name -> its output. A job that threw
+        or wasn't done in time is left out.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)]$Handle, [int]$WaitMs)
+    $results = @{}
+    $deadline = [DateTime]::UtcNow.AddMilliseconds($WaitMs)
+    foreach ($job in $Handle.Jobs) {
+        $left = [int][Math]::Max(0, ($deadline - [DateTime]::UtcNow).TotalMilliseconds)
+        if ($job.Async.AsyncWaitHandle.WaitOne($left)) {
+            try {
+                $output = $job.PowerShell.EndInvoke($job.Async)
+                if ($job.PowerShell.HadErrors) { Write-Verbose "DotForge: banner job $($job.Name) failed: $($job.PowerShell.Streams.Error | Select-Object -First 1)" }
+                else { $results[$job.Name] = @($output) }
+            } catch {
+                Write-Verbose "DotForge: banner job $($job.Name) failed: $($_.Exception.Message)"
+            }
+            $job.PowerShell.Dispose()
+        } else {
+            # Not done: stop it in the background; never wait for it here.
+            $null = $job.PowerShell.BeginStop($null, $null)
+        }
+    }
+    if ($Handle.Pool) { $null = $Handle.Pool.BeginClose($null, $null) }
+    $results
+}

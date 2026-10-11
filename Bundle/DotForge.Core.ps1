@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 386eb170a6926491860317f568ce7e185a71332ad25a1beed9f717e79e50b4db
+# sources-sha256: 9eda4c132ca59b2c77ee60d4303edef420294a72b542c3c5b956b962b0a10df6
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1048,6 +1048,23 @@ function ConvertTo-DFXdgBlock {
     }
 }
 
+function ConvertTo-DFBannerField {
+    <#
+    .SYNOPSIS
+        Normalizes a record's banner part: { script, body, fills }.
+    .PARAMETER RawBanner
+        See the synopsis.
+    #>
+    param($RawBanner)
+
+    if (-not $RawBanner) { return $null }
+    [pscustomobject]@{
+        script = Get-DFToolRecordProperty $RawBanner 'script' $null
+        body   = [bool](Get-DFToolRecordProperty $RawBanner 'body' $false)
+        fills  = [string[]]@(Get-DFToolRecordProperty $RawBanner 'fills' @())
+    }
+}
+
 function ConvertTo-DFNativeMap {
     <#
     .SYNOPSIS
@@ -1330,6 +1347,7 @@ function ConvertTo-DFToolRecord {
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
         setup             = $setup
+        banner            = ConvertTo-DFBannerField (Get-DFToolRecordProperty $Tool 'banner' $null)
         installs          = $installs
         install           = $install
         # Set by the loader (Read-DFToolRecordFile) from where the JSON was read, never by the JSON.
@@ -1877,6 +1895,23 @@ function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
     }
 }
 
+function Get-DFBannerSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in banner: a .banner.ps1 script, a boolean body, and placeholder names for fills.
+    #>
+    $banner = Get-DFSchemaProperty $Tool 'banner'
+    if ($null -eq $banner) { return }
+    if ($banner -isnot [pscustomobject]) { return 'banner must be an object' }
+    $script = Get-DFSchemaProperty $banner 'script'
+    if ($script -isnot [string] -or $script -notmatch '^[\w.-]+\.banner\.ps1$') { 'banner.script must name a <file>.banner.ps1 next to the record' }
+    $body = Get-DFSchemaProperty $banner 'body'
+    if ($null -ne $body -and $body -isnot [bool]) { 'banner.body must be true or false' }
+    foreach ($fill in @(Get-DFSchemaProperty $banner 'fills')) {
+        if ($null -ne $fill -and ($fill -isnot [string] -or $fill -notmatch '^[\w-]+$')) { "banner.fills entry '$fill' must be a placeholder name (letters, digits, _ or -)" }
+    }
+}
+
 function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -1917,11 +1952,12 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
+        banner = 'script', 'body', 'fills'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
@@ -1940,6 +1976,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = Get-DFSchemaProperty $Tool 'setup'
     if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
+    $bannerObj = Get-DFSchemaProperty $Tool 'banner'
+    if ($bannerObj -is [pscustomobject]) { $sections.Add(@('banner', $bannerObj, 'banner.')) }
     foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
         if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
@@ -1997,6 +2035,7 @@ function Test-DFToolSchema {
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
         Get-DFNativeSchemaError $Tool
+        Get-DFBannerSchemaError $Tool
         Get-DFInstallsSchemaError $Tool
         Get-DFActivationSchemaError $Tool
         Get-DFPickerSchemaError $Tool
@@ -2079,6 +2118,407 @@ function Write-DFFileAtomic {
     $tmp = "$Path.tmp.$PID"
     Set-Content -Path $tmp -Value $Value -Encoding UTF8
     Move-Item -Path $tmp -Destination $Path -Force
+}
+
+# ---- Private/DFBanner.ps1
+#Requires -Version 7.2
+
+# The startup banner's coordinator (ShowBanner). Core never names a tool: parts
+# come from requested, installed tools whose records have a banner field. A
+# part script (Tools/<tool>.banner.ps1) is dot-sourced here, so its script
+# blocks can call DotForge's private helpers; it outputs one object:
+#   Style    { param($Context) }           -> @{ KeyColor; OutputColor; Separator } (optional)
+#   Work     { param($Context) }           -> background jobs: @{ Name; ScriptBlock; ArgumentList }
+#   Complete { param($Results, $Context) } -> @{ Body = lines or $null; Fills = @{ name = items } }
+# See docs/superpowers/specs/2026-10-11-startup-banner-design.md.
+
+$script:DFBannerShown = $false
+
+function Test-DFBannerHost {
+    <#
+    .SYNOPSIS
+        Whether the banner may print: an interactive console host whose output isn't redirected.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+    (Test-DFInteractiveHost) -and -not [Console]::IsOutputRedirected
+}
+
+function Get-DFBannerCachePath {
+    <#
+    .SYNOPSIS
+        The banner's last known fills: $XDG_CACHE_HOME\dotforge\banner.json.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    Join-Path (Get-DFXdgPath Cache) 'dotforge' 'banner.json'
+}
+
+function Start-DFBanner {
+    <#
+    .SYNOPSIS
+        With ShowBanner on, clears the screen, prints the first line, and starts every banner part's background work.
+    .DESCRIPTION
+        Returns the state Show-DFBanner needs, or $null when the banner is
+        off, the host isn't interactive, or it was already shown in this
+        shell. Never throws.
+    .PARAMETER Tools
+        The requested tool names.
+    .OUTPUTS
+        pscustomobject (Parts, Style, Handle), or $null.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][string[]]$Tools)
+    if (-not (Get-DFConfig ShowBanner -Default $false) -or $script:DFBannerShown -or -not (Test-DFBannerHost)) { return }
+    $script:DFBannerShown = $true
+    try {
+        if (Get-DFConfig BannerClear -Default $true) { Clear-Host }
+        $parts = @(Get-DFBannerPart -Tools $Tools)
+        $style = Get-DFBannerPartStyle -Parts $parts
+        $version = $ExecutionContext.SessionState.Module.Version
+        $firstLine = Format-DFBannerLine -Key 'DotForge' -Value "$(if ($version) { "$version · " })loading $(@($Tools).Count) tools…" -Style $style
+        Write-DFBannerLines -Lines @($firstLine) -DelayMs 0
+        $work = @(foreach ($part in $parts) {
+            try { & $part.Script.Work $part.Context }
+            catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed to start: $($_.Exception.Message)" }
+        })
+        [pscustomobject]@{ Parts = $parts; Style = $style; Handle = (Start-DFBannerWork -Work $work) }
+    } catch {
+        Write-Warning "DotForge: the banner failed to start: $($_.Exception.Message)"
+    }
+}
+
+function Get-DFBannerPart {
+    <#
+    .SYNOPSIS
+        Loads the banner parts of the requested, installed tools with a banner field; the body part first.
+    .PARAMETER Tools
+        The requested tool names.
+    .OUTPUTS
+        pscustomobject per part: Tool, Context, Script (Style, Work, Complete).
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][string[]]$Tools)
+    if (-not $Tools) { return }
+    $db = Import-DFToolDb -Name $Tools 3>$null
+    $shipped = ConvertTo-DFPath (Join-Path $PSScriptRoot '..' 'Tools')
+    foreach ($tool in @($db.Values | Where-Object { $_.banner } | Sort-Object { -not $_.banner.body }, name)) {
+        if (-not (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type)) { continue }
+        $path = Join-Path (Get-DFToolFolder -Tool $tool -Default $shipped) $tool.banner.script
+        try {
+            $script = . $path
+            [pscustomobject]@{ Tool = $tool; Context = [pscustomobject]@{ Tool = $tool }; Script = $script }
+        } catch { Write-Warning "DotForge: banner part $($tool.name) didn't load: $($_.Exception.Message)" }
+    }
+}
+
+function Get-DFBannerPartStyle {
+    <#
+    .SYNOPSIS
+        The banner style from the first part that has one; plain otherwise.
+    .PARAMETER Parts
+        Get-DFBannerPart result.
+    .OUTPUTS
+        New-DFBannerStyle result.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Parts)
+    foreach ($part in $Parts) {
+        if (-not $part.Script.PSObject.Properties['Style']) { continue }
+        try {
+            $values = & $part.Script.Style $part.Context
+            if ($values) { return New-DFBannerStyle @values }
+        } catch { Write-Verbose "DotForge: banner part $($part.Tool.name) has no style: $($_.Exception.Message)" }
+    }
+    New-DFBannerStyle
+}
+
+function Show-DFBanner {
+    <#
+    .SYNOPSIS
+        Collects the banner parts' results, fills placeholders (from the cache when a part isn't back in time), caches, and prints.
+    .PARAMETER State
+        Start-DFBanner result; $null does nothing.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param($State)
+    if (-not $State) { return }
+    try {
+        $results = Receive-DFBannerWork -Handle $State.Handle -WaitMs (Get-DFConfig BannerWait -Default 300)
+        $body = $null
+        $fills = @{}
+        foreach ($part in $State.Parts) {
+            try {
+                $done = & $part.Script.Complete $results $part.Context
+                if ($part.Tool.banner.body -and $done.Body) { $body = @($done.Body) }
+                if ($done.Fills) {
+                    foreach ($name in @($done.Fills.Keys)) { if (@($done.Fills[$name])) { $fills[$name] = @($done.Fills[$name]) } }
+                }
+            } catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed: $($_.Exception.Message)" }
+        }
+        $fills = Merge-DFBannerCache -Fills $fills -Names @($State.Parts | ForEach-Object { $_.Tool.banner.fills })
+        if ($body) {
+            Write-DFBannerLines -Lines @(Merge-DFBannerBody -Body $body -Fills $fills -Style $State.Style) -DelayMs (Get-DFConfig BannerLineDelay -Default 8)
+        }
+    } catch {
+        Write-Warning "DotForge: the banner failed: $($_.Exception.Message)"
+    }
+}
+
+function Merge-DFBannerCache {
+    <#
+    .SYNOPSIS
+        Saves fresh fills to the cache and fills the missing ones from it, marked "(cached)".
+    .PARAMETER Fills
+        Fresh fills.
+    .PARAMETER Names
+        Every fill name the loaded parts declare.
+    .OUTPUTS
+        System.Collections.Hashtable: name -> fill items.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Fills, [AllowEmptyCollection()][string[]]$Names)
+    $cache = Read-DFBannerCache
+    $all = @{}
+    foreach ($name in $Fills.Keys) {
+        $all[$name] = $Fills[$name]
+        $cache[$name] = @{ at = [DateTime]::UtcNow.ToString('o'); items = @($Fills[$name]) }
+    }
+    foreach ($name in $Names) {
+        if ($all.ContainsKey($name) -or -not $cache.ContainsKey($name)) { continue }
+        $all[$name] = @(foreach ($item in @($cache[$name].items)) {
+            [pscustomobject]@{ Key = $item.Key; Value = "$($item.Value) (cached)"; Alert = [bool]$item.Alert }
+        })
+    }
+    if ($Fills.Count) { Write-DFFileAtomic -Path (Get-DFBannerCachePath) -Value ($cache | ConvertTo-Json -Depth 6) }
+    $all
+}
+
+function Read-DFBannerCache {
+    <#
+    .SYNOPSIS
+        The banner's cached fills (name -> @{ at; items }); empty when there are none or the file can't be read.
+    .OUTPUTS
+        System.Collections.Hashtable.
+    #>
+    [CmdletBinding()]
+    param()
+    $path = Get-DFBannerCachePath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @{} }
+    try {
+        $cache = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if ($cache -is [System.Collections.IDictionary]) { return $cache }
+    } catch { Write-Verbose "DotForge: the banner cache can't be read: $($_.Exception.Message)" }
+    @{}
+}
+
+# ---- Private/DFBanner.Render.ps1
+#Requires -Version 7.2
+
+# Pure rendering for the startup banner (Private/DFBanner.ps1).
+# See docs/superpowers/specs/2026-10-11-startup-banner-design.md.
+
+function ConvertTo-DFAnsiColor {
+    <#
+    .SYNOPSIS
+        A fastfetch color (#rrggbb, or ANSI codes like "35") as an escape prefix; '' for anything else.
+    .PARAMETER Color
+        The color.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowNull()][AllowEmptyString()][string]$Color)
+    $e = [char]27
+    if ($Color -match '^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$') {
+        return "$e[38;2;$([Convert]::ToInt32($Matches[1], 16));$([Convert]::ToInt32($Matches[2], 16));$([Convert]::ToInt32($Matches[3], 16))m"
+    }
+    if ($Color -match '^\d+(;\d+)*$') { return "$e[${Color}m" }
+    ''
+}
+
+function New-DFBannerStyle {
+    <#
+    .SYNOPSIS
+        The banner's colors and separator, as escape prefixes.
+    .PARAMETER KeyColor
+        Key color (fastfetch's display.color.keys).
+    .PARAMETER OutputColor
+        Value color (display.color.output).
+    .PARAMETER Separator
+        Text between key and value (display.separator).
+    .OUTPUTS
+        pscustomobject: Key, Output, Alert, Separator.
+    #>
+    [CmdletBinding()]
+    param([string]$KeyColor, [string]$OutputColor, [string]$Separator = '  ')
+    [pscustomobject]@{
+        Key       = ConvertTo-DFAnsiColor $KeyColor
+        Output    = ConvertTo-DFAnsiColor $OutputColor
+        # catppuccin red: a failing drive line.
+        Alert     = ConvertTo-DFAnsiColor '#f38ba8'
+        Separator = $Separator
+    }
+}
+
+function Format-DFBannerLine {
+    <#
+    .SYNOPSIS
+        One banner line: colored key, separator, colored value.
+    .PARAMETER Key
+        The key.
+    .PARAMETER Value
+        The value.
+    .PARAMETER Style
+        New-DFBannerStyle result.
+    .PARAMETER Alert
+        Color the value with the alert color.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowEmptyString()][string]$Key, [AllowEmptyString()][string]$Value, [Parameter(Mandatory)]$Style, [switch]$Alert)
+    $reset = "$([char]27)[0m"
+    $paint = { param($prefix, $text) if ($prefix) { "$prefix$text$reset" } else { $text } }
+    $valueColor = if ($Alert) { $Style.Alert } else { $Style.Output }
+    "$(& $paint $Style.Key $Key)$($Style.Separator)$(& $paint $valueColor $Value)"
+}
+
+function Merge-DFBannerBody {
+    <#
+    .SYNOPSIS
+        Replaces each @DF:<name>@ placeholder line in the body with that name's fill lines, or removes it.
+    .DESCRIPTION
+        A fill item has Key, Value and Alert; a $null Key takes the
+        placeholder line's own key (its text before the separator, colors
+        stripped). A name with no fill removes its line, so placeholder text
+        never shows.
+    .PARAMETER Body
+        The body lines (fastfetch's output).
+    .PARAMETER Fills
+        Name -> fill items.
+    .PARAMETER Style
+        New-DFBannerStyle result.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([AllowEmptyCollection()][string[]]$Body, [Parameter(Mandatory)][hashtable]$Fills, [Parameter(Mandatory)]$Style)
+    $ansi = "$([char]27)\[[0-9;]*m"
+    foreach ($line in $Body) {
+        if ($line -notmatch '@DF:([\w-]+)@') { $line; continue }
+        $name = $Matches[1]
+        if (-not $Fills.ContainsKey($name)) { continue }
+        $plain = $line -replace $ansi, ''
+        $separatorAt = $plain.IndexOf($Style.Separator)
+        $ownKey = if ($separatorAt -gt 0) { $plain.Substring(0, $separatorAt) } else { '' }
+        foreach ($item in @($Fills[$name])) {
+            $key = if ($null -ne $item.Key) { $item.Key } else { $ownKey }
+            Format-DFBannerLine -Key $key -Value $item.Value -Style $Style -Alert:([bool]$item.Alert)
+        }
+    }
+}
+
+function Write-DFBannerLines {
+    <#
+    .SYNOPSIS
+        Prints banner lines one at a time, like a printer.
+    .PARAMETER Lines
+        The lines.
+    .PARAMETER DelayMs
+        Pause between lines; 0 prints at once.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][string[]]$Lines, [int]$DelayMs)
+    $first = $true
+    foreach ($line in $Lines) {
+        if (-not $first -and $DelayMs -gt 0) { Start-Sleep -Milliseconds $DelayMs }
+        [Console]::WriteLine($line)
+        $first = $false
+    }
+}
+
+# ---- Private/DFBanner.Work.ps1
+#Requires -Version 7.2
+
+# The startup banner's background jobs: one runspace pool, started before tools
+# load and collected when Start-DFSession ends. A runspace pool needs no module
+# import (ThreadJob would add to startup). See
+# docs/superpowers/specs/2026-10-11-startup-banner-design.md.
+
+function Start-DFBannerWork {
+    <#
+    .SYNOPSIS
+        Starts the banner parts' background jobs in one runspace pool, so they run while tools load.
+    .PARAMETER Work
+        Items with Name, ScriptBlock and ArgumentList. A script block runs in a
+        fresh runspace: it sees its arguments, not the caller's variables.
+    .OUTPUTS
+        A handle for Receive-DFBannerWork.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Work)
+    $count = @($Work).Count
+    if (-not $count) { return [pscustomobject]@{ Pool = $null; Jobs = @() } }
+    $pool = [runspacefactory]::CreateRunspacePool(1, $count)
+    $pool.Open()
+    $jobs = foreach ($item in $Work) {
+        $shell = [powershell]::Create()
+        $shell.RunspacePool = $pool
+        $null = $shell.AddScript($item.ScriptBlock.ToString())
+        foreach ($argument in @($item.ArgumentList)) { $null = $shell.AddArgument($argument) }
+        [pscustomobject]@{ Name = $item.Name; PowerShell = $shell; Async = $shell.BeginInvoke() }
+    }
+    [pscustomobject]@{ Pool = $pool; Jobs = @($jobs) }
+}
+
+function Receive-DFBannerWork {
+    <#
+    .SYNOPSIS
+        Collects the background jobs that finish within WaitMs; stops the rest without waiting for them.
+    .PARAMETER Handle
+        Start-DFBannerWork result.
+    .PARAMETER WaitMs
+        Longest total wait.
+    .OUTPUTS
+        System.Collections.Hashtable: job name -> its output. A job that threw
+        or wasn't done in time is left out.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)]$Handle, [int]$WaitMs)
+    $results = @{}
+    $deadline = [DateTime]::UtcNow.AddMilliseconds($WaitMs)
+    foreach ($job in $Handle.Jobs) {
+        $left = [int][Math]::Max(0, ($deadline - [DateTime]::UtcNow).TotalMilliseconds)
+        if ($job.Async.AsyncWaitHandle.WaitOne($left)) {
+            try {
+                $output = $job.PowerShell.EndInvoke($job.Async)
+                if ($job.PowerShell.HadErrors) { Write-Verbose "DotForge: banner job $($job.Name) failed: $($job.PowerShell.Streams.Error | Select-Object -First 1)" }
+                else { $results[$job.Name] = @($output) }
+            } catch {
+                Write-Verbose "DotForge: banner job $($job.Name) failed: $($_.Exception.Message)"
+            }
+            $job.PowerShell.Dispose()
+        } else {
+            # Not done: stop it in the background; never wait for it here.
+            $null = $job.PowerShell.BeginStop($null, $null)
+        }
+    }
+    if ($Handle.Pool) { $null = $Handle.Pool.BeginClose($null, $null) }
+    $results
 }
 
 # ---- Private/DFInstallHost.ps1
@@ -2167,6 +2607,10 @@ $script:DFConfigKeys = [ordered]@{
     InstallVia          = 'Tool -> source to install it from (beats everything, including ExcludeSources)'
     InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
     ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
+    ShowBanner         = 'Show the startup banner (fastfetch, drive health, public IP)'
+    BannerLineDelay    = 'Milliseconds between banner lines; 0 prints at once'
+    BannerWait         = 'Longest wait, in ms, for an unfinished banner part'
+    BannerClear        = 'Clear the screen before the banner; $false keeps scrollback'
     BatTheme           = 'bat theme'
     DeltaTheme         = 'delta theme'
     FzfTheme           = 'fzf theme'
@@ -7619,6 +8063,11 @@ function Start-DFSession {
           7. Warns about requested tools that aren't installed or failed, with
              the command that installs them.
 
+        With ShowBanner, it clears the screen (unless BannerClear is $false)
+        and prints one line at once; slow banner work (fastfetch, drive health,
+        the public IP) runs in the background while tools load, and the banner
+        prints a line at a time when the load ends.
+
         Tools that aren't requested are never looked at. Nothing is installed:
         run Install-DFTool -Missing for that. Calling Start-DFSession again
         applies the new config and activates newly requested tools; a tool no
@@ -7666,6 +8115,8 @@ function Start-DFSession {
 
     $request = @(Resolve-DFRequestedTools -Tools @(Get-DFConfig Tools) -ExcludeTools @(Get-DFConfig ExcludeTools) `
         -GroupDb (Get-DFGroupDb) -KnownTools @(Get-DFToolNames @pathArgs))
+    # ShowBanner: the first line now, the rest's slow parts in the background while tools load.
+    $banner = Start-DFBanner -Tools @($request | Where-Object { -not $_.Excluded } | ForEach-Object Name)
 
     # A second call only adds; a tool that is no longer requested can't be
     # cleanly undone (aliases, environment, prompt hooks), so say so.
@@ -7678,6 +8129,8 @@ function Start-DFSession {
     }
 
     $null = Invoke-DFSessionActivation -Request $request @pathArgs
+    # Before the notices, so warnings print under the banner.
+    Show-DFBanner -State $banner
 
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) {
         $activeNames = @($script:DFSessionStatus.Values | Where-Object State -eq 'Active' | ForEach-Object Name)

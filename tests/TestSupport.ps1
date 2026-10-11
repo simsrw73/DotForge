@@ -52,6 +52,7 @@ function Reset-DFTestSession {
     $script:DFSessionRoleWinners = $null
     $script:DFToolRecordCache = @{}
     $script:DFToolDb = $null
+    $script:DFBannerShown = $false
 }
 
 function Get-DFTestModuleFile {

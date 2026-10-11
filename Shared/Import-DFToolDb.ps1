@@ -240,6 +240,23 @@ function ConvertTo-DFXdgBlock {
     }
 }
 
+function ConvertTo-DFBannerField {
+    <#
+    .SYNOPSIS
+        Normalizes a record's banner part: { script, body, fills }.
+    .PARAMETER RawBanner
+        See the synopsis.
+    #>
+    param($RawBanner)
+
+    if (-not $RawBanner) { return $null }
+    [pscustomobject]@{
+        script = Get-DFToolRecordProperty $RawBanner 'script' $null
+        body   = [bool](Get-DFToolRecordProperty $RawBanner 'body' $false)
+        fills  = [string[]]@(Get-DFToolRecordProperty $RawBanner 'fills' @())
+    }
+}
+
 function ConvertTo-DFNativeMap {
     <#
     .SYNOPSIS
@@ -522,6 +539,7 @@ function ConvertTo-DFToolRecord {
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
         setup             = $setup
+        banner            = ConvertTo-DFBannerField (Get-DFToolRecordProperty $Tool 'banner' $null)
         installs          = $installs
         install           = $install
         # Set by the loader (Read-DFToolRecordFile) from where the JSON was read, never by the JSON.

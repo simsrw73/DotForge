@@ -19,6 +19,11 @@ function Start-DFSession {
           7. Warns about requested tools that aren't installed or failed, with
              the command that installs them.
 
+        With ShowBanner, it clears the screen (unless BannerClear is $false)
+        and prints one line at once; slow banner work (fastfetch, drive health,
+        the public IP) runs in the background while tools load, and the banner
+        prints a line at a time when the load ends.
+
         Tools that aren't requested are never looked at. Nothing is installed:
         run Install-DFTool -Missing for that. Calling Start-DFSession again
         applies the new config and activates newly requested tools; a tool no
@@ -66,6 +71,8 @@ function Start-DFSession {
 
     $request = @(Resolve-DFRequestedTools -Tools @(Get-DFConfig Tools) -ExcludeTools @(Get-DFConfig ExcludeTools) `
         -GroupDb (Get-DFGroupDb) -KnownTools @(Get-DFToolNames @pathArgs))
+    # ShowBanner: the first line now, the rest's slow parts in the background while tools load.
+    $banner = Start-DFBanner -Tools @($request | Where-Object { -not $_.Excluded } | ForEach-Object Name)
 
     # A second call only adds; a tool that is no longer requested can't be
     # cleanly undone (aliases, environment, prompt hooks), so say so.
@@ -78,6 +85,8 @@ function Start-DFSession {
     }
 
     $null = Invoke-DFSessionActivation -Request $request @pathArgs
+    # Before the notices, so warnings print under the banner.
+    Show-DFBanner -State $banner
 
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) {
         $activeNames = @($script:DFSessionStatus.Values | Where-Object State -eq 'Active' | ForEach-Object Name)

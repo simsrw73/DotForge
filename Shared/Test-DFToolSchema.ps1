@@ -282,6 +282,23 @@ function Get-DFPickerEntryError ([PSCustomObject]$Picker, [string]$Prefix) {
     }
 }
 
+function Get-DFBannerSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in banner: a .banner.ps1 script, a boolean body, and placeholder names for fills.
+    #>
+    $banner = Get-DFSchemaProperty $Tool 'banner'
+    if ($null -eq $banner) { return }
+    if ($banner -isnot [pscustomobject]) { return 'banner must be an object' }
+    $script = Get-DFSchemaProperty $banner 'script'
+    if ($script -isnot [string] -or $script -notmatch '^[\w.-]+\.banner\.ps1$') { 'banner.script must name a <file>.banner.ps1 next to the record' }
+    $body = Get-DFSchemaProperty $banner 'body'
+    if ($null -ne $body -and $body -isnot [bool]) { 'banner.body must be true or false' }
+    foreach ($fill in @(Get-DFSchemaProperty $banner 'fills')) {
+        if ($null -ne $fill -and ($fill -isnot [string] -or $fill -notmatch '^[\w-]+$')) { "banner.fills entry '$fill' must be a placeholder name (letters, digits, _ or -)" }
+    }
+}
+
 function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -322,11 +339,12 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
+        banner = 'script', 'body', 'fills'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
@@ -345,6 +363,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     if ($xdg -is [pscustomobject]) { $sections.Add(@('xdg', $xdg, 'xdg.')) }
     $setupObj = Get-DFSchemaProperty $Tool 'setup'
     if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
+    $bannerObj = Get-DFSchemaProperty $Tool 'banner'
+    if ($bannerObj -is [pscustomobject]) { $sections.Add(@('banner', $bannerObj, 'banner.')) }
     foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
         if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
@@ -402,6 +422,7 @@ function Test-DFToolSchema {
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
         Get-DFNativeSchemaError $Tool
+        Get-DFBannerSchemaError $Tool
         Get-DFInstallsSchemaError $Tool
         Get-DFActivationSchemaError $Tool
         Get-DFPickerSchemaError $Tool
