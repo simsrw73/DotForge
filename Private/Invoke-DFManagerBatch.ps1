@@ -112,11 +112,30 @@ function ConvertTo-DFManagerResult {
     switch ($Outcome.ExitCode) {
         0 { [pscustomobject]@{ Tool = $Tool; Result = $Success; Detail = "via $Manager" } }
         -1 { [pscustomobject]@{ Tool = $Tool; Result = 'Skipped'; Detail = $Outcome.Output } }
-        default {
-            $tail = @("$($Outcome.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
-            [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = "$Manager failed: $tail" }
-        }
+        default { [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = (Format-DFManagerFailure -Tool $Tool -Manager $Manager -Output $Outcome.Output) } }
     }
+}
+
+function Format-DFManagerFailure {
+    <#
+    .SYNOPSIS
+        A failed manager call's Detail: "<manager> failed: " and its last three lines; the whole output goes to the verbose stream.
+    .PARAMETER Tool
+        Tool name.
+    .PARAMETER Manager
+        The manager's name.
+    .PARAMETER Output
+        What the manager wrote.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([string]$Tool, [string]$Manager, [string]$Output)
+    $text = "$Output".Trim()
+    Write-Verbose "$Manager output for $($Tool):`n$text"
+    $tail = @($text -split "`r?`n" | Select-Object -Last 3) -join ' / '
+    "$Manager failed: $tail"
 }
 
 function Resolve-DFPartialUpdate {

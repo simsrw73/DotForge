@@ -19,7 +19,8 @@ function Update-DFTool {
         (the manager does nothing for one that is current). -Name does the same
         for the named tools. Tools are updated in one call per manager where
         the manager allows it. A manager that needs administrator rights gets
-        them the way Install-DFTool does.
+        them the way Install-DFTool does. A failed update shows the manager's
+        last lines; -Verbose shows all of its output.
 
         Runtimes that a version manager owns (node through fnm or mise, Python
         through uv or pymanager) aren't updated here: the table names the
@@ -66,7 +67,11 @@ function Update-DFTool {
         $results.Add([pscustomobject]@{ Tool = $row.Tool; Result = 'Skipped'; Detail = $row.Update })
     }
     $toUpdate = @($rows | Where-Object State -in 'Outdated', 'Unknown')
-    if (-not $toUpdate) { Write-Host 'Everything is up to date.'; return $results.ToArray() }
+    if (-not $toUpdate) {
+        # Only when every named tool was checked and is current: an unknown name already warned.
+        if ($rows -and @($rows | Where-Object State -ne 'UpToDate').Count -eq 0 -and $rows.Count -eq @($targets).Count) { Write-Host 'Everything is up to date.' }
+        return $results.ToArray()
+    }
 
     foreach ($group in $toUpdate | Group-Object { "$($_.Found.Manager.name)|$($_.Found.Source)" }) {
         $found = $group.Group[0].Found

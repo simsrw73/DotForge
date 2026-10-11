@@ -93,6 +93,17 @@ Describe 'Update-DFTool' {
         Should -Invoke Invoke-DFManagerBatch -Times 0
         Should -Invoke Write-Host -ParameterFilter { $Object -eq 'Everything is up to date.' }
     }
+    It 'warns about an unknown name and does not say everything is up to date' {
+        Mock Write-Warning { }
+        $null = Update-DFTool -Name fzff -Confirm:$false
+        Should -Invoke Write-Warning -Times 1 -ParameterFilter { $Message -eq "DotForge: unknown tool 'fzff'." }
+        Should -Invoke Write-Host -Times 0 -ParameterFilter { $Object -eq 'Everything is up to date.' }
+    }
+    It 'writes the whole output of a failed update under -Verbose' {
+        Mock Invoke-DFManagerBatch { foreach ($i in $Ids) { [pscustomobject]@{ Id = $i; ExitCode = 2; Output = "first`nsecond`nthird`nfourth" } } }
+        $verbose = @(Update-DFTool -Name fzf -Confirm:$false -Verbose 4>&1 | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] })
+        ($verbose.Message -join "`n") | Should -BeLike "*scoop output for fzf:*first*second*third*fourth*"
+    }
     It 'marks the tools of a failed update Failed, with the manager''s last lines' {
         Mock Invoke-DFManagerBatch { foreach ($i in $Ids) { [pscustomobject]@{ Id = $i; ExitCode = 2; Output = "line1`nERROR: network down" } } }
         $r = Update-DFTool -Name fzf -Confirm:$false

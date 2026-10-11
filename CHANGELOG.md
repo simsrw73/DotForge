@@ -18,8 +18,9 @@ All notable changes to DotForge are documented here.
 
 - **`Remove-DFTool`:** removes a tool's package through the manager it came from, then lists what is
   left: config files DotForge seeded, changes its one-time setup recorded, and its entry in your `Tools`.
-  A tool another active tool requires is refused unless you pass `-Force`; `-IncludeDependents` removes
-  the dependents too, dependents first, after one confirmation. A package manager that still has
+  A tool another active tool requires is refused unless you pass `-Force` or name the dependents too
+  (`Remove-DFTool fzf, PSFzf`); `-IncludeDependents` removes them without naming them. Dependents go
+  first, after one confirmation. A package manager that still has
   packages installed needs `-Force`, and its packages stay.
 - **`Update-DFTool`:** shows which of your tools have updates (Tool, Manager, Installed, Update), and
   with `-All` or `-Name` updates them through the manager each one came from. It finds that manager by
@@ -28,6 +29,8 @@ All notable changes to DotForge are documented here.
 - **A notice when you run a developer build:** `Start-DFSession` prints one line naming the version
   and where it's installed when DotForge is a dev build from `build/Publish-DFLocal.ps1`
   (`<version>-dev<timestamp>`). Gallery releases print nothing.
+- **`-Verbose` shows a manager's whole output when an install, update or removal fails;** the result's
+  `Detail` still has only its last three lines.
 
 ### Fixed
 

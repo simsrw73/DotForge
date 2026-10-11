@@ -114,6 +114,13 @@ Describe 'Invoke-DFInstallPlan' {
         ($r | Where-Object Tool -eq glow).Result | Should -Be 'Failed'
         $script:Calls | Should -Contain 'fnm install lts'
     }
+    It 'writes the whole output of a failed install under -Verbose' {
+        $script:Fail = @('glow')
+        Mock Test-DFToolAvailable { $Executable -ne 'glow.exe' }
+        $plan = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable $script:Avail
+        $verbose = @(Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail -Verbose 4>&1 | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] })
+        ($verbose.Message -join "`n") | Should -BeLike '*scoop output for glow:*out*'
+    }
     It 'says why a dependent was skipped in words' {
         Mock Test-DFToolAvailable { $Executable -ne 'fnm.exe' }
         $plan = New-DFInstallPlan -Name fnm, node -ToolDb $script:Db -IsAvailable $script:Avail

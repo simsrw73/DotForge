@@ -50,6 +50,11 @@ Describe 'Remove-DFTool' {
         $script:Removed | Should -Be @('psfzf', 'fzf')
         $r.Tool | Should -Be @('PSFzf', 'fzf')
     }
+    It 'removes a tool and its dependent named together, dependent first, without -IncludeDependents' {
+        $r = @(Remove-DFTool -Name fzf, PSFzf -Confirm:$false)
+        $r.Result | Should -Be @('Removed', 'Removed')
+        $script:Removed | Should -Be @('psfzf', 'fzf')
+    }
     It 'removes nothing with -WhatIf' {
         $null = Remove-DFTool -Name fzf -IncludeDependents -WhatIf
         Should -Invoke Invoke-DFManagerBatch -Times 0
@@ -91,7 +96,7 @@ Describe 'Remove-DFTool' {
         $script:DFSessionStatus['glow'].Detail | Should -Be 'removed by Remove-DFTool'
         $text = $script:Lines -join "`n"
         $text | Should -BeLike "*$seeded*"
-        $text | Should -BeLike '*gitConfigInclude*C:\x\glow.gitconfig*'
+        $text | Should -BeLike '*change its setup made: gitConfigInclude path=C:\x\glow.gitconfig*'
         $text | Should -BeLike "*remove 'glow' from Tools in your profile*"
         $text | Should -BeLike '*new shell*'
     }

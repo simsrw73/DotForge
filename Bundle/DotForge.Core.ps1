@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 3a21e66a3eb36199c4023b4cba03608e9865bc7213ccaee749a93a1e3aa869a6
+# sources-sha256: dd05d4135166e508f3693e12a87aee6fa31d8e75f0b10e15eec64ba80489d692
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2698,10 +2698,7 @@ function Invoke-DFInstallPlan {
                 # A failed batch may still have installed some of its tools.
                 $ok = $r.ExitCode -eq 0 -or ($batched -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
                 if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
-                else {
-                    $tail = @("$($r.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
-                    & $set $it.Tool 'Failed' "$($m.name) failed: $tail"
-                }
+                else { & $set $it.Tool 'Failed' (Format-DFManagerFailure -Tool $it.Tool -Manager $m.name -Output $r.Output) }
             }
             if (@($results | Where-Object ExitCode -eq 0).Count -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
         }
@@ -2838,11 +2835,30 @@ function ConvertTo-DFManagerResult {
     switch ($Outcome.ExitCode) {
         0 { [pscustomobject]@{ Tool = $Tool; Result = $Success; Detail = "via $Manager" } }
         -1 { [pscustomobject]@{ Tool = $Tool; Result = 'Skipped'; Detail = $Outcome.Output } }
-        default {
-            $tail = @("$($Outcome.Output)".Trim() -split "`r?`n" | Select-Object -Last 3) -join ' / '
-            [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = "$Manager failed: $tail" }
-        }
+        default { [pscustomobject]@{ Tool = $Tool; Result = 'Failed'; Detail = (Format-DFManagerFailure -Tool $Tool -Manager $Manager -Output $Outcome.Output) } }
     }
+}
+
+function Format-DFManagerFailure {
+    <#
+    .SYNOPSIS
+        A failed manager call's Detail: "<manager> failed: " and its last three lines; the whole output goes to the verbose stream.
+    .PARAMETER Tool
+        Tool name.
+    .PARAMETER Manager
+        The manager's name.
+    .PARAMETER Output
+        What the manager wrote.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([string]$Tool, [string]$Manager, [string]$Output)
+    $text = "$Output".Trim()
+    Write-Verbose "$Manager output for $($Tool):`n$text"
+    $tail = @($text -split "`r?`n" | Select-Object -Last 3) -join ' / '
+    "$Manager failed: $tail"
 }
 
 function Resolve-DFPartialUpdate {
@@ -5350,7 +5366,9 @@ function Write-DFRemoveLeftover {
     }
     $record = (Get-DFToolSetupState).PSObject.Properties[$Tool.name]?.Value
     foreach ($action in @(${record}?.actions | Where-Object { $_ })) {
-        $lines.Add("change its setup made: $(@($action.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ' ')")
+        # Type first, then the other fields by name: a setup script's hashtable has no stable order.
+        $fields = @($action.PSObject.Properties | Where-Object Name -ne 'type' | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" })
+        $lines.Add("change its setup made: $(@($action.PSObject.Properties['type']?.Value) + $fields -join ' ')")
     }
     if ($Tool.name -in @(Get-DFConfig Tools)) { $lines.Add("remove '$($Tool.name)' from Tools in your profile") }
     elseif ($script:DFSessionStatus -and $script:DFSessionStatus.Contains($Tool.name)) { $lines.Add("add '$($Tool.name)' to ExcludeTools in your profile (a group requests it)") }
@@ -6227,6 +6245,7 @@ function Install-DFTool {
         Shows what would be installed, in which stage, and from where.
     .OUTPUTS
         PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
+        A Failed Detail has the manager's last lines; -Verbose shows all of its output.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
     #>
@@ -6806,7 +6825,7 @@ function Remove-DFTool {
 
         Dependents: a tool that another active tool requires (directly, or as
         the only active member of a required role) is refused, naming the
-        dependents. -Force removes it anyway. -IncludeDependents follows the
+        dependents, unless they are named too: then they are removed first. -Force removes it anyway. -IncludeDependents follows the
         requires chains and removes the dependents too, dependents first,
         after one confirmation for the whole list.
 
@@ -6859,12 +6878,14 @@ function Remove-DFTool {
     $order = [System.Collections.Generic.List[string]]::new()
     foreach ($toolName in $Name) {
         if (-not $db[$toolName]) { Write-Warning "DotForge: unknown tool '$toolName'."; continue }
-        $dependents = @(Get-DFToolDependent -Name $toolName -ToolDb $db -Active $active -Transitive:$IncludeDependents)
-        if ($dependents -and -not $Force -and -not $IncludeDependents) {
-            & $refuse $toolName "required by $($dependents -join ', '): use -IncludeDependents to remove them too, or -Force"
+        # Dependents named in this call are removed with it, first.
+        $dependents = @(Get-DFToolDependent -Name $toolName -ToolDb $db -Active $active -Transitive)
+        $unnamed = @($dependents | Where-Object { $_ -notin $Name })
+        if ($unnamed -and -not $Force -and -not $IncludeDependents) {
+            & $refuse $toolName "required by $($unnamed -join ', '): use -IncludeDependents to remove them too, or -Force"
             continue
         }
-        $chain = @(if ($IncludeDependents) { $dependents }) + $toolName
+        $chain = @(if ($IncludeDependents) { $dependents } else { $dependents | Where-Object { $_ -in $Name } }) + $toolName
         $busy = @(foreach ($member in $chain) { Get-DFManagerPackage -Manager $db[$member] @pathArgs | ForEach-Object { [pscustomobject]@{ Manager = $member; Id = $_ } } })
         if ($busy -and -not $Force) {
             $first = $busy[0].Manager
@@ -7007,7 +7028,8 @@ function Update-DFTool {
         (the manager does nothing for one that is current). -Name does the same
         for the named tools. Tools are updated in one call per manager where
         the manager allows it. A manager that needs administrator rights gets
-        them the way Install-DFTool does.
+        them the way Install-DFTool does. A failed update shows the manager's
+        last lines; -Verbose shows all of its output.
 
         Runtimes that a version manager owns (node through fnm or mise, Python
         through uv or pymanager) aren't updated here: the table names the
@@ -7054,7 +7076,11 @@ function Update-DFTool {
         $results.Add([pscustomobject]@{ Tool = $row.Tool; Result = 'Skipped'; Detail = $row.Update })
     }
     $toUpdate = @($rows | Where-Object State -in 'Outdated', 'Unknown')
-    if (-not $toUpdate) { Write-Host 'Everything is up to date.'; return $results.ToArray() }
+    if (-not $toUpdate) {
+        # Only when every named tool was checked and is current: an unknown name already warned.
+        if ($rows -and @($rows | Where-Object State -ne 'UpToDate').Count -eq 0 -and $rows.Count -eq @($targets).Count) { Write-Host 'Everything is up to date.' }
+        return $results.ToArray()
+    }
 
     foreach ($group in $toUpdate | Group-Object { "$($_.Found.Manager.name)|$($_.Found.Source)" }) {
         $found = $group.Group[0].Found

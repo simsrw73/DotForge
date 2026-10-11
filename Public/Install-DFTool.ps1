@@ -49,6 +49,7 @@ function Install-DFTool {
         Shows what would be installed, in which stage, and from where.
     .OUTPUTS
         PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
+        A Failed Detail has the manager's last lines; -Verbose shows all of its output.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
     #>

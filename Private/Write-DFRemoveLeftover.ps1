@@ -64,7 +64,9 @@ function Write-DFRemoveLeftover {
     }
     $record = (Get-DFToolSetupState).PSObject.Properties[$Tool.name]?.Value
     foreach ($action in @(${record}?.actions | Where-Object { $_ })) {
-        $lines.Add("change its setup made: $(@($action.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ' ')")
+        # Type first, then the other fields by name: a setup script's hashtable has no stable order.
+        $fields = @($action.PSObject.Properties | Where-Object Name -ne 'type' | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" })
+        $lines.Add("change its setup made: $(@($action.PSObject.Properties['type']?.Value) + $fields -join ' ')")
     }
     if ($Tool.name -in @(Get-DFConfig Tools)) { $lines.Add("remove '$($Tool.name)' from Tools in your profile") }
     elseif ($script:DFSessionStatus -and $script:DFSessionStatus.Contains($Tool.name)) { $lines.Add("add '$($Tool.name)' to ExcludeTools in your profile (a group requests it)") }

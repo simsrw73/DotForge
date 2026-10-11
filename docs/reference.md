@@ -559,7 +559,7 @@ Afterwards, new tools are activated in this session. A tool you named that isn't
 | `-UseDefaults` | switch |  |  |  | Don't ask: take the default for every open choice. |
 | `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
 
-**Outputs:** PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
+**Outputs:** PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail. A Failed Detail has the manager's last lines; -Verbose shows all of its output.
 
 **Example 1**
 
@@ -876,7 +876,7 @@ Remove-DFTool [-Name] <string[]> [-Force] [-IncludeDependents] [-ToolsPath <stri
 
 Each tool's manager is found by asking the managers of its own sources (as Update-DFTool does). Only the package is removed.
 
-Dependents: a tool that another active tool requires (directly, or as the only active member of a required role) is refused, naming the dependents. -Force removes it anyway. -IncludeDependents follows the requires chains and removes the dependents too, dependents first, after one confirmation for the whole list.
+Dependents: a tool that another active tool requires (directly, or as the only active member of a required role) is refused, naming the dependents, unless they are named too: then they are removed first. -Force removes it anyway. -IncludeDependents follows the requires chains and removes the dependents too, dependents first, after one confirmation for the whole list.
 
 A package manager that still has packages installed is always refused unless you pass -Force, and the packages it installed are never removed with it. So is a version manager (fnm, mise), which can't list what it installed.
 
@@ -989,7 +989,7 @@ Each tool's manager is found by asking the managers of its own sources; a tool i
 
 With no -Name or -All, shows a table for the session's active tools (Tool, Manager, Installed, Update: the newer version, "up to date", "unknown" when the manager can't say, or why the tool can't be updated) and changes nothing.
 
--All updates every active tool that has an update, plus the unknowns (the manager does nothing for one that is current). -Name does the same for the named tools. Tools are updated in one call per manager where the manager allows it. A manager that needs administrator rights gets them the way Install-DFTool does.
+-All updates every active tool that has an update, plus the unknowns (the manager does nothing for one that is current). -Name does the same for the named tools. Tools are updated in one call per manager where the manager allows it. A manager that needs administrator rights gets them the way Install-DFTool does. A failed update shows the manager's last lines; -Verbose shows all of its output.
 
 Runtimes that a version manager owns (node through fnm or mise, Python through uv or pymanager) aren't updated here: the table names the manager to use.
 

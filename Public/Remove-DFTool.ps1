@@ -10,7 +10,7 @@ function Remove-DFTool {
 
         Dependents: a tool that another active tool requires (directly, or as
         the only active member of a required role) is refused, naming the
-        dependents. -Force removes it anyway. -IncludeDependents follows the
+        dependents, unless they are named too: then they are removed first. -Force removes it anyway. -IncludeDependents follows the
         requires chains and removes the dependents too, dependents first,
         after one confirmation for the whole list.
 
@@ -63,12 +63,14 @@ function Remove-DFTool {
     $order = [System.Collections.Generic.List[string]]::new()
     foreach ($toolName in $Name) {
         if (-not $db[$toolName]) { Write-Warning "DotForge: unknown tool '$toolName'."; continue }
-        $dependents = @(Get-DFToolDependent -Name $toolName -ToolDb $db -Active $active -Transitive:$IncludeDependents)
-        if ($dependents -and -not $Force -and -not $IncludeDependents) {
-            & $refuse $toolName "required by $($dependents -join ', '): use -IncludeDependents to remove them too, or -Force"
+        # Dependents named in this call are removed with it, first.
+        $dependents = @(Get-DFToolDependent -Name $toolName -ToolDb $db -Active $active -Transitive)
+        $unnamed = @($dependents | Where-Object { $_ -notin $Name })
+        if ($unnamed -and -not $Force -and -not $IncludeDependents) {
+            & $refuse $toolName "required by $($unnamed -join ', '): use -IncludeDependents to remove them too, or -Force"
             continue
         }
-        $chain = @(if ($IncludeDependents) { $dependents }) + $toolName
+        $chain = @(if ($IncludeDependents) { $dependents } else { $dependents | Where-Object { $_ -in $Name } }) + $toolName
         $busy = @(foreach ($member in $chain) { Get-DFManagerPackage -Manager $db[$member] @pathArgs | ForEach-Object { [pscustomobject]@{ Manager = $member; Id = $_ } } })
         if ($busy -and -not $Force) {
             $first = $busy[0].Manager
