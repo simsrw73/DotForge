@@ -50,7 +50,7 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | `needs a manager for <source> (<managers>), and none is installed or requested` | the tool's only packages are in a source whose manager you don't have (e.g. the npm registry) | Run `Install-DFTool` interactively to pick one, pass `-UseDefaults`, or add a manager (`npm`, `pnpm`, …) to `Tools`. |
 | `no source left (only <sources> have it, and ExcludeSources removes them)` | `ExcludeSources` forbids every source the tool has | Allow one for this tool with `InstallVia = @{ <tool> = '<source>' }`. |
 | `no package in any source` | the tool record lists no packages | Install the tool yourself. |
-| `<manager> needs an elevated shell: rerun as administrator, or add gsudo` | the manager (choco) needs admin rights | Run the shell as administrator, install gsudo, or pick another source with `-Via`. |
+| `<manager> needs administrator rights: no one to answer the admin prompt` | the manager (choco) needs admin rights, and PowerShell is running without a person to answer a prompt (a scheduled task, `-NonInteractive`) | Run it in an interactive shell, run the shell as administrator, install gsudo, or pick another source with `-Via`. |
 | `installed, but '<exe>' isn't found yet: open a new shell` | the installer changed PATH in a way this shell can't pick up | Open a new shell. |
 | `skipped: <tool> failed` | an earlier stage failed, so tools that need it were not attempted | Fix the first failure (its output is in the summary) and run `Install-DFTool -Missing` again; installed tools aren't reinstalled. |
 | `<tool> one-time setup failed: <error>` | the tool's setup script threw | Fix the cause shown; setup retries on the next `Register-DFTool`. |

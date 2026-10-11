@@ -120,7 +120,7 @@ A tool whose record has `installs` is a package manager: `Install-DFTool` uses i
 | `update` / `remove` | How to update or remove a package: an argv like `install`, or `{ "function": ..., "args": { ... } }`. Without one, DotForge says it can't update or remove through this manager. |
 | `list` / `outdated` | Names of functions in `Tools/<manager>.manage.ps1` that report what the manager has installed and what has an update. |
 | `batch` | It can install several ids in one call. |
-| `elevate` | It needs an elevated shell (choco). Unless the shell is elevated, DotForge runs it through the `elevator` role's tool (gsudo) when one is installed or being installed in the same run; otherwise it uses the tool's next source. |
+| `elevate` | It needs administrator rights (choco). Unless the shell is elevated, DotForge runs it through the `elevator` role's tool (gsudo) when one is installed or being installed in the same run, else through Windows' `sudo` when it is on in inline mode, else in a separate administrator window (which reports only an exit code). With no one to answer an admin prompt, it uses the tool's next source. |
 | `reactivate` | Re-run this manager's companion after it installs something, so a new runtime reaches `PATH` in the same shell (fnm, mise). |
 | `feeds` | How to list and add third-party feeds (buckets, marketplaces) and how a feed-qualified id is written. |
 

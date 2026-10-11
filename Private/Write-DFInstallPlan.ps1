@@ -14,7 +14,7 @@ function Write-DFInstallPlan {
     foreach ($s in $Plan.Stages) {
         $parts = @(foreach ($b in $s.Batches) {
             $feeds = @($b.Items | Where-Object { $_.Ref.Feed } | ForEach-Object { "+ feed '$($_.Ref.Feed.name)' ($($_.Ref.Feed.url))" } | Select-Object -Unique)
-            $elev = if ($b.Elevate) { " (needs admin: 1 UAC prompt via $([IO.Path]::GetFileNameWithoutExtension($b.ElevateWith)))" } else { '' }
+            $elev = if ($b.Elevation) { " (needs admin: $($b.Elevation.Detail))" } else { '' }
             "$($b.Manager.name)$elev`: $((@($feeds) + @($b.Items | ForEach-Object { "$($_.Tool) ($($_.Ref.Id))" })) -join ' · ')"
         })
         $parts += @($s.Provided | ForEach-Object { "$($_.Tool) (comes with $($_.ProvidedBy))" })

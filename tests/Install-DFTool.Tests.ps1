@@ -22,7 +22,7 @@ Describe 'Install-DFTool' {
         $script:Installed = @('scoop.cmd')
         $script:Calls = [System.Collections.Generic.List[string]]::new()
         Mock Test-DFToolAvailable { $Executable -in $script:Installed }
-        Mock Invoke-DFInstallCommand {
+        Mock Invoke-DFManagerCommand {
             $script:Calls.Add($Argv -join ' ')
             # An install makes its tools "installed".
             $exe = @{ glow = 'glow.exe'; '@microsoft/inshellisense' = 'is.cmd'; nodejs = 'npm.cmd'; pnpm = 'pnpm.cmd' }

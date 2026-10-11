@@ -4,6 +4,16 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Installing through a manager that needs admin rights (choco) no longer needs gsudo.** Without an
+  elevated shell or gsudo, DotForge uses Windows' `sudo` when it is on in inline mode, else runs the
+  command in a separate administrator window (one UAC prompt; only its exit code comes back). Only a
+  shell with no one to answer the prompt (a scheduled task, `-NonInteractive`) falls back to the next
+  source.
+- **Breaking, for hand-written manager records:** `installs.command` is now `installs.install`; the old
+  name is a schema error that names the new one. DotForge's own managers are renamed.
+
 ### Added
 
 - **A notice when you run a developer build:** `Start-DFSession` prints one line naming the version

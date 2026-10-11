@@ -25,15 +25,21 @@ function Expand-DFInstallArgv {
     })
 }
 
-function Invoke-DFInstallCommand {
+function Invoke-DFManagerCommand {
     <#
     .SYNOPSIS
         Runs one package-manager command and returns its exit code and output. The only place DotForge runs a manager.
     .DESCRIPTION
-        An argv runs as a native command; a function (installs.function, e.g.
-        Install-PSResource) is called with -Arguments splatted. -Elevate runs
-        the argv through -ElevateWith (the elevator role's executable, e.g.
-        gsudo). Tests mock this function.
+        Serves every operation (install, update, remove, list, outdated). An
+        argv runs as a native command; a function (Install-PSResource,
+        Update-PSResource) is called with -Arguments splatted. -Elevation, from
+        Get-DFElevationMethod, says how to get administrator rights: an
+        elevator (gsudo) or Windows' sudo runs the argv in this console; RunAs
+        opens a separate administrator window, whose output can't be read, so
+        only its exit code comes back; Unavailable runs nothing and says why.
+        Tests mock this function.
+    .PARAMETER Operation
+        install, update, remove, list or outdated (for messages).
     .PARAMETER Manager
         The manager's tool record (for messages).
     .PARAMETER Argv
@@ -42,22 +48,20 @@ function Invoke-DFInstallCommand {
         A PowerShell command to call instead of an argv.
     .PARAMETER Arguments
         Parameters for -Function.
-    .PARAMETER Elevate
-        Run through -ElevateWith.
-    .PARAMETER ElevateWith
-        The elevator's executable.
+    .PARAMETER Elevation
+        From Get-DFElevationMethod; omit (or $null) when the command doesn't need administrator rights.
     .OUTPUTS
         PSCustomObject: ExitCode, Output.
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
+        [Parameter(Mandatory)][ValidateSet('install', 'update', 'remove', 'list', 'outdated')][string]$Operation,
         [Parameter(Mandatory)][pscustomobject]$Manager,
         [string[]]$Argv = @(),
         [string]$Function,
         [hashtable]$Arguments = @{},
-        [switch]$Elevate,
-        [string]$ElevateWith
+        [pscustomobject]$Elevation
     )
     if ($Function) {
         try {
@@ -67,7 +71,17 @@ function Invoke-DFInstallCommand {
             return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
         }
     }
-    $exe, $rest = if ($Elevate) { $ElevateWith, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+    $method = if ($Elevation) { $Elevation.Method } else { 'None' }
+    if ($method -eq 'Unavailable') {
+        return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
+    }
+    if ($method -eq 'RunAs') {
+        # Start-Process joins -ArgumentList with spaces, so quote what would split.
+        $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
+        $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru
+        return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+    }
+    $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
     # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
     # never sets an exit code: don't read a stale one from an earlier command.
     $global:LASTEXITCODE = 0

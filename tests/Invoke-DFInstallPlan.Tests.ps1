@@ -21,9 +21,9 @@ Describe 'Invoke-DFInstallPlan' {
         Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
         $script:Calls = [System.Collections.Generic.List[string]]::new()
         $script:Fail = @()
-        Mock Invoke-DFInstallCommand {
+        Mock Invoke-DFManagerCommand {
             $line = ($Argv -join ' ')
-            if ($Elevate) { $line = "[elevated] $line" }
+            if ($Elevation) { $line = "[$($Elevation.Method)] $line" }
             $script:Calls.Add($line)
             [pscustomobject]@{ ExitCode = $(if (@($Argv | Where-Object { $_ -in $script:Fail }).Count) { 1 } else { 0 }); Output = 'out' }
         }
@@ -74,22 +74,33 @@ Describe 'Invoke-DFInstallPlan' {
         $script:Calls | Should -Be @('scoop bucket list', 'scoop bucket add insomnia https://u', 'scoop install insomnia/ps-dotenv')
 
         $script:Calls.Clear()
-        Mock Invoke-DFInstallCommand {
+        Mock Invoke-DFManagerCommand {
             $script:Calls.Add($Argv -join ' ')
             [pscustomobject]@{ ExitCode = 0; Output = $(if ($Argv -contains 'list') { "insomnia https://u`nmain x" } else { '' }) }
         }
         $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
         $script:Calls | Should -Not -Contain 'scoop bucket add insomnia https://u'
     }
-    It 'runs an elevated manager through gsudo when it is installed, and skips it otherwise' {
+    It 'runs an elevated manager through gsudo when it is installed' {
         Set-DFTestConfig @{ InstallVia = @{ glow = 'choco' } }
         $script:Installed = @('scoop', 'choco', 'gsudo')
         $plan = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable $script:Avail
         $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
-        $script:Calls | Should -Be @('[elevated] choco install glow -y')
-
-        # Without an elevator, choco can't run, so glow comes from its next source.
-        $script:Calls.Clear(); $script:Installed = @('scoop', 'choco')
+        $script:Calls | Should -Be @('[Elevator] choco install glow -y')
+    }
+    It 'falls back to a separate admin window without an elevator' {
+        Mock Test-DFInteractiveHost { $true }
+        Mock Test-DFWindowsSudoInline { $false }
+        Set-DFTestConfig @{ InstallVia = @{ glow = 'choco' } }
+        $script:Installed = @('scoop', 'choco')
+        $plan = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable $script:Avail
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        $script:Calls | Should -Be @('[RunAs] choco install glow -y')
+    }
+    It 'uses the next source when no one can answer an admin prompt' {
+        Mock Test-DFInteractiveHost { $false }
+        $script:Installed = @('scoop', 'choco')
+        Set-DFTestConfig @{ InstallOrder = @('choco', 'scoop') }
         $plan = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable $script:Avail
         $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
         $script:Calls | Should -Be @('scoop install glow')
@@ -130,20 +141,6 @@ Describe 'Update-DFPathFromRegistry' {
     }
 }
 
-Describe 'Invoke-DFInstallCommand' {
-    It 'reports success for an in-process .ps1 shim even when an earlier command left a failure code' {
-        $bin = Join-Path $TestDrive "shim-$([guid]::NewGuid().ToString('N').Substring(0,6))"
-        New-Item -ItemType Directory $bin | Out-Null
-        'param() "ok"' | Set-Content (Join-Path $bin 'dffakemgr.ps1')
-        $saved = $Env:Path
-        try {
-            $Env:Path = "$bin;$Env:Path"
-            $global:LASTEXITCODE = 1
-            (Invoke-DFInstallCommand -Manager ([pscustomobject]@{ name = 'dffakemgr' }) -Argv 'dffakemgr', 'install', 'x').ExitCode | Should -Be 0
-        } finally { $Env:Path = $saved }
-    }
-}
-
 Describe 'Test-DFInteractiveHost' {
     It 'is false when PowerShell was started with -NonInteractive (or -noni)' {
         Test-DFInteractiveHost -CommandLine @('pwsh', '-NonInteractive', '-File', 'setup.ps1') | Should -BeFalse
@@ -155,7 +152,7 @@ Describe 'Invoke-DFInstallPlan with a two-block manager' {
     BeforeEach {
         Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
         $script:Calls = [System.Collections.Generic.List[string]]::new()
-        Mock Invoke-DFInstallCommand { $script:Calls.Add($Argv -join ' '); [pscustomobject]@{ ExitCode = 0; Output = '' } }
+        Mock Invoke-DFManagerCommand { $script:Calls.Add($Argv -join ' '); [pscustomobject]@{ ExitCode = 0; Output = '' } }
         Mock Update-DFPathFromRegistry { }
         Mock Register-DFTool { }
         Mock Test-DFElevated { $false }

@@ -41,15 +41,13 @@ function New-DFInstallPlan {
         if ($m -and -not $want.Contains($m) -and $ToolDb[$m] -and -not (& $IsAvailable $ToolDb[$m])) { $want.Add($m) }
     }
 
-    # A manager that needs admin rights runs only in an elevated shell or
-    # through an elevator (the elevator role, e.g. gsudo) that is installed or
-    # installed earlier in this run.
+    # How a manager that needs admin rights gets them (Get-DFElevationMethod):
+    # an elevator installed now or earlier in this run, Windows' sudo, or a
+    # separate admin window; none of them without a person to answer a prompt.
     $elevated = Test-DFElevated
-    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
-    $elevatorNow = $elevators | Where-Object { & $IsAvailable $_ } | Select-Object -First 1
-    $elevatorPlanned = if (-not $elevatorNow) { $elevators | Where-Object { $want.Contains($_.name) } | Select-Object -First 1 }
-    $elevator = if ($elevatorNow) { $elevatorNow } else { $elevatorPlanned }
-    $canElevate = $elevated -or [bool]$elevator
+    $elevation = Get-DFElevationMethod -ToolDb $ToolDb -IsAvailable $IsAvailable -Planned @($want)
+    $elevatorPlanned = if ($elevation.Method -eq 'Elevator' -and -not (& $IsAvailable $ToolDb[$elevation.Tool])) { $ToolDb[$elevation.Tool] }
+    $canElevate = $elevation.Method -ne 'Unavailable'
 
     $items = [ordered]@{}
     $gaps = [System.Collections.Generic.List[object]]::new()
@@ -124,10 +122,9 @@ function New-DFInstallPlan {
         $batches = @(foreach ($b in ($g.Group | Where-Object Manager | Group-Object { "$($_.Manager.name)|$($_.Source)" })) {
             $m = $b.Group[0].Manager
             $blk = $b.Group[0].Block
-            $elev = [bool]$blk.elevate -and -not $elevated
             [pscustomobject]@{
                 Manager = $m; Source = $b.Group[0].Source; Block = $blk; Items = @($b.Group)
-                Elevate = $elev; ElevateWith = $(if ($elev -and $elevator) { $elevator.executable })
+                Elevation = $(if ($blk.elevate -and $elevation.Method -ne 'Direct') { $elevation })
             }
         })
         [pscustomobject]@{ Number = [int]$g.Name; Batches = $batches; Provided = @($g.Group | Where-Object ProvidedBy) }

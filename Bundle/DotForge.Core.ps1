@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 8035cedc2c2b21aef58705ca71440d02ab7bf0ea9bdb7102326c84201f777cb7
+# sources-sha256: 83b1f5ec4da02acea3e74309c7efb234de304206eedcd1440a64f4ef237cec67
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2042,6 +2042,66 @@ function Get-DFCoreutilsShadowSet {
     return @()
 }
 
+# ---- Private/Get-DFElevationMethod.ps1
+#Requires -Version 7.2
+
+function Test-DFWindowsSudoInline {
+    <#
+    .SYNOPSIS
+        Whether Windows' built-in sudo is on in inline mode (Settings > System > For developers) and on PATH.
+    .DESCRIPTION
+        Windows' sudo is off until the user turns it on; only inline mode runs
+        the command in this console, so its output can be read.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+    if (-not $IsWindows) { return $false }
+    $enabled = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Sudo' -Name Enabled -ErrorAction Ignore).Enabled
+    $enabled -eq 3 -and [bool](Get-Command sudo.exe -CommandType Application -ErrorAction Ignore)
+}
+
+function Get-DFElevationMethod {
+    <#
+    .SYNOPSIS
+        How a command that needs administrator rights gets them in this shell.
+    .DESCRIPTION
+        In order: the shell is already elevated (Direct); an elevator tool (the
+        elevator role, e.g. gsudo) that is installed or installed earlier in the
+        same plan (Elevator); Windows' sudo in inline mode (WindowsSudo); a
+        separate administrator window through Start-Process -Verb RunAs (RunAs).
+        The last two need a person to answer the admin prompt, so a
+        non-interactive host gets Unavailable instead. An elevator is used
+        even then, as installs always have.
+    .PARAMETER ToolDb
+        Name -> tool record; the elevator role's members come from it.
+    .PARAMETER IsAvailable
+        { param($record) } -> whether that tool is installed now.
+    .PARAMETER Planned
+        Tools installed earlier in the same plan.
+    .OUTPUTS
+        PSCustomObject: Method (Direct, Elevator, WindowsSudo, RunAs, Unavailable), Executable,
+        Detail, and Tool (the elevator's name, for Elevator).
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [hashtable]$ToolDb = @{},
+        [scriptblock]$IsAvailable = { param($t) Test-DFToolAvailable -Executable $t.executable -Type $t.type },
+        [string[]]$Planned = @()
+    )
+    $method = { param($name, $exe, $detail, $tool) [pscustomobject]@{ Method = $name; Executable = $exe; Detail = $detail; Tool = $tool } }
+    if (Test-DFElevated) { return & $method 'Direct' $null 'already elevated' }
+    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
+    $elevator = @($elevators | Where-Object { & $IsAvailable $_ }) + @($elevators | Where-Object { $_.name -in $Planned }) | Select-Object -First 1
+    if ($elevator) { return & $method 'Elevator' $elevator.executable "through $($elevator.name)" $elevator.name }
+    if (-not (Test-DFInteractiveHost)) { return & $method 'Unavailable' $null 'no one to answer the admin prompt' }
+    if (Test-DFWindowsSudoInline) { return & $method 'WindowsSudo' 'sudo' "through Windows' sudo" }
+    & $method 'RunAs' $null 'in a separate administrator window (exit code only)'
+}
+
 # ---- Private/Get-DFGroupDb.ps1
 #Requires -Version 7.2
 
@@ -2255,84 +2315,6 @@ function Clear-DFToolSetupState {
     Write-DFFileAtomic -Path (Get-DFToolSetupStatePath) -Value ($state | ConvertTo-Json -Depth 10)
 }
 
-# ---- Private/Invoke-DFInstallCommand.ps1
-#Requires -Version 7.2
-
-function Expand-DFInstallArgv {
-    <#
-    .SYNOPSIS
-        Fills a manager's argv template: {id} becomes every id, other {name} tokens come from -Values.
-    .PARAMETER Template
-        The argv template from installs.install or installs.feeds. A token
-        that is exactly {id} expands to every id; a token containing {id}
-        (pkg@{id}) is repeated once per id.
-    .PARAMETER Values
-        ids (string[]) plus any other token values (name, url).
-    .OUTPUTS
-        System.String[].
-    #>
-    [CmdletBinding()]
-    [OutputType([string[]])]
-    param([Parameter(Mandatory)][string[]]$Template, [Parameter(Mandatory)][hashtable]$Values)
-    [string[]]@(foreach ($t in $Template) {
-        $fill = { param($text) [regex]::Replace($text, '\{(\w+)\}', { param($m) [string]$Values[$m.Groups[1].Value] }) }
-        if ($t -eq '{id}') { @($Values.ids) }
-        # {id} inside a token (node@{id}) gives one argument per id.
-        elseif ($t.Contains('{id}')) { foreach ($i in @($Values.ids)) { & $fill $t.Replace('{id}', $i) } }
-        else { & $fill $t }
-    })
-}
-
-function Invoke-DFInstallCommand {
-    <#
-    .SYNOPSIS
-        Runs one package-manager command and returns its exit code and output. The only place DotForge runs a manager.
-    .DESCRIPTION
-        An argv runs as a native command; a function (installs.function, e.g.
-        Install-PSResource) is called with -Arguments splatted. -Elevate runs
-        the argv through -ElevateWith (the elevator role's executable, e.g.
-        gsudo). Tests mock this function.
-    .PARAMETER Manager
-        The manager's tool record (for messages).
-    .PARAMETER Argv
-        The command line, already expanded.
-    .PARAMETER Function
-        A PowerShell command to call instead of an argv.
-    .PARAMETER Arguments
-        Parameters for -Function.
-    .PARAMETER Elevate
-        Run through -ElevateWith.
-    .PARAMETER ElevateWith
-        The elevator's executable.
-    .OUTPUTS
-        PSCustomObject: ExitCode, Output.
-    #>
-    [CmdletBinding()]
-    [OutputType([pscustomobject])]
-    param(
-        [Parameter(Mandatory)][pscustomobject]$Manager,
-        [string[]]$Argv = @(),
-        [string]$Function,
-        [hashtable]$Arguments = @{},
-        [switch]$Elevate,
-        [string]$ElevateWith
-    )
-    if ($Function) {
-        try {
-            $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
-            return [pscustomobject]@{ ExitCode = 0; Output = $out }
-        } catch {
-            return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
-        }
-    }
-    $exe, $rest = if ($Elevate) { $ElevateWith, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
-    # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
-    # never sets an exit code: don't read a stale one from an earlier command.
-    $global:LASTEXITCODE = 0
-    $out = & $exe @rest 2>&1 | Out-String
-    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
-}
-
 # ---- Private/Invoke-DFInstallPlan.ps1
 #Requires -Version 7.2
 
@@ -2345,8 +2327,9 @@ function Invoke-DFInstallPlan {
           - its feeds are added if missing (listed first, added once);
           - the batch runs as one command when the manager supports batch,
             else one command per tool;
-          - a batch the plan marked Elevate runs through its ElevateWith
-            executable (the elevator role, e.g. gsudo);
+          - a batch with an Elevation runs the way it says (an elevator such
+            as gsudo, Windows' sudo, or a separate admin window), or is
+            reported as failed when no one can answer the admin prompt;
           - when a batch fails, each of its tools is re-checked: one bad id
             doesn't fail the tools that did install.
         After the stage:
@@ -2399,19 +2382,14 @@ function Invoke-DFInstallPlan {
                 if ($d) { & $set $it.Tool 'Skipped' (& $skipFor $d) } else { $it }
             })
             if (-not $ready) { continue }
-            $elevate = [bool]$batch.Elevate
-            if ($elevate -and -not $batch.ElevateWith) {
-                foreach ($it in $ready) { & $set $it.Tool 'Skipped' "$($m.name) needs an elevated shell: rerun as administrator, or install an elevator such as gsudo" }
-                continue
-            }
             # Feeds first, each once, and only those the manager doesn't list yet.
             if ($blk.feeds) {
                 $feeds = @($ready | Where-Object { $_.Ref.Feed } | ForEach-Object { $_.Ref.Feed } | Sort-Object name -Unique)
                 if ($feeds) {
-                    $listed = (Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
+                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
                     $names = @($listed -split "`r?`n" | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $_ })
                     foreach ($f in $feeds | Where-Object { $_.name -notin $names }) {
-                        $r = Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
+                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
                         if ($r.ExitCode -ne 0) { Write-Warning "DotForge: could not add $($m.name) feed '$($f.name)' ($($f.url))." }
                     }
                 }
@@ -2430,9 +2408,9 @@ function Invoke-DFInstallPlan {
                 $r = if ($blk.function) {
                     $fnArgs = @{}
                     foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
-                    Invoke-DFInstallCommand -Manager $m -Function $blk.function -Arguments $fnArgs
+                    Invoke-DFManagerCommand -Operation install -Manager $m -Function $blk.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
+                    Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevation $batch.Elevation
                 }
                 foreach ($it in $group) {
                     $t = $ToolDb[$it.Tool]
@@ -2463,6 +2441,98 @@ function Invoke-DFInstallPlan {
         }
     }
     @($result.Values)
+}
+
+# ---- Private/Invoke-DFManagerCommand.ps1
+#Requires -Version 7.2
+
+function Expand-DFInstallArgv {
+    <#
+    .SYNOPSIS
+        Fills a manager's argv template: {id} becomes every id, other {name} tokens come from -Values.
+    .PARAMETER Template
+        The argv template from installs.install or installs.feeds. A token
+        that is exactly {id} expands to every id; a token containing {id}
+        (pkg@{id}) is repeated once per id.
+    .PARAMETER Values
+        ids (string[]) plus any other token values (name, url).
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string[]]$Template, [Parameter(Mandatory)][hashtable]$Values)
+    [string[]]@(foreach ($t in $Template) {
+        $fill = { param($text) [regex]::Replace($text, '\{(\w+)\}', { param($m) [string]$Values[$m.Groups[1].Value] }) }
+        if ($t -eq '{id}') { @($Values.ids) }
+        # {id} inside a token (node@{id}) gives one argument per id.
+        elseif ($t.Contains('{id}')) { foreach ($i in @($Values.ids)) { & $fill $t.Replace('{id}', $i) } }
+        else { & $fill $t }
+    })
+}
+
+function Invoke-DFManagerCommand {
+    <#
+    .SYNOPSIS
+        Runs one package-manager command and returns its exit code and output. The only place DotForge runs a manager.
+    .DESCRIPTION
+        Serves every operation (install, update, remove, list, outdated). An
+        argv runs as a native command; a function (Install-PSResource,
+        Update-PSResource) is called with -Arguments splatted. -Elevation, from
+        Get-DFElevationMethod, says how to get administrator rights: an
+        elevator (gsudo) or Windows' sudo runs the argv in this console; RunAs
+        opens a separate administrator window, whose output can't be read, so
+        only its exit code comes back; Unavailable runs nothing and says why.
+        Tests mock this function.
+    .PARAMETER Operation
+        install, update, remove, list or outdated (for messages).
+    .PARAMETER Manager
+        The manager's tool record (for messages).
+    .PARAMETER Argv
+        The command line, already expanded.
+    .PARAMETER Function
+        A PowerShell command to call instead of an argv.
+    .PARAMETER Arguments
+        Parameters for -Function.
+    .PARAMETER Elevation
+        From Get-DFElevationMethod; omit (or $null) when the command doesn't need administrator rights.
+    .OUTPUTS
+        PSCustomObject: ExitCode, Output.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)][ValidateSet('install', 'update', 'remove', 'list', 'outdated')][string]$Operation,
+        [Parameter(Mandatory)][pscustomobject]$Manager,
+        [string[]]$Argv = @(),
+        [string]$Function,
+        [hashtable]$Arguments = @{},
+        [pscustomobject]$Elevation
+    )
+    if ($Function) {
+        try {
+            $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
+            return [pscustomobject]@{ ExitCode = 0; Output = $out }
+        } catch {
+            return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
+        }
+    }
+    $method = if ($Elevation) { $Elevation.Method } else { 'None' }
+    if ($method -eq 'Unavailable') {
+        return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
+    }
+    if ($method -eq 'RunAs') {
+        # Start-Process joins -ArgumentList with spaces, so quote what would split.
+        $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
+        $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru
+        return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+    }
+    $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+    # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
+    # never sets an exit code: don't read a stale one from an earlier command.
+    $global:LASTEXITCODE = 0
+    $out = & $exe @rest 2>&1 | Out-String
+    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
 }
 
 # ---- Private/Invoke-DFPackageManagerPicker.ps1
@@ -3501,15 +3571,13 @@ function New-DFInstallPlan {
         if ($m -and -not $want.Contains($m) -and $ToolDb[$m] -and -not (& $IsAvailable $ToolDb[$m])) { $want.Add($m) }
     }
 
-    # A manager that needs admin rights runs only in an elevated shell or
-    # through an elevator (the elevator role, e.g. gsudo) that is installed or
-    # installed earlier in this run.
+    # How a manager that needs admin rights gets them (Get-DFElevationMethod):
+    # an elevator installed now or earlier in this run, Windows' sudo, or a
+    # separate admin window; none of them without a person to answer a prompt.
     $elevated = Test-DFElevated
-    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
-    $elevatorNow = $elevators | Where-Object { & $IsAvailable $_ } | Select-Object -First 1
-    $elevatorPlanned = if (-not $elevatorNow) { $elevators | Where-Object { $want.Contains($_.name) } | Select-Object -First 1 }
-    $elevator = if ($elevatorNow) { $elevatorNow } else { $elevatorPlanned }
-    $canElevate = $elevated -or [bool]$elevator
+    $elevation = Get-DFElevationMethod -ToolDb $ToolDb -IsAvailable $IsAvailable -Planned @($want)
+    $elevatorPlanned = if ($elevation.Method -eq 'Elevator' -and -not (& $IsAvailable $ToolDb[$elevation.Tool])) { $ToolDb[$elevation.Tool] }
+    $canElevate = $elevation.Method -ne 'Unavailable'
 
     $items = [ordered]@{}
     $gaps = [System.Collections.Generic.List[object]]::new()
@@ -3584,10 +3652,9 @@ function New-DFInstallPlan {
         $batches = @(foreach ($b in ($g.Group | Where-Object Manager | Group-Object { "$($_.Manager.name)|$($_.Source)" })) {
             $m = $b.Group[0].Manager
             $blk = $b.Group[0].Block
-            $elev = [bool]$blk.elevate -and -not $elevated
             [pscustomobject]@{
                 Manager = $m; Source = $b.Group[0].Source; Block = $blk; Items = @($b.Group)
-                Elevate = $elev; ElevateWith = $(if ($elev -and $elevator) { $elevator.executable })
+                Elevation = $(if ($blk.elevate -and $elevation.Method -ne 'Direct') { $elevation })
             }
         })
         [pscustomobject]@{ Number = [int]$g.Name; Batches = $batches; Provided = @($g.Group | Where-Object ProvidedBy) }
@@ -4720,7 +4787,7 @@ function Write-DFInstallPlan {
     foreach ($s in $Plan.Stages) {
         $parts = @(foreach ($b in $s.Batches) {
             $feeds = @($b.Items | Where-Object { $_.Ref.Feed } | ForEach-Object { "+ feed '$($_.Ref.Feed.name)' ($($_.Ref.Feed.url))" } | Select-Object -Unique)
-            $elev = if ($b.Elevate) { " (needs admin: 1 UAC prompt via $([IO.Path]::GetFileNameWithoutExtension($b.ElevateWith)))" } else { '' }
+            $elev = if ($b.Elevation) { " (needs admin: $($b.Elevation.Detail))" } else { '' }
             "$($b.Manager.name)$elev`: $((@($feeds) + @($b.Items | ForEach-Object { "$($_.Tool) ($($_.Ref.Id))" })) -join ' · ')"
         })
         $parts += @($s.Provided | ForEach-Object { "$($_.Tool) (comes with $($_.ProvidedBy))" })

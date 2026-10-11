@@ -9,8 +9,9 @@ function Invoke-DFInstallPlan {
           - its feeds are added if missing (listed first, added once);
           - the batch runs as one command when the manager supports batch,
             else one command per tool;
-          - a batch the plan marked Elevate runs through its ElevateWith
-            executable (the elevator role, e.g. gsudo);
+          - a batch with an Elevation runs the way it says (an elevator such
+            as gsudo, Windows' sudo, or a separate admin window), or is
+            reported as failed when no one can answer the admin prompt;
           - when a batch fails, each of its tools is re-checked: one bad id
             doesn't fail the tools that did install.
         After the stage:
@@ -63,19 +64,14 @@ function Invoke-DFInstallPlan {
                 if ($d) { & $set $it.Tool 'Skipped' (& $skipFor $d) } else { $it }
             })
             if (-not $ready) { continue }
-            $elevate = [bool]$batch.Elevate
-            if ($elevate -and -not $batch.ElevateWith) {
-                foreach ($it in $ready) { & $set $it.Tool 'Skipped' "$($m.name) needs an elevated shell: rerun as administrator, or install an elevator such as gsudo" }
-                continue
-            }
             # Feeds first, each once, and only those the manager doesn't list yet.
             if ($blk.feeds) {
                 $feeds = @($ready | Where-Object { $_.Ref.Feed } | ForEach-Object { $_.Ref.Feed } | Sort-Object name -Unique)
                 if ($feeds) {
-                    $listed = (Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
+                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
                     $names = @($listed -split "`r?`n" | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $_ })
                     foreach ($f in $feeds | Where-Object { $_.name -notin $names }) {
-                        $r = Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
+                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
                         if ($r.ExitCode -ne 0) { Write-Warning "DotForge: could not add $($m.name) feed '$($f.name)' ($($f.url))." }
                     }
                 }
@@ -94,9 +90,9 @@ function Invoke-DFInstallPlan {
                 $r = if ($blk.function) {
                     $fnArgs = @{}
                     foreach ($p in $blk.args.PSObject.Properties) { $fnArgs[$p.Name] = if ($p.Value -eq '{id}') { $ids } else { $p.Value } }
-                    Invoke-DFInstallCommand -Manager $m -Function $blk.function -Arguments $fnArgs
+                    Invoke-DFManagerCommand -Operation install -Manager $m -Function $blk.function -Arguments $fnArgs
                 } else {
-                    Invoke-DFInstallCommand -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevate:$elevate -ElevateWith $batch.ElevateWith
+                    Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.install -Values @{ ids = $ids }) -Elevation $batch.Elevation
                 }
                 foreach ($it in $group) {
                     $t = $ToolDb[$it.Tool]

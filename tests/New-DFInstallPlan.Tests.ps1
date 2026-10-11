@@ -73,6 +73,8 @@ Describe 'New-DFInstallPlan and elevation' {
     BeforeEach {
         Set-DFTestConfig @{ InstallVia = @{ glow = 'choco' } }
         Mock Test-DFElevated { $false }
+        Mock Test-DFInteractiveHost { $true }
+        Mock Test-DFWindowsSudoInline { $false }
         $script:Db = New-ChainDb
         $script:Db.choco = Rec '{ "name": "choco", "executable": "choco.exe", "roles": { "package-manager": { "priority": 10 } }, "installs": { "from": "choco", "install": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'
         $script:Db.gsudo = Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} }, "packages": { "scoop": "gsudo" } }'
@@ -80,7 +82,8 @@ Describe 'New-DFInstallPlan and elevation' {
     }
     AfterEach { Set-DFTestConfig $null }
 
-    It 'skips a manager that needs admin when nothing can elevate, and uses the next source' {
+    It 'skips a manager that needs admin when no one can answer the prompt, and uses the next source' {
+        Mock Test-DFInteractiveHost { $false }
         $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
         ($p.Items | Where-Object Tool -eq glow).Source | Should -Be 'scoop'
     }
@@ -88,8 +91,14 @@ Describe 'New-DFInstallPlan and elevation' {
         $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco', 'gsudo' }
         $b = $p.Stages[0].Batches[0]
         $b.Manager.name | Should -Be 'choco'
-        $b.Elevate | Should -BeTrue
-        $b.ElevateWith | Should -Be 'gsudo.exe'
+        $b.Elevation.Method | Should -Be 'Elevator'
+        $b.Elevation.Executable | Should -Be 'gsudo.exe'
+    }
+    It 'plans it through a separate admin window when nothing else can elevate' {
+        $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
+        $b = $p.Stages[0].Batches[0]
+        $b.Manager.name | Should -Be 'choco'
+        $b.Elevation.Method | Should -Be 'RunAs'
     }
     It 'makes it wait for an elevator installed in the same run' {
         $p = New-DFInstallPlan -Name gsudo, glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
@@ -100,6 +109,6 @@ Describe 'New-DFInstallPlan and elevation' {
         Mock Test-DFElevated { $true }
         $p = New-DFInstallPlan -Name glow -ToolDb $script:Db -IsAvailable { param($m) $m.name -in 'scoop', 'choco' }
         $p.Stages[0].Batches[0].Manager.name | Should -Be 'choco'
-        $p.Stages[0].Batches[0].Elevate | Should -BeFalse
+        $p.Stages[0].Batches[0].Elevation | Should -BeNullOrEmpty
     }
 }
