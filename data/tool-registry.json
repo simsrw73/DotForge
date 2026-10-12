@@ -1223,7 +1223,7 @@
       }
     },
     "glow": {
-      "sha256": "679bd86ea0658a397ff2b0c84144e703a7975606eb02cf7dbe4565b18f47c5ef",
+      "sha256": "0d43ac2a3fd8793d354f1d237643f2f579364e9c2b1589bd6b3f4152539733cb",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1239,12 +1239,22 @@
           "choco": "glow"
         },
         "xdg": {
-          "method": "wrapper",
-          "vars": null,
-          "dirs": [],
-          "instructions": "glow honors no XDG environment variable. Its config path comes from a Win32 known-folder lookup (immune to APPDATA/LOCALAPPDATA), GLAMOUR_STYLE is never read, and GLOW_STYLE loses to the non-TTY downgrade. Tools/glow.ps1 wraps the executable and passes --config and -s explicitly.",
-          "compliance": "none",
+          "method": "env",
+          "vars": {
+            "GLOW_CONFIG_HOME": "${XDG_CONFIG_HOME}/glow"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/glow"
+          ],
+          "instructions": "glow 3 reads <GLOW_CONFIG_HOME>/glow.yml (verified glow 3.0.0); its --config flag has no effect. Its style is passed with -s by the wrapper in Tools/glow.ps1, because GLOW_STYLE loses to glow's non-TTY downgrade.",
+          "compliance": "full",
           "native": {
+            "GLOW_CONFIG_HOME": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
             "${XDG_CONFIG_HOME}/glow/glow.yml": {
               "paths": [
                 "${LOCALAPPDATA}/glow/Config/glow.yml",
@@ -1253,7 +1263,7 @@
               ],
               "move": true,
               "guide": null,
-              "setting": "configFile"
+              "setting": null
             }
           }
         },
@@ -1273,8 +1283,7 @@
         },
         "themeMap": null,
         "settings": {
-          "theme": "catppuccin-mocha",
-          "configFile": "${XDG_CONFIG_HOME}/glow/glow.yml"
+          "theme": "catppuccin-mocha"
         },
         "executableExclude": [],
         "prewarm": true,

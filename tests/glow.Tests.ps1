@@ -8,15 +8,12 @@ BeforeAll {
 
 Describe 'Tools/glow.json' {
     BeforeEach { Reset-DFTestSession }
-    It 'declares the wrapper XDG method' {
-        # glow is configured by CLI flags in Tools/glow.ps1, not by Register-DFTool.
-        $script:GlowJson.xdg.method | Should -Be 'wrapper'
-    }
-
-    It 'declares no XDG environment variables' {
-        # Regression: GLOW_CONFIG_DIR was set here and glow ignores it outright —
-        # its config path comes from a Win32 known-folder lookup, not the environment.
-        $script:GlowJson.xdg.PSObject.Properties['vars'] | Should -BeNullOrEmpty
+    It 'points glow at its XDG config folder through GLOW_CONFIG_HOME' {
+        # glow 3 reads <GLOW_CONFIG_HOME>/glow.yml; its --config flag has no effect
+        # (verified glow 3.0.0; see docs/external-dependencies.md).
+        $script:GlowJson.xdg.method | Should -Be 'env'
+        $script:GlowJson.xdg.vars.GLOW_CONFIG_HOME | Should -Be '${XDG_CONFIG_HOME}/glow'
+        $script:GlowJson.settings.PSObject.Properties['configFile'] | Should -BeNullOrEmpty
     }
 
     It 'names a theme that Resolve-DFGlowStyle can resolve without the binary' {
@@ -88,10 +85,12 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'glow') | Should -BeTrue
     }
 
-    It 'sets no GLOW_CONFIG_DIR environment variable' {
-        # Regression: the env var never worked; the wrapper passes --config instead.
+    It 'sets GLOW_CONFIG_HOME, and the wrapper and picker pass no --config' {
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
+        $Env:GLOW_CONFIG_HOME | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'glow'))
         $Env:GLOW_CONFIG_DIR | Should -BeNullOrEmpty
+        ${function:global:glow}.ToString() | Should -Not -Match '--config'
+        ${function:global:Read-MarkdownFile}.ToString() | Should -Not -Match '--config'
     }
 
     It 'prefers a theme from the XDG user dir over the bundled copy' {
@@ -158,15 +157,18 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
 
     It 'renders piped markdown without hanging' {
         # Regression: a wrapper body of `& glow.exe @args` swallows the pipeline,
-        # leaving glow.exe blocked on the inherited console stdin.
+        # leaving glow.exe blocked on the inherited console stdin. The companion
+        # forwards $input; the job checks that pattern with findstr.exe, which
+        # blocks the same way: running the real glow would create
+        # %LOCALAPPDATA%\glow, which no environment variable can redirect.
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
+        ${function:global:glow}.ToString() | Should -Match ([regex]::Escape('$input | & glow.exe'))
         $job = Start-Job -ScriptBlock {
-            param($cfg, $style)
             Set-Item -Path 'function:global:glow' -Value ([scriptblock]::Create(
-                "if (`$MyInvocation.ExpectingInput) { `$input | & glow.exe --config '$cfg' -s '$style' @args }" +
-                " else { & glow.exe --config '$cfg' -s '$style' @args }"))
-            ('# Piped' | glow -w 20) -join ''
-        } -ArgumentList (Join-Path $Env:XDG_CONFIG_HOME 'glow/glow.yml'), $global:DFGlowStyle
+                "if (`$MyInvocation.ExpectingInput) { `$input | & findstr.exe . }" +
+                " else { & findstr.exe . }"))
+            ('# Piped' | glow) -join ''
+        }
 
         try {
             Wait-Job $job -Timeout 60 | Should -Not -BeNullOrEmpty -Because 'the wrapper must forward stdin instead of blocking'

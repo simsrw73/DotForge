@@ -101,7 +101,7 @@ Describe 'Companion pickers' {
             fgl $TestDrive
             $script:Calls[0] | Should -Be "fd --type f --extension md . $TestDrive"
             $script:Calls | Should -Contain 'glow -p docs\guide one.md'
-            $global:DFTestNative.Preview | Should -BeLike '*glow.exe --config "*glow.yml" -s "dracula" {}'
+            $global:DFTestNative.Preview | Should -BeLike 'glow.exe -s "dracula" {}'
         }
         It 'falls back to Get-ChildItem without fd' {
             # fgl is a closure (no mocks reach it) and this machine may have a real fd: hide both.

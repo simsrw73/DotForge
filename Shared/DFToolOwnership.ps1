@@ -63,7 +63,7 @@ function Get-DFToolRelocation {
     .DESCRIPTION
         Caches are left out: losing one costs nothing. Each result carries the
         key's xdg.native entry, or $null when the record declares none. When
-        that entry names a setting (glow's configFile) and the record's
+        that entry names a setting (fastfetch's configPath) and the record's
         settings set it, that value is the target.
     .PARAMETER Tool
         A normalized tool record.

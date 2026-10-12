@@ -1,7 +1,7 @@
 {
   "bat": {
     "versionTested": "0.26.1",
-    "probedAt": "2026-07-24",
+    "probedAt": "2026-10-11",
     "claims": [
       {
         "id": "bat/honors-env:BAT_CONFIG_PATH",
@@ -24,8 +24,8 @@
     ]
   },
   "fastfetch": {
-    "versionTested": "2.68.1",
-    "probedAt": "2026-09-06",
+    "versionTested": "2.69.0",
+    "probedAt": "2026-10-11",
     "claims": [
       {
         "id": "fastfetch/honors-env:XDG_CONFIG_HOME",
@@ -37,14 +37,21 @@
     ]
   },
   "glow": {
-    "versionTested": "2.1.2",
-    "probedAt": "2026-07-24",
+    "versionTested": "3.0.0",
+    "probedAt": "2026-10-11",
     "claims": [
       {
         "id": "glow/honors-env:GLOW_CONFIG_DIR",
         "verdict": "fail",
         "kind": "env-then-spawn",
-        "evidence": "exit=0; output=Render markdown on the CLI, with pizzazz! Usage: glow [SOURCE|DIR] [flags] glow [command] Available Commands: completion Generate the autocompletion script for the specified shell config Edit the glow"
+        "evidence": "exit=0; output=Render markdown on the CLI, \u001b[38;2;4;181;117mwith pizzazz\u001b[m! Usage: glow [SOURCE|DIR] [flags] glow [command] Available Commands: completion Generate the autocompletion script for the specified shell "
+      },
+      {
+        "id": "glow/honors-env:GLOW_CONFIG_HOME",
+        "verdict": "manual",
+        "kind": "manual",
+        "evidence": "human-verified; see retest",
+        "retest": "with GLOW_CONFIG_HOME=<dir> holding glow.yml 'width: 30', `glow <file>` wraps at 26 columns instead of 76 (verified glow 3.0.0; it wins over XDG_CONFIG_HOME/glow/glow.yml). glow --help does not show the path, so this can't be probed automatically"
       },
       {
         "id": "glow/honors-flag:-s",
@@ -57,7 +64,7 @@
         "verdict": "manual",
         "kind": "manual",
         "evidence": "human-verified; see retest",
-        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2); re-check on new versions whether --config content becomes effective"
+        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2 and 3.0.0); re-check on new versions whether --config content becomes effective"
       }
     ]
   }

@@ -179,9 +179,9 @@ zoxide hooks the prompt, so it must be set up after your prompt engine; DotForge
 
 ### glow and fastfetch
 
-Neither tool reads its config location from environment variables on Windows, so DotForge wraps each in a function that passes the path explicitly: `$XDG_CONFIG_HOME\glow\glow.yml` and `$XDG_CONFIG_HOME\fastfetch\config.jsonc`. You use them as normal:
+glow reads its config from `$XDG_CONFIG_HOME\glow\glow.yml` (DotForge sets `GLOW_CONFIG_HOME`); DotForge wraps it only to pass the session's style with `-s`. fastfetch doesn't read its config location from environment variables on Windows, so DotForge wraps it to pass `$XDG_CONFIG_HOME\fastfetch\config.jsonc` explicitly. You use them as normal:
 
-<!-- requires: glow -->
+<!-- system -->
 ```powershell
 Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('glow') }

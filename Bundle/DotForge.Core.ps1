@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: c0116eee9ba6429c8b9f15865925773781d914aca4b21328da28b388b1f076be
+# sources-sha256: 9d942e55cc2a4d56a8c415b42715546967d3ebebb0a0ae8a37141a8e5e896b6f
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -346,7 +346,7 @@ function Get-DFToolRelocation {
     .DESCRIPTION
         Caches are left out: losing one costs nothing. Each result carries the
         key's xdg.native entry, or $null when the record declares none. When
-        that entry names a setting (glow's configFile) and the record's
+        that entry names a setting (fastfetch's configPath) and the record's
         settings set it, that value is the target.
     .PARAMETER Tool
         A normalized tool record.

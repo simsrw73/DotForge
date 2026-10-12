@@ -1,31 +1,20 @@
-# Companion for glow — wraps the executable so style and config reach it as CLI
-# flags instead of environment variables.
+# Companion for glow — wraps the executable so the style reaches it as the -s flag.
 #
-# glow honors no XDG environment variable (verified against glow 2.1.2):
-#   * GLOW_CONFIG_DIR / GLOW_CONFIG_HOME / GLOW_CONFIG / GLOW_CONFIG_FILE are all
-#     ignored — the config path comes from a Win32 known-folder lookup, so it does
-#     not move even when APPDATA/LOCALAPPDATA are redirected.
-#   * GLAMOUR_STYLE is never read at all.
-#   * GLOW_STYLE is parsed, but loses to glow's non-TTY downgrade, so it silently
-#     fails to apply.
-# Only the --config and -s flags work reliably, hence this wrapper.
-# adapter for glow/honors-env:GLOW_CONFIG_DIR
+# Config: glow 3 reads <GLOW_CONFIG_HOME>/glow.yml, which glow.json's xdg.vars points
+# at $XDG_CONFIG_HOME\glow; its --config flag has no effect (verified glow 3.0.0, and
+# already ineffective in 2.1.2), so nothing here passes it.
+# Style: GLAMOUR_STYLE is never read, and GLOW_STYLE loses to glow's non-TTY
+# downgrade (still true in 3.0.0), so only -s works, hence this wrapper.
 # See docs/external-dependencies.md.
 #
-# Reads: $DFConfig.GlowTheme, then $DFConfig.Theme, then settings.theme in glow.json;
-# settings.configFile (default ${XDG_CONFIG_HOME}/glow/glow.yml).
+# Reads: $DFConfig.GlowTheme, then $DFConfig.Theme, then settings.theme in glow.json.
 # Defines: glow (wrapper), Resolve-DFGlowStyle, $global:DFGlowStyle, Read-MarkdownFile (alias fgl).
-# Writes: creates the config file's directory only; glow.yml itself is yours.
 
 # 1. Settings from tool JSON. Theme: per-tool GlowTheme -> shared Theme -> JSON default.
 $_settings = $DFCurrentTool.settings
 $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
 $_theme    = Get-DFConfiguredTheme -ToolKey 'GlowTheme' -Default $_default
 $_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
-$_cfgRaw   = $_settings.PSObject.Properties['configFile']?.Value ?? '${XDG_CONFIG_HOME}/glow/glow.yml'
-$_cfg      = Expand-DFXdgPath $_cfgRaw
-
-New-DFDirectory (Split-Path $_cfg) | Out-Null
 
 # 2. Register Resolve-DFGlowStyle (captures $_bundledDir via closure)
 $_bundledDir = Join-Path $PSScriptRoot 'glow'
@@ -87,10 +76,11 @@ $global:DFGlowStyle = Resolve-DFGlowStyle -Name $_theme
 Set-Item -Path 'function:global:glow' -Value ({
     <#
     .SYNOPSIS
-        Runs glow with DotForge's config file and the current session style.
+        Runs glow with the current session style.
     .DESCRIPTION
-        Wraps glow.exe and always passes --config <glow.yml> and -s <style>,
-        because glow ignores its environment variables on Windows. The style is
+        Wraps glow.exe and always passes -s <style>, because glow's GLOW_STYLE
+        variable loses to its non-TTY downgrade. Its config comes from
+        $XDG_CONFIG_HOME\glow\glow.yml (GLOW_CONFIG_HOME). The style is
         read from $global:DFGlowStyle on every call, so assigning to it switches
         the theme immediately; when it is empty, 'auto' is used. Other
         arguments, glow's subcommands and piped input pass through unchanged.
@@ -111,13 +101,13 @@ Set-Item -Path 'function:global:glow' -Value ({
     #>
     $_s = if ($global:DFGlowStyle) { $global:DFGlowStyle } else { 'auto' }
     if ($MyInvocation.ExpectingInput) {
-        $input | & glow.exe --config $_cfg -s $_s @args
+        $input | & glow.exe -s $_s @args
     } else {
-        & glow.exe --config $_cfg -s $_s @args
+        & glow.exe -s $_s @args
     }
 }.GetNewClosure())
 
-# 5. The fgl picker. A closure, so the preview can pass glow.exe the same --config as the wrapper.
+# 5. The fgl picker.
 Set-Item -Path 'function:global:Read-MarkdownFile' -Value ({
     <#
     .SYNOPSIS
@@ -144,7 +134,7 @@ Set-Item -Path 'function:global:Read-MarkdownFile' -Value ({
     $style = if ($global:DFGlowStyle) { $global:DFGlowStyle } else { 'auto' }
     $list = if (Get-Command fd -ErrorAction Ignore) { { fd --type f --extension md . $Path }.GetNewClosure() }
         else { { Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*.md' -ErrorAction Ignore | ForEach-Object FullName }.GetNewClosure() }
-    Invoke-DFPicker -List $list -Preview "glow.exe --config ""$_cfg"" -s ""$style"" {}" `
+    Invoke-DFPicker -List $list -Preview "glow.exe -s ""$style"" {}" `
         -Header 'Select Markdown file  [Enter to read it in glow]' -Action { param($file) glow -p $file }
 }.GetNewClosure())
 Set-Alias -Name fgl -Value Read-MarkdownFile -Scope Global -Force

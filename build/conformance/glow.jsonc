@@ -1,5 +1,6 @@
 {
-  // glow — env vars are ignored (Win32 known-folder config path); only flags work.
+  // glow — config comes from GLOW_CONFIG_HOME (or XDG_CONFIG_HOME) since glow 3;
+  // --config has no effect, and the style only reaches it as -s.
   // See Tools/glow.ps1 and docs/external-dependencies.md.
   "tool": "glow",
   "claims": [
@@ -10,6 +11,13 @@
         "setEnv": { "GLOW_CONFIG_DIR": "${SCRATCH}" },
         "spawn": ["glow", "--help"],
         "expect": { "contains": "${SCRATCH}" }
+      }
+    },
+    {
+      "id": "glow/honors-env:GLOW_CONFIG_HOME",
+      "probe": {
+        "kind": "manual",
+        "retest": "with GLOW_CONFIG_HOME=<dir> holding glow.yml 'width: 30', `glow <file>` wraps at 26 columns instead of 76 (verified glow 3.0.0; it wins over XDG_CONFIG_HOME/glow/glow.yml). glow --help does not show the path, so this can't be probed automatically"
       }
     },
     {
@@ -25,7 +33,7 @@
       "id": "glow/honors-flag:--config",
       "probe": {
         "kind": "manual",
-        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2); re-check on new versions whether --config content becomes effective"
+        "retest": "glow --config <file> locates the file but its contents do not affect `glow <file>` rendering (verified glow 2.1.2 and 3.0.0); re-check on new versions whether --config content becomes effective"
       }
     }
   ]

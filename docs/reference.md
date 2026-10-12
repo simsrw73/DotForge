@@ -120,7 +120,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [fastfetch](#fastfetch) |  | fastfetch | Runs fastfetch with DotForge's config file. |
 | [Set-LocationWithFnm](#set-locationwithfnm) |  | fnm | Changes directory (through zoxide when it is registered) and switches Node versions for the new directory. |
 | [Invoke-DFApplyFzfTheme](#invoke-dfapplyfzftheme) |  | fzf | Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS. |
-| [glow](#glow) |  | glow | Runs glow with DotForge's config file and the current session style. |
+| [glow](#glow) |  | glow | Runs glow with the current session style. |
 | [Read-MarkdownFile](#read-markdownfile) | `fgl` | glow | Fuzzy-picks a Markdown file below a folder and reads it in glow's pager. |
 | [Resolve-DFGlowStyle](#resolve-dfglowstyle) |  | glow | Resolves a glow style name to the value handed to glow's -s flag. |
 | [please](#please) |  | gsudo | Re-runs the previous command elevated, through gsudo. |
@@ -2818,7 +2818,9 @@ Render Markdown on the CLI
 | Detected by | `glow.exe` |
 | Tags | `markdown`, `viewer`, `text` |
 | Install ids | scoop: `glow`<br>choco: `glow` |
-| XDG method | `wrapper` |
+| XDG method | `env` |
+| XDG variables | `GLOW_CONFIG_HOME` = `${XDG_CONFIG_HOME}/glow` |
+| Creates | `${XDG_CONFIG_HOME}/glow` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | [`Tools/glow.ps1`](#glow-companion) |
@@ -3614,9 +3616,9 @@ Applies a theme file you wrote, e.g. { "colors": { "bg": "#282828", "fg": "#ebdb
 
 #### glow
 
-Runs glow with DotForge's config file and the current session style.
+Runs glow with the current session style.
 
-Wraps glow.exe and always passes --config &lt;glow.yml&gt; and -s &lt;style&gt;, because glow ignores its environment variables on Windows. The style is read from $global:DFGlowStyle on every call, so assigning to it switches the theme immediately; when it is empty, 'auto' is used. Other arguments, glow's subcommands and piped input pass through unchanged.
+Wraps glow.exe and always passes -s &lt;style&gt;, because glow's GLOW_STYLE variable loses to its non-TTY downgrade. Its config comes from $XDG_CONFIG_HOME\\glow\\glow.yml (GLOW_CONFIG_HOME). The style is read from $global:DFGlowStyle on every call, so assigning to it switches the theme immediately; when it is empty, 'auto' is used. Other arguments, glow's subcommands and piped input pass through unchanged.
 
 Defined by DotForge's glow companion.
 

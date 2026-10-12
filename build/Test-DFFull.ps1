@@ -6,10 +6,15 @@
     Points every XDG_*_HOME at a fresh, empty sentinel folder, runs the tests,
     and reports passed/failed tests, failed containers (a file that fails
     discovery is neither passed nor failed), and any file the run wrote into a
-    sentinel folder (a test that escaped its $TestDrive isolation). Runs with
-    $ErrorActionPreference = 'Stop', as GitHub Actions does. Exits 1 on
-    any failure, failed container or sentinel file, so CI and agents can gate
-    on it. Run it from `pwsh -NoProfile`.
+    sentinel folder (a test that escaped its $TestDrive isolation). It also
+    fails on a stray folder: a folder named after a DotForge tool that
+    appears in the real %APPDATA%, %LOCALAPPDATA% or home folder during the
+    run. Some tools (glow) find those folders through a Windows API that
+    ignores environment variables, so running the real tool in a test writes
+    there no matter how the XDG folders are redirected. Runs with
+    $ErrorActionPreference = 'Stop', as GitHub Actions does. Exits 1 on any
+    failure, failed container, sentinel file or stray folder, so CI and
+    agents can gate on it. Run it from `pwsh -NoProfile`.
 .PARAMETER Path
     Test files or folders. Default: the whole tests/ folder.
 .PARAMETER Output
@@ -39,20 +44,36 @@ foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {
     Set-Item "Env:XDG_$($kind)_HOME" $folder
 }
 
+# Folders a real tool would create in the user's own folders: one named after a tool
+# (glow, bat, ...) in %APPDATA% / %LOCALAPPDATA%, or in the home folder with or without a dot.
+$toolNames = @(Get-ChildItem (Join-Path $repo 'Tools') -Filter '*.json' | ForEach-Object BaseName)
+$getToolFolders = {
+    $roots = @($env:APPDATA, $env:LOCALAPPDATA) | Where-Object { $_ -and (Test-Path $_) }
+    $found = foreach ($root in $roots) {
+        Get-ChildItem $root -Directory -Force -ErrorAction Ignore | Where-Object Name -in $toolNames | ForEach-Object FullName
+    }
+    $found += Get-ChildItem $HOME -Directory -Force -ErrorAction Ignore |
+        Where-Object { $_.Name.TrimStart('.') -in $toolNames } | ForEach-Object FullName
+    @($found)
+}
+$foldersBefore = & $getToolFolders
+
 Push-Location $repo
 try {
     $clock = [System.Diagnostics.Stopwatch]::StartNew()
     $result = Invoke-Pester -Path $Path -PassThru -Output $Output
     $written = @(Get-ChildItem $sentinel -Recurse -File)
+    $stray = @(& $getToolFolders | Where-Object { $_ -notin $foldersBefore })
 
     "Passed $($result.PassedCount) Failed $($result.FailedCount) Skipped $($result.SkippedCount) " +
-    "FailedContainers $($result.FailedContainersCount) SentinelFiles $($written.Count) " +
+    "FailedContainers $($result.FailedContainersCount) SentinelFiles $($written.Count) StrayFolders $($stray.Count) " +
     "($([int]$clock.Elapsed.TotalSeconds) s)"
     foreach ($container in $result.FailedContainers) { "FAILED CONTAINER: $($container.Item)" }
     foreach ($test in $result.Failed) { "FAILED: $($test.ExpandedPath)`n    $($test.ErrorRecord[0].Exception.Message)" }
     foreach ($file in $written | Select-Object -First 20) { "WROTE OUTSIDE `$TestDrive: $($file.FullName)" }
+    foreach ($folder in $stray) { "CREATED A REAL TOOL FOLDER: $folder (a test ran the real tool; it is left for you to check)" }
 
-    $green = $result.FailedCount -eq 0 -and $result.FailedContainersCount -eq 0 -and $written.Count -eq 0
+    $green = $result.FailedCount -eq 0 -and $result.FailedContainersCount -eq 0 -and $written.Count -eq 0 -and $stray.Count -eq 0
     if (-not $green) { exit 1 }
 } finally {
     Pop-Location
