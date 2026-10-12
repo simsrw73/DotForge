@@ -63,10 +63,24 @@ Describe 'Activation and config ownership' {
     It 'blocks a tool that requires a conflicted tool' {
         New-OldConfig owna
         Register-DFTool -Name ownb 3>$null
-        (Get-DFToolStatus ownb).State | Should -Be 'Missing'
+        (Get-DFToolStatus ownb).State | Should -Be 'Blocked'
         (Get-DFToolStatus ownb).Detail | Should -Match 'owna'
         $Env:OWN_B | Should -BeNullOrEmpty
     }
+    It 'says a blocked tool is waiting on another, not that it is missing' {
+        New-OldConfig owna
+        Register-DFTool -Name ownb -WarningVariable warnings 3>$null
+        "$warnings" | Should -Match 'ownb \(requires owna'
+        "$warnings" | Should -Not -Match "isn't installed"
+        (Get-DFToolStatus -Missing).Name | Should -Not -Contain 'ownb'
+    }
+    It 'still calls a tool missing when it is not installed, whatever it requires' {
+        New-OldConfig owna
+        Mock Test-DFToolAvailable { $false }
+        Register-DFTool -Name ownb 3>$null
+        (Get-DFToolStatus ownb).State | Should -Be 'Missing'
+    }
+
     It 'activates an owned tool despite leftovers in the old location' {
         New-OldConfig owna
         Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'adopt' } }
@@ -142,7 +156,7 @@ Describe 'Activation and config ownership' {
         # ownb has no old config, but requires owna, which is in conflict.
         New-OldConfig owna
         Register-DFTool -Name ownb 3>$null
-        (Get-DFToolStatus ownb).State | Should -Be 'Missing'
+        (Get-DFToolStatus ownb).State | Should -Be 'Blocked'
         (Read-DFToolOwnership).ContainsKey('ownb') | Should -BeFalse
     }
     It 'warns about a conflict once, not again on a later Register-DFTool' {

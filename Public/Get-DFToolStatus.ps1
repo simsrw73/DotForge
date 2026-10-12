@@ -7,7 +7,8 @@ function Get-DFToolStatus {
     .DESCRIPTION
         One object per requested (or excluded) tool:
             Name         the tool
-            State        Active, Missing (not installed), Failed (setup or
+            State        Active, Missing (not installed), Blocked (installed,
+                         but a tool it requires isn't active), Failed (setup or
                          activation threw), Excluded (by ExcludeTools), or
                          Conflict (its old config location holds your config;
                          see Resolve-DFToolConflict)

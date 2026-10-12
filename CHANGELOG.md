@@ -70,6 +70,7 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **A tool blocked by another was reported as not installed:** cargo, whose rustup was waiting on its old config, showed in the "isn't installed" notice, and `Install-DFTool -Missing` then found nothing to install. An installed tool whose requirement isn't active is now `Blocked`, with its own notice line.
 - **micro's config folder was never moved:** its record set `MICRO_CONF_DIR`; micro reads `MICRO_CONFIG_HOME`.
 - **uv's record set `UV_DATA_DIR`, which uv ignores;** it is gone. uv's cache still moves with `UV_CACHE_DIR`.
 - **`fvenv` found no `activate.ps1` on Linux:** venvs there name it in lowercase; the picker now matches

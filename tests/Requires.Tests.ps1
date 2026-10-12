@@ -43,7 +43,7 @@ Describe 'requires (tools and role:<name>)' {
         $script:Installed = 'app.exe'
         Start-DFSession -Config @{ Tools = @('app') } -ToolsPath $script:Tools 3>$null
         $global:DFTestOrder | Should -BeNullOrEmpty
-        (Get-DFToolStatus -Name app).State | Should -Be 'Missing'
+        (Get-DFToolStatus -Name app).State | Should -Be 'Blocked'
         (Get-DFToolStatus -Name app).Detail | Should -Match 'requires lib'
     }
 
@@ -52,7 +52,7 @@ Describe 'requires (tools and role:<name>)' {
         New-ReqTool 'lib'
         $script:Installed = 'app.exe', 'lib.exe'
         Start-DFSession -Config @{ Tools = @('app'); ExcludeTools = @('lib') } -ToolsPath $script:Tools 3>$null
-        (Get-DFToolStatus -Name app).State | Should -Be 'Missing'
+        (Get-DFToolStatus -Name app).State | Should -Be 'Blocked'
         (Get-DFToolStatus -Name app).Detail | Should -Match 'requires lib, which is excluded'
     }
 

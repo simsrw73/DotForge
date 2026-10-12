@@ -86,7 +86,9 @@ function Invoke-DFSessionActivation {
             if ((Test-DFToolActive $tool.name) -and $tool.name -notin $Reactivate) { continue }
             $blocker = Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs
             if ($blocker) {
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Missing -RequestedBy $requestedBy[$tool.name] -Detail $blocker
+                # Installed, but a tool it needs isn't active: Blocked. Not installed: Missing (Install-DFTool -Missing).
+                $state = if (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type) { 'Blocked' } else { 'Missing' }
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State $state -RequestedBy $requestedBy[$tool.name] -Detail $blocker
                 continue
             }
             # Installed only now (an earlier companion put it on PATH, as fnm does
@@ -282,8 +284,9 @@ function New-DFToolStatus {
     .PARAMETER Name
         Tool name.
     .PARAMETER State
-        Active, Missing, Failed, Excluded or Conflict (its old config location
-        holds the user's config; see Resolve-DFToolConflict).
+        Active, Missing (not installed), Blocked (installed, but a tool it
+        requires isn't active), Failed, Excluded or Conflict (its old config
+        location holds the user's config; see Resolve-DFToolConflict).
     .PARAMETER RequestedBy
         'Tools', '+group', or what else requested it.
     .PARAMETER Detail
@@ -294,7 +297,7 @@ function New-DFToolStatus {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][ValidateSet('Active', 'Missing', 'Failed', 'Excluded', 'Conflict')][string]$State,
+        [Parameter(Mandatory)][ValidateSet('Active', 'Missing', 'Blocked', 'Failed', 'Excluded', 'Conflict')][string]$State,
         [string]$RequestedBy,
         [string]$Detail
     )
@@ -361,6 +364,11 @@ function Write-DFSessionNotice {
     $all = @($script:DFSessionStatus.Values)
     $missing = @($all | Where-Object State -eq 'Missing')
     $failed = @($all | Where-Object State -eq 'Failed')
+    $blocked = @($all | Where-Object State -eq 'Blocked')
+    if ($blocked) {
+        $what = if ($blocked.Count -eq 1) { "1 tool can't load until a tool it needs does" } else { "$($blocked.Count) tools can't load until tools they need do" }
+        Write-Warning "DotForge: $what`: $(($blocked | ForEach-Object { "$($_.Name) ($($_.Detail))" }) -join ', ')."
+    }
     if ($missing) {
         $n = $missing.Count
         $what = if ($n -eq 1) { "1 requested tool isn't installed" } else { "$n requested tools aren't installed" }
