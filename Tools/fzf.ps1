@@ -13,6 +13,7 @@ $_bundledDir = Join-Path $PSScriptRoot 'fzf'
 # Private helpers can't be called by name from a function:global: closure, but a
 # captured scriptblock keeps its module binding, so capture them here.
 $_resolveThemeFile = ${function:Resolve-DFThemeFile}
+$_setEnv = ${function:Set-DFEnv}
 
 Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     <#
@@ -36,6 +37,11 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
         $DFConfig.FzfTheme, then $DFConfig.Theme, then catppuccin-mocha.
     .PARAMETER Name
         A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file.
+    .PARAMETER Implicit
+        Used by the companion at startup when the theme came from $DFConfig.Theme
+        or the default: an FZF_DEFAULT_OPTS you set outside DotForge is then kept
+        as is. Without it (calling the function yourself, or an explicit
+        FzfTheme), the colors are appended to it.
     .EXAMPLE
         Invoke-DFApplyFzfTheme -Name catppuccin-mocha
 
@@ -50,7 +56,7 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Name)
+    param([Parameter(Mandatory)][string]$Name, [switch]$Implicit)
 
     $path = & $_resolveThemeFile -Tool 'fzf' -Name $Name -BundledDir $_bundledDir
     if (-not $path) {
@@ -82,10 +88,12 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
 
     $colorArg = '--color=' + ($pairs -join ',')
     $existing = [string]$Env:FZF_DEFAULT_OPTS
-    $Env:FZF_DEFAULT_OPTS = if ($existing) { "$existing`n$colorArg" } else { $colorArg }
+    $value = if ($existing) { "$existing`n$colorArg" } else { $colorArg }
+    $explicit = if (-not $Implicit) { "fzf theme '$Name' was applied" }
+    & $_setEnv -Name 'FZF_DEFAULT_OPTS' -Value $value -Tool 'fzf' -ExplicitReason $explicit
 }.GetNewClosure())
 
 # Apply initial theme: per-tool FzfTheme -> shared Theme -> 'catppuccin-mocha'.
 $_themeSetting = Get-DFConfiguredTheme -ToolKey 'FzfTheme' -Default 'catppuccin-mocha'
 $_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap $DFCurrentTool.themeMap
-Invoke-DFApplyFzfTheme -Name $_themeSetting
+Invoke-DFApplyFzfTheme -Name $_themeSetting -Implicit:(-not (Get-DFConfig FzfTheme))

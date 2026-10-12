@@ -16,6 +16,7 @@
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
 
 $_fingerprintCache = ${function:Get-DFFingerprintCache}
+$_setEnv = ${function:Set-DFEnv}
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     <#
@@ -35,6 +36,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         Bypass the cache and regenerate even when the theme name matches
         what's cached — use after a vivid upgrade that may have shifted a
         theme's palette.
+    .PARAMETER Implicit
+        Used by the companion at startup when the theme came from $DFConfig.Theme
+        or the default: an LS_COLORS you set outside DotForge is then kept.
     .EXAMPLE
         Invoke-DFApplyLSColorsTheme -Name nord
 
@@ -51,7 +55,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Name,
-        [switch]$Force
+        [switch]$Force,
+        [switch]$Implicit
     )
 
     # Keyed by theme name: a theme change regenerates, the same theme reuses it.
@@ -65,7 +70,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     }
     if (-not $value) { return }
 
-    [System.Environment]::SetEnvironmentVariable('LS_COLORS', $value, 'Process')
+    $explicit = if (-not $Implicit) { "vivid theme '$Name' was applied" }
+    & $_setEnv -Name 'LS_COLORS' -Value $value -Tool 'vivid' -ExplicitReason $explicit
 }.GetNewClosure())
 
 # Resolve: per-tool VividTheme -> shared Theme -> tool JSON default.
@@ -74,7 +80,7 @@ $_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha
 $_theme    = Get-DFConfiguredTheme -ToolKey 'VividTheme' -Default $_default
 $_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
 
-Invoke-DFApplyLSColorsTheme -Name $_theme
+Invoke-DFApplyLSColorsTheme -Name $_theme -Implicit:(-not (Get-DFConfig VividTheme))
 
 # Live picker: list vivid's own themes, preview each via `vivid preview`,
 # apply the chosen one immediately (same cache/apply path as registration).

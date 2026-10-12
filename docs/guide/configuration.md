@@ -177,6 +177,14 @@ A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker`
 
 Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `python-package-manager` (PyPI: uv, then pipx, then pip), `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
 
+### Your own environment values win
+
+If you set one of the variables a tool configures (in your profile, or system-wide) before DotForge
+loads, DotForge keeps your value and `Get-DFToolStatus <tool>` says so, e.g.
+`BAT_THEME kept as set outside DotForge ('Dracula'); DotForge wanted 'Catppuccin Mocha'`.
+A choice you make in DotForge's own config overrides it (a `Defaults` role pick, a per-tool theme key
+such as `BatTheme`, or a command like `Invoke-DFApplyFzfTheme`), with a one-time warning naming both.
+
 ## Skip a tool
 
 Why: you have a tool installed but don't want DotForge to touch it.

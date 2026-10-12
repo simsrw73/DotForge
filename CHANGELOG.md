@@ -6,6 +6,10 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Your own environment values win.** A variable a tool's `env` or `xdg.vars` sets (`LESS`, `FZF_*`,
+  `BAT_THEME`, `LS_COLORS`, ...) that you already set outside DotForge is now kept, and
+  `Get-DFToolStatus` says so; before, DotForge overwrote most of them. A value DotForge wrote itself is
+  still updated when a tool re-registers.
 - **Installing through a manager that needs admin rights (choco) no longer needs gsudo.** Without an
   elevated shell or gsudo, DotForge uses Windows' `sudo` when it is on in inline mode, else runs the
   command in a separate administrator window (one UAC prompt; only its exit code comes back). Only a

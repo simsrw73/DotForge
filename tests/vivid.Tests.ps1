@@ -129,4 +129,10 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         $keyFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.key'
         (Get-Content $keyFile -Raw).Trim() | Should -Be 'catppuccin-mocha'
     }
+
+    It 'keeps an LS_COLORS set outside DotForge when VividTheme is not set' {
+        [System.Environment]::SetEnvironmentVariable('LS_COLORS', 'di=01;34', 'Process')
+        Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
+        $Env:LS_COLORS | Should -Be 'di=01;34'
+    }
 }

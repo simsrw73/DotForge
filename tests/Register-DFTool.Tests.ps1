@@ -444,6 +444,52 @@ Register-DFTool -Name 'testtool' -ToolsPath $script:TmpTools
         Remove-Item (Join-Path $script:TmpTools 'throwtool.ps1') -ErrorAction Ignore
         $script:DFToolDb = $null
     }
+
+    Context 'env precedence' {
+        BeforeEach {
+            Mock Get-Command { [PSCustomObject]@{ Path = 'C:ake\envkeep.exe' } }
+            @'
+{
+  "name": "envkeep",
+  "executable": "envkeep.exe",
+  "xdg": { "compliance": "partial", "method": "env", "vars": { "ENVKEEP_CONFIG": "${XDG_CONFIG_HOME}/envkeep" } },
+  "env": { "ENVKEEP_OPTS": "--dotforge" }
+}
+'@ | Set-Content (Join-Path $script:TmpTools 'envkeep.json')
+        }
+        AfterEach { Remove-Item Env:ENVKEEP_OPTS, Env:ENVKEEP_CONFIG -ErrorAction Ignore }
+
+        It 'keeps an env value set outside DotForge, and says so in the status' {
+            $Env:ENVKEEP_OPTS = '--mine'
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            $Env:ENVKEEP_OPTS | Should -Be '--mine'
+            (Get-DFToolStatus -Name 'envkeep').Detail | Should -Match "ENVKEEP_OPTS kept as set outside DotForge \('--mine'\); DotForge wanted '--dotforge'"
+        }
+
+        It 'keeps an xdg.vars value set outside DotForge' {
+            $Env:ENVKEEP_CONFIG = 'C:\mine'
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            $Env:ENVKEEP_CONFIG | Should -Be 'C:\mine'
+        }
+
+        It 'rewrites a value DotForge wrote on re-registration' {
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            Set-Content (Join-Path $script:TmpTools 'envkeep.json') ((Get-Content (Join-Path $script:TmpTools 'envkeep.json') -Raw).Replace('--dotforge', '--changed'))
+            Reset-DFTestSession
+            $global:DFEnvState = @{ Written = @{ ENVKEEP_OPTS = '--dotforge' }; Warned = @{}; Kept = @{} }   # the ledger survives a session reset
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            $Env:ENVKEEP_OPTS | Should -Be '--changed'
+        }
+
+        It 'has no kept note once the value is DotForge''s again' {
+            $Env:ENVKEEP_OPTS = '--mine'
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            Remove-Item Env:ENVKEEP_OPTS
+            Reset-DFTestSession
+            Register-DFTool -Name 'envkeep' -ToolsPath $script:TmpTools
+            (Get-DFToolStatus -Name 'envkeep').Detail | Should -Be ''
+        }
+    }
 }
 
 Describe 'Register-DFTool one-time setup' {

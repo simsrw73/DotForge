@@ -246,13 +246,16 @@ function Invoke-DFToolRegistration {
     )
     $RoleWinners = $Context.RoleWinners
     $RoleDb = $Context.RoleDb
+
+    # Notes about values kept over this tool's own are rebuilt by every registration.
+    Clear-DFEnvKeptNote -Tool $Tool.name
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands
     # ${XDG_*} and passes flag strings through byte-for-byte.
     if ($Tool.env) {
         foreach ($var in $Tool.env.PSObject.Properties) {
-            [System.Environment]::SetEnvironmentVariable($var.Name, (Expand-DFXdgPath $var.Value), 'Process')
+            Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name
         }
     }
 

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: de9a17a431b95cbf90fc19b98ca58f3d87636c179a1499814dc86e5e6b9a4561
+# sources-sha256: 436657b63664ae98b9cb79cfd45436d34f88a40d2362a1dcd895b8c2cabe3a74
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -4452,7 +4452,7 @@ function Invoke-DFSessionActivation {
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name]
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(Get-DFEnvKeptNote -Tool $tool.name)
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }
@@ -5836,13 +5836,16 @@ function Invoke-DFToolRegistration {
     )
     $RoleWinners = $Context.RoleWinners
     $RoleDb = $Context.RoleDb
+
+    # Notes about values kept over this tool's own are rebuilt by every registration.
+    Clear-DFEnvKeptNote -Tool $Tool.name
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands
     # ${XDG_*} and passes flag strings through byte-for-byte.
     if ($Tool.env) {
         foreach ($var in $Tool.env.PSObject.Properties) {
-            [System.Environment]::SetEnvironmentVariable($var.Name, (Expand-DFXdgPath $var.Value), 'Process')
+            Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name
         }
     }
 
@@ -6277,7 +6280,7 @@ function Set-DFToolXdgConfig {
         or a manual-instructions warning.
     .DESCRIPTION
         Reads $Tool.xdg.method and dispatches accordingly: 'env' sets env
-        vars from xdg.vars that aren't already set and creates xdg.dirs;
+        vars from xdg.vars through Set-DFEnv (a value set outside DotForge is kept) and creates xdg.dirs;
         'manual' warns with any instructions; 'wrapper' and 'default' are
         no-ops here (handled by a companion .ps1, or not needed at all). A
         default config file is seeded once by the setup step (setup.seed,
@@ -6297,22 +6300,10 @@ function Set-DFToolXdgConfig {
     if (-not $xdg) { return }
     switch ($xdg.method) {
         'env' {
-            $vars = $xdg.vars
-            if ($vars) {
-                # A tool's vars are defaults: a variable the user already set (in
-                # their profile, or system-wide) is never overwritten.
-                $vars.PSObject.Properties | ForEach-Object {
-                    $current = [System.Environment]::GetEnvironmentVariable($_.Name, 'Process')
-                    if ($current) {
-                        Write-Verbose "DotForge: $($Tool.name) keeps $($_.Name) as already set ($current)"
-                        return
-                    }
-                    [System.Environment]::SetEnvironmentVariable(
-                        $_.Name,
-                        (Expand-DFXdgPath $_.Value),
-                        'Process'
-                    )
-                }
+            # A tool's vars are defaults: a variable the user set outside DotForge
+            # (profile, system) is kept, one DotForge wrote is updated (Set-DFEnv).
+            foreach ($var in @($xdg.vars?.PSObject.Properties)) {
+                if ($var) { Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name }
             }
             $xdg.dirs | Where-Object { $_ } |
                 ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }

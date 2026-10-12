@@ -3591,6 +3591,7 @@ Defined by DotForge's fzf companion, which calls it at startup with $DFConfig.Fz
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string |  | yes |  | A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file. |
+| `-Implicit` | switch |  |  |  | Used by the companion at startup when the theme came from $DFConfig.Theme or the default: an FZF_DEFAULT_OPTS you set outside DotForge is then kept as is. Without it (calling the function yourself, or an explicit FzfTheme), the colors are appended to it. |
 
 **Outputs:** None. Changes $Env:FZF_DEFAULT_OPTS for the current session.
 
@@ -4199,6 +4200,7 @@ Defined by DotForge's vivid companion, which calls it at startup with $DFConfig.
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string |  | yes |  | A vivid theme name; list them with vivid themes. |
 | `-Force` | switch |  |  |  | Bypass the cache and regenerate even when the theme name matches what's cached — use after a vivid upgrade that may have shifted a theme's palette. |
+| `-Implicit` | switch |  |  |  | Used by the companion at startup when the theme came from $DFConfig.Theme or the default: an LS_COLORS you set outside DotForge is then kept. |
 
 **Outputs:** None. Sets $Env:LS_COLORS and may write the cache files.
 

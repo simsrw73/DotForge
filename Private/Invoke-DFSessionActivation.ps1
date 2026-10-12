@@ -99,7 +99,7 @@ function Invoke-DFSessionActivation {
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name]
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(Get-DFEnvKeptNote -Tool $tool.name)
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }

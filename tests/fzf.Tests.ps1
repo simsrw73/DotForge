@@ -104,4 +104,20 @@ Describe 'fzf tool sidecar' {
         { Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools } | Should -Not -Throw
         $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
     }
+
+    It 'keeps an FZF_DEFAULT_OPTS set outside DotForge when the theme is not explicit' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS = '--mine'
+        Reset-DFTestSession
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha -Implicit
+        $Env:FZF_DEFAULT_OPTS | Should -Be '--mine'
+    }
+
+    It 'appends the theme to an outside FZF_DEFAULT_OPTS when called by hand' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS = '--mine'
+        Reset-DFTestSession
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha -WarningAction SilentlyContinue
+        $Env:FZF_DEFAULT_OPTS | Should -Match '^--mine\r?\n--color=.*bg\+:#313244'
+    }
 }
