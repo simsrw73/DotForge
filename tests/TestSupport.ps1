@@ -44,7 +44,7 @@ function Reset-DFTestSession {
         file that state persists, so every Describe that registers tools calls
         this from its BeforeEach. Also clears the per-name record cache and
         the full tool DB cache. Also forgets which environment values DotForge
-        wrote (Get-DFEnvState).
+        wrote (Get-DFEnvState), and the resolved themes.
     .OUTPUTS
         None.
     #>
@@ -55,7 +55,24 @@ function Reset-DFTestSession {
     $script:DFToolDb = $null
     $script:DFBannerShown = $false
     $script:DFSessionStarted = $false
+    $script:DFSessionThemes = @{}
     $global:DFEnvState = $null
+}
+
+function Get-DFTestToolRecord {
+    <#
+    .SYNOPSIS
+        Loads Tools/<Name>.json as a normalized tool record, with its folder set to Tools/.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        PSCustomObject. The record ConvertTo-DFToolRecord returns.
+    #>
+    param([Parameter(Mandatory)][string]$Name)
+    $toolsDir = Join-Path $PSScriptRoot '..' 'Tools'
+    $record = ConvertTo-DFToolRecord (Get-Content (Join-Path $toolsDir "$Name.json") -Raw | ConvertFrom-Json)
+    $record.folder = (Resolve-Path $toolsDir).Path
+    $record
 }
 
 function Get-DFTestModuleFile {

@@ -221,7 +221,7 @@ function Test-DFHasEntries {
 function Invoke-DFToolRegistration {
     <#
     .SYNOPSIS
-        Applies one installed tool's configuration: XDG, environment, aliases, picker, won roles, companion.
+        Applies one installed tool's configuration: XDG, environment, the declared theme, aliases, picker, won roles, companion.
     .DESCRIPTION
         The per-tool body of Register-DFTool. For each role the tool won, its role
         block's env (through Set-DFEnv) and aliases are applied before the
@@ -257,6 +257,13 @@ function Invoke-DFToolRegistration {
         foreach ($var in $Tool.env.PSObject.Properties) {
             Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name
         }
+    }
+
+    # A declared theme is resolved afresh on each registration (the config may
+    # have changed), applied to theme.env, and cached for the companion and wrappers.
+    if ($Tool.theme) {
+        if ($script:DFSessionThemes -is [hashtable]) { $script:DFSessionThemes.Remove($Tool.name) }
+        Set-DFToolThemeEnv -Tool $Tool -Theme (Get-DFToolTheme -Tool $Tool)
     }
 
     # A legacy (v1 "role" string) loser keeps v1 behavior: its top-level aliases
