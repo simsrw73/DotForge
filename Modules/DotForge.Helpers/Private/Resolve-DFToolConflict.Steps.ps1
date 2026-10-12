@@ -302,3 +302,68 @@ function Get-DFMoveProblem {
     }
     @($problems | Select-Object -Unique)
 }
+
+function Invoke-DFConflictGuide {
+    <#
+    .SYNOPSIS
+        Resolve-DFToolConflict with no tool name: goes through every tool waiting on the user, offering each one's advised action.
+    .DESCRIPTION
+        The advice comes from Get-DFConflictAdvice (Move, Adopt, or Skip for
+        a location DotForge must not move). Enter takes it; A, M or S picks.
+        Where it can't ask (no interactive console), it only lists the tools
+        and their advice.
+    .OUTPUTS
+        DotForge.ConflictResult per tool resolved.
+    #>
+    [CmdletBinding()]
+    param()
+    $waiting = @(Get-DFToolStatus -Conflict 3>$null)
+    if (-not $waiting) { Write-Host 'No tools are waiting on your existing config.'; return }
+    $ask = Test-DFConflictPrompt
+    $defaults = @{ Move = 'Move'; Adopt = 'Adopt'; Manual = 'Skip' }
+    $resolved = [System.Collections.Generic.List[string]]::new()
+    foreach ($status in $waiting) {
+        $advice = Get-DFConflictAdvice -Name $status.Name -Conflicts @($status.Conflicts)
+        Write-Host "$($status.Name): your config at $(@($status.Conflicts.OldPaths) -join ', ') would be hidden. $($advice.Text)"
+        if (-not $ask) { continue }
+        $default = $defaults[$advice.Action]
+        $answer = Read-DFConflictChoice -Name $status.Name -Default $default
+        $choice = switch -Regex ("$answer".Trim()) { '^$' { $default } '^[Aa]' { 'Adopt' } '^[Mm]' { 'Move' } default { 'Skip' } }
+        if ($choice -eq 'Skip') { continue }
+        $result = if ($choice -eq 'Adopt') { Resolve-DFToolConflict -Name $status.Name -Adopt -Confirm:$false }
+                  else { Resolve-DFToolConflict -Name $status.Name -Move -Confirm:$false }
+        $result
+        if ($result -and -not @($result.Problems)) { $resolved.Add($status.Name) }
+    }
+    if ($resolved.Count) { Write-Host "Load them with: Register-DFTool -Name $($resolved -join ', ')" }
+}
+
+function Test-DFConflictPrompt {
+    <#
+    .SYNOPSIS
+        Whether Resolve-DFToolConflict can ask: an interactive console whose input isn't redirected.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+    [Environment]::UserInteractive -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected
+}
+
+function Read-DFConflictChoice {
+    <#
+    .SYNOPSIS
+        Asks what to do with one tool; returns the typed answer ('' for Enter).
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Default
+        What Enter does: Move, Adopt or Skip.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Default)
+    Read-Host "  $Name - [A]dopt, [M]ove or [S]kip (Enter: $Default)"
+}

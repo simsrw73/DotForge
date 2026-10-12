@@ -128,3 +128,35 @@ Describe 'smartmontools banner job' -Skip:(-not $IsWindows) {
         @(& $script:Part.Work ([pscustomobject]@{})).Count | Should -Be 0
     }
 }
+
+Describe 'SATA wear values off the 0-100 scale' {
+    It 'shows no life percentage for a vendor whose scale starts above 100' {
+        $j = Get-Content (Join-Path "$PSScriptRoot/fixtures/banner" 'smartctl-ssd-860.json') -Raw | ConvertFrom-Json
+        ($j.ata_smart_attributes.table | Where-Object id -eq 177).value = 200
+        $value = (& $script:Part.Complete @{ drives = @($j | ConvertTo-Json -Depth 30) } ([pscustomobject]@{})).Fills.drives.Value
+        $value | Should -Not -Match '% life'
+        $value | Should -Match '^SSD · '
+    }
+    It 'reads a drive without smart_status.passed under StrictMode, without losing the others' {
+        $j = Get-Content (Join-Path "$PSScriptRoot/fixtures/banner" 'smartctl-nvme-980.json') -Raw | ConvertFrom-Json
+        $j.smart_status.PSObject.Properties.Remove('passed')
+        Set-StrictMode -Version Latest
+        try {
+            $fill = (& $script:Part.Complete @{ drives = @(($j | ConvertTo-Json -Depth 30), (Get-Content (Join-Path "$PSScriptRoot/fixtures/banner" 'smartctl-nvme-990.json') -Raw)) } ([pscustomobject]@{})).Fills.drives
+        } finally { Set-StrictMode -Off }
+        @($fill).Count | Should -Be 2
+    }
+}
+
+Describe 'Banner fills across the shipped tools' {
+    It 'fills each placeholder from exactly one tool' {
+        $owners = @{}
+        foreach ($file in Get-ChildItem "$PSScriptRoot/../Tools/*.json") {
+            $rec = Get-Content $file -Raw | ConvertFrom-Json
+            foreach ($fill in @($rec.PSObject.Properties['banner']?.Value.fills)) { if ($fill) { $owners[$fill] = @($owners[$fill]) + $rec.name | Where-Object { $_ } } }
+        }
+        foreach ($name in $owners.Keys) { @($owners[$name]).Count | Should -Be 1 -Because "$name is filled by $($owners[$name] -join ', ')" }
+        $owners.Keys | Should -Contain 'drives'
+        $owners.Keys | Should -Contain 'publicip'
+    }
+}

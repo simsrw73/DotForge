@@ -56,8 +56,8 @@ Describe 'Activation and config ownership' {
         (Get-DFToolStatus owna).State | Should -Be 'Conflict'
         $Env:OWN_A | Should -BeNullOrEmpty
         Get-Alias ownax -Scope Global -ErrorAction Ignore | Should -BeNullOrEmpty
-        @($warnings | Where-Object { "$_" -match "owna isn't active" }).Count | Should -Be 1
-        "$warnings" | Should -Match 'Resolve-DFToolConflict owna -Move'
+        @($warnings | Where-Object { "$_" -match 'waiting on your existing config: owna' }).Count | Should -Be 1
+        (Get-DFToolStatus owna).Detail | Should -Match 'Resolve-DFToolConflict owna -Move'
         (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
     }
     It 'blocks a tool that requires a conflicted tool' {
@@ -81,9 +81,27 @@ Describe 'Activation and config ownership' {
     It 'names the guide instead of -Move when the location must not be moved' {
         Write-OwnRecord owna OWN_A -Native @{ OWN_A = @{ paths = @('${HOME}/.owna'); move = $false; guide = 'Use owna''s own mover.' } }
         New-OldConfig owna
-        Register-DFTool -Name owna -WarningVariable warnings 3>$null
-        "$warnings" | Should -Match "Use owna's own mover"
-        "$warnings" | Should -Not -Match '-Move'
+        Register-DFTool -Name owna 3>$null
+        (Get-DFToolStatus owna).Detail | Should -Match "Use owna's own mover"
+        (Get-DFToolStatus owna).Detail | Should -Not -Match '-Move'
+    }
+    It 'gives each tool''s instructions once, even when several of its paths share them' {
+        Write-OwnRecord owna OWN_A -Native @{
+            OWN_A = @{ paths = @('${HOME}/.owna'); move = $false; guide = 'Use owna''s own mover.' }
+            '${XDG_DATA_HOME}/owna' = @{ paths = @('${HOME}/.owna-data'); move = $false; guide = 'Use owna''s own mover.' } }
+        New-OldConfig owna
+        New-Item -ItemType File -Force (Join-Path $script:FakeHome '.owna-data' 'db') | Out-Null
+        Register-DFTool -Name owna 3>$null
+        ([regex]::Matches((Get-DFToolStatus owna).Detail, "own mover")).Count | Should -Be 1
+    }
+    It 'names every waiting tool in one warning' {
+        Write-OwnRecord ownc OWN_C
+        New-OldConfig owna
+        New-OldConfig ownc
+        Register-DFTool -Name owna, ownc -WarningVariable warnings 3>$null
+        @($warnings | Where-Object { "$_" -match 'waiting on your existing config' }).Count | Should -Be 1
+        "$warnings" | Should -Match '2 tools are waiting on your existing config: owna, ownc'
+        "$warnings" | Should -Match 'Get-DFToolStatus -Conflict'
     }
     It 'does not record ownership when the ownership file is corrupt' {
         $path = Get-DFToolOwnershipPath
@@ -115,9 +133,9 @@ Describe 'Activation and config ownership' {
     It 'points to -Adopt, not -Move, when the XDG location already has files too' {
         New-OldConfig owna
         New-Item -ItemType File -Force (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg') | Out-Null
-        Register-DFTool -Name owna -WarningVariable warnings 3>$null
-        "$warnings" | Should -Match 'Resolve-DFToolConflict owna -Adopt'
-        "$warnings" | Should -Not -Match '-Move'
+        Register-DFTool -Name owna 3>$null
+        (Get-DFToolStatus owna).Detail | Should -Match 'Resolve-DFToolConflict owna -Adopt'
+        (Get-DFToolStatus owna).Detail | Should -Not -Match '-Move'
     }
 
     It 'records ownership only for tools that end up active' {
@@ -132,13 +150,13 @@ Describe 'Activation and config ownership' {
         New-OldConfig owna
         Register-DFTool -Name owna 3>$null
         Register-DFTool -Name ownc -WarningVariable warnings 3>$null
-        "$warnings" | Should -Not -Match "owna isn't active"
+        "$warnings" | Should -Not -Match 'waiting on your existing config'
     }
     It 'warns again when you name the conflicted tool again' {
         New-OldConfig owna
         Register-DFTool -Name owna 3>$null
         Register-DFTool -Name owna -WarningVariable warnings 3>$null
-        "$warnings" | Should -Match "owna isn't active"
+        "$warnings" | Should -Match 'waiting on your existing config: owna'
     }
 
     # A move whose old copy was in use leaves it pending; later loads retry.

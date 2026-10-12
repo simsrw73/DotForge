@@ -233,7 +233,9 @@ Disk WD10EZEX      HDD · no bad sectors · 29°C · 84,115 h
 5. A line whose check isn't back within `BannerWait` shows its last known value, marked `(cached)`, or is left out the first time.
 6. fastfetch and smartmontools are in `+core`. Without smartmontools there are no drive lines; without fastfetch only the first line prints. The banner shows only in an interactive console, never in scripts or redirected output.
 
-**Moving lines.** Your fastfetch config decides where the extra lines go: `{ "type": "custom", "key": "Public IP", "format": "@DF:publicip@" }` and `{ "type": "custom", "key": "Disk", "format": "@DF:drives@" }`. Move or delete those entries. DotForge's default config has them; a config you already have doesn't, so add them, or delete your config and run `Invoke-DFToolSetup fastfetch -Force` for the new default (which also drops the Packages and physical-disk lines). Running `fastfetch` by hand fills them from the last known values.
+**Moving lines.** Your fastfetch config decides where the extra lines go: `{ "type": "custom", "key": "Public IP", "format": "@DF:publicip@" }` and `{ "type": "custom", "key": "Disk", "format": "@DF:drives@" }`. Move or delete those entries. DotForge's default config has them; a config you already have doesn't, so add them, or delete your config and run `Invoke-DFToolSetup fastfetch -Force` for the new default (which also drops the Packages and physical-disk lines). Running `fastfetch` by hand fills them from the last known values; to do that it captures fastfetch's output, so a config with an image logo or one that fits the terminal width shows as plain text there (the banner itself is unaffected).
+
+**Not wanted?** `ExcludeTools = @('smartmontools')` drops the drive lines and the "isn't installed" notice; `ShowBanner = $false` (the default) turns the banner off.
 
 **Colors** follow your fastfetch config (`display.color.keys`, `display.color.output`, `display.separator`).
 
@@ -252,10 +254,12 @@ DotForge never does that on its own:
 <!-- fragment -->
 
 ```text
-WARNING: DotForge: bat isn't active: your existing config at C:\Users\you\AppData\Roaming\bat\config would be hidden. Run Resolve-DFToolConflict bat -Move (or -Adopt), or remove bat from Tools.
+WARNING: DotForge: 2 tools are waiting on your existing config: bat, zoxide. See Get-DFToolStatus -Conflict, or run Resolve-DFToolConflict to go through them.
 ```
 
-`Get-DFToolStatus -Conflict` lists every tool waiting on you. You have three choices:
+`Get-DFToolStatus -Conflict` lists every tool waiting on you, with where its config is and what DotForge advises: `-Move` when the XDG location is empty, `-Adopt` when it already has config (DotForge has been using that copy), or the tool's own instructions when DotForge must not move it (rustup, vcpkg).
+
+`Resolve-DFToolConflict` with no tool name goes through them one at a time: Enter takes the advice; `A`, `M` or `S` adopts, moves or skips. Or decide for each tool yourself:
 
 | You want | Run |
 | --- | --- |
@@ -339,7 +343,7 @@ Set these in your profile, before or after importing DotForge:
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |
 | `PAGER was '<value>' but $DFConfig.Defaults.pager is '<tool>'` | you set the variable and also chose a different tool | Remove one of the two settings. |
-| `<tool> isn't active: your existing config at <path> would be hidden` | the tool's own config location has your config, and DotForge hasn't been told it may take over | See [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
+| `N tools are waiting on your existing config: ...` | those tools' own config locations have your config, and DotForge hasn't been told it may take over | Run `Resolve-DFToolConflict`; see [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
 | `<path> names the old location; change it to <path>` from `Resolve-DFToolConflict -Move` | a config file refers to the folder being moved | Edit that line to the new location, then run `-Move` again. |
 | `<path> is still in use; DotForge tries again on the next load` | a moved tool's old copy was open | Close what holds it and open a new shell; or delete it yourself and run `Resolve-DFToolConflict <tool> -Done`. |
 | No drive lines in the banner | smartmontools isn't installed, or isn't in `Tools` | `Install-DFTool smartmontools`, and keep `+core` (or `smartmontools`) in `Tools`. |

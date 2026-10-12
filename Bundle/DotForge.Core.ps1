@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e3a364e0c761e1e29b0a3e0b3e355b8cdb2ce7da0b6302162626e3f5fea1fd3a
+# sources-sha256: 9c4ceb853ff72832b902dc83de2345daa014f7023f5b7a2c2ce736e86cbf2dc8
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -560,6 +560,36 @@ function Invoke-DFPendingRemoval {
     if ($left.Count -eq $before.Count) { return $false }
     if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
     $true
+}
+
+function Get-DFConflictAdvice {
+    <#
+    .SYNOPSIS
+        What to do about a tool whose old config location holds the user's config: one rule, used by the status detail and Resolve-DFToolConflict.
+    .DESCRIPTION
+        A location DotForge must not move (move: false) needs the tool's own
+        instructions, then -Adopt. When the XDG location already has files,
+        DotForge has been using that copy, so -Adopt. Otherwise -Move.
+        Each instruction is given once, even when several paths share it.
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Conflicts
+        Find-DFToolConflict's Conflicts.
+    .OUTPUTS
+        pscustomobject: Action (Manual, Adopt or Move) and Text.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Conflicts)
+    $guides = @($Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide | Where-Object { $_ } | Select-Object -Unique)
+    $inUse = @($Conflicts | Where-Object TargetHasContent | ForEach-Object Target | Select-Object -Unique)
+    $leave = "or remove $Name from Tools."
+    if (@($Conflicts | Where-Object { -not $_.Move })) {
+        return [pscustomobject]@{ Action = 'Manual'; Text = "$($guides -join ' ') Then run Resolve-DFToolConflict $Name -Adopt, $leave" }
+    }
+    if ($inUse) {
+        return [pscustomobject]@{ Action = 'Adopt'; Text = "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $Name -Adopt, $leave" }
+    }
+    [pscustomobject]@{ Action = 'Move'; Text = "Run Resolve-DFToolConflict $Name -Move (or -Adopt), $leave" }
 }
 
 # ---- Shared/Expand-DFXdgPath.ps1
@@ -2133,6 +2163,9 @@ function Write-DFFileAtomic {
 # See docs/superpowers/specs/2026-10-11-startup-banner-design.md.
 
 $script:DFBannerShown = $false
+# Set when a Start-DFSession finishes: a later call in the same shell (say, one
+# that turns ShowBanner on) never clears the screen of a shell already in use.
+$script:DFSessionStarted = $false
 
 function Test-DFBannerHost {
     <#
@@ -2211,16 +2244,17 @@ function Start-DFBanner {
     #>
     [CmdletBinding()]
     param([AllowEmptyCollection()][string[]]$Tools)
-    if (-not (Get-DFConfig ShowBanner -Default $false) -or $script:DFBannerShown -or -not (Test-DFBannerHost)) { return }
+    if (-not (Get-DFConfig ShowBanner -Default $false) -or $script:DFBannerShown -or $script:DFSessionStarted -or -not (Test-DFBannerHost)) { return }
     $script:DFBannerShown = $true
     try {
         if (Get-DFConfig BannerClear -Default $true) { Clear-Host }
         $parts = @(Get-DFBannerPart -Tools $Tools)
         $style = Get-DFBannerPartStyle -Parts $parts
-        $version = $ExecutionContext.SessionState.Module.Version
+        $module = $ExecutionContext.SessionState.Module
+        $version = if ($module) { $module.Version }
         $firstLine = Format-DFBannerLine -Key 'DotForge' -Value "$(if ($version) { "$version · " })loading $(@($Tools).Count) tools…" -Style $style
         Write-DFBannerLines -Lines @($firstLine) -DelayMs 0
-        $work = @(foreach ($part in $parts) {
+        $work = @(foreach ($part in @(Select-DFBannerWorkPart -Parts $parts)) {
             try { & $part.Script.Work $part.Context }
             catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed to start: $($_.Exception.Message)" }
         })
@@ -2251,6 +2285,82 @@ function Get-DFBannerPart {
             $script = . $path
             [pscustomobject]@{ Tool = $tool; Context = [pscustomobject]@{ Tool = $tool }; Script = $script }
         } catch { Write-Warning "DotForge: banner part $($tool.name) didn't load: $($_.Exception.Message)" }
+    }
+}
+
+function Select-DFBannerWorkPart {
+    <#
+    .SYNOPSIS
+        The parts whose background work something will show: none without a body part; otherwise the body part and the parts filling a placeholder it uses.
+    .DESCRIPTION
+        A body part may say which placeholders its body has (Uses); without
+        Uses every fill counts as used.
+    .PARAMETER Parts
+        Get-DFBannerPart result.
+    .OUTPUTS
+        The parts to start.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Parts)
+    $body = @($Parts | Where-Object { $_.Tool.banner.body })
+    if (-not $body) { return }
+    $used = $null
+    foreach ($part in $body) {
+        if (-not $part.Script.PSObject.Properties['Uses']) { continue }
+        try { $used = @($used) + @(& $part.Script.Uses $part.Context) | Where-Object { $_ } } catch { $used = $null; break }
+    }
+    foreach ($part in $Parts) {
+        if ($part.Tool.banner.body -or $null -eq $used) { $part; continue }
+        if (@($part.Tool.banner.fills | Where-Object { $_ -in $used })) { $part }
+    }
+}
+
+function Set-DFBannerSessionStarted {
+    <#
+    .SYNOPSIS
+        Records that this shell's first Start-DFSession has run, so no later call shows a banner.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    $script:DFSessionStarted = $true
+}
+
+function Stop-DFBanner {
+    <#
+    .SYNOPSIS
+        Lets the banner's background work end without showing it (the load failed or was stopped).
+    .PARAMETER State
+        Start-DFBanner result; $null does nothing.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param($State)
+    if (-not $State -or -not $State.PSObject.Properties['Handle'] -or -not $State.Handle.Pool) { return }
+    try { $null = $State.Handle.Pool.BeginClose($null, $null) } catch { Write-Verbose "DotForge: $($_.Exception.Message)" }
+}
+
+function ConvertTo-DFBannerFillItem {
+    <#
+    .SYNOPSIS
+        The well-formed fill items (Key, Value, Alert) among what a part or the cache gave; the rest are dropped.
+    .PARAMETER Items
+        Candidate items.
+    .OUTPUTS
+        pscustomobject per item: Key, Value, Alert.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][AllowEmptyCollection()][object[]]$Items)
+    foreach ($item in @($Items)) {
+        $get = if ($item -is [System.Collections.IDictionary]) { { param($n) if ($item.Contains($n)) { $item[$n] } } }
+               elseif ($item -is [psobject] -and $item -isnot [string] -and $item -isnot [ValueType]) { { param($n) $item.PSObject.Properties[$n]?.Value } }
+               else { $null }
+        if (-not $get) { continue }
+        $value = & $get 'Value'
+        if ($null -eq $value) { continue }
+        [pscustomobject]@{ Key = (& $get 'Key'); Value = "$value"; Alert = [bool](& $get 'Alert') }
     }
 }
 
@@ -2294,9 +2404,14 @@ function Show-DFBanner {
         foreach ($part in $State.Parts) {
             try {
                 $done = & $part.Script.Complete $results $part.Context
-                if ($part.Tool.banner.body -and $done.Body) { $body = @($done.Body) }
-                if ($done.Fills) {
-                    foreach ($name in @($done.Fills.Keys)) { if (@($done.Fills[$name])) { $fills[$name] = @($done.Fills[$name]) } }
+                $doneBody = if ($done -is [psobject]) { $done.PSObject.Properties['Body']?.Value }
+                $doneFills = if ($done -is [psobject]) { $done.PSObject.Properties['Fills']?.Value }
+                if ($part.Tool.banner.body -and $doneBody) { $body = @($doneBody | ForEach-Object { "$_" }) }
+                if ($doneFills -is [System.Collections.IDictionary]) {
+                    foreach ($name in @($doneFills.Keys)) {
+                        $items = @(ConvertTo-DFBannerFillItem -Items @($doneFills[$name]))
+                        if ($items) { $fills[$name] = $items }
+                    }
                 }
             } catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed: $($_.Exception.Message)" }
         }
@@ -2336,9 +2451,10 @@ function Merge-DFBannerCache {
     }
     foreach ($name in $Names) {
         if ($all.ContainsKey($name) -or -not $cache.ContainsKey($name)) { continue }
-        $all[$name] = @(foreach ($item in @($cache[$name].items)) {
-            [pscustomobject]@{ Key = $item.Key; Value = "$($item.Value) (cached)"; Alert = [bool]$item.Alert }
-        })
+        $entry = $cache[$name]
+        $cached = if ($entry -is [System.Collections.IDictionary] -and $entry.Contains('items') -and $entry['items'] -is [System.Collections.IList]) { @(ConvertTo-DFBannerFillItem -Items @($entry['items'])) }
+        if (-not $cached) { continue }
+        $all[$name] = @(foreach ($item in $cached) { [pscustomobject]@{ Key = $item.Key; Value = "$($item.Value) (cached)"; Alert = $item.Alert } })
     }
     if ($Fills.Count) { Write-DFFileAtomic -Path (Get-DFBannerCachePath) -Value ($cache | ConvertTo-Json -Depth 6) }
     $all
@@ -2408,6 +2524,11 @@ function ConvertTo-DFAnsiColor {
         return "$e[38;2;$([Convert]::ToInt32($Matches[1], 16));$([Convert]::ToInt32($Matches[2], 16));$([Convert]::ToInt32($Matches[3], 16))m"
     }
     if ($Color -match '^\d+(;\d+)*$') { return "$e[${Color}m" }
+    # fastfetch's color names: the 8 standard colors, their bright_ forms, and default.
+    $names = @{ black = 30; red = 31; green = 32; yellow = 33; blue = 34; magenta = 35; cyan = 36; white = 37; default = 39 }
+    $name = "$Color".ToLowerInvariant()
+    if ($names.ContainsKey($name)) { return "$e[$($names[$name])m" }
+    if ($name -match '^bright_(\w+)$' -and $names.ContainsKey($Matches[1]) -and $Matches[1] -ne 'default') { return "$e[$($names[$Matches[1]] + 60)m" }
     ''
 }
 
@@ -4609,16 +4730,12 @@ function Write-DFSessionNotice {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
     }
-    foreach ($conflicted in @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })) {
-        $conflicted.Warned = $true
-        $name = $conflicted.Name
-        $paths = @($conflicted.Conflicts.OldPaths) -join ', '
-        $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
-        $inUse = @($conflicted.Conflicts | Where-Object TargetHasContent | ForEach-Object Target)
-        $how = if ($guides) { "$($guides -join ' ') Then run Resolve-DFToolConflict $name -Adopt" }
-               elseif ($inUse) { "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $name -Adopt" }
-               else { "Run Resolve-DFToolConflict $name -Move (or -Adopt)" }
-        Write-Warning "DotForge: $name isn't active: your existing config at $paths would be hidden. $how, or remove $name from Tools."
+    # One line for every tool waiting on the user; each one's advice is in Get-DFToolStatus -Conflict.
+    $waiting = @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })
+    if ($waiting) {
+        foreach ($conflicted in $waiting) { $conflicted.Warned = $true }
+        $what = if ($waiting.Count -eq 1) { '1 tool is' } else { "$($waiting.Count) tools are" }
+        Write-Warning "DotForge: $what waiting on your existing config: $($waiting.Name -join ', '). See Get-DFToolStatus -Conflict, or run Resolve-DFToolConflict to go through them."
     }
 }
 
@@ -4704,7 +4821,7 @@ function Test-DFToolOwnership {
     $check = Find-DFToolConflict -Tool $Record -Ownership $table
     if ($check.Conflicts) {
         $paths = @($check.Conflicts.OldPaths) -join ', '
-        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden"
+        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $check.Conflicts).Text)"
         $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
         # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
         # re-checks every requested tool, but warns again only for one it names.
@@ -8207,9 +8324,17 @@ function Start-DFSession {
         }
     }
 
-    $null = Invoke-DFSessionActivation -Request $request @pathArgs
-    # Before the notices, so warnings print under the banner.
-    Show-DFBanner -State $banner
+    $shown = $false
+    try {
+        $null = Invoke-DFSessionActivation -Request $request @pathArgs
+        # Before the notices, so warnings print under the banner.
+        Show-DFBanner -State $banner
+        $shown = $true
+    } finally {
+        # A failed or stopped load leaves no banner work running.
+        if (-not $shown) { Stop-DFBanner -State $banner }
+        Set-DFBannerSessionStarted
+    }
 
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) {
         $activeNames = @($script:DFSessionStatus.Values | Where-Object State -eq 'Active' | ForEach-Object Name)

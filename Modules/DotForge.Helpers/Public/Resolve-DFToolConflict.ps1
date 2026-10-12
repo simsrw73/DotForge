@@ -26,18 +26,28 @@ function Resolve-DFToolConflict {
         -Done clears a move's unfinished removals after you've dealt with
         them yourself.
 
+        With no tool name, it goes through every tool waiting on you
+        (Get-DFToolStatus -Conflict) and offers each one's advised action:
+        -Move when the XDG location is empty, -Adopt when it already has your
+        config, and Skip when the tool must be moved by hand first. Enter takes
+        the advice; A, M or S picks. Where it can't ask, it only lists them.
+
         Ownership is recorded in $XDG_STATE_HOME\dotforge\ownership.json. From
         then on DotForge configures the tool in its sessions and ignores
         anything left in the old location. Programs started outside a
         DotForge session keep using the old location.
     .PARAMETER Name
-        The tool.
+        The tool. Leave it out to go through every tool waiting on you.
     .PARAMETER Move
         Copy the old config to the XDG location, check it, then rename the old copy to <name>.dotforge-moved.
     .PARAMETER Adopt
         Record ownership without moving anything.
     .PARAMETER Done
         Clear a move's unfinished removals, keeping ownership.
+    .EXAMPLE
+        Resolve-DFToolConflict
+
+        Goes through every tool waiting on your existing config, one at a time, offering the advised action for each.
     .EXAMPLE
         Resolve-DFToolConflict bat -Move -WhatIf
 
@@ -58,15 +68,19 @@ function Resolve-DFToolConflict {
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Move')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Guided')]
     [OutputType([pscustomobject])]
     param(
-        [Parameter(Mandatory, Position = 0)][string]$Name,
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'Move')]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'Adopt')]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'Done')]
+        [string]$Name,
         [Parameter(Mandatory, ParameterSetName = 'Move')][switch]$Move,
         [Parameter(Mandatory, ParameterSetName = 'Adopt')][switch]$Adopt,
         [Parameter(Mandatory, ParameterSetName = 'Done')][switch]$Done
     )
 
+    if ($PSCmdlet.ParameterSetName -eq 'Guided') { return Invoke-DFConflictGuide }
     $tool = (Import-DFToolDb -Name $Name)[$Name]
     if (-not $tool) { Write-Error "DotForge: no tool record named '$Name'."; return }
     $ownership = Read-DFToolOwnership

@@ -184,3 +184,89 @@ Describe 'A banner body that is not ready in time' {
         $script:Printed[1] | Should -Match 'slowbody.*BannerWait'
     }
 }
+
+Describe 'Banner robustness' {
+    BeforeEach {
+        Set-DFTestXdg
+        Reset-DFTestSession
+        $script:DFToolDb = $null
+        $script:DFToolRecordCache = @{}
+        Remove-Item (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
+        $script:UserTools = Join-Path $Env:XDG_CONFIG_HOME 'dotforge' 'tools'
+        New-Item -ItemType Directory -Force $script:UserTools | Out-Null
+        Set-DFTestConfig @{ ShowBanner = $true; BannerLineDelay = 0; BannerWait = 300; BannerClear = $false }
+        Mock Test-DFBannerHost { $true }
+        $script:Printed = [System.Collections.Generic.List[string]]::new()
+        Mock Write-DFBannerLines { foreach ($line in $Lines) { $script:Printed.Add(($line -replace "$([char]27)\[[0-9;]*m", '')) } }
+        $global:DFTestDrivesWorkCalled = $false
+        Write-BannerPart body '{ "script": "body.banner.ps1", "body": true, "fills": ["ip"] }' @'
+[pscustomobject]@{
+    Uses = { param($Context) @('ip', 'drives') }
+    Work = { param($Context) @(@{ Name = 'ip'; ScriptBlock = { '9.9.9.9' }; ArgumentList = @() }) }
+    Complete = { param($Results, $Context)
+        [pscustomobject]@{ Body = @('OS  Win', 'Public IP  @DF:ip@', 'Disk  @DF:drives@')
+            Fills = @{ ip = @(if ($Results['ip']) { [pscustomobject]@{ Key = $null; Value = "$($Results['ip'])"; Alert = $false } }) } } }
+}
+'@
+        Write-BannerPart drives '{ "script": "drives.banner.ps1", "fills": ["drives"] }' @'
+[pscustomobject]@{
+    Work = { param($Context) $global:DFTestDrivesWorkCalled = $true; @() }
+    Complete = { param($Results, $Context) [pscustomobject]@{ Body = $null; Fills = @{ drives = @('just a string', 42) } } }
+}
+'@
+    }
+    AfterEach {
+        Set-StrictMode -Off
+        Remove-Variable DFTestDrivesWorkCalled -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; $script:DFToolDb = $null; $script:DFToolRecordCache = @{}; Restore-DFTestXdg
+    }
+
+    It 'keeps the rest when a part returns fill items of the wrong shape, even under StrictMode' {
+        Set-StrictMode -Version Latest
+        Show-DFBanner -State (Start-DFBanner -Tools body, drives) 3>$null
+        Set-StrictMode -Off
+        @($script:Printed) | Should -Contain 'OS  Win'
+        @($script:Printed) | Should -Contain 'Public IP  9.9.9.9'
+    }
+    It 'ignores a malformed cache entry' {
+        Write-DFFileAtomic -Path (Get-DFBannerCachePath) -Value '{ "drives": { "at": "x", "items": "not a list" } }'
+        Write-BannerPart drives '{ "script": "drives.banner.ps1", "fills": ["drives"] }' '[pscustomobject]@{ Work = { @() }; Complete = { [pscustomobject]@{ Body = $null; Fills = @{} } } }'
+        Set-StrictMode -Version Latest
+        Show-DFBanner -State (Start-DFBanner -Tools body, drives) 3>$null
+        Set-StrictMode -Off
+        @($script:Printed) | Should -Contain 'OS  Win'
+    }
+    It 'does no work for a part whose lines no body uses' {
+        Write-BannerPart body '{ "script": "body.banner.ps1", "body": true, "fills": ["ip"] }' @'
+[pscustomobject]@{
+    Uses = { param($Context) @('ip') }
+    Work = { param($Context) @() }
+    Complete = { param($Results, $Context) [pscustomobject]@{ Body = @('OS  Win'); Fills = @{} } }
+}
+'@
+        Show-DFBanner -State (Start-DFBanner -Tools body, drives)
+        $global:DFTestDrivesWorkCalled | Should -BeFalse
+    }
+    It 'does no work at all without a body part' {
+        Show-DFBanner -State (Start-DFBanner -Tools drives)
+        $global:DFTestDrivesWorkCalled | Should -BeFalse
+    }
+    It 'shows the banner only on the first Start-DFSession of the shell' {
+        Set-DFTestConfig $null
+        Mock Clear-Host { }
+        Start-DFSession -Config @{ Tools = @() } 3>$null
+        Start-DFSession -Config @{ Tools = @('body'); ShowBanner = $true } 3>$null
+        Should -Invoke Clear-Host -Times 0 -Exactly
+        @($script:Printed).Count | Should -Be 0
+    }
+    It 'closes the banner''s work when tool activation fails' {
+        Set-DFTestConfig $null
+        Mock Start-DFBanner { 'state' }
+        Mock Show-DFBanner { }
+        Mock Stop-DFBanner { }
+        Mock Invoke-DFSessionActivation { throw 'boom' }
+        { Start-DFSession -Config @{ Tools = @(); ShowBanner = $true } 3>$null } | Should -Throw '*boom*'
+        Should -Invoke Stop-DFBanner -Times 1 -Exactly -ParameterFilter { $State -eq 'state' }
+        Should -Invoke Show-DFBanner -Times 0 -Exactly
+    }
+}

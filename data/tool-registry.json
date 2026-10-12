@@ -3049,7 +3049,7 @@
       }
     },
     "rustup": {
-      "sha256": "8deeb7e9e37515fd7a7cf9b84c1b151b0dfbf8f8a48e583a848ab45c4325b71d",
+      "sha256": "4a4d713d64ed98394360470e9b09938529bc527f8a9f3f95be047398d17ed71c",
       "record": {
         "name": "rustup",
         "executable": "rustup.exe",
@@ -3082,7 +3082,7 @@
                 "${HOME}/.rustup"
               ],
               "move": false,
-              "guide": "rustup keeps absolute paths inside; follow https://rust-lang.github.io/rustup/installation/index.html to move it.",
+              "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them.",
               "setting": null
             },
             "CARGO_HOME": {
@@ -3090,7 +3090,7 @@
                 "${HOME}/.cargo"
               ],
               "move": false,
-              "guide": "Cargo home is part of rustup's installation layout; follow https://rust-lang.github.io/rustup/installation/index.html to move it.",
+              "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them.",
               "setting": null
             }
           }

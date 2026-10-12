@@ -84,9 +84,17 @@ function Start-DFSession {
         }
     }
 
-    $null = Invoke-DFSessionActivation -Request $request @pathArgs
-    # Before the notices, so warnings print under the banner.
-    Show-DFBanner -State $banner
+    $shown = $false
+    try {
+        $null = Invoke-DFSessionActivation -Request $request @pathArgs
+        # Before the notices, so warnings print under the banner.
+        Show-DFBanner -State $banner
+        $shown = $true
+    } finally {
+        # A failed or stopped load leaves no banner work running.
+        if (-not $shown) { Stop-DFBanner -State $banner }
+        Set-DFBannerSessionStarted
+    }
 
     if (-not (Get-DFConfig SkipConflictCheck -Default $false)) {
         $activeNames = @($script:DFSessionStatus.Values | Where-Object State -eq 'Active' | ForEach-Object Name)

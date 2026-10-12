@@ -986,11 +986,13 @@ Shows that PSFzf would be removed first, then fzf, without removing anything.
 Hands a tool's config over to DotForge when its old config location still holds your config.
 
 ```text
-Resolve-DFToolConflict [-Name] <string> -Move [-WhatIf] [-Confirm] [<CommonParameters>]
+Resolve-DFToolConflict [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Resolve-DFToolConflict [-Name] <string> -Done [-WhatIf] [-Confirm] [<CommonParameters>]
 
 Resolve-DFToolConflict [-Name] <string> -Adopt [-WhatIf] [-Confirm] [<CommonParameters>]
 
-Resolve-DFToolConflict [-Name] <string> -Done [-WhatIf] [-Confirm] [<CommonParameters>]
+Resolve-DFToolConflict [-Name] <string> -Move [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 DotForge leaves a requested tool inactive (Get-DFToolStatus -Conflict) while the tool's own default location holds config or data that its XDG locations would hide. This command resolves that, one of three ways:
@@ -1001,11 +1003,13 @@ DotForge leaves a requested tool inactive (Get-DFToolStatus -Conflict) while the
 
 -Done clears a move's unfinished removals after you've dealt with them yourself.
 
+With no tool name, it goes through every tool waiting on you (Get-DFToolStatus -Conflict) and offers each one's advised action: -Move when the XDG location is empty, -Adopt when it already has your config, and Skip when the tool must be moved by hand first. Enter takes the advice; A, M or S picks. Where it can't ask, it only lists them.
+
 Ownership is recorded in $XDG_STATE_HOME\\dotforge\\ownership.json. From then on DotForge configures the tool in its sessions and ignores anything left in the old location. Programs started outside a DotForge session keep using the old location.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Name` | string |  | yes |  | The tool. |
+| `-Name` | string |  | yes |  | The tool. Leave it out to go through every tool waiting on you. |
 | `-Move` | switch |  | yes |  | Copy the old config to the XDG location, check it, then rename the old copy to &lt;name&gt;.dotforge-moved. |
 | `-Adopt` | switch |  | yes |  | Record ownership without moving anything. |
 | `-Done` | switch |  | yes |  | Clear a move's unfinished removals, keeping ownership. |
@@ -1015,12 +1019,20 @@ Ownership is recorded in $XDG_STATE_HOME\\dotforge\\ownership.json. From then on
 **Example 1**
 
 ```powershell
+Resolve-DFToolConflict
+```
+
+Goes through every tool waiting on your existing config, one at a time, offering the advised action for each.
+
+**Example 2**
+
+```powershell
 Resolve-DFToolConflict bat -Move -WhatIf
 ```
 
 Shows what would be moved, without changing anything.
 
-**Example 2**
+**Example 3**
 
 ```powershell
 Resolve-DFToolConflict bat -Move
@@ -1028,7 +1040,7 @@ Resolve-DFToolConflict bat -Move
 
 Moves bat's config from its old location to $XDG_CONFIG_HOME\\bat, then loads it with Register-DFTool -Name bat.
 
-**Example 3**
+**Example 4**
 
 ```powershell
 Resolve-DFToolConflict starship -Adopt

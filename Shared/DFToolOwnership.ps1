@@ -278,3 +278,33 @@ function Invoke-DFPendingRemoval {
     if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
     $true
 }
+
+function Get-DFConflictAdvice {
+    <#
+    .SYNOPSIS
+        What to do about a tool whose old config location holds the user's config: one rule, used by the status detail and Resolve-DFToolConflict.
+    .DESCRIPTION
+        A location DotForge must not move (move: false) needs the tool's own
+        instructions, then -Adopt. When the XDG location already has files,
+        DotForge has been using that copy, so -Adopt. Otherwise -Move.
+        Each instruction is given once, even when several paths share it.
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Conflicts
+        Find-DFToolConflict's Conflicts.
+    .OUTPUTS
+        pscustomobject: Action (Manual, Adopt or Move) and Text.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Conflicts)
+    $guides = @($Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide | Where-Object { $_ } | Select-Object -Unique)
+    $inUse = @($Conflicts | Where-Object TargetHasContent | ForEach-Object Target | Select-Object -Unique)
+    $leave = "or remove $Name from Tools."
+    if (@($Conflicts | Where-Object { -not $_.Move })) {
+        return [pscustomobject]@{ Action = 'Manual'; Text = "$($guides -join ' ') Then run Resolve-DFToolConflict $Name -Adopt, $leave" }
+    }
+    if ($inUse) {
+        return [pscustomobject]@{ Action = 'Adopt'; Text = "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $Name -Adopt, $leave" }
+    }
+    [pscustomobject]@{ Action = 'Move'; Text = "Run Resolve-DFToolConflict $Name -Move (or -Adopt), $leave" }
+}

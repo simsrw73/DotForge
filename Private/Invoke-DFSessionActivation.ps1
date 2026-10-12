@@ -377,16 +377,12 @@ function Write-DFSessionNotice {
         $what = if ($failed.Count -eq 1) { '1 tool failed to load' } else { "$($failed.Count) tools failed to load" }
         Write-Warning "DotForge: $what`: $($failed.Name -join ', '). See Get-DFToolStatus -Failed."
     }
-    foreach ($conflicted in @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })) {
-        $conflicted.Warned = $true
-        $name = $conflicted.Name
-        $paths = @($conflicted.Conflicts.OldPaths) -join ', '
-        $guides = @($conflicted.Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide)
-        $inUse = @($conflicted.Conflicts | Where-Object TargetHasContent | ForEach-Object Target)
-        $how = if ($guides) { "$($guides -join ' ') Then run Resolve-DFToolConflict $name -Adopt" }
-               elseif ($inUse) { "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $name -Adopt" }
-               else { "Run Resolve-DFToolConflict $name -Move (or -Adopt)" }
-        Write-Warning "DotForge: $name isn't active: your existing config at $paths would be hidden. $how, or remove $name from Tools."
+    # One line for every tool waiting on the user; each one's advice is in Get-DFToolStatus -Conflict.
+    $waiting = @($all | Where-Object { $_.State -eq 'Conflict' -and -not $_.Warned })
+    if ($waiting) {
+        foreach ($conflicted in $waiting) { $conflicted.Warned = $true }
+        $what = if ($waiting.Count -eq 1) { '1 tool is' } else { "$($waiting.Count) tools are" }
+        Write-Warning "DotForge: $what waiting on your existing config: $($waiting.Name -join ', '). See Get-DFToolStatus -Conflict, or run Resolve-DFToolConflict to go through them."
     }
 }
 
@@ -472,7 +468,7 @@ function Test-DFToolOwnership {
     $check = Find-DFToolConflict -Tool $Record -Ownership $table
     if ($check.Conflicts) {
         $paths = @($check.Conflicts.OldPaths) -join ', '
-        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden"
+        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $check.Conflicts).Text)"
         $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
         # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
         # re-checks every requested tool, but warns again only for one it names.

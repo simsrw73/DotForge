@@ -13,43 +13,56 @@
 $_smartLine = {
     param([string]$Json)
     try { $drive = $Json | ConvertFrom-Json -ErrorAction Stop } catch { return }
-    if (-not $drive.PSObject.Properties['model_name'] -or -not $drive.PSObject.Properties['smart_status']) { return }
-    $model = ($drive.model_name -replace '^(Samsung SSD|Samsung|WDC|Western Digital|Seagate|Crucial|KINGSTON|INTEL|SanDisk|TOSHIBA|Micron)\s+', '').Trim()
+    # Every optional field is read through PSObject.Properties: a user's
+    # Set-StrictMode reaches this code, and drives report different fields.
+    $field = { param($Object, [string]$Name) if ($Object -is [psobject] -and $Object.PSObject.Properties[$Name]) { $Object.PSObject.Properties[$Name].Value } }
+    $modelName = & $field $drive 'model_name'
+    $status = & $field $drive 'smart_status'
+    if (-not $modelName -or $null -eq $status) { return }
+    $model = ("$modelName" -replace '^(Samsung SSD|Samsung|WDC|Western Digital|Seagate|Crucial|KINGSTON|INTEL|SanDisk|TOSHIBA|Micron)\s+', '').Trim()
     $attributes = @{}
-    foreach ($attribute in @($drive.PSObject.Properties['ata_smart_attributes']?.Value.table)) {
-        if ($attribute) { $attributes[[int]$attribute.id] = $attribute }
+    foreach ($attribute in @(& $field (& $field $drive 'ata_smart_attributes') 'table')) {
+        $id = & $field $attribute 'id'
+        if ($null -ne $id) { $attributes[[int]$id] = $attribute }
     }
-    $nvme = $drive.PSObject.Properties['nvme_smart_health_information_log']?.Value
+    $nvme = & $field $drive 'nvme_smart_health_information_log'
     $facts = [System.Collections.Generic.List[string]]::new()
     $alerts = [System.Collections.Generic.List[string]]::new()
-    if (-not $drive.smart_status.passed) { $alerts.Add('self-check FAILED') }
+    if ((& $field $status 'passed') -eq $false) { $alerts.Add('self-check FAILED') }
 
     $life = $null
     if ($nvme) {
         $facts.Add('NVMe')
-        $life = 100 - [int]$nvme.percentage_used
-        if ([long]$nvme.media_errors -gt 0) { $alerts.Add("$($nvme.media_errors) media errors") }
+        $used = & $field $nvme 'percentage_used'
+        if ($null -ne $used) { $life = 100 - [int]$used }
+        $mediaErrors = & $field $nvme 'media_errors'
+        if ([long]$mediaErrors -gt 0) { $alerts.Add("$mediaErrors media errors") }
     } elseif ($attributes.ContainsKey(3) -or $attributes.ContainsKey(10)) {
         $facts.Add('HDD')
     } else {
         $facts.Add('SSD')
-        foreach ($id in 177, 231, 233) { if ($attributes.ContainsKey($id)) { $life = [int]$attributes[$id].value; break } }
+        foreach ($id in 177, 231, 233) { if ($attributes.ContainsKey($id)) { $life = & $field $attributes[$id] 'value'; break } }
     }
-    if ($null -ne $life) { $facts.Add("$life% life") }
+    # A vendor scale that isn't 0-100 (some start at 200 or 253) says nothing as a percentage.
+    if ($null -ne $life -and ([int]$life -lt 0 -or [int]$life -gt 100)) { $life = $null }
+    if ($null -ne $life) { $facts.Add("$([int]$life)% life") }
 
     $badNames = @{ 5 = 'reallocated sectors'; 187 = 'uncorrectable errors'; 197 = 'pending sectors'; 198 = 'offline uncorrectable sectors' }
     $bad = @(foreach ($id in 5, 187, 197, 198) {
-        if ($attributes.ContainsKey($id) -and [long]$attributes[$id].raw.value -gt 0) { "$($attributes[$id].raw.value) $($badNames[$id])" }
+        if (-not $attributes.ContainsKey($id)) { continue }
+        $count = & $field (& $field $attributes[$id] 'raw') 'value'
+        if ([long]$count -gt 0) { "$count $($badNames[$id])" }
     })
     if ($facts[0] -eq 'HDD' -and -not $bad) { $facts.Add('no bad sectors') }
     foreach ($item in $bad) { $alerts.Add($item) }
-    if ($null -ne $life -and $life -lt 10) { $alerts.Add('under 10% life') }
+    if ($null -ne $life -and [int]$life -lt 10) { $alerts.Add('under 10% life') }
 
-    $temperature = $drive.PSObject.Properties['temperature']?.Value.current
+    $temperature = & $field (& $field $drive 'temperature') 'current'
     if ($temperature) { $facts.Add("$temperature°C") }
-    $hours = $drive.PSObject.Properties['power_on_time']?.Value.hours
+    $hours = & $field (& $field $drive 'power_on_time') 'hours'
     if ($hours) { $facts.Add(('{0:N0} h' -f [long]$hours)) }
-    if ($nvme -and $nvme.data_units_written) { $facts.Add(('{0:N0} TB written' -f ([double]$nvme.data_units_written * 512000 / 1e12))) }
+    $written = & $field $nvme 'data_units_written'
+    if ($written) { $facts.Add(('{0:N0} TB written' -f ([double]$written * 512000 / 1e12))) }
     foreach ($alert in $alerts) { $facts.Add($alert) }
     [pscustomobject]@{ Model = $model; Value = $facts -join ' · '; Alert = [bool]$alerts.Count }
 }

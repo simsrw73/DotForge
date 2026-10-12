@@ -12,7 +12,7 @@ Describe 'Banner rendering' {
     }
     It 'passes numeric ANSI codes through and ignores names it does not know' {
         ConvertTo-DFAnsiColor '35' | Should -Be "$($script:E)[35m"
-        ConvertTo-DFAnsiColor 'blue' | Should -Be ''
+        ConvertTo-DFAnsiColor 'nonsense' | Should -Be ''
         ConvertTo-DFAnsiColor $null | Should -Be ''
     }
     It 'formats a line with key, separator and value colors' {
@@ -68,5 +68,14 @@ Describe 'Banner rendering' {
         [Console]::SetOut([System.IO.StringWriter]::new())
         try { Write-DFBannerLines -Lines 'a', 'b', 'c' -DelayMs 8 } finally { [Console]::SetOut($old) }
         Should -Invoke Start-Sleep -Times 2 -Exactly
+    }
+}
+
+Describe 'fastfetch color names' {
+    It '<name> is SGR <code>' -ForEach @(
+        @{ name = 'magenta'; code = '35' }, @{ name = 'blue'; code = '34' }, @{ name = 'white'; code = '37' },
+        @{ name = 'bright_blue'; code = '94' }, @{ name = 'bright_black'; code = '90' }, @{ name = 'default'; code = '39' }
+    ) {
+        ConvertTo-DFAnsiColor $name | Should -Be "$([char]27)[${code}m"
     }
 }

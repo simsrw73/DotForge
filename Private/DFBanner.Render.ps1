@@ -20,6 +20,11 @@ function ConvertTo-DFAnsiColor {
         return "$e[38;2;$([Convert]::ToInt32($Matches[1], 16));$([Convert]::ToInt32($Matches[2], 16));$([Convert]::ToInt32($Matches[3], 16))m"
     }
     if ($Color -match '^\d+(;\d+)*$') { return "$e[${Color}m" }
+    # fastfetch's color names: the 8 standard colors, their bright_ forms, and default.
+    $names = @{ black = 30; red = 31; green = 32; yellow = 33; blue = 34; magenta = 35; cyan = 36; white = 37; default = 39 }
+    $name = "$Color".ToLowerInvariant()
+    if ($names.ContainsKey($name)) { return "$e[$($names[$name])m" }
+    if ($name -match '^bright_(\w+)$' -and $names.ContainsKey($Matches[1]) -and $Matches[1] -ne 'default') { return "$e[$($names[$Matches[1]] + 60)m" }
     ''
 }
 

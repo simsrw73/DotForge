@@ -63,3 +63,56 @@ Describe 'Resolve-DFToolConflict' {
         Get-Content $path -Raw | Should -Match 'bad'
     }
 }
+
+# With no tool name: go through every tool waiting on the user.
+Describe 'Resolve-DFToolConflict, guided' {
+    BeforeEach {
+        Set-DFTestXdg
+        Remove-Item (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
+        Mock Write-Host { }
+        $conflict = { param($Tool, $Target, [bool]$Move = $true, [bool]$InUse = $false)
+            [pscustomobject]@{ Tool = $Tool; Key = 'K'; OldPaths = @("C:\old\$Tool"); Target = $Target; TargetHasContent = $InUse; Move = $Move; Guide = 'Do it by hand.' } }
+        $script:Waiting = @(
+            [pscustomobject]@{ Name = 'aa'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'aa' 'C:\new\aa') }
+            [pscustomobject]@{ Name = 'bb'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'bb' 'C:\new\bb' -InUse $true) }
+            [pscustomobject]@{ Name = 'cc'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'cc' 'C:\new\cc' -Move $false) })
+        Mock Get-DFToolStatus { $script:Waiting } -ParameterFilter { $Conflict }
+        Mock Test-DFConflictPrompt { $true }
+        Mock Import-DFToolDb { @{ $Name[0] = [pscustomobject]@{ name = $Name[0] } } }
+        Mock Invoke-DFConflictMove { $Result.Action = 'Move'; $Result }
+    }
+    AfterEach { Restore-DFTestXdg }
+
+    It 'offers each tool''s advised action as the default, and does what you pick' {
+        Mock Read-DFConflictChoice { '' }     # Enter: take the default
+        $results = @(Resolve-DFToolConflict)
+        Should -Invoke Read-DFConflictChoice -Times 3 -Exactly
+        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Move' }
+        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Adopt' }
+        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Skip' }
+        ($results | Where-Object Tool -eq 'aa').Action | Should -Be 'Move'
+        (Read-DFToolOwnership)['bb'].how | Should -Be 'adopt'
+        (Read-DFToolOwnership).ContainsKey('cc') | Should -BeFalse
+    }
+    It 'skips a tool you skip' {
+        Mock Read-DFConflictChoice { 'S' }
+        $null = Resolve-DFToolConflict
+        (Read-DFToolOwnership).Count | Should -Be 0
+        Should -Invoke Invoke-DFConflictMove -Times 0 -Exactly
+    }
+    It 'only lists the tools when it can''t ask' {
+        Mock Test-DFConflictPrompt { $false }
+        Mock Read-DFConflictChoice { 'A' }
+        $null = Resolve-DFToolConflict
+        Should -Invoke Read-DFConflictChoice -Times 0 -Exactly
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'cc' }
+        (Read-DFToolOwnership).Count | Should -Be 0
+    }
+    It 'says so when nothing is waiting' {
+        Mock Get-DFToolStatus { } -ParameterFilter { $Conflict }
+        Mock Read-DFConflictChoice { 'A' }
+        $null = Resolve-DFToolConflict
+        Should -Invoke Read-DFConflictChoice -Times 0 -Exactly
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'No tools are waiting' }
+    }
+}

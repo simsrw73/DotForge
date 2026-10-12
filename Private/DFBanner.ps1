@@ -10,6 +10,9 @@
 # See docs/superpowers/specs/2026-10-11-startup-banner-design.md.
 
 $script:DFBannerShown = $false
+# Set when a Start-DFSession finishes: a later call in the same shell (say, one
+# that turns ShowBanner on) never clears the screen of a shell already in use.
+$script:DFSessionStarted = $false
 
 function Test-DFBannerHost {
     <#
@@ -88,16 +91,17 @@ function Start-DFBanner {
     #>
     [CmdletBinding()]
     param([AllowEmptyCollection()][string[]]$Tools)
-    if (-not (Get-DFConfig ShowBanner -Default $false) -or $script:DFBannerShown -or -not (Test-DFBannerHost)) { return }
+    if (-not (Get-DFConfig ShowBanner -Default $false) -or $script:DFBannerShown -or $script:DFSessionStarted -or -not (Test-DFBannerHost)) { return }
     $script:DFBannerShown = $true
     try {
         if (Get-DFConfig BannerClear -Default $true) { Clear-Host }
         $parts = @(Get-DFBannerPart -Tools $Tools)
         $style = Get-DFBannerPartStyle -Parts $parts
-        $version = $ExecutionContext.SessionState.Module.Version
+        $module = $ExecutionContext.SessionState.Module
+        $version = if ($module) { $module.Version }
         $firstLine = Format-DFBannerLine -Key 'DotForge' -Value "$(if ($version) { "$version · " })loading $(@($Tools).Count) tools…" -Style $style
         Write-DFBannerLines -Lines @($firstLine) -DelayMs 0
-        $work = @(foreach ($part in $parts) {
+        $work = @(foreach ($part in @(Select-DFBannerWorkPart -Parts $parts)) {
             try { & $part.Script.Work $part.Context }
             catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed to start: $($_.Exception.Message)" }
         })
@@ -128,6 +132,82 @@ function Get-DFBannerPart {
             $script = . $path
             [pscustomobject]@{ Tool = $tool; Context = [pscustomobject]@{ Tool = $tool }; Script = $script }
         } catch { Write-Warning "DotForge: banner part $($tool.name) didn't load: $($_.Exception.Message)" }
+    }
+}
+
+function Select-DFBannerWorkPart {
+    <#
+    .SYNOPSIS
+        The parts whose background work something will show: none without a body part; otherwise the body part and the parts filling a placeholder it uses.
+    .DESCRIPTION
+        A body part may say which placeholders its body has (Uses); without
+        Uses every fill counts as used.
+    .PARAMETER Parts
+        Get-DFBannerPart result.
+    .OUTPUTS
+        The parts to start.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Parts)
+    $body = @($Parts | Where-Object { $_.Tool.banner.body })
+    if (-not $body) { return }
+    $used = $null
+    foreach ($part in $body) {
+        if (-not $part.Script.PSObject.Properties['Uses']) { continue }
+        try { $used = @($used) + @(& $part.Script.Uses $part.Context) | Where-Object { $_ } } catch { $used = $null; break }
+    }
+    foreach ($part in $Parts) {
+        if ($part.Tool.banner.body -or $null -eq $used) { $part; continue }
+        if (@($part.Tool.banner.fills | Where-Object { $_ -in $used })) { $part }
+    }
+}
+
+function Set-DFBannerSessionStarted {
+    <#
+    .SYNOPSIS
+        Records that this shell's first Start-DFSession has run, so no later call shows a banner.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    $script:DFSessionStarted = $true
+}
+
+function Stop-DFBanner {
+    <#
+    .SYNOPSIS
+        Lets the banner's background work end without showing it (the load failed or was stopped).
+    .PARAMETER State
+        Start-DFBanner result; $null does nothing.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param($State)
+    if (-not $State -or -not $State.PSObject.Properties['Handle'] -or -not $State.Handle.Pool) { return }
+    try { $null = $State.Handle.Pool.BeginClose($null, $null) } catch { Write-Verbose "DotForge: $($_.Exception.Message)" }
+}
+
+function ConvertTo-DFBannerFillItem {
+    <#
+    .SYNOPSIS
+        The well-formed fill items (Key, Value, Alert) among what a part or the cache gave; the rest are dropped.
+    .PARAMETER Items
+        Candidate items.
+    .OUTPUTS
+        pscustomobject per item: Key, Value, Alert.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][AllowEmptyCollection()][object[]]$Items)
+    foreach ($item in @($Items)) {
+        $get = if ($item -is [System.Collections.IDictionary]) { { param($n) if ($item.Contains($n)) { $item[$n] } } }
+               elseif ($item -is [psobject] -and $item -isnot [string] -and $item -isnot [ValueType]) { { param($n) $item.PSObject.Properties[$n]?.Value } }
+               else { $null }
+        if (-not $get) { continue }
+        $value = & $get 'Value'
+        if ($null -eq $value) { continue }
+        [pscustomobject]@{ Key = (& $get 'Key'); Value = "$value"; Alert = [bool](& $get 'Alert') }
     }
 }
 
@@ -171,9 +251,14 @@ function Show-DFBanner {
         foreach ($part in $State.Parts) {
             try {
                 $done = & $part.Script.Complete $results $part.Context
-                if ($part.Tool.banner.body -and $done.Body) { $body = @($done.Body) }
-                if ($done.Fills) {
-                    foreach ($name in @($done.Fills.Keys)) { if (@($done.Fills[$name])) { $fills[$name] = @($done.Fills[$name]) } }
+                $doneBody = if ($done -is [psobject]) { $done.PSObject.Properties['Body']?.Value }
+                $doneFills = if ($done -is [psobject]) { $done.PSObject.Properties['Fills']?.Value }
+                if ($part.Tool.banner.body -and $doneBody) { $body = @($doneBody | ForEach-Object { "$_" }) }
+                if ($doneFills -is [System.Collections.IDictionary]) {
+                    foreach ($name in @($doneFills.Keys)) {
+                        $items = @(ConvertTo-DFBannerFillItem -Items @($doneFills[$name]))
+                        if ($items) { $fills[$name] = $items }
+                    }
                 }
             } catch { Write-Warning "DotForge: banner part $($part.Tool.name) failed: $($_.Exception.Message)" }
         }
@@ -213,9 +298,10 @@ function Merge-DFBannerCache {
     }
     foreach ($name in $Names) {
         if ($all.ContainsKey($name) -or -not $cache.ContainsKey($name)) { continue }
-        $all[$name] = @(foreach ($item in @($cache[$name].items)) {
-            [pscustomobject]@{ Key = $item.Key; Value = "$($item.Value) (cached)"; Alert = [bool]$item.Alert }
-        })
+        $entry = $cache[$name]
+        $cached = if ($entry -is [System.Collections.IDictionary] -and $entry.Contains('items') -and $entry['items'] -is [System.Collections.IList]) { @(ConvertTo-DFBannerFillItem -Items @($entry['items'])) }
+        if (-not $cached) { continue }
+        $all[$name] = @(foreach ($item in $cached) { [pscustomobject]@{ Key = $item.Key; Value = "$($item.Value) (cached)"; Alert = $item.Alert } })
     }
     if ($Fills.Count) { Write-DFFileAtomic -Path (Get-DFBannerCachePath) -Value ($cache | ConvertTo-Json -Depth 6) }
     $all

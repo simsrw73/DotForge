@@ -21,7 +21,8 @@ All notable changes to DotForge are documented here.
   life, temperature, hours, data written, in red when something's wrong) and the public IP are gathered
   in the background while tools load, then print a line at a time. Never waits on the network; late
   values show the last known one, marked `(cached)`. `BannerLineDelay`, `BannerWait` and `BannerClear`
-  tune it. smartmontools is a new tool; it and fastfetch join `+core`. The default fastfetch config
+  tune it. smartmontools is a new tool; it and fastfetch join `+core` (`ExcludeTools = @('smartmontools')`
+  silences its "isn't installed" notice if you don't want drive lines). The default fastfetch config
   drops the Packages and physical-disk lines and gains `@DF:publicip@` / `@DF:drives@` placeholders.
   Tool records can add banner lines with a `banner` field.
 - **DotForge never hides config you already have.** A tool you list in `Tools` whose own default
@@ -30,7 +31,9 @@ All notable changes to DotForge are documented here.
   `Resolve-DFToolConflict <tool> -Move` checks that nothing refers to the old location, copies it to
   the XDG location, verifies every file, and renames the old copy to `<name>.dotforge-moved`, never deleting it (a copy in use is
   retried on later loads); `-Adopt` takes over without moving anything. `Get-DFToolStatus -Conflict`
-  lists the tools waiting. Tool records declare their old locations in `xdg.native`.
+  lists the tools waiting, each with the advised action, and one warning per load names them all;
+  `Resolve-DFToolConflict` with no tool name goes through them one at a time. Tool records declare
+  their old locations in `xdg.native`.
   **If you already use DotForge:** a tool whose old location still holds files next to the XDG copy
   DotForge has been using (most often PowerShell's own history file) is left inactive after the
   upgrade until you run `Resolve-DFToolConflict <tool> -Adopt` once; the warning says so.

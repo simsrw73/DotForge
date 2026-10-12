@@ -29,6 +29,14 @@ $_ffConfigPath = {
         } catch { @{} }
     }.GetNewClosure()
 
+    # The placeholders the config in use has, so no work is started for lines it doesn't show.
+    Uses = {
+        param($Context)
+        $path = & $_ffConfigPath $Context.Tool
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
+        @(Select-String -LiteralPath $path -Pattern '@DF:([\w-]+)@' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+    }.GetNewClosure()
+
     Work = {
         param($Context)
         $path = & $_ffConfigPath $Context.Tool
