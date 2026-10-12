@@ -127,6 +127,26 @@ function Get-DFMapSchemaError ($map, [string]$path, [switch]$StringsOnly) {
     }
 }
 
+function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in theme: key names a *Theme config key; default, files, fallback and command are strings; valid is strings; map and env map names to strings.
+    #>
+    $theme = Get-DFSchemaProperty $Tool 'theme'
+    if ($null -eq $theme) { return }
+    if ($theme -isnot [pscustomobject]) { return 'theme must be an object' }
+    $key = Get-DFSchemaProperty $theme 'key'
+    if ($key -isnot [string] -or $key -cnotmatch '^[A-Z][A-Za-z0-9]*Theme$') { "theme.key must name the tool's config key, e.g. 'BatTheme'" }
+    foreach ($field in 'default', 'files', 'fallback', 'command') {
+        $v = Get-DFSchemaProperty $theme $field
+        if ($null -ne $v -and ($v -isnot [string] -or -not $v)) { "theme.$field must be a non-empty string" }
+    }
+    $valid = $theme.PSObject.Properties['valid']?.Value   # read directly: a helper would unroll ["x"]
+    if ($null -ne $valid -and ($valid -isnot [array] -or @($valid | Where-Object { $_ -isnot [string] }).Count)) { 'theme.valid must be an array of strings' }
+    $v = Get-DFSchemaProperty $theme 'map'; if ($null -ne $v) { Get-DFMapSchemaError $v 'theme.map' -StringsOnly }
+    $v = Get-DFSchemaProperty $theme 'env'; if ($null -ne $v) { Get-DFMapSchemaError $v 'theme.env' -StringsOnly }
+}
+
 function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -339,12 +359,13 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         banner = 'script', 'body', 'fills'
+        theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
@@ -365,6 +386,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     if ($setupObj -is [pscustomobject]) { $sections.Add(@('setup', $setupObj, 'setup.')) }
     $bannerObj = Get-DFSchemaProperty $Tool 'banner'
     if ($bannerObj -is [pscustomobject]) { $sections.Add(@('banner', $bannerObj, 'banner.')) }
+    $themeObj = Get-DFSchemaProperty $Tool 'theme'
+    if ($themeObj -is [pscustomobject]) { $sections.Add(@('theme', $themeObj, 'theme.')) }
     foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
         if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
@@ -392,7 +415,7 @@ function Test-DFToolSchema {
         Returns a result object: Valid, Errors and Warnings.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, after, requires, setup, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, theme, after, requires, setup, prewarm and role blocks.
         Each section is checked by its own step; their error messages are collected, in
         order, into the result's Errors. Field names that look like misspellings of known
         fields go into Warnings: a tool with only warnings is still valid.
@@ -419,6 +442,7 @@ function Test-DFToolSchema {
         Get-DFPackagesSchemaError $Tool
         Get-DFRolesSchemaError $Tool
         Get-DFAliasAndMapSchemaError $Tool
+        Get-DFThemeSchemaError $Tool
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
         Get-DFNativeSchemaError $Tool

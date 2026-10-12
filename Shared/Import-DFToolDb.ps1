@@ -463,6 +463,32 @@ function ConvertTo-DFInstallBlock {
     [pscustomobject]@{ prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @()) }
 }
 
+function ConvertTo-DFThemeBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's theme block: every field present, valid a string array, map defaulting to the legacy top-level themeMap.
+    .PARAMETER RawTheme
+        The parsed theme object, or $null.
+    .PARAMETER LegacyMap
+        The tool's top-level themeMap, or $null.
+    .OUTPUTS
+        PSCustomObject, or $null when there is no theme block.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$RawTheme, [AllowNull()][object]$LegacyMap)
+    if ($null -eq $RawTheme) { return $null }
+    [pscustomobject]@{
+        key      = Get-DFToolRecordProperty $RawTheme 'key' $null
+        default  = Get-DFToolRecordProperty $RawTheme 'default' $null
+        map      = Get-DFToolRecordProperty $RawTheme 'map' $LegacyMap
+        files    = Get-DFToolRecordProperty $RawTheme 'files' $null
+        valid    = [string[]]@(Get-DFToolRecordProperty $RawTheme 'valid' @())
+        fallback = Get-DFToolRecordProperty $RawTheme 'fallback' $null
+        env      = Get-DFToolRecordProperty $RawTheme 'env' $null
+        command  = Get-DFToolRecordProperty $RawTheme 'command' $null
+    }
+}
+
 function ConvertTo-DFToolRecord {
     <#
     .SYNOPSIS
@@ -474,10 +500,13 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
-            packages / xdg / env / aliases / picker / themeMap /
+            packages / xdg / env / aliases / picker / themeMap / theme /
             settings / setup $null, roles an empty object, executableExclude @(),
             folder / source $null (the loader sets them: where the JSON was
             read from, and 'builtin' or 'user')
+
+        theme, when present, has key, default, map (falling back to the legacy
+        top-level themeMap), files, valid (string[]), fallback, env and command.
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -535,6 +564,7 @@ function ConvertTo-DFToolRecord {
         requires          = [object[]]@(Get-DFToolRecordProperty $Tool 'requires' @())
         roles             = $roles
         themeMap          = Get-DFToolRecordProperty $Tool 'themeMap' $null
+        theme             = ConvertTo-DFThemeBlock (Get-DFToolRecordProperty $Tool 'theme' $null) (Get-DFToolRecordProperty $Tool 'themeMap' $null)
         settings          = Get-DFToolRecordProperty $Tool 'settings' $null
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)

@@ -227,6 +227,29 @@ Describe 'Test-DFToolSchema' {
         It 'rejects an invalid picker type with its current message' {
             Get-SchemaErrors @{ picker = $true } | Should -BeExactly 'picker must be null, "custom", an object or a list of objects'
         }
+
+        Context 'theme' {
+            It 'accepts a full theme block' {
+                Get-SchemaErrors @{ theme = [pscustomobject]@{ key = 'XTheme'; default = 'a'; map = [pscustomobject]@{ a = 'A' }; files = 'x'
+                    valid = @('A'); fallback = 'A'; env = [pscustomobject]@{ X_THEME = '{theme}' }; command = 'Select-XTheme' } } | Should -BeNullOrEmpty
+            }
+            It 'requires key to name a *Theme config key' {
+                Get-SchemaErrors @{ theme = [pscustomobject]@{ key = 'x' } } | Should -Match 'theme.key'
+            }
+            It 'rejects a non-object theme' {
+                Get-SchemaErrors @{ theme = 'dracula' } | Should -Match 'theme must be an object'
+            }
+            It 'requires valid to be strings' {
+                Get-SchemaErrors @{ theme = [pscustomobject]@{ key = 'XTheme'; valid = @(1) } } | Should -Match 'theme.valid'
+            }
+            It 'requires env values to be strings' {
+                Get-SchemaErrors @{ theme = [pscustomobject]@{ key = 'XTheme'; env = [pscustomobject]@{ X = 1 } } } | Should -Match 'theme.env.X'
+            }
+            It 'warns about a misspelled theme field' {
+                (Test-DFToolSchema -Tool ([pscustomobject]@{ name = 'x'; executable = 'x.exe'; theme = [pscustomobject]@{ key = 'XTheme'; defualt = 'a' } })).Warnings |
+                    Should -Match "theme.defualt.*theme.default"
+            }
+        }
     }
 
     Context 'typo warnings' {

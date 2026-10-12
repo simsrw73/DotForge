@@ -13,7 +13,7 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.tags).Count      | Should -Be 0
         @($r.after).Count | Should -Be 0
         $r.prewarm     | Should -BeTrue
-        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'settings') {
+        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'theme', 'settings') {
             $r.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "$p must exist"
             $r.$p | Should -BeNullOrEmpty
         }
@@ -129,7 +129,7 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
         $fields = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env',
-                  'aliases', 'picker', 'after', 'requires', 'roles', 'themeMap', 'settings', 'prewarm', 'setup'
+                  'aliases', 'picker', 'after', 'requires', 'roles', 'themeMap', 'theme', 'settings', 'prewarm', 'setup'
         foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '..' 'Tools') -Filter '*.json') {
             $r = ConvertTo-DFToolRecord (Get-Content $file.FullName -Raw | ConvertFrom-Json)
             {
@@ -140,6 +140,23 @@ Describe 'ConvertTo-DFToolRecord' {
                 if ($r.picker -and $r.picker -isnot [string]) { foreach ($p in @($r.picker)) { $null = $p.function, $p.list, $p.alias, $p.action, $p.parse } }
                 if ($r.aliases) { foreach ($a in $r.aliases.PSObject.Properties) { $null = $a.Value.command, $a.Value.args } }
             } | Should -Not -Throw -Because $file.Name
+        }
+    }
+
+    Context 'theme' {
+        It 'is $null when absent' {
+            (ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'x'; executable = 'x.exe' })).theme | Should -BeNullOrEmpty
+        }
+        It 'fills every field' {
+            $theme = (ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'x'; executable = 'x.exe'; theme = [pscustomobject]@{ key = 'XTheme' } })).theme
+            $theme.key | Should -Be 'XTheme'
+            foreach ($f in 'default', 'map', 'files', 'fallback', 'env', 'command') { $theme.PSObject.Properties[$f] | Should -Not -BeNullOrEmpty }
+            , $theme.valid | Should -BeOfType [string[]]
+        }
+        It 'takes map from the legacy top-level themeMap when theme.map is absent' {
+            $legacy = [pscustomobject]@{ 'catppuccin-mocha' = 'Catppuccin Mocha' }
+            $theme = (ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'x'; executable = 'x.exe'; themeMap = $legacy; theme = [pscustomobject]@{ key = 'XTheme' } })).theme
+            $theme.map.'catppuccin-mocha' | Should -Be 'Catppuccin Mocha'
         }
     }
 }

@@ -58,6 +58,7 @@
         "themeMap": {
           "catppuccin-mocha": "Catppuccin Mocha"
         },
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -100,6 +101,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -144,6 +146,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -198,6 +201,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -288,6 +292,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -330,6 +335,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -431,6 +437,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -479,6 +486,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -571,6 +579,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -624,6 +633,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -674,6 +684,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -752,6 +763,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -856,6 +868,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -918,6 +931,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": {
           "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc"
         },
@@ -994,6 +1008,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1064,6 +1079,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1143,6 +1159,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1211,6 +1228,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1282,6 +1300,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": {
           "theme": "catppuccin-mocha"
         },
@@ -1336,6 +1355,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1396,6 +1416,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1439,6 +1460,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1505,6 +1527,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1588,6 +1611,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [
           "*\\Git\\usr\\bin\\*"
@@ -1674,6 +1698,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1726,6 +1751,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1788,6 +1814,7 @@
         "themeMap": {
           "catppuccin-mocha": "catppuccin"
         },
+        "theme": null,
         "settings": {
           "theme": "catppuccin-mocha"
         },
@@ -1857,6 +1884,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1918,6 +1946,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1988,6 +2017,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2028,6 +2058,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2077,6 +2108,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2163,6 +2195,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2257,6 +2290,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2308,6 +2342,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2350,6 +2385,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2426,6 +2462,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2499,6 +2536,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2571,6 +2609,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2613,6 +2652,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2668,6 +2708,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": false,
@@ -2729,6 +2770,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2790,6 +2832,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": {
           "editMode": "Emacs",
           "predictionSource": "HistoryAndPlugin",
@@ -2838,6 +2881,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": false,
@@ -2912,6 +2956,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -2979,6 +3024,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3046,6 +3092,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3132,6 +3179,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3178,6 +3226,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3253,6 +3302,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3323,6 +3373,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3364,6 +3415,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3425,6 +3477,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3531,6 +3584,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3573,6 +3627,7 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
+        "theme": null,
         "settings": {
           "theme": "catppuccin-mocha"
         },
@@ -3637,6 +3692,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3683,6 +3739,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3804,6 +3861,7 @@
           }
         },
         "themeMap": null,
+        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
