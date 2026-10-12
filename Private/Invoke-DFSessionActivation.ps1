@@ -84,7 +84,7 @@ function Invoke-DFSessionActivation {
     try {
         foreach ($tool in $tools) {
             if ((Test-DFToolActive $tool.name) -and $tool.name -notin $Reactivate) { continue }
-            $blocker = Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs
+            $blocker = @(Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs)
             if ($blocker) {
                 # Installed, but a tool it needs isn't active: Blocked. Not installed: Missing (Install-DFTool -Missing).
                 $state = if (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type) { 'Blocked' } else { 'Missing' }
@@ -212,7 +212,7 @@ function Start-DFActivationPrewarm {
 function Get-DFActivationBlocker {
     <#
     .SYNOPSIS
-        Says why a tool can't be activated now, or returns an empty string when nothing blocks it.
+        Says why a tool can't be activated now, or returns nothing when nothing blocks it.
     .DESCRIPTION
         In order: a requirement Resolve-DFToolRequirements blocked (excluded, or
         no record); a required tool that didn't activate; the tool not being
@@ -225,10 +225,10 @@ function Get-DFActivationBlocker {
     .PARAMETER ToolsPath
         Tools folder. Default: the module's Tools/.
     .OUTPUTS
-        System.String.
+        System.String[]: the reasons, empty when nothing blocks it.
     #>
     [CmdletBinding()]
-    [OutputType([string])]
+    [OutputType([string[]])]
     param(
         [Parameter(Mandatory)][PSCustomObject]$Tool,
         [Parameter(Mandatory)][PSCustomObject]$Requirements,
@@ -243,13 +243,12 @@ function Get-DFActivationBlocker {
         if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
     })
     if ($unmet) { return "requires $($unmet -join ', '), which is not available" }
-    if (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type) { return '' }
+    if (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type) { return }
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
-    $detail = "'$($Tool.executable)' is not installed"
+    "'$($Tool.executable)' is not installed"
     if ($Requirements.RoleHint.ContainsKey($Tool.name)) {
-        $detail += "; $(Get-DFRoleRequirementHint -Role $Requirements.RoleHint[$Tool.name] @pathArgs)"
+        Get-DFRoleRequirementHint -Role $Requirements.RoleHint[$Tool.name] @pathArgs
     }
-    $detail
 }
 
 function Add-DFRoleOutcomeStatus {
@@ -270,7 +269,7 @@ function Add-DFRoleOutcomeStatus {
         }
         if ($roleOutcome.Reason -eq 'fallback' -and $status.Contains($roleOutcome.Preferred) -and $status[$roleOutcome.Preferred].State -eq 'Missing') {
             $preferred = $status[$roleOutcome.Preferred]
-            $preferred.Detail = "$($preferred.Detail); using $($roleOutcome.Winner) instead ($($roleOutcome.Role))"
+            Add-DFToolStatusDetail -Status $preferred -Text "using $($roleOutcome.Winner) instead ($($roleOutcome.Role))"
             $preferred | Add-Member -NotePropertyName FallbackRole -NotePropertyValue $roleOutcome.Role -Force
             $preferred | Add-Member -NotePropertyName FallbackTool -NotePropertyValue $roleOutcome.Winner -Force
         }
@@ -290,7 +289,7 @@ function New-DFToolStatus {
     .PARAMETER RequestedBy
         'Tools', '+group', or what else requested it.
     .PARAMETER Detail
-        Failure message or other explanation.
+        Lines explaining the state (failure message, what blocks it, values kept over the tool's own). Joined with '; ' in Detail.
     .OUTPUTS
         DotForge.ToolStatus.
     #>
@@ -299,16 +298,38 @@ function New-DFToolStatus {
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][ValidateSet('Active', 'Missing', 'Blocked', 'Failed', 'Excluded', 'Conflict')][string]$State,
         [string]$RequestedBy,
-        [string]$Detail
+        [AllowEmptyCollection()][AllowEmptyString()][string[]]$Detail = @()
     )
-    [pscustomobject]@{
+    $status = [pscustomobject]@{
         PSTypeName  = 'DotForge.ToolStatus'
         Name        = $Name
         State       = $State
         RequestedBy = $RequestedBy
         Roles       = [string[]]@()
-        Detail      = $Detail
+        DetailItems = [System.Collections.Generic.List[string]]::new()
     }
+    foreach ($line in $Detail) { if ($line) { $status.DetailItems.Add($line) } }
+    # One place renders the lines, so no producer joins strings itself (T-28).
+    $status | Add-Member -MemberType ScriptProperty -Name Detail -Value { $this.DetailItems -join '; ' }
+    $display = [System.Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]@('Name', 'State', 'RequestedBy', 'Roles', 'Detail'))
+    $status | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value ([System.Management.Automation.PSMemberInfo[]]@($display))
+    $status
+}
+
+function Add-DFToolStatusDetail {
+    <#
+    .SYNOPSIS
+        Appends a line to a tool status's Detail.
+    .PARAMETER Status
+        A DotForge.ToolStatus record.
+    .PARAMETER Text
+        The line; empty text is ignored.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Status, [AllowEmptyString()][string]$Text)
+    if ($Text) { $Status.DetailItems.Add($Text) }
 }
 
 function Test-DFToolActive {
@@ -662,11 +683,11 @@ function Add-DFInstallHint {
             $st = $script:DFSessionStatus[$it.Tool]
             if (-not $st -or $st -notin $todo) { continue }
             $how = if ($it.ProvidedBy) { "comes with $($it.ProvidedBy)" } else { "via $($it.Manager.name)" }
-            $st.Detail = "$($st.Detail); Install-DFTool -Missing will install it $how"
+            Add-DFToolStatusDetail -Status $st -Text "Install-DFTool -Missing will install it $how"
         }
         foreach ($g in $plan.Gaps) {
             $st = $script:DFSessionStatus[$g.Tool]
-            if ($st -and $st -in $todo) { $st.Detail = "$($st.Detail); can't install yet: $($g.Reason)" }
+            if ($st -and $st -in $todo) { Add-DFToolStatusDetail -Status $st -Text "can't install yet: $($g.Reason)" }
         }
     } catch {
         Write-Verbose "DotForge: couldn't work out how missing tools would install: $($_.Exception.Message)"
