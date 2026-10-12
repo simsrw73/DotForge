@@ -34,7 +34,7 @@ reads when present and no-ops when absent; no core code names a tool.
 `Get-DFEnvState` (same shape: a session `Written` map, name → value DotForge last wrote).
 
 ```powershell
-Set-DFEnv -Name <var> -Value <expanded> -Source <tool or role label> [-Explicit] [-Tool <name>]
+Set-DFEnv -Name <var> -Value <expanded> -Tool <owning tool> [-ExplicitReason <text>]
 ```
 
 Rule, in order:
@@ -42,19 +42,23 @@ Rule, in order:
 1. Current value `-ceq` new value → record it in `Written`, done.
 2. Current value empty, or `-ceq Written[Name]` (DotForge wrote it) → write, record.
 3. Otherwise the value was **set outside DotForge**:
-   - without `-Explicit`: keep it; `Write-Verbose`; return a *kept* outcome (below).
-   - with `-Explicit`: overwrite, and warn once per session per variable with both values
-     (today's `Defaults` warning, generalized: the user's config contradicts their environment).
+   - without `-ExplicitReason`: keep it; `Write-Verbose`; record a *kept* note for `-Tool` (below).
+   - with `-ExplicitReason`: overwrite, and warn once per session per conflict:
+     `DotForge: <Name> was '<current>' but <ExplicitReason>.` plus the "Remove one of the two
+     settings" line (today's `Defaults` warning, generalized). Values over 60 characters are
+     shortened in messages (`LS_COLORS`).
 
-`Set-DFEnv` returns `$null` when it wrote or no-op'd, or a `[pscustomobject]@{ Name; Kept; Wanted; Source }`
-when it kept an outside value. The caller adds it to the tool's status (see *Status detail*).
+`Set-DFEnv` returns nothing. Kept notes live in `Get-DFEnvState`'s `Kept` map (tool → variable →
+note); a write or no-op for that variable removes its note, and each registration of a tool starts
+by clearing its notes. The activation loop puts the tool's notes in its Active status Detail.
 
-Explicit means the user named the choice in DotForge's config:
+Explicit means the user named the choice in DotForge's config (or ran a command):
 
-| Writer | `-Explicit` when |
+| Writer | `-ExplicitReason` when |
 |---|---|
 | role block `env` | the winner came from `Defaults` (today's `-Reason Defaults`) |
-| `theme.env` | the theme came from the per-tool key (`BatTheme`), not `Theme` or the JSON default |
+| `theme.env` | the theme came from the per-tool key (`BatTheme`) or `Set-DFToolTheme`, not `Theme` or the JSON default |
+| fzf's and vivid's theme apply functions | called by the user, or at registration with an explicit theme |
 | `xdg.vars`, `env` | never |
 
 ### Callers
@@ -68,18 +72,21 @@ Explicit means the user named the choice in DotForge's config:
 - Sidecars that write env themselves (fzf's `--color` append, vivid's `LS_COLORS`) call
   `Set-DFEnv` too, so their writes enter the ledger.
 
-fzf's colors: `Invoke-DFApplyFzfTheme` appends `--color=…` to the current `FZF_DEFAULT_OPTS`
-whether DotForge or the user owns it (fzf applies the last `--color`), and writes the result
-through `Set-DFEnv -Explicit`, because an explicit theme apply is a user action.
+fzf's colors: `Invoke-DFApplyFzfTheme` appends `--color=…` to the current `FZF_DEFAULT_OPTS` and
+writes the result through `Set-DFEnv`. It and vivid's `Invoke-DFApplyLSColorsTheme` gain an
+`-Implicit` switch, which the companions pass at registration when the theme came from `Theme` or
+the default: then a value the user set outside DotForge is kept. Called by hand (or with an
+explicit `FzfTheme`/`VividTheme`), they override it.
 
 No `force` flag: no current env entry needs one, and `-Explicit` covers deliberate overrides.
 
 ### Status detail (closes T-28)
 
 A kept value is a fourth producer of `DotForge.ToolStatus.Detail`, so T-28's condition is met:
-`Detail` becomes a `string[]` built by appending, rendered once (joined with `; `) by the status
-formatter and the banner. `Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker` and
-`Add-DFInstallHint` append instead of joining. The kept-env line reads
+The status record holds `DetailItems` (a list) and `Detail` becomes a read-only script property that
+joins them with `; `, so every reader keeps seeing a string. `Add-DFToolStatusDetail` appends;
+`Add-DFRoleOutcomeStatus`, `Get-DFActivationBlocker` (now returns `string[]`) and
+`Add-DFInstallHint` use it instead of joining strings. The kept-env line reads
 `BAT_THEME kept as set outside DotForge ('Dracula'); DotForge wanted 'Catppuccin Mocha'`.
 
 ## Phase 2 — Declarative theme
@@ -122,14 +129,15 @@ Get-DFToolTheme -Tool <record> [-Name <override>]
    `DotForge: <tool> theme '<Native>' not recognized — using '<fallback>'` and use `fallback`
    (or `$null` with no fallback, which skips `theme.env`).
 
-A tool without `theme` returns `$null`. `Get-DFConfiguredTheme` is deleted (its only callers are
-the migrated sidecars); `Resolve-DFThemeName` stays as the map step.
+A tool without `theme` returns `$null`. `Get-DFConfiguredTheme` stays as the chain step (and for
+user companions that call it); `Resolve-DFThemeName` stays as the map step.
 
 ### Applying it
 
 `Invoke-DFToolRegistration`, after `env` and before the companion: when `$Tool.theme` is set,
-resolve it once, store it in session state (`$script:DFToolThemes[<tool>]`), and write each
-`theme.env` entry through `Set-DFEnv -Explicit:$theme.Explicit`, `{theme}` replaced by `Value`.
+resolve it once, store it in session state (`$script:DFSessionThemes[<tool>]`), and write each
+`theme.env` entry through `Set-DFEnv` (with `-ExplicitReason "`$DFConfig.<key> is '<name>'"` when
+the theme is explicit), `{theme}` replaced by `Value`.
 The companion reads the result with `Get-DFToolTheme` (cached; no second warning).
 
 ### `Set-DFToolTheme` (Public, core)
@@ -142,8 +150,9 @@ Re-resolves with `-Name`, updates session state, re-applies `theme.env` (explici
 the resolved object. Wrappers read the session theme on every call, so the change is live. Errors
 for a tool that isn't active or has no `theme` block. For a tool whose `theme.command` is set
 (fzf, psreadline, vivid: themes applied by sidecar code), it errors naming that command; the
-message comes from the record, never a tool-name switch.
-Argument completion lists active tools with a `theme` block.
+message comes from the record, never a tool-name switch. A theme with no `env`, no wrapper `{theme}`
+and no `command` (mdv: written to its config once, at setup) errors saying it can't be switched
+live. Argument completion lists active tools with a `theme` block.
 
 ### Tool changes
 
@@ -180,14 +189,12 @@ expanded `ifFile`), `{settings.<name>}` (a value from the tool's `settings`), `$
 `valid` or `files` but no `fallback`, so `{theme}` always has a value. Arguments
 the user types follow the declared ones.
 
-A `wrapper` block replaces `xdg.method: "wrapper"`'s meaning of "a companion handles it": the
-method stays as the XDG classification, and the schema requires a `wrapper` block (or a
-companion) for it.
+`xdg.method: "wrapper"` stays the XDG classification; the `wrapper` block is what builds the wrapper.
 
 ### `New-DFToolWrapper` (Private, captured by sidecars)
 
 ```powershell
-New-DFToolWrapper -Tool <record> [-OnOutput <scriptblock>]
+New-DFToolWrapper -Tool <record> [-Invoke <scriptblock>] [-Description <text>]
 ```
 
 Defines `function:global:<executable basename>` (`glow` for `glow.exe`) as a simple function:
@@ -195,8 +202,9 @@ Defines `function:global:<executable basename>` (`glow` for `glow.exe`) as a sim
 - builds the declared arguments on each call (`{theme}` from session state, `ifFile` tested then);
 - `$MyInvocation.ExpectingInput` → `$input | & <exe> @declared @args` (without it, piped input
   hangs: see glow's sidecar history);
-- otherwise `& <exe> @declared @args`, or, with `-OnOutput`, passes the call's output, the
-  declared arguments and `$MyInvocation` to the scriptblock and returns what it returns;
+- otherwise `& <exe> @declared @args`, or, with `-Invoke`, calls the scriptblock with the
+  executable, the declared arguments, the user's arguments and `$MyInvocation`, and returns what it
+  returns (fastfetch decides its own color flags and fills placeholders there);
 - calls the executable by its full name (`glow.exe`) so the wrapper never recurses;
 - carries generated comment-based help: synopsis "Runs <name> with DotForge's arguments", the
   declared arguments listed in the description, one example. `tests/Docs.Help.Tests.ps1` checks
@@ -204,9 +212,9 @@ Defines `function:global:<executable basename>` (`glow` for `glow.exe`) as a sim
 
 Registration calls `New-DFToolWrapper -Tool $Tool` before the companion when `$Tool.wrapper` is set,
 unless `wrapper.custom` is true. `custom: true` means the companion calls
-`New-DFToolWrapper -Tool $DFCurrentTool -OnOutput { ... }` itself (fastfetch); the declared `args`
-are still the single source of the arguments. The schema rejects `custom` on a tool with no
-companion.
+`New-DFToolWrapper -Tool $DFCurrentTool -Invoke { ... }` itself (fastfetch); the declared `args`
+are still the single source of the arguments. A test checks that every in-repo `custom` wrapper's
+companion calls `New-DFToolWrapper`.
 
 Builtin safety: a wrapper's name is the executable basename. A test checks every declared
 wrapper's name against a fresh session's cmdlets and aliases, so a wrapper never shadows a builtin
@@ -217,7 +225,7 @@ wrapper's name against a fresh session's cmdlets and aliases, so a wrapper never
 | Tool | Result |
 |---|---|
 | glow | `wrapper { args ["-s", "{theme}"] }`; wrapper code removed from the sidecar (picker stays) |
-| fastfetch | `wrapper { custom: true, args [{ ifFile: "{settings.configPath}", args ["--config", "{file}"] }] }`; sidecar calls `New-DFToolWrapper -OnOutput` for the `@DF:` placeholders |
+| fastfetch | `wrapper { custom: true, args [{ ifFile: "{settings.configPath}", args ["--config", "{file}"] }] }`; sidecar calls `New-DFToolWrapper -Invoke` for the color flags and `@DF:` placeholders |
 | lsd | `xdg.method` `manual` → `wrapper`; `wrapper { args [{ ifFile "${XDG_CONFIG_HOME}/lsd/config.yaml", args ["--config-file", "{file}"] }] }`; `xdg.native` lists lsd's own config locations. **Verify first** with a real probe (lsd's Windows default location, that `--config-file` on an existing file works); clean up any folder the probe creates |
 
 
@@ -227,17 +235,16 @@ wrapper's name against a fresh session's cmdlets and aliases, so a wrapper never
   when no wrapper uses `{theme}`), `Value` is `$null` and `theme.env` is skipped.
 - `ifFile` that doesn't exist: group omitted silently (fastfetch, lsd today).
 - `Set-DFEnv` never throws; a failed `SetEnvironmentVariable` is a warning.
-- Schema errors (unknown `theme`/`wrapper` fields, `{theme}` without `theme`, `custom` without a
-  companion) fail `Test-DFToolSchema` like any other field.
+- Schema errors (bad `theme`/`wrapper` shapes, `{theme}` without `theme`, `{theme}` without a
+  `fallback` when `valid`/`files` can reject) fail `Test-DFToolSchema` like any other field.
 
 ## Testing
 
-- `tests/Set-DFEnv.Tests.ps1`: the four rule branches, `-Explicit` warning once, kept outcome
-  object; replaces the precedence cases in the role-env tests (which keep their role-level ones).
+- `tests/Set-DFEnv.Tests.ps1`: the four rule branches, `-ExplicitReason` warning once, kept notes; replaces the precedence cases in the role-env tests (which keep their role-level ones).
 - `tests/Get-DFToolTheme.Tests.ps1`: chain order and `Explicit`, map, files (user dir, bundled,
   absolute), valid/fallback warning, no `theme` → `$null`.
 - `tests/New-DFToolWrapper.Tests.ps1`: declared args order, `ifFile` present/absent, piped input
-  (a stub `.exe`-named function stands in), `-OnOutput`, theme read at call time after
+  (a stub `.exe`-named function stands in), `-Invoke`, theme read at call time after
   `Set-DFToolTheme`, generated help renders.
 - Tool tests (bat, mdcat, moor, delta, glow, fastfetch, lsd) assert the JSON blocks and the
   effect (env value / wrapper args) through registration, replacing sidecar-specific tests.
