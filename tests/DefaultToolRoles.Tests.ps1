@@ -69,7 +69,7 @@ Describe 'oh-my-posh/starship share role: prompt (real tool records and sidecars
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
-        $global:DFRoleEnvState = $null
+        $global:DFEnvState = $null
         Set-DFTestConfig $null
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
@@ -141,7 +141,7 @@ Export-ModuleMember -Function * -Variable Dotenv
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
-        $global:DFRoleEnvState = $null
+        $global:DFEnvState = $null
         Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook -Scope Global -ErrorAction Ignore
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
@@ -168,7 +168,7 @@ Export-ModuleMember -Function * -Variable Dotenv
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
         }
         Remove-Module Dotenv -Force -ErrorAction Ignore
-        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook, ProjectEnvInits, Dotenv, DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFDotenvLocationHook, ProjectEnvInits, Dotenv, DFEnvState -Scope Global -ErrorAction Ignore
         Remove-Item Env:DIRENV_BASH -ErrorAction Ignore
         Remove-DFTestGlobal -Function mise
     }
@@ -197,7 +197,7 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
         $script:DFRoleDb = $null
-        $global:DFRoleEnvState = $null
+        $global:DFEnvState = $null
         Set-DFTestConfig $null
         $script:SavedXdg = @{}
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
@@ -223,7 +223,7 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
         }
         if ($null -eq $script:SavedPager) { Remove-Item Env:PAGER -ErrorAction Ignore } else { $Env:PAGER = $script:SavedPager }
         if ($null -eq $script:SavedMoor) { Remove-Item Env:MOOR -ErrorAction Ignore } else { $Env:MOOR = $script:SavedMoor }
-        Set-DFTestConfig $null; Remove-Variable DFRoleEnvState -Scope Global -ErrorAction Ignore
+        Set-DFTestConfig $null; Remove-Variable DFEnvState -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function cat -Alias cat
     }
 

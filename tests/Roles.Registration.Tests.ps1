@@ -7,7 +7,7 @@ Describe 'Register-DFTool role activation' {
     BeforeEach { Reset-DFTestSession;
         $script:DFToolDb = $null
         $script:DFToolAvailability = @{}
-        $global:DFRoleEnvState = $null
+        $global:DFEnvState = $null
         foreach ($v in 'CONFIG', 'CACHE', 'STATE', 'DATA') {
             Set-Variable -Scope Script -Name "Saved$v" -Value ([Environment]::GetEnvironmentVariable("XDG_$($v)_HOME"))
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", (Join-Path $TestDrive $v.ToLower()))

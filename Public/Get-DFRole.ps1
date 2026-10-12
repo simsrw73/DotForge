@@ -68,7 +68,7 @@ function Get-DFRole {
                 foreach ($var in $block.env.PSObject.Properties) {
                     $current = [Environment]::GetEnvironmentVariable($var.Name, 'Process')
                     if ($current -and $current -cne (Expand-DFXdgPath $var.Value)) {
-                        $source = if ((Get-DFRoleEnvState).Written[$var.Name] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
+                        $source = if ((Get-DFEnvState).Written[$var.Name] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
                         [pscustomobject]@{ Name = $var.Name; Value = $current; Source = $source }
                     }
                 }

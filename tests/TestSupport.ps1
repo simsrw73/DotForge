@@ -43,7 +43,8 @@ function Reset-DFTestSession {
         role winners are computed over everything requested). Within one test
         file that state persists, so every Describe that registers tools calls
         this from its BeforeEach. Also clears the per-name record cache and
-        the full tool DB cache.
+        the full tool DB cache. Also forgets which environment values DotForge
+        wrote (Get-DFEnvState).
     .OUTPUTS
         None.
     #>
@@ -54,6 +55,7 @@ function Reset-DFTestSession {
     $script:DFToolDb = $null
     $script:DFBannerShown = $false
     $script:DFSessionStarted = $false
+    $global:DFEnvState = $null
 }
 
 function Get-DFTestModuleFile {

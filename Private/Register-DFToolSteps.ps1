@@ -224,7 +224,7 @@ function Invoke-DFToolRegistration {
         Applies one installed tool's configuration: XDG, environment, aliases, picker, won roles, companion.
     .DESCRIPTION
         The per-tool body of Register-DFTool. For each role the tool won, its role
-        block's env (through Set-DFRoleEnv) and aliases are applied before the
+        block's env (through Set-DFEnv) and aliases are applied before the
         companion runs, and its role hook is called right after it (by
         Invoke-DFToolCompanion). Roles it lost are skipped entirely. Anything a
         companion writes to the output stream passes through to the caller.
@@ -284,11 +284,13 @@ function Invoke-DFToolRegistration {
         if (-not $won -or $won.Winner -ne $Tool.name) { continue }
         $block = $Tool.roles.$roleName
         if ($block.env) {
+            # An explicit Defaults choice overrides a value set outside DotForge; an auto-pick doesn't.
+            $explicit = if ($won.Reason -eq 'Defaults') { "`$DFConfig.Defaults.$roleName is '$($won.Winner)'; using $($won.Winner)" }
             foreach ($var in $block.env.PSObject.Properties) {
                 # ${DF_TOOL_EXE}: the winner's own executable path (see Resolve-DFToolExecutable).
                 $value = [string]$var.Value
                 if ($value.Contains('${DF_TOOL_EXE}')) { $value = $value.Replace('${DF_TOOL_EXE}', (ConvertTo-DFToolExePathToken -Tool $Tool)) }
-                Set-DFRoleEnv -Name $var.Name -Value (Expand-DFXdgPath $value) -Role $roleName -Winner $won.Winner -Reason $won.Reason
+                Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $value) -Tool $Tool.name -ExplicitReason $explicit
             }
         }
         if ($block.aliases) { Register-DFToolAliases -Tool $Tool -Aliases $block.aliases }

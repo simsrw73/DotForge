@@ -57,10 +57,10 @@ Describe 'Get-DFRole' {
     }
 
     It 'labels a value DotForge wrote for an earlier winner as such' {
-        $global:DFRoleEnvState = @{ Written = @{ DF_T2_PAGER = 'pb' }; Warned = @{} }
+        $global:DFEnvState = @{ Written = @{ DF_T2_PAGER = 'pb' }; Warned = @{}; Kept = @{} }
         $Env:DF_T2_PAGER = 'pb'
         try {
             (Get-DFRole pager -ToolsPath $script:Tools).Overridden.Source | Should -Be 'DotForge (earlier winner)'
-        } finally { Remove-Variable DFRoleEnvState -Scope Global -ErrorAction Ignore }
+        } finally { Remove-Variable DFEnvState -Scope Global -ErrorAction Ignore }
     }
 }
