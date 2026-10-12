@@ -1,7 +1,7 @@
 {
   "bat": {
     "versionTested": "0.26.1",
-    "probedAt": "2026-10-11",
+    "probedAt": "2026-10-12",
     "claims": [
       {
         "id": "bat/honors-env:BAT_CONFIG_PATH",
@@ -25,7 +25,7 @@
   },
   "fastfetch": {
     "versionTested": "2.69.0",
-    "probedAt": "2026-10-11",
+    "probedAt": "2026-10-12",
     "claims": [
       {
         "id": "fastfetch/honors-env:XDG_CONFIG_HOME",
@@ -38,7 +38,7 @@
   },
   "glow": {
     "versionTested": "3.0.0",
-    "probedAt": "2026-10-11",
+    "probedAt": "2026-10-12",
     "claims": [
       {
         "id": "glow/honors-env:GLOW_CONFIG_DIR",

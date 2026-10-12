@@ -44,26 +44,16 @@ foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {
     Set-Item "Env:XDG_$($kind)_HOME" $folder
 }
 
-# Folders a real tool would create in the user's own folders: one named after a tool
-# (glow, bat, ...) in %APPDATA% / %LOCALAPPDATA%, or in the home folder with or without a dot.
-$toolNames = @(Get-ChildItem (Join-Path $repo 'Tools') -Filter '*.json' | ForEach-Object BaseName)
-$getToolFolders = {
-    $roots = @($env:APPDATA, $env:LOCALAPPDATA) | Where-Object { $_ -and (Test-Path $_) }
-    $found = foreach ($root in $roots) {
-        Get-ChildItem $root -Directory -Force -ErrorAction Ignore | Where-Object Name -in $toolNames | ForEach-Object FullName
-    }
-    $found += Get-ChildItem $HOME -Directory -Force -ErrorAction Ignore |
-        Where-Object { $_.Name.TrimStart('.') -in $toolNames } | ForEach-Object FullName
-    @($found)
-}
-$foldersBefore = & $getToolFolders
+. (Join-Path $PSScriptRoot 'DFToolFolders.ps1')
+$toolsPath = Join-Path $repo 'Tools'
+$foldersBefore = Get-DFUserToolFolder -ToolsPath $toolsPath
 
 Push-Location $repo
 try {
     $clock = [System.Diagnostics.Stopwatch]::StartNew()
     $result = Invoke-Pester -Path $Path -PassThru -Output $Output
     $written = @(Get-ChildItem $sentinel -Recurse -File)
-    $stray = @(& $getToolFolders | Where-Object { $_ -notin $foldersBefore })
+    $stray = @(Get-DFUserToolFolder -ToolsPath $toolsPath | Where-Object { $_ -notin $foldersBefore })
 
     "Passed $($result.PassedCount) Failed $($result.FailedCount) Skipped $($result.SkippedCount) " +
     "FailedContainers $($result.FailedContainersCount) SentinelFiles $($written.Count) StrayFolders $($stray.Count) " +

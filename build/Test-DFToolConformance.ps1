@@ -39,6 +39,12 @@ Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'Get-DFSourceFile.ps1')
 foreach ($f in Get-DFSourceFile) { . $f }
 . (Join-Path $PSScriptRoot 'DFConformance.ps1')
+. (Join-Path $PSScriptRoot 'DFToolFolders.ps1')
+
+# Probes run the real tools; one that writes to a Windows known folder (glow) would
+# leave a folder in the user's own %LOCALAPPDATA%. Remove only what this run created.
+$toolsPath = Join-Path $PSScriptRoot '..' 'Tools'
+$foldersBefore = Get-DFUserToolFolder -ToolsPath $toolsPath
 
 if (-not $SpawnTool) {
     $SpawnTool = {
@@ -145,4 +151,8 @@ $ledgerHash = @{}; foreach ($k in $ledger.Keys) { $ledgerHash[$k] = $ledger[$k] 
 Write-DFConformanceReport -Ledger $ledgerHash -AdapterLinks $links -Path $ReportPath
 
 foreach ($n in $allNotes) { Write-Warning $n }
+foreach ($folder in @(Get-DFUserToolFolder -ToolsPath $toolsPath | Where-Object { $_ -notin $foldersBefore })) {
+    Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction Ignore
+    Write-Warning "Removed $folder, which a probe created in your own folders."
+}
 Write-Verbose "Conformance ledger written to $OutPath"
