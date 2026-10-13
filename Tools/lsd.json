@@ -10,8 +10,14 @@
   },
   "xdg": {
     "compliance": "none",
-    "method": "manual",
-    "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config."
+    "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/lsd/config.yaml": ["${APPDATA}/lsd/config.yaml", "${HOME}/.config/lsd/config.yaml"]
+    },
+    "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes it only when $XDG_CONFIG_HOME/lsd/config.yaml exists."
+  },
+  "wrapper": {
+    "args": [ { "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml", "args": ["--config-file", "{file}"] } ]
   },
   "roles": {
     "listing": {

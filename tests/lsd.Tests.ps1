@@ -11,4 +11,10 @@ Describe 'Tools/lsd.json' {
     It 'does not emit hyperlinks in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
         $script:LsdJson.roles.listing.aliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
     }
+
+    It 'wraps lsd to pass --config-file only when its XDG config exists' {
+        $script:LsdJson.xdg.method | Should -Be 'wrapper'
+        $script:LsdJson.wrapper.args[0].ifFile | Should -Be '${XDG_CONFIG_HOME}/lsd/config.yaml'
+        $script:LsdJson.wrapper.args[0].args | Should -Be @('--config-file', '{file}')
+    }
 }

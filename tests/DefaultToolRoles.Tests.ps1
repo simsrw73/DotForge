@@ -29,6 +29,8 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         # shows only the unbound template, so calling it is the only reliable probe.
         function global:eza { $global:LastCommandCalled = 'eza' }
         function global:lsd { $global:LastCommandCalled = 'lsd' }
+        # lsd registers a wrapper that replaces the stub above and runs `lsd.exe`, so stub that name too.
+        function global:lsd.exe { $global:LastCommandCalled = 'lsd' }
     }
     AfterEach {
         Set-DFTestConfig $null; Remove-Variable LastCommandCalled -Scope Global -ErrorAction Ignore
@@ -36,7 +38,7 @@ Describe 'eza/lsd share role: listing (real tool records)' {
             [Environment]::SetEnvironmentVariable("XDG_$($v)_HOME", $script:SavedXdg[$v])
         }
         # eza's real picker block also defines Select-File and its ff alias.
-        Remove-DFTestGlobal -Function ls, ll, la, tree, Select-File, eza, lsd -Alias ff
+        Remove-DFTestGlobal -Function ls, ll, la, tree, Select-File, eza, lsd, lsd.exe -Alias ff
     }
 
     It 'declares listing on both tools, with the listing aliases inside the role block' {

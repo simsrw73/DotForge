@@ -2944,7 +2944,8 @@ Modern ls replacement with colors, icons, and tree view
 | Detected by | `lsd.exe` |
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `lsd`<br>winget: `lsd-rs.lsd`<br>choco: `lsd` |
-| XDG method | `manual` |
+| XDG method | `wrapper` |
+| Wraps | `lsd` adds `--config-file {file}` when `${XDG_CONFIG_HOME}/lsd/config.yaml` exists |
 | Roles | [`listing`](#listing-role) |
 | Aliases, as the listing tool | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --all --long --header --literal`<br>`la` → `lsd --all --literal`<br>`tree` → `lsd --tree --literal` |
 

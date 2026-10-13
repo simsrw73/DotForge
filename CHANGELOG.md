@@ -22,6 +22,7 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- lsd reads `$XDG_CONFIG_HOME/lsd/config.yaml`: its wrapper passes `--config-file` only while that file exists (lsd panics on a missing path).
 - `Set-DFToolTheme <tool> <theme>` switches a tool's declared theme for the rest of the session.
 - **A startup banner:** `Start-DFSession -Config @{ ShowBanner = $true }` clears the screen and prints
   one line at once; fastfetch, a health line per drive (smartmontools' `smartctl`, no admin rights:

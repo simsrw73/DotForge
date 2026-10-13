@@ -1722,7 +1722,7 @@
       }
     },
     "lsd": {
-      "sha256": "e6d26ce33a5ba95f9250e2ef13697678b9c7232cd38ee6d7d748bde3e5f1e353",
+      "sha256": "b8b42000fa6ef94b9c3ebd5b47efdd11b71bf44f869142e41ab9b56b020d43e4",
       "record": {
         "name": "lsd",
         "executable": "lsd.exe",
@@ -1739,12 +1739,22 @@
           "choco": "lsd"
         },
         "xdg": {
-          "method": "manual",
+          "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": "lsd's --config-file panics on a nonexistent path; DotForge does not manage its config. Point --config-file yourself if you want a custom lsd config.",
+          "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes it only when $XDG_CONFIG_HOME/lsd/config.yaml exists.",
           "compliance": "none",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/lsd/config.yaml": {
+              "paths": [
+                "${APPDATA}/lsd/config.yaml",
+                "${HOME}/.config/lsd/config.yaml"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -1795,7 +1805,18 @@
         },
         "themeMap": null,
         "theme": null,
-        "wrapper": null,
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml",
+              "args": [
+                "--config-file",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": false
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
