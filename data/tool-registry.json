@@ -1288,7 +1288,7 @@
       }
     },
     "glow": {
-      "sha256": "0d43ac2a3fd8793d354f1d237643f2f579364e9c2b1589bd6b3f4152539733cb",
+      "sha256": "0931c7e9d4fe892112156e3b26e36f9df6ccf5ed298ee7d4356bc0fc7a753c3e",
       "record": {
         "name": "glow",
         "executable": "glow.exe",
@@ -1311,7 +1311,7 @@
           "dirs": [
             "${XDG_CONFIG_HOME}/glow"
           ],
-          "instructions": "glow 3 reads <GLOW_CONFIG_HOME>/glow.yml (verified glow 3.0.0); its --config flag has no effect. Its style is passed with -s by the wrapper in Tools/glow.ps1, because GLOW_STYLE loses to glow's non-TTY downgrade.",
+          "instructions": "glow 3 reads <GLOW_CONFIG_HOME>/glow.yml (verified glow 3.0.0); its --config flag has no effect. Its style is passed with -s by the wrapper declared in Tools/glow.json, because GLOW_STYLE loses to glow's non-TTY downgrade.",
           "compliance": "full",
           "native": {
             "GLOW_CONFIG_HOME": {
@@ -1347,11 +1347,43 @@
           }
         },
         "themeMap": null,
-        "theme": null,
-        "wrapper": null,
-        "settings": {
-          "theme": "catppuccin-mocha"
+        "theme": {
+          "key": "GlowTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "glow",
+          "valid": [
+            "auto",
+            "dark",
+            "light",
+            "dracula",
+            "pink",
+            "notty",
+            "ascii",
+            "tokyo-night"
+          ],
+          "fallback": "auto",
+          "env": null,
+          "command": null
         },
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": null,
+              "args": [
+                "-s"
+              ]
+            },
+            {
+              "ifFile": null,
+              "args": [
+                "{theme}"
+              ]
+            }
+          ],
+          "custom": false
+        },
+        "settings": null,
         "executableExclude": [],
         "prewarm": true,
         "setup": null,

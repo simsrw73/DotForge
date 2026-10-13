@@ -6,6 +6,8 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Breaking:** `Resolve-DFGlowStyle` and `$global:DFGlowStyle` are gone. Switch glow's style with
+  `Set-DFToolTheme glow <style>`; the style is still set by `GlowTheme`/`Theme`.
 - **Your own environment values win.** A variable a tool's `env` or `xdg.vars` sets (`LESS`, `FZF_*`,
   `BAT_THEME`, `LS_COLORS`, ...) that you already set outside DotForge is now kept, and
   `Get-DFToolStatus` says so; before, DotForge overwrote most of them. A value DotForge wrote itself is

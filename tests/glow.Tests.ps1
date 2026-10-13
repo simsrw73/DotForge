@@ -13,16 +13,23 @@ Describe 'Tools/glow.json' {
         # (verified glow 3.0.0; see docs/external-dependencies.md).
         $script:GlowJson.xdg.method | Should -Be 'env'
         $script:GlowJson.xdg.vars.GLOW_CONFIG_HOME | Should -Be '${XDG_CONFIG_HOME}/glow'
-        $script:GlowJson.settings.PSObject.Properties['configFile'] | Should -BeNullOrEmpty
+        $script:GlowJson.PSObject.Properties['settings'] | Should -BeNullOrEmpty
     }
 
-    It 'names a theme that Resolve-DFGlowStyle can resolve without the binary' {
-        $name = $script:GlowJson.settings.theme
+    It 'declares its style files and the -s wrapper' {
+        $script:GlowJson.theme.files | Should -Be 'glow'
+        $script:GlowJson.theme.fallback | Should -Be 'auto'
+        $script:GlowJson.wrapper.args | Should -Be @('-s', '{theme}')
+        $script:GlowJson.PSObject.Properties['settings'] | Should -BeNullOrEmpty
+    }
+
+    It 'defaults to a theme bundled in Tools/glow' {
+        $name = $script:GlowJson.theme.default
         Test-Path (Join-Path $script:BundleDir "$name.json") | Should -BeTrue
     }
 
     It 'ships the bundled theme as a parsable glamour style document' {
-        $name  = $script:GlowJson.settings.theme
+        $name  = $script:GlowJson.theme.default
         $style = Get-Content (Join-Path $script:BundleDir "$name.json") -Raw | ConvertFrom-Json
         $style.document | Should -Not -BeNullOrEmpty
         $style.h1       | Should -Not -BeNullOrEmpty
@@ -57,8 +64,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         $script:DFToolDb     = $null
 
         Set-DFTestConfig $null
-        Remove-Variable DFGlowStyle -Scope Global -ErrorAction Ignore
-        Remove-DFTestGlobal -Function 'glow', 'Resolve-DFGlowStyle'
+        Remove-DFTestGlobal -Function 'glow', 'Read-MarkdownFile'
         Restore-DFTestXdg
     }
 
@@ -67,17 +73,12 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         Test-Path 'function:global:glow' | Should -BeTrue
     }
 
-    It 'registers Resolve-DFGlowStyle as a global function' {
-        Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        Test-Path 'function:global:Resolve-DFGlowStyle' | Should -BeTrue
-    }
-
     It 'resolves the bundled theme by default' {
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
         # The sidecar builds this from its own $PSScriptRoot, which is already
         # canonical — resolve the test's ../Tools form so the comparison matches.
         $expected = (Resolve-Path (Join-Path $script:RealTools 'glow' 'catppuccin-mocha.json')).Path
-        $global:DFGlowStyle | Should -Be $expected
+        (Get-DFSessionThemeValue -Name glow) | Should -Be $expected
     }
 
     It 'creates the XDG config directory' {
@@ -100,26 +101,26 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         '{ "document": {}, "h1": {} }' | Set-Content $userTheme
 
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        $global:DFGlowStyle | Should -Be $userTheme
+        (Get-DFSessionThemeValue -Name glow) | Should -Be $userTheme
     }
 
     It 'passes a glow built-in style name through unchanged' {
         Set-DFTestConfig @{ GlowTheme = 'dracula' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        $global:DFGlowStyle | Should -Be 'dracula'
+        (Get-DFSessionThemeValue -Name glow) | Should -Be 'dracula'
     }
 
     It 'follows the shared $DFConfig[Theme] key (catppuccin-mocha -> bundled mocha)' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
         $expected = (Resolve-Path (Join-Path $script:RealTools 'glow' 'catppuccin-mocha.json')).Path
-        $global:DFGlowStyle | Should -Be $expected
+        (Get-DFSessionThemeValue -Name glow) | Should -Be $expected
     }
 
     It 'lets GlowTheme override the shared Theme key' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; GlowTheme = 'dracula' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        $global:DFGlowStyle | Should -Be 'dracula'
+        (Get-DFSessionThemeValue -Name glow) | Should -Be 'dracula'
     }
 
     It 'no longer treats the bare "catppuccin" alias as the mocha family (retired)' {
@@ -127,7 +128,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
         # Old code mapped 'catppuccin' -> catppuccin-mocha.json; new code passes it
         # through and glow, not recognizing it, falls back to 'auto'.
-        $global:DFGlowStyle | Should -Be 'auto'
+        (Get-DFSessionThemeValue -Name glow) | Should -Be 'auto'
     }
 
     It 'falls back to auto and warns for an unknown theme' {
@@ -135,8 +136,8 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         # never reach the flag.
         Set-DFTestConfig @{ GlowTheme = 'no-such-theme' }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools -WarningVariable warnings -WarningAction SilentlyContinue
-        $global:DFGlowStyle | Should -Be 'auto'
-        $warnings -join "`n" | Should -Match "glow style 'no-such-theme' not found"
+        (Get-DFSessionThemeValue -Name glow) | Should -Be 'auto'
+        $warnings -join "`n" | Should -Match "glow theme 'no-such-theme' not recognized — falling back to 'auto'"
     }
 
     It 'tolerates $DFConfig being set to $null' {
@@ -144,7 +145,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         # threw "Cannot index into a null array" for a profile with $DFConfig = $null.
         Set-DFTestConfig $null
         { Register-DFTool -Name 'glow' -ToolsPath $script:RealTools } | Should -Not -Throw
-        $global:DFGlowStyle | Should -Not -BeNullOrEmpty
+        (Get-DFSessionThemeValue -Name glow) | Should -Not -BeNullOrEmpty
     }
 
     It 'accepts a rooted path to an existing style file' {
@@ -152,7 +153,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         '{ "document": {} }' | Set-Content $custom
         Set-DFTestConfig @{ GlowTheme = $custom }
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        $global:DFGlowStyle | Should -Be $custom
+        (Get-DFSessionThemeValue -Name glow) | Should -Be $custom
     }
 
     It 'renders piped markdown without hanging' {
@@ -162,7 +163,7 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         # blocks the same way: running the real glow would create
         # %LOCALAPPDATA%\glow, which no environment variable can redirect.
         Register-DFTool -Name 'glow' -ToolsPath $script:RealTools
-        ${function:global:glow}.ToString() | Should -Match ([regex]::Escape('$input | & glow.exe'))
+        ${function:global:glow}.ToString() | Should -Match ([regex]::Escape('$input | & $_dfExe @declared'))
         $job = Start-Job -ScriptBlock {
             Set-Item -Path 'function:global:glow' -Value ([scriptblock]::Create(
                 "if (`$MyInvocation.ExpectingInput) { `$input | & findstr.exe . }" +

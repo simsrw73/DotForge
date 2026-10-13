@@ -121,9 +121,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [fastfetch](#fastfetch) |  | fastfetch | Runs fastfetch with DotForge's config file. |
 | [Set-LocationWithFnm](#set-locationwithfnm) |  | fnm | Changes directory (through zoxide when it is registered) and switches Node versions for the new directory. |
 | [Invoke-DFApplyFzfTheme](#invoke-dfapplyfzftheme) |  | fzf | Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS. |
-| [glow](#glow) |  | glow | Runs glow with the current session style. |
 | [Read-MarkdownFile](#read-markdownfile) | `fgl` | glow | Fuzzy-picks a Markdown file below a folder and reads it in glow's pager. |
-| [Resolve-DFGlowStyle](#resolve-dfglowstyle) |  | glow | Resolves a glow style name to the value handed to glow's -s flag. |
 | [please](#please) |  | gsudo | Re-runs the previous command elevated, through gsudo. |
 | [Start-DFInshellisense](#start-dfinshellisense) |  | inshellisense | Starts an inshellisense session in this shell unless one is already running. |
 | [Select-JsonPath](#select-jsonpath) | `fjq` | jq | A live jq playground: type a filter in fzf, watch its output, and press Enter to run it. |
@@ -2860,6 +2858,8 @@ Render Markdown on the CLI
 | XDG method | `env` |
 | XDG variables | `GLOW_CONFIG_HOME` = `${XDG_CONFIG_HOME}/glow` |
 | Creates | `${XDG_CONFIG_HOME}/glow` |
+| Theme | key `GlowTheme`, default `catppuccin-mocha` |
+| Wraps | `glow` adds `-s`, `{theme}` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | [`Tools/glow.ps1`](#glow-companion) |
@@ -3657,41 +3657,13 @@ Applies a theme file you wrote, e.g. { "colors": { "bg": "#282828", "fg": "#ebdb
 
 ### glow companion
 
-#### glow
-
-Runs glow with the current session style.
-
-Wraps glow.exe and always passes -s &lt;style&gt;, because glow's GLOW_STYLE variable loses to its non-TTY downgrade. Its config comes from $XDG_CONFIG_HOME\\glow\\glow.yml (GLOW_CONFIG_HOME). The style is read from $global:DFGlowStyle on every call, so assigning to it switches the theme immediately; when it is empty, 'auto' is used. Other arguments, glow's subcommands and piped input pass through unchanged.
-
-Defined by DotForge's glow companion.
-
-**Outputs:** System.String. The rendered Markdown.
-
-**Example 1**
-
-```powershell
-glow README.md
-```
-
-Renders a Markdown file with the configured style.
-
-**Example 2**
-
-```powershell
-Get-Content notes.md | glow
-```
-
-Renders piped Markdown.
-
-**See also:** [tools](guide/tools.md)
-
 #### Read-MarkdownFile
 
 Alias: `fgl`
 
 Fuzzy-picks a Markdown file below a folder and reads it in glow's pager.
 
-Lists \*.md files below -Path (with fd when it is installed, else Get-ChildItem), previews each rendered in the session's glow style ($global:DFGlowStyle), and opens the chosen one with glow -p.
+Lists \*.md files below -Path (with fd when it is installed, else Get-ChildItem), previews each rendered in the session's glow style (Set-DFToolTheme glow &lt;style&gt; switches it), and opens the chosen one with glow -p.
 
 Defined by DotForge's glow companion. Requires fzf (or $Env:Picker).
 
@@ -3708,30 +3680,6 @@ fgl docs
 ```
 
 Picks a Markdown file under docs and reads it in glow.
-
-**See also:** [tools](guide/tools.md)
-
-#### Resolve-DFGlowStyle
-
-Resolves a glow style name to the value handed to glow's -s flag.
-
-Tries, in order: -Name as a full path to an existing file; then $XDG_CONFIG_HOME\\glow\\themes\\&lt;Name&gt;.json; then DotForge's bundled Tools\\glow\\&lt;Name&gt;.json (catppuccin-mocha ships there); then glow's own built-in styles (auto, dark, light, dracula, pink, notty, ascii, tokyo-night), returned as the bare name. Anything else warns and returns 'auto', because glow exits with an error on an unknown style.
-
-Defined by DotForge's glow companion. To switch the style for the rest of the session, assign the result to $global:DFGlowStyle.
-
-| Parameter | Type | Default | Required | Pipeline | Description |
-| --- | --- | --- | --- | --- | --- |
-| `-Name` | string |  | yes |  | A style name or the full path to a glamour style JSON file. |
-
-**Outputs:** System.String. A style file path or a glow built-in style name.
-
-**Example 1**
-
-```powershell
-$global:DFGlowStyle = Resolve-DFGlowStyle -Name dracula
-```
-
-Switches every later glow call in this session to the dracula style.
 
 **See also:** [tools](guide/tools.md)
 

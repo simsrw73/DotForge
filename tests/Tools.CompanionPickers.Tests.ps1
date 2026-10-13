@@ -41,9 +41,9 @@ Describe 'Companion pickers' {
         Mock Write-Warning { }
     }
     AfterEach {
-        Remove-DFTestGlobal -Function jq, fd, glow, bw, npm, pnpm, bun, yarn, Select-JsonPath, Read-MarkdownFile, Resolve-DFGlowStyle,
+        Remove-DFTestGlobal -Function jq, fd, glow, bw, npm, pnpm, bun, yarn, Select-JsonPath, Read-MarkdownFile,
             Select-UvVenv, Select-NpmScript, Select-BwItem, Invoke-DFPicker -Alias fjq, fgl, fvenv, fns, fbw
-        Remove-Variable -Name DFTestNative, DFTestActivated, DFGlowStyle -Scope Global -ErrorAction Ignore
+        Remove-Variable -Name DFTestNative, DFTestActivated -Scope Global -ErrorAction Ignore
         Restore-DFTestXdg
     }
 
@@ -87,7 +87,7 @@ Describe 'Companion pickers' {
         BeforeEach {
             Import-Companion glow
             Set-NativeStub glow, fd
-            $global:DFGlowStyle = 'dracula'
+            Set-DFSessionTheme -Name glow -Theme ([pscustomobject]@{ Value = 'dracula' })
             # Read-MarkdownFile is a closure, so it reaches a global Invoke-DFPicker, not the mock.
             Set-Item function:global:Invoke-DFPicker -Value {
                 param([scriptblock]$List, [string]$Preview, [string]$Header, [scriptblock]$Action)

@@ -23,11 +23,16 @@
       "GLOW_CONFIG_HOME": [],
       "${XDG_CONFIG_HOME}/glow/glow.yml": ["${LOCALAPPDATA}/glow/Config/glow.yml", "${HOME}/.config/glow/glow.yml", "${HOME}/Library/Preferences/glow/glow.yml"]
     },
-    "instructions": "glow 3 reads <GLOW_CONFIG_HOME>/glow.yml (verified glow 3.0.0); its --config flag has no effect. Its style is passed with -s by the wrapper in Tools/glow.ps1, because GLOW_STYLE loses to glow's non-TTY downgrade."
+    "instructions": "glow 3 reads <GLOW_CONFIG_HOME>/glow.yml (verified glow 3.0.0); its --config flag has no effect. Its style is passed with -s by the wrapper declared in Tools/glow.json, because GLOW_STYLE loses to glow's non-TTY downgrade."
   },
-  "settings": {
-    "theme": "catppuccin-mocha"
+  "theme": {
+    "key": "GlowTheme",
+    "default": "catppuccin-mocha",
+    "files": "glow",
+    "valid": ["auto", "dark", "light", "dracula", "pink", "notty", "ascii", "tokyo-night"],
+    "fallback": "auto"
   },
+  "wrapper": { "args": ["-s", "{theme}"] },
   "aliases": {},
   "picker": "custom"
 }

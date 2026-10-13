@@ -187,7 +187,7 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('glow') }
 Register-DFTool -Name glow
 '# Hello' | Set-Content hello.md
-$global:DFGlowStyle = 'notty'
+Set-DFToolTheme glow notty | Out-Null
 glow hello.md
 ```
 
@@ -196,7 +196,7 @@ glow hello.md
   # Hello
 ```
 
-1. `$global:DFGlowStyle` switches glow's style for the rest of the session.
+1. `Set-DFToolTheme glow <style>` switches glow's style for the rest of the session.
 2. fastfetch's config file is created from DotForge's template the first time, then left for you to edit.
 3. fastfetch and smartmontools make up the [startup banner](configuration.md#startup-banner): `ShowBanner = $true`. smartmontools adds no commands of its own; its `smartctl` reads each drive's health for the banner.
 
