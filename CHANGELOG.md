@@ -20,6 +20,7 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- `Set-DFToolTheme <tool> <theme>` switches a tool's declared theme for the rest of the session.
 - **A startup banner:** `Start-DFSession -Config @{ ShowBanner = $true }` clears the screen and prints
   one line at once; fastfetch, a health line per drive (smartmontools' `smartctl`, no admin rights:
   life, temperature, hours, data written, in red when something's wrong) and the public IP are gathered

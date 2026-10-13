@@ -24,6 +24,7 @@
         'Get-DFToolStatus',
         'Register-DFTool',
         'Complete-DFToolSetup',
+        'Set-DFToolTheme',
         # Layer 3 — Tool Operations
         'Install-DFTool',
         'Update-DFTool',

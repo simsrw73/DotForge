@@ -34,6 +34,7 @@ $Ast = [System.Management.Automation.Language.Ast]
 $sectionByFile = [ordered]@{
     'Add-DFToPath'               = 'Core'
     'Complete-DFToolSetup'       = 'Core'
+    'Set-DFToolTheme'            = 'Core'
     'Find-DFTool'                = 'Core'
     'Get-DFRole'                 = 'Core'
     'Get-DFTool'                 = 'Core'

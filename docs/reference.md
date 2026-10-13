@@ -32,6 +32,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
 | [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Hands a tool's config over to DotForge when its old config location still holds your config. |
+| [Set-DFToolTheme](#set-dftooltheme) |  | Switches an active tool's theme for the rest of this session. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 | [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
 
@@ -1048,6 +1049,43 @@ Resolve-DFToolConflict starship -Adopt
 ```
 
 You've already moved starship.toml yourself: DotForge takes over starship's config.
+
+**See also:** [configuration](guide/configuration.md)
+
+### Set-DFToolTheme
+
+Switches an active tool's theme for the rest of this session.
+
+```text
+Set-DFToolTheme [-Name] <string> [-Theme] <string> [<CommonParameters>]
+```
+
+For a tool whose theme block DotForge applies itself: resolves -Theme like the configured one (theme map, theme files, built-in names, with a warning and the tool's fallback for a name it doesn't know), re-applies the theme's environment variables, and makes the tool's wrapper use it from the next call. The choice is explicit, so it replaces a value you set outside DotForge.
+
+It lasts for this session; to keep it, set the tool's theme key (for example $DFConfig GlowTheme) in your profile. A tool whose theme is applied by its companion names its own command instead, and a theme written to a config file once, at setup, can't be switched here.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The tool, e.g. glow. Tab completion lists active tools with a theme. |
+| `-Theme` | string |  | yes |  | A theme name, or the full path to a theme file for tools that read theme files. |
+
+**Outputs:** PSCustomObject: Name, Native, Value (what the tool is given) and Explicit.
+
+**Example 1**
+
+```powershell
+Set-DFToolTheme glow dracula
+```
+
+Renders Markdown with glow's dracula style for the rest of the session.
+
+**Example 2**
+
+```powershell
+Set-DFToolTheme bat 'Monokai Extended'
+```
+
+Switches bat's BAT_THEME.
 
 **See also:** [configuration](guide/configuration.md)
 

@@ -108,6 +108,17 @@ mdcat: dracula
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | vivid (`LS_COLORS`) | `VividTheme` | any `vivid themes` name | warning; `LS_COLORS` unchanged |
 
+To switch a tool's theme for the rest of the session, use `Set-DFToolTheme`:
+
+<!-- system -->
+```powershell
+Set-DFToolTheme bat 'Monokai Extended'
+```
+
+It works for tools whose theme DotForge applies itself (bat, mdcat, moor, delta, glow). fzf, PSReadLine
+and vivid have their own commands (`Invoke-DFApplyFzfTheme`, `Select-PSReadLineTheme`,
+`Select-LSColorsTheme`). To keep a theme, set the tool's key (`BatTheme`, ...) in your config.
+
 mdv's theme is written to its config file once, the first time mdv is registered. To change it later, edit `$XDG_CONFIG_HOME\mdv\config.yaml`.
 
 To try themes interactively before you choose, use the theme pickers `fprl` (PSReadLine), `fls` (directory colors) and `fpot` (oh-my-posh prompt). They apply a theme to the current session only; see [Tools](tools.md).
