@@ -2613,9 +2613,7 @@ Modern cat replacement with syntax highlighting and Git integration
 | Install ids | scoop: `bat`<br>winget: `sharkdp.bat`<br>choco: `bat` |
 | XDG method | `env` |
 | XDG variables | `BAT_CONFIG_PATH` = `${XDG_CONFIG_HOME}/bat/bat.conf` |
-| Environment | `BAT_THEME` = `Catppuccin Mocha` |
 | Aliases | `cat` → `bat -pp` |
-| Companion | `Tools/bat.ps1` |
 
 ### bitwarden tool
 
@@ -2957,7 +2955,6 @@ cat for markdown — render CommonMark in the terminal
 | Tags | `markdown`, `viewer`, `text` |
 | Install ids | scoop: `mdcat`<br>crates: `mdcat` |
 | XDG method | `default` |
-| Environment | `MDCAT_THEME` = `catppuccin-mocha` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | `Tools/mdcat.ps1` |
 
@@ -3017,7 +3014,6 @@ Pager that does the right thing without configuration (formerly moar)
 | XDG method | `default` |
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `moor` |
-| Companion | `Tools/moor.ps1` |
 
 ### nano tool
 

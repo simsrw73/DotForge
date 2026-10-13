@@ -10,8 +10,9 @@ Describe 'Tools/mdcat.json' {
     It 'declares the default XDG method (mdcat is XDG-native)' {
         $script:McatJson.xdg.method | Should -Be 'default'
     }
-    It 'sets a catppuccin MDCAT_THEME default in the env block' {
-        $script:McatJson.env.MDCAT_THEME | Should -Be 'catppuccin-mocha'
+    It 'declares a catppuccin MDCAT_THEME default in the theme block' {
+        $script:McatJson.theme.default | Should -Be 'catppuccin-mocha'
+        $script:McatJson.theme.env.MDCAT_THEME | Should -Be '{theme}'
     }
     It 'declares scoop and crates (cargo) packages' {
         $script:McatJson.packages.scoop | Should -Be 'mdcat'
@@ -52,32 +53,35 @@ Describe 'mdcat tool sidecar' -Skip:(-not (Get-Command mdcat.exe -ErrorAction Ig
 
         (Get-Item $cacheFile).LastWriteTimeUtc | Should -Be $writtenAfterFirst
     }
+}
 
-    It 'sets MDCAT_THEME to the JSON default when no $DFConfig theme is set' {
-        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
+Describe 'mdcat theme' {
+    BeforeEach { Reset-DFTestSession; Set-DFTestConfig $null; Remove-Item Env:MDCAT_THEME -ErrorAction Ignore; $script:Mdcat = Get-DFTestToolRecord mdcat }
+    AfterEach { Remove-Item Env:MDCAT_THEME -ErrorAction Ignore; Set-DFTestConfig $null }
+
+    It 'defaults to catppuccin-mocha' {
+        Set-DFToolThemeEnv -Tool $script:Mdcat -Theme (Resolve-DFToolTheme -Tool $script:Mdcat)
         $Env:MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
-
-    It 'lets $DFConfig[MdcatTheme] override the theme' {
-        Set-DFTestConfig @{ MdcatTheme = 'dracula' }
-        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
-        $Env:MDCAT_THEME | Should -Be 'dracula'
+    It 'lets MdcatTheme override' {
+        Set-DFTestConfig @{ MdcatTheme = 'nord' }
+        Set-DFToolThemeEnv -Tool $script:Mdcat -Theme (Resolve-DFToolTheme -Tool $script:Mdcat)
+        $Env:MDCAT_THEME | Should -Be 'nord'
     }
-
-    It 'maps the shared catppuccin-mocha family to catppuccin-mocha' {
+    It 'follows the shared Theme key' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
-        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools
+        Set-DFToolThemeEnv -Tool $script:Mdcat -Theme (Resolve-DFToolTheme -Tool $script:Mdcat)
         $Env:MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
-
-    It 'falls back to auto for an unsupported theme name' {
-        Set-DFTestConfig @{ MdcatTheme = 'no-such-theme' }
-        Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
+    It 'falls back to auto with a warning for an unsupported theme' {
+        Set-DFTestConfig @{ MdcatTheme = 'bogus' }
+        $w = & { $theme = Resolve-DFToolTheme -Tool $script:Mdcat; Set-DFToolThemeEnv -Tool $script:Mdcat -Theme $theme } 3>&1 | Out-String
         $Env:MDCAT_THEME | Should -Be 'auto'
+        $w | Should -Match "mdcat theme 'bogus' not recognized — falling back to 'auto'"
     }
-
-    It 'tolerates $DFConfig being set to $null' {
+    It 'tolerates a null config' {
         Set-DFTestConfig $null
-        { Register-DFTool -Name 'mdcat' -ToolsPath $script:RealTools } | Should -Not -Throw
+        Set-DFToolThemeEnv -Tool $script:Mdcat -Theme (Resolve-DFToolTheme -Tool $script:Mdcat)
+        $Env:MDCAT_THEME | Should -Be 'catppuccin-mocha'
     }
 }

@@ -172,9 +172,9 @@ Two categories, and the difference matters:
 | | |
 |---|---|
 | **What** | moor (renamed from moar at v2.0.0) reads default options from `MOOR`; `-style` takes a highlighting style name (`catppuccin-mocha` among them) and falls back to its default for an unknown one. |
-| **Where** | `Tools/moor.ps1` |
-| **Why** | The companion sets `MOOR=-style <theme> -quit-if-one-screen` only when `MOOR` is empty, so a user's own value wins. |
-| **If it changes** | If `-style` is renamed, moor rejects the option: set `MOOR` yourself, or update the companion. |
+| **Where** | the `theme` block in `Tools/moor.json` |
+| **Why** | The theme block sets `MOOR=-style <theme> -quit-if-one-screen`, and by the env precedence rule only when `MOOR` is unset, so a user's own value wins. |
+| **If it changes** | If `-style` is renamed, moor rejects the option: set `MOOR` yourself, or update the theme block. |
 
 ---
 

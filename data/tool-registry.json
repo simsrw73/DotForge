@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "tools": {
     "bat": {
-      "sha256": "a46ecd6c1c1b11002ffd148d8daeaf90df61e7d3fd2e943245a96bdca81e9cea",
+      "sha256": "bb9ded4aba473aafa50f7eca2bcafaa0d15bbe0b26bd6cfa06768e3c7c5b3898",
       "record": {
         "name": "bat",
         "executable": "bat.exe",
@@ -40,9 +40,7 @@
             }
           }
         },
-        "env": {
-          "BAT_THEME": "Catppuccin Mocha"
-        },
+        "env": null,
         "aliases": {
           "cat": {
             "command": "bat",
@@ -55,10 +53,21 @@
         "after": [],
         "requires": [],
         "roles": {},
-        "themeMap": {
-          "catppuccin-mocha": "Catppuccin Mocha"
+        "themeMap": null,
+        "theme": {
+          "key": "BatTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "Catppuccin Mocha"
+          },
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": {
+            "BAT_THEME": "{theme}"
+          },
+          "command": null
         },
-        "theme": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -592,7 +601,7 @@
       }
     },
     "delta": {
-      "sha256": "e61e1ce92f99e8fbff0c8bd6df1143dc3b42a1a78ec5556b6344263d55ce8944",
+      "sha256": "639fe75bb86eabd5e02aa9d53234504442df123652e36a19b186636203e6172e",
       "record": {
         "name": "delta",
         "executable": "delta.exe",
@@ -633,7 +642,18 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "DeltaTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": {
+            "DELTA_FEATURES": "+{theme}"
+          },
+          "command": null
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1711,7 +1731,7 @@
       }
     },
     "mdcat": {
-      "sha256": "bb5589ada25da3b32ff744f842f562fea1f113917bb4ae9c50841a30ef0d8599",
+      "sha256": "fdc99a636bd275530cc3b976e1837611e5dc0f53a68fe23f98f74b56db2e4bd8",
       "record": {
         "name": "mdcat",
         "executable": "mdcat.exe",
@@ -1734,9 +1754,7 @@
           "compliance": "full",
           "native": null
         },
-        "env": {
-          "MDCAT_THEME": "catppuccin-mocha"
-        },
+        "env": null,
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1751,7 +1769,30 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "MdcatTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [
+            "auto",
+            "dark",
+            "light",
+            "catppuccin-mocha",
+            "catppuccin-latte",
+            "gruvbox-dark",
+            "gruvbox-light",
+            "dracula",
+            "nord",
+            "solarized-dark",
+            "solarized-light"
+          ],
+          "fallback": "auto",
+          "env": {
+            "MDCAT_THEME": "{theme}"
+          },
+          "command": null
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1979,7 +2020,7 @@
       }
     },
     "moor": {
-      "sha256": "658eb83f34d0c1cd0dd70f4b1beb1f303c0b8f3e3755074c03515f825ffbf6a4",
+      "sha256": "ded781dd83c37b024feaea85219727eb4f189f15357ad0d57624dd5f73a2159a",
       "record": {
         "name": "moor",
         "executable": "moor.exe",
@@ -2017,7 +2058,18 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "MoorTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": {
+            "MOOR": "-style {theme} -quit-if-one-screen"
+          },
+          "command": null
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,

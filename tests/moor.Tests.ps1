@@ -1,15 +1,13 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
-    $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/moor.ps1'
 }
 
-Describe 'moor companion' {
+Describe 'moor theme' {
     BeforeEach {
-        $script:SavedMoor = $Env:MOOR
-        Remove-Item Env:MOOR -ErrorAction Ignore
-        Set-DFTestConfig $null
-        $DFCurrentTool = [pscustomobject]@{ themeMap = $null }
+        Reset-DFTestSession; Set-DFTestConfig $null
+        $script:SavedMoor = $Env:MOOR; Remove-Item Env:MOOR -ErrorAction Ignore
+        $script:Moor = Get-DFTestToolRecord moor
     }
     AfterEach {
         if ($null -eq $script:SavedMoor) { Remove-Item Env:MOOR -ErrorAction Ignore } else { $Env:MOOR = $script:SavedMoor }
@@ -18,19 +16,17 @@ Describe 'moor companion' {
 
     It 'sets MOOR to the configured style and quit-if-one-screen when unset' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
-        . $script:CompanionPath
+        Set-DFToolThemeEnv -Tool $script:Moor -Theme (Resolve-DFToolTheme -Tool $script:Moor)
         $Env:MOOR | Should -Be '-style catppuccin-mocha -quit-if-one-screen'
     }
-
     It 'lets MoorTheme override the shared theme' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; MoorTheme = 'dracula' }
-        . $script:CompanionPath
+        Set-DFToolThemeEnv -Tool $script:Moor -Theme (Resolve-DFToolTheme -Tool $script:Moor) -WarningAction SilentlyContinue
         $Env:MOOR | Should -Be '-style dracula -quit-if-one-screen'
     }
-
     It 'leaves a MOOR the user set alone' {
         $Env:MOOR = '-no-linenumbers'
-        . $script:CompanionPath
+        Set-DFToolThemeEnv -Tool $script:Moor -Theme (Resolve-DFToolTheme -Tool $script:Moor)
         $Env:MOOR | Should -Be '-no-linenumbers'
     }
 }

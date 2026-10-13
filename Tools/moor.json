@@ -5,6 +5,7 @@
   "tags": ["pager", "viewer"],
   "packages": { "scoop": "moor" },
   "xdg": { "compliance": "none", "method": "default" },
+  "theme": { "key": "MoorTheme", "default": "catppuccin-mocha", "env": { "MOOR": "-style {theme} -quit-if-one-screen" } },
   "roles": { "pager": { "priority": 30, "env": { "PAGER": "moor" } } },
   "aliases": {},
   "picker": null

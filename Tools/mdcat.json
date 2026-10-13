@@ -16,8 +16,12 @@
     "compliance": "full",
     "method": "default"
   },
-  "env": {
-    "MDCAT_THEME": "catppuccin-mocha"
+  "theme": {
+    "key": "MdcatTheme",
+    "default": "catppuccin-mocha",
+    "valid": ["auto", "dark", "light", "catppuccin-mocha", "catppuccin-latte", "gruvbox-dark", "gruvbox-light", "dracula", "nord", "solarized-dark", "solarized-light"],
+    "fallback": "auto",
+    "env": { "MDCAT_THEME": "{theme}" }
   },
   "aliases": {},
   "picker": null

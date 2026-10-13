@@ -56,21 +56,6 @@ Describe 'delta tool sidecar' {
         Restore-DFTestXdg
     }
 
-    It 'sets DELTA_FEATURES to the canonical default, additively (+), when no theme is configured' {
-        Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
-        $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
-    }
-    It 'follows the shared $DFConfig[Theme]' {
-        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
-        Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
-        $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
-    }
-    It 'lets $DFConfig[DeltaTheme] override with a verbatim (non-canonical) name, additively' {
-        Set-DFTestConfig @{ DeltaTheme = 'my-custom-feature' }
-        Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
-        $Env:DELTA_FEATURES | Should -Be '+my-custom-feature'
-    }
-
     It 'deploys the bundled catppuccin theme file to $XDG_CONFIG_HOME/delta' {
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
         $deployed = Join-Path $Env:XDG_CONFIG_HOME 'delta' 'catppuccin.gitconfig'
@@ -115,7 +100,6 @@ Describe 'delta tool sidecar' {
         Set-DFTestConfig @{ SkipSetup = @('delta') }
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
 
-        $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
         @(git config --global --get-all include.path 2>$null) | Should -BeNullOrEmpty
         (Get-DFToolSetupState).PSObject.Properties['delta'] | Should -BeNullOrEmpty
     }
@@ -123,5 +107,25 @@ Describe 'delta tool sidecar' {
     It 'prints a visible confirmation naming the removal command on first add' {
         $out = Register-DFTool -Name 'delta' -ToolsPath $script:RealTools 6>&1 | Out-String
         $out | Should -Match 'git config --global --unset-all include\.path'
+    }
+}
+
+Describe 'delta theme' {
+    BeforeEach { Reset-DFTestSession; Set-DFTestConfig $null; Remove-Item Env:DELTA_FEATURES -ErrorAction Ignore; $script:Delta = Get-DFTestToolRecord delta }
+    AfterEach { Remove-Item Env:DELTA_FEATURES -ErrorAction Ignore; Set-DFTestConfig $null }
+
+    It 'sets DELTA_FEATURES to the canonical default, additively (+)' {
+        Set-DFToolThemeEnv -Tool $script:Delta -Theme (Resolve-DFToolTheme -Tool $script:Delta)
+        $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
+    }
+    It 'follows the shared Theme key' {
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
+        Set-DFToolThemeEnv -Tool $script:Delta -Theme (Resolve-DFToolTheme -Tool $script:Delta)
+        $Env:DELTA_FEATURES | Should -Be '+catppuccin-mocha'
+    }
+    It 'lets DeltaTheme override with a verbatim feature name, additively' {
+        Set-DFTestConfig @{ DeltaTheme = 'my-feature' }
+        Set-DFToolThemeEnv -Tool $script:Delta -Theme (Resolve-DFToolTheme -Tool $script:Delta)
+        $Env:DELTA_FEATURES | Should -Be '+my-feature'
     }
 }

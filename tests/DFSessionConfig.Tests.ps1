@@ -89,6 +89,13 @@ Describe 'Session config' {
     }
 
     Context 'known-key list' {
+        It 'lists every theme.key a tool record declares' {
+            $root = Split-Path $PSScriptRoot -Parent
+            $keys = foreach ($json in Get-ChildItem (Join-Path $root 'Tools') -Filter '*.json') {
+                (Get-Content $json -Raw | ConvertFrom-Json).PSObject.Properties['theme']?.Value?.key
+            }
+            @($keys | Where-Object { $_ -and -not $script:DFConfigKeys.Contains($_) }) | Should -BeNullOrEmpty
+        }
         It 'lists every key the code reads by name (Get-DFConfig and Get-DFConfiguredTheme -ToolKey)' {
             $root = Split-Path $PSScriptRoot -Parent
             $read = foreach ($file in Get-ChildItem (Join-Path $root 'Shared'), (Join-Path $root 'Private'), (Join-Path $root 'Public'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Private'), (Join-Path $root 'Modules' 'DotForge.Catalog' 'Public'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Private'), (Join-Path $root 'Modules' 'DotForge.Helpers' 'Public'), (Join-Path $root 'Tools') -Filter '*.ps1') {

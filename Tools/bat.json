@@ -23,11 +23,11 @@
     },
     "dirs": []
   },
-  "env": {
-    "BAT_THEME": "Catppuccin Mocha"
-  },
-  "themeMap": {
-    "catppuccin-mocha": "Catppuccin Mocha"
+  "theme": {
+    "key": "BatTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "Catppuccin Mocha" },
+    "env": { "BAT_THEME": "{theme}" }
   },
   "aliases": {
     "cat": {

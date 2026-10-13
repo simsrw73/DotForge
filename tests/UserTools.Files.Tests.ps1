@@ -34,9 +34,9 @@ Describe 'Files of a user tool record' {
     }
 
     It 'runs the user companion, not the shipped one, for an overridden tool' {
-        '{ "name": "bat", "executable": "Pester", "type": "module" }' | Set-Content (Join-Path $script:UserTools 'bat.json')
-        '$global:DFTestUserCompanion = "user"' | Set-Content (Join-Path $script:UserTools 'bat.ps1')
-        $tool = (Import-DFToolDb -Name bat).bat
+        '{ "name": "mdcat", "executable": "Pester", "type": "module" }' | Set-Content (Join-Path $script:UserTools 'mdcat.json')
+        '$global:DFTestUserCompanion = "user"' | Set-Content (Join-Path $script:UserTools 'mdcat.ps1')
+        $tool = (Import-DFToolDb -Name mdcat).mdcat
         Invoke-DFToolCompanion -Tool $tool -ToolsPath $script:ShippedTools
         $global:DFTestUserCompanion | Should -Be 'user'
     }

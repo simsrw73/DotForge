@@ -1,22 +1,14 @@
-# Companion for delta — set DELTA_FEATURES from the configured theme so it tracks
-# $DFConfig.Theme, and deploy the bundled catppuccin/delta theme file so that
-# feature name resolves to a real [delta "..."] block instead of a dead pointer.
+# Companion for delta — deploys the bundled catppuccin/delta theme file so the
+# feature named by DELTA_FEATURES (set from the theme block in Tools/delta.json)
+# resolves to a real [delta "..."] block instead of a dead pointer.
 # delta features are user-defined config names, so there is no built-in list to
 # validate against; an unknown feature is silently ignored by delta. See
 # docs/superpowers/specs/2026-09-04-delta-catppuccin-design.md and
 # docs/external-dependencies.md.
 #
-# Reads: $DFConfig.DeltaTheme, then $DFConfig.Theme, then 'catppuccin-mocha'.
-# Sets: DELTA_FEATURES. Writes: $XDG_CONFIG_HOME\delta\catppuccin.gitconfig
+# Writes: $XDG_CONFIG_HOME\delta\catppuccin.gitconfig
 # (rewritten whenever the bundled copy changes, so don't edit it in place). The
 # git-config include that activates it is added once by delta.setup.ps1.
-
-$_theme  = Get-DFConfiguredTheme -ToolKey 'DeltaTheme' -Default 'catppuccin-mocha'
-$_native = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
-# Leading '+' makes this additive: DELTA_FEATURES without it *replaces* the
-# user's entire git-config `features` list rather than layering on top of it
-# (verified directly — see the design spec's Section 0).
-[System.Environment]::SetEnvironmentVariable('DELTA_FEATURES', "+$_native", 'Process')
 
 # Deploy the bundled catppuccin/delta theme file (all four flavours) so
 # DELTA_FEATURES resolves to something real. Always-refresh, not seed-once —

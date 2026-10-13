@@ -17,6 +17,7 @@
     "compliance": "none",
     "method": "default"
   },
+  "theme": { "key": "DeltaTheme", "default": "catppuccin-mocha", "env": { "DELTA_FEATURES": "+{theme}" } },
   "aliases": {},
   "picker": null
 }
