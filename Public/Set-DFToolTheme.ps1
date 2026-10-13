@@ -55,8 +55,7 @@ function Set-DFToolTheme {
         return
     }
     $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
-    if ($script:DFSessionThemes -isnot [hashtable]) { $script:DFSessionThemes = @{} }
-    $script:DFSessionThemes[$Name] = $resolved
+    Set-DFSessionTheme -Name $Name -Theme $resolved
     Set-DFToolThemeEnv -Tool $tool -Theme $resolved -ExplicitReason "Set-DFToolTheme chose '$Theme'"
     $resolved
 }

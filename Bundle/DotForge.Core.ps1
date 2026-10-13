@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 2edd870a06060a7e8b8b9dff1bb3b59c35888d66eb9794845dbaf322ed65acb1
+# sources-sha256: 91bbe6b1002d1f1ca2a0a82700c58dd5da0c27b6702719ff620973883821c5ea
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3880,6 +3880,23 @@ function Get-DFSessionThemeValue {
     if ($script:DFSessionThemes -is [hashtable] -and $script:DFSessionThemes.ContainsKey($Name)) {
         $script:DFSessionThemes[$Name].Value
     }
+}
+
+function Set-DFSessionTheme {
+    <#
+    .SYNOPSIS
+        Records a tool's theme for the rest of this session; Set-DFToolTheme calls it after resolving a new one.
+    .PARAMETER Name
+        The tool name.
+    .PARAMETER Theme
+        A Resolve-DFToolTheme result.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][pscustomobject]$Theme)
+    if ($script:DFSessionThemes -isnot [hashtable]) { $script:DFSessionThemes = @{} }
+    $script:DFSessionThemes[$Name] = $Theme
 }
 
 function Set-DFToolThemeEnv {
@@ -8795,8 +8812,7 @@ function Set-DFToolTheme {
         return
     }
     $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
-    if ($script:DFSessionThemes -isnot [hashtable]) { $script:DFSessionThemes = @{} }
-    $script:DFSessionThemes[$Name] = $resolved
+    Set-DFSessionTheme -Name $Name -Theme $resolved
     Set-DFToolThemeEnv -Tool $tool -Theme $resolved -ExplicitReason "Set-DFToolTheme chose '$Theme'"
     $resolved
 }

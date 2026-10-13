@@ -52,10 +52,13 @@ Describe 'env-block relocation preserves the migrated values' {
         $j.xdg.vars.PSObject.Properties['LESS'] | Should -BeNullOrEmpty
         $j.env.LESS | Should -Be '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
     }
-    It 'mdcat moves MDCAT_THEME to env and is method default' {
+    It 'mdcat moves MDCAT_THEME out of xdg.vars to its theme block and is method default' {
         $j = Get-Content (Join-Path $script:RealTools 'mdcat.json') -Raw | ConvertFrom-Json
         $j.xdg.method     | Should -Be 'default'
-        $j.env.MDCAT_THEME | Should -Be 'catppuccin-mocha'
+        $vars = $j.xdg.PSObject.Properties['vars']?.Value
+        if ($vars) { $vars.PSObject.Properties['MDCAT_THEME'] | Should -BeNullOrEmpty }
+        $j.theme.env.MDCAT_THEME | Should -Be '{theme}'
+        $j.theme.default | Should -Be 'catppuccin-mocha'
     }
 }
 

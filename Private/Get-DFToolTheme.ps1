@@ -109,6 +109,23 @@ function Get-DFSessionThemeValue {
     }
 }
 
+function Set-DFSessionTheme {
+    <#
+    .SYNOPSIS
+        Records a tool's theme for the rest of this session; Set-DFToolTheme calls it after resolving a new one.
+    .PARAMETER Name
+        The tool name.
+    .PARAMETER Theme
+        A Resolve-DFToolTheme result.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][pscustomobject]$Theme)
+    if ($script:DFSessionThemes -isnot [hashtable]) { $script:DFSessionThemes = @{} }
+    $script:DFSessionThemes[$Name] = $Theme
+}
+
 function Set-DFToolThemeEnv {
     <#
     .SYNOPSIS
