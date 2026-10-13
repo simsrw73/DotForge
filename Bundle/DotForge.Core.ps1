@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: f4074d965f9b7bb5ede08e1eacd94b83a813bba391f4d209059141cb18fe869b
+# sources-sha256: 96d21f60866e19c022725a01b27b9eca6819a5020dc2343a74acb2e570eef2d7
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1327,6 +1327,29 @@ function ConvertTo-DFThemeBlock {
     }
 }
 
+function ConvertTo-DFWrapperBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's wrapper block: args becomes a list of { ifFile; args } groups, custom a boolean.
+    .PARAMETER RawWrapper
+        The parsed wrapper object, or $null.
+    .OUTPUTS
+        PSCustomObject, or $null when there is no wrapper block.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$RawWrapper)
+    if ($null -eq $RawWrapper) { return $null }
+    $groups = foreach ($entry in @($RawWrapper.PSObject.Properties['args']?.Value)) {
+        if ($null -eq $entry) { continue }
+        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; args = [string[]]@($entry) }; continue }
+        [pscustomobject]@{
+            ifFile = Get-DFToolRecordProperty $entry 'ifFile' $null
+            args   = [string[]]@($entry.PSObject.Properties['args']?.Value)
+        }
+    }
+    [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
+}
+
 function ConvertTo-DFToolRecord {
     <#
     .SYNOPSIS
@@ -1338,13 +1361,16 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
-            packages / xdg / env / aliases / picker / themeMap / theme /
+            packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
             folder / source $null (the loader sets them: where the JSON was
             read from, and 'builtin' or 'user')
 
         theme, when present, has key, default, map (falling back to the legacy
         top-level themeMap), files, valid (string[]), fallback, env and command.
+
+        wrapper, when present, has args (a list of { ifFile; args } groups; a
+        plain string is its own group) and custom.
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -1403,6 +1429,7 @@ function ConvertTo-DFToolRecord {
         roles             = $roles
         themeMap          = Get-DFToolRecordProperty $Tool 'themeMap' $null
         theme             = ConvertTo-DFThemeBlock (Get-DFToolRecordProperty $Tool 'theme' $null) (Get-DFToolRecordProperty $Tool 'themeMap' $null)
+        wrapper           = ConvertTo-DFWrapperBlock (Get-DFToolRecordProperty $Tool 'wrapper' $null)
         settings          = Get-DFToolRecordProperty $Tool 'settings' $null
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
@@ -1820,6 +1847,38 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
     $v = Get-DFSchemaProperty $theme 'env'; if ($null -ne $v) { Get-DFMapSchemaError $v 'theme.env' -StringsOnly }
 }
 
+function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in wrapper: args is an array of strings and { ifFile, args } groups; {theme} needs a theme that always has a value.
+    #>
+    $wrapper = Get-DFSchemaProperty $Tool 'wrapper'
+    if ($null -eq $wrapper) { return }
+    if ($wrapper -isnot [pscustomobject]) { return 'wrapper must be an object' }
+    $custom = Get-DFSchemaProperty $wrapper 'custom'
+    if ($null -ne $custom -and $custom -isnot [bool]) { 'wrapper.custom must be true or false' }
+    $entries = $wrapper.PSObject.Properties['args']?.Value   # read directly: a helper would unroll ["x"]
+    if ($entries -isnot [array]) { return 'wrapper.args must be an array' }
+    $usesTheme = $false
+    for ($n = 0; $n -lt $entries.Count; $n++) {
+        $entry = $entries[$n]
+        if ($entry -is [string]) { if ($entry.Contains('{theme}')) { $usesTheme = $true }; continue }
+        $inner = if ($entry -is [pscustomobject]) { $entry.PSObject.Properties['args']?.Value }
+        $ifFile = if ($entry -is [pscustomobject]) { Get-DFSchemaProperty $entry 'ifFile' }
+        if ($ifFile -isnot [string] -or -not $ifFile -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
+            "wrapper.args[$n] must be a string or { ifFile, args: [strings] }"; continue
+        }
+        if (@($inner | Where-Object { $_.Contains('{theme}') }).Count) { $usesTheme = $true }
+    }
+    if (-not $usesTheme) { return }
+    $theme = Get-DFSchemaProperty $Tool 'theme'
+    if ($null -eq $theme) { return 'wrapper.args uses {theme}, but the tool has no theme block' }
+    $canReject = (Get-DFSchemaProperty $theme 'files') -or $theme.PSObject.Properties['valid']
+    if ($canReject -and -not (Get-DFSchemaProperty $theme 'fallback')) {
+        'wrapper.args uses {theme}, so theme needs a fallback (valid or files can reject a name)'
+    }
+}
+
 function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -2032,13 +2091,14 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         banner = 'script', 'body', 'fills'
         theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command'
+        wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
@@ -2061,6 +2121,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     if ($bannerObj -is [pscustomobject]) { $sections.Add(@('banner', $bannerObj, 'banner.')) }
     $themeObj = Get-DFSchemaProperty $Tool 'theme'
     if ($themeObj -is [pscustomobject]) { $sections.Add(@('theme', $themeObj, 'theme.')) }
+    $wrapperObj = Get-DFSchemaProperty $Tool 'wrapper'
+    if ($wrapperObj -is [pscustomobject]) { $sections.Add(@('wrapper', $wrapperObj, 'wrapper.')) }
     foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
         if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
@@ -2088,7 +2150,7 @@ function Test-DFToolSchema {
         Returns a result object: Valid, Errors and Warnings.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, theme, after, requires, setup, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm and role blocks.
         Each section is checked by its own step; their error messages are collected, in
         order, into the result's Errors. Field names that look like misspellings of known
         fields go into Warnings: a tool with only warnings is still valid.
@@ -2116,6 +2178,7 @@ function Test-DFToolSchema {
         Get-DFRolesSchemaError $Tool
         Get-DFAliasAndMapSchemaError $Tool
         Get-DFThemeSchemaError $Tool
+        Get-DFWrapperSchemaError $Tool
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
         Get-DFNativeSchemaError $Tool
@@ -3858,7 +3921,7 @@ function Set-DFToolThemeEnv {
 function Test-DFThemeSwitchable {
     <#
     .SYNOPSIS
-        True when DotForge itself applies a tool's theme at run time (theme.env), so Set-DFToolTheme can switch it.
+        True when DotForge itself applies a tool's theme at run time (theme.env or a wrapper's {theme}), so Set-DFToolTheme can switch it.
     .PARAMETER Tool
         A normalized tool record with a theme block.
     .OUTPUTS
@@ -3867,7 +3930,9 @@ function Test-DFThemeSwitchable {
     [CmdletBinding()]
     [OutputType([bool])]
     param([Parameter(Mandatory)][pscustomobject]$Tool)
-    [bool]$Tool.theme.env -and @($Tool.theme.env.PSObject.Properties).Count -gt 0
+    $hasEnv = [bool]$Tool.theme.env -and @($Tool.theme.env.PSObject.Properties).Count -gt 0
+    $inWrapper = [bool]$Tool.wrapper -and @($Tool.wrapper.args | ForEach-Object { $_.args } | Where-Object { $_.Contains('{theme}') }).Count -gt 0
+    $hasEnv -or $inWrapper
 }
 
 # ---- Private/Get-DFToolUpdate.ps1
@@ -5742,6 +5807,130 @@ function Set-DFPickerFunction {
     }
 }
 
+# ---- Private/New-DFToolWrapper.ps1
+#Requires -Version 7.2
+
+function Expand-DFToolToken {
+    <#
+    .SYNOPSIS
+        Expands a tool record's template: {settings.<name>} from the tool's settings, then ${XDG_*}.
+    .PARAMETER Tool
+        A normalized tool record.
+    .PARAMETER Text
+        The template, e.g. '{settings.configPath}' or '${XDG_CONFIG_HOME}/lsd/config.yaml'.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][string]$Text)
+    $settings = $Tool.settings
+    $filled = [regex]::Replace($Text, '\{settings\.(\w+)\}', {
+        param($match)
+        if ($settings) { [string]$settings.PSObject.Properties[$match.Groups[1].Value]?.Value } else { '' }
+    })
+    Expand-DFXdgPath $filled
+}
+
+function Format-DFWrapperHelp {
+    <#
+    .SYNOPSIS
+        Returns the comment-based help block for a generated executable wrapper.
+    .PARAMETER Tool
+        A normalized tool record with a wrapper block.
+    .PARAMETER Name
+        The wrapper's command name.
+    .PARAMETER Description
+        Extra description from a companion that builds the wrapper itself.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][string]$Name, [string]$Description)
+    $exe = $Tool.executable
+    $declared = @(foreach ($group in @($Tool.wrapper.args)) {
+        $list = $group.args -join ' '
+        if ($group.ifFile) { "$list (when $($group.ifFile) exists)" } else { $list }
+    }) -join '; '
+    $themeLine = if ($declared.Contains('{theme}')) { "`n        {theme} is the session's $($Tool.name) theme; Set-DFToolTheme switches it." } else { '' }
+    $extra = if ($Description) { "`n        $Description" } else { '' }
+    @"
+    <#
+    .SYNOPSIS
+        Runs $exe with the arguments DotForge adds.
+    .DESCRIPTION
+        Wraps $exe and passes, before your own arguments: $declared.$themeLine$extra
+        Piped input is passed through. Defined by DotForge from the wrapper block in $($Tool.name).json.
+    .EXAMPLE
+        $Name --help
+
+        Runs $exe --help with DotForge's arguments.
+    .OUTPUTS
+        System.String. The output of $exe.
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+    #>
+
+"@
+}
+
+function New-DFToolWrapper {
+    <#
+    .SYNOPSIS
+        Defines a global function, named after a tool's executable, that runs it with the tool's declared wrapper arguments.
+    .DESCRIPTION
+        Builds the arguments on every call from wrapper.args: plain strings are
+        always passed, an { ifFile, args } group only while its file exists
+        ({file} is that path; ifFile may use {settings.<name>} and ${XDG_*}),
+        and {theme} is the session theme's value (Get-DFSessionThemeValue), so
+        Set-DFToolTheme takes effect at once. Your own arguments follow. Piped
+        input is passed through (without that branch, a function with no
+        process block swallows the pipeline and the tool waits on the
+        console). The executable is called by its file name (glow.exe), so the
+        wrapper never calls itself.
+    .PARAMETER Tool
+        A normalized tool record with a wrapper block.
+    .PARAMETER Invoke
+        Runs a non-piped call instead of the plain one, for a companion whose
+        wrapper does more (fastfetch). Called as
+        & $Invoke <executable> <declared args> <user args> <$MyInvocation>.
+    .PARAMETER Description
+        Extra text for the generated help's description.
+    .OUTPUTS
+        None. Defines function:global:<executable name>.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][pscustomobject]$Tool,
+        [scriptblock]$Invoke,
+        [string]$Description
+    )
+    # The generated function is a closure over these $_df* variables.
+    $_dfExe = $Tool.executable
+    $_dfToolName = $Tool.name
+    $_dfInvoke = $Invoke
+    $_dfThemeOf = ${function:Get-DFSessionThemeValue}
+    $_dfGroups = @(foreach ($group in @($Tool.wrapper.args)) {
+        $file = if ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
+        [pscustomobject]@{
+            IfFile = $file
+            Args   = [string[]]@(foreach ($arg in $group.args) { if ($file) { $arg.Replace('{file}', $file) } else { $arg } })
+        }
+    })
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($_dfExe)
+    $body = (Format-DFWrapperHelp -Tool $Tool -Name $name -Description $Description) + @'
+    $declared = @(foreach ($group in $_dfGroups) {
+        if ($group.IfFile -and -not (Test-Path -LiteralPath $group.IfFile -PathType Leaf)) { continue }
+        foreach ($arg in $group.Args) { $arg.Replace('{theme}', [string](& $_dfThemeOf $_dfToolName)) }
+    })
+    if ($MyInvocation.ExpectingInput) { $input | & $_dfExe @declared @args; return }
+    if ($_dfInvoke) { & $_dfInvoke $_dfExe $declared $args $MyInvocation; return }
+    & $_dfExe @declared @args
+'@
+    Set-Item -Path "function:global:$name" -Value ([scriptblock]::Create($body).GetNewClosure())
+}
+
 # ---- Private/Register-DFToolAliases.ps1
 #Requires -Version 7.2
 
@@ -6072,6 +6261,9 @@ function Invoke-DFToolRegistration {
         if ($script:DFSessionThemes -is [hashtable]) { $script:DFSessionThemes.Remove($Tool.name) }
         Set-DFToolThemeEnv -Tool $Tool -Theme (Get-DFToolTheme -Tool $Tool)
     }
+
+    # A declared executable wrapper; custom ones are built by the companion (New-DFToolWrapper -Invoke).
+    if ($Tool.wrapper -and -not $Tool.wrapper.custom) { New-DFToolWrapper -Tool $Tool }
 
     # A legacy (v1 "role" string) loser keeps v1 behavior: its top-level aliases
     # that the role reserves are left to the winner.

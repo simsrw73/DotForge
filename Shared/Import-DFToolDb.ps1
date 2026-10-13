@@ -489,6 +489,29 @@ function ConvertTo-DFThemeBlock {
     }
 }
 
+function ConvertTo-DFWrapperBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's wrapper block: args becomes a list of { ifFile; args } groups, custom a boolean.
+    .PARAMETER RawWrapper
+        The parsed wrapper object, or $null.
+    .OUTPUTS
+        PSCustomObject, or $null when there is no wrapper block.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$RawWrapper)
+    if ($null -eq $RawWrapper) { return $null }
+    $groups = foreach ($entry in @($RawWrapper.PSObject.Properties['args']?.Value)) {
+        if ($null -eq $entry) { continue }
+        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; args = [string[]]@($entry) }; continue }
+        [pscustomobject]@{
+            ifFile = Get-DFToolRecordProperty $entry 'ifFile' $null
+            args   = [string[]]@($entry.PSObject.Properties['args']?.Value)
+        }
+    }
+    [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
+}
+
 function ConvertTo-DFToolRecord {
     <#
     .SYNOPSIS
@@ -500,13 +523,16 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
-            packages / xdg / env / aliases / picker / themeMap / theme /
+            packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
             folder / source $null (the loader sets them: where the JSON was
             read from, and 'builtin' or 'user')
 
         theme, when present, has key, default, map (falling back to the legacy
         top-level themeMap), files, valid (string[]), fallback, env and command.
+
+        wrapper, when present, has args (a list of { ifFile; args } groups; a
+        plain string is its own group) and custom.
 
         roles is an object keyed by role name; each value is { priority
         (default 0); optIn (default $false); aliases (same shape as top-level
@@ -565,6 +591,7 @@ function ConvertTo-DFToolRecord {
         roles             = $roles
         themeMap          = Get-DFToolRecordProperty $Tool 'themeMap' $null
         theme             = ConvertTo-DFThemeBlock (Get-DFToolRecordProperty $Tool 'theme' $null) (Get-DFToolRecordProperty $Tool 'themeMap' $null)
+        wrapper           = ConvertTo-DFWrapperBlock (Get-DFToolRecordProperty $Tool 'wrapper' $null)
         settings          = Get-DFToolRecordProperty $Tool 'settings' $null
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)

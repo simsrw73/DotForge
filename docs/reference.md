@@ -2613,6 +2613,7 @@ Modern cat replacement with syntax highlighting and Git integration
 | Install ids | scoop: `bat`<br>winget: `sharkdp.bat`<br>choco: `bat` |
 | XDG method | `env` |
 | XDG variables | `BAT_CONFIG_PATH` = `${XDG_CONFIG_HOME}/bat/bat.conf` |
+| Theme | key `BatTheme`, default `catppuccin-mocha`; sets `BAT_THEME` = `{theme}` |
 | Aliases | `cat` → `bat -pp` |
 
 ### bitwarden tool
@@ -2730,6 +2731,7 @@ Syntax-highlighting pager for git diff output
 | Tags | `git`, `diff`, `pager` |
 | Install ids | scoop: `delta`<br>winget: `dandavison.delta`<br>choco: `delta` |
 | XDG method | `default` |
+| Theme | key `DeltaTheme`, default `catppuccin-mocha`; sets `DELTA_FEATURES` = `+{theme}` |
 | Roles | [`diff`](#diff-role) |
 | Sets, as the diff tool | `GIT_PAGER` = `delta` |
 | Companion | `Tools/delta.ps1`, one-time `Tools/delta.setup.ps1` |
@@ -2829,6 +2831,7 @@ General-purpose command-line fuzzy finder
 | Install ids | scoop: `fzf`<br>winget: `junegunn.fzf`<br>choco: `fzf` |
 | XDG method | `default` |
 | Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_DEFAULT_OPTS` = `--layout=reverse --inline-info --height=40% --border`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
+| Theme | key `FzfTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyFzfTheme` |
 | Roles | [`picker`](#picker-role) |
 | Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
@@ -2955,6 +2958,7 @@ cat for markdown — render CommonMark in the terminal
 | Tags | `markdown`, `viewer`, `text` |
 | Install ids | scoop: `mdcat`<br>crates: `mdcat` |
 | XDG method | `default` |
+| Theme | key `MdcatTheme`, default `catppuccin-mocha`; sets `MDCAT_THEME` = `{theme}` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | `Tools/mdcat.ps1` |
 
@@ -2970,6 +2974,7 @@ Terminal markdown viewer with themes and syntax highlighting
 | XDG method | `env` |
 | XDG variables | `MDV_CONFIG_PATH` = `${XDG_CONFIG_HOME}/mdv` |
 | Creates | `${XDG_CONFIG_HOME}/mdv` |
+| Theme | key `MdvTheme`, default `catppuccin-mocha` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | one-time `Tools/mdv.setup.ps1` |
 
@@ -3012,6 +3017,7 @@ Pager that does the right thing without configuration (formerly moar)
 | Tags | `pager`, `viewer` |
 | Install ids | scoop: `moor` |
 | XDG method | `default` |
+| Theme | key `MoorTheme`, default `catppuccin-mocha`; sets `MOOR` = `-style {theme} -quit-if-one-screen` |
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `moor` |
 
@@ -3183,6 +3189,7 @@ Enhanced command-line editing and syntax highlighting for PowerShell
 | Tags | `readline`, `completion`, `theme`, `module` |
 | XDG method | `env` |
 | Creates | `${XDG_STATE_HOME}/psreadline` |
+| Theme | key `PSReadLineTheme`, default `catppuccin-mocha`; switch with `Select-PSReadLineTheme` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`completion`](#completion-role) |
 | Companion | [`Tools/psreadline.ps1`](#psreadline-companion) |
@@ -3342,6 +3349,7 @@ Themeable LS_COLORS generator
 | Tags | `color`, `theme`, `listing` |
 | Install ids | scoop: `vivid`<br>winget: `sharkdp.vivid` |
 | XDG method | `default` |
+| Theme | key `VividTheme`, default `catppuccin-mocha`; switch with `Select-LSColorsTheme` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/vivid.ps1`](#vivid-companion) |
 

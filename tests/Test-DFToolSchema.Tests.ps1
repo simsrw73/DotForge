@@ -250,6 +250,27 @@ Describe 'Test-DFToolSchema' {
                     Should -Match "theme.defualt.*theme.default"
             }
         }
+
+        Context 'wrapper' {
+            It 'accepts strings and ifFile groups' {
+                Get-SchemaErrors @{ wrapper = [pscustomobject]@{ args = @('-x', [pscustomobject]@{ ifFile = '${XDG_CONFIG_HOME}/x'; args = @('--config', '{file}') }) } } | Should -BeNullOrEmpty
+            }
+            It 'requires args to be an array' {
+                Get-SchemaErrors @{ wrapper = [pscustomobject]@{ args = '-x' } } | Should -Match 'wrapper.args must be an array'
+            }
+            It 'rejects a malformed group' {
+                Get-SchemaErrors @{ wrapper = [pscustomobject]@{ args = @([pscustomobject]@{ args = @('-x') }) } } | Should -Match 'wrapper.args\[0\]'
+            }
+            It 'rejects {theme} without a theme block' {
+                Get-SchemaErrors @{ wrapper = [pscustomobject]@{ args = @('-s', '{theme}') } } | Should -Match 'no theme block'
+            }
+            It 'rejects {theme} when valid can reject and there is no fallback' {
+                Get-SchemaErrors @{ theme = [pscustomobject]@{ key = 'XTheme'; valid = @('a') }; wrapper = [pscustomobject]@{ args = @('-s', '{theme}') } } | Should -Match 'needs a fallback'
+            }
+            It 'requires custom to be a boolean' {
+                Get-SchemaErrors @{ wrapper = [pscustomobject]@{ custom = 'yes'; args = @() } } | Should -Match 'wrapper.custom'
+            }
+        }
     }
 
     Context 'typo warnings' {

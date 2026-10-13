@@ -273,6 +273,23 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
     }
     $env = & $prop $Tool 'env'
     if ($env) { & $add 'Environment' (($env.PSObject.Properties | ForEach-Object { "$(& $code $_.Name) = $(& $code $_.Value)" }) -join '<br>') }
+    $theme = & $prop $Tool 'theme'
+    if ($theme) {
+        $themeText = "key $(& $code $theme.key)"
+        if (& $prop $theme 'default') { $themeText += ", default $(& $code $theme.default)" }
+        $themeEnv = & $prop $theme 'env'
+        if ($themeEnv) { $themeText += '; sets ' + (($themeEnv.PSObject.Properties | ForEach-Object { "$(& $code $_.Name) = $(& $code $_.Value)" }) -join ', ') }
+        if (& $prop $theme 'command') { $themeText += "; switch with $(& $code $theme.command)" }
+        & $add 'Theme' $themeText
+    }
+    $wrapper = & $prop $Tool 'wrapper'
+    if ($wrapper) {
+        $wrapped = [System.IO.Path]::GetFileNameWithoutExtension($Tool.executable)
+        $parts = @(foreach ($entry in @(& $prop $wrapper 'args')) {
+            if ($entry -is [string]) { & $code $entry } else { "$(& $code ($entry.args -join ' ')) when $(& $code $entry.ifFile) exists" }
+        })
+        & $add 'Wraps' "$(& $code $wrapped) adds $($parts -join ', ')"
+    }
     $aliases = & $prop $Tool 'aliases'
     if ($aliases -and @($aliases.PSObject.Properties).Count) {
         & $add 'Aliases' (($aliases.PSObject.Properties | ForEach-Object {

@@ -148,7 +148,7 @@ function Set-DFToolThemeEnv {
 function Test-DFThemeSwitchable {
     <#
     .SYNOPSIS
-        True when DotForge itself applies a tool's theme at run time (theme.env), so Set-DFToolTheme can switch it.
+        True when DotForge itself applies a tool's theme at run time (theme.env or a wrapper's {theme}), so Set-DFToolTheme can switch it.
     .PARAMETER Tool
         A normalized tool record with a theme block.
     .OUTPUTS
@@ -157,5 +157,7 @@ function Test-DFThemeSwitchable {
     [CmdletBinding()]
     [OutputType([bool])]
     param([Parameter(Mandatory)][pscustomobject]$Tool)
-    [bool]$Tool.theme.env -and @($Tool.theme.env.PSObject.Properties).Count -gt 0
+    $hasEnv = [bool]$Tool.theme.env -and @($Tool.theme.env.PSObject.Properties).Count -gt 0
+    $inWrapper = [bool]$Tool.wrapper -and @($Tool.wrapper.args | ForEach-Object { $_.args } | Where-Object { $_.Contains('{theme}') }).Count -gt 0
+    $hasEnv -or $inWrapper
 }

@@ -147,6 +147,38 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
     $v = Get-DFSchemaProperty $theme 'env'; if ($null -ne $v) { Get-DFMapSchemaError $v 'theme.env' -StringsOnly }
 }
 
+function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
+    <#
+    .SYNOPSIS
+        Schema errors in wrapper: args is an array of strings and { ifFile, args } groups; {theme} needs a theme that always has a value.
+    #>
+    $wrapper = Get-DFSchemaProperty $Tool 'wrapper'
+    if ($null -eq $wrapper) { return }
+    if ($wrapper -isnot [pscustomobject]) { return 'wrapper must be an object' }
+    $custom = Get-DFSchemaProperty $wrapper 'custom'
+    if ($null -ne $custom -and $custom -isnot [bool]) { 'wrapper.custom must be true or false' }
+    $entries = $wrapper.PSObject.Properties['args']?.Value   # read directly: a helper would unroll ["x"]
+    if ($entries -isnot [array]) { return 'wrapper.args must be an array' }
+    $usesTheme = $false
+    for ($n = 0; $n -lt $entries.Count; $n++) {
+        $entry = $entries[$n]
+        if ($entry -is [string]) { if ($entry.Contains('{theme}')) { $usesTheme = $true }; continue }
+        $inner = if ($entry -is [pscustomobject]) { $entry.PSObject.Properties['args']?.Value }
+        $ifFile = if ($entry -is [pscustomobject]) { Get-DFSchemaProperty $entry 'ifFile' }
+        if ($ifFile -isnot [string] -or -not $ifFile -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
+            "wrapper.args[$n] must be a string or { ifFile, args: [strings] }"; continue
+        }
+        if (@($inner | Where-Object { $_.Contains('{theme}') }).Count) { $usesTheme = $true }
+    }
+    if (-not $usesTheme) { return }
+    $theme = Get-DFSchemaProperty $Tool 'theme'
+    if ($null -eq $theme) { return 'wrapper.args uses {theme}, but the tool has no theme block' }
+    $canReject = (Get-DFSchemaProperty $theme 'files') -or $theme.PSObject.Properties['valid']
+    if ($canReject -and -not (Get-DFSchemaProperty $theme 'fallback')) {
+        'wrapper.args uses {theme}, so theme needs a fallback (valid or files can reject a name)'
+    }
+}
+
 function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
@@ -359,13 +391,14 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         banner = 'script', 'body', 'fills'
         theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command'
+        wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
         role   = 'priority', 'optIn', 'aliases', 'env'
@@ -388,6 +421,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     if ($bannerObj -is [pscustomobject]) { $sections.Add(@('banner', $bannerObj, 'banner.')) }
     $themeObj = Get-DFSchemaProperty $Tool 'theme'
     if ($themeObj -is [pscustomobject]) { $sections.Add(@('theme', $themeObj, 'theme.')) }
+    $wrapperObj = Get-DFSchemaProperty $Tool 'wrapper'
+    if ($wrapperObj -is [pscustomobject]) { $sections.Add(@('wrapper', $wrapperObj, 'wrapper.')) }
     foreach ($o in @($Tool.PSObject.Properties['installs']?.Value)) {
         if ($o -is [pscustomobject]) { $sections.Add(@('installs', $o, 'installs.')) }
     }
@@ -415,7 +450,7 @@ function Test-DFToolSchema {
         Returns a result object: Valid, Errors and Warnings.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, theme, after, requires, setup, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm and role blocks.
         Each section is checked by its own step; their error messages are collected, in
         order, into the result's Errors. Field names that look like misspellings of known
         fields go into Warnings: a tool with only warnings is still valid.
@@ -443,6 +478,7 @@ function Test-DFToolSchema {
         Get-DFRolesSchemaError $Tool
         Get-DFAliasAndMapSchemaError $Tool
         Get-DFThemeSchemaError $Tool
+        Get-DFWrapperSchemaError $Tool
         Get-DFOrderingSchemaError $Tool
         Get-DFSetupSchemaError $Tool
         Get-DFNativeSchemaError $Tool

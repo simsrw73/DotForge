@@ -266,6 +266,9 @@ function Invoke-DFToolRegistration {
         Set-DFToolThemeEnv -Tool $Tool -Theme (Get-DFToolTheme -Tool $Tool)
     }
 
+    # A declared executable wrapper; custom ones are built by the companion (New-DFToolWrapper -Invoke).
+    if ($Tool.wrapper -and -not $Tool.wrapper.custom) { New-DFToolWrapper -Tool $Tool }
+
     # A legacy (v1 "role" string) loser keeps v1 behavior: its top-level aliases
     # that the role reserves are left to the winner.
     $suppressed = @(foreach ($rp in $Tool.roles.PSObject.Properties) {

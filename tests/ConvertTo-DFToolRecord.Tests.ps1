@@ -13,7 +13,7 @@ Describe 'ConvertTo-DFToolRecord' {
         @($r.tags).Count      | Should -Be 0
         @($r.after).Count | Should -Be 0
         $r.prewarm     | Should -BeTrue
-        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'theme', 'settings') {
+        foreach ($p in 'packages', 'xdg', 'env', 'aliases', 'picker', 'themeMap', 'theme', 'wrapper', 'settings') {
             $r.PSObject.Properties[$p] | Should -Not -BeNullOrEmpty -Because "$p must exist"
             $r.$p | Should -BeNullOrEmpty
         }
@@ -129,7 +129,7 @@ Describe 'ConvertTo-DFToolRecord' {
 
     It 'lets every shipped record be read with plain property access under StrictMode' {
         $fields = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env',
-                  'aliases', 'picker', 'after', 'requires', 'roles', 'themeMap', 'theme', 'settings', 'prewarm', 'setup'
+                  'aliases', 'picker', 'after', 'requires', 'roles', 'themeMap', 'theme', 'wrapper', 'settings', 'prewarm', 'setup'
         foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '..' 'Tools') -Filter '*.json') {
             $r = ConvertTo-DFToolRecord (Get-Content $file.FullName -Raw | ConvertFrom-Json)
             {
@@ -158,5 +158,15 @@ Describe 'ConvertTo-DFToolRecord' {
             $theme = (ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'x'; executable = 'x.exe'; themeMap = $legacy; theme = [pscustomobject]@{ key = 'XTheme' } })).theme
             $theme.map.'catppuccin-mocha' | Should -Be 'Catppuccin Mocha'
         }
+    }
+
+    It 'normalizes wrapper args into groups' {
+        $w = (ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'x'; executable = 'x.exe'; wrapper = [pscustomobject]@{ args = @('-s', [pscustomobject]@{ ifFile = 'f'; args = @('-c', '{file}') }) } })).wrapper
+        $w.custom | Should -BeFalse
+        $w.args.Count | Should -Be 2
+        $w.args[0].ifFile | Should -BeNullOrEmpty
+        $w.args[0].args | Should -Be @('-s')
+        $w.args[1].ifFile | Should -Be 'f'
+        $w.args[1].args | Should -Be @('-c', '{file}')
     }
 }
