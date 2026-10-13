@@ -206,7 +206,7 @@ glow hello.md
 
 ### lsd
 
-lsd panics when pointed at a config file that doesn't exist, so DotForge doesn't manage its config and prints a reminder each time lsd is registered. To stop the reminder, exclude lsd (`ExcludeTools = @('lsd')`), or uninstall one of eza and lsd.
+lsd crashes when pointed at a config file that doesn't exist (lsd 1.2.0), so DotForge passes `--config-file $XDG_CONFIG_HOME\lsd\config.yaml` only while that file exists; without it, lsd uses its own defaults. If you already have a config in lsd's own locations (`%USERPROFILE%\.config\lsd` or `%APPDATA%\lsd`), lsd stays inactive as a conflict until you run `Resolve-DFToolConflict lsd -Move` or `-Adopt`.
 
 ### mdcat and mdv
 
@@ -234,7 +234,6 @@ vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. T
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `lsd requires manual XDG configuration` on every start | lsd is installed and registered | Skip lsd or ignore the note; nothing is wrong. |
 | `the 'Microsoft.WinGet.Client' module is required` | winget pickers without their module | `Install-Module Microsoft.WinGet.Client -Scope CurrentUser`. |
 | `the 'Scoop' module is required` | scoop pickers without their module | `Install-Module Scoop -Scope CurrentUser`. |
 | `no oh-my-posh config found` | no theme file where DotForge looks | Set `$Env:POSH_THEME`, or put one `*.omp.json` in `$XDG_CONFIG_HOME\oh-my-posh\`. |

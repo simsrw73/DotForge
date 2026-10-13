@@ -108,7 +108,7 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 
 | Message or symptom | Cause | Fix |
 | --- | --- | --- |
-| `<tool> requires manual XDG configuration` | the tool can't be relocated safely (lsd) | Informational; skip the tool to silence it. |
+| `<tool> requires manual XDG configuration` | the tool can't be relocated safely | Informational; skip the tool to silence it. |
 | `no oh-my-posh config found`, `multiple oh-my-posh configs found` | zero or several `*.omp.*` files in `$XDG_CONFIG_HOME\oh-my-posh\` | Set `$Env:POSH_THEME` to one file. |
 | `POSH_THEMES_PATH not set or directory not found` | `fpot` has no themes folder | Put `*.omp.json` themes in `$XDG_DATA_HOME\oh-my-posh\themes`. |
 | `direnv requires PowerShell 7.2+` | older PowerShell | Upgrade. |
