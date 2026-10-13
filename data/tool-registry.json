@@ -1131,7 +1131,7 @@
       }
     },
     "fzf": {
-      "sha256": "97a2bebdeb863282fb7487f6743c113ec3a185d804b250db01a59028c0b8d58b",
+      "sha256": "94cb08fb863dfe97ea3003478fa8b3d344ced73bda9216c3dfac9077a6659098",
       "record": {
         "name": "fzf",
         "executable": "fzf.exe",
@@ -1179,7 +1179,16 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "FzfTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": "Invoke-DFApplyFzfTheme"
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -1805,7 +1814,7 @@
       }
     },
     "mdv": {
-      "sha256": "fc36bdea813bd52e73a4f4fd96fbde6c44d7dc162ff59571fefe0ae269cd0218",
+      "sha256": "9ce33425919e9edb23ec9e1f34a87ce4be185e641524602138ef7964cff0dad0",
       "record": {
         "name": "mdv",
         "executable": "mdv.exe",
@@ -1852,13 +1861,30 @@
             "legacy": false
           }
         },
-        "themeMap": {
-          "catppuccin-mocha": "catppuccin"
+        "themeMap": null,
+        "theme": {
+          "key": "MdvTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "catppuccin"
+          },
+          "files": null,
+          "valid": [
+            "terminal",
+            "solarized-dark",
+            "nord",
+            "tokyonight",
+            "kanagawa",
+            "gruvbox",
+            "monokai",
+            "material-ocean",
+            "catppuccin"
+          ],
+          "fallback": "terminal",
+          "env": null,
+          "command": null
         },
-        "theme": null,
-        "settings": {
-          "theme": "catppuccin-mocha"
-        },
+        "settings": null,
         "executableExclude": [],
         "prewarm": true,
         "setup": null,
@@ -2835,7 +2861,7 @@
       }
     },
     "psreadline": {
-      "sha256": "192c4399ddb1a114e3123a5f0375ba4e11ed078a77a3a5bac01b5a0a1f8a48c5",
+      "sha256": "6cce15768aba0a721c147a4c52f6c67f9465401fc50beeb934289cd413023af8",
       "record": {
         "name": "psreadline",
         "executable": "PSReadLine",
@@ -2884,7 +2910,16 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "PSReadLineTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": "Select-PSReadLineTheme"
+        },
         "settings": {
           "editMode": "Emacs",
           "predictionSource": "HistoryAndPlugin",
@@ -3649,7 +3684,7 @@
       }
     },
     "vivid": {
-      "sha256": "d48f0dc99aae5f6032948b1b4dde818661c742a21d67b76fadc12f2d53c227c4",
+      "sha256": "00ced0113047c1baed9d393f8be0a27a9a6ce7052406a0e0df01810d1102c427",
       "record": {
         "name": "vivid",
         "executable": "vivid.exe",
@@ -3679,10 +3714,17 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
-        "theme": null,
-        "settings": {
-          "theme": "catppuccin-mocha"
+        "theme": {
+          "key": "VividTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": "Select-LSColorsTheme"
         },
+        "settings": null,
         "executableExclude": [],
         "prewarm": true,
         "setup": null,

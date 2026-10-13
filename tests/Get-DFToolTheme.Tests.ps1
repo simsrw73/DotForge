@@ -120,3 +120,14 @@ Describe 'theme during registration' {
         $Env:THEMED_THEME | Should -Be 'dracula'
     }
 }
+
+Describe 'code-applied themes' {
+    It '<_> declares its theme with a command and no env' -ForEach @('fzf', 'psreadline', 'vivid') {
+        $record = Get-DFTestToolRecord $_
+        $record.theme.command | Should -Not -BeNullOrEmpty
+        $record.theme.env | Should -BeNullOrEmpty
+    }
+    It '<_> companion no longer resolves the theme chain itself' -ForEach @('fzf', 'psreadline', 'vivid', 'mdv.setup') {
+        Get-Content "$PSScriptRoot/../Tools/$_.ps1" -Raw | Should -Not -Match 'Get-DFConfiguredTheme|Resolve-DFThemeName'
+    }
+}

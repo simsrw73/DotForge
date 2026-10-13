@@ -8,7 +8,7 @@
     "winget": "sharkdp.vivid"
   },
   "xdg": { "compliance": "none", "method": "default" },
-  "settings": { "theme": "catppuccin-mocha" },
+  "theme": { "key": "VividTheme", "default": "catppuccin-mocha", "command": "Select-LSColorsTheme" },
   "aliases": {},
   "picker": "custom"
 }

@@ -6,11 +6,9 @@ BeforeAll {
 
 Describe 'psreadline completion configuration' {
     BeforeEach {
-        $Global:DFCurrentTool = [pscustomobject]@{
-            settings = [pscustomobject]@{
-                editMode = 'Windows'
-            }
-        }
+        Reset-DFTestSession
+        $Global:DFCurrentTool = Get-DFTestToolRecord psreadline
+        $Global:DFCurrentTool.settings = [pscustomobject]@{ editMode = 'Windows' }
         $script:OriginalEditMode = (Get-PSReadLineOption).EditMode
 
         Mock Test-Path { $false }

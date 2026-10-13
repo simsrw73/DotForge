@@ -20,7 +20,7 @@ Describe 'Tools/vivid.json' {
     }
 
     It 'defaults the theme setting to catppuccin-mocha' {
-        $script:VividJson.settings.theme | Should -Be 'catppuccin-mocha'
+        $script:VividJson.theme.default | Should -Be 'catppuccin-mocha'
     }
 
     It 'declares a custom picker' {

@@ -12,25 +12,15 @@
 # runs on this script's one guaranteed execution, so a later deletion sticks.
 # See docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
 #
-# Reads: $DFConfig.MdvTheme, then $DFConfig.Theme, then settings.theme in mdv.json.
+# Theme: the theme block in Tools/mdv.json (Get-DFToolTheme).
 # Writes: $MDV_CONFIG_PATH\config.yaml (default $XDG_CONFIG_HOME\mdv\config.yaml),
 # only if it doesn't exist. To change the theme later, edit that file. To reseed
 # it, delete it and remove the "mdv" entry from
 # $XDG_STATE_HOME\dotforge\setup-state.json. To skip: $DFConfig.SkipSetup = @('mdv').
 
-$_settings = $DFCurrentTool.settings
-$_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
-$_name     = Get-DFConfiguredTheme -ToolKey 'MdvTheme' -Default $_default
-$_name     = Resolve-DFThemeName -Name $_name -ThemeMap $DFCurrentTool.themeMap
-
-$_valid = @(
-    'terminal', 'solarized-dark', 'nord', 'tokyonight',
-    'kanagawa', 'gruvbox', 'monokai', 'material-ocean', 'catppuccin'
-)
-if ($_name -notin $_valid) {
-    Write-Warning "DotForge: mdv theme '$_name' not recognized — falling back to 'terminal'"
-    $_name = 'terminal'
-}
+# The theme block in Tools/mdv.json resolves MdvTheme -> Theme -> default, maps
+# the canonical name and falls back to 'terminal' for a name mdv doesn't know.
+$_name = (Get-DFToolTheme -Tool $DFCurrentTool).Value
 
 $_cfgDir  = if ($Env:MDV_CONFIG_PATH) { $Env:MDV_CONFIG_PATH }
             else { Expand-DFXdgPath '${XDG_CONFIG_HOME}/mdv' }

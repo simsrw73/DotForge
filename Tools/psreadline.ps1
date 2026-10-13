@@ -1,8 +1,8 @@
 # Companion for psreadline — apply settings, theme, and register theme picker (fprl)
 #
 # Reads: settings in psreadline.json; $DFConfig.PSReadLineEditMode ('Emacs' default,
-# or 'Windows'); $DFConfig.PSReadLineTheme, then $DFConfig.Theme, then
-# 'catppuccin-mocha'. Theme files: $XDG_CONFIG_HOME\psreadline\themes\<name>.json,
+# or 'Windows'). Theme: the theme block in Tools/psreadline.json (Get-DFToolTheme).
+# Theme files: $XDG_CONFIG_HOME\psreadline\themes\<name>.json,
 # else bundled Tools\psreadline\.
 # Changes: PSReadLine options for this session, including HistorySavePath, which
 # moves to $XDG_STATE_HOME\psreadline\history; earlier history in PowerShell's
@@ -140,10 +140,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
 }.GetNewClosure())
 
-# 5. Apply initial theme: per-tool PSReadLineTheme -> shared Theme -> 'catppuccin-mocha'.
-$_themeSetting = Get-DFConfiguredTheme -ToolKey 'PSReadLineTheme' -Default 'catppuccin-mocha'
-$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap $DFCurrentTool.themeMap
-Invoke-DFApplyPSReadLineTheme -Name $_themeSetting
+# 5. Apply the session theme (Tools/psreadline.json theme block: PSReadLineTheme -> Theme -> default).
+Invoke-DFApplyPSReadLineTheme -Name (Get-DFToolTheme -Tool $DFCurrentTool).Native
 
 # 6. Register theme picker
 Set-Item -Path 'function:global:Select-PSReadLineTheme' -Value ({

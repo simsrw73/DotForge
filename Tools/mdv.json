@@ -24,11 +24,12 @@
       "${XDG_CONFIG_HOME}/mdv"
     ]
   },
-  "settings": {
-    "theme": "catppuccin-mocha"
-  },
-  "themeMap": {
-    "catppuccin-mocha": "catppuccin"
+  "theme": {
+    "key": "MdvTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "catppuccin" },
+    "valid": ["terminal", "solarized-dark", "nord", "tokyonight", "kanagawa", "gruvbox", "monokai", "material-ocean", "catppuccin"],
+    "fallback": "terminal"
   },
   "aliases": {},
   "picker": null

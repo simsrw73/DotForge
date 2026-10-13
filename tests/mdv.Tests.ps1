@@ -14,10 +14,11 @@ Describe 'Tools/mdv.json' {
         $script:MdvJson.xdg.vars.MDV_CONFIG_PATH | Should -Be '${XDG_CONFIG_HOME}/mdv'
     }
     It 'names catppuccin-mocha as the default theme' {
-        $script:MdvJson.settings.theme | Should -Be 'catppuccin-mocha'
+        $script:MdvJson.theme.default | Should -Be 'catppuccin-mocha'
     }
-    It 'declares a themeMap translating the canonical family to catppuccin' {
-        $script:MdvJson.themeMap.'catppuccin-mocha' | Should -Be 'catppuccin'
+    It 'declares a theme map translating the canonical family to catppuccin' {
+        $script:MdvJson.theme.map.'catppuccin-mocha' | Should -Be 'catppuccin'
+        $script:MdvJson.theme.fallback | Should -Be 'terminal'
     }
     It 'declares a crates (cargo) package' {
         $script:MdvJson.packages.crates | Should -Be 'mdv'

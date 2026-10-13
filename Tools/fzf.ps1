@@ -5,7 +5,7 @@
 # fzf.json's non-color flags on every call, before this companion runs, so
 # appending the resolved --color=... string here is always idempotent.
 #
-# Reads: $DFConfig.FzfTheme, then $DFConfig.Theme, then 'catppuccin-mocha'.
+# Theme: the theme block in Tools/fzf.json (Get-DFToolTheme).
 # Theme files: $XDG_CONFIG_HOME\fzf\themes\<name>.json, else bundled Tools\fzf\.
 # Sets: FZF_DEFAULT_OPTS. Writes no files.
 
@@ -93,7 +93,6 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     & $_setEnv -Name 'FZF_DEFAULT_OPTS' -Value $value -Tool 'fzf' -ExplicitReason $explicit
 }.GetNewClosure())
 
-# Apply initial theme: per-tool FzfTheme -> shared Theme -> 'catppuccin-mocha'.
-$_themeSetting = Get-DFConfiguredTheme -ToolKey 'FzfTheme' -Default 'catppuccin-mocha'
-$_themeSetting = Resolve-DFThemeName -Name $_themeSetting -ThemeMap $DFCurrentTool.themeMap
-Invoke-DFApplyFzfTheme -Name $_themeSetting -Implicit:(-not (Get-DFConfig FzfTheme))
+# Apply the session theme (Tools/fzf.json theme block: FzfTheme -> Theme -> default).
+$_theme = Get-DFToolTheme -Tool $DFCurrentTool
+Invoke-DFApplyFzfTheme -Name $_theme.Native -Implicit:(-not $_theme.Explicit)

@@ -28,6 +28,7 @@
     "historySearchCursorMovesToEnd": true,
     "maximumHistoryCount":         10000
   },
+  "theme": { "key": "PSReadLineTheme", "default": "catppuccin-mocha", "command": "Select-PSReadLineTheme" },
   "aliases": {},
   "picker": "custom"
 }

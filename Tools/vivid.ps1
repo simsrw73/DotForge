@@ -11,7 +11,7 @@
 # its module binding, so $_fingerprintCache below works. (An earlier note here called
 # this a hard constraint; capturing the scriptblock is the way around it.)
 #
-# Reads: $DFConfig.VividTheme, then $DFConfig.Theme, then settings.theme in vivid.json.
+# Theme: the theme block in Tools/vivid.json (Get-DFToolTheme).
 # Sets: LS_COLORS (read by eza, lsd and other listing tools).
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
 
@@ -74,13 +74,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     & $_setEnv -Name 'LS_COLORS' -Value $value -Tool 'vivid' -ExplicitReason $explicit
 }.GetNewClosure())
 
-# Resolve: per-tool VividTheme -> shared Theme -> tool JSON default.
-$_settings = $DFCurrentTool.settings
-$_default  = $_settings.PSObject.Properties['theme']?.Value ?? 'catppuccin-mocha'
-$_theme    = Get-DFConfiguredTheme -ToolKey 'VividTheme' -Default $_default
-$_theme    = Resolve-DFThemeName -Name $_theme -ThemeMap $DFCurrentTool.themeMap
-
-Invoke-DFApplyLSColorsTheme -Name $_theme -Implicit:(-not (Get-DFConfig VividTheme))
+# Apply the session theme (Tools/vivid.json theme block: VividTheme -> Theme -> default).
+$_theme = Get-DFToolTheme -Tool $DFCurrentTool
+Invoke-DFApplyLSColorsTheme -Name $_theme.Native -Implicit:(-not $_theme.Explicit)
 
 # Live picker: list vivid's own themes, preview each via `vivid preview`,
 # apply the chosen one immediately (same cache/apply path as registration).
