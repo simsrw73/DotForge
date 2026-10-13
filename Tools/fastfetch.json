@@ -17,10 +17,14 @@
         "setting": "configPath"
       }
     },
-    "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc)."
+    "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Its wrapper (declared in Tools/fastfetch.json, built by Tools/fastfetch.ps1) passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc)."
   },
   "settings": {
     "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc"
+  },
+  "wrapper": {
+    "custom": true,
+    "args": [ { "ifFile": "{settings.configPath}", "args": ["--config", "{file}"] } ]
   },
   "banner": { "script": "fastfetch.banner.ps1", "body": true, "fills": ["publicip"] },
   "setup": {

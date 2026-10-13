@@ -1,4 +1,5 @@
-# Companion for fastfetch -- wraps the executable so the seeded config reaches it via
+# Companion for fastfetch -- builds the fastfetch wrapper declared in Tools/fastfetch.json,
+# adding the startup banner's placeholders. The wrapper passes the seeded config via
 # an explicit --config flag, since fastfetch does not honor $XDG_CONFIG_HOME on
 # Windows (verified against fastfetch 2.68.1): --list-config-paths ignores it
 # entirely and only checks a hardcoded list of Win32 known-folder paths, the first of
@@ -21,45 +22,17 @@ $_ffComplete = ${function:Complete-DFBannerBody}
 # The themed default config is seeded once by the setup step (setup.seed in
 # fastfetch.json), not here: a config the user deletes stays deleted.
 
-Set-Item -Path 'function:global:fastfetch' -Value ({
-    <#
-    .SYNOPSIS
-        Runs fastfetch with DotForge's config file.
-    .DESCRIPTION
-        Wraps fastfetch.exe and passes --config <path>, because fastfetch
-        ignores XDG_CONFIG_HOME on Windows. The path comes from
-        settings.configPath in fastfetch.json (default
-        $XDG_CONFIG_HOME\fastfetch\config.jsonc). DotForge's one-time setup
-        seeds that file with a themed default; after that it is yours to edit
-        and is never overwritten. If you delete it, fastfetch runs with its
-        own defaults (no --config is passed).
-
-        All other arguments, and piped input, are passed to fastfetch unchanged.
-        Defined by DotForge's fastfetch companion.
-    .EXAMPLE
-        fastfetch
-
-        Prints the system-info banner using DotForge's config.
-    .EXAMPLE
-        fastfetch --logo none
-
-        Passes an extra fastfetch option through.
-    .OUTPUTS
-        System.String. fastfetch's output.
-    .LINK
-        https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
-    #>
-    $cfgArgs = if (Test-Path -LiteralPath $_cfg -PathType Leaf) { '--config', $_cfg } else { @() }
-    $placeholders = $cfgArgs -and (Select-String -LiteralPath $_cfg -Pattern '@DF:' -SimpleMatch -Quiet)
-    if ($MyInvocation.ExpectingInput) {
-        $input | & fastfetch.exe @cfgArgs @args
-    } elseif ($placeholders) {
-        # Keep colors when the output goes to the screen; fastfetch drops them when captured.
-        $color = if ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength -or [Console]::IsOutputRedirected) { @() } else { @('--pipe', 'false') }
-        $body = @(& fastfetch.exe @cfgArgs @color @args)
-        $styleValues = try { & $_ffStyleOf ([pscustomobject]@{ Tool = $_ffTool }) } catch { @{} }
-        & $_ffComplete -Body $body -StyleValues $styleValues
-    } else {
-        & fastfetch.exe @cfgArgs @args
-    }
-}.GetNewClosure())
+# The --config flag comes from the wrapper block in Tools/fastfetch.json; this adds
+# the banner's placeholders (@DF:publicip@, @DF:drives@), filled from the banner
+# cache, and keeps colors when the output goes to the screen (fastfetch drops them
+# when captured).
+New-DFToolWrapper -Tool $DFCurrentTool -Description ('When the config holds @DF: placeholders (the startup banner''s ' +
+    'public IP and drives), they are filled from the banner cache. If you delete the config, fastfetch runs with its own defaults.') -Invoke {
+    param($exe, [string[]]$declared, [object[]]$userArgs, $invocation)
+    $placeholders = $declared.Count -and (Select-String -LiteralPath $_cfg -Pattern '@DF:' -SimpleMatch -Quiet)
+    if (-not $placeholders) { & $exe @declared @userArgs; return }
+    $color = if ($invocation.PipelinePosition -lt $invocation.PipelineLength -or [Console]::IsOutputRedirected) { @() } else { @('--pipe', 'false') }
+    $body = @(& $exe @declared @color @userArgs)
+    $styleValues = try { & $_ffStyleOf ([pscustomobject]@{ Tool = $_ffTool }) } catch { @{} }
+    & $_ffComplete -Body $body -StyleValues $styleValues
+}.GetNewClosure()

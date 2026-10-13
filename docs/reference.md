@@ -118,7 +118,6 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-DFChocoElevated](#invoke-dfchocoelevated) |  | choco | Runs choco with the given arguments, elevated through gsudo when available. |
 | [Remove-ChocoPackage](#remove-chocopackage) | `crm` | choco | Fuzzy-picks an installed Chocolatey package and uninstalls it. |
 | [Select-ChocoPackage](#select-chocopackage) | `cins` | choco | Searches the Chocolatey community feed, fuzzy-picks a package, and returns or runs its install command. |
-| [fastfetch](#fastfetch) |  | fastfetch | Runs fastfetch with DotForge's config file. |
 | [Set-LocationWithFnm](#set-locationwithfnm) |  | fnm | Changes directory (through zoxide when it is registered) and switches Node versions for the new directory. |
 | [Invoke-DFApplyFzfTheme](#invoke-dfapplyfzftheme) |  | fzf | Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS. |
 | [Read-MarkdownFile](#read-markdownfile) | `fgl` | glow | Fuzzy-picks a Markdown file below a folder and reads it in glow's pager. |
@@ -2785,9 +2784,10 @@ Fast, actively-maintained neofetch-like system information tool
 | Tags | `system`, `info` |
 | Install ids | scoop: `fastfetch`<br>winget: `Fastfetch-cli.Fastfetch` |
 | XDG method | `wrapper` |
+| Wraps | `fastfetch` adds `--config {file}` when `{settings.configPath}` exists |
 | Seeds once | `${XDG_CONFIG_HOME}/fastfetch/config.jsonc` |
 | Roles | [`system-info`](#system-info-role) |
-| Companion | [`Tools/fastfetch.ps1`](#fastfetch-companion) |
+| Companion | `Tools/fastfetch.ps1` |
 
 ### fd tool
 
@@ -3563,36 +3563,6 @@ cins ripgrep
 ```
 
 Pick ripgrep and press Enter to get: choco install ripgrep -y
-
-**See also:** [tools](guide/tools.md)
-
-### fastfetch companion
-
-#### fastfetch
-
-Runs fastfetch with DotForge's config file.
-
-Wraps fastfetch.exe and passes --config &lt;path&gt;, because fastfetch ignores XDG_CONFIG_HOME on Windows. The path comes from settings.configPath in fastfetch.json (default $XDG_CONFIG_HOME\\fastfetch\\config.jsonc). DotForge's one-time setup seeds that file with a themed default; after that it is yours to edit and is never overwritten. If you delete it, fastfetch runs with its own defaults (no --config is passed).
-
-All other arguments, and piped input, are passed to fastfetch unchanged. Defined by DotForge's fastfetch companion.
-
-**Outputs:** System.String. fastfetch's output.
-
-**Example 1**
-
-```powershell
-fastfetch
-```
-
-Prints the system-info banner using DotForge's config.
-
-**Example 2**
-
-```powershell
-fastfetch --logo none
-```
-
-Passes an extra fastfetch option through.
 
 **See also:** [tools](guide/tools.md)
 

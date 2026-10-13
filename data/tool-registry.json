@@ -914,7 +914,7 @@
       }
     },
     "fastfetch": {
-      "sha256": "9003aec0988636ed2c20289460afbbcd0284c7af614950bb46d6696b37061781",
+      "sha256": "d22e67dd0947198c9e1d9feb9c24fd55535cc534748f95444e8b32b7844ea8f0",
       "record": {
         "name": "fastfetch",
         "executable": "fastfetch.exe",
@@ -932,7 +932,7 @@
           "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Tools/fastfetch.ps1 wraps the executable and passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc).",
+          "instructions": "fastfetch's Windows config search list is hardcoded (Win32 known-folder lookups) and ignores XDG_CONFIG_HOME entirely -- confirmed via `fastfetch --list-config-paths` with XDG_CONFIG_HOME set to a probe path. Its wrapper (declared in Tools/fastfetch.json, built by Tools/fastfetch.ps1) passes --config explicitly, and its one-time setup seeds the themed default config (Tools/fastfetch/config.jsonc).",
           "compliance": "none",
           "native": {
             "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": {
@@ -965,7 +965,18 @@
         },
         "themeMap": null,
         "theme": null,
-        "wrapper": null,
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": "{settings.configPath}",
+              "args": [
+                "--config",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": true
+        },
         "settings": {
           "configPath": "${XDG_CONFIG_HOME}/fastfetch/config.jsonc"
         },

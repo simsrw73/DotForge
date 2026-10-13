@@ -30,9 +30,36 @@ Describe 'Tools/fastfetch.json' {
         { Get-Content "$PSScriptRoot/../Tools/fastfetch/config.jsonc" -Raw | ConvertFrom-Json } | Should -Not -Throw
     }
 
+    It 'declares a custom wrapper passing --config only when the config exists' {
+        $json = Get-Content "$PSScriptRoot/../Tools/fastfetch.json" -Raw | ConvertFrom-Json
+        $json.wrapper.custom | Should -BeTrue
+        $json.wrapper.args[0].ifFile | Should -Be '{settings.configPath}'
+        $json.wrapper.args[0].args | Should -Be @('--config', '{file}')
+    }
+
     It 'excludes the publicip module (measured 2.87s cold-path network spike during design)' {
         $config = Get-Content "$PSScriptRoot/../Tools/fastfetch/config.jsonc" -Raw | ConvertFrom-Json
         $config.modules | Should -Not -Contain 'publicip'
+    }
+}
+
+Describe 'fastfetch wrapper' {
+    BeforeEach {
+        Reset-DFTestSession; Set-DFTestXdg
+        Set-Item function:global:fastfetch.exe -Value { "args=$($args -join '|')" }
+        $script:Record = Get-DFTestToolRecord fastfetch
+        $DFCurrentTool = $script:Record
+        . "$PSScriptRoot/../Tools/fastfetch.ps1"
+    }
+    AfterEach { Remove-DFTestGlobal -Function 'fastfetch.exe', 'fastfetch'; Restore-DFTestXdg }
+
+    It 'runs without --config while the config is missing' {
+        fastfetch --logo none | Should -Be 'args=--logo|none'
+    }
+    It 'passes --config once the config exists' {
+        $cfg = Join-Path $Env:XDG_CONFIG_HOME 'fastfetch' 'config.jsonc'
+        New-Item -ItemType File -Path $cfg -Force | Out-Null
+        fastfetch | Should -Be "args=--config|$cfg"
     }
 }
 

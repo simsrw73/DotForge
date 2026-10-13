@@ -56,7 +56,8 @@ Describe 'The fastfetch wrapper fills placeholders from the cache' {
         Copy-Item "$PSScriptRoot/../Tools/fastfetch/config.jsonc" $config
         $global:DFTestFastfetchLines = $script:Fixture
         function global:fastfetch.exe { $global:DFTestFastfetchLines }
-        $DFCurrentTool = New-Tool $config
+        $DFCurrentTool = Get-DFTestToolRecord fastfetch
+        $DFCurrentTool.settings = [pscustomobject]@{ configPath = $config }
         . "$PSScriptRoot/../Tools/fastfetch.ps1"
     }
     AfterEach {
