@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 96d21f60866e19c022725a01b27b9eca6819a5020dc2343a74acb2e570eef2d7
+# sources-sha256: 2edd870a06060a7e8b8b9dff1bb3b59c35888d66eb9794845dbaf322ed65acb1
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -5813,23 +5813,32 @@ function Set-DFPickerFunction {
 function Expand-DFToolToken {
     <#
     .SYNOPSIS
-        Expands a tool record's template: {settings.<name>} from the tool's settings, then ${XDG_*}.
+        Expands a tool record's path template: {settings.<name>} from the tool's settings, then ${XDG_*}, then canonicalizes it.
+    .DESCRIPTION
+        Returns $null (with a verbose message naming the tool and setting) when
+        the template names a setting the tool doesn't have, so the caller can
+        drop what depends on it instead of using a wrong path. The result goes
+        through ConvertTo-DFPath, so a leading ~ expands to $HOME.
     .PARAMETER Tool
         A normalized tool record.
     .PARAMETER Text
         The template, e.g. '{settings.configPath}' or '${XDG_CONFIG_HOME}/lsd/config.yaml'.
     .OUTPUTS
-        System.String.
+        System.String, or $null when a referenced setting is missing.
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][string]$Text)
     $settings = $Tool.settings
-    $filled = [regex]::Replace($Text, '\{settings\.(\w+)\}', {
-        param($match)
-        if ($settings) { [string]$settings.PSObject.Properties[$match.Groups[1].Value]?.Value } else { '' }
-    })
-    Expand-DFXdgPath $filled
+    foreach ($match in [regex]::Matches($Text, '\{settings\.(\w+)\}')) {
+        $setting = $match.Groups[1].Value
+        if (-not $settings -or -not [string]$settings.PSObject.Properties[$setting]?.Value) {
+            Write-Verbose "DotForge: $($Tool.name) has no setting '$setting' for '$Text'"
+            return $null
+        }
+    }
+    $filled = [regex]::Replace($Text, '\{settings\.(\w+)\}', { param($match) [string]$settings.PSObject.Properties[$match.Groups[1].Value].Value })
+    ConvertTo-DFPath (Expand-DFXdgPath $filled)
 }
 
 function Format-DFWrapperHelp {
@@ -5913,6 +5922,7 @@ function New-DFToolWrapper {
     $_dfThemeOf = ${function:Get-DFSessionThemeValue}
     $_dfGroups = @(foreach ($group in @($Tool.wrapper.args)) {
         $file = if ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
+        if ($group.ifFile -and -not $file) { continue }   # its file can't be named: never pass the group
         [pscustomobject]@{
             IfFile = $file
             Args   = [string[]]@(foreach ($arg in $group.args) { if ($file) { $arg.Replace('{file}', $file) } else { $arg } })

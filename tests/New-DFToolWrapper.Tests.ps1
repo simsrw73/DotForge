@@ -38,6 +38,21 @@ Describe 'New-DFToolWrapper' {
         New-DFToolWrapper -Tool $tool
         dfwrapped | Should -Be "args=-c|$(Join-Path $Env:XDG_CONFIG_HOME 'w.conf')"
     }
+    It 'omits an ifFile group whose whole template names a missing setting' {
+        $tool = New-WrappedTool @('--a', [pscustomobject]@{ ifFile = '{settings.cfg}'; args = @('-c', '{file}') })
+        { New-DFToolWrapper -Tool $tool } | Should -Not -Throw
+        dfwrapped | Should -Be 'args=--a'
+    }
+    It 'omits an ifFile group whose template uses a missing setting inside a longer path' {
+        $tool = New-WrappedTool @('--a', [pscustomobject]@{ ifFile = '{settings.cfg}/x.conf'; args = @('-c', '{file}') }) -Settings @{ other = 'y' }
+        Expand-DFToolToken -Tool $tool -Text '{settings.cfg}/x.conf' | Should -BeNullOrEmpty
+        New-DFToolWrapper -Tool $tool
+        dfwrapped | Should -Be 'args=--a'
+    }
+    It 'expands a literal ~ in ifFile under $HOME' {
+        $tool = New-WrappedTool @([pscustomobject]@{ ifFile = '~/x.conf'; args = @('-c', '{file}') })
+        Expand-DFToolToken -Tool $tool -Text '~/x.conf' | Should -Be (Join-Path $HOME 'x.conf')
+    }
     It 'reads {theme} from the session on every call' {
         $tool = New-WrappedTool @('-s', '{theme}') -Theme @{ key = 'WrappedTheme'; default = 'nord' }
         $script:DFSessionThemes = @{ wrapped = [pscustomobject]@{ Value = 'nord' } }
