@@ -323,6 +323,7 @@ function ConvertTo-DFRoleMap {
                 optIn    = [bool](Get-DFToolRecordProperty $role.Value 'optIn' $false)
                 aliases  = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $role.Value 'aliases' $null)
                 env      = Get-DFToolRecordProperty $role.Value 'env' $null
+                flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
                 legacy   = $false
             }
         }
@@ -333,7 +334,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; legacy = $true }
     }
 
     [pscustomobject]$roles
@@ -611,4 +612,21 @@ function ConvertTo-DFToolRecord {
         }
     }
     [pscustomobject]$record
+}
+
+function ConvertTo-DFRoleFlags {
+    <#
+    .SYNOPSIS
+        Normalizes a role block's flags: word -> string array ($null when absent).
+    .PARAMETER Flags
+        The parsed flags object.
+    .OUTPUTS
+        PSCustomObject, or $null.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$Flags)
+    if ($Flags -isnot [pscustomobject]) { return $null }
+    $map = [ordered]@{}
+    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = [string[]]@($p.Value) }
+    [pscustomobject]$map
 }

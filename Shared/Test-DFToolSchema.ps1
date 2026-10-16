@@ -194,6 +194,11 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
         foreach ($r in $roles.PSObject.Properties) {
             $v = Get-DFSchemaProperty $r.Value 'aliases'; if ($null -ne $v) { Get-DFAliasesSchemaError $v "roles.$($r.Name).aliases" }
             $v = Get-DFSchemaProperty $r.Value 'env';     if ($null -ne $v) { Get-DFMapSchemaError $v "roles.$($r.Name).env" }
+            $v = Get-DFSchemaProperty $r.Value 'flags'
+            if ($null -ne $v -and ($v -isnot [pscustomobject] -or @($v.PSObject.Properties | Where-Object {
+                    $_.Value -isnot [array] -or @($_.Value | Where-Object { $_ -isnot [string] }).Count }).Count)) {
+                "roles.$($r.Name).flags must map words to arrays of strings"
+            }
         }
     }
 }
@@ -401,7 +406,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))

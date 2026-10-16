@@ -170,3 +170,19 @@ Describe 'ConvertTo-DFToolRecord' {
         $w.args[1].args | Should -Be @('-c', '{file}')
     }
 }
+
+Describe 'ConvertTo-DFToolRecord role flags' {
+    It 'keeps a role block''s flags as word -> string arrays' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "listing": { "flags": { "long": ["--long"], "color": [] } } } }' | ConvertFrom-Json
+        $record = ConvertTo-DFToolRecord $tool
+        $record.roles.listing.flags.long | Should -Be @('--long')
+        @($record.roles.listing.flags.color).Count | Should -Be 0
+    }
+
+    It 'gives a role block without flags a null flags field' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "pager": {} } }' | ConvertFrom-Json
+        $record = ConvertTo-DFToolRecord $tool
+        $record.roles.pager.PSObject.Properties['flags'] | Should -Not -BeNullOrEmpty
+        $record.roles.pager.flags | Should -BeNullOrEmpty
+    }
+}

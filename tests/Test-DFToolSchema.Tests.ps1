@@ -363,3 +363,17 @@ Describe 'Shipped tool JSON files' {
         $result.Warnings | Should -BeNullOrEmpty
     }
 }
+
+Describe 'Test-DFToolSchema role flags' {
+    It 'rejects role flags that are not word -> string arrays: <Json>' -ForEach @(
+        @{ Json = '"flags": ["--long"]' }, @{ Json = '"flags": { "long": "--long" }' }, @{ Json = '"flags": { "long": [1] }' }
+    ) {
+        $tool = "{ ""name"": ""t"", ""executable"": ""t.exe"", ""roles"": { ""listing"": { $Json } } }" | ConvertFrom-Json
+        (Test-DFToolSchema -Tool $tool).Errors -join ';' | Should -Match 'roles.listing.flags'
+    }
+
+    It 'accepts role flags of word -> string arrays' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "listing": { "flags": { "long": ["--long"], "color": [] } } } }' | ConvertFrom-Json
+        (Test-DFToolSchema -Tool $tool).Errors | Should -BeNullOrEmpty
+    }
+}
