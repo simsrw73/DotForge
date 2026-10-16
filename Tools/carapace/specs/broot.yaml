@@ -1,0 +1,64 @@
+# Carapace spec for broot.
+#
+# broot has no completion generator, and carapace's inshellisense bridge for it
+# returns nothing, so `broot -<TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `broot --help` (broot 1.61.0), so it can drift from the
+# installed binary; catalogued in docs/external-dependencies.md.
+name: broot
+description: Explore file hierarchies with a tree view
+flags:
+  --help: Print help
+  --version: Print the version
+  --conf=: Semicolon-separated config file paths
+  -d, --dates: Show last modified dates
+  -D, --no-dates: Don't show dates
+  -f, --only-folders: Only show folders
+  -F, --no-only-folders: Show folders and files
+  --show-root-fs: Show filesystem info on top
+  --max-depth=: Only show trees up to this depth
+  -g, --show-git-info: Show git statuses (-gg for only changed files)
+  -G, --no-show-git-info: Show less git information
+  --git-status: Only files with an interesting git status
+  -h, --hidden: Show hidden files
+  -H, --no-hidden: Don't show hidden files
+  -i, --git-ignored: Show git-ignored files
+  -I, --no-git-ignored: Don't show git-ignored files
+  -p, --permissions: Show permissions
+  -P, --no-permissions: Don't show permissions
+  -s, --sizes: Show sizes
+  -S, --no-sizes: Don't show sizes
+  --sort-by-count: Sort by count
+  --sort-by-date: Sort by date
+  --sort-by-size: Sort by size
+  --sort-by-type: Sort by type, directories first
+  --sort-by-type-dirs-first: Sort by type, directories first
+  --sort-by-type-dirs-last: Sort by type, directories last
+  --no-sort: Don't sort
+  --tree: Show the tree when the sort allows it
+  --no-tree: Don't show the tree
+  -w, --whale-spotting: Sort by size, show ignored and hidden files
+  -W, --no-whale-spotting: No sort, no hidden or ignored files
+  -t, --trim-root: Trim the root and hide the scrollbar
+  -T, --no-trim-root: Don't trim the root, show a scrollbar
+  --outcmd=: Where to write the produced command
+  --verb-output=: Path for verbs using :write_output
+  -c, --cmd=: Semicolon-separated commands to execute
+  --color=: Styles and colors
+  --height=: Height
+  --install: Install or reinstall the br shell function
+  --set-install-state=: Set the installation state
+  --print-shell-function=: Print the br function for a shell
+  --write-default-conf=: Write default config files to a directory
+completion:
+  flag:
+    conf: ["$files"]
+    outcmd: ["$files"]
+    verb-output: ["$files"]
+    color: [auto, yes, no]
+    set-install-state: [undefined, refused, installed]
+    print-shell-function: [bash, fish, nushell, powershell, zsh]
+    write-default-conf: ["$directories"]
+  positional:
+    - ["$directories"]

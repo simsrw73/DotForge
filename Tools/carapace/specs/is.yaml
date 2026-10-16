@@ -1,0 +1,39 @@
+# Carapace spec for is (inshellisense).
+#
+# inshellisense has no completion generator for itself and carapace ships no
+# completer for it, so `is <TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `is --help` (inshellisense 0.0.4), so it can drift from the
+# installed binary; catalogued in docs/external-dependencies.md.
+name: is
+description: IDE-style command line autocomplete
+flags:
+  -v, --version: Show version
+  -l, --login: Start the shell as a login shell
+  -s, --shell=: Shell to use for command execution
+  -c, --check: Check if the shell is in an inshellisense session
+  -V, --verbose: Verbose logging
+  -h, --help: Show help
+completion:
+  flag:
+    shell: [bash, powershell, pwsh, zsh, fish, cmd, xonsh, nu]
+commands:
+  - name: init
+    description: Generate shell configuration and print its source command
+    completion:
+      positional:
+        - [bash, powershell, pwsh, zsh, fish, xonsh, nu]
+  - name: reinit
+    description: Regenerate shell configurations
+  - name: doctor
+    description: Check the health of the installation
+  - name: specs
+    description: Manage specs
+    commands:
+      - name: list
+        description: List the names of all available specs
+  - name: complete
+    description: Generate a completion for the given input
+  - name: uninstall
+    description: Remove cache and configuration

@@ -1,0 +1,62 @@
+# Carapace spec for pymanager (the Python install manager for Windows).
+#
+# pymanager has no completion generator and carapace ships no pymanager
+# completer, so `pymanager <TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1). Runtime tags are not
+# completed (no output format lists tags alone; see `pymanager list --online`).
+#
+# Hand-authored from `pymanager help <command>` (pymanager 26.4), so it can drift
+# from the installed binary; catalogued in docs/external-dependencies.md.
+name: pymanager
+description: Python install manager
+persistentflags:
+  -v, --verbose: More output
+  -q, --quiet: Less output
+  -y, --yes: Accept confirmation prompts
+  -h, --help: Show help for the command
+  --config=: Configuration JSON file
+completion:
+  flag:
+    config: ["$files"]
+commands:
+  - name: exec
+    description: Launch a runtime, installing it if needed
+    parsing: disabled
+  - name: help
+    description: Show help for a command
+    completion:
+      positional:
+        - [exec, help, install, list, uninstall]
+  - name: install
+    description: Download new runtimes, or update installed ones
+    flags:
+      -s, --source=: Index URL
+      -t, --target=: Install into this folder
+      -d, --download=: Download packages into this folder
+      -f, --force: Re-download and overwrite
+      -u, --update: Update when a newer version exists
+      --dry-run: Choose a runtime without installing
+      --refresh: Update shortcuts and aliases for installed versions
+      --configure: Re-run the system configuration helper
+      --by-id: Require an exact install ID
+    completion:
+      flag:
+        target: ["$directories"]
+        download: ["$directories"]
+  - name: list
+    description: Show installed runtimes
+    flags:
+      -f, --format=: Output format
+      -1, --one: Only the first match
+      --online: Runtimes available to install
+      -s, --source=: Index URL
+      --only-managed: Only installs this tool manages
+    completion:
+      flag:
+        format: [table, json, jsonl, csv, exe, prefix, url, formats]
+  - name: uninstall
+    description: Remove runtimes
+    flags:
+      --cleanup: Remove cached and unrecognized files
+      --purge: Remove all runtimes, shortcuts and cached files
+      --by-id: Require an exact install ID

@@ -1,0 +1,42 @@
+# Carapace spec for moor (the pager formerly called moar).
+#
+# moor has no completion generator and carapace ships no moor completer, so
+# `moor -<TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1). moor's flags are Go-style:
+# a single dash, also accepted with two.
+#
+# Hand-authored from `moor --help` (moor 2.19.4), so it can drift from the
+# installed binary; catalogued in docs/external-dependencies.md.
+name: moor
+description: Terminal pager with syntax highlighting
+flags:
+  -colors=: Highlighting palette size
+  -debug: Print debug logs after exiting
+  -follow: Follow piped input like tail -f
+  -lang=: Language for highlighting (mime type or extension)
+  -mousemode=: Mouse mode
+  -no-clear-on-exit: Keep screen contents on exit
+  -no-clear-on-exit-margin=: Lines left for the shell prompt
+  -no-linenumbers: Hide line numbers on startup
+  -no-search-line-highlight: Don't highlight lines with search hits
+  -no-statusbar: Hide the status bar
+  -quit-if-one-screen: Don't page if the content fits on one screen
+  -reformat: Reformat some input files (JSON)
+  -render-unprintable=: How unprintable characters are rendered
+  -scroll-left-hint=: Shown when the view can scroll left
+  -scroll-right-hint=: Shown when the view can scroll right
+  -shift=: Horizontal scroll amount
+  -statusbar=: Status bar style
+  -style=: Highlighting style
+  -tab-size=: Spaces per tab stop
+  -terminal-fg: Use terminal colors for plain text
+  -trace: Print trace logs after exiting
+  -version: Print the version
+  -wrap: Wrap long lines
+completion:
+  flag:
+    colors: ["8", "16", "256", "16M", auto]
+    mousemode: [auto, select, scroll]
+    render-unprintable: [highlight, whitespace]
+    statusbar: [inverse, plain, bold]
+  positionalany: ["$files"]

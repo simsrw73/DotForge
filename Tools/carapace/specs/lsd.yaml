@@ -1,0 +1,71 @@
+# Carapace spec for lsd (LSDeluxe).
+#
+# lsd ships its shell completions only inside release archives (no generator
+# command), and carapace's only lsd completer is the inshellisense bridge, so
+# without inshellisense `lsd -<TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `lsd --help` (lsd 1.2.0), so it can drift from the installed
+# binary; catalogued in docs/external-dependencies.md.
+name: lsd
+description: An ls command with colors and icons
+flags:
+  -a, --all: Do not ignore entries starting with .
+  -A, --almost-all: Do not list implied . and ..
+  --color=: When to use terminal colors
+  --icon=: When to print icons
+  --icon-theme=: Fancy or unicode icons
+  -F, --classify: Append an indicator to file names
+  -l, --long: Display extended metadata as a table
+  --ignore-config: Ignore the configuration file
+  --config-file=: Custom lsd configuration file
+  -1, --oneline: One entry per line
+  -R, --recursive: Recurse into directories
+  -h, --human-readable: For ls compatibility only
+  --tree: Recurse and show a tree
+  --depth=: Stop recursing after this depth
+  -d, --directory-only: List directories themselves, not their contents
+  --permission=: How to display permissions
+  --size=: How to display size
+  --total-size: Display the total size of directories
+  --date=: How to display dates
+  -t, --timesort: Sort by time modified
+  -S, --sizesort: Sort by size
+  -X, --extensionsort: Sort by extension
+  -G, --gitsort: Sort by git status
+  -v, --versionsort: Natural sort of version numbers
+  --sort=: Sort by this instead of name
+  -U, --no-sort: Directory order, unsorted
+  -r, --reverse: Reverse the sort order
+  --group-dirs=: Where directories go
+  --group-directories-first: Directories first
+  --blocks=: Blocks to display, in order
+  --classic: Output like ls
+  --no-symlink: Do not display symlink targets
+  -I, --ignore-glob*=: Hide names matching this glob
+  -i, --inode: Display index numbers
+  -g, --git: Show git status (with --long)
+  -L, --dereference: Show the link target's information
+  -Z, --context: Print security context
+  --hyperlink=: Attach hyperlinks to names
+  --header: Display block headers
+  --truncate-owner-after=: Truncate user and group names after this many characters
+  --truncate-owner-marker=: Marker for a truncated name
+  --system-protected: Include files with the system protection flag
+  -N, --literal: Print names without quoting
+  --help: Show help
+  -V, --version: Show version
+completion:
+  flag:
+    color: [always, auto, never]
+    icon: [always, auto, never]
+    icon-theme: [fancy, unicode]
+    config-file: ["$files"]
+    permission: [rwx, octal, attributes, disable]
+    size: [default, short, bytes]
+    date: [date, locale, relative]
+    sort: [size, time, version, extension, git, none]
+    group-dirs: [none, first, last]
+    blocks: ["$uniquelist(,)", permission, user, group, context, size, date, name, inode, links, git]
+    hyperlink: [always, auto, never]
+  positionalany: ["$files"]

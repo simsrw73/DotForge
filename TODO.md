@@ -10,7 +10,6 @@ git history, not here. IDs are never reused; the next free one is **T-66**.
 
 ## Priority 2 — Open Problems
 
-- [ ] **T-4 5 tools lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`).
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (d) tests use `C:\` literals, so macOS/Linux stays unverified.

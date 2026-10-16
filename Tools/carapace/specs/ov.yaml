@@ -1,0 +1,11 @@
+# Carapace spec for ov (feature-rich terminal pager).
+#
+# carapace ships no ov completer, so `ov <TAB>` had nothing. ov is a cobra
+# program, so this spec only bridges to ov's own completion (`ov __complete`):
+# it follows the installed version and never goes stale. DotForge deploys it to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+name: ov
+description: Feature-rich terminal pager
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.Cobra([ov])"]

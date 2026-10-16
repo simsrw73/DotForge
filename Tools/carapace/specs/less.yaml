@@ -1,0 +1,82 @@
+# Carapace spec for less.
+#
+# less has no completion generator, and carapace's only less completer is the
+# inshellisense bridge, so without inshellisense `less -<TAB>` has nothing.
+# DotForge deploys this to $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `less --help` (less 710): the short/long option pairs plus
+# the commonly used long-only options. It can drift from the installed binary;
+# catalogued in docs/external-dependencies.md.
+name: less
+description: Terminal pager
+flags:
+  -?, --help: Display help
+  -a, --search-skip-screen: Search skips the current screen
+  -A, --SEARCH-SKIP-SCREEN: Search starts just after the target line
+  -b, --buffers=: Number of buffers
+  -B, --auto-buffers: Don't allocate buffers for pipes automatically
+  -c, --clear-screen: Repaint by clearing rather than scrolling
+  -d, --dumb: Dumb terminal
+  -D, --color=: Set screen colors
+  -e, --quit-at-eof: Quit at the second end of file
+  -E, --QUIT-AT-EOF: Quit at the first end of file
+  -f, --force: Force open non-regular files
+  -F, --quit-if-one-screen: Quit if the file fits on one screen
+  -g, --hilite-search: Highlight only the last match
+  -G, --HILITE-SEARCH: Don't highlight matches
+  -h, --max-back-scroll=: Backward scroll limit
+  -i, --ignore-case: Ignore case unless the pattern has uppercase
+  -I, --IGNORE-CASE: Ignore case in all searches
+  -j, --jump-target=: Screen position of target lines
+  -J, --status-column: Display a status column
+  -k, --lesskey-file=: Use a compiled lesskey file
+  -K, --quit-on-intr: Exit on ctrl-C
+  -L, --no-lessopen: Ignore LESSOPEN
+  -m, --long-prompt: Verbose prompt
+  -M, --LONG-PROMPT: Most verbose prompt
+  -n, --line-numbers: Suppress line numbers in prompts
+  -N, --LINE-NUMBERS: Display line numbers
+  -o, --log-file=: Copy to a log file
+  -O, --LOG-FILE=: Copy to a log file, overwriting it
+  -p, --pattern=: Start at a pattern
+  -P, --prompt=: Define the prompt
+  -q, --quiet: Quiet the terminal bell
+  -Q, --QUIET: Never ring the terminal bell
+  -r, --raw-control-chars: Output raw control characters
+  -R, --RAW-CONTROL-CHARS: Output ANSI color sequences raw
+  -s, --squeeze-blank-lines: Squeeze blank lines
+  -S, --chop-long-lines: Chop long lines instead of wrapping
+  -t, --tag=: Find a tag
+  -T, --tag-file=: Alternate tags file
+  -u, --underline-special: Send backspaces and carriage returns raw
+  -U, --UNDERLINE-SPECIAL: Treat backspaces, tabs and carriage returns as control characters
+  -V, --version: Display the version
+  -w, --hilite-unread: Highlight the first new line after a full screen
+  -W, --HILITE-UNREAD: Highlight the first new line after any movement
+  -x, --tabs=: Set tab stops
+  -X, --no-init: Don't use termcap init/deinit strings
+  -y, --max-forw-scroll=: Forward scroll limit
+  -z, --window=: Window size
+  -~, --tilde: Don't display tildes after end of file
+  -#, --shift=: Horizontal scroll amount
+  --follow-name: The F command follows a renamed file
+  --header=: Header lines and columns
+  --incsearch: Search as each character is typed
+  --lesskey-src=: Use a lesskey source file
+  --mouse: Enable mouse input
+  --no-histdups: Remove duplicates from command history
+  --no-search-headers: Don't search header lines
+  --no-vbell: Disable the visual bell
+  --redraw-on-quit: Redraw the final screen on quit
+  --save-marks: Keep marks across invocations
+  --search-options=: Default search modifiers
+  --use-color: Enable colored text
+  --wordwrap: Wrap lines at spaces
+completion:
+  flag:
+    lesskey-file: ["$files"]
+    log-file: ["$files"]
+    LOG-FILE: ["$files"]
+    tag-file: ["$files"]
+    lesskey-src: ["$files"]
+  positionalany: ["$files"]

@@ -1,6 +1,19 @@
-# Companion for uv — the fvenv picker, which activates a Python virtual environment.
+# Companion for uv — uv's own completions, and the fvenv picker, which activates a
+# Python virtual environment.
 #
 # Defines: Select-UvVenv (alias fvenv).
+
+# uv's own PowerShell completer is a 757 KB script (~70 ms to parse) and carapace has
+# no uv completer, so it loads on the first Tab after `uv`, not at startup. The script
+# is a pure function of uv's build, cached keyed to the binary's file identity so an
+# upgrade regenerates it. See docs/external-dependencies.md.
+$_cachedOutput = ${function:Get-DFCachedCommandOutput}
+Register-DFLazyCompleter -CommandName uv -Load {
+    $completer = & $_cachedOutput -Name 'uv-completions' -Executable 'uv' -Generate {
+        uv generate-shell-completion powershell | Out-String
+    }
+    if ($completer) { . ([scriptblock]::Create($completer)) }
+}.GetNewClosure()
 
 function global:Select-UvVenv {
     <#

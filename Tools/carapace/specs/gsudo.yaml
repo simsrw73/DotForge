@@ -1,0 +1,38 @@
+# Carapace spec for gsudo.
+#
+# carapace ships no gsudo completer; gsudo's own completer lives in gsudoModule,
+# which DotForge doesn't import. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1). The first word completes
+# gsudo's verbs and the commands carapace knows; the rest is completed by that
+# command's own completer (`gsudo git chec<TAB>` completes git).
+#
+# gsudo's flags are hand-authored from `gsudo --help` (gsudo 2.6.1), so they can
+# drift from the installed binary; catalogued in docs/external-dependencies.md.
+name: gsudo
+description: Run a command with elevated permissions
+parsing: non-interspersed
+flags:
+  -n, --new: Start the command in a new console
+  -w, --wait: Wait for the new console's command to end
+  --keepShell: Keep the elevated shell open after the command
+  --keepWindow: Ask for a keypress before closing the new console
+  --close: Always close the new window at the end
+  -i, --integrity=: Integrity level
+  -u, --user=: Run as this user
+  -s, --system: Run as Local System
+  --ti: Run as TrustedInstaller
+  -k, --reset-timestamp: Kill all cached credentials
+  -d, --direct: Skip shell detection
+  --loglevel=: Minimum log level
+  --debug: Debug mode
+  --copyns: Connect network drives to the elevated user
+  --chdir=: Change to this folder first
+  --loadProfile: Load the PowerShell profile when elevating PowerShell
+completion:
+  flag:
+    integrity: [Untrusted, Low, Medium, MediumPlus, High, System]
+    loglevel: [All, Debug, Info, Warning, Error, None]
+    chdir: ["$directories"]
+  positional:
+    - ["$carapace.tools.carapace.Completers", cache, status, config]
+  positionalany: ["$carapace.bridge.CarapaceBin"]

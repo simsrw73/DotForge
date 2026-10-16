@@ -22,6 +22,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Tab completion for 13 more tools.** Carapace specs for bw, broot, gsudo, is (inshellisense),
+  less, lsd, moor, ov, pymanager and smartctl (bw, less and lsd completed before only with
+  inshellisense installed). `gsudo` also completes the command it elevates. uv, mise and vcpkg
+  get their own completers, loaded the first time you press Tab after them, so startup doesn't pay
+  for uv's 757 KB script.
 - **Declarative themes and wrappers.** A tool record can declare its theme (`theme`: config key,
   default, name map, theme files, accepted names, the variables it sets) and an executable wrapper
   (`wrapper`: arguments, ones passed only while a file exists). bat, mdcat, moor, delta and glow need

@@ -1,0 +1,62 @@
+# Carapace spec for smartctl (smartmontools).
+#
+# smartctl has no completion generator and carapace ships no smartctl completer,
+# so `smartctl -<TAB>` has nothing. DotForge deploys this to
+# $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `smartctl -h` (smartctl 7.5): every option, and values for the
+# common ones. Devices are not completed (list them with `smartctl --scan`). It can
+# drift from the installed binary; catalogued in docs/external-dependencies.md.
+name: smartctl
+description: Control and monitor SMART disks
+flags:
+  -h, --help: Show help
+  -V, --version: Show version and license
+  -i, --info: Show device identity information
+  --identify?: Show the IDENTIFY DEVICE structure
+  -g, --get=: Get a device setting
+  -a, --all: Show all SMART information
+  -x, --xall: Show all information, including non-SMART
+  --scan: Scan for devices
+  --scan-open: Scan for devices and try to open each one
+  -j, --json?: Print output as JSON
+  -q, --quietmode=: Quiet mode
+  -d, --device=: Device type
+  -T, --tolerance=: Tolerance to ATA errors
+  -b, --badsum=: Action on a bad checksum
+  -r, --report=: Report transactions
+  -n, --nocheck=: Don't check if the device is in a low-power mode
+  -s, --smart=: Enable or disable SMART
+  -o, --offlineauto=: Automatic offline testing
+  -S, --saveauto=: Attribute autosave
+  --set=: Set a device setting
+  -H, --health: Show SMART health status
+  -c, --capabilities: Show SMART capabilities
+  -A, --attributes: Show SMART attributes
+  -f, --format=: Attribute output format
+  -l, --log=: Show a log
+  -v, --vendorattribute=: Vendor-specific attribute display
+  -F, --firmwarebug=: Work around a firmware bug
+  -P, --presets=: Drive-specific presets
+  -B, --drivedb=: Drive database file
+  -t, --test=: Run a self-test
+  -C, --captive: Run the test in captive mode
+  -X, --abort: Abort a running self-test
+completion:
+  flag:
+    get: [all, aam, apm, dsn, lookahead, security, wcache, rcache, wcreorder, wcache-sct]
+    set: [aam, apm, dsn, lookahead, security-freeze, standby, wcache, rcache, wcreorder, wcache-sct]
+    quietmode: [errorsonly, silent, noserial]
+    device: [auto, test, ata, scsi, nvme, sat, usbasm1352r, usbcypress, usbjmicron, usbprolific, usbsunplus, sntasmedia, sntjmicron, sntrealtek, jmb39x, jms56x, aacraid, areca]
+    tolerance: [normal, conservative, permissive, verypermissive]
+    badsum: [warn, exit, ignore]
+    report: [ioctl, ataioctl, scsiioctl, nvmeioctl]
+    nocheck: [never, sleep, standby, idle]
+    smart: ["on", "off"]
+    offlineauto: ["on", "off"]
+    saveauto: ["on", "off"]
+    format: [old, brief, hex]
+    log: [error, selftest, selective, directory, xerror, xselftest, background, sasphy, sataphy, scttemp, scttempsts, scttemphist, scttempint, scterc, devstat, defects, ssd, gplog, smartlog, nvmelog, tapedevstat, zdevstat, envrep, farm]
+    presets: [use, ignore, show, showall]
+    drivedb: ["$files"]
+    test: [offline, short, long, conveyance, force, vendor, select, pending, afterselect]

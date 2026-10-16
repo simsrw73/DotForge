@@ -1,0 +1,185 @@
+# Carapace spec for bw (Bitwarden CLI).
+#
+# bw generates completions for zsh only, and carapace's only bw completer is the
+# inshellisense bridge, so without inshellisense `bw <TAB>` has nothing. DotForge
+# deploys this to $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `bw --help` (bw 2026.9.1), so it can drift from the installed
+# binary; catalogued in docs/external-dependencies.md.
+name: bw
+description: Bitwarden password manager CLI
+persistentflags:
+  --pretty: Format output
+  --raw: Return raw output
+  --response: Return JSON formatted response output
+  --cleanexit: Exit 0 unless an error is thrown
+  --quiet: Return nothing to stdout
+  --nointeraction: Do not prompt for input
+  --session=: Session key
+flags:
+  -v, --version: Show version
+commands:
+  - name: login
+    description: Log into a user account
+    flags:
+      --method=: Two-step login method
+      --code=: Two-step login code
+      --sso?: Log in with single sign-on
+      --apikey: Log in with an API key
+      --passwordenv=: Environment variable holding your password
+      --passwordfile=: File holding your password
+      --check: Check login status
+    completion:
+      flag:
+        passwordenv: ["$carapace.os.EnvironmentVariables"]
+        passwordfile: ["$files"]
+  - name: logout
+    description: Log out of the current user account
+  - name: lock
+    description: Lock the vault and destroy session keys
+  - name: unlock
+    description: Unlock the vault and return a session key
+    flags:
+      --check: Check lock status
+      --passwordenv=: Environment variable holding your password
+      --passwordfile=: File holding your password
+    completion:
+      flag:
+        passwordenv: ["$carapace.os.EnvironmentVariables"]
+        passwordfile: ["$files"]
+  - name: sync
+    description: Pull the latest vault data from the server
+    flags:
+      -f, --force: Force a full sync
+      --last: Get the last sync date
+  - name: generate
+    description: Generate a password or passphrase
+    flags:
+      -u, --uppercase: Include uppercase characters
+      -l, --lowercase: Include lowercase characters
+      -n, --number: Include numeric characters
+      -s, --special: Include special characters
+      -p, --passphrase: Generate a passphrase
+      --length=: Password length
+      --words=: Number of words
+      --minNumber=: Minimum numeric characters
+      --minSpecial=: Minimum special characters
+      --separator=: Word separator
+      -c, --capitalize: Title case passphrase
+      --includeNumber: Passphrase includes a number
+      --ambiguous: Avoid ambiguous characters
+  - name: encode
+    description: Base64 encode stdin
+  - name: config
+    description: Configure CLI settings
+    completion:
+      positional:
+        - [server]
+  - name: update
+    description: Check for updates
+  - name: completion
+    description: Generate shell completions
+    flags:
+      --shell=: Shell to generate completions for
+    completion:
+      flag:
+        shell: [zsh]
+  - name: status
+    description: Show server, sync, user and vault status
+  - name: list
+    description: List objects from the vault
+    flags:
+      --search=: Search the listed objects
+      --url=: Filter logins by URL
+      --folderid=: Filter items by folder id
+      --collectionid=: Filter items by collection id
+      --organizationid=: Filter by organization id
+      --trash: Items in the trash
+      --archived: Archived items
+    completion:
+      positional:
+        - [items, folders, collections, org-collections, org-members, organizations]
+  - name: get
+    description: Get an object from the vault
+    flags:
+      --itemid=: Attachment's item id
+      --output=: Output directory or file for an attachment
+      --organizationid=: Organization id
+    completion:
+      flag:
+        output: ["$files"]
+      positional:
+        - [item, username, password, uri, totp, notes, exposed, attachment, folder, collection, org-collection, organization, template, fingerprint, send]
+  - name: create
+    description: Create an object in the vault
+    completion:
+      positional:
+        - [item, attachment, folder, org-collection]
+  - name: edit
+    description: Edit an object in the vault
+    completion:
+      positional:
+        - [item, item-collections, folder, org-collection]
+  - name: delete
+    description: Delete an object from the vault
+    flags:
+      --itemid=: Attachment's item id
+      --organizationid=: Organization id
+      -p, --permanent: Delete permanently instead of moving to the trash
+    completion:
+      positional:
+        - [item, attachment, folder, org-collection]
+  - name: restore
+    description: Restore an object from the trash or archive
+    completion:
+      positional:
+        - [item]
+  - name: move
+    description: Move an item to an organization
+  - name: confirm
+    description: Confirm an object to the organization
+    completion:
+      positional:
+        - [org-member]
+  - name: import
+    description: Import vault data from a file
+    flags:
+      --formats: List import formats
+      --organizationid=: Organization to import to
+      --keyfile=: Key file that unlocks a KeePass database
+      --passwordenv=: Environment variable holding the import file's password
+      --passwordfile=: File holding the import file's password
+    completion:
+      flag:
+        keyfile: ["$files"]
+        passwordenv: ["$carapace.os.EnvironmentVariables"]
+        passwordfile: ["$files"]
+      positional:
+        - []
+        - ["$files"]
+  - name: export
+    description: Export vault data
+    flags:
+      --output=: Output directory or file
+      --format=: Export format
+      --password?: Encrypt with this password
+      --organizationid=: Organization id
+    completion:
+      flag:
+        output: ["$files"]
+        format: [csv, json, encrypted_json, zip]
+  - name: archive
+    description: Archive an object
+    completion:
+      positional:
+        - [item]
+  - name: send
+    description: Work with Bitwarden Sends
+  - name: receive
+    description: Access a Bitwarden Send from a URL
+  - name: report
+    description: Generate a vault report
+  - name: serve
+    description: Start a RESTful API web server
+  - name: sdk-version
+    description: Print the SDK version

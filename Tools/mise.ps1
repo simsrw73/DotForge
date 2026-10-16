@@ -11,6 +11,17 @@ param()
 
 Add-DFToPath (Join-Path (Get-DFXdgPath Data) 'mise\shims')
 
+# mise's own completer (carapace has none): a small native script that asks
+# `mise __complete_word__` on each Tab, so it follows the installed version. It is a
+# pure function of mise's build, cached keyed to the binary, and loads on the first Tab.
+$_cachedOutput = ${function:Get-DFCachedCommandOutput}
+Register-DFLazyCompleter -CommandName mise -Load {
+    $completer = & $_cachedOutput -Name 'mise-completions' -Executable 'mise' -Generate {
+        mise completion powershell | Out-String
+    }
+    if ($completer) { . ([scriptblock]::Create($completer)) }
+}.GetNewClosure()
+
 function Initialize-DFRoleProjectEnv {
     # Called by DotForge only when mise wins the project-env role.
     param([PSCustomObject]$Tool, [string]$Role)

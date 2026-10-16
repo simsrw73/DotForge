@@ -84,7 +84,9 @@ inshellisense is a Node program, so it's usually installed with npm and only on 
 
 ## Add a completer for a command Carapace doesn't know
 
-Carapace has no completer for some tools. DotForge ships specs for `scoop` and `mdv` and copies them to `$XDG_CONFIG_HOME\carapace\specs\`, where Carapace loads them. To add your own, write a YAML spec there:
+Carapace has no completer for some tools. DotForge ships specs for bw, broot, gsudo, is (inshellisense), less, lsd, mdv, moor, ov, pymanager, scoop and smartctl, and copies them to `$XDG_CONFIG_HOME\carapace\specs\`, where Carapace loads them. `gsudo` completes the command you elevate too: `gsudo git chec<Tab>` offers git's subcommands. uv, mise and vcpkg use their own completers instead, which DotForge loads the first time you press Tab after the command, so they cost nothing at startup.
+
+To add your own, write a YAML spec there:
 
 ```powershell
 Import-Module DotForge
@@ -107,11 +109,11 @@ Get-ChildItem $specs -Name
 deploy.yaml
 ```
 
-DotForge's own `scoop.yaml` and `mdv.yaml` appear there too once Carapace has been registered.
+DotForge's own specs appear there too once Carapace has been registered.
 
 1. Open a new shell to use the spec. Carapace registers a completer for each command it knows when its init script runs; DotForge caches that script and regenerates it whenever a file in the specs folder is added, removed or changed, or Carapace is upgraded.
 2. Run `carapace --help` for the spec format, or see the [carapace-spec documentation](https://carapace-sh.github.io/carapace-spec/).
-3. Don't edit `scoop.yaml` or `mdv.yaml`: DotForge rewrites them whenever its bundled copy changes.
+3. Don't edit DotForge's specs (such as `scoop.yaml`): DotForge rewrites each one whenever its bundled copy changes.
 
 ## Troubleshooting
 
