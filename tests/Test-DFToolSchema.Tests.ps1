@@ -377,3 +377,14 @@ Describe 'Test-DFToolSchema role flags' {
         (Test-DFToolSchema -Tool $tool).Errors | Should -BeNullOrEmpty
     }
 }
+
+Describe 'Test-DFToolSchema role flag groups' {
+    It 'accepts a flag group' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "flags": { "theme": [{ "ifFile": "a", "unlessFile": "b", "args": ["-c", "{file}"] }] } } } }' | ConvertFrom-Json
+        (Test-DFToolSchema -Tool $tool).Errors | Should -BeNullOrEmpty
+    }
+    It 'rejects a flag group whose args is not an array of strings' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "flags": { "theme": [{ "ifFile": "a", "args": "x" }] } } } }' | ConvertFrom-Json
+        (Test-DFToolSchema -Tool $tool).Errors -join ';' | Should -Match 'roles.pager.flags'
+    }
+}

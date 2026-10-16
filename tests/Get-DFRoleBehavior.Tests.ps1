@@ -55,3 +55,50 @@ Describe 'Get-DFRolePicker' {
         $script:Role.behaviors.pickers[0].list | Should -Be @('one-per-line', 'color', 'literal')
     }
 }
+
+Describe 'flag groups' {
+    BeforeEach { Clear-DFToolNote -Tool 'lsx'; Set-DFTestXdg }
+    AfterEach { Restore-DFTestXdg }
+
+    It 'passes a group only while ifFile exists and unlessFile does not' {
+        $cfg = Join-Path $TestDrive 'c.yaml'; $own = Join-Path $Env:XDG_CONFIG_HOME 'own.yaml'
+        Remove-Item $cfg, $own -ErrorAction Ignore
+        $flags = [pscustomobject]@{ theme = @([pscustomobject]@{ ifFile = $cfg; unlessFile = '${XDG_CONFIG_HOME}/own.yaml'; args = @('--config', '{file}') }) }
+        $tool = [pscustomobject]@{ name = 'lsx'; executable = 'lsx.exe'; settings = $null; theme = $null }
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -BeNullOrEmpty
+        Set-Content $cfg 'x'
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -Be @('--config', $cfg)
+        New-Item -ItemType File -Force $own | Out-Null
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -BeNullOrEmpty
+    }
+    It 'expands {theme} in a group path from the tool''s theme' {
+        $folder = Join-Path $TestDrive 'flavor'; New-Item -ItemType Directory -Force $folder | Out-Null; Set-Content (Join-Path $folder 'c.yaml') 'x'
+        Mock Get-DFToolTheme { [pscustomobject]@{ Value = $folder } }
+        $flags = [pscustomobject]@{ theme = @([pscustomobject]@{ ifFile = '{theme}/c.yaml'; args = @('--config', '{file}') }) }
+        $tool = [pscustomobject]@{ name = 'lsx'; executable = 'lsx.exe'; settings = $null; theme = [pscustomobject]@{ key = 'X' } }
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -Be @('--config', (Join-Path $folder 'c.yaml'))
+    }
+    It 'treats {theme} with no theme value as a missing file' {
+        Mock Get-DFToolTheme { [pscustomobject]@{ Value = $null } }
+        $flags = [pscustomobject]@{ theme = @([pscustomobject]@{ ifFile = '{theme}/c.yaml'; args = @('--config', '{file}') }) }
+        $tool = [pscustomobject]@{ name = 'lsx'; executable = 'lsx.exe'; settings = $null; theme = [pscustomobject]@{ key = 'X' } }
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Get-DFRoleBehaviorEnv' {
+    BeforeAll {
+        $script:EnvRole = ConvertTo-DFRoleRecord -Name 'pager' -Role ('{ "kind": "single", "hook": "Initialize-DFRolePager",
+            "behaviors": { "words": { "quit": "q", "color": "c" }, "env": { "PAGER": ["quit", "color"] } } }' | ConvertFrom-Json)
+    }
+    It 'builds each variable as the winner''s executable and its flags' {
+        $tool = ConvertTo-DFToolRecord ('{ "name": "lsx", "executable": "lsx.exe", "roles": { "pager": { "flags": { "quit": ["-F"], "color": ["-R"] } } } }' | ConvertFrom-Json)
+        Mock ConvertTo-DFToolExePathToken { 'lsx' }
+        (Get-DFRoleBehaviorEnv -RoleDefinition $script:EnvRole -Block $tool.roles.pager -Tool $tool)['PAGER'] | Should -Be 'lsx -F -R'
+    }
+    It 'quotes an argument that holds a space' {
+        $tool = ConvertTo-DFToolRecord ('{ "name": "lsx", "executable": "lsx.exe", "roles": { "pager": { "flags": { "quit": ["--config", "C:/Program Files/x.yaml"], "color": [] } } } }' | ConvertFrom-Json)
+        Mock ConvertTo-DFToolExePathToken { 'lsx' }
+        (Get-DFRoleBehaviorEnv -RoleDefinition $script:EnvRole -Block $tool.roles.pager -Tool $tool)['PAGER'] | Should -Be 'lsx --config "C:/Program Files/x.yaml"'
+    }
+}

@@ -322,9 +322,9 @@ function Invoke-DFWonRoles {
         $won = $RoleWinners[$roleName]
         if (-not $won -or $won.Winner -ne $Tool.name) { continue }
         $block = $Tool.roles.$roleName
+        # An explicit Defaults choice overrides a value set outside DotForge; an auto-pick doesn't.
+        $explicit = if ($won.Reason -eq 'Defaults') { "`$DFConfig.Defaults.$roleName is '$($won.Winner)'; using $($won.Winner)" }
         if ($block.env) {
-            # An explicit Defaults choice overrides a value set outside DotForge; an auto-pick doesn't.
-            $explicit = if ($won.Reason -eq 'Defaults') { "`$DFConfig.Defaults.$roleName is '$($won.Winner)'; using $($won.Winner)" }
             foreach ($var in $block.env.PSObject.Properties) {
                 # ${DF_TOOL_EXE}: the winner's own executable path (see Resolve-DFToolExecutable).
                 $value = [string]$var.Value
@@ -344,6 +344,8 @@ function Invoke-DFWonRoles {
             }
             Register-DFToolAliases -Tool $Tool -Aliases (Get-DFRoleBehaviorAlias -RoleDefinition $roleDefinition -Block $block -Tool $Tool)
             foreach ($picker in Get-DFRolePicker -RoleDefinition $roleDefinition -Block $block -Tool $Tool) { Set-DFPickerFunction -Picker $picker }
+            $built = Get-DFRoleBehaviorEnv -RoleDefinition $roleDefinition -Block $block -Tool $Tool
+            foreach ($var in $built.Keys) { Set-DFEnv -Name $var -Value $built[$var] -Tool $Tool.name -ExplicitReason $explicit }
         } elseif ($block.aliases) {
             Register-DFToolAliases -Tool $Tool -Aliases $block.aliases
         }

@@ -316,6 +316,21 @@ Describe 'Register-DFTool role behaviors' {
         } finally { Remove-DFTestGlobal -Function 'tlso' }
     }
 
+    It 'sets a behaviors env variable from the winner''s flags' {
+        $rolesFile = Join-Path $TestDrive 'roles-env.json'
+        '{ "tpg": { "kind": "single", "hook": "Initialize-DFRoleTpg",
+            "behaviors": { "words": { "q": "q" }, "env": { "DF_T_PG": ["q"] } } } }' | Set-Content $rolesFile
+        $script:DFRoleDb = Get-DFRoleDb -Path $rolesFile
+        '{ "name": "tpga", "executable": "tpga.exe", "roles": { "tpg": { "flags": { "q": ["-q"] } } } }' | Set-Content (Join-Path $script:Tools 'tpga.json')
+        Mock ConvertTo-DFToolExePathToken { 'tpga' }
+        $saved = $Env:DF_T_PG; Remove-Item Env:DF_T_PG -ErrorAction Ignore
+        try {
+            Set-DFTestConfig @{ Tools = @('tpga') }
+            Register-DFTool -Name 'tpga' -ToolsPath $script:Tools 3>$null 6>$null
+            $Env:DF_T_PG | Should -Be 'tpga -q'
+        } finally { if ($null -eq $saved) { Remove-Item Env:DF_T_PG -ErrorAction Ignore } else { $Env:DF_T_PG = $saved } }
+    }
+
     It 'does not warn about a missing hook for a behaviors-only membership' {
         Set-DFTestConfig @{ Tools = @('tlsa') }
         Register-DFTool -Name 'tlsa' -ToolsPath $script:Tools -WarningVariable w 6>$null

@@ -196,8 +196,8 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
             $v = Get-DFSchemaProperty $r.Value 'env';     if ($null -ne $v) { Get-DFMapSchemaError $v "roles.$($r.Name).env" }
             $v = Get-DFSchemaProperty $r.Value 'flags'
             if ($null -ne $v -and ($v -isnot [pscustomobject] -or @($v.PSObject.Properties | Where-Object {
-                    $_.Value -isnot [array] -or @($_.Value | Where-Object { $_ -isnot [string] }).Count }).Count)) {
-                "roles.$($r.Name).flags must map words to arrays of strings"
+                    $_.Value -isnot [array] -or @($_.Value | Where-Object { -not (Test-DFRoleFlagItem $_) }).Count }).Count)) {
+                "roles.$($r.Name).flags must map words to arrays of strings or { ifFile, unlessFile, args } groups"
             }
         }
     }
@@ -540,4 +540,20 @@ function Get-DFFieldSuggestion {
         if ($d[$a.Length, $b.Length] -lt $bestDist) { $bestDist = $d[$a.Length, $b.Length]; $best = $k }
     }
     $best
+}
+
+function Test-DFRoleFlagItem ([object]$Item) {
+    <#
+    .SYNOPSIS
+        Whether one role flag item is valid: a string, or a group whose args is an array of strings and whose ifFile/unlessFile are strings.
+    #>
+    if ($Item -is [string]) { return $true }
+    if ($Item -isnot [pscustomobject]) { return $false }
+    $argsValue = $Item.PSObject.Properties['args']?.Value
+    if ($argsValue -isnot [array] -or @($argsValue | Where-Object { $_ -isnot [string] }).Count) { return $false }
+    foreach ($key in 'ifFile', 'unlessFile') {
+        $v = $Item.PSObject.Properties[$key]?.Value
+        if ($null -ne $v -and $v -isnot [string]) { return $false }
+    }
+    $true
 }

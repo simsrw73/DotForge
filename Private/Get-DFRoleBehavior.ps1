@@ -7,17 +7,25 @@ function Resolve-DFRoleWords {
     .PARAMETER Words
         The words, in the order their flags go.
     .PARAMETER Flags
-        The winner's role block flags (word -> string array).
+        The winner's role block flags (word -> arguments, each a string or a
+        { ifFile, unlessFile, args } group).
+    .PARAMETER Tool
+        The winner's tool record, for a group's {settings.<name>} and {theme}.
     .OUTPUTS
         pscustomobject { Args = [string[]]; Missing = [string[]] }.
     #>
     [CmdletBinding()]
-    param([AllowEmptyCollection()][string[]]$Words, [AllowNull()][object]$Flags)
+    param([AllowEmptyCollection()][string[]]$Words, [AllowNull()][object]$Flags, [PSCustomObject]$Tool)
     $argList = [System.Collections.Generic.List[string]]::new()
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($word in $Words) {
         $mapped = if ($Flags) { $Flags.PSObject.Properties[$word] }
-        if ($mapped) { foreach ($a in @($mapped.Value)) { if ($a) { $argList.Add($a) } } } else { $missing.Add($word) }
+        if (-not $mapped) { $missing.Add($word); continue }
+        foreach ($item in @($mapped.Value)) {
+            # A string first: -is [pscustomobject] is also true of a PSObject-wrapped string.
+            if ($item -is [string]) { if ($item) { $argList.Add($item) } }
+            elseif ($item -is [pscustomobject]) { foreach ($a in Resolve-DFRoleFlagGroup -Group $item -Tool $Tool) { $argList.Add($a) } }
+        }
     }
     [pscustomobject]@{ Args = [string[]]$argList.ToArray(); Missing = [string[]]$missing.ToArray() }
 }
@@ -74,7 +82,7 @@ function Get-DFRoleBehaviorAlias {
     $aliases = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.aliases.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags
+        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags -Tool $Tool
         $aliases[$name] = [pscustomobject]@{ command = $command; args = $resolved.Args }
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
@@ -107,7 +115,7 @@ function Get-DFRolePicker {
     $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
     $missing = [ordered]@{}
     $pickers = foreach ($picker in @($RoleDefinition.behaviors.pickers)) {
-        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags
+        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags -Tool $Tool
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
         $copy = [ordered]@{}
         foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
@@ -116,4 +124,80 @@ function Get-DFRolePicker {
     }
     if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
     @($pickers)
+}
+
+function Resolve-DFRoleFlagGroup {
+    <#
+    .SYNOPSIS
+        A conditional flag group's arguments: passed only while ifFile exists and unlessFile doesn't.
+    .DESCRIPTION
+        Paths expand {theme} (the tool's resolved theme value; none means the file is
+        missing), then {settings.<name>} and ${XDG_*} (Expand-DFToolToken), and are
+        canonical. {file} in args is the ifFile path.
+    .PARAMETER Group
+        { ifFile?, unlessFile?, args }.
+    .PARAMETER Tool
+        The tool record.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][PSCustomObject]$Group, [PSCustomObject]$Tool)
+    $expand = {
+        param([string]$Template)
+        if (-not $Template) { return }
+        if ($Template.Contains('{theme}')) {
+            $theme = if ($Tool -and $Tool.theme) { (Get-DFToolTheme -Tool $Tool).Value }
+            if (-not $theme) { return }
+            $Template = $Template.Replace('{theme}', [string]$theme)
+        }
+        Expand-DFToolToken -Tool $Tool -Text $Template
+    }
+    $ifFile = $Group.PSObject.Properties['ifFile']?.Value
+    $unlessFile = $Group.PSObject.Properties['unlessFile']?.Value
+    $file = if ($ifFile) { & $expand $ifFile }
+    if ($ifFile -and -not ($file -and (Test-Path -LiteralPath $file -PathType Leaf))) { return }
+    if ($unlessFile) {
+        $other = & $expand $unlessFile
+        if ($other -and (Test-Path -LiteralPath $other -PathType Leaf)) { return }
+    }
+    [string[]]@(foreach ($arg in @($Group.args)) { if ($file) { ([string]$arg).Replace('{file}', $file) } else { [string]$arg } })
+}
+
+function Get-DFRoleBehaviorEnv {
+    <#
+    .SYNOPSIS
+        Builds a won role's behavior variables: the winner's executable and each word's flags.
+    .DESCRIPTION
+        The executable is the ${DF_TOOL_EXE} token (ConvertTo-DFToolExePathToken: the
+        winner's own build, quoted when it has a space). An argument holding a space is
+        quoted, so a program that splits the variable keeps it whole. A missing word is
+        noted as for aliases.
+    .PARAMETER RoleDefinition
+        The role record, with behaviors.env.
+    .PARAMETER Block
+        The winner's normalized block for the role.
+    .PARAMETER Tool
+        The winner's tool record.
+    .OUTPUTS
+        System.Collections.Specialized.OrderedDictionary: variable -> command line.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Block,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $command = ConvertTo-DFToolExePathToken -Tool $Tool
+    $values = [ordered]@{}
+    $missing = [ordered]@{}
+    foreach ($name in $RoleDefinition.behaviors.env.Keys) {
+        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
+        $quoted = foreach ($a in $resolved.Args) { if ($a -match '\s') { "`"$a`"" } else { $a } }
+        $values[$name] = (@($command) + @($quoted)) -join ' '
+        foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
+    }
+    if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
+    $values
 }

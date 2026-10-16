@@ -186,3 +186,13 @@ Describe 'ConvertTo-DFToolRecord role flags' {
         $record.roles.pager.flags | Should -BeNullOrEmpty
     }
 }
+
+Describe 'ConvertTo-DFToolRecord role flag groups' {
+    It 'keeps a flag group as an object beside plain arguments' {
+        $tool = '{ "name": "t", "executable": "t.exe", "roles": { "pager": { "flags": { "theme": ["-x", { "ifFile": "a", "args": ["-c", "{file}"] }] } } } }' | ConvertFrom-Json
+        $items = @((ConvertTo-DFToolRecord $tool).roles.pager.flags.theme)
+        $items[0] | Should -Be '-x'
+        $items[1].ifFile | Should -Be 'a'
+        $items[1].args | Should -Be @('-c', '{file}')
+    }
+}

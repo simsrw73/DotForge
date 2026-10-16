@@ -617,7 +617,7 @@ function ConvertTo-DFToolRecord {
 function ConvertTo-DFRoleFlags {
     <#
     .SYNOPSIS
-        Normalizes a role block's flags: word -> string array ($null when absent).
+        Normalizes a role block's flags: word -> array of arguments and groups ($null when absent).
     .PARAMETER Flags
         The parsed flags object.
     .OUTPUTS
@@ -627,6 +627,7 @@ function ConvertTo-DFRoleFlags {
     param([AllowNull()][object]$Flags)
     if ($Flags -isnot [pscustomobject]) { return $null }
     $map = [ordered]@{}
-    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = [string[]]@($p.Value) }
+    # An item is an argument, or a { ifFile, unlessFile, args } group (Resolve-DFRoleFlagGroup).
+    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = @($p.Value | ForEach-Object { if ($_ -is [string]) { [string]$_ } elseif ($_ -is [pscustomobject]) { $_ } else { [string]$_ } }) }
     [pscustomobject]$map
 }
