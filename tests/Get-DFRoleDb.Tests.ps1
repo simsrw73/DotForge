@@ -94,3 +94,39 @@ Describe 'Get-DFRoleDb' {
         $db.Count | Should -Be @($raw.PSObject.Properties).Count
     }
 }
+
+Describe 'ConvertTo-DFRoleRecord behaviors' {
+    BeforeAll {
+        function script:ConvertFrom-RoleJson([string]$Json) { $Json | ConvertFrom-Json }
+    }
+
+    It 'reads words, aliases and pickers, and derives reserved aliases' {
+        $role = ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": { "words": { "long": "details", "all": "hidden too" },
+                           "aliases": { "ll": ["long"], "la": ["long", "all"] },
+                           "pickers": [ { "alias": "ff", "function": "Select-File", "list": ["long"] } ] } }'
+        $record = ConvertTo-DFRoleRecord -Name 'listing' -Role $role
+        $record.behaviors.words | Should -Be @('long', 'all')
+        $record.behaviors.aliases['la'] | Should -Be @('long', 'all')
+        $record.behaviors.pickers[0].function | Should -Be 'Select-File'
+        $record.reserved.aliases | Should -Be @('ll', 'la', 'ff')
+    }
+
+    It 'leaves behaviors null for a role without them' {
+        $record = ConvertTo-DFRoleRecord -Name 'pager' -Role (ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRolePager" }')
+        $record.behaviors | Should -BeNullOrEmpty
+    }
+
+    It 'rejects behaviors that use an undefined word' {
+        $role = ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": { "words": { "long": "details" }, "aliases": { "ll": ["long", "lnog"] } } }'
+        ConvertTo-DFRoleRecord -Name 'listing' -Role $role 3>$null | Should -BeNullOrEmpty
+        ConvertTo-DFRoleRecord -Name 'listing' -Role $role -WarningVariable w 3>$null | Out-Null
+        "$w" | Should -Match "lnog"
+    }
+
+    It 'rejects behaviors on a category role' {
+        $role = ConvertFrom-RoleJson '{ "kind": "category", "behaviors": { "words": { "a": "x" }, "aliases": { "q": ["a"] } } }'
+        ConvertTo-DFRoleRecord -Name 'grep' -Role $role 3>$null | Should -BeNullOrEmpty
+    }
+}

@@ -136,9 +136,11 @@ Both functions live in `Private/` (startup core) and return result objects.
 
 ### When something is missing
 
-- **Schema** (`Test-DFToolSchema`): when the role a block belongs to has
-  `behaviors`, `flags` must be an object of word → array of strings, and the block
-  may not hold the role's aliases. Malformed `flags` is a load error.
+- **Schema** (`Test-DFToolSchema`): `flags`, when present in a role block, must be an
+  object of word → array of strings. The schema checks one record and can't see
+  `data/roles.json`, so the role-aware rules (no hand-written aliases for a
+  behaviors role, every word mapped) are the role contract test's, and at runtime a
+  behaviors role's hand-written block aliases are skipped with a verbose message.
 - **A member lacks a word the role uses:** the alias or picker is built without
   that word's flags, and the tool's status notes it once, e.g.
   `listing: no flag for 'git' (ll, la)`. DotForge's own tools can't reach this: the

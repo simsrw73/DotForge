@@ -51,7 +51,10 @@ function ConvertTo-DFRoleRecord {
         kind must be 'single' or 'category'. A single role needs a hook named
         Initialize-DFRole plus its name in PascalCase (project-env ->
         Initialize-DFRoleProjectEnv). A category role may not declare a hook, exclusive,
-        reserved names or emptyMembership. Invalid entries warn and return nothing.
+        reserved names, emptyMembership or behaviors. A single role's behaviors
+        (words, aliases, pickers) may use only words it defines, and replace its
+        reserved aliases with the behaviors' alias and picker names. Invalid entries
+        warn and return nothing.
     .PARAMETER Name
         The role name (the key in roles.json).
     .PARAMETER Role
@@ -72,6 +75,12 @@ function ConvertTo-DFRoleRecord {
     # Index the collection itself: assigning it from an if-expression would
     # enumerate it into a plain array, and string indexing would then find nothing.
     $resProps = ${reserved}?.PSObject.Properties
+    # A role with behaviors derives its reserved aliases from them (its aliases and pickers).
+    $behaviors = ConvertTo-DFRoleBehaviors -Behaviors $props['behaviors']?.Value
+    $reservedAliases = [string[]]@(if ($null -ne $resProps) { $resProps['aliases']?.Value })
+    if ($behaviors.Value) {
+        $reservedAliases = [string[]]@(@($behaviors.Value.aliases.Keys) + @($behaviors.Value.pickers | ForEach-Object alias | Where-Object { $_ }))
+    }
     $record = [pscustomobject]@{
         name            = $Name
         kind            = $props['kind']?.Value
@@ -80,11 +89,12 @@ function ConvertTo-DFRoleRecord {
         emptyMembership = [bool]$props['emptyMembership']?.Value
         reserved        = [pscustomobject]@{
             env     = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
-            aliases = [string[]]@(if ($null -ne $resProps) { $resProps['aliases']?.Value })
+            aliases = $reservedAliases
             code    = [string[]]@(if ($null -ne $resProps) { $resProps['code']?.Value })
         }
         requires        = [string]$props['requires']?.Value
         description     = [string]$props['description']?.Value
+        behaviors       = $behaviors.Value
     }
 
     $problem = switch ($record.kind) {
@@ -94,11 +104,12 @@ function ConvertTo-DFRoleRecord {
             $pascal = -join ($Name -split '-' | Where-Object { $_ } | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() + $_.Substring(1) })
             $expected = "Initialize-DFRole$pascal"
             if ($record.hook -cne $expected) { "hook '$($record.hook)' must be $expected" }
+            elseif ($behaviors.Problem) { $behaviors.Problem }
         }
         'category' {
-            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or
+            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or
                 $record.reserved.env.Count -or $record.reserved.aliases.Count -or $record.reserved.code.Count) {
-                'a category role cannot declare a hook, exclusive, emptyMembership or reserved names'
+                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors or reserved names'
             }
         }
         default { "unknown kind '$($record.kind)' (expected single or category)" }
@@ -108,4 +119,34 @@ function ConvertTo-DFRoleRecord {
         return
     }
     $record
+}
+
+function ConvertTo-DFRoleBehaviors {
+    <#
+    .SYNOPSIS
+        Normalizes a role's behaviors block: words, aliases (name -> words) and pickers (list as words).
+    .DESCRIPTION
+        Returns a Value of $null when the role has none. A problem (a word used but
+        not defined) is returned as a string for ConvertTo-DFRoleRecord to report.
+    .PARAMETER Behaviors
+        The parsed behaviors object.
+    .OUTPUTS
+        pscustomobject { Value; Problem }.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$Behaviors)
+    if ($null -eq $Behaviors) { return [pscustomobject]@{ Value = $null; Problem = $null } }
+    $words = [string[]]@($Behaviors.PSObject.Properties['words']?.Value.PSObject.Properties | ForEach-Object Name)
+    $aliases = [ordered]@{}
+    foreach ($alias in @($Behaviors.PSObject.Properties['aliases']?.Value.PSObject.Properties)) {
+        if ($alias) { $aliases[$alias.Name] = [string[]]@($alias.Value) }
+    }
+    $pickers = @($Behaviors.PSObject.Properties['pickers']?.Value | Where-Object { $_ })
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) })
+    $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
+    $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
+    [pscustomobject]@{
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers }
+        Problem = $problem
+    }
 }
