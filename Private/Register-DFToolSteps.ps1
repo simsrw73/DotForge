@@ -249,6 +249,7 @@ function Invoke-DFToolRegistration {
 
     # Notes about values kept over this tool's own are rebuilt by every registration.
     Clear-DFEnvKeptNote -Tool $Tool.name
+    Clear-DFToolNote -Tool $Tool.name
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands

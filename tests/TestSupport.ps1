@@ -57,6 +57,7 @@ function Reset-DFTestSession {
     $script:DFSessionStarted = $false
     $script:DFSessionThemes = @{}
     $global:DFEnvState = $null
+    $script:DFToolNotes = @{}
 }
 
 function Get-DFTestToolRecord {
