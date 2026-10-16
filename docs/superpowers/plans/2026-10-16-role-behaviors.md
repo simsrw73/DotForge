@@ -401,7 +401,7 @@ In `Invoke-DFSessionActivation.ps1`, the Active status line becomes:
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name))
 ```
 
-If `Reset-DFTestSession` (`tests/TestSupport.ps1`) resets session state by name, add `$script:DFToolNotes = @{}` beside the env-state reset there.
+In `Reset-DFTestSession` (`tests/TestSupport.ps1`), add `$script:DFToolNotes = @{}` after `$global:DFEnvState = $null`.
 
 - [ ] **Step 4: Run to verify they pass**
 
