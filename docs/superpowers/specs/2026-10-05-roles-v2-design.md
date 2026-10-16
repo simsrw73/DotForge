@@ -340,3 +340,7 @@ each tool map it to its own flags; the role block's `aliases` is where that land
 - `Defaults` selects; priority decides otherwise; exclusive conflicts warn once per candidate set.
 - The contract tests in §6 pass and fail on a deliberately broken fixture.
 - Full suite green under Pester 6; reference regenerated; docs updated.
+
+## Addendum (2026-10-16): role behaviors
+
+A role can now define its aliases and pickers once, in words, with each member mapping the words to its own flags. `listing` is the first. See `2026-10-16-role-behaviors-design.md`.

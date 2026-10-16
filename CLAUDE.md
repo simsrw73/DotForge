@@ -237,6 +237,9 @@ Each `Tools/*.json` must have at minimum:
   in role blocks, and its reserved code only in the hook; `tests/Roles.Contract.Tests.ps1` enforces
   it. The legacy `role` string still loads. Read `docs/superpowers/specs/2026-10-05-roles-v2-design.md`
   before adding a role.
+  A role may define `behaviors` (words, aliases, pickers) in `data/roles.json`; its members then map
+  each word to their flags (`flags`) instead of writing the aliases, and the winner's are built from them
+  (`docs/superpowers/specs/2026-10-16-role-behaviors-design.md`).
 - `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
   Read a `requires`/`after` entry only through `ConvertFrom-DFToolReference`, and list a role's members
   among records only through `Get-DFRoleMember` (`Shared/DFToolReference.ps1`).

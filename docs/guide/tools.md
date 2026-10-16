@@ -72,7 +72,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | chezmoi | `cz`; `czf` picks a managed file and runs `chezmoi edit` on it |
 | choco | `cins`, `crm`, `cup` pickers; `Ctrl+G` `C` |
 | docker | `fdc` opens a shell in a running container; `fdi` outputs an image's `repo:tag` |
-| eza | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role); `ff` file picker |
+| eza | `ls`, `ll`, `la`, `tree` and the `ff` file picker, when it wins the `listing` role (see lsd) |
 | fd | `ffd` file picker |
 | fnm | `cd` also switches Node versions |
 | gh | `fpr` checks out a pull request; `fgi` opens an issue in the browser (both preview it) |
@@ -80,7 +80,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | gsudo | `sudo` → gsudo; `please` re-runs the last command elevated |
 | jq | `fjq` live jq playground: type a filter, see its output, Enter runs it |
 | lazygit | `lg` |
-| lsd | `ls`, `ll`, `la`, `tree` (when it wins the `listing` role; see [roles](configuration.md#choose-a-tool-for-each-role)) |
+| lsd | When it wins the `listing` role ([roles](configuration.md#choose-a-tool-for-each-role)), the same commands as eza: `ls` (names, directories first), `ll` (long, with git status), `la` (`ll` plus hidden entries), `tree`, and `ff` (pick a file, outputs its path) |
 | npm | `nls` → `npm list -g --depth=0`; `fns` runs a `package.json` script with the project's manager |
 | oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |

@@ -216,9 +216,9 @@ A role is a job several tools can do, such as `prompt` or `pager`. The roles and
 
 ```json
 "roles": {
-  "listing": {
+  "pager": {
     "priority": 20,
-    "aliases": { "ls": { "command": "eza", "args": ["--group-directories-first"] } }
+    "env": { "PAGER": "moor" }
   }
 }
 ```
@@ -229,6 +229,24 @@ A role is a job several tools can do, such as `prompt` or `pager`. The roles and
 - Code a role reserves (for example `Invoke-Expression` for prompt engines) may run only inside that hook.
 - In a role block's `env`, `${DF_TOOL_EXE}` becomes the full path of your tool's executable (forward slashes, quoted if it has a space), skipping `executableExclude` locations; with no other copy, it's the bare name. less uses it so `PAGER` names the native build.
 - A *category* role (such as `grep`) takes an empty block: `"grep": {}`.
+
+Some roles define their aliases and pickers themselves, in words: `listing` defines
+`ls`, `ll`, `la`, `tree` and the `ff` picker. Join one by mapping each of its words to
+your tool's flags in a `flags` block; `[]` means your tool does that by default:
+
+```json
+"roles": { "listing": { "priority": 5, "flags": {
+  "color": ["--color=auto"], "color-always": ["--color=always"],
+  "icons": ["--icon=auto"], "icons-always": ["--icon=always"],
+  "dirs-first": ["--group-directories-first"], "literal": ["--literal"],
+  "long": ["--long"], "all": ["--all"], "git": ["--git"],
+  "tree": ["--tree"], "one-per-line": ["-1"]
+} } }
+```
+
+`data/roles.json` lists each role's words and what they mean. Don't write the role's
+aliases yourself: they're ignored. If your tool lacks a word, the aliases that use it
+are built without it, and `Get-DFToolStatus <tool>` says which.
 
 starship's companion is a complete example:
 

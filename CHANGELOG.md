@@ -6,6 +6,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **lsd's `ll` and `la` now mean what eza's do.** `ll` is a long listing without hidden
+  entries (it had `--all` and `--header`); `la` is `ll` with hidden entries (it was a
+  short listing).
 - **Breaking:** `Resolve-DFGlowStyle` and `$global:DFGlowStyle` are gone. Switch glow's style with
   `Set-DFToolTheme glow <style>`; the style is still set by `GlowTheme`/`Theme`.
 - **Your own environment values win.** A variable a tool's `env` or `xdg.vars` sets (`LESS`, `FZF_*`,
@@ -21,6 +24,10 @@ All notable changes to DotForge are documented here.
   name is a schema error that names the new one. DotForge's own managers are renamed.
 
 ### Added
+
+- **Roles describe their aliases once.** A role can define its aliases and pickers in words, and
+  each member maps the words to its own flags. `listing` does this, so `ls`, `ll`, `la`, `tree` and
+  `ff` mean the same with eza or lsd, and `ff` now works with lsd too.
 
 - **Tab completion for 13 more tools.** Carapace specs for bw, broot, gsudo, is (inshellisense),
   less, lsd, moor, ov, pymanager and smartctl (bw, less and lsd completed before only with

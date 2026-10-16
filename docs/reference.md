@@ -2449,13 +2449,13 @@ Provides a JavaScript runtime on PATH (node, bun). Tools that need one declare r
 
 ### listing role
 
-Lists directory contents. The winner defines ls, ll, la and tree.
+Lists directory contents. The winner defines ls, ll, la, tree and ff.
 
 | | |
 | --- | --- |
 | Kind | single |
 | Members | [eza](#eza-tool), [lsd](#lsd-tool) |
-| Only the winner sets | `ls`, `ll`, `la`, `tree` |
+| Only the winner sets | `ls`, `ll`, `la`, `tree`, `ff` |
 
 ### markdown-viewer role
 
@@ -2770,9 +2770,9 @@ Modern ls replacement with icons, Git integration, and color
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `eza`<br>winget: `eza-community.eza`<br>choco: `eza` |
 | XDG method | `default` |
-| Picker | `ff` (Select-File): lists `eza --icons -1 --color=always --no-quotes`; Enter outputs the selection |
 | Roles | [`listing`](#listing-role) |
-| Aliases, as the listing tool | `ls` → `eza --color=auto --icons=auto --group-directories-first --no-quotes`<br>`ll` → `eza --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`la` → `eza --all --long --group-directories-first --icons=auto --color=auto --git --no-quotes`<br>`tree` → `eza --tree --no-quotes` |
+| Picker, as the listing tool | `ff` (Select-File): lists `eza -1 --icons=always --color=always --no-quotes` |
+| Aliases, as the listing tool | `ls` → `eza --color=auto --icons=auto --group-directories-first --no-quotes`<br>`ll` → `eza --long --color=auto --icons=auto --group-directories-first --git --no-quotes`<br>`la` → `eza --long --all --color=auto --icons=auto --group-directories-first --git --no-quotes`<br>`tree` → `eza --tree --no-quotes` |
 
 ### fastfetch tool
 
@@ -2947,7 +2947,8 @@ Modern ls replacement with colors, icons, and tree view
 | XDG method | `wrapper` |
 | Wraps | `lsd` adds `--config-file {file}` when `${XDG_CONFIG_HOME}/lsd/config.yaml` exists |
 | Roles | [`listing`](#listing-role) |
-| Aliases, as the listing tool | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --all --long --header --literal`<br>`la` → `lsd --all --literal`<br>`tree` → `lsd --tree --literal` |
+| Picker, as the listing tool | `ff` (Select-File): lists `lsd -1 --icon=always --color=always --literal` |
+| Aliases, as the listing tool | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --long --color=auto --icon=auto --group-directories-first --git --literal`<br>`la` → `lsd --long --all --color=auto --icon=auto --group-directories-first --git --literal`<br>`tree` → `lsd --tree --literal` |
 
 ### mdcat tool
 

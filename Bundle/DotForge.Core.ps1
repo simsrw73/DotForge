@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 136418f37e9e29d57578cb3e5db73de5359d7ecfb2ce99075f31038adf803903
+# sources-sha256: f4fc02d23c0878d123b307ccc7e783894c53d888bbac2f808374a54226198d20
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1215,6 +1215,7 @@ function ConvertTo-DFRoleMap {
                 optIn    = [bool](Get-DFToolRecordProperty $role.Value 'optIn' $false)
                 aliases  = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $role.Value 'aliases' $null)
                 env      = Get-DFToolRecordProperty $role.Value 'env' $null
+                flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
                 legacy   = $false
             }
         }
@@ -1225,7 +1226,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; legacy = $true }
     }
 
     [pscustomobject]$roles
@@ -1503,6 +1504,23 @@ function ConvertTo-DFToolRecord {
         }
     }
     [pscustomobject]$record
+}
+
+function ConvertTo-DFRoleFlags {
+    <#
+    .SYNOPSIS
+        Normalizes a role block's flags: word -> string array ($null when absent).
+    .PARAMETER Flags
+        The parsed flags object.
+    .OUTPUTS
+        PSCustomObject, or $null.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$Flags)
+    if ($Flags -isnot [pscustomobject]) { return $null }
+    $map = [ordered]@{}
+    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = [string[]]@($p.Value) }
+    [pscustomobject]$map
 }
 
 # ---- Shared/Invoke-DFBoundedProcess.ps1
@@ -1948,6 +1966,11 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
         foreach ($r in $roles.PSObject.Properties) {
             $v = Get-DFSchemaProperty $r.Value 'aliases'; if ($null -ne $v) { Get-DFAliasesSchemaError $v "roles.$($r.Name).aliases" }
             $v = Get-DFSchemaProperty $r.Value 'env';     if ($null -ne $v) { Get-DFMapSchemaError $v "roles.$($r.Name).env" }
+            $v = Get-DFSchemaProperty $r.Value 'flags'
+            if ($null -ne $v -and ($v -isnot [pscustomobject] -or @($v.PSObject.Properties | Where-Object {
+                    $_.Value -isnot [array] -or @($_.Value | Where-Object { $_ -isnot [string] }).Count }).Count)) {
+                "roles.$($r.Name).flags must map words to arrays of strings"
+            }
         }
     }
 }
@@ -2155,7 +2178,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))
@@ -3086,6 +3109,57 @@ function Assert-DFSessionConfigured {
         "(including SkipSetup, DotenvSafeMode and DotenvApprovedDirs). Pass it explicitly: Start-DFSession -Config `$DFConfig")
 }
 
+# ---- Private/DFToolNote.ps1
+#Requires -Version 7.2
+
+$script:DFToolNotes = @{}
+
+function Add-DFToolNote {
+    <#
+    .SYNOPSIS
+        Records a note for a tool's status (e.g. a role flag it lacks); a repeated note is kept once.
+    .PARAMETER Tool
+        The tool name.
+    .PARAMETER Note
+        The note.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Tool, [Parameter(Mandatory)][string]$Note)
+    if (-not $script:DFToolNotes.ContainsKey($Tool)) { $script:DFToolNotes[$Tool] = [System.Collections.Generic.List[string]]::new() }
+    if (-not $script:DFToolNotes[$Tool].Contains($Note)) { $script:DFToolNotes[$Tool].Add($Note) }
+}
+
+function Get-DFToolNote {
+    <#
+    .SYNOPSIS
+        Returns a tool's status notes, in the order they were added.
+    .PARAMETER Tool
+        The tool name.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Tool)
+    if ($script:DFToolNotes.ContainsKey($Tool)) { [string[]]@($script:DFToolNotes[$Tool]) }
+}
+
+function Clear-DFToolNote {
+    <#
+    .SYNOPSIS
+        Forgets a tool's status notes; each registration of the tool starts with this.
+    .PARAMETER Tool
+        The tool name.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Tool)
+    $script:DFToolNotes.Remove($Tool)
+}
+
 # ---- Private/Find-DFToolSource.ps1
 #Requires -Version 7.2
 
@@ -3579,6 +3653,127 @@ function Get-DFGroupDb {
     $db
 }
 
+# ---- Private/Get-DFRoleBehavior.ps1
+#Requires -Version 7.2
+
+function Resolve-DFRoleWords {
+    <#
+    .SYNOPSIS
+        A won role's words as the winner's arguments; missing words are returned, not thrown.
+    .PARAMETER Words
+        The words, in the order their flags go.
+    .PARAMETER Flags
+        The winner's role block flags (word -> string array).
+    .OUTPUTS
+        pscustomobject { Args = [string[]]; Missing = [string[]] }.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][string[]]$Words, [AllowNull()][object]$Flags)
+    $argList = [System.Collections.Generic.List[string]]::new()
+    $missing = [System.Collections.Generic.List[string]]::new()
+    foreach ($word in $Words) {
+        $mapped = if ($Flags) { $Flags.PSObject.Properties[$word] }
+        if ($mapped) { foreach ($a in @($mapped.Value)) { if ($a) { $argList.Add($a) } } } else { $missing.Add($word) }
+    }
+    [pscustomobject]@{ Args = [string[]]$argList.ToArray(); Missing = [string[]]$missing.ToArray() }
+}
+
+function Add-DFRoleMissingWordNote {
+    <#
+    .SYNOPSIS
+        Notes, once per word, the role words a tool has no flag for, naming the aliases and pickers that use them.
+    .PARAMETER Tool
+        The tool record.
+    .PARAMETER Role
+        The role name.
+    .PARAMETER Missing
+        Word -> names of the aliases or pickers that use it.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Tool,
+        [Parameter(Mandatory)][string]$Role,
+        [Parameter(Mandatory)][System.Collections.Specialized.OrderedDictionary]$Missing
+    )
+    foreach ($word in $Missing.Keys) {
+        Add-DFToolNote -Tool $Tool.name -Note "$Role`: no flag for '$word' ($(@($Missing[$word]) -join ', '))"
+    }
+}
+
+function Get-DFRoleBehaviorAlias {
+    <#
+    .SYNOPSIS
+        Builds a won role's aliases from the winner's flags.
+    .DESCRIPTION
+        Each alias the role's behaviors define runs the winner's executable (its file
+        name without extension) with each word's flags, in the role's order. A word the
+        winner doesn't map is left out and noted in the tool's status.
+    .PARAMETER RoleDefinition
+        The role record (Get-DFRoleDb), with behaviors.
+    .PARAMETER Block
+        The winner's normalized block for the role (flags).
+    .PARAMETER Tool
+        The winner's tool record.
+    .OUTPUTS
+        PSCustomObject: alias name -> { command; args }.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Block,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
+    $aliases = [ordered]@{}
+    $missing = [ordered]@{}
+    foreach ($name in $RoleDefinition.behaviors.aliases.Keys) {
+        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags
+        $aliases[$name] = [pscustomobject]@{ command = $command; args = $resolved.Args }
+        foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
+    }
+    if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
+    [pscustomobject]$aliases
+}
+
+function Get-DFRolePicker {
+    <#
+    .SYNOPSIS
+        Builds a won role's pickers, with each list command made from the winner's flags.
+    .DESCRIPTION
+        Returns copies of the role's pickers whose list is "<executable> <flags>"; every
+        other field (alias, function, preview, ...) is kept. A missing word is noted as for aliases.
+    .PARAMETER RoleDefinition
+        The role record, with behaviors.
+    .PARAMETER Block
+        The winner's normalized block for the role.
+    .PARAMETER Tool
+        The winner's tool record.
+    .OUTPUTS
+        PSCustomObject[]: declarative pickers for Set-DFPickerFunction.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Block,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
+    $missing = [ordered]@{}
+    $pickers = foreach ($picker in @($RoleDefinition.behaviors.pickers)) {
+        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags
+        foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
+        $copy = [ordered]@{}
+        foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
+        $copy['list'] = (@($command) + $resolved.Args) -join ' '
+        [pscustomobject]$copy
+    }
+    if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
+    @($pickers)
+}
+
 # ---- Private/Get-DFRoleDb.ps1
 #Requires -Version 7.2
 
@@ -3633,7 +3828,10 @@ function ConvertTo-DFRoleRecord {
         kind must be 'single' or 'category'. A single role needs a hook named
         Initialize-DFRole plus its name in PascalCase (project-env ->
         Initialize-DFRoleProjectEnv). A category role may not declare a hook, exclusive,
-        reserved names or emptyMembership. Invalid entries warn and return nothing.
+        reserved names, emptyMembership or behaviors. A single role's behaviors
+        (words, aliases, pickers) may use only words it defines, and replace its
+        reserved aliases with the behaviors' alias and picker names. Invalid entries
+        warn and return nothing.
     .PARAMETER Name
         The role name (the key in roles.json).
     .PARAMETER Role
@@ -3654,6 +3852,12 @@ function ConvertTo-DFRoleRecord {
     # Index the collection itself: assigning it from an if-expression would
     # enumerate it into a plain array, and string indexing would then find nothing.
     $resProps = ${reserved}?.PSObject.Properties
+    # A role with behaviors derives its reserved aliases from them (its aliases and pickers).
+    $behaviors = ConvertTo-DFRoleBehaviors -Behaviors $props['behaviors']?.Value
+    $reservedAliases = [string[]]@(if ($null -ne $resProps) { $resProps['aliases']?.Value })
+    if ($behaviors.Value) {
+        $reservedAliases = [string[]]@(@($behaviors.Value.aliases.Keys) + @($behaviors.Value.pickers | ForEach-Object alias | Where-Object { $_ }))
+    }
     $record = [pscustomobject]@{
         name            = $Name
         kind            = $props['kind']?.Value
@@ -3662,11 +3866,12 @@ function ConvertTo-DFRoleRecord {
         emptyMembership = [bool]$props['emptyMembership']?.Value
         reserved        = [pscustomobject]@{
             env     = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
-            aliases = [string[]]@(if ($null -ne $resProps) { $resProps['aliases']?.Value })
+            aliases = $reservedAliases
             code    = [string[]]@(if ($null -ne $resProps) { $resProps['code']?.Value })
         }
         requires        = [string]$props['requires']?.Value
         description     = [string]$props['description']?.Value
+        behaviors       = $behaviors.Value
     }
 
     $problem = switch ($record.kind) {
@@ -3676,11 +3881,12 @@ function ConvertTo-DFRoleRecord {
             $pascal = -join ($Name -split '-' | Where-Object { $_ } | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() + $_.Substring(1) })
             $expected = "Initialize-DFRole$pascal"
             if ($record.hook -cne $expected) { "hook '$($record.hook)' must be $expected" }
+            elseif ($behaviors.Problem) { $behaviors.Problem }
         }
         'category' {
-            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or
+            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or
                 $record.reserved.env.Count -or $record.reserved.aliases.Count -or $record.reserved.code.Count) {
-                'a category role cannot declare a hook, exclusive, emptyMembership or reserved names'
+                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors or reserved names'
             }
         }
         default { "unknown kind '$($record.kind)' (expected single or category)" }
@@ -3690,6 +3896,36 @@ function ConvertTo-DFRoleRecord {
         return
     }
     $record
+}
+
+function ConvertTo-DFRoleBehaviors {
+    <#
+    .SYNOPSIS
+        Normalizes a role's behaviors block: words, aliases (name -> words) and pickers (list as words).
+    .DESCRIPTION
+        Returns a Value of $null when the role has none. A problem (a word used but
+        not defined) is returned as a string for ConvertTo-DFRoleRecord to report.
+    .PARAMETER Behaviors
+        The parsed behaviors object.
+    .OUTPUTS
+        pscustomobject { Value; Problem }.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$Behaviors)
+    if ($null -eq $Behaviors) { return [pscustomobject]@{ Value = $null; Problem = $null } }
+    $words = [string[]]@($Behaviors.PSObject.Properties['words']?.Value.PSObject.Properties | ForEach-Object Name)
+    $aliases = [ordered]@{}
+    foreach ($alias in @($Behaviors.PSObject.Properties['aliases']?.Value.PSObject.Properties)) {
+        if ($alias) { $aliases[$alias.Name] = [string[]]@($alias.Value) }
+    }
+    $pickers = @($Behaviors.PSObject.Properties['pickers']?.Value | Where-Object { $_ })
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) })
+    $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
+    $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
+    [pscustomobject]@{
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers }
+        Problem = $problem
+    }
 }
 
 # ---- Private/Get-DFToolDependent.ps1
@@ -4808,7 +5044,7 @@ function Invoke-DFSessionActivation {
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(Get-DFEnvKeptNote -Tool $tool.name)
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name))
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }
@@ -6364,7 +6600,9 @@ function Invoke-DFToolRegistration {
         The per-tool body of Register-DFTool. For each role the tool won, its role
         block's env (through Set-DFEnv) and aliases are applied before the
         companion runs, and its role hook is called right after it (by
-        Invoke-DFToolCompanion). Roles it lost are skipped entirely. Anything a
+        Invoke-DFToolCompanion). For a role with behaviors, its aliases and
+        pickers are built from the winner's flags (Get-DFRoleBehaviorAlias,
+        Get-DFRolePicker). Roles it lost are skipped entirely. Anything a
         companion writes to the output stream passes through to the caller.
     .PARAMETER Tool
         The normalized tool record.
@@ -6387,6 +6625,7 @@ function Invoke-DFToolRegistration {
 
     # Notes about values kept over this tool's own are rebuilt by every registration.
     Clear-DFEnvKeptNote -Tool $Tool.name
+    Clear-DFToolNote -Tool $Tool.name
     Set-DFToolXdgConfig -Tool $Tool
 
     # Non-XDG settings apply regardless of xdg.method. Expand-DFXdgPath expands
@@ -6427,10 +6666,33 @@ function Invoke-DFToolRegistration {
     Register-DFToolAliases -Tool $Tool -Aliases $topAliases
     New-DFToolPickerFunction -Tool $Tool
 
+    $wonRoles = @(Invoke-DFWonRoles -Tool $Tool -Context $Context)
+
+    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
+}
+
+function Invoke-DFWonRoles {
+    <#
+    .SYNOPSIS
+        Applies the roles a tool won: each role block's env and aliases, or for a role with behaviors the aliases and pickers built from the winner's flags.
+    .PARAMETER Tool
+        The normalized tool record.
+    .PARAMETER Context
+        The activation context (RoleWinners, RoleDb).
+    .OUTPUTS
+        One { Role; Hook; HookRequired } per won role, for Invoke-DFToolCompanion.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Tool,
+        [Parameter(Mandatory)][PSCustomObject]$Context
+    )
+    $RoleWinners = $Context.RoleWinners
+    $RoleDb = $Context.RoleDb
     # Enumerate properties rather than .Name: on a tool with no roles,
     # member enumeration would yield a single $null.
     $roleNames = @(foreach ($rp in $Tool.roles.PSObject.Properties) { $rp.Name }) | Sort-Object
-    $wonRoles = foreach ($roleName in $roleNames) {
+    foreach ($roleName in $roleNames) {
         $won = $RoleWinners[$roleName]
         if (-not $won -or $won.Winner -ne $Tool.name) { continue }
         $block = $Tool.roles.$roleName
@@ -6444,17 +6706,26 @@ function Invoke-DFToolRegistration {
                 Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $value) -Tool $Tool.name -ExplicitReason $explicit
             }
         }
-        if ($block.aliases) { Register-DFToolAliases -Tool $Tool -Aliases $block.aliases }
+        $roleDefinition = $RoleDb[$roleName]
+        $behaviors = $roleDefinition.behaviors
+        if ($behaviors) {
+            # The role defines its aliases and pickers in words; the winner's flags fill them in.
+            if (Test-DFHasEntries $block.aliases) {
+                Write-Verbose "DotForge: $($Tool.name)'s own aliases for '$roleName' are ignored; the role defines them (behaviors)."
+            }
+            Register-DFToolAliases -Tool $Tool -Aliases (Get-DFRoleBehaviorAlias -RoleDefinition $roleDefinition -Block $block -Tool $Tool)
+            foreach ($picker in Get-DFRolePicker -RoleDefinition $roleDefinition -Block $block -Tool $Tool) { Set-DFPickerFunction -Picker $picker }
+        } elseif ($block.aliases) {
+            Register-DFToolAliases -Tool $Tool -Aliases $block.aliases
+        }
         [pscustomobject]@{
             Role         = $roleName
-            Hook         = $RoleDb[$roleName].hook
+            Hook         = $roleDefinition.hook
             # An empty {} block is still an object, so count what it holds.
-            HookRequired = -not ((Test-DFHasEntries $block.env) -or (Test-DFHasEntries $block.aliases) -or
-                $block.legacy -or $RoleDb[$roleName].emptyMembership)
+            HookRequired = -not ($behaviors -or (Test-DFHasEntries $block.env) -or (Test-DFHasEntries $block.aliases) -or
+                $block.legacy -or $roleDefinition.emptyMembership)
         }
     }
-
-    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
 }
 
 function Write-DFConflictNotice {
@@ -7750,7 +8021,8 @@ function Get-DFCommandConflict {
     #     and exported by the module manifest (AliasesToExport), so the module owns
     #     them and (Get-Module DotForge).ExportedAliases contains them.
     #  2. Tool aliases and picker aliases (cat, ls, ff, ...) — created by
-    #     Register-DFTool from the tool database.
+    #     Register-DFTool from the tool database and, for roles with behaviors,
+    #     from data/roles.json.
     $owned = [System.Collections.Generic.List[string]]::new()
 
     # Cached: this runs from Register-DFTool at profile load, and re-parsing the
@@ -7773,17 +8045,22 @@ function Get-DFCommandConflict {
         if ($ToolsPath) { $dbParams['ToolsPath'] = $ToolsPath }
         @((Import-DFToolDb @dbParams -ErrorAction Ignore).Values)
     }
+    $roleDb = Get-DFRoleDb
     foreach ($tool in $checked) {
         if (-not $tool) { continue }
         if ($tool.aliases) {
             $owned.AddRange([string[]]@($tool.aliases.PSObject.Properties.Name))
         }
         # A role's aliases (ls, ll, ...) are defined only by the role's winner,
-        # but any member may win, so all of them can be shadowed.
+        # but any member may win, so all of them can be shadowed. A role with
+        # behaviors builds its aliases and pickers itself; Get-DFRoleDb lists
+        # their names in reserved.aliases.
         foreach ($role in $tool.roles.PSObject.Properties) {
             if ($role.Value.aliases) {
                 $owned.AddRange([string[]]@($role.Value.aliases.PSObject.Properties.Name))
             }
+            $definition = $roleDb[$role.Name]
+            if ($definition -and $definition.behaviors) { $owned.AddRange([string[]]@($definition.reserved.aliases)) }
         }
         foreach ($picker in @($tool.picker)) {
             if ($picker -is [PSCustomObject] -and $picker.alias) { $owned.Add([string]$picker.alias) }
