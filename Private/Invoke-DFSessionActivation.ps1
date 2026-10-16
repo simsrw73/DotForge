@@ -109,6 +109,8 @@ function Invoke-DFSessionActivation {
         Complete-DFToolOwnership -State $owned.State
     }
 
+    # A role nothing in the session fills may name a fallback (pager: more).
+    Set-DFRoleFallback -RoleDb $roleDb -RoleWinners $winners -SessionTools @($script:DFSessionToolDb.Values) | Out-Null
     Add-DFRoleOutcomeStatus -RoleWinners $winners
 
     # Install hints are built later, when the status is read (Add-DFInstallHint).

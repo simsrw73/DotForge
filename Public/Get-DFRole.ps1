@@ -34,7 +34,7 @@ function Get-DFRole {
 
         Shows whether a pager variable you set outside DotForge is overriding the pager role's winner.
     .OUTPUTS
-        DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Overridden.
+        DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Fallback (what the role falls back to when nothing wins), Overridden.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>
@@ -87,6 +87,12 @@ function Get-DFRole {
             Candidates  = [string[]]@($candidates)
             Winner      = ${w}?.Winner
             Reason      = ${w}?.Reason
+            # With no winner, what the role falls back to (pager: PAGER = more).
+            Fallback    = if (-not $w -and $role.fallback) {
+                $map = [ordered]@{}
+                foreach ($v in $role.fallback.env.PSObject.Properties) { $map[$v.Name] = [string]$v.Value }
+                [pscustomobject]$map
+            }
             Overridden  = $overridden
         }
     }
