@@ -62,4 +62,21 @@ Describe 'Resolve-DFThemeFile' {
         Resolve-DFThemeFile -Tool fzf -Name 'nope' -BundledDir $script:bundled | Should -BeNullOrEmpty
         Resolve-DFThemeFile -Tool fzf -Name (Join-Path $TestDrive 'missing.json') -BundledDir $script:bundled | Should -BeNullOrEmpty
     }
+    # Some tools read a theme from a folder (eza's EZA_CONFIG_DIR holds theme.yml).
+    It 'finds a bundled theme folder named after the theme' {
+        $folder = Join-Path $script:bundled 'flavor'
+        New-Item -ItemType Directory -Path $folder -Force | Out-Null
+        Resolve-DFThemeFile -Tool fzf -Name flavor -BundledDir $script:bundled | Should -Be $folder
+    }
+    It 'prefers a theme folder in $XDG_CONFIG_HOME\<tool>\themes over a bundled one' {
+        New-Item -ItemType Directory -Path (Join-Path $script:bundled 'flavor') -Force | Out-Null
+        $user = Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'themes' 'flavor'
+        New-Item -ItemType Directory -Path $user -Force | Out-Null
+        Resolve-DFThemeFile -Tool fzf -Name flavor -BundledDir $script:bundled | Should -Be $user
+    }
+    It 'accepts an existing absolute folder path' {
+        $abs = Join-Path $TestDrive 'my-theme'
+        New-Item -ItemType Directory -Path $abs -Force | Out-Null
+        Resolve-DFThemeFile -Tool fzf -Name $abs -BundledDir $script:bundled | Should -Be $abs
+    }
 }

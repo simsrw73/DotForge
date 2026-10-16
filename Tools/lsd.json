@@ -14,10 +14,18 @@
     "native": {
       "${XDG_CONFIG_HOME}/lsd/config.yaml": ["${APPDATA}/lsd/config.yaml", "${HOME}/.config/lsd/config.yaml"]
     },
-    "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes it only when $XDG_CONFIG_HOME/lsd/config.yaml exists."
+    "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes each config only while it exists: the theme's (Tools/lsd/<theme>/config.yaml, which reads colors.yaml beside it), then $XDG_CONFIG_HOME/lsd/config.yaml. lsd uses the last --config-file whole, so your own config replaces the theme's."
   },
   "wrapper": {
-    "args": [ { "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml", "args": ["--config-file", "{file}"] } ]
+    "args": [
+      { "ifFile": "{theme}/config.yaml", "args": ["--config-file", "{file}"] },
+      { "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml", "args": ["--config-file", "{file}"] }
+    ]
+  },
+  "theme": {
+    "key": "LsdTheme",
+    "default": "catppuccin-mocha",
+    "files": "lsd"
   },
   "roles": {
     "listing": {

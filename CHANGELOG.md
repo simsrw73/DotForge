@@ -94,6 +94,10 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **eza's and lsd's dates, sizes and permissions ignored your theme** (eza's dates were a dark blue).
+  DotForge themed only file names (vivid's `LS_COLORS`). eza and lsd now get catppuccin's own themes for
+  the other columns (`EzaTheme`/`LsdTheme`, else `Theme`); a theme you set up yourself still wins.
+
 - **wget wouldn't run, and rg reported an error on every search, on a new setup:** DotForge pointed
   `WGETRC` and `RIPGREP_CONFIG_PATH` at files nothing created. Their one-time setup now seeds them
   (only when absent): a `ripgreprc` with `--smart-case`, `--hidden` and `--glob=!.git/`, and an

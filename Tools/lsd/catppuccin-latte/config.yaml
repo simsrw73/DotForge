@@ -1,0 +1,4 @@
+# lsd reads colors.yaml from the folder of the config it is given (--config-file).
+# DotForge passes this file only when you have no lsd config of your own.
+color:
+  theme: custom

@@ -2770,9 +2770,11 @@ Modern ls replacement with icons, Git integration, and color
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `eza`<br>winget: `eza-community.eza`<br>choco: `eza` |
 | XDG method | `default` |
+| Theme | key `EzaTheme`, default `catppuccin-mocha`; sets `EZA_CONFIG_DIR` = `{theme}` |
 | Roles | [`listing`](#listing-role) |
 | Picker, as the listing tool | `ff` (Select-File): lists `eza -1 --icons=always --color=always --no-quotes` |
 | Aliases, as the listing tool | `ls` → `eza --color=auto --icons=auto --group-directories-first --no-quotes`<br>`ll` → `eza --long --color=auto --icons=auto --group-directories-first --git --no-quotes`<br>`la` → `eza --long --all --color=auto --icons=auto --group-directories-first --git --no-quotes`<br>`tree` → `eza --tree --no-quotes` |
+| Companion | `Tools/eza.ps1` |
 
 ### fastfetch tool
 
@@ -2945,7 +2947,8 @@ Modern ls replacement with colors, icons, and tree view
 | Tags | `file`, `directory`, `ls` |
 | Install ids | scoop: `lsd`<br>winget: `lsd-rs.lsd`<br>choco: `lsd` |
 | XDG method | `wrapper` |
-| Wraps | `lsd` adds `--config-file {file}` when `${XDG_CONFIG_HOME}/lsd/config.yaml` exists |
+| Theme | key `LsdTheme`, default `catppuccin-mocha` |
+| Wraps | `lsd` adds `--config-file {file}` when `{theme}/config.yaml` exists, `--config-file {file}` when `${XDG_CONFIG_HOME}/lsd/config.yaml` exists |
 | Roles | [`listing`](#listing-role) |
 | Picker, as the listing tool | `ff` (Select-File): lists `lsd -1 --icon=always --color=always --literal` |
 | Aliases, as the listing tool | `ls` → `lsd --color=auto --icon=auto --group-directories-first --literal`<br>`ll` → `lsd --long --color=auto --icon=auto --group-directories-first --git --literal`<br>`la` → `lsd --long --all --color=auto --icon=auto --group-directories-first --git --literal`<br>`tree` → `lsd --tree --literal` |

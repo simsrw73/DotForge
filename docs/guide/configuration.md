@@ -40,7 +40,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `DeltaTheme`, `FzfTheme`, `GlowTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -55,7 +55,7 @@ DotForge reads the hashtable you pass to `Start-DFSession -Config`, so a change 
 
 ## Themes
 
-One `Theme` setting colors bat, delta, fzf, glow, mdcat, mdv, PSReadLine and directory listings (through vivid's `LS_COLORS`). DotForge translates the name into each tool's own spelling: `catppuccin-mocha` becomes bat's `Catppuccin Mocha` and mdv's `catppuccin`.
+One `Theme` setting colors bat, delta, fzf, glow, mdcat, mdv, PSReadLine and directory listings: file names through vivid's `LS_COLORS`, and the other columns of eza and lsd (dates, sizes, permissions) through their catppuccin themes. DotForge translates the name into each tool's own spelling: `catppuccin-mocha` becomes bat's `Catppuccin Mocha` and mdv's `catppuccin`.
 
 `catppuccin-mocha` is the only theme every one of these tools has. Any other name applies only in the tools that know it; the rest warn and keep their default. Use a per-tool key to fill the gaps.
 

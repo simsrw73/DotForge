@@ -24,6 +24,12 @@
       }
     }
   },
+  "theme": {
+    "key": "EzaTheme",
+    "default": "catppuccin-mocha",
+    "files": "eza",
+    "env": { "EZA_CONFIG_DIR": "{theme}" }
+  },
   "aliases": {},
   "picker": null
 }

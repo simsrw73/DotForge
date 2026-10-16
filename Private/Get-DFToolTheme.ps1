@@ -44,7 +44,8 @@ function Resolve-DFToolTheme {
         $bundled = Join-Path (Get-DFToolFolder -Tool $Tool -Default (Join-Path $PSScriptRoot '..' 'Tools')) $theme.files
         $value = Resolve-DFThemeFile -Tool $theme.files -Name $native -BundledDir $bundled
     }
-    if (-not $value) {
+    # A theme read only from files (no valid list of built-in names) is unset without one.
+    if (-not $value -and -not ($theme.files -and -not $theme.valid)) {
         if (-not $theme.valid -or $native -in $theme.valid) {
             $value = $native
         } else {

@@ -55,6 +55,14 @@ Describe 'Resolve-DFToolTheme' {
         $t = Resolve-DFToolTheme -Tool (New-ThemedTool @{ key = 'ThemedTheme'; default = 'nord'; files = 'themed' } (Join-Path $TestDrive 'tools'))
         $t.Value | Should -Be (Join-Path $Env:XDG_CONFIG_HOME 'themed' 'themes' 'nord.json')
     }
+    It 'leaves the value unset, without a warning, when files has no match and there is no valid list' {
+        # eza and lsd read their theme from a folder; a theme with no folder is no theme to pass.
+        $tool = New-ThemedTool @{ key = 'ThemedTheme'; default = 'dracula'; files = 'themed' } (Join-Path $TestDrive 'tools')
+        $t = Resolve-DFToolTheme -Tool $tool -WarningVariable w
+        $t.Value | Should -BeNullOrEmpty
+        $t.Name | Should -Be 'dracula'
+        "$w" | Should -BeNullOrEmpty
+    }
     It 'uses a valid built-in name when no file matches' {
         $t = Resolve-DFToolTheme -Tool (New-ThemedTool @{ key = 'ThemedTheme'; default = 'dark'; files = 'themed'; valid = @('dark'); fallback = 'auto' } (Join-Path $TestDrive 'tools'))
         $t.Value | Should -Be 'dark'

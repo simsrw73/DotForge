@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0168ca5f958ae4d9b98a065d03c4a14900b64c4a846fec327d0e49987d2d0172
+# sources-sha256: 98e858b7d5c4dc745a6b23ed17d8c65a45d89ade1f066fc61377af59164328d2
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3007,8 +3007,10 @@ $script:DFConfigKeys = [ordered]@{
     BannerClear        = 'Clear the screen before the banner; $false keeps scrollback'
     BatTheme           = 'bat theme'
     DeltaTheme         = 'delta theme'
+    EzaTheme           = 'eza theme (dates, sizes, permissions)'
     FzfTheme           = 'fzf theme'
     GlowTheme          = 'glow theme'
+    LsdTheme           = 'lsd theme (dates, sizes, permissions)'
     MdcatTheme         = 'mdcat theme'
     MdvTheme           = 'mdv theme'
     MoorTheme          = 'moor theme'
@@ -3461,8 +3463,9 @@ function Resolve-DFThemeFile {
     .SYNOPSIS
         Finds a tool's theme file: an absolute path, the user's themes folder, or the bundled copy.
     .DESCRIPTION
-        Looks, in order, for -Name as an existing absolute file path; then
-        <XDG config>\<Tool>\themes\<Name>.json; then <BundledDir>\<Name>.json.
+        Looks, in order, for -Name as an existing absolute path (file or folder);
+        then <XDG config>\<Tool>\themes\<Name>.json or the folder <Name> there;
+        then <BundledDir>\<Name>.json or the folder <BundledDir>\<Name>.
         Returns the first that exists, or $null. Used by the fzf, psreadline and
         glow companions, which capture it with ${function:Resolve-DFThemeFile}
         so their global functions can call it.
@@ -3483,10 +3486,14 @@ function Resolve-DFThemeFile {
         [Parameter(Mandatory)][string]$BundledDir
     )
     if ([System.IO.Path]::IsPathRooted($Name)) {
-        return (Test-Path $Name -PathType Leaf) ? $Name : $null
+        return (Test-Path $Name) ? $Name : $null
     }
-    foreach ($candidate in (Join-Path (Get-DFXdgPath Config) $Tool 'themes' "$Name.json"), (Join-Path $BundledDir "$Name.json")) {
-        if (Test-Path $candidate -PathType Leaf) { return $candidate }
+    # In each place a <Name>.json file, else a <Name> folder (for a tool that reads its theme from a folder).
+    foreach ($dir in (Join-Path (Get-DFXdgPath Config) $Tool 'themes'), $BundledDir) {
+        $file = Join-Path $dir "$Name.json"
+        if (Test-Path $file -PathType Leaf) { return $file }
+        $folder = Join-Path $dir $Name
+        if (Test-Path $folder -PathType Container) { return $folder }
     }
     $null
 }
@@ -4110,7 +4117,8 @@ function Resolve-DFToolTheme {
         $bundled = Join-Path (Get-DFToolFolder -Tool $Tool -Default (Join-Path $PSScriptRoot '..' 'Tools')) $theme.files
         $value = Resolve-DFThemeFile -Tool $theme.files -Name $native -BundledDir $bundled
     }
-    if (-not $value) {
+    # A theme read only from files (no valid list of built-in names) is unset without one.
+    if (-not $value -and -not ($theme.files -and -not $theme.valid)) {
         if (-not $theme.valid -or $native -in $theme.valid) {
             $value = $native
         } else {
@@ -6204,7 +6212,7 @@ function New-DFToolWrapper {
     .DESCRIPTION
         Builds the arguments on every call from wrapper.args: plain strings are
         always passed, an { ifFile, args } group only while its file exists
-        ({file} is that path; ifFile may use {settings.<name>} and ${XDG_*}),
+        ({file} is that path; ifFile may use {settings.<name>}, ${XDG_*} and {theme}),
         and {theme} is the session theme's value (Get-DFSessionThemeValue), so
         Set-DFToolTheme takes effect at once. Your own arguments follow. Piped
         input is passed through (without that branch, a function with no
@@ -6233,19 +6241,29 @@ function New-DFToolWrapper {
     $_dfToolName = $Tool.name
     $_dfInvoke = $Invoke
     $_dfThemeOf = ${function:Get-DFSessionThemeValue}
+    $_dfCanonical = ${function:ConvertTo-DFPath}
     $_dfGroups = @(foreach ($group in @($Tool.wrapper.args)) {
-        $file = if ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
+        # A {theme} path is only known per call (Set-DFToolTheme can change it), so it stays a template.
+        $file = if ($group.ifFile -and $group.ifFile.Contains('{theme}')) { $group.ifFile }
+                elseif ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
         if ($group.ifFile -and -not $file) { continue }   # its file can't be named: never pass the group
         [pscustomobject]@{
             IfFile = $file
-            Args   = [string[]]@(foreach ($arg in $group.args) { if ($file) { $arg.Replace('{file}', $file) } else { $arg } })
+            # A {theme} group fills {file} per call, once its path is known.
+            Args   = [string[]]@(foreach ($arg in $group.args) { if ($file -and -not $file.Contains('{theme}')) { $arg.Replace('{file}', $file) } else { $arg } })
         }
     })
     $name = [System.IO.Path]::GetFileNameWithoutExtension($_dfExe)
     $body = (Format-DFWrapperHelp -Tool $Tool -Name $name -Description $Description) + @'
+    $theme = [string](& $_dfThemeOf $_dfToolName)
     $declared = @(foreach ($group in $_dfGroups) {
-        if ($group.IfFile -and -not (Test-Path -LiteralPath $group.IfFile -PathType Leaf)) { continue }
-        foreach ($arg in $group.Args) { $arg.Replace('{theme}', [string](& $_dfThemeOf $_dfToolName)) }
+        $file = $group.IfFile
+        if ($file -and $file.Contains('{theme}')) {
+            if (-not $theme) { continue }
+            $file = & $_dfCanonical $file.Replace('{theme}', $theme)
+        }
+        if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        foreach ($arg in $group.Args) { $arg.Replace('{file}', [string]$file).Replace('{theme}', $theme) }
     })
     if ($MyInvocation.ExpectingInput) { $input | & $_dfExe @declared @args; return }
     if ($_dfInvoke) { & $_dfInvoke $_dfExe $declared $args $MyInvocation; return }

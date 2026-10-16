@@ -81,7 +81,7 @@ function New-DFToolWrapper {
     .DESCRIPTION
         Builds the arguments on every call from wrapper.args: plain strings are
         always passed, an { ifFile, args } group only while its file exists
-        ({file} is that path; ifFile may use {settings.<name>} and ${XDG_*}),
+        ({file} is that path; ifFile may use {settings.<name>}, ${XDG_*} and {theme}),
         and {theme} is the session theme's value (Get-DFSessionThemeValue), so
         Set-DFToolTheme takes effect at once. Your own arguments follow. Piped
         input is passed through (without that branch, a function with no
@@ -110,19 +110,29 @@ function New-DFToolWrapper {
     $_dfToolName = $Tool.name
     $_dfInvoke = $Invoke
     $_dfThemeOf = ${function:Get-DFSessionThemeValue}
+    $_dfCanonical = ${function:ConvertTo-DFPath}
     $_dfGroups = @(foreach ($group in @($Tool.wrapper.args)) {
-        $file = if ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
+        # A {theme} path is only known per call (Set-DFToolTheme can change it), so it stays a template.
+        $file = if ($group.ifFile -and $group.ifFile.Contains('{theme}')) { $group.ifFile }
+                elseif ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
         if ($group.ifFile -and -not $file) { continue }   # its file can't be named: never pass the group
         [pscustomobject]@{
             IfFile = $file
-            Args   = [string[]]@(foreach ($arg in $group.args) { if ($file) { $arg.Replace('{file}', $file) } else { $arg } })
+            # A {theme} group fills {file} per call, once its path is known.
+            Args   = [string[]]@(foreach ($arg in $group.args) { if ($file -and -not $file.Contains('{theme}')) { $arg.Replace('{file}', $file) } else { $arg } })
         }
     })
     $name = [System.IO.Path]::GetFileNameWithoutExtension($_dfExe)
     $body = (Format-DFWrapperHelp -Tool $Tool -Name $name -Description $Description) + @'
+    $theme = [string](& $_dfThemeOf $_dfToolName)
     $declared = @(foreach ($group in $_dfGroups) {
-        if ($group.IfFile -and -not (Test-Path -LiteralPath $group.IfFile -PathType Leaf)) { continue }
-        foreach ($arg in $group.Args) { $arg.Replace('{theme}', [string](& $_dfThemeOf $_dfToolName)) }
+        $file = $group.IfFile
+        if ($file -and $file.Contains('{theme}')) {
+            if (-not $theme) { continue }
+            $file = & $_dfCanonical $file.Replace('{theme}', $theme)
+        }
+        if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        foreach ($arg in $group.Args) { $arg.Replace('{file}', [string]$file).Replace('{theme}', $theme) }
     })
     if ($MyInvocation.ExpectingInput) { $input | & $_dfExe @declared @args; return }
     if ($_dfInvoke) { & $_dfInvoke $_dfExe $declared $args $MyInvocation; return }

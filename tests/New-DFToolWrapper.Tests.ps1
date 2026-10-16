@@ -61,6 +61,24 @@ Describe 'New-DFToolWrapper' {
         $script:DFSessionThemes.wrapped = [pscustomobject]@{ Value = 'dracula' }
         dfwrapped | Should -Be 'args=-s|dracula'
     }
+    It 'reads {theme} in ifFile on every call, passing the group only while that file exists' {
+        $one = Join-Path $TestDrive 'flavor-one'; $two = Join-Path $TestDrive 'flavor-two'
+        New-Item -ItemType Directory -Force $one, $two | Out-Null
+        Set-Content (Join-Path $one 'c.yaml') 'x'
+        $tool = New-WrappedTool @([pscustomobject]@{ ifFile = '{theme}/c.yaml'; args = @('-c', '{file}') }) -Theme @{ key = 'WrappedTheme' }
+        $script:DFSessionThemes = @{ wrapped = [pscustomobject]@{ Value = $one } }
+        New-DFToolWrapper -Tool $tool 3>$null -WarningVariable w
+        "$w" | Should -BeNullOrEmpty
+        dfwrapped | Should -Be "args=-c|$(Join-Path $one 'c.yaml')"
+        $script:DFSessionThemes.wrapped = [pscustomobject]@{ Value = $two }
+        dfwrapped | Should -Be 'args='
+    }
+    It 'omits a {theme} ifFile group while the session has no theme value' {
+        $tool = New-WrappedTool @('--a', [pscustomobject]@{ ifFile = '{theme}/c.yaml'; args = @('-c', '{file}') }) -Theme @{ key = 'WrappedTheme' }
+        $script:DFSessionThemes = @{ wrapped = [pscustomobject]@{ Value = $null } }
+        New-DFToolWrapper -Tool $tool 3>$null
+        dfwrapped | Should -Be 'args=--a'
+    }
     It 'keeps a theme value with spaces as one argument' {
         $tool = New-WrappedTool @('-s', '{theme}') -Theme @{ key = 'WrappedTheme' }
         $script:DFSessionThemes = @{ wrapped = [pscustomobject]@{ Value = 'Catppuccin Mocha' } }

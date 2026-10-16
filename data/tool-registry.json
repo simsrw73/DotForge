@@ -817,7 +817,7 @@
       }
     },
     "eza": {
-      "sha256": "3308bd24744b6a30b52dc366910ac890e6651c39a2a69e9b4c2185e016fd6778",
+      "sha256": "9a6eaeb6fde286c5e3e4ae7f36fff1b66a12a880e56d228d86d58990784be4d1",
       "record": {
         "name": "eza",
         "executable": "eza.exe",
@@ -891,7 +891,18 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "EzaTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "eza",
+          "valid": [],
+          "fallback": null,
+          "env": {
+            "EZA_CONFIG_DIR": "{theme}"
+          },
+          "command": null
+        },
         "wrapper": null,
         "settings": null,
         "executableExclude": [],
@@ -1722,7 +1733,7 @@
       }
     },
     "lsd": {
-      "sha256": "4af07980edc7179b7871f9e42f9d093f88998b0baf069c9393929878394ecc79",
+      "sha256": "183640bd46ccdfcf8b3d6d258f73b9189c73f7b6b935cccd0e830c71368c5e8b",
       "record": {
         "name": "lsd",
         "executable": "lsd.exe",
@@ -1742,7 +1753,7 @@
           "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes it only when $XDG_CONFIG_HOME/lsd/config.yaml exists.",
+          "instructions": "lsd's --config-file panics on a path that doesn't exist (verified lsd 1.2.0), so its wrapper passes each config only while it exists: the theme's (Tools/lsd/<theme>/config.yaml, which reads colors.yaml beside it), then $XDG_CONFIG_HOME/lsd/config.yaml. lsd uses the last --config-file whole, so your own config replaces the theme's.",
           "compliance": "none",
           "native": {
             "${XDG_CONFIG_HOME}/lsd/config.yaml": {
@@ -1806,9 +1817,25 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "LsdTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "lsd",
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null
+        },
         "wrapper": {
           "args": [
+            {
+              "ifFile": "{theme}/config.yaml",
+              "args": [
+                "--config-file",
+                "{file}"
+              ]
+            },
             {
               "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml",
               "args": [

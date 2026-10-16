@@ -38,8 +38,9 @@ function Resolve-DFThemeFile {
     .SYNOPSIS
         Finds a tool's theme file: an absolute path, the user's themes folder, or the bundled copy.
     .DESCRIPTION
-        Looks, in order, for -Name as an existing absolute file path; then
-        <XDG config>\<Tool>\themes\<Name>.json; then <BundledDir>\<Name>.json.
+        Looks, in order, for -Name as an existing absolute path (file or folder);
+        then <XDG config>\<Tool>\themes\<Name>.json or the folder <Name> there;
+        then <BundledDir>\<Name>.json or the folder <BundledDir>\<Name>.
         Returns the first that exists, or $null. Used by the fzf, psreadline and
         glow companions, which capture it with ${function:Resolve-DFThemeFile}
         so their global functions can call it.
@@ -60,10 +61,14 @@ function Resolve-DFThemeFile {
         [Parameter(Mandatory)][string]$BundledDir
     )
     if ([System.IO.Path]::IsPathRooted($Name)) {
-        return (Test-Path $Name -PathType Leaf) ? $Name : $null
+        return (Test-Path $Name) ? $Name : $null
     }
-    foreach ($candidate in (Join-Path (Get-DFXdgPath Config) $Tool 'themes' "$Name.json"), (Join-Path $BundledDir "$Name.json")) {
-        if (Test-Path $candidate -PathType Leaf) { return $candidate }
+    # In each place a <Name>.json file, else a <Name> folder (for a tool that reads its theme from a folder).
+    foreach ($dir in (Join-Path (Get-DFXdgPath Config) $Tool 'themes'), $BundledDir) {
+        $file = Join-Path $dir "$Name.json"
+        if (Test-Path $file -PathType Leaf) { return $file }
+        $folder = Join-Path $dir $Name
+        if (Test-Path $folder -PathType Container) { return $folder }
     }
     $null
 }
