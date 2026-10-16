@@ -131,3 +131,35 @@ Describe 'ConvertTo-DFRoleRecord behaviors' {
         ConvertTo-DFRoleRecord -Name 'grep' -Role $role 3>$null | Should -BeNullOrEmpty
     }
 }
+
+Describe 'ConvertTo-DFRoleRecord fallback and env behaviors' {
+    BeforeAll { function script:Read-Role([string]$Json) { $Json | ConvertFrom-Json } }
+
+    It 'reads a fallback of reserved env' {
+        $r = ConvertTo-DFRoleRecord -Name 'pager' -Role (Read-Role '{ "kind": "single", "hook": "Initialize-DFRolePager",
+            "reserved": { "env": ["PAGER"] }, "fallback": { "env": { "PAGER": "more" } } }')
+        $r.fallback.env.PAGER | Should -Be 'more'
+    }
+    It 'rejects a fallback that sets a variable the role does not reserve' {
+        $role = Read-Role '{ "kind": "single", "hook": "Initialize-DFRolePager", "reserved": { "env": ["PAGER"] },
+            "fallback": { "env": { "EDITOR": "notepad" } } }'
+        ConvertTo-DFRoleRecord -Name 'pager' -Role $role -WarningVariable w 3>$null | Should -BeNullOrEmpty
+        "$w" | Should -Match 'EDITOR'
+    }
+    It 'rejects a fallback on a category role' {
+        ConvertTo-DFRoleRecord -Name 'grep' -Role (Read-Role '{ "kind": "category", "fallback": { "env": { "X": "y" } } }') 3>$null |
+            Should -BeNullOrEmpty
+    }
+    It 'reads behaviors.env and reserves its variables' {
+        $r = ConvertTo-DFRoleRecord -Name 'pager' -Role (Read-Role '{ "kind": "single", "hook": "Initialize-DFRolePager",
+            "reserved": { "env": ["PAGER"] },
+            "behaviors": { "words": { "quit": "q", "color": "c" }, "env": { "PAGER": ["quit", "color"], "BAT_PAGER": ["quit"] } } }')
+        $r.behaviors.env['PAGER'] | Should -Be @('quit', 'color')
+        $r.reserved.env | Should -Be @('PAGER', 'BAT_PAGER')
+    }
+    It 'rejects behaviors.env that uses an undefined word' {
+        $role = Read-Role '{ "kind": "single", "hook": "Initialize-DFRolePager",
+            "behaviors": { "words": { "quit": "q" }, "env": { "PAGER": ["quit", "nope"] } } }'
+        ConvertTo-DFRoleRecord -Name 'pager' -Role $role 3>$null | Should -BeNullOrEmpty
+    }
+}

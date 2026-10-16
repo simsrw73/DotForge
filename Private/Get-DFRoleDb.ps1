@@ -81,6 +81,12 @@ function ConvertTo-DFRoleRecord {
     if ($behaviors.Value) {
         $reservedAliases = [string[]]@(@($behaviors.Value.aliases.Keys) + @($behaviors.Value.pickers | ForEach-Object alias | Where-Object { $_ }))
     }
+    # behaviors.env variables are the role's too.
+    $reservedEnv = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
+    if ($behaviors.Value -and $behaviors.Value.env.Count) {
+        $reservedEnv = [string[]]@(@($reservedEnv) + @($behaviors.Value.env.Keys) | Select-Object -Unique)
+    }
+    $fallback = $props['fallback']?.Value
     $record = [pscustomobject]@{
         name            = $Name
         kind            = $props['kind']?.Value
@@ -88,13 +94,14 @@ function ConvertTo-DFRoleRecord {
         hook            = $props['hook']?.Value
         emptyMembership = [bool]$props['emptyMembership']?.Value
         reserved        = [pscustomobject]@{
-            env     = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
+            env     = $reservedEnv
             aliases = $reservedAliases
             code    = [string[]]@(if ($null -ne $resProps) { $resProps['code']?.Value })
         }
         requires        = [string]$props['requires']?.Value
         description     = [string]$props['description']?.Value
         behaviors       = $behaviors.Value
+        fallback        = $fallback
     }
 
     $problem = switch ($record.kind) {
@@ -105,11 +112,15 @@ function ConvertTo-DFRoleRecord {
             $expected = "Initialize-DFRole$pascal"
             if ($record.hook -cne $expected) { "hook '$($record.hook)' must be $expected" }
             elseif ($behaviors.Problem) { $behaviors.Problem }
+            elseif ($fallback) {
+                $bad = @($fallback.PSObject.Properties['env']?.Value.PSObject.Properties | ForEach-Object Name | Where-Object { $_ -notin $reservedEnv })
+                if ($bad) { "fallback sets $($bad -join ', '), which the role does not reserve" }
+            }
         }
         'category' {
-            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or
+            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or $record.fallback -or
                 $record.reserved.env.Count -or $record.reserved.aliases.Count -or $record.reserved.code.Count) {
-                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors or reserved names'
+                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors, fallback or reserved names'
             }
         }
         default { "unknown kind '$($record.kind)' (expected single or category)" }
@@ -142,11 +153,15 @@ function ConvertTo-DFRoleBehaviors {
         if ($alias) { $aliases[$alias.Name] = [string[]]@($alias.Value) }
     }
     $pickers = @($Behaviors.PSObject.Properties['pickers']?.Value | Where-Object { $_ })
-    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) })
+    $env = [ordered]@{}
+    foreach ($var in @($Behaviors.PSObject.Properties['env']?.Value.PSObject.Properties)) {
+        if ($var) { $env[$var.Name] = [string[]]@($var.Value) }
+    }
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ })
     $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
     $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
     [pscustomobject]@{
-        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers }
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env }
         Problem = $problem
     }
 }
