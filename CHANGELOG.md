@@ -22,6 +22,10 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Declarative themes and wrappers.** A tool record can declare its theme (`theme`: config key,
+  default, name map, theme files, accepted names, the variables it sets) and an executable wrapper
+  (`wrapper`: arguments, ones passed only while a file exists). bat, mdcat, moor, delta and glow need
+  no theme code.
 - lsd reads `$XDG_CONFIG_HOME/lsd/config.yaml`: its wrapper passes `--config-file` only while that file exists (lsd panics on a missing path).
 - `Set-DFToolTheme <tool> <theme>` switches a tool's declared theme for the rest of the session.
 - **A startup banner:** `Start-DFSession -Config @{ ShowBanner = $true }` clears the screen and prints

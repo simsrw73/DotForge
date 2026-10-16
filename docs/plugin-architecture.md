@@ -114,7 +114,7 @@ regenerable indexes — never hand-edited core logic.**
   core code.
 - **Anti-pattern, avoided:** a central `data/theme-aliases.json` keyed by tool
   name. Adding a themed tool would mean editing a core data file. Replaced by an
-  optional per-tool `themeMap` block in each tool's own JSON (workstream C), read
+  optional per-tool `theme.map` block in each tool's own JSON (workstream C), read
   by `Resolve-DFThemeName` from the *target tool's* declaration — a tool whose
   dialect matches the canonical needs no declaration at all.
 - **Forbidden:** any `switch ($tool.name)` / `if ($tool.name -eq …)` branch in

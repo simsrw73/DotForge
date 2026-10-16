@@ -58,13 +58,15 @@ To keep the tool for yourself, put the file in your own tools folder instead: se
 | `install` | | `{ "prefer": ["winget", "scoop"] }`: this tool's preferred sources, for when one package is official or better maintained. Only sources in `packages`. The user's `InstallVia` still wins. |
 | `installs` | | Makes the tool a **package manager**; see [Package managers](#package-managers). |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
-| `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. |
+| `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. A value you set outside DotForge is kept (see [Your own environment values win](configuration.md#your-own-environment-values-win)). |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker, or a list of them; see below. |
 | `after` | | Tools (`"zoxide"`) or roles (`"role:version-manager"`) this one is registered after, when both are requested. Ordering only: it requests nothing. |
 | `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members; it never picks a member for the user, and never blocks. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
-| `themeMap` | | Shared theme name → this tool's own spelling, e.g. `{ "catppuccin-mocha": "Catppuccin Mocha" }`. |
+| `theme` | | The tool's theme: `{ "key": "BatTheme", "default": "catppuccin-mocha", "map": { … }, "env": { "BAT_THEME": "{theme}" } }`. Optional `files` (theme files in `Tools/<files>/` and `$XDG_CONFIG_HOME\<files>\themes`), `valid` + `fallback` (names the tool accepts, and what to use otherwise), `command` (for a theme your companion applies: the command that switches it). See [Themes and wrappers](#themes-and-wrappers). |
+| `wrapper` | | Runs the executable through a function that adds arguments: `{ "args": ["-s", "{theme}", { "ifFile": "${XDG_CONFIG_HOME}/x/config", "args": ["--config", "{file}"] }] }`. `custom: true` when your companion builds it with `New-DFToolWrapper -Invoke`. |
+| `themeMap` | | Legacy: use `theme.map`. Still read when `theme.map` is absent. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |
 | `prewarm` | | `false` stops DotForge pre-loading a module tool in the background. |
 | `setup` | | `{ "seed": { "<destination>": "<file under Tools/>" } }`: default config files copied once, in the one-time setup step (see below). |
@@ -174,8 +176,39 @@ When JSON isn't enough, add `Tools/<name>.ps1`. `Register-DFTool` dot-sources it
 - `$PSScriptRoot` is the `Tools\` folder, for bundled files in `Tools/<name>/`.
 - Define user-facing functions as `function global:Name` (or `Set-Item function:global:Name`) and aliases with `-Scope Global`, or they vanish when registration returns.
 - Give every global function complete comment-based help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER` for each parameter, `.EXAMPLE`, `.OUTPUTS`). `tests/Docs.Help.Tests.ps1` enforces it.
-- Read themes with `Get-DFConfiguredTheme -ToolKey '<Tool>Theme'`, then `Resolve-DFThemeName` with your `themeMap`.
+- Declare your theme in the record's `theme` block. If your companion applies it in code (a theme file
+  it converts, an API call), read the resolved theme with `Get-DFToolTheme -Tool $DFCurrentTool`
+  (`.Native` is the tool's own name, `.Value` the file or name to use) and set `theme.command`.
 - Anything that depends on another tool's undocumented behavior must fail quietly and be listed in [docs/external-dependencies.md](../external-dependencies.md).
+
+### Themes and wrappers
+
+Most tools need no theme code. bat takes its theme from a variable:
+
+```json
+"theme": {
+  "key": "BatTheme",
+  "default": "catppuccin-mocha",
+  "map": { "catppuccin-mocha": "Catppuccin Mocha" },
+  "env": { "BAT_THEME": "{theme}" }
+}
+```
+
+glow takes it as an argument, from a style file it ships in `Tools/glow/` or a name it knows:
+
+```json
+"theme": {
+  "key": "GlowTheme",
+  "default": "catppuccin-mocha",
+  "files": "glow",
+  "valid": ["auto", "dark", "light", "dracula", "pink", "notty", "ascii", "tokyo-night"],
+  "fallback": "auto"
+},
+"wrapper": { "args": ["-s", "{theme}"] }
+```
+
+The theme comes from the per-tool key (`BatTheme`), then the shared `Theme`, then `default`. An
+explicit per-tool key, or `Set-DFToolTheme <tool> <theme>`, overrides a variable set outside DotForge.
 
 ## Joining a role
 

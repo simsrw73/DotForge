@@ -42,8 +42,12 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
         $script:DFToolAvailability = @{}
         Set-DFTestXdg
         $script:SavedConfigDir  = $Env:GLOW_CONFIG_DIR
+        $script:SavedConfigHome = $Env:GLOW_CONFIG_HOME
 
+        # A GLOW_CONFIG_HOME inherited from the developer's own DotForge shell would be
+        # kept as set outside DotForge (Set-DFEnv), so the tests would see the real folder.
         $Env:GLOW_CONFIG_DIR    = $null
+        $Env:GLOW_CONFIG_HOME   = $null
 
         # TestDrive persists for the whole file's run, not per-It: without this,
         # a theme file written to the XDG user dir by one test (e.g. the "prefers
@@ -60,8 +64,9 @@ Describe 'glow tool sidecar' -Skip:(-not (Get-Command glow.exe -ErrorAction Igno
     }
 
     AfterEach {
-        $Env:GLOW_CONFIG_DIR = $script:SavedConfigDir
-        $script:DFToolDb     = $null
+        $Env:GLOW_CONFIG_DIR  = $script:SavedConfigDir
+        $Env:GLOW_CONFIG_HOME = $script:SavedConfigHome
+        $script:DFToolDb      = $null
 
         Set-DFTestConfig $null
         Remove-DFTestGlobal -Function 'glow', 'Read-MarkdownFile'

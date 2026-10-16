@@ -207,7 +207,7 @@ Each `Tools/*.json` must have at minimum:
   names in `Tools/<manager>.manage.ps1`), `batch`, `elevate`, `reactivate`, `feeds`. A list of blocks when it
   installs from several sources (uv); records always normalize to a list, read one with
   `Get-DFInstallBlock -Manager -Source`. Core never names a manager.
-- `xdg.method`: one of `default | env | wrapper | manual` (seed a default config file with `setup.seed`, not an xdg method)
+- `xdg.method`: one of `default | env | wrapper | manual` (`wrapper`: the `wrapper` block builds it; seed a default config file with `setup.seed`, not an xdg method)
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
 - `xdg.native`: the tool's own default locations for each relocated config, data or state path (keyed
   by the `xdg.vars` variable, seed target, or target template), so a user's existing config is never
@@ -216,16 +216,19 @@ Each `Tools/*.json` must have at minimum:
   false, guide }` for one DotForge must not move. `tests/ToolNative.Coverage.Tests.ps1` enforces it.
   Design: `docs/superpowers/specs/2026-10-11-config-ownership-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
-  settings (fzf options, `LESS`, theme names, …). Applied unconditionally by
-  `Register-DFTool` via `[Environment]::SetEnvironmentVariable(..., 'Process')` through
-  `Expand-DFXdgPath` (flag strings pass through; `${XDG_*}` still expands). Keep `xdg.vars`
-  for `${XDG_*}` path templates only.
-- `themeMap` (optional): a map of canonical theme family → this tool's native dialect (e.g.
-  `{ "catppuccin-mocha": "catppuccin" }`). Only needed when the tool's native name differs from
-  the canonical (per the plugin invariant — no central theme registry). Sidecars resolve the
-  configured theme with `Get-DFConfiguredTheme` (chain) then `Resolve-DFThemeName` (translate via
-  this map), then validate against their own built-in list. Shared `Theme` is
-  canonical-only; a per-tool `<Tool>Theme` accepts the canonical name or the tool's own natives.
+  settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass
+  through; `${XDG_*}` still expands) and written through `Set-DFEnv` (`Private/Set-DFEnv.ps1`):
+  a value set outside DotForge is kept and noted in the tool's status; an explicit config choice
+  overrides it with a warning. Keep `xdg.vars` for `${XDG_*}` path templates only.
+- `theme` (optional): `{ key, default, map, env, files, valid, fallback, command }`. Resolved per
+  tool key → `Theme` → `default`, translated by `map` (canonical family → native name; no central
+  theme registry), checked against `valid`/`fallback` or the theme `files`, then applied through
+  `env` (`{theme}` placeholder) or the wrapper. A companion that applies its theme in code reads
+  `Get-DFToolTheme -Tool $DFCurrentTool` and sets `command`. `Set-DFToolTheme` switches it live.
+  The legacy `themeMap` is still read when `theme.map` is absent.
+- `wrapper` (optional): `{ args, custom }`: a global function runs the executable with extra
+  arguments (`{theme}`; `{ ifFile, args }` groups passed only while the file exists, `{file}`).
+  `custom: true` when the companion builds it with `New-DFToolWrapper -Invoke`.
 - `roles` (optional): the roles this tool joins, an object keyed by role name; each value is
   `{ priority, env, aliases }` (`"grep": {}` for a category). Roles are defined in `data/roles.json`
   (keyed by role, never by tool). Only the role's winner (`Defaults`, else highest priority; a role is filled only by a requested tool)
