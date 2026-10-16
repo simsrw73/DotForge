@@ -19,9 +19,9 @@ function Enable-DFCarapaceInshellisenseBridge {
     #>
     [CmdletBinding()]
     param([string]$TabCompletionWinner)
-    $executable = Get-Command is -ErrorAction Ignore
-    if (-not $executable) { $executable = Get-Command inshellisense -ErrorAction Ignore }
-    if (-not $executable -or $TabCompletionWinner -eq 'inshellisense') { return $false }
+    # inshellisense's record names `is`; startup already probed it when inshellisense was requested.
+    $installed = (Test-DFToolAvailable -Executable 'is') -or (Test-DFToolAvailable -Executable 'inshellisense')
+    if (-not $installed -or $TabCompletionWinner -eq 'inshellisense') { return $false }
     $bridges = [System.Collections.Generic.List[string]]::new()
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($bridge in @($Env:CARAPACE_BRIDGES -split ',')) { $name = $bridge.Trim(); if ($name -and $seen.Add($name)) { $bridges.Add($name) } }

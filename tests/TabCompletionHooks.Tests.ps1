@@ -36,7 +36,7 @@ Describe 'tab-completion sidecar hooks' {
         }
 
         It 'binds Tab to a ScriptBlock that invokes Invoke-FzfTabCompletion' {
-            Mock Get-Command { $null } -ParameterFilter { $Name -eq 'carapace' }
+            Mock Test-DFToolAvailable { $false } -ParameterFilter { $Executable -eq 'carapace.exe' }
             . $script:PSFzfCompanion
             Initialize-DFRoleTabCompletion -Tool ([pscustomobject]@{}) -Role 'tab-completion'
 
@@ -47,7 +47,7 @@ Describe 'tab-completion sidecar hooks' {
 
         It 'adds --ansi only once when carapace is resolvable and preserves existing options' {
             $Env:FZF_DEFAULT_OPTS = '--height 40% --ansi --layout reverse'
-            Mock Get-Command { [pscustomobject]@{ Name = 'carapace' } } -ParameterFilter { $Name -eq 'carapace' }
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'carapace.exe' }
             . $script:PSFzfCompanion
             Initialize-DFRoleTabCompletion -Tool ([pscustomobject]@{}) -Role 'tab-completion'
 
@@ -56,7 +56,7 @@ Describe 'tab-completion sidecar hooks' {
 
         It 'leaves FZF_DEFAULT_OPTS unchanged when carapace is absent' {
             $Env:FZF_DEFAULT_OPTS = '--height 40% --layout reverse'
-            Mock Get-Command { $null } -ParameterFilter { $Name -eq 'carapace' }
+            Mock Test-DFToolAvailable { $false } -ParameterFilter { $Executable -eq 'carapace.exe' }
             . $script:PSFzfCompanion
             Initialize-DFRoleTabCompletion -Tool ([pscustomobject]@{}) -Role 'tab-completion'
 
@@ -69,7 +69,7 @@ Describe 'tab-completion sidecar hooks' {
             Mock Get-DFXdgPath { Join-Path $TestDrive 'xdg-config' }
             Mock Get-DFCachedCommandOutput { 'return' }
             Mock Invoke-Expression { }
-            Mock Get-Command { $null }
+            Mock Test-DFToolAvailable { $false }
             Mock Get-DFRole { [pscustomobject]@{ Winner = 'carapace' } }
             Mock Set-PSReadLineKeyHandler { }
         }
@@ -82,21 +82,21 @@ Describe 'tab-completion sidecar hooks' {
 
         It 'looks up the tab-completion winner once per startup' {
             # The bridge itself is covered below; this guards the startup cost (one Get-DFRole call).
-            Mock Get-Command { [pscustomobject]@{ Name = 'is' } } -ParameterFilter { $Name -eq 'is' }
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'is' }
             . $script:CarapaceCompanion
             Should -Invoke Get-DFRole -Times 1 -Exactly -ParameterFilter { $Name -eq 'tab-completion' }
         }
 
         It 'merges inshellisense into user bridges without duplicates when it did not win Tab' {
             $Env:CARAPACE_BRIDGES = 'zsh,InShelliSense,bash,ZSH'
-            Mock Get-Command { [pscustomobject]@{ Name = 'is' } } -ParameterFilter { $Name -eq 'is' }
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'is' }
             . $script:CarapaceCompanion
             Enable-DFCarapaceInshellisenseBridge -TabCompletionWinner 'carapace' | Should -BeTrue
             $Env:CARAPACE_BRIDGES | Should -Be 'zsh,InShelliSense,bash'
         }
 
         It 'does not bridge when inshellisense won Tab' {
-            Mock Get-Command { [pscustomobject]@{ Name = 'is' } } -ParameterFilter { $Name -eq 'is' }
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'is' }
             . $script:CarapaceCompanion
             $Env:CARAPACE_BRIDGES = 'zsh'
             Enable-DFCarapaceInshellisenseBridge -TabCompletionWinner 'inshellisense' | Should -BeFalse

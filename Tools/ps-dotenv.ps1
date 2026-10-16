@@ -30,6 +30,8 @@ function Initialize-DFRoleProjectEnv {
             Write-Warning "DotForge: ps-dotenv could not approve '$dir': $($_.Exception.Message)"
         }
     }
+    # The handler lives in a global so a later re-registration (Register-DFTool in the
+    # same shell) finds it and doesn't add a second copy to LocationChangedAction.
     if (-not $global:DFDotenvLocationHook) {
         $global:DFDotenvLocationHook = [EventHandler[System.Management.Automation.LocationChangedEventArgs]] { Dotenv\Update-Dotenv }
         $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction =

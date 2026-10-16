@@ -47,6 +47,7 @@ function Enable-DFFzfAnsiOption {
 
 function Initialize-DFRoleTabCompletion {
     param($Tool, $Role)
-    if (Get-Command carapace -ErrorAction Ignore) { Enable-DFFzfAnsiOption }
+    # Startup already probed carapace (Test-DFToolAvailable remembers it); don't look it up again.
+    if (Test-DFToolAvailable -Executable 'carapace.exe') { Enable-DFFzfAnsiOption }
     Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
 }

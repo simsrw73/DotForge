@@ -134,7 +134,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyPSReadLineTheme' -Value ({
     }
     if ($colors.Count -gt 0) {
         # Expose applied colors for testing in non-VT environments where
-        # Get-PSReadLineOption.Colors returns $null (redirected output).
+        # Get-PSReadLineOption.Colors returns $null (redirected output). A Pester mock
+        # of Set-PSReadLineOption can't see this call (this function is a closure), so
+        # the global is the only observable channel.
         $global:DFPSReadLineColors = $colors
         Set-PSReadLineOption -Colors $colors
     }

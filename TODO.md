@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-66**.
+git history, not here. IDs are never reused; the next free one is **T-67**.
 
 ## Priority 1 — Release Readiness
 
@@ -21,7 +21,7 @@ git history, not here. IDs are never reused; the next free one is **T-66**.
 From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and the improve-code-quality journey (`docs/IMPROVE-CODE-QUALITY-PLAN.md`).
 
 - [ ] **T-25 Conformance coverage** — probes exist for 3 of ~57 tools (`build/conformance/*.jsonc`).
-- [ ] **T-26 Small cleanups** — companions repeat `Get-Command` lookups `Test-DFToolAvailable` already made (scoop, PSFzf, carapace, gsudo, choco, winget); `mise activate` and `oh-my-posh init` run uncached at every start; session globals with no cleanup (`$global:cdBeforeFnm`, `DFDotenvLocationHook`, `DFPSReadLineColors`).
+- [ ] **T-66 Can `oh-my-posh init` be cached?** — `Tools/oh-my-posh.ps1` runs `oh-my-posh init pwsh` at every start (and again on a theme switch). Recent versions put a session id in the init script, so a cached copy might reuse it across shells. Verify on a real install that the output is stable apart from such values before caching it (`Get-DFCachedCommandOutput`). `mise activate` stays uncached on purpose (it embeds PATH; external-dependencies #14).
 - [ ] **T-27 One home for the `role:<name>` reference syntax** — parsed in five places (`Private/Invoke-DFSessionActivation.ps1` ×3, `Private/New-DFInstallPlan.ps1` ×2); "the requested members of a role" is computed in `Resolve-DFToolRequirements` and `Get-DFActivationOrder`. Add `ConvertFrom-DFToolReference` and `Get-DFRoleMember`. Do it with the next change to that syntax.
 
 ## Priority 3 — Features

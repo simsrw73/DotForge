@@ -7,28 +7,25 @@
 #
 # To let both coexist:
 #   1. Capture whatever currently owns `cd` (zoxide's __zoxide_z if zoxide ran
-#      first, else Set-Location) into $global:cdBeforeFnm.
+#      first, else Set-Location).
 #   2. Let fnm install its env + Set-LocationWithFnm/cd hook.
 #   3. Re-point Set-LocationWithFnm at the captured command so `cd` performs the
 #      zoxide jump AND fnm's per-directory Node switch.
 #
 # Step 1 only recovers zoxide's binding if zoxide registered first, so fnm.json
 # declares "after": ["zoxide"] and the session topo-sorts zoxide ahead of
-# fnm. With zoxide absent, $global:cdBeforeFnm falls back to Set-Location and fnm
+# fnm. With zoxide absent, the captured command is Set-Location and fnm
 # still works standalone.
 #
 # Invoke-Expression is required by fnm's init pattern — no alternative exists.
-# $global:cdBeforeFnm must be global: fnm's `cd` alias resolves Set-LocationWithFnm
-# in the global scope at call time, and that function reads the captured command
-# from there — a narrower scope would be invisible to it.
+# The captured command lives in Set-LocationWithFnm's closure, so no global is needed.
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
 param()
 
 # 1. Capture the current `cd` target before fnm overwrites it. zoxide binds `cd`
 #    as an alias, so .ReferencedCommand yields the callable __zoxide_z function.
-$global:cdBeforeFnm = (Get-Alias 'cd' -Scope Global -ErrorAction Ignore).ReferencedCommand
-if ($null -eq $global:cdBeforeFnm) { $global:cdBeforeFnm = Get-Command Set-Location }
+$_cdBeforeFnm = (Get-Alias 'cd' -Scope Global -ErrorAction Ignore).ReferencedCommand
+if ($null -eq $_cdBeforeFnm) { $_cdBeforeFnm = Get-Command Set-Location }
 
 # 2. Install fnm's environment and its --use-on-cd hook (defines Set-FnmOnLoad,
 #    Set-LocationWithFnm, and rebinds the `cd` alias).
@@ -38,7 +35,7 @@ fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
 #    Set-LocationWithFnm by name, so redefining the function is enough — no need to
 #    touch the alias. Forward @args (not fnm's single $path) so zoxide's multi-
 #    keyword queries (`cd foo bar`) and `cd -`/`cd +` survive intact.
-function global:Set-LocationWithFnm {
+Set-Item function:global:Set-LocationWithFnm ({
     <#
     .SYNOPSIS
         Changes directory (through zoxide when it is registered) and switches Node versions for the new directory.
@@ -60,6 +57,6 @@ function global:Set-LocationWithFnm {
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
-    if ($args.Count -eq 0) { & $global:cdBeforeFnm } else { & $global:cdBeforeFnm @args }
+    if ($args.Count -eq 0) { & $_cdBeforeFnm } else { & $_cdBeforeFnm @args }
     Set-FnmOnLoad
-}
+}.GetNewClosure())
