@@ -60,7 +60,7 @@ function Get-DFRole {
 
     foreach ($role in $roleDb.Values | Sort-Object name) {
         if ($Name -and $role.name -notin $Name) { continue }
-        $members = @($db.Values | Where-Object { $_.roles.PSObject.Properties[$role.name] } | ForEach-Object name | Sort-Object)
+        $members = @(Get-DFRoleMember -Role $role.name -Tools @($db.Values) | ForEach-Object name)
         $w = $winners[$role.name]
         $overridden = @(if ($w) {
             $block = $db[$w.Winner].roles.($role.name)

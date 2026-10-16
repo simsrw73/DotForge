@@ -238,6 +238,8 @@ Each `Tools/*.json` must have at minimum:
   it. The legacy `role` string still loads. Read `docs/superpowers/specs/2026-10-05-roles-v2-design.md`
   before adding a role.
 - `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
+  Read a `requires`/`after` entry only through `ConvertFrom-DFToolReference`, and list a role's members
+  among records only through `Get-DFRoleMember` (`Shared/DFToolReference.ps1`).
   Resolved by `Resolve-DFToolRequirements` (`Private/Invoke-DFSessionActivation.ps1`): required tools
   are auto-requested and ordered first, and a missing/excluded one blocks the tool. A role requirement
   orders after the role's requested members, never requests a member itself (the user chooses in

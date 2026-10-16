@@ -49,7 +49,7 @@ function Get-DFElevationMethod {
     )
     $method = { param($name, $exe, $detail, $tool) [pscustomobject]@{ Method = $name; Executable = $exe; Detail = $detail; Tool = $tool } }
     if (Test-DFElevated) { return & $method 'Direct' $null 'already elevated' }
-    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
+    $elevators = @(Get-DFRoleMember -Role 'elevator' -Tools @($ToolDb.Values))
     $elevator = @($elevators | Where-Object { & $IsAvailable $_ }) + @($elevators | Where-Object { $_.name -in $Planned }) | Select-Object -First 1
     if ($elevator) { return & $method 'Elevator' $elevator.executable "through $($elevator.name)" $elevator.name }
     if (-not (Test-DFInteractiveHost)) { return & $method 'Unavailable' $null 'no one to answer the admin prompt' }

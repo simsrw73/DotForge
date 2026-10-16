@@ -107,7 +107,7 @@ function Select-DFRoleWinner {
             # A role is only ever filled by a tool the user asked for.
             Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not requested in Tools — using priority. Add '$chosen' to Tools to use it."
         } elseif (-not $chosenTool.roles.PSObject.Properties[$Role]) {
-            $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$Role]) { $t.name } }) | Sort-Object
+            $members = @(Get-DFRoleMember -Role $Role -Tools @($ToolDb.Values) | ForEach-Object name)
             Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not a $Role tool (requested ones: $($members -join ', ')) — using priority."
         } else {
             # Report the tool's own spelling, not the user's (names compare case-insensitively).

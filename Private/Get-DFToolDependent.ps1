@@ -32,16 +32,19 @@ function Get-DFToolDependent {
     $direct = {
         param($target)
         $record = $ToolDb[$target]
+        $activeRecords = @($Active | ForEach-Object { $ToolDb[$_] })
         $soleRoles = @(if ($record) {
             foreach ($role in $record.roles.PSObject.Properties.Name) {
-                $members = @($Active | Where-Object { $ToolDb[$_] -and $ToolDb[$_].roles.PSObject.Properties[$role] })
-                if ($members.Count -eq 1 -and $members[0] -eq $target) { "role:$role" }
+                $members = @(Get-DFRoleMember -Role $role -Tools $activeRecords)
+                if ($members.Count -eq 1 -and $members[0].name -eq $target) { $role }
             }
         })
         foreach ($other in $Active) {
             if ($other -eq $target -or -not $ToolDb[$other]) { continue }
-            $needs = @($ToolDb[$other].requires)
-            if ($target -in $needs -or @($needs | Where-Object { $_ -in $soleRoles }).Count) { $other }
+            $needs = @($ToolDb[$other].requires | ForEach-Object { ConvertFrom-DFToolReference -Reference $_ })
+            $needsTarget = @($needs | Where-Object { $_.Kind -eq 'Tool' -and $_.Name -eq $target }).Count
+            $needsSoleRole = @($needs | Where-Object { $_.Kind -eq 'Role' -and $_.Name -in $soleRoles }).Count
+            if ($needsTarget -or $needsSoleRole) { $other }
         }
     }
     if (-not $Transitive) { return [string[]]@(& $direct $Name) }

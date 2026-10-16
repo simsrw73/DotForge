@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 15aace4bbe86cd5a2fa58dea13aceeb9c202a178d05b0fa6995e440af88a7839
+# sources-sha256: 136418f37e9e29d57578cb3e5db73de5359d7ecfb2ce99075f31038adf803903
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -133,7 +133,7 @@ function Get-DFBuiltInSourceOrder {
     [OutputType([string[]])]
     param([Parameter(Mandatory)][hashtable]$ToolDb)
     $managers = @($ToolDb.Values | Where-Object installs)
-    $system = @($managers | Where-Object { $_.roles.PSObject.Properties['package-manager'] } |
+    $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers |
         Sort-Object @{ Expression = { $_.roles.'package-manager'.priority }; Descending = $true }, name |
         ForEach-Object { $_.installs[0].from })
     $other = @($managers | ForEach-Object { $_.installs | ForEach-Object { $_.from } } | Where-Object { $_ -notin $system } | Sort-Object -Unique)
@@ -590,6 +590,60 @@ function Get-DFConflictAdvice {
         return [pscustomobject]@{ Action = 'Adopt'; Text = "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $Name -Adopt, $leave" }
     }
     [pscustomobject]@{ Action = 'Move'; Text = "Run Resolve-DFToolConflict $Name -Move (or -Adopt), $leave" }
+}
+
+# ---- Shared/DFToolReference.ps1
+function ConvertFrom-DFToolReference {
+    <#
+    .SYNOPSIS
+        Reads one entry of a tool record's requires or after list: a tool name, or role:<name>.
+    .DESCRIPTION
+        The one definition of the reference syntax. A name starts with a letter or
+        digit and continues with letters, digits, '.', '_' or '-'. The role: prefix
+        is case-insensitive, as it always was.
+    .PARAMETER Reference
+        The entry, e.g. 'fzf' or 'role:js-runtime'.
+    .EXAMPLE
+        ConvertFrom-DFToolReference -Reference 'role:js-runtime'
+
+        Returns Kind 'Role', Name 'js-runtime'.
+    .OUTPUTS
+        pscustomobject with Kind ('Tool' or 'Role') and Name; nothing when the entry is malformed.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([AllowEmptyString()][AllowNull()][string]$Reference)
+    if ($Reference -notmatch '^(?<role>role:)?(?<name>[A-Za-z0-9][A-Za-z0-9._-]*)$') { return }
+    [pscustomobject]@{
+        Kind = if ($Matches['role']) { 'Role' } else { 'Tool' }
+        Name = $Matches['name']
+    }
+}
+
+function Get-DFRoleMember {
+    <#
+    .SYNOPSIS
+        Returns the tool records, of those given, that join a role.
+    .DESCRIPTION
+        The one home for "the members of a role" among a set of records (the
+        requested tools, the active ones, or every record). Sorted by name.
+    .PARAMETER Role
+        The role name, e.g. 'js-runtime'.
+    .PARAMETER Tools
+        The tool records to look through.
+    .EXAMPLE
+        Get-DFRoleMember -Role 'pager' -Tools $toolDb.Values
+
+        The requested tools that can be the pager.
+    .OUTPUTS
+        The member records.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Role,
+        [Parameter(Mandatory)][AllowEmptyCollection()][AllowNull()][object[]]$Tools
+    )
+    @($Tools | Where-Object { $_ -and $_.roles -and $_.roles.PSObject.Properties[$Role] }) | Sort-Object name
 }
 
 # ---- Shared/Expand-DFXdgPath.ps1
@@ -1907,7 +1961,7 @@ function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
         'dependsOn was replaced: use after (ordering only) or requires (the tool cannot work without it)'
     }
     $after = $Tool.PSObject.Properties['after']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
         'after must be an array of tool names or role:<role> entries'
     }
 }
@@ -1934,7 +1988,7 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
         Schema errors in requires and prewarm.
     #>
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+    if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
         'requires must be an array of tool names or role:<role> entries'
     }
     $prewarm = Get-DFSchemaProperty $Tool 'prewarm'
@@ -3485,7 +3539,7 @@ function Get-DFElevationMethod {
     )
     $method = { param($name, $exe, $detail, $tool) [pscustomobject]@{ Method = $name; Executable = $exe; Detail = $detail; Tool = $tool } }
     if (Test-DFElevated) { return & $method 'Direct' $null 'already elevated' }
-    $elevators = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties['elevator'] } | Sort-Object name)
+    $elevators = @(Get-DFRoleMember -Role 'elevator' -Tools @($ToolDb.Values))
     $elevator = @($elevators | Where-Object { & $IsAvailable $_ }) + @($elevators | Where-Object { $_.name -in $Planned }) | Select-Object -First 1
     if ($elevator) { return & $method 'Elevator' $elevator.executable "through $($elevator.name)" $elevator.name }
     if (-not (Test-DFInteractiveHost)) { return & $method 'Unavailable' $null 'no one to answer the admin prompt' }
@@ -3673,16 +3727,19 @@ function Get-DFToolDependent {
     $direct = {
         param($target)
         $record = $ToolDb[$target]
+        $activeRecords = @($Active | ForEach-Object { $ToolDb[$_] })
         $soleRoles = @(if ($record) {
             foreach ($role in $record.roles.PSObject.Properties.Name) {
-                $members = @($Active | Where-Object { $ToolDb[$_] -and $ToolDb[$_].roles.PSObject.Properties[$role] })
-                if ($members.Count -eq 1 -and $members[0] -eq $target) { "role:$role" }
+                $members = @(Get-DFRoleMember -Role $role -Tools $activeRecords)
+                if ($members.Count -eq 1 -and $members[0].name -eq $target) { $role }
             }
         })
         foreach ($other in $Active) {
             if ($other -eq $target -or -not $ToolDb[$other]) { continue }
-            $needs = @($ToolDb[$other].requires)
-            if ($target -in $needs -or @($needs | Where-Object { $_ -in $soleRoles }).Count) { $other }
+            $needs = @($ToolDb[$other].requires | ForEach-Object { ConvertFrom-DFToolReference -Reference $_ })
+            $needsTarget = @($needs | Where-Object { $_.Kind -eq 'Tool' -and $_.Name -eq $target }).Count
+            $needsSoleRole = @($needs | Where-Object { $_.Kind -eq 'Role' -and $_.Name -in $soleRoles }).Count
+            if ($needsTarget -or $needsSoleRole) { $other }
         }
     }
     if (-not $Transitive) { return [string[]]@(& $direct $Name) }
@@ -4833,9 +4890,10 @@ function Get-DFActivationOrder {
     $edges = @{}
     foreach ($name in $RequirementEdges.Keys) { $edges[$name] = @($RequirementEdges[$name]) }
     foreach ($record in $Records) {
-        foreach ($afterEntry in @($record.after | Where-Object { $_ -like 'role:*' })) {
-            $role = $afterEntry.Substring(5)
-            foreach ($member in @($ToolDb.Values | Where-Object { $_.name -ne $record.name -and $_.roles.PSObject.Properties[$role] })) {
+        foreach ($afterEntry in @($record.after)) {
+            $reference = ConvertFrom-DFToolReference -Reference $afterEntry
+            if (-not $reference -or $reference.Kind -ne 'Role') { continue }
+            foreach ($member in @(Get-DFRoleMember -Role $reference.Name -Tools @($ToolDb.Values) | Where-Object { $_.name -ne $record.name })) {
                 $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ })
             }
         }
@@ -4892,7 +4950,7 @@ function Get-DFActivationBlocker {
     # yet reached has no status, so the cycle doesn't block itself.)
     $status = $script:DFSessionStatus
     $unmet = @(foreach ($req in @($Tool.requires)) {
-        if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
+        if ((ConvertFrom-DFToolReference -Reference $req).Kind -eq 'Tool' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
     })
     if ($unmet) { return "requires $($unmet -join ', '), which is not available" }
     if (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type) { return }
@@ -5249,10 +5307,11 @@ function Resolve-DFToolRequirements {
     while ($queue.Count) {
         $record = $queue.Dequeue()
         foreach ($req in @($record.requires)) {
-            if (-not $req) { continue }
-            if ($req -like 'role:*') {
-                $role = $req.Substring(5)
-                $members = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties[$role] })
+            $reference = ConvertFrom-DFToolReference -Reference $req
+            if (-not $reference) { continue }
+            if ($reference.Kind -eq 'Role') {
+                $role = $reference.Name
+                $members = @(Get-DFRoleMember -Role $role -Tools @($ToolDb.Values))
                 if (-not $members) { $roleHint[$record.name] = @(@($roleHint[$record.name]) + $role | Where-Object { $_ }) }
                 foreach ($member in $members) {
                     if ($member.name -ne $record.name) { $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ }) }
@@ -5300,7 +5359,7 @@ function Get-DFRoleRequirementHint {
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $all = Import-DFToolDb @pathArgs
     @(foreach ($r in $Role) {
-        $names = @($all.Values | Where-Object { $_.roles.PSObject.Properties[$r] } | ForEach-Object name | Sort-Object)
+        $names = @(Get-DFRoleMember -Role $r -Tools @($all.Values) | ForEach-Object name)
         if ($names.Count -gt 1) { "needs a $r`: add $($names[0..($names.Count - 2)] -join ', ') or $($names[-1]) to Tools" }
         elseif ($names) { "needs a $r`: add $($names[0]) to Tools" }
         else { "needs a $r" }
@@ -5659,7 +5718,9 @@ function New-DFInstallPlan {
     for ($i = 0; $i -lt $want.Count; $i++) {
         $t = $ToolDb[$want[$i]]
         if (-not $t) { continue }
-        $required = @($t.requires | Where-Object { $_ -and $_ -notlike 'role:*' -and $want.Contains($_) })
+        # What it comes with: the tools (not roles) it requires.
+        $providers = @($t.requires | Where-Object { (ConvertFrom-DFToolReference -Reference $_).Kind -eq 'Tool' })
+        $required = @($providers | Where-Object { $want.Contains($_) })
         # (@($null?.X) is a one-element array, so test the object first.)
         $hasPackages = $t.packages -and @($t.packages.PSObject.Properties).Count -gt 0
         if (-not $hasPackages -and $required) {
@@ -5667,7 +5728,6 @@ function New-DFInstallPlan {
             continue
         }
         # No packages, and what it comes with isn't being installed: say what to add.
-        $providers = @($t.requires | Where-Object { $_ -and $_ -notlike 'role:*' })
         if (-not $hasPackages -and $providers) {
             $gaps.Add([pscustomobject]@{
                 Tool = $t.name; Reason = "comes with $($providers[0]): add $($providers[0]) to install it"
@@ -6185,7 +6245,7 @@ function Select-DFRoleWinner {
             # A role is only ever filled by a tool the user asked for.
             Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not requested in Tools — using priority. Add '$chosen' to Tools to use it."
         } elseif (-not $chosenTool.roles.PSObject.Properties[$Role]) {
-            $members = @(foreach ($t in $ToolDb.Values) { if ($t.roles.PSObject.Properties[$Role]) { $t.name } }) | Sort-Object
+            $members = @(Get-DFRoleMember -Role $Role -Tools @($ToolDb.Values) | ForEach-Object name)
             Write-Warning "DotForge: Defaults['$Role'] names '$chosen', which is not a $Role tool (requested ones: $($members -join ', ')) — using priority."
         } else {
             # Report the tool's own spelling, not the user's (names compare case-insensitively).
@@ -7872,7 +7932,7 @@ function Get-DFRole {
 
     foreach ($role in $roleDb.Values | Sort-Object name) {
         if ($Name -and $role.name -notin $Name) { continue }
-        $members = @($db.Values | Where-Object { $_.roles.PSObject.Properties[$role.name] } | ForEach-Object name | Sort-Object)
+        $members = @(Get-DFRoleMember -Role $role.name -Tools @($db.Values) | ForEach-Object name)
         $w = $winners[$role.name]
         $overridden = @(if ($w) {
             $block = $db[$w.Winner].roles.($role.name)

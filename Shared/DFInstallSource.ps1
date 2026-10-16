@@ -41,7 +41,7 @@ function Get-DFBuiltInSourceOrder {
     [OutputType([string[]])]
     param([Parameter(Mandatory)][hashtable]$ToolDb)
     $managers = @($ToolDb.Values | Where-Object installs)
-    $system = @($managers | Where-Object { $_.roles.PSObject.Properties['package-manager'] } |
+    $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers |
         Sort-Object @{ Expression = { $_.roles.'package-manager'.priority }; Descending = $true }, name |
         ForEach-Object { $_.installs[0].from })
     $other = @($managers | ForEach-Object { $_.installs | ForEach-Object { $_.from } } | Where-Object { $_ -notin $system } | Sort-Object -Unique)

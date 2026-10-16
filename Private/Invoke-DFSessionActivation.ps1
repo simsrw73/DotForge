@@ -181,9 +181,10 @@ function Get-DFActivationOrder {
     $edges = @{}
     foreach ($name in $RequirementEdges.Keys) { $edges[$name] = @($RequirementEdges[$name]) }
     foreach ($record in $Records) {
-        foreach ($afterEntry in @($record.after | Where-Object { $_ -like 'role:*' })) {
-            $role = $afterEntry.Substring(5)
-            foreach ($member in @($ToolDb.Values | Where-Object { $_.name -ne $record.name -and $_.roles.PSObject.Properties[$role] })) {
+        foreach ($afterEntry in @($record.after)) {
+            $reference = ConvertFrom-DFToolReference -Reference $afterEntry
+            if (-not $reference -or $reference.Kind -ne 'Role') { continue }
+            foreach ($member in @(Get-DFRoleMember -Role $reference.Name -Tools @($ToolDb.Values) | Where-Object { $_.name -ne $record.name })) {
                 $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ })
             }
         }
@@ -240,7 +241,7 @@ function Get-DFActivationBlocker {
     # yet reached has no status, so the cycle doesn't block itself.)
     $status = $script:DFSessionStatus
     $unmet = @(foreach ($req in @($Tool.requires)) {
-        if ($req -and $req -notlike 'role:*' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
+        if ((ConvertFrom-DFToolReference -Reference $req).Kind -eq 'Tool' -and $status.Contains($req) -and -not (Test-DFToolActive $req)) { $req }
     })
     if ($unmet) { return "requires $($unmet -join ', '), which is not available" }
     if (Test-DFToolAvailable -Executable $Tool.executable -Type $Tool.type) { return }
@@ -597,10 +598,11 @@ function Resolve-DFToolRequirements {
     while ($queue.Count) {
         $record = $queue.Dequeue()
         foreach ($req in @($record.requires)) {
-            if (-not $req) { continue }
-            if ($req -like 'role:*') {
-                $role = $req.Substring(5)
-                $members = @($ToolDb.Values | Where-Object { $_.roles.PSObject.Properties[$role] })
+            $reference = ConvertFrom-DFToolReference -Reference $req
+            if (-not $reference) { continue }
+            if ($reference.Kind -eq 'Role') {
+                $role = $reference.Name
+                $members = @(Get-DFRoleMember -Role $role -Tools @($ToolDb.Values))
                 if (-not $members) { $roleHint[$record.name] = @(@($roleHint[$record.name]) + $role | Where-Object { $_ }) }
                 foreach ($member in $members) {
                     if ($member.name -ne $record.name) { $edges[$record.name] = @(@($edges[$record.name]) + $member.name | Where-Object { $_ }) }
@@ -648,7 +650,7 @@ function Get-DFRoleRequirementHint {
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
     $all = Import-DFToolDb @pathArgs
     @(foreach ($r in $Role) {
-        $names = @($all.Values | Where-Object { $_.roles.PSObject.Properties[$r] } | ForEach-Object name | Sort-Object)
+        $names = @(Get-DFRoleMember -Role $r -Tools @($all.Values) | ForEach-Object name)
         if ($names.Count -gt 1) { "needs a $r`: add $($names[0..($names.Count - 2)] -join ', ') or $($names[-1]) to Tools" }
         elseif ($names) { "needs a $r`: add $($names[0]) to Tools" }
         else { "needs a $r" }

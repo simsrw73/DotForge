@@ -207,7 +207,7 @@ function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
         'dependsOn was replaced: use after (ordering only) or requires (the tool cannot work without it)'
     }
     $after = $Tool.PSObject.Properties['after']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+    if ($null -ne $after -and ($after -isnot [array] -or @($after | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
         'after must be an array of tool names or role:<role> entries'
     }
 }
@@ -234,7 +234,7 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
         Schema errors in requires and prewarm.
     #>
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
-    if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or $_ -notmatch '^(role:)?[A-Za-z0-9][A-Za-z0-9._-]*$' }).Count)) {
+    if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
         'requires must be an array of tool names or role:<role> entries'
     }
     $prewarm = Get-DFSchemaProperty $Tool 'prewarm'

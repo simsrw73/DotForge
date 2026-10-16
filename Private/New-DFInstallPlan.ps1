@@ -54,7 +54,9 @@ function New-DFInstallPlan {
     for ($i = 0; $i -lt $want.Count; $i++) {
         $t = $ToolDb[$want[$i]]
         if (-not $t) { continue }
-        $required = @($t.requires | Where-Object { $_ -and $_ -notlike 'role:*' -and $want.Contains($_) })
+        # What it comes with: the tools (not roles) it requires.
+        $providers = @($t.requires | Where-Object { (ConvertFrom-DFToolReference -Reference $_).Kind -eq 'Tool' })
+        $required = @($providers | Where-Object { $want.Contains($_) })
         # (@($null?.X) is a one-element array, so test the object first.)
         $hasPackages = $t.packages -and @($t.packages.PSObject.Properties).Count -gt 0
         if (-not $hasPackages -and $required) {
@@ -62,7 +64,6 @@ function New-DFInstallPlan {
             continue
         }
         # No packages, and what it comes with isn't being installed: say what to add.
-        $providers = @($t.requires | Where-Object { $_ -and $_ -notlike 'role:*' })
         if (-not $hasPackages -and $providers) {
             $gaps.Add([pscustomobject]@{
                 Tool = $t.name; Reason = "comes with $($providers[0]): add $($providers[0]) to install it"
