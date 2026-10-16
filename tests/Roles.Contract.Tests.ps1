@@ -11,7 +11,15 @@ BeforeAll {
     $root = Split-Path $PSScriptRoot -Parent
     $script:Roles = Get-Content (Join-Path $root 'data/roles.json') -Raw | ConvertFrom-Json -AsHashtable
     $script:AllReservedEnv = @($script:Roles.Values | ForEach-Object { if ($_['reserved']) { $_['reserved']['env'] } } | Where-Object { $_ })
-    $script:AllReservedAliases = @($script:Roles.Values | ForEach-Object { if ($_['reserved']) { $_['reserved']['aliases'] } } | Where-Object { $_ })
+    # A role with behaviors reserves its behavior aliases and picker aliases (Get-DFRoleDb derives the same set).
+    $script:ReservedAliasesOf = @{}
+    foreach ($roleName in $script:Roles.Keys) {
+        $def = $script:Roles[$roleName]
+        $script:ReservedAliasesOf[$roleName] = if ($def['behaviors']) {
+            @(@($def['behaviors']['aliases'].Keys) + @($def['behaviors']['pickers'] | ForEach-Object { $_['alias'] } | Where-Object { $_ }))
+        } elseif ($def['reserved']) { @($def['reserved']['aliases'] | Where-Object { $_ }) } else { @() }
+    }
+    $script:AllReservedAliases = @($script:ReservedAliasesOf.Values | ForEach-Object { $_ } | Where-Object { $_ })
 
     function Get-RoleMemberships($JsonPath) {
         $j = Get-Content $JsonPath -Raw | ConvertFrom-Json -AsHashtable
@@ -33,7 +41,8 @@ BeforeAll {
     # A role block has content when its env or aliases hold at least one entry;
     # an empty {} is still a truthy hashtable.
     function Test-RoleBlockContent([hashtable]$Block) {
-        ($Block['env'] -and $Block['env'].Count -gt 0) -or ($Block['aliases'] -and $Block['aliases'].Count -gt 0)
+        ($Block['env'] -and $Block['env'].Count -gt 0) -or ($Block['aliases'] -and $Block['aliases'].Count -gt 0) -or
+            ($Block['flags'] -and $Block['flags'].Count -gt 0)
     }
 
     function Get-SidecarAst($Path) {
@@ -75,6 +84,27 @@ Describe 'Role contract: <Name>' -ForEach $script:ToolCases {
         foreach ($h in Get-HookNames (Get-SidecarAst $SidecarPath)) {
             $h | Should -Not -BeLike 'global:*' -Because 'a hook must stay local to the companion call'
             $h | Should -BeIn $declared -Because "$Name defines $h for a role it does not declare"
+        }
+    }
+
+    It 'maps every word its behaviors roles use, and only those' {
+        $memberships = Get-RoleMemberships $JsonPath
+        foreach ($role in $memberships.Keys) {
+            $behaviors = $script:Roles[$role]['behaviors']
+            if (-not $behaviors) { continue }
+            $used = @(@($behaviors['aliases'].Values | ForEach-Object { $_ }) + @($behaviors['pickers'] | ForEach-Object { $_['list'] }) | Select-Object -Unique)
+            $mapped = @(if ($memberships[$role]['flags']) { $memberships[$role]['flags'].Keys })
+            foreach ($word in $used) { $word | Should -BeIn $mapped -Because "$Name joins '$role' but has no flag for '$word'" }
+            foreach ($word in $mapped) { $word | Should -BeIn @($behaviors['words'].Keys) -Because "'$word' is not one of '$role''s words" }
+        }
+    }
+
+    It 'writes no aliases by hand for a behaviors role' {
+        $memberships = Get-RoleMemberships $JsonPath
+        foreach ($role in $memberships.Keys) {
+            if (-not $script:Roles[$role]['behaviors']) { continue }
+            $hand = $memberships[$role]['aliases']
+            ($hand -and $hand.Count) | Should -BeFalse -Because "'$role' defines its aliases from behaviors"
         }
     }
 

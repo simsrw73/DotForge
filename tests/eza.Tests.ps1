@@ -1,5 +1,11 @@
 BeforeAll {
+    . "$PSScriptRoot/TestSupport.ps1"
+    foreach ($f in Get-DFTestModuleFile) { . $f }
     $script:EzaJson = Get-Content "$PSScriptRoot/../Tools/eza.json" -Raw | ConvertFrom-Json
+    # The aliases DotForge builds for eza when it wins listing: the role's words, eza's flags.
+    $listing = (Get-DFRoleDb -Path "$PSScriptRoot/../data/roles.json")['listing']
+    $record = Get-DFTestToolRecord 'eza'
+    $script:EzaAliases = Get-DFRoleBehaviorAlias -RoleDefinition $listing -Block $record.roles.listing -Tool $record
 
     # eza declares these with an optional value (`--icons [<WHEN>]`). Written
     # bare, clap fills the empty slot from the next positional -- so a bare
@@ -12,7 +18,7 @@ Describe 'Tools/eza.json' {
     It 'binds a value to every optional-value flag in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
         # Regression (4d29177): appending a bare `--hyperlink` to each alias
         # made `ll .` fail with "invalid value '.' for '--hyperlink [<WHEN>]'".
-        $aliasArgs = $script:EzaJson.roles.listing.aliases.$_.args
+        $aliasArgs = $script:EzaAliases.$_.args
         foreach ($flag in $script:OptionalValueFlags) {
             $aliasArgs | Should -Not -Contain $flag -Because "$flag must be written as ${flag}=<when> so it cannot consume a path"
         }
@@ -21,17 +27,17 @@ Describe 'Tools/eza.json' {
     It 'passes a path through as a positional for alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
         # Guards the whole arg list, not just the known optional-value flags:
         # no arg may be left able to absorb the trailing path.
-        $aliasArgs = @($script:EzaJson.roles.listing.aliases.$_.args)
+        $aliasArgs = @($script:EzaAliases.$_.args)
         $trailing = $aliasArgs[-1]
         $trailing | Should -Match '^--[a-z-]+(=.+)?$' -Because 'trailing args must be a bound flag or a pure boolean'
         $script:OptionalValueFlags | Should -Not -Contain $trailing -Because "a trailing bare $trailing would capture the caller's path"
     }
 
     It 'unquotes names with spaces in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
-        $script:EzaJson.roles.listing.aliases.$_.args | Should -Contain '--no-quotes'
+        $script:EzaAliases.$_.args | Should -Contain '--no-quotes'
     }
 
     It 'does not emit hyperlinks in alias <_>' -ForEach @('ls', 'll', 'la', 'tree') {
-        $script:EzaJson.roles.listing.aliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
+        $script:EzaAliases.$_.args | Where-Object { $_ -match '^--hyperlink' } | Should -BeNullOrEmpty
     }
 }

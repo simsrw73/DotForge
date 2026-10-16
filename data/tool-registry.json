@@ -202,6 +202,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "js-package-manager": {
@@ -209,6 +210,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -294,6 +296,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "tab-completion": {
@@ -301,6 +304,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -345,6 +349,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -498,6 +503,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -592,6 +598,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -647,6 +654,7 @@
             "env": {
               "GIT_PAGER": "delta"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -710,6 +718,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -808,7 +817,7 @@
       }
     },
     "eza": {
-      "sha256": "83f0222f4e47f4629b925be6db39494f7be1db3e7e56d7253d10c44d077b4a1d",
+      "sha256": "3308bd24744b6a30b52dc366910ac890e6651c39a2a69e9b4c2185e016fd6778",
       "record": {
         "name": "eza",
         "executable": "eza.exe",
@@ -834,68 +843,50 @@
         },
         "env": null,
         "aliases": {},
-        "picker": [
-          {
-            "function": "Select-File",
-            "alias": "ff",
-            "list": "eza --icons -1 --color=always --no-quotes",
-            "list_accepts_path": true,
-            "preview": "bat --color=always --line-range=:200 {}",
-            "preview_window": "right:60%",
-            "ansi": true,
-            "header": "Select file  [Enter to output path]",
-            "action": "output",
-            "parse": null
-          }
-        ],
+        "picker": null,
         "after": [],
         "requires": [],
         "roles": {
           "listing": {
             "priority": 20,
             "optIn": false,
-            "aliases": {
-              "ls": {
-                "command": "eza",
-                "args": [
-                  "--color=auto",
-                  "--icons=auto",
-                  "--group-directories-first",
-                  "--no-quotes"
-                ]
-              },
-              "ll": {
-                "command": "eza",
-                "args": [
-                  "--long",
-                  "--group-directories-first",
-                  "--icons=auto",
-                  "--color=auto",
-                  "--git",
-                  "--no-quotes"
-                ]
-              },
-              "la": {
-                "command": "eza",
-                "args": [
-                  "--all",
-                  "--long",
-                  "--group-directories-first",
-                  "--icons=auto",
-                  "--color=auto",
-                  "--git",
-                  "--no-quotes"
-                ]
-              },
-              "tree": {
-                "command": "eza",
-                "args": [
-                  "--tree",
-                  "--no-quotes"
-                ]
-              }
-            },
+            "aliases": null,
             "env": null,
+            "flags": {
+              "color": [
+                "--color=auto"
+              ],
+              "color-always": [
+                "--color=always"
+              ],
+              "icons": [
+                "--icons=auto"
+              ],
+              "icons-always": [
+                "--icons=always"
+              ],
+              "dirs-first": [
+                "--group-directories-first"
+              ],
+              "literal": [
+                "--no-quotes"
+              ],
+              "long": [
+                "--long"
+              ],
+              "all": [
+                "--all"
+              ],
+              "git": [
+                "--git"
+              ],
+              "tree": [
+                "--tree"
+              ],
+              "one-per-line": [
+                "-1"
+              ]
+            },
             "legacy": false
           }
         },
@@ -960,6 +951,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1049,6 +1041,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1121,6 +1114,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1202,6 +1196,7 @@
             "env": {
               "Picker": "fzf"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -1354,6 +1349,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1442,6 +1438,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1497,6 +1494,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "tab-completion": {
@@ -1504,6 +1502,7 @@
             "optIn": true,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1702,6 +1701,7 @@
             "env": {
               "PAGER": "${DF_TOOL_EXE}"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -1722,7 +1722,7 @@
       }
     },
     "lsd": {
-      "sha256": "b8b42000fa6ef94b9c3ebd5b47efdd11b71bf44f869142e41ab9b56b020d43e4",
+      "sha256": "4af07980edc7179b7871f9e42f9d093f88998b0baf069c9393929878394ecc79",
       "record": {
         "name": "lsd",
         "executable": "lsd.exe",
@@ -1765,41 +1765,43 @@
           "listing": {
             "priority": 10,
             "optIn": false,
-            "aliases": {
-              "ls": {
-                "command": "lsd",
-                "args": [
-                  "--color=auto",
-                  "--icon=auto",
-                  "--group-directories-first",
-                  "--literal"
-                ]
-              },
-              "ll": {
-                "command": "lsd",
-                "args": [
-                  "--all",
-                  "--long",
-                  "--header",
-                  "--literal"
-                ]
-              },
-              "la": {
-                "command": "lsd",
-                "args": [
-                  "--all",
-                  "--literal"
-                ]
-              },
-              "tree": {
-                "command": "lsd",
-                "args": [
-                  "--tree",
-                  "--literal"
-                ]
-              }
-            },
+            "aliases": null,
             "env": null,
+            "flags": {
+              "color": [
+                "--color=auto"
+              ],
+              "color-always": [
+                "--color=always"
+              ],
+              "icons": [
+                "--icon=auto"
+              ],
+              "icons-always": [
+                "--icon=always"
+              ],
+              "dirs-first": [
+                "--group-directories-first"
+              ],
+              "literal": [
+                "--literal"
+              ],
+              "long": [
+                "--long"
+              ],
+              "all": [
+                "--all"
+              ],
+              "git": [
+                "--git"
+              ],
+              "tree": [
+                "--tree"
+              ],
+              "one-per-line": [
+                "-1"
+              ]
+            },
             "legacy": false
           }
         },
@@ -1863,6 +1865,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -1948,6 +1951,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2038,6 +2042,7 @@
               "EDITOR": "micro",
               "VISUAL": "micro"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -2094,6 +2099,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "version-manager": {
@@ -2101,6 +2107,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2173,6 +2180,7 @@
             "env": {
               "PAGER": "moor"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -2277,6 +2285,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2365,6 +2374,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2461,6 +2471,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2514,6 +2525,7 @@
             "env": {
               "PAGER": "ov --quit-if-one-screen"
             },
+            "flags": null,
             "legacy": false
           }
         },
@@ -2558,6 +2570,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2636,6 +2649,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2711,6 +2725,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2886,6 +2901,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -2942,6 +2958,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "tab-completion": {
@@ -2949,6 +2966,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3012,6 +3030,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3071,6 +3090,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3147,6 +3167,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3216,6 +3237,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3291,6 +3313,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3383,6 +3406,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3431,6 +3455,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3580,6 +3605,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3679,6 +3705,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           },
           "python-package-manager": {
@@ -3686,6 +3713,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3917,6 +3945,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -3969,6 +3998,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },
@@ -4092,6 +4122,7 @@
             "optIn": false,
             "aliases": null,
             "env": null,
+            "flags": null,
             "legacy": false
           }
         },

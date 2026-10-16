@@ -41,10 +41,11 @@ Describe 'eza/lsd share role: listing (real tool records)' {
         Remove-DFTestGlobal -Function ls, ll, la, tree, Select-File, eza, lsd, lsd.exe -Alias ff
     }
 
-    It 'declares listing on both tools, with the listing aliases inside the role block' {
+    It 'declares listing on both tools, with flags for its words and no hand-written aliases' {
         foreach ($name in 'eza', 'lsd') {
             $j = Get-Content (Join-Path $script:RealTools "$name.json") -Raw | ConvertFrom-Json
-            $j.roles.listing.aliases.PSObject.Properties.Name | Should -Be @('ls', 'll', 'la', 'tree')
+            $j.roles.listing.flags | Should -Not -BeNullOrEmpty
+            $j.roles.listing.PSObject.Properties['aliases'] | Should -BeNullOrEmpty
             @($j.aliases.PSObject.Properties).Count | Should -Be 0
             $j.PSObject.Properties['role'] | Should -BeNullOrEmpty
         }

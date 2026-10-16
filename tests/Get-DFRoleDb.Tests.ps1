@@ -17,7 +17,8 @@ Describe 'Get-DFRoleDb' {
 
     It 'loads reserved names, including roles with several reserved kinds' {
         $db = Get-DFRoleDb -Path $script:ShippedRoles
-        $db['listing'].reserved.aliases | Should -Be @('ls', 'll', 'la', 'tree')
+        # listing's are derived from its behaviors: the aliases, then the pickers' aliases.
+        $db['listing'].reserved.aliases | Should -Be @('ls', 'll', 'la', 'tree', 'ff')
         $db['pager'].reserved.env | Should -Be @('PAGER')
         $db['prompt'].reserved.code | Should -Contain 'Invoke-Expression'
         $db['editor'].reserved.env | Should -Be @('EDITOR', 'VISUAL')

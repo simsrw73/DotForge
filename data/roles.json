@@ -24,8 +24,42 @@
     "kind": "single",
     "exclusive": false,
     "hook": "Initialize-DFRoleListing",
-    "reserved": { "env": [], "aliases": ["ls", "ll", "la", "tree"], "code": [] },
-    "description": "Lists directory contents. The winner defines ls, ll, la and tree."
+    "reserved": { "env": [], "aliases": [], "code": [] },
+    "description": "Lists directory contents. The winner defines ls, ll, la, tree and ff.",
+    "behaviors": {
+      "words": {
+        "color": "color when the terminal supports it",
+        "color-always": "always color",
+        "icons": "icons when the terminal supports them",
+        "icons-always": "always icons",
+        "dirs-first": "directories before files",
+        "literal": "names unquoted",
+        "long": "one row per entry, with details",
+        "all": "include hidden entries",
+        "git": "git status per entry",
+        "tree": "recurse as a tree",
+        "one-per-line": "names only, one per line"
+      },
+      "aliases": {
+        "ls":   ["color", "icons", "dirs-first", "literal"],
+        "ll":   ["long", "color", "icons", "dirs-first", "git", "literal"],
+        "la":   ["long", "all", "color", "icons", "dirs-first", "git", "literal"],
+        "tree": ["tree", "literal"]
+      },
+      "pickers": [
+        {
+          "alias": "ff",
+          "function": "Select-File",
+          "list": ["one-per-line", "icons-always", "color-always", "literal"],
+          "list_accepts_path": true,
+          "preview": "bat --color=always --line-range=:200 {}",
+          "preview_window": "right:60%",
+          "ansi": true,
+          "header": "Select file  [Enter to output path]",
+          "action": "output"
+        }
+      ]
+    }
   },
   "pager": {
     "kind": "single",

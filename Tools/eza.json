@@ -15,41 +15,15 @@
   "roles": {
     "listing": {
       "priority": 20,
-      "aliases": {
-        "ls": {
-          "command": "eza",
-          "args": [
-            "--color=auto",
-            "--icons=auto",
-            "--group-directories-first",
-            "--no-quotes"
-          ]
-        },
-        "ll": {
-          "command": "eza",
-          "args": ["--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--no-quotes"]
-        },
-        "la": {
-          "command": "eza",
-          "args": ["--all", "--long", "--group-directories-first", "--icons=auto", "--color=auto", "--git", "--no-quotes"]
-        },
-        "tree": {
-          "command": "eza",
-          "args": ["--tree", "--no-quotes"]
-        }
+      "flags": {
+        "color": ["--color=auto"], "color-always": ["--color=always"],
+        "icons": ["--icons=auto"], "icons-always": ["--icons=always"],
+        "dirs-first": ["--group-directories-first"], "literal": ["--no-quotes"],
+        "long": ["--long"], "all": ["--all"], "git": ["--git"],
+        "tree": ["--tree"], "one-per-line": ["-1"]
       }
     }
   },
   "aliases": {},
-  "picker": {
-    "alias": "ff",
-    "function": "Select-File",
-    "list": "eza --icons -1 --color=always --no-quotes",
-    "list_accepts_path": true,
-    "preview": "bat --color=always --line-range=:200 {}",
-    "preview_window": "right:60%",
-    "ansi": true,
-    "header": "Select file  [Enter to output path]",
-    "action": "output"
-  }
+  "picker": null
 }

@@ -22,11 +22,12 @@
   "roles": {
     "listing": {
       "priority": 10,
-      "aliases": {
-        "ls":   { "command": "lsd", "args": ["--color=auto", "--icon=auto", "--group-directories-first", "--literal"] },
-        "ll":   { "command": "lsd", "args": ["--all", "--long", "--header", "--literal"] },
-        "la":   { "command": "lsd", "args": ["--all", "--literal"] },
-        "tree": { "command": "lsd", "args": ["--tree", "--literal"] }
+      "flags": {
+        "color": ["--color=auto"], "color-always": ["--color=always"],
+        "icons": ["--icon=auto"], "icons-always": ["--icon=always"],
+        "dirs-first": ["--group-directories-first"], "literal": ["--literal"],
+        "long": ["--long"], "all": ["--all"], "git": ["--git"],
+        "tree": ["--tree"], "one-per-line": ["-1"]
       }
     }
   },
