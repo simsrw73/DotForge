@@ -83,14 +83,15 @@ Describe 'New-DFShim' {
     }
 
     It 'falls back to $HOME\.local\bin when no $DFConfig ShimsPath is set' {
-        $defaultDir = Join-Path $HOME '.local' 'bin'
-        $shimPath   = Join-Path $defaultDir 'dfshimtest.cmd'
-        try {
-            New-DFShim -Name 'dfshimtest' -Target $script:FakeExe 3>$null
-            Test-Path $shimPath | Should -BeTrue
-        } finally {
-            Remove-Item $shimPath -ErrorAction Ignore
-        }
+        # Never write the developer's real folder: no directory is created (mocked), no shim is
+        # written (-WhatIf), and -Force skips the check for one already there.
+        Mock New-DFDirectory {}
+        $defaultDir = ConvertTo-DFPath (Join-Path $HOME '.local' 'bin')
+
+        New-DFShim -Name 'dfshimtest' -Target $script:FakeExe -Force -WhatIf 3>$null 6>$null
+
+        Should -Invoke New-DFDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq $defaultDir }
+        Test-Path (Join-Path $defaultDir 'dfshimtest.cmd') | Should -BeFalse
     }
 
     It 'warns when shims dir is not on $PATH' {
