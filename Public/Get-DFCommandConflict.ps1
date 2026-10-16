@@ -81,7 +81,8 @@ function Get-DFCommandConflict {
     #     and exported by the module manifest (AliasesToExport), so the module owns
     #     them and (Get-Module DotForge).ExportedAliases contains them.
     #  2. Tool aliases and picker aliases (cat, ls, ff, ...) — created by
-    #     Register-DFTool from the tool database.
+    #     Register-DFTool from the tool database and, for roles with behaviors,
+    #     from data/roles.json.
     $owned = [System.Collections.Generic.List[string]]::new()
 
     # Cached: this runs from Register-DFTool at profile load, and re-parsing the
@@ -104,17 +105,22 @@ function Get-DFCommandConflict {
         if ($ToolsPath) { $dbParams['ToolsPath'] = $ToolsPath }
         @((Import-DFToolDb @dbParams -ErrorAction Ignore).Values)
     }
+    $roleDb = Get-DFRoleDb
     foreach ($tool in $checked) {
         if (-not $tool) { continue }
         if ($tool.aliases) {
             $owned.AddRange([string[]]@($tool.aliases.PSObject.Properties.Name))
         }
         # A role's aliases (ls, ll, ...) are defined only by the role's winner,
-        # but any member may win, so all of them can be shadowed.
+        # but any member may win, so all of them can be shadowed. A role with
+        # behaviors builds its aliases and pickers itself; Get-DFRoleDb lists
+        # their names in reserved.aliases.
         foreach ($role in $tool.roles.PSObject.Properties) {
             if ($role.Value.aliases) {
                 $owned.AddRange([string[]]@($role.Value.aliases.PSObject.Properties.Name))
             }
+            $definition = $roleDb[$role.Name]
+            if ($definition -and $definition.behaviors) { $owned.AddRange([string[]]@($definition.reserved.aliases)) }
         }
         foreach ($picker in @($tool.picker)) {
             if ($picker -is [PSCustomObject] -and $picker.alias) { $owned.Add([string]$picker.alias) }

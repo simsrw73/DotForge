@@ -50,6 +50,20 @@ Describe 'Get-DFCommandConflict' {
         Remove-Item (Join-Path $script:TmpTools 'listtool.json')
     }
 
+    It 'reports the aliases and pickers a behaviors role builds for its members' {
+        # listing (data/roles.json) builds ls/ll/la/tree and ff from a member's flags;
+        # the member's record names none of them.
+        @'
+{ "name": "flagtool", "executable": "flagtool.exe",
+  "roles": { "listing": { "flags": { "long": ["-l"] } } } }
+'@ | Set-Content (Join-Path $script:TmpTools 'flagtool.json')
+        Mock Get-DFCoreutilsShadowSet { [string[]]@('la', 'ff') }
+        $c = @(Get-DFCommandConflict -ToolsPath $script:TmpTools)
+        $c.Command | Should -Contain 'la'
+        $c.Command | Should -Contain 'ff'
+        Remove-Item (Join-Path $script:TmpTools 'flagtool.json')
+    }
+
     It 'does not report DotForge commands coreutils leaves alone' {
         Mock Get-DFCoreutilsShadowSet { [string[]]@('cat', 'touch', 'ls') }
         $c = @(Get-DFCommandConflict -ToolsPath $script:TmpTools)

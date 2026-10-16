@@ -24,7 +24,8 @@ BeforeAll {
     # Every command name DotForge creates, from the two places it creates them:
     # the manifest's AliasesToExport (helper aliases, created at import and exported
     # by the module manifest, so the module owns them and ExportedAliases contains them),
-    # and the tool database (tool aliases, role aliases and picker aliases).
+    # and the tool database (tool aliases, role aliases and picker aliases), plus the
+    # names roles with behaviors build (data/roles.json).
     $script:OwnedNames = [System.Collections.Generic.List[string]]::new()
 
     $manifestData = Import-PowerShellDataFile "$PSScriptRoot/../DotForge.psd1"
@@ -48,6 +49,11 @@ BeforeAll {
             $pAlias = $picker.PSObject.Properties['alias']?.Value
             if ($pAlias) { $script:OwnedNames.Add([string]$pAlias) }
         }
+    }
+    # A role with behaviors creates its aliases and pickers for whichever member wins
+    # (data/roles.json); Get-DFRoleDb derives those names into reserved.aliases.
+    foreach ($role in (Get-DFRoleDb -Path "$PSScriptRoot/../data/roles.json").Values) {
+        if ($role.behaviors) { $script:OwnedNames.AddRange([string[]]@($role.reserved.aliases)) }
     }
     $script:OwnedNames = @($script:OwnedNames | Sort-Object -Unique)
 }

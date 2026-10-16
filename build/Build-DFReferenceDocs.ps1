@@ -320,6 +320,24 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
             $renv = & $prop $r.Value 'env'
             if ($renv) { & $add "Sets, as the $($r.Name) tool" (($renv.PSObject.Properties | ForEach-Object { "$(& $code $_.Name) = $(& $code $_.Value)" }) -join '<br>') }
             $ral = & $prop $r.Value 'aliases'
+            # A role with behaviors builds the winner's aliases and pickers from its flags:
+            # show what this tool would get, through the module's own composition.
+            $built = & (Get-Module DotForge) {
+                param($RoleName, $Raw)
+                $definition = (Get-DFRoleDb)[$RoleName]
+                if (-not $definition -or -not $definition.behaviors) { return }
+                $record = ConvertTo-DFToolRecord $Raw
+                [pscustomobject]@{
+                    Aliases = Get-DFRoleBehaviorAlias -RoleDefinition $definition -Block $record.roles.$RoleName -Tool $record
+                    Pickers = @(Get-DFRolePicker -RoleDefinition $definition -Block $record.roles.$RoleName -Tool $record)
+                }
+            } $r.Name $Tool
+            if ($built) {
+                $ral = $built.Aliases
+                foreach ($bp in $built.Pickers) {
+                    & $add "Picker, as the $($r.Name) tool" "$(& $code $bp.alias) ($($bp.function)): lists $(& $code $bp.list)"
+                }
+            }
             if ($ral -and @($ral.PSObject.Properties).Count) {
                 & $add "Aliases, as the $($r.Name) tool" (($ral.PSObject.Properties | ForEach-Object {
                     $cmd = (@($_.Value.command) + @($_.Value.PSObject.Properties['args']?.Value) | Where-Object { $_ }) -join ' '
@@ -407,7 +425,8 @@ foreach ($roleName in $roleNamesSorted) {
     $null = $md.AppendLine('| | |').AppendLine('| --- | --- |')
     $null = $md.AppendLine("| Kind | $kind |")
     $null = $md.AppendLine("| Members | $($members -join ', ') |")
-    $res = $def.PSObject.Properties['reserved']?.Value
+    # Get-DFRoleDb's reserved names: for a role with behaviors, the aliases and pickers it builds.
+    $res = & (Get-Module DotForge) { param($n) (Get-DFRoleDb)[$n]?.reserved } $roleName
     $resNames = @(@(if ($res) { @($res.env) + @($res.aliases) }) | Where-Object { $_ } | ForEach-Object { "``$_``" })
     if ($resNames) { $null = $md.AppendLine("| Only the winner sets | $($resNames -join ', ') |") }
     if ($def.PSObject.Properties['requires']) { $null = $md.AppendLine("| Requires | $(ConvertTo-MdInline $def.requires) |") }
