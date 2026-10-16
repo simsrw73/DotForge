@@ -1,0 +1,5 @@
+# ripgrep config (RIPGREP_CONFIG_PATH), seeded once by DotForge; yours to edit.
+# One flag per line. See: rg --help
+--smart-case
+--hidden
+--glob=!.git/

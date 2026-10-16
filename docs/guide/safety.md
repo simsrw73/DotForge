@@ -45,6 +45,8 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 
 glow and fastfetch get their config paths through wrapper functions instead (`$XDG_CONFIG_HOME\glow\glow.yml`, `$XDG_CONFIG_HOME\fastfetch\config.jsonc`). The [tool records](../reference.md#tool-records) are the authoritative list.
 
+ripgrep and wget stop working properly when their variable names a file that doesn't exist (rg reports an error on every search; wget won't run). So on first registration DotForge copies a starter file there, only when none exists: a `ripgreprc` with `--smart-case`, `--hidden` and `--glob=!.git/`, and a `wgetrc` that sets nothing. If you delete one, recreate it (an empty file is fine) or run `Invoke-DFToolSetup -Name ripgrep` (or `wget`).
+
 Before registering a tool you already use, either move its old folder to the new location or set the variable yourself to keep it in place.
 
 ## Files DotForge writes

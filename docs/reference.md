@@ -3241,6 +3241,7 @@ Recursively search directories for a regex pattern, respecting gitignore
 | XDG variables | `RIPGREP_CONFIG_PATH` = `${XDG_CONFIG_HOME}/ripgrep/ripgreprc` |
 | Creates | `${XDG_CONFIG_HOME}/ripgrep` |
 | Picker | `` (): lists ``; Enter runs `` |
+| Seeds once | `${XDG_CONFIG_HOME}/ripgrep/ripgreprc` |
 | Roles | [`grep`](#grep-role) |
 | Companion | [`Tools/ripgrep.ps1`](#ripgrep-companion) |
 
@@ -3366,6 +3367,7 @@ Non-interactive network downloader
 | XDG method | `env` |
 | XDG variables | `WGETRC` = `${XDG_CONFIG_HOME}/wget/wgetrc` |
 | Creates | `${XDG_CONFIG_HOME}/wget` |
+| Seeds once | `${XDG_CONFIG_HOME}/wget/wgetrc` |
 | Roles | [`url-fetch`](#url-fetch-role) |
 
 ### winget tool

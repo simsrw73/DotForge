@@ -20,11 +20,17 @@
       "RIPGREP_CONFIG_PATH": "${XDG_CONFIG_HOME}/ripgrep/ripgreprc"
     },
     "native": {
-      "RIPGREP_CONFIG_PATH": []
+      "RIPGREP_CONFIG_PATH": [],
+      "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": []
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/ripgrep"
     ]
+  },
+  "setup": {
+    "seed": {
+      "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": "ripgrep/ripgreprc"
+    }
   },
   "aliases": {},
   "picker": "custom"

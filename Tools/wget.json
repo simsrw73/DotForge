@@ -18,11 +18,17 @@
       "WGETRC": "${XDG_CONFIG_HOME}/wget/wgetrc"
     },
     "native": {
-      "WGETRC": ["${HOME}/.wgetrc"]
+      "WGETRC": ["${HOME}/.wgetrc"],
+      "${XDG_CONFIG_HOME}/wget/wgetrc": []
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/wget"
     ]
+  },
+  "setup": {
+    "seed": {
+      "${XDG_CONFIG_HOME}/wget/wgetrc": "wget/wgetrc"
+    }
   },
   "aliases": {},
   "picker": null

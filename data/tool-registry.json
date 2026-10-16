@@ -3239,7 +3239,7 @@
       }
     },
     "ripgrep": {
-      "sha256": "471ac98a32eeeca3b950feb3638aaf5183ec6f36b5afbfff83f46023bfce88e9",
+      "sha256": "57f42c37c3108001d954ab9609ec8b1d4c54196467dbd4265d0524891a5d96c9",
       "record": {
         "name": "ripgrep",
         "executable": "rg.exe",
@@ -3271,6 +3271,12 @@
               "move": true,
               "guide": null,
               "setting": null
+            },
+            "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -3294,7 +3300,11 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": "ripgrep/ripgreprc"
+          }
+        },
         "banner": null,
         "installs": null,
         "install": null,
@@ -3855,7 +3865,7 @@
       }
     },
     "wget": {
-      "sha256": "c2320238c05f1658e844256e9ad5e1088a651a7a00b67ab0cbeb98911c78fb7f",
+      "sha256": "102f18018122cbbdf1cffd3a5f3e33ed316337f532c527625a49bf1b2b0da013",
       "record": {
         "name": "wget",
         "executable": "wget.exe",
@@ -3887,6 +3897,12 @@
               "move": true,
               "guide": null,
               "setting": null
+            },
+            "${XDG_CONFIG_HOME}/wget/wgetrc": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
             }
           }
         },
@@ -3910,7 +3926,11 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/wget/wgetrc": "wget/wgetrc"
+          }
+        },
         "banner": null,
         "installs": null,
         "install": null,

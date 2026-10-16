@@ -82,6 +82,10 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **wget wouldn't run, and rg reported an error on every search, on a new setup:** DotForge pointed
+  `WGETRC` and `RIPGREP_CONFIG_PATH` at files nothing created. Their one-time setup now seeds them
+  (only when absent): a `ripgreprc` with `--smart-case`, `--hidden` and `--glob=!.git/`, and an
+  empty `wgetrc`.
 - **glow ignored your glow config:** DotForge passed it with `--config`, whose contents glow never applies.
   glow 3 reads `<GLOW_CONFIG_HOME>/glow.yml`, so DotForge now sets `GLOW_CONFIG_HOME` to `$XDG_CONFIG_HOME\glow`;
   the wrapper still passes the style with `-s`. glow's `configFile` setting is gone.

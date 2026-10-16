@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-64**.
+git history, not here. IDs are never reused; the next free one is **T-65**.
 
 ## Priority 1 — Release Readiness
 
@@ -11,13 +11,11 @@ git history, not here. IDs are never reused; the next free one is **T-64**.
 ## Priority 2 — Open Problems
 
 - [ ] **T-4 5 tools lack completions** — `broot`, `sfsu`, `nvm`, `uv`, `bw`. Prefer a carapace custom spec (`$XDG_CONFIG_HOME/carapace/specs/*.yaml`).
-- [ ] **T-5 Seed default configs for ripgrep and wget** — use `setup.seed`: `ripgrep` needs `RIPGREP_CONFIG_PATH` and a seeded `ripgreprc`; `wget` needs `WGETRC` and an empty file.
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (d) tests use `C:\` literals, so macOS/Linux stays unverified.
 - [ ] **T-15 Reduce `Get-DFHelpTopicList` cached-path cost** — cache validation enumerates every installed module to compute the fingerprint. Consider a TTL or a cheaper fingerprint.
 - [ ] **T-16 Review coverage gaps** — tests for: custom package-manager priority after a default lookup; generated `list_accepts_path` functions with single-word and quoted commands; malformed PATH in `New-DFShim`; duplicate tool names.
-- [ ] **T-63 New-DFShim test writes the real `$HOME\.local\bin`** — `tests/New-DFShim.Tests.ps1` ("falls back to `$HOME\.local\bin`") creates and deletes `dfshimtest.cmd` there, so two test runs at once collide (seen 2026-10-16). Point the fallback at `$TestDrive`.
 
 ## Priority 2 — Architecture Backlog
 
@@ -32,6 +30,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-34 Role-level behavior specs for competing tools** — tools sharing a role (eza, lsd for `listing`) each hand-write `ls`/`ll`/`la`/`tree` in their own flags, and the two have drifted (lsd's `ll` includes `--all`). Describe alias behavior once per role in `data/roles.json` and let each tool map behavior names to its own flags. No central tool-keyed table. Also consider applying a role's aliases and pickers only for the winning provider. Brainstorm and spec first.
 - [ ] **T-35 Onboard more tools into roles** — each batch its own small spec: editor (nano, vim); picker (skim; television needs its own adapter); file-manager (yazi, superfile, broot); url-fetch (httpie, xh, curlie, aria2); suggested roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs, btop, bottom), disk-usage (dust, dua, gdu), json (jq, jaq, fx, jless), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd), watch (watchexec), code-stats (tokei, scc). Promote `markdown-viewer` from category to single once something consumes a winner.
 - [ ] **T-36 Survey more per-directory env tools** — beyond ps-dotenv, mise and direnv. Also: write direnv's Git Bash `bash_path` config (setup lifecycle) and record its variable-unloading bug in `docs/external-dependencies.md`.
+- [ ] **T-64 ripgrep colors follow the chosen theme** — rg has no theme variable; colors come only from `--colors` flags. Sketch: a `theme` block with `files: "ripgrep"` (per-theme `--colors` lines in `Tools/ripgrep/themes/`), applied through an `rg` wrapper, since the seeded `ripgreprc` is copied once and can't follow `Set-DFToolTheme`. Weigh that a wrapper function shadows `rg.exe` for every caller, pickers included. Short design first.
 - [ ] **T-37 Themes set in a tool's own config file** — a theme env var DotForge sets (`BAT_THEME`, `MDCAT_THEME`) still outranks a theme the user set in that tool's config file (bat's `config`), with no notice. Env values set outside DotForge are kept since T-21; weigh detecting the config-file case per tool.
 - [ ] **T-38 Setup teardown** — an `Uninstall-DFToolSetup` that reads the recorded `actions` back. Spec it once there's more than delta's one `actions` shape.
 - [ ] **T-56 Purge for Remove-DFTool** — delete seeded files unchanged since seeding; undo setup changes a tool's setup declares how to undo.
