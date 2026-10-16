@@ -222,3 +222,79 @@ Describe 'Get-DFRoleWinners opt-in memberships' {
         $winner.ContainsKey('tab-completion') | Should -BeFalse
     }
 }
+
+Describe 'Register-DFTool role behaviors' {
+    BeforeEach {
+        Reset-DFTestSession
+        $script:DFToolDb = $null; $script:DFToolAvailability = @{}
+        Set-DFTestXdg
+        Set-DFTestConfig $null
+        $script:Tools = Join-Path $TestDrive "tools-$([guid]::NewGuid())"
+        New-Item -ItemType Directory $script:Tools | Out-Null
+        $rolesFile = Join-Path $TestDrive 'roles-behaviors.json'
+        @"
+{ "tlist": { "kind": "single", "hook": "Initialize-DFRoleTlist",
+    "behaviors": { "words": { "long": "d", "all": "h", "one": "1" },
+                   "aliases": { "tll": ["long"], "tla": ["long", "all"] },
+                   "pickers": [ { "alias": "tff", "function": "Select-DFTestFile", "list": ["one"], "action": "output" } ] } } }
+"@ | Set-Content $rolesFile
+        $script:DFRoleDb = Get-DFRoleDb -Path $rolesFile
+        '{ "name": "tlsa", "executable": "tlsa.exe", "roles": { "tlist": { "priority": 20, "flags": { "long": ["-l"], "all": ["-a"], "one": ["-1"] } } } }' |
+            Set-Content (Join-Path $script:Tools 'tlsa.json')
+        '{ "name": "tlsb", "executable": "tlsb.exe", "roles": { "tlist": { "priority": 10, "flags": { "long": ["--long"], "one": ["--oneline"] },
+            "aliases": { "tll": { "command": "tlsb", "args": ["--hand"] } } } } }' |
+            Set-Content (Join-Path $script:Tools 'tlsb.json')
+        Mock Test-DFToolAvailable { $true }
+        Mock Write-DFConflictNotice { }
+        # Stand-ins for the tools: each records how an alias called it.
+        function global:tlsa { $global:DFBehaviorCall = "tlsa $($args -join ' ')" }
+        function global:tlsb { $global:DFBehaviorCall = "tlsb $($args -join ' ')" }
+        function script:Invoke-BehaviorAlias([string]$Name) { $global:DFBehaviorCall = $null; & $Name; $global:DFBehaviorCall }
+    }
+    AfterEach {
+        Set-DFTestConfig $null
+        Remove-Variable DFBehaviorCall -Scope Global -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'tll', 'tla', 'Select-DFTestFile', 'tlsa', 'tlsb'
+        Remove-Alias tff -Scope Global -Force -ErrorAction Ignore
+        $script:DFRoleDb = $null
+        Restore-DFTestXdg
+    }
+
+    It 'gives the winner the role''s aliases and pickers from its flags' {
+        Set-DFTestConfig @{ Tools = @('tlsa', 'tlsb') }
+        Register-DFTool -Name 'tlsa', 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        Invoke-BehaviorAlias 'tla' | Should -Be 'tlsa -l -a'
+        Get-Command Select-DFTestFile -CommandType Function | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Defaults flips the winner''s flags' {
+        Set-DFTestConfig @{ Tools = @('tlsa', 'tlsb'); Defaults = @{ tlist = 'tlsb' } }
+        Register-DFTool -Name 'tlsa', 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        Invoke-BehaviorAlias 'tll' | Should -Be 'tlsb --long'
+    }
+
+    It 'ignores hand-written aliases for a behaviors role' {
+        Set-DFTestConfig @{ Tools = @('tlsb') }
+        Register-DFTool -Name 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        Invoke-BehaviorAlias 'tll' | Should -Be 'tlsb --long'
+    }
+
+    It 'notes missing words in the tool''s status' {
+        Set-DFTestConfig @{ Tools = @('tlsb') }
+        Register-DFTool -Name 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        (Get-DFToolStatus -Name 'tlsb').Detail | Should -Contain "tlist: no flag for 'all' (tla)"
+    }
+
+    It 're-registration keeps one note' {
+        Set-DFTestConfig @{ Tools = @('tlsb') }
+        Register-DFTool -Name 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        Register-DFTool -Name 'tlsb' -ToolsPath $script:Tools 3>$null 6>$null
+        @((Get-DFToolStatus -Name 'tlsb').Detail | Where-Object { $_ -like 'tlist:*' }).Count | Should -Be 1
+    }
+
+    It 'does not warn about a missing hook for a behaviors-only membership' {
+        Set-DFTestConfig @{ Tools = @('tlsa') }
+        Register-DFTool -Name 'tlsa' -ToolsPath $script:Tools -WarningVariable w 6>$null
+        "$w" | Should -Not -Match 'Initialize-DFRoleTlist'
+    }
+}

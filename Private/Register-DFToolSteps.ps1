@@ -226,7 +226,9 @@ function Invoke-DFToolRegistration {
         The per-tool body of Register-DFTool. For each role the tool won, its role
         block's env (through Set-DFEnv) and aliases are applied before the
         companion runs, and its role hook is called right after it (by
-        Invoke-DFToolCompanion). Roles it lost are skipped entirely. Anything a
+        Invoke-DFToolCompanion). For a role with behaviors, its aliases and
+        pickers are built from the winner's flags (Get-DFRoleBehaviorAlias,
+        Get-DFRolePicker). Roles it lost are skipped entirely. Anything a
         companion writes to the output stream passes through to the caller.
     .PARAMETER Tool
         The normalized tool record.
@@ -290,10 +292,33 @@ function Invoke-DFToolRegistration {
     Register-DFToolAliases -Tool $Tool -Aliases $topAliases
     New-DFToolPickerFunction -Tool $Tool
 
+    $wonRoles = @(Invoke-DFWonRoles -Tool $Tool -Context $Context)
+
+    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
+}
+
+function Invoke-DFWonRoles {
+    <#
+    .SYNOPSIS
+        Applies the roles a tool won: each role block's env and aliases, or for a role with behaviors the aliases and pickers built from the winner's flags.
+    .PARAMETER Tool
+        The normalized tool record.
+    .PARAMETER Context
+        The activation context (RoleWinners, RoleDb).
+    .OUTPUTS
+        One { Role; Hook; HookRequired } per won role, for Invoke-DFToolCompanion.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$Tool,
+        [Parameter(Mandatory)][PSCustomObject]$Context
+    )
+    $RoleWinners = $Context.RoleWinners
+    $RoleDb = $Context.RoleDb
     # Enumerate properties rather than .Name: on a tool with no roles,
     # member enumeration would yield a single $null.
     $roleNames = @(foreach ($rp in $Tool.roles.PSObject.Properties) { $rp.Name }) | Sort-Object
-    $wonRoles = foreach ($roleName in $roleNames) {
+    foreach ($roleName in $roleNames) {
         $won = $RoleWinners[$roleName]
         if (-not $won -or $won.Winner -ne $Tool.name) { continue }
         $block = $Tool.roles.$roleName
@@ -307,17 +332,26 @@ function Invoke-DFToolRegistration {
                 Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $value) -Tool $Tool.name -ExplicitReason $explicit
             }
         }
-        if ($block.aliases) { Register-DFToolAliases -Tool $Tool -Aliases $block.aliases }
+        $roleDefinition = $RoleDb[$roleName]
+        $behaviors = $roleDefinition.behaviors
+        if ($behaviors) {
+            # The role defines its aliases and pickers in words; the winner's flags fill them in.
+            if (Test-DFHasEntries $block.aliases) {
+                Write-Verbose "DotForge: $($Tool.name)'s own aliases for '$roleName' are ignored; the role defines them (behaviors)."
+            }
+            Register-DFToolAliases -Tool $Tool -Aliases (Get-DFRoleBehaviorAlias -RoleDefinition $roleDefinition -Block $block -Tool $Tool)
+            foreach ($picker in Get-DFRolePicker -RoleDefinition $roleDefinition -Block $block -Tool $Tool) { Set-DFPickerFunction -Picker $picker }
+        } elseif ($block.aliases) {
+            Register-DFToolAliases -Tool $Tool -Aliases $block.aliases
+        }
         [pscustomobject]@{
             Role         = $roleName
-            Hook         = $RoleDb[$roleName].hook
+            Hook         = $roleDefinition.hook
             # An empty {} block is still an object, so count what it holds.
-            HookRequired = -not ((Test-DFHasEntries $block.env) -or (Test-DFHasEntries $block.aliases) -or
-                $block.legacy -or $RoleDb[$roleName].emptyMembership)
+            HookRequired = -not ($behaviors -or (Test-DFHasEntries $block.env) -or (Test-DFHasEntries $block.aliases) -or
+                $block.legacy -or $roleDefinition.emptyMembership)
         }
     }
-
-    Invoke-DFToolCompanion -Tool $Tool -ToolsPath $Context.ToolsPath -SkipSetup @($Context.SkipSetup) -WonRoles @($wonRoles)
 }
 
 function Write-DFConflictNotice {
