@@ -292,6 +292,30 @@ Describe 'Register-DFTool role behaviors' {
         @((Get-DFToolStatus -Name 'tlsb').Detail | Where-Object { $_ -like 'tlist:*' }).Count | Should -Be 1
     }
 
+    It 'leaves a legacy (v1 role string) winner its own aliases' {
+        '{ "name": "tlsl", "executable": "tlsl.exe", "role": "tlist", "aliases": { "tll": { "command": "tlsl", "args": ["-l", "-h"] } } }' |
+            Set-Content (Join-Path $script:Tools 'tlsl.json')
+        function global:tlsl { $global:DFBehaviorCall = "tlsl $($args -join ' ')" }
+        try {
+            Set-DFTestConfig @{ Tools = @('tlsl') }
+            Register-DFTool -Name 'tlsl' -ToolsPath $script:Tools 3>$null 6>$null
+            Invoke-BehaviorAlias 'tll' | Should -Be 'tlsl -l -h'
+            Get-Command tla -CommandType Function -ErrorAction Ignore | Should -BeNullOrEmpty
+        } finally { Remove-DFTestGlobal -Function 'tlsl' }
+    }
+
+    It 'leaves a member without flags its own role-block aliases' {
+        '{ "name": "tlso", "executable": "tlso.exe", "roles": { "tlist": { "priority": 30, "aliases": { "tll": { "command": "tlso", "args": ["-l", "-h"] } } } } }' |
+            Set-Content (Join-Path $script:Tools 'tlso.json')
+        function global:tlso { $global:DFBehaviorCall = "tlso $($args -join ' ')" }
+        try {
+            Set-DFTestConfig @{ Tools = @('tlso') }
+            Register-DFTool -Name 'tlso' -ToolsPath $script:Tools 3>$null 6>$null
+            Invoke-BehaviorAlias 'tll' | Should -Be 'tlso -l -h'
+            Get-Command tla -CommandType Function -ErrorAction Ignore | Should -BeNullOrEmpty
+        } finally { Remove-DFTestGlobal -Function 'tlso' }
+    }
+
     It 'does not warn about a missing hook for a behaviors-only membership' {
         Set-DFTestConfig @{ Tools = @('tlsa') }
         Register-DFTool -Name 'tlsa' -ToolsPath $script:Tools -WarningVariable w 6>$null

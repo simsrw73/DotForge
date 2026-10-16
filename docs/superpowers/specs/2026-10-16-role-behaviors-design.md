@@ -147,8 +147,10 @@ Both functions live in `Private/` (startup core) and return result objects.
   role contract test fails first.
 - **A member maps a word the role doesn't define:** a role contract failure for
   DotForge's tools; ignored at runtime.
-- **A legacy record** (v1 `role` string): `behaviors` doesn't apply; it keeps
-  today's behavior.
+- **A legacy record** (v1 `role` string), or a member with no `flags` (written before
+  the role had behaviors): `behaviors` doesn't apply; it keeps its own aliases, so an
+  existing setup never loses flags it had. (Added at final review: the plan had
+  dropped this rule.)
 
 ## Tests
 

@@ -333,7 +333,10 @@ function Invoke-DFWonRoles {
             }
         }
         $roleDefinition = $RoleDb[$roleName]
-        $behaviors = $roleDefinition.behaviors
+        # Behaviors apply to a member that maps the role's words (flags). A legacy (v1
+        # role string) record, or one written before the role had behaviors, keeps its
+        # own aliases, so an existing setup never loses flags it had.
+        $behaviors = $roleDefinition.behaviors -and -not $block.legacy -and $block.flags
         if ($behaviors) {
             # The role defines its aliases and pickers in words; the winner's flags fill them in.
             if (Test-DFHasEntries $block.aliases) {

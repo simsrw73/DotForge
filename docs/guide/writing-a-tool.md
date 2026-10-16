@@ -244,9 +244,10 @@ your tool's flags in a `flags` block; `[]` means your tool does that by default:
 } } }
 ```
 
-`data/roles.json` lists each role's words and what they mean. Don't write the role's
-aliases yourself: they're ignored. If your tool lacks a word, the aliases that use it
-are built without it, and `Get-DFToolStatus <tool>` says which.
+`data/roles.json` lists each role's words and what they mean. With `flags`, don't write
+the role's aliases yourself: they're ignored. If your tool lacks a word, the aliases
+that use it are built without it, and `Get-DFToolStatus <tool>` says which. A record
+without `flags` (written before the role had words) keeps its own aliases.
 
 starship's companion is a complete example:
 

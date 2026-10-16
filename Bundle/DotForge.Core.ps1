@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: f4fc02d23c0878d123b307ccc7e783894c53d888bbac2f808374a54226198d20
+# sources-sha256: 0168ca5f958ae4d9b98a065d03c4a14900b64c4a846fec327d0e49987d2d0172
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -6707,7 +6707,10 @@ function Invoke-DFWonRoles {
             }
         }
         $roleDefinition = $RoleDb[$roleName]
-        $behaviors = $roleDefinition.behaviors
+        # Behaviors apply to a member that maps the role's words (flags). A legacy (v1
+        # role string) record, or one written before the role had behaviors, keeps its
+        # own aliases, so an existing setup never loses flags it had.
+        $behaviors = $roleDefinition.behaviors -and -not $block.legacy -and $block.flags
         if ($behaviors) {
             # The role defines its aliases and pickers in words; the winner's flags fill them in.
             if (Test-DFHasEntries $block.aliases) {
