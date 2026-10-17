@@ -201,7 +201,13 @@ function Get-DFRoleBehaviorEnv {
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.env.Keys) {
         $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
-        $quoted = foreach ($a in $resolved.Args) { if ($a -match '[\s;&|<>()''^]') { "`"$a`"" } else { $a } }
+        # git runs PAGER through sh, and bat/delta split it shell-style: a backslash is an escape
+        # there, so paths use forward slashes (as ${DF_TOOL_EXE} does), and an argument with a
+        # space or shell punctuation is double-quoted.
+        $quoted = foreach ($a in $resolved.Args) {
+            $a = $a.Replace('\', '/')
+            if ($a -match '[\s;&|<>()''^*?\[#~]') { "`"$a`"" } else { $a }
+        }
         $values[$name] = (@($command) + @($quoted)) -join ' '
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }

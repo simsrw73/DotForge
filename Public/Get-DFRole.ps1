@@ -62,16 +62,26 @@ function Get-DFRole {
         if ($Name -and $role.name -notin $Name) { continue }
         $members = @(Get-DFRoleMember -Role $role.name -Tools @($db.Values) | ForEach-Object name)
         $w = $winners[$role.name]
-        $overridden = @(if ($w) {
-            $block = $db[$w.Winner].roles.($role.name)
-            if ($block.env) {
-                foreach ($var in $block.env.PSObject.Properties) {
-                    $current = [Environment]::GetEnvironmentVariable($var.Name, 'Process')
-                    if ($current -and $current -cne (Expand-DFXdgPath $var.Value)) {
-                        $source = if ((Get-DFEnvState).Written[$var.Name] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
-                        [pscustomobject]@{ Name = $var.Name; Value = $current; Source = $source }
-                    }
-                }
+        # What DotForge would set for this role: the winner's block env and, for a role
+        # with behaviors.env, the variables built from its flags; with no winner, the fallback.
+        $wanted = [ordered]@{}
+        if ($w) {
+            $winnerTool = $db[$w.Winner]
+            $block = $winnerTool.roles.($role.name)
+            if ($block.env) { foreach ($var in $block.env.PSObject.Properties) { $wanted[$var.Name] = Expand-DFXdgPath $var.Value } }
+            if ($role.behaviors -and $role.behaviors.env.Count -and $block.flags -and -not $block.legacy) {
+                $built = Get-DFRoleBehaviorEnv -RoleDefinition $role -Block $block -Tool $winnerTool
+                foreach ($builtName in $built.Keys) { $wanted[$builtName] = $built[$builtName] }
+            }
+        } elseif ($role.fallback) {
+            foreach ($var in $role.fallback.env.PSObject.Properties) { $wanted[$var.Name] = [string]$var.Value }
+        }
+        $overridden = @(foreach ($varName in $wanted.Keys) {
+            $current = [Environment]::GetEnvironmentVariable($varName, 'Process')
+            if ($current -and $current -cne $wanted[$varName]) {
+                # $Name is this function's role filter: never reuse it here.
+                $source = if ((Get-DFEnvState).Written[$varName] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
+                [pscustomobject]@{ Name = $varName; Value = $current; Source = $source }
             }
         })
         $candidates = if ($w) { $w.Candidates } else {

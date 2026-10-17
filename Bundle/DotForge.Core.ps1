@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 40d826a4ecf75b56c69924d0def0f7d073c265f3c1c07354589a7cecf16ce7ac
+# sources-sha256: 827174c9df84396748f910836bcba5fa559db96f8bc56467f3c5903b353580d8
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3886,7 +3886,13 @@ function Get-DFRoleBehaviorEnv {
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.env.Keys) {
         $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
-        $quoted = foreach ($a in $resolved.Args) { if ($a -match '[\s;&|<>()''^]') { "`"$a`"" } else { $a } }
+        # git runs PAGER through sh, and bat/delta split it shell-style: a backslash is an escape
+        # there, so paths use forward slashes (as ${DF_TOOL_EXE} does), and an argument with a
+        # space or shell punctuation is double-quoted.
+        $quoted = foreach ($a in $resolved.Args) {
+            $a = $a.Replace('\', '/')
+            if ($a -match '[\s;&|<>()''^*?\[#~]') { "`"$a`"" } else { $a }
+        }
         $values[$name] = (@($command) + @($quoted)) -join ' '
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
@@ -8418,16 +8424,26 @@ function Get-DFRole {
         if ($Name -and $role.name -notin $Name) { continue }
         $members = @(Get-DFRoleMember -Role $role.name -Tools @($db.Values) | ForEach-Object name)
         $w = $winners[$role.name]
-        $overridden = @(if ($w) {
-            $block = $db[$w.Winner].roles.($role.name)
-            if ($block.env) {
-                foreach ($var in $block.env.PSObject.Properties) {
-                    $current = [Environment]::GetEnvironmentVariable($var.Name, 'Process')
-                    if ($current -and $current -cne (Expand-DFXdgPath $var.Value)) {
-                        $source = if ((Get-DFEnvState).Written[$var.Name] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
-                        [pscustomobject]@{ Name = $var.Name; Value = $current; Source = $source }
-                    }
-                }
+        # What DotForge would set for this role: the winner's block env and, for a role
+        # with behaviors.env, the variables built from its flags; with no winner, the fallback.
+        $wanted = [ordered]@{}
+        if ($w) {
+            $winnerTool = $db[$w.Winner]
+            $block = $winnerTool.roles.($role.name)
+            if ($block.env) { foreach ($var in $block.env.PSObject.Properties) { $wanted[$var.Name] = Expand-DFXdgPath $var.Value } }
+            if ($role.behaviors -and $role.behaviors.env.Count -and $block.flags -and -not $block.legacy) {
+                $built = Get-DFRoleBehaviorEnv -RoleDefinition $role -Block $block -Tool $winnerTool
+                foreach ($builtName in $built.Keys) { $wanted[$builtName] = $built[$builtName] }
+            }
+        } elseif ($role.fallback) {
+            foreach ($var in $role.fallback.env.PSObject.Properties) { $wanted[$var.Name] = [string]$var.Value }
+        }
+        $overridden = @(foreach ($varName in $wanted.Keys) {
+            $current = [Environment]::GetEnvironmentVariable($varName, 'Process')
+            if ($current -and $current -cne $wanted[$varName]) {
+                # $Name is this function's role filter: never reuse it here.
+                $source = if ((Get-DFEnvState).Written[$varName] -ceq $current) { 'DotForge (earlier winner)' } else { 'outside DotForge' }
+                [pscustomobject]@{ Name = $varName; Value = $current; Source = $source }
             }
         })
         $candidates = if ($w) { $w.Candidates } else {

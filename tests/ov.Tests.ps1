@@ -20,7 +20,7 @@ Describe 'ov' {
 
     It 'ov PAGER passes the theme''s config' {
         $cfg = Join-Path (Get-DFToolTheme -Tool (Get-DFTestToolRecord 'ov')).Value 'config.yaml'
-        Get-OvPager | Should -Be "ov -F -X --config $cfg"
+        Get-OvPager | Should -Be "ov -F -X --config $($cfg.Replace('\', '/'))"
     }
     It 'ov with your own config passes no --config' {
         New-Item -ItemType File -Force (Join-Path $Env:XDG_CONFIG_HOME 'ov' 'config.yaml') | Out-Null
@@ -35,7 +35,7 @@ Describe 'ov' {
     }
     It 'follows OvTheme over the shared Theme' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; OvTheme = 'catppuccin-latte' }
-        Get-OvPager | Should -Match ([regex]::Escape((Join-Path 'catppuccin-latte' 'config.yaml')))
+        Get-OvPager | Should -Match ([regex]::Escape('catppuccin-latte/config.yaml'))
     }
     It 'ships a config per flavor that parses and uses the flavor''s colors: <Flavor>' -ForEach @(
         @{ Flavor = 'catppuccin-mocha'; Text = '#cdd6f4' }, @{ Flavor = 'catppuccin-macchiato'; Text = '#cad3f5' },
@@ -51,5 +51,21 @@ Describe 'ov' {
             & ov.exe --config $cfg.FullName --help *> $null
             $LASTEXITCODE | Should -Be 0 -Because $cfg.FullName
         }
+    }
+}
+
+Describe 'ov PAGER survives a shell' {
+    BeforeEach { Reset-DFTestSession; Set-DFTestXdg; Remove-Item $Env:XDG_CONFIG_HOME -Recurse -Force -ErrorAction Ignore; Set-DFTestConfig $null; Mock ConvertTo-DFToolExePathToken { 'ov' } }
+    AfterEach { Set-DFTestConfig $null; Restore-DFTestXdg }
+
+    It 'writes the --config path with forward slashes, which sh leaves alone' {
+        # git runs PAGER through sh, and bat/delta split it shell-style: an unquoted \ is an escape there.
+        Get-OvPager | Should -Not -Match '\\'
+    }
+    It 'reaches ov intact through sh' -Skip:(-not (Get-Command sh -CommandType Application -ErrorAction Ignore)) {
+        $pager = Get-OvPager
+        $cfg = ($pager -split ' --config ', 2)[1]
+        $echoed = & sh -c "printf '%s' $cfg"
+        $echoed | Should -Be $cfg.Trim('"')
     }
 }

@@ -43,3 +43,33 @@ Describe 'pager fallback in Get-DFRole' {
         $role.Fallback.BAT_PAGER | Should -Be 'more'
     }
 }
+
+Describe 'Get-DFRole Overridden for a role built from behaviors' {
+    BeforeEach {
+        Reset-DFTestSession; Set-DFTestXdg; Set-DFTestConfig $null
+        $script:SavedPager = $Env:PAGER; $script:SavedBatPager = $Env:BAT_PAGER
+        $global:DFEnvState = $null
+    }
+    AfterEach {
+        if ($null -eq $script:SavedPager) { Remove-Item Env:PAGER -ErrorAction Ignore } else { $Env:PAGER = $script:SavedPager }
+        if ($null -eq $script:SavedBatPager) { Remove-Item Env:BAT_PAGER -ErrorAction Ignore } else { $Env:BAT_PAGER = $script:SavedBatPager }
+        Set-DFTestConfig $null; Restore-DFTestXdg
+    }
+
+    It 'reports a PAGER you set over the winner''s behaviors value' {
+        Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -like 'less*' }
+        Mock Test-DFToolAvailable { $false }
+        Mock ConvertTo-DFToolExePathToken { 'less' }
+        $Env:PAGER = 'mine'
+        $role = Get-DFRole -Name pager
+        $role.Winner | Should -Be 'less'
+        @($role.Overridden | Where-Object Name -eq 'PAGER').Value | Should -Be 'mine'
+    }
+    It 'reports a PAGER you set over the fallback' {
+        Mock Test-DFToolAvailable { $false }
+        $Env:PAGER = 'mine'
+        $role = Get-DFRole -Name pager
+        $role.Winner | Should -BeNullOrEmpty
+        @($role.Overridden | Where-Object Name -eq 'PAGER').Value | Should -Be 'mine'
+    }
+}
