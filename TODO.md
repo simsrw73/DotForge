@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-67**.
+git history, not here. IDs are never reused; the next free one is **T-70**.
 
 ## Priority 1 — Release Readiness
 
@@ -26,6 +26,9 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 ## Priority 3 — Features
 
 - [ ] **T-35 Onboard more tools into roles** — pagers done (2026-10-16: moor, ov, less, `more` fallback). Each batch its own small spec: editor (nano, vim); picker (skim; television needs its own adapter); file-manager (yazi, superfile, broot); url-fetch (httpie, xh, curlie, aria2); suggested roles: shell-history (atuin), git-tui (lazygit, gitui), process-viewer (procs, btop, bottom), disk-usage (dust, dua, gdu), json (jq, jaq, fx, jless), dotfiles (chezmoi, yadm), quick-help (tealdeer), secrets (bitwarden), replace (sd), watch (watchexec), code-stats (tokei, scc). Promote `markdown-viewer` from category to single once something consumes a winner.
+- [ ] **T-67 atuin and mcfly in `history-search`** — history navigators that fill only Ctrl+R; join the `history-search` role from the fuzzy-finders batch (`docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md`) with their own init (`atuin init powershell`, `mcfly init powershell`), binding only Ctrl+R.
+- [ ] **T-68 `directory-jump` role for Alt+C** — fuzzy cd: broot, file managers (yazi, superfile), fzf/PSFzf's Alt+C. PSFzf binds Alt+C in its companion until this role exists.
+- [ ] **T-69 Setup notes for existing tools** — review every tool for manual steps the user must take (fonts, terminal settings, …) and declare them as `setup.notes` (fuzzy-finders spec).
 - [ ] **T-36 Survey more per-directory env tools** — beyond ps-dotenv, mise and direnv. Also: write direnv's Git Bash `bash_path` config (setup lifecycle) and record its variable-unloading bug in `docs/external-dependencies.md`.
 - [ ] **T-65 Show everything DotForge intercepts, and how to bypass it** — one command that reports the whole DotForge environment, above all what silently changes a tool's default behavior: every executable wrapped by a function (the `wrapper` block, custom wrappers like fastfetch's), every alias that shadows a command or program (role aliases such as `ls`, the coreutils shadow set), prompt and key-binding hooks (zoxide, PSFzf), each with what it adds or changes. Config files and env vars are visible and already in `Get-DFToolStatus`; list them too, but separately. Document for users how to bypass an override per call (e.g. `rg.exe`, `& (Get-Command rg -CommandType Application)`) and how to opt out per tool or per kind of override entirely (new config keys if needed). Build it from what the records and session already know (no hand-kept list). Brainstorm and spec first.
 - [ ] **T-64 ripgrep colors follow the chosen theme** — rg has no theme variable; colors come only from `--colors` flags. Sketch: a `theme` block with `files: "ripgrep"` (per-theme `--colors` lines in `Tools/ripgrep/themes/`), applied through an `rg` wrapper, since the seeded `ripgreprc` is copied once and can't follow `Set-DFToolTheme`. Weigh that a wrapper function shadows `rg.exe` for every caller, pickers included. Short design first.
