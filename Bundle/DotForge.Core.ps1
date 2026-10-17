@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 98e858b7d5c4dc745a6b23ed17d8c65a45d89ade1f066fc61377af59164328d2
+# sources-sha256: 40d826a4ecf75b56c69924d0def0f7d073c265f3c1c07354589a7cecf16ce7ac
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1509,7 +1509,7 @@ function ConvertTo-DFToolRecord {
 function ConvertTo-DFRoleFlags {
     <#
     .SYNOPSIS
-        Normalizes a role block's flags: word -> string array ($null when absent).
+        Normalizes a role block's flags: word -> array of arguments and groups ($null when absent).
     .PARAMETER Flags
         The parsed flags object.
     .OUTPUTS
@@ -1519,7 +1519,8 @@ function ConvertTo-DFRoleFlags {
     param([AllowNull()][object]$Flags)
     if ($Flags -isnot [pscustomobject]) { return $null }
     $map = [ordered]@{}
-    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = [string[]]@($p.Value) }
+    # An item is an argument, or a { ifFile, unlessFile, args } group (Resolve-DFRoleFlagGroup).
+    foreach ($p in $Flags.PSObject.Properties) { $map[$p.Name] = @($p.Value | ForEach-Object { if ($_ -is [string]) { [string]$_ } elseif ($_ -is [pscustomobject]) { $_ } else { [string]$_ } }) }
     [pscustomobject]$map
 }
 
@@ -1651,10 +1652,14 @@ function Invoke-DFPagerExe {
         $program = $parts[0]
         $rest    = if ($parts.Count -gt 1) { $parts[1] } else { '' }
     }
-    if ($rest -match '["\x27]') {
-        Write-Warning "DotForge: Quoted arguments in `$Env:Pager are not supported. Use --key=value form (e.g. bat --theme=Dracula)."
+    # A double-quoted argument stays whole (DotForge quotes a path with a space, such as
+    # ov's --config); single quotes aren't understood.
+    if ($rest -match "\x27") {
+        Write-Warning "DotForge: Single-quoted arguments in `$Env:Pager are not supported. Use double quotes or --key=value form (e.g. bat --theme=Dracula)."
     }
-    [string[]] $pagerArgs = if ($rest) { $rest -split '\s+' } else { @() }
+    [string[]] $pagerArgs = @([regex]::Matches($rest, '"([^"]*)"|(\S+)') | ForEach-Object {
+        if ($_.Groups[1].Success) { $_.Groups[1].Value } else { $_.Groups[2].Value }
+    })
     $Lines | & $program @pagerArgs
 }
 
@@ -1968,8 +1973,8 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
             $v = Get-DFSchemaProperty $r.Value 'env';     if ($null -ne $v) { Get-DFMapSchemaError $v "roles.$($r.Name).env" }
             $v = Get-DFSchemaProperty $r.Value 'flags'
             if ($null -ne $v -and ($v -isnot [pscustomobject] -or @($v.PSObject.Properties | Where-Object {
-                    $_.Value -isnot [array] -or @($_.Value | Where-Object { $_ -isnot [string] }).Count }).Count)) {
-                "roles.$($r.Name).flags must map words to arrays of strings"
+                    $_.Value -isnot [array] -or @($_.Value | Where-Object { -not (Test-DFRoleFlagItem $_) }).Count }).Count)) {
+                "roles.$($r.Name).flags must map words to arrays of strings or { ifFile, unlessFile, args } groups"
             }
         }
     }
@@ -2312,6 +2317,22 @@ function Get-DFFieldSuggestion {
         if ($d[$a.Length, $b.Length] -lt $bestDist) { $bestDist = $d[$a.Length, $b.Length]; $best = $k }
     }
     $best
+}
+
+function Test-DFRoleFlagItem ([object]$Item) {
+    <#
+    .SYNOPSIS
+        Whether one role flag item is valid: a string, or a group whose args is an array of strings and whose ifFile/unlessFile are strings.
+    #>
+    if ($Item -is [string]) { return $true }
+    if ($Item -isnot [pscustomobject]) { return $false }
+    $argsValue = $Item.PSObject.Properties['args']?.Value
+    if ($argsValue -isnot [array] -or @($argsValue | Where-Object { $_ -isnot [string] }).Count) { return $false }
+    foreach ($key in 'ifFile', 'unlessFile') {
+        $v = $Item.PSObject.Properties[$key]?.Value
+        if ($null -ne $v -and $v -isnot [string]) { return $false }
+    }
+    $true
 }
 
 # ---- Shared/Write-DFFileAtomic.ps1
@@ -3014,6 +3035,7 @@ $script:DFConfigKeys = [ordered]@{
     MdcatTheme         = 'mdcat theme'
     MdvTheme           = 'mdv theme'
     MoorTheme          = 'moor theme'
+    OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     VividTheme         = 'vivid (LS_COLORS) theme'
     PSReadLineTheme    = 'PSReadLine theme'
     PSReadLineEditMode = 'PSReadLine edit mode'
@@ -3670,17 +3692,25 @@ function Resolve-DFRoleWords {
     .PARAMETER Words
         The words, in the order their flags go.
     .PARAMETER Flags
-        The winner's role block flags (word -> string array).
+        The winner's role block flags (word -> arguments, each a string or a
+        { ifFile, unlessFile, args } group).
+    .PARAMETER Tool
+        The winner's tool record, for a group's {settings.<name>} and {theme}.
     .OUTPUTS
         pscustomobject { Args = [string[]]; Missing = [string[]] }.
     #>
     [CmdletBinding()]
-    param([AllowEmptyCollection()][string[]]$Words, [AllowNull()][object]$Flags)
+    param([AllowEmptyCollection()][string[]]$Words, [AllowNull()][object]$Flags, [PSCustomObject]$Tool)
     $argList = [System.Collections.Generic.List[string]]::new()
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($word in $Words) {
         $mapped = if ($Flags) { $Flags.PSObject.Properties[$word] }
-        if ($mapped) { foreach ($a in @($mapped.Value)) { if ($a) { $argList.Add($a) } } } else { $missing.Add($word) }
+        if (-not $mapped) { $missing.Add($word); continue }
+        foreach ($item in @($mapped.Value)) {
+            # A string first: -is [pscustomobject] is also true of a PSObject-wrapped string.
+            if ($item -is [string]) { if ($item) { $argList.Add($item) } }
+            elseif ($item -is [pscustomobject]) { foreach ($a in Resolve-DFRoleFlagGroup -Group $item -Tool $Tool) { $argList.Add($a) } }
+        }
     }
     [pscustomobject]@{ Args = [string[]]$argList.ToArray(); Missing = [string[]]$missing.ToArray() }
 }
@@ -3737,7 +3767,7 @@ function Get-DFRoleBehaviorAlias {
     $aliases = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.aliases.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags
+        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags -Tool $Tool
         $aliases[$name] = [pscustomobject]@{ command = $command; args = $resolved.Args }
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
@@ -3770,15 +3800,113 @@ function Get-DFRolePicker {
     $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
     $missing = [ordered]@{}
     $pickers = foreach ($picker in @($RoleDefinition.behaviors.pickers)) {
-        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags
+        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags -Tool $Tool
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
         $copy = [ordered]@{}
         foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
-        $copy['list'] = (@($command) + $resolved.Args) -join ' '
+        # The list becomes PowerShell code (Set-DFPickerFunction), so each argument is a literal.
+        $copy['list'] = (@($command) + @($resolved.Args | ForEach-Object { ConvertTo-DFPowerShellLiteral $_ })) -join ' '
         [pscustomobject]$copy
     }
     if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
     @($pickers)
+}
+
+function Resolve-DFRoleFlagGroup {
+    <#
+    .SYNOPSIS
+        A conditional flag group's arguments: passed only while ifFile exists and unlessFile doesn't.
+    .DESCRIPTION
+        Paths expand {theme} (the tool's resolved theme value; none means the file is
+        missing), then {settings.<name>} and ${XDG_*} (Expand-DFToolToken), and are
+        canonical. {file} in args is the ifFile path.
+    .PARAMETER Group
+        { ifFile?, unlessFile?, args }.
+    .PARAMETER Tool
+        The tool record.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][PSCustomObject]$Group, [PSCustomObject]$Tool)
+    $expand = {
+        param([string]$Template)
+        if (-not $Template) { return }
+        if ($Template.Contains('{theme}')) {
+            $theme = if ($Tool -and $Tool.theme) { (Get-DFToolTheme -Tool $Tool).Value }
+            if (-not $theme) { return }
+            $Template = $Template.Replace('{theme}', [string]$theme)
+        }
+        Expand-DFToolToken -Tool $Tool -Text $Template
+    }
+    $ifFile = $Group.PSObject.Properties['ifFile']?.Value
+    $unlessFile = $Group.PSObject.Properties['unlessFile']?.Value
+    $file = if ($ifFile) { & $expand $ifFile }
+    if ($ifFile -and -not ($file -and (Test-Path -LiteralPath $file -PathType Leaf))) { return }
+    if ($unlessFile) {
+        # Fail closed: a guard path that can't be named can't be shown absent.
+        $other = & $expand $unlessFile
+        if (-not $other -or (Test-Path -LiteralPath $other -PathType Leaf)) { return }
+    }
+    # A path ends up inside a command line (PAGER, a picker's list): never let it carry shell syntax.
+    if ($file -and $file -match '[`"$%\r\n]') {
+        if ($Tool) { Add-DFToolNote -Tool $Tool.name -Note "skipped a flag group: unsafe characters in path '$file'" }
+        return
+    }
+    [string[]]@(foreach ($arg in @($Group.args)) { if ($file) { ([string]$arg).Replace('{file}', $file) } else { [string]$arg } })
+}
+
+function Get-DFRoleBehaviorEnv {
+    <#
+    .SYNOPSIS
+        Builds a won role's behavior variables: the winner's executable and each word's flags.
+    .DESCRIPTION
+        The executable is the ${DF_TOOL_EXE} token (ConvertTo-DFToolExePathToken: the
+        winner's own build, quoted when it has a space). An argument holding a space is
+        quoted, so a program that splits the variable keeps it whole. A missing word is
+        noted as for aliases.
+    .PARAMETER RoleDefinition
+        The role record, with behaviors.env.
+    .PARAMETER Block
+        The winner's normalized block for the role.
+    .PARAMETER Tool
+        The winner's tool record.
+    .OUTPUTS
+        System.Collections.Specialized.OrderedDictionary: variable -> command line.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Block,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $command = ConvertTo-DFToolExePathToken -Tool $Tool
+    $values = [ordered]@{}
+    $missing = [ordered]@{}
+    foreach ($name in $RoleDefinition.behaviors.env.Keys) {
+        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
+        $quoted = foreach ($a in $resolved.Args) { if ($a -match '[\s;&|<>()''^]') { "`"$a`"" } else { $a } }
+        $values[$name] = (@($command) + @($quoted)) -join ' '
+        foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
+    }
+    if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
+    $values
+}
+function ConvertTo-DFPowerShellLiteral {
+    <#
+    .SYNOPSIS
+        An argument as PowerShell source: bare when plainly safe, else a single-quoted literal.
+    .PARAMETER Value
+        The argument.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowEmptyString()][string]$Value)
+    if ($Value -match '^[A-Za-z0-9_./:=+,@-]+$') { return $Value }
+    "'" + $Value.Replace("'", "''") + "'"
 }
 
 # ---- Private/Get-DFRoleDb.ps1
@@ -3865,6 +3993,12 @@ function ConvertTo-DFRoleRecord {
     if ($behaviors.Value) {
         $reservedAliases = [string[]]@(@($behaviors.Value.aliases.Keys) + @($behaviors.Value.pickers | ForEach-Object alias | Where-Object { $_ }))
     }
+    # behaviors.env variables are the role's too.
+    $reservedEnv = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
+    if ($behaviors.Value -and $behaviors.Value.env.Count) {
+        $reservedEnv = [string[]]@(@($reservedEnv) + @($behaviors.Value.env.Keys) | Select-Object -Unique)
+    }
+    $fallback = $props['fallback']?.Value
     $record = [pscustomobject]@{
         name            = $Name
         kind            = $props['kind']?.Value
@@ -3872,13 +4006,14 @@ function ConvertTo-DFRoleRecord {
         hook            = $props['hook']?.Value
         emptyMembership = [bool]$props['emptyMembership']?.Value
         reserved        = [pscustomobject]@{
-            env     = [string[]]@(if ($null -ne $resProps) { $resProps['env']?.Value })
+            env     = $reservedEnv
             aliases = $reservedAliases
             code    = [string[]]@(if ($null -ne $resProps) { $resProps['code']?.Value })
         }
         requires        = [string]$props['requires']?.Value
         description     = [string]$props['description']?.Value
         behaviors       = $behaviors.Value
+        fallback        = $fallback
     }
 
     $problem = switch ($record.kind) {
@@ -3889,11 +4024,15 @@ function ConvertTo-DFRoleRecord {
             $expected = "Initialize-DFRole$pascal"
             if ($record.hook -cne $expected) { "hook '$($record.hook)' must be $expected" }
             elseif ($behaviors.Problem) { $behaviors.Problem }
+            elseif ($fallback) {
+                $bad = @($fallback.PSObject.Properties['env']?.Value.PSObject.Properties | ForEach-Object Name | Where-Object { $_ -notin $reservedEnv })
+                if ($bad) { "fallback sets $($bad -join ', '), which the role does not reserve" }
+            }
         }
         'category' {
-            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or
+            if ($record.hook -or $record.emptyMembership -or $record.exclusive -or $record.behaviors -or $record.fallback -or
                 $record.reserved.env.Count -or $record.reserved.aliases.Count -or $record.reserved.code.Count) {
-                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors or reserved names'
+                'a category role cannot declare a hook, exclusive, emptyMembership, behaviors, fallback or reserved names'
             }
         }
         default { "unknown kind '$($record.kind)' (expected single or category)" }
@@ -3926,11 +4065,15 @@ function ConvertTo-DFRoleBehaviors {
         if ($alias) { $aliases[$alias.Name] = [string[]]@($alias.Value) }
     }
     $pickers = @($Behaviors.PSObject.Properties['pickers']?.Value | Where-Object { $_ })
-    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) })
+    $env = [ordered]@{}
+    foreach ($var in @($Behaviors.PSObject.Properties['env']?.Value.PSObject.Properties)) {
+        if ($var) { $env[$var.Name] = [string[]]@($var.Value) }
+    }
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ })
     $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
     $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
     [pscustomobject]@{
-        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers }
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env }
         Problem = $problem
     }
 }
@@ -5062,6 +5205,8 @@ function Invoke-DFSessionActivation {
         Complete-DFToolOwnership -State $owned.State
     }
 
+    # A role nothing in the session fills may name a fallback (pager: more).
+    Set-DFRoleFallback -RoleDb $roleDb -RoleWinners $winners -SessionTools @($script:DFSessionToolDb.Values) | Out-Null
     Add-DFRoleOutcomeStatus -RoleWinners $winners
 
     # Install hints are built later, when the status is read (Add-DFInstallHint).
@@ -6714,9 +6859,9 @@ function Invoke-DFWonRoles {
         $won = $RoleWinners[$roleName]
         if (-not $won -or $won.Winner -ne $Tool.name) { continue }
         $block = $Tool.roles.$roleName
+        # An explicit Defaults choice overrides a value set outside DotForge; an auto-pick doesn't.
+        $explicit = if ($won.Reason -eq 'Defaults') { "`$DFConfig.Defaults.$roleName is '$($won.Winner)'; using $($won.Winner)" }
         if ($block.env) {
-            # An explicit Defaults choice overrides a value set outside DotForge; an auto-pick doesn't.
-            $explicit = if ($won.Reason -eq 'Defaults') { "`$DFConfig.Defaults.$roleName is '$($won.Winner)'; using $($won.Winner)" }
             foreach ($var in $block.env.PSObject.Properties) {
                 # ${DF_TOOL_EXE}: the winner's own executable path (see Resolve-DFToolExecutable).
                 $value = [string]$var.Value
@@ -6736,6 +6881,8 @@ function Invoke-DFWonRoles {
             }
             Register-DFToolAliases -Tool $Tool -Aliases (Get-DFRoleBehaviorAlias -RoleDefinition $roleDefinition -Block $block -Tool $Tool)
             foreach ($picker in Get-DFRolePicker -RoleDefinition $roleDefinition -Block $block -Tool $Tool) { Set-DFPickerFunction -Picker $picker }
+            $built = Get-DFRoleBehaviorEnv -RoleDefinition $roleDefinition -Block $block -Tool $Tool
+            foreach ($var in $built.Keys) { Set-DFEnv -Name $var -Value $built[$var] -Tool $Tool.name -ExplicitReason $explicit }
         } elseif ($block.aliases) {
             Register-DFToolAliases -Tool $Tool -Aliases $block.aliases
         }
@@ -7118,6 +7265,45 @@ function Format-DFEnvValue {
     [OutputType([string])]
     param([AllowEmptyString()][AllowNull()][string]$Value)
     if ($Value.Length -gt 60) { $Value.Substring(0, 57) + '...' } else { $Value }
+}
+
+# ---- Private/Set-DFRoleFallback.ps1
+#Requires -Version 7.2
+
+function Set-DFRoleFallback {
+    <#
+    .SYNOPSIS
+        Applies each single role's fallback env when no tool in the session fills the role.
+    .DESCRIPTION
+        A role in data/roles.json may name a fallback (pager: PAGER = more). It applies
+        only when this activation picked no winner and no member is active in the session
+        (a later Register-DFTool -Name for another tool must not undo an earlier winner).
+        Written through Set-DFEnv, so a value set outside DotForge is kept.
+    .PARAMETER RoleDb
+        Get-DFRoleDb.
+    .PARAMETER RoleWinners
+        This activation's Get-DFRoleWinners result.
+    .PARAMETER SessionTools
+        The session's tool records (each role's members are found among them).
+    .OUTPUTS
+        System.String[]: the roles whose fallback was applied.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory)][hashtable]$RoleDb,
+        [Parameter(Mandatory)][hashtable]$RoleWinners,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$SessionTools
+    )
+    [string[]]@(foreach ($role in $RoleDb.Values) {
+        if (-not $role.fallback -or $RoleWinners.ContainsKey($role.name)) { continue }
+        $active = @(Get-DFRoleMember -Role $role.name -Tools $SessionTools | Where-Object { Test-DFToolActive $_.name })
+        if ($active) { continue }
+        foreach ($var in $role.fallback.env.PSObject.Properties) {
+            Set-DFEnv -Name $var.Name -Value ([string]$var.Value) -Tool "$($role.name) role"
+        }
+        $role.name
+    })
 }
 
 # ---- Private/Set-DFToolXdgConfig.ps1
@@ -8204,7 +8390,7 @@ function Get-DFRole {
 
         Shows whether a pager variable you set outside DotForge is overriding the pager role's winner.
     .OUTPUTS
-        DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Overridden.
+        DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Fallback (what the role falls back to when nothing wins), Overridden.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>
@@ -8257,6 +8443,12 @@ function Get-DFRole {
             Candidates  = [string[]]@($candidates)
             Winner      = ${w}?.Winner
             Reason      = ${w}?.Reason
+            # With no winner, what the role falls back to (pager: PAGER = more).
+            Fallback    = if (-not $w -and $role.fallback) {
+                $map = [ordered]@{}
+                foreach ($v in $role.fallback.env.PSObject.Properties) { $map[$v.Name] = [string]$v.Value }
+                [pscustomobject]$map
+            }
             Overridden  = $overridden
         }
     }

@@ -40,7 +40,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -182,9 +182,18 @@ $DFConfig = @{
 }
 ```
 
+### Pagers
+
+moor, ov and less page the same way, whichever wins the `pager` role (moor, then ov,
+then less): output that fits one screen isn't paged, colors pass through, the output
+stays on screen when you quit, and the mouse wheel scrolls. The winner sets `PAGER` and
+`BAT_PAGER` (so bat pages the same way); with none of them installed, both are `more`.
+ov also follows your theme (`OvTheme`, else `Theme`) unless you have your own
+`$XDG_CONFIG_HOME\ov\config.yaml`. `Get-DFRole pager` shows the winner, or the fallback.
+
 ### Your own variables win, unless you pick a tool
 
-A role's variables are `PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
+A role's variables are `PAGER` and `BAT_PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
 
 Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `python-package-manager` (PyPI: uv, then pipx, then pip), `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
 
@@ -346,7 +355,7 @@ Set these in your profile, before or after importing DotForge:
 | Variable | Used by | Example |
 | --- | --- | --- |
 | `EDITOR` | `ep` (edit profile), `frg` (open a search result); set by the `editor` role's winner when you haven't set it | `$Env:EDITOR = 'code'` |
-| `PAGER` | `pg`, `hm`, `clhp`: output goes through it when set; set by the `pager` role's winner when you haven't set it | `$Env:PAGER = 'less -R'` |
+| `PAGER` | `pg`, `hm`, `clhp`: output goes through it when set; set by the `pager` role's winner (else `more`) when you haven't set it | `$Env:PAGER = 'less -R'` |
 | `Picker` | every picker; the fzf-compatible program to run; set by the `picker` role's winner when you haven't set it | `$Env:Picker = 'sk'` (skim) |
 | `NO_COLOR` | `hm`, `clh`, `env`: any value turns colors off | `$Env:NO_COLOR = '1'` |
 | `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | everything; set them yourself to move the folders | `$Env:XDG_CONFIG_HOME = 'D:\dotfiles\config'` |

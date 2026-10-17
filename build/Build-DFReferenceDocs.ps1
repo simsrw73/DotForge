@@ -332,6 +332,26 @@ function Get-ToolMarkdown($Tool, [string]$ToolsDir, [string[]]$ToolsWithFunction
                     Pickers = @(Get-DFRolePicker -RoleDefinition $definition -Block $record.roles.$RoleName -Tool $record)
                 }
             } $r.Name $Tool
+            # A role's behaviors.env, described rather than built: the built value names this
+            # machine's executable path and depends on which files exist.
+            $envWords = & (Get-Module DotForge) { param($n) (Get-DFRoleDb)[$n]?.behaviors?.env } $r.Name
+            $flags = & $prop $r.Value 'flags'
+            if ($envWords -and $envWords.Count -and $flags) {
+                $exeName = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
+                & $add "Sets, as the $($r.Name) tool" (($envWords.Keys | ForEach-Object {
+                    $parts = foreach ($word in $envWords[$_]) {
+                        foreach ($item in @($flags.PSObject.Properties[$word]?.Value)) {
+                            if ($item -is [string]) { $item }
+                            elseif ($item) {
+                                $when = @(if ($item.PSObject.Properties['ifFile']) { "if $($item.ifFile) exists" }
+                                          if ($item.PSObject.Properties['unlessFile']) { "unless $($item.unlessFile) exists" }) -join ', '
+                                "[$((@($item.args) -join ' ').Replace('{file}', '<file>')) $when]"
+                            }
+                        }
+                    }
+                    "$(& $code $_) = $(& $code ((@($exeName) + @($parts)) -join ' '))"
+                }) -join '<br>')
+            }
             if ($built) {
                 $ral = $built.Aliases
                 foreach ($bp in $built.Pickers) {
@@ -429,6 +449,11 @@ foreach ($roleName in $roleNamesSorted) {
     $res = & (Get-Module DotForge) { param($n) (Get-DFRoleDb)[$n]?.reserved } $roleName
     $resNames = @(@(if ($res) { @($res.env) + @($res.aliases) }) | Where-Object { $_ } | ForEach-Object { "``$_``" })
     if ($resNames) { $null = $md.AppendLine("| Only the winner sets | $($resNames -join ', ') |") }
+    $fallbackEnv = & (Get-Module DotForge) { param($n) (Get-DFRoleDb)[$n]?.fallback?.env } $roleName
+    if ($fallbackEnv) {
+        $fallbackText = (@($fallbackEnv.PSObject.Properties) | ForEach-Object { '`' + $_.Name + '` = `' + $_.Value + '`' }) -join ', '
+        $null = $md.AppendLine("| With no winner | $fallbackText |")
+    }
     if ($def.PSObject.Properties['requires']) { $null = $md.AppendLine("| Requires | $(ConvertTo-MdInline $def.requires) |") }
     $null = $md.AppendLine()
 }

@@ -249,6 +249,19 @@ the role's aliases yourself: they're ignored. If your tool lacks a word, the ali
 that use it are built without it, and `Get-DFToolStatus <tool>` says which. A record
 without `flags` (written before the role had words) keeps its own aliases.
 
+A role's words can also build variables: `pager` builds `PAGER` and `BAT_PAGER` as your
+executable followed by your flags for its words, so don't set those in your block's
+`env`. A flag can be a group passed only while a file exists (`ifFile`, which `{file}`
+names in `args`) or doesn't (`unlessFile`); paths may use `{theme}`, `${XDG_*}` and
+`{settings.<name>}`. ov's theme word:
+
+```json
+"theme": [ { "ifFile": "{theme}/config.yaml", "unlessFile": "${XDG_CONFIG_HOME}/ov/config.yaml", "args": ["--config", "{file}"] } ]
+```
+
+A role can also name a `fallback` for when no requested tool fills it; `pager` falls back
+to `more`.
+
 starship's companion is a complete example:
 
 <!-- fragment -->

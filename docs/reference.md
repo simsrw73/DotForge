@@ -383,7 +383,7 @@ After Start-DFSession, it shows the session's view: members, candidates and winn
 | `-Name` | string[] |  |  |  | Role names to show. All roles when omitted. |
 | `-ToolsPath` | string |  |  |  | Read tool records from this directory instead of the module's Tools folder. Intended for tests. |
 
-**Outputs:** DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Overridden.
+**Outputs:** DotForge.Role. Name, Kind, Exclusive, Description, Members, Candidates, Winner, Reason, Fallback (what the role falls back to when nothing wins), Overridden.
 
 **Example 1**
 
@@ -2486,13 +2486,14 @@ Installs tools. Install-DFTool tries the winner first, then the others by priori
 
 ### pager role
 
-Pages long output. The winner sets PAGER, which DotForge's own pager also reads.
+Pages long output. The winner sets PAGER and BAT_PAGER, which DotForge's own pager also reads; with no pager, more.
 
 | | |
 | --- | --- |
 | Kind | single |
 | Members | [less](#less-tool), [moor](#moor-tool), [ov](#ov-tool) |
-| Only the winner sets | `PAGER` |
+| Only the winner sets | `PAGER`, `BAT_PAGER` |
+| With no winner | `PAGER` = `more`, `BAT_PAGER` = `more` |
 
 ### picker role
 
@@ -2935,7 +2936,7 @@ Opposite of more — terminal pager
 | Creates | `${XDG_STATE_HOME}/less`<br>`${XDG_CONFIG_HOME}/less` |
 | Environment | `LESS` = `--RAW-CONTROL-CHARS --quit-if-one-screen --no-init` |
 | Roles | [`pager`](#pager-role) |
-| Sets, as the pager tool | `PAGER` = `${DF_TOOL_EXE}` |
+| Sets, as the pager tool | `PAGER` = `less -F -R -X --mouse`<br>`BAT_PAGER` = `less -F -R -X --mouse` |
 
 ### lsd tool
 
@@ -3022,9 +3023,9 @@ Pager that does the right thing without configuration (formerly moar)
 | Tags | `pager`, `viewer` |
 | Install ids | scoop: `moor` |
 | XDG method | `default` |
-| Theme | key `MoorTheme`, default `catppuccin-mocha`; sets `MOOR` = `-style {theme} -quit-if-one-screen` |
+| Theme | key `MoorTheme`, default `catppuccin-mocha`; sets `MOOR` = `-style {theme}` |
 | Roles | [`pager`](#pager-role) |
-| Sets, as the pager tool | `PAGER` = `moor` |
+| Sets, as the pager tool | `PAGER` = `moor -quit-if-one-screen -no-clear-on-exit -mousemode scroll`<br>`BAT_PAGER` = `moor -quit-if-one-screen -no-clear-on-exit -mousemode scroll` |
 
 ### nano tool
 
@@ -3092,8 +3093,9 @@ Feature-rich terminal pager with headers, columns and sections
 | Tags | `pager`, `viewer` |
 | Install ids | scoop: `ov`<br>winget: `noborus.ov` |
 | XDG method | `default` |
+| Theme | key `OvTheme`, default `catppuccin-mocha` |
 | Roles | [`pager`](#pager-role) |
-| Sets, as the pager tool | `PAGER` = `ov --quit-if-one-screen` |
+| Sets, as the pager tool | `PAGER` = `ov -F -X [--config <file> if {theme}/config.yaml exists, unless ${XDG_CONFIG_HOME}/ov/config.yaml exists]`<br>`BAT_PAGER` = `ov -F -X [--config <file> if {theme}/config.yaml exists, unless ${XDG_CONFIG_HOME}/ov/config.yaml exists]` |
 
 ### pip tool
 

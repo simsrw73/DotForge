@@ -239,7 +239,9 @@ Each `Tools/*.json` must have at minimum:
   before adding a role.
   A role may define `behaviors` (words, aliases, pickers) in `data/roles.json`; its members then map
   each word to their flags (`flags`) instead of writing the aliases, and the winner's are built from them
-  (`docs/superpowers/specs/2026-10-16-role-behaviors-design.md`).
+  (`docs/superpowers/specs/2026-10-16-role-behaviors-design.md`). `behaviors.env` builds variables the same way
+  (pager: `PAGER`, `BAT_PAGER`); a flag may be an `{ ifFile, unlessFile, args }` group; a role may name a
+  `fallback` env for when nothing in the session fills it (`docs/superpowers/specs/2026-10-16-pager-role-design.md`).
 - `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
   Read a `requires`/`after` entry only through `ConvertFrom-DFToolReference`, and list a role's members
   among records only through `Get-DFRoleMember` (`Shared/DFToolReference.ps1`).

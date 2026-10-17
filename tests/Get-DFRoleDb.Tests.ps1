@@ -19,7 +19,8 @@ Describe 'Get-DFRoleDb' {
         $db = Get-DFRoleDb -Path $script:ShippedRoles
         # listing's are derived from its behaviors: the aliases, then the pickers' aliases.
         $db['listing'].reserved.aliases | Should -Be @('ls', 'll', 'la', 'tree', 'ff')
-        $db['pager'].reserved.env | Should -Be @('PAGER')
+        # pager's behaviors.env adds BAT_PAGER to what it reserves.
+        $db['pager'].reserved.env | Should -Be @('PAGER', 'BAT_PAGER')
         $db['prompt'].reserved.code | Should -Contain 'Invoke-Expression'
         $db['editor'].reserved.env | Should -Be @('EDITOR', 'VISUAL')
     }

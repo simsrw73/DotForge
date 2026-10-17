@@ -6,6 +6,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **lsd's `ll` and `la` now mean what eza's do.** `ll` is a long listing without hidden
   entries (it had `--all` and `--header`); `la` is `ll` with hidden entries (it was a
   short listing).
@@ -25,6 +28,8 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`more` pages when no pager is installed.** A role can now name a fallback.
+- **ov follows your theme** (`OvTheme`, else `Theme`) with catppuccin colors, unless you have your own ov config.
 - **Roles describe their aliases once.** A role can define its aliases and pickers in words, and
   each member maps the words to its own flags. `listing` does this, so `ls`, `ll`, `la`, `tree` and
   `ff` mean the same with eza or lsd, and `ff` now works with lsd too.
@@ -94,6 +99,7 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`pg` split a double-quoted `PAGER` argument** (a path with a space) into pieces; it now keeps it whole.
 - **eza's and lsd's dates, sizes and permissions ignored your theme** (eza's dates were a dark blue).
   DotForge themed only file names (vivid's `LS_COLORS`). eza and lsd now get catppuccin's own themes for
   the other columns (`EzaTheme`/`LsdTheme`, else `Theme`); a theme you set up yourself still wins.
@@ -377,6 +383,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **`Import-Module DotForge` is about 5x faster** (0.70 s to 0.15 s; startup 2.23 s to 1.71 s with a
   47-tool profile). The startup core loads from one bundled file (`Bundle/DotForge.Core.ps1`, used
   only when it matches the sources; `$Env:DF_NO_BUNDLE = '1'` loads the separate files). The package catalog (`trifle`) and the general helpers are now separate modules inside
@@ -577,6 +586,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **`psreadline`'s default `EditMode` is now `Emacs`, not `Windows`.** Override with
   `$DFConfig['PSReadLineEditMode'] = 'Windows'` to keep the old default. Also folded in three
   settings that previously lived in a personal `profile.ps1` (marked there as a
@@ -708,6 +720,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **`psreadline` now defaults to `catppuccin-mocha`**, matching `mdcat`/`mdv`/`glow`.
   Previously its built-in default was `dark` — the only themed tool in this
   codebase that didn't ship catppuccin out of the box. `Tools/psreadline/catppuccin-mocha.json`
@@ -767,6 +782,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **Non-XDG environment variables moved out of `xdg.vars` into a dedicated top-level `env`
   block.** `xdg.vars` is now `${XDG_*}` path-templates only. Affects `fzf`, `delta`, `less`,
   and `mdcat` (fzf/delta/mdcat move to `xdg.method: default`). Behavior is unchanged — the same
@@ -1016,6 +1034,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - **`Get-DFEnv` (`env`) colorized output:** KEY=VALUE lines now render with a bold-cyan
   variable name, a bold-yellow `=` divider, and a faint (theme-adaptive) value, gated on
   `$Env:NO_COLOR` / VT support. Color is suppressed automatically when output is piped or
@@ -1077,6 +1098,9 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
+  colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
+  follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
 - `Register-DFTool`: respects `dependsOn` in tool JSON — tools are topologically sorted before
   registration so declared dependencies are always configured first (e.g. psreadline before PSFzf)
 - `Register-DFTool`: sets `$DFCurrentTool` to the tool's parsed JSON object in the local scope
