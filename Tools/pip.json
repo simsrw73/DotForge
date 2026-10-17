@@ -6,6 +6,19 @@
   "roles": { "python-package-manager": { "priority": 10 } },
   "requires": ["python"],
   "installs": { "from": "pypi", "install": ["pip", "install", "--user", "{id}"], "update": ["pip", "install", "--user", "--upgrade", "{id}"], "remove": ["pip", "uninstall", "-y", "{id}"], "list": "Get-DFPipInstalled", "outdated": "Get-DFPipOutdated", "batch": true },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": {
+      "PIP_CONFIG_FILE": "${XDG_CONFIG_HOME}/pip/pip.ini",
+      "PIP_CACHE_DIR": "${XDG_CACHE_HOME}/pip"
+    },
+    "native": {
+      "PIP_CONFIG_FILE": ["${APPDATA}/pip/pip.ini", "${HOME}/pip/pip.ini"],
+      "PIP_CACHE_DIR": { "paths": ["${LOCALAPPDATA}/pip/cache"], "move": false, "block": false, "guide": "it's only pip's download cache; delete it to free the space." }
+    },
+    "dirs": ["${XDG_CONFIG_HOME}/pip", "${XDG_CACHE_HOME}/pip"]
+  },
   "aliases": {},
   "picker": null
 }

@@ -36,7 +36,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -157,19 +158,22 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/broot/conf.hjson": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/broot/verbs.hjson": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -223,7 +227,7 @@
       }
     },
     "bun": {
-      "sha256": "0065b8273f902a85b4e63d974f955384fb7300cd74437cc3b556a74d051a0948",
+      "sha256": "f49a5f3143e5c05cbf98894018f67bc9c0b351a98a81eebb74523c78d374d7f5",
       "record": {
         "name": "bun",
         "executable": "bun.exe",
@@ -240,7 +244,39 @@
           "winget": "Oven-sh.Bun",
           "npm": "bun"
         },
-        "xdg": null,
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "BUN_INSTALL": "${XDG_DATA_HOME}/bun",
+            "BUN_INSTALL_CACHE_DIR": "${XDG_CACHE_HOME}/bun/install/cache"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/bun/bin",
+            "${XDG_CACHE_HOME}/bun/install/cache"
+          ],
+          "instructions": null,
+          "compliance": "full",
+          "native": {
+            "BUN_INSTALL": {
+              "paths": [
+                "${HOME}/.bun"
+              ],
+              "move": false,
+              "guide": "bun's old home holds its global packages (install\\global) and their commands (bin): reinstall them with bun add -g, then delete ~/.bun. If bun itself was installed there, keep it on PATH or reinstall bun with scoop or winget.",
+              "setting": null,
+              "block": false
+            },
+            "BUN_INSTALL_CACHE_DIR": {
+              "paths": [
+                "${HOME}/.bun/install/cache"
+              ],
+              "move": false,
+              "guide": "it's only bun's download cache; delete it to free the space.",
+              "setting": null,
+              "block": false
+            }
+          }
+        },
         "env": null,
         "aliases": {},
         "picker": null,
@@ -500,7 +536,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -659,7 +696,8 @@
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -856,7 +894,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -1041,7 +1080,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": "configPath"
+              "setting": "configPath",
+              "block": true
             }
           }
         },
@@ -1217,7 +1257,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -1501,7 +1542,8 @@
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/glow/glow.yml": {
               "paths": [
@@ -1511,7 +1553,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -1865,7 +1908,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -1932,7 +1976,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "LESSKEYIN": {
               "paths": [
@@ -1943,7 +1988,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2029,7 +2075,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2239,7 +2286,8 @@
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2332,7 +2380,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2680,7 +2729,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "NODE_REPL_HISTORY": {
               "paths": [
@@ -2688,7 +2738,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2800,7 +2851,8 @@
               ],
               "move": false,
               "guide": "That folder holds the themes oh-my-posh installed, and your prompt config may name it: copy the themes you use to $XDG_DATA_HOME/oh-my-posh/themes and point your config there.",
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -2972,7 +3024,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -3025,7 +3078,7 @@
       }
     },
     "pip": {
-      "sha256": "828f7e360834755ac3371e851411a97928ab746969552c74b1dc4da0e33dc1af",
+      "sha256": "3f0778616117488aa6bdd3f220ce758371d52932a5f0ce8f96f9f6f2a9dc2377",
       "record": {
         "name": "pip",
         "executable": "pip.exe",
@@ -3037,7 +3090,40 @@
           "package-manager"
         ],
         "packages": null,
-        "xdg": null,
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "PIP_CONFIG_FILE": "${XDG_CONFIG_HOME}/pip/pip.ini",
+            "PIP_CACHE_DIR": "${XDG_CACHE_HOME}/pip"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/pip",
+            "${XDG_CACHE_HOME}/pip"
+          ],
+          "instructions": null,
+          "compliance": "full",
+          "native": {
+            "PIP_CONFIG_FILE": {
+              "paths": [
+                "${APPDATA}/pip/pip.ini",
+                "${HOME}/pip/pip.ini"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null,
+              "block": true
+            },
+            "PIP_CACHE_DIR": {
+              "paths": [
+                "${LOCALAPPDATA}/pip/cache"
+              ],
+              "move": false,
+              "guide": "it's only pip's download cache; delete it to free the space.",
+              "setting": null,
+              "block": false
+            }
+          }
+        },
         "env": null,
         "aliases": {},
         "picker": null,
@@ -3105,7 +3191,7 @@
       }
     },
     "pipx": {
-      "sha256": "74a360377d5cb7b445b3d8bc9247107155e49c601561427db50f107af0f5f60e",
+      "sha256": "cbe4ae92eaa7039b22fc5bdd0177b73d45df1ecd920cbf6c5db8895a508ee7ff",
       "record": {
         "name": "pipx",
         "executable": "pipx",
@@ -3120,7 +3206,29 @@
           "scoop": "pipx",
           "pypi": "pipx"
         },
-        "xdg": null,
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "PIPX_HOME": "${XDG_DATA_HOME}/pipx"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/pipx"
+          ],
+          "instructions": null,
+          "compliance": "full",
+          "native": {
+            "PIPX_HOME": {
+              "paths": [
+                "${LOCALAPPDATA}/pipx/pipx",
+                "${HOME}/pipx"
+              ],
+              "move": false,
+              "guide": "pipx's old home holds the environments of the apps it installed: run pipx list with PIPX_HOME pointing there, reinstall them, then delete it.",
+              "setting": null,
+              "block": false
+            }
+          }
+        },
         "env": null,
         "aliases": {},
         "picker": null,
@@ -3184,7 +3292,7 @@
       }
     },
     "pnpm": {
-      "sha256": "8326f6637602112802306e20fae68d0bca4e3d978f9887fb10c6e92ae8fea551",
+      "sha256": "9e3bd1ceb74dfcee600807895b3e0dfd80deca0693922e0d3a95564e91c53619",
       "record": {
         "name": "pnpm",
         "executable": "pnpm.cmd",
@@ -3200,7 +3308,28 @@
           "winget": "pnpm.pnpm",
           "npm": "pnpm"
         },
-        "xdg": null,
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "PNPM_HOME": "${XDG_DATA_HOME}/pnpm"
+          },
+          "dirs": [
+            "${XDG_DATA_HOME}/pnpm"
+          ],
+          "instructions": null,
+          "compliance": "full",
+          "native": {
+            "PNPM_HOME": {
+              "paths": [
+                "${LOCALAPPDATA}/pnpm"
+              ],
+              "move": false,
+              "guide": "pnpm's old home holds its global commands and store: reinstall your global packages with pnpm add -g, then delete it. pnpm reads XDG_CONFIG_HOME, XDG_CACHE_HOME and XDG_STATE_HOME itself for the rest.",
+              "setting": null,
+              "block": false
+            }
+          }
+        },
         "env": null,
         "aliases": {},
         "picker": null,
@@ -3544,7 +3673,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -3747,7 +3877,7 @@
       }
     },
     "python": {
-      "sha256": "8f8d1a430425a1d649e3bc880af2f6cdf34dcd83eba3a6c23cb965af3f618d6f",
+      "sha256": "68cf28d72d72dbf98076fae5fc5aea7e02a224a867c375eaabaf6a8f13117e31",
       "record": {
         "name": "python",
         "executable": "python.exe",
@@ -3765,7 +3895,28 @@
           "scoop": "python",
           "winget": "Python.Python.3.13"
         },
-        "xdg": null,
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "PYTHON_HISTORY": "${XDG_STATE_HOME}/python/history"
+          },
+          "dirs": [
+            "${XDG_STATE_HOME}/python"
+          ],
+          "instructions": null,
+          "compliance": "partial",
+          "native": {
+            "PYTHON_HISTORY": {
+              "paths": [
+                "${HOME}/.python_history"
+              ],
+              "move": false,
+              "guide": "that's your Python REPL history; to keep it, copy it to $XDG_STATE_HOME\\python\\history, then delete it.",
+              "setting": null,
+              "block": false
+            }
+          }
+        },
         "env": null,
         "aliases": {},
         "picker": null,
@@ -3838,13 +3989,15 @@
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -3921,7 +4074,8 @@
               ],
               "move": false,
               "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them.",
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "CARGO_HOME": {
               "paths": [
@@ -3929,7 +4083,8 @@
               ],
               "move": false,
               "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them.",
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -4270,7 +4425,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -4363,7 +4519,8 @@
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/television/config.toml": {
               "paths": [
@@ -4371,31 +4528,36 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/television/themes/catppuccin-mocha.toml": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/television/themes/catppuccin-macchiato.toml": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/television/themes/catppuccin-frappe.toml": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/television/themes/catppuccin-latte.toml": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -4680,7 +4842,8 @@
               ],
               "move": false,
               "guide": "vcpkg roots are chosen when you clone it; follow https://learn.microsoft.com/vcpkg/get_started/get-started to relocate it.",
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -4790,13 +4953,15 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             },
             "${XDG_CONFIG_HOME}/wget/wgetrc": {
               "paths": [],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },
@@ -4966,7 +5131,8 @@
               ],
               "move": true,
               "guide": null,
-              "setting": null
+              "setting": null,
+              "block": true
             }
           }
         },

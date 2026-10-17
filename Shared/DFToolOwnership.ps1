@@ -201,7 +201,8 @@ function Find-DFToolConflict {
         Read-DFToolOwnership result.
     .OUTPUTS
         pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target,
-        TargetHasContent, Move, Guide) and Complete.
+        TargetHasContent, Move, Guide, Block) and Complete. A conflict with
+        Block false (xdg.native block: false) doesn't hold the tool back.
     #>
     [CmdletBinding()]
     param(
@@ -224,7 +225,7 @@ function Find-DFToolConflict {
             [pscustomobject]@{
                 Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target
                 TargetHasContent = Test-DFPathHasContent -Path $reloc.Target
-                Move = $reloc.Native.move; Guide = $reloc.Native.guide
+                Move = $reloc.Native.move; Guide = $reloc.Native.guide; Block = $reloc.Native.block
             }
         }
     }

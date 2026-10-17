@@ -7,6 +7,19 @@
   "after": ["role:version-manager"],
   "packages": { "scoop": "bun", "winget": "Oven-sh.Bun", "npm": "bun" },
   "installs": { "from": "npm", "install": ["bun", "add", "-g", "{id}"], "batch": true, "update": ["bun", "add", "-g", "{id}@latest"], "remove": ["bun", "remove", "-g", "{id}"], "list": "Get-DFBunInstalled" },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": {
+      "BUN_INSTALL": "${XDG_DATA_HOME}/bun",
+      "BUN_INSTALL_CACHE_DIR": "${XDG_CACHE_HOME}/bun/install/cache"
+    },
+    "native": {
+      "BUN_INSTALL": { "paths": ["${HOME}/.bun"], "move": false, "block": false, "guide": "bun's old home holds its global packages (install\\global) and their commands (bin): reinstall them with bun add -g, then delete ~/.bun. If bun itself was installed there, keep it on PATH or reinstall bun with scoop or winget." },
+      "BUN_INSTALL_CACHE_DIR": { "paths": ["${HOME}/.bun/install/cache"], "move": false, "block": false, "guide": "it's only bun's download cache; delete it to free the space." }
+    },
+    "dirs": ["${XDG_DATA_HOME}/bun/bin", "${XDG_CACHE_HOME}/bun/install/cache"]
+  },
   "aliases": {},
   "picker": null
 }

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: d93f47bd6d63a2ffd1d2cf103150edf002481dc7e2544203ce7bfd169f8caa65
+# sources-sha256: 834cc642f259d8c2d950885b3422f483ca37853c442d2128088c30343527d52f
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -484,7 +484,8 @@ function Find-DFToolConflict {
         Read-DFToolOwnership result.
     .OUTPUTS
         pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target,
-        TargetHasContent, Move, Guide) and Complete.
+        TargetHasContent, Move, Guide, Block) and Complete. A conflict with
+        Block false (xdg.native block: false) doesn't hold the tool back.
     #>
     [CmdletBinding()]
     param(
@@ -507,7 +508,7 @@ function Find-DFToolConflict {
             [pscustomobject]@{
                 Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target
                 TargetHasContent = Test-DFPathHasContent -Path $reloc.Target
-                Move = $reloc.Native.move; Guide = $reloc.Native.guide
+                Move = $reloc.Native.move; Guide = $reloc.Native.guide; Block = $reloc.Native.block
             }
         }
     }
@@ -1167,8 +1168,9 @@ function ConvertTo-DFNativeMap {
                 move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
                 guide = Get-DFToolRecordProperty $p.Value 'guide' $null
                 setting = Get-DFToolRecordProperty $p.Value 'setting' $null
+                block = [bool](Get-DFToolRecordProperty $p.Value 'block' $true)
             }
-        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null } }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null; block = $true } }
     }
     [pscustomobject]$map
 }
@@ -2206,6 +2208,8 @@ function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
         if ($entry -is [pscustomobject]) {
             $move = Get-DFSchemaProperty $entry 'move'
             if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
+            $block = Get-DFSchemaProperty $entry 'block'
+            if ($null -ne $block -and $block -isnot [bool]) { "xdg.native.$($p.Name).block must be true or false" }
             if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
             if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
             $setting = Get-DFSchemaProperty $entry 'setting'
@@ -5800,7 +5804,8 @@ function Invoke-DFSessionActivation {
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name))
+                $oldLocations = if ($owned.State.Notes.ContainsKey($tool.name)) { $owned.State.Notes[$tool.name] } else { @() }
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name) + @($oldLocations))
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }
@@ -6157,6 +6162,7 @@ function Select-DFOwnedRecord {
         Changed   = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Unchecked = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Clean     = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Notes     = @{}   # tool -> notes about old locations that don't hold it back
         Reactivate = $Reactivate
     }
     $kept = [System.Collections.Generic.List[object]]::new()
@@ -6200,10 +6206,18 @@ function Test-DFToolOwnership {
     )
     $table = $State.Table
     $check = Find-DFToolConflict -Tool $Record -Ownership $table
-    if ($check.Conflicts) {
-        $paths = @($check.Conflicts.OldPaths) -join ', '
-        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $check.Conflicts).Text)"
-        $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+    # An old location that only holds caches, installed packages or history (xdg.native block:
+    # false) is noted with its guide; the tool stays active.
+    # Kept in the ownership state, not Add-DFToolNote: registration clears a tool's notes first.
+    $oldNotes = @(foreach ($note in @($check.Conflicts | Where-Object { $_.Block -eq $false })) {
+            "$(@($note.OldPaths) -join ', ') isn't used any more: $($note.Guide)"
+        })
+    if ($oldNotes -and $State.PSObject.Properties['Notes']) { $State.Notes[$Record.name] = $oldNotes }
+    $blocking = @($check.Conflicts | Where-Object { $_.Block -ne $false })
+    if ($blocking) {
+        $paths = @($blocking.OldPaths) -join ', '
+        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $blocking).Text)"
+        $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $blocking
         # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
         # re-checks every requested tool, but warns again only for one it names.
         $previous = $script:DFSessionStatus[$Record.name]

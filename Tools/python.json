@@ -7,6 +7,15 @@
   "after": ["role:version-manager"],
   "packages": { "pymanager": "3", "uv": "3", "mise": "python@3", "scoop": "python", "winget": "Python.Python.3.13" },
   "install": { "prefer": ["pymanager", "uv"] },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": { "PYTHON_HISTORY": "${XDG_STATE_HOME}/python/history" },
+    "native": {
+      "PYTHON_HISTORY": { "paths": ["${HOME}/.python_history"], "move": false, "block": false, "guide": "that's your Python REPL history; to keep it, copy it to $XDG_STATE_HOME\\python\\history, then delete it." }
+    },
+    "dirs": ["${XDG_STATE_HOME}/python"]
+  },
   "aliases": {},
   "picker": null
 }

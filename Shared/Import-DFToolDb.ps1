@@ -275,8 +275,9 @@ function ConvertTo-DFNativeMap {
                 move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
                 guide = Get-DFToolRecordProperty $p.Value 'guide' $null
                 setting = Get-DFToolRecordProperty $p.Value 'setting' $null
+                block = [bool](Get-DFToolRecordProperty $p.Value 'block' $true)
             }
-        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null } }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null; block = $true } }
     }
     [pscustomobject]$map
 }

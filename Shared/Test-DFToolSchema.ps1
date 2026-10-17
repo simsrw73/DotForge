@@ -405,6 +405,8 @@ function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
         if ($entry -is [pscustomobject]) {
             $move = Get-DFSchemaProperty $entry 'move'
             if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
+            $block = Get-DFSchemaProperty $entry 'block'
+            if ($null -ne $block -and $block -isnot [bool]) { "xdg.native.$($p.Name).block must be true or false" }
             if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
             if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
             $setting = Get-DFSchemaProperty $entry 'setting'

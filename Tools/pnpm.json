@@ -7,6 +7,15 @@
   "requires": ["role:js-runtime"],
   "packages": { "scoop": "pnpm", "winget": "pnpm.pnpm", "npm": "pnpm" },
   "installs": { "from": "npm", "install": ["pnpm", "add", "-g", "{id}"], "batch": true, "update": ["pnpm", "add", "-g", "{id}@latest"], "remove": ["pnpm", "remove", "-g", "{id}"], "list": "Get-DFPnpmInstalled", "outdated": "Get-DFPnpmOutdated" },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": { "PNPM_HOME": "${XDG_DATA_HOME}/pnpm" },
+    "native": {
+      "PNPM_HOME": { "paths": ["${LOCALAPPDATA}/pnpm"], "move": false, "block": false, "guide": "pnpm's old home holds its global commands and store: reinstall your global packages with pnpm add -g, then delete it. pnpm reads XDG_CONFIG_HOME, XDG_CACHE_HOME and XDG_STATE_HOME itself for the rest." }
+    },
+    "dirs": ["${XDG_DATA_HOME}/pnpm"]
+  },
   "aliases": {},
   "picker": null
 }

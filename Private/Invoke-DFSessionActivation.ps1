@@ -99,7 +99,8 @@ function Invoke-DFSessionActivation {
             # profile's $ErrorActionPreference = 'Stop') must not stop the rest.
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name))
+                $oldLocations = if ($owned.State.Notes.ContainsKey($tool.name)) { $owned.State.Notes[$tool.name] } else { @() }
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name) + @($oldLocations))
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }
@@ -456,6 +457,7 @@ function Select-DFOwnedRecord {
         Changed   = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Unchecked = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Clean     = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        Notes     = @{}   # tool -> notes about old locations that don't hold it back
         Reactivate = $Reactivate
     }
     $kept = [System.Collections.Generic.List[object]]::new()
@@ -499,10 +501,18 @@ function Test-DFToolOwnership {
     )
     $table = $State.Table
     $check = Find-DFToolConflict -Tool $Record -Ownership $table
-    if ($check.Conflicts) {
-        $paths = @($check.Conflicts.OldPaths) -join ', '
-        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $check.Conflicts).Text)"
-        $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $check.Conflicts
+    # An old location that only holds caches, installed packages or history (xdg.native block:
+    # false) is noted with its guide; the tool stays active.
+    # Kept in the ownership state, not Add-DFToolNote: registration clears a tool's notes first.
+    $oldNotes = @(foreach ($note in @($check.Conflicts | Where-Object { $_.Block -eq $false })) {
+            "$(@($note.OldPaths) -join ', ') isn't used any more: $($note.Guide)"
+        })
+    if ($oldNotes -and $State.PSObject.Properties['Notes']) { $State.Notes[$Record.name] = $oldNotes }
+    $blocking = @($check.Conflicts | Where-Object { $_.Block -ne $false })
+    if ($blocking) {
+        $paths = @($blocking.OldPaths) -join ', '
+        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $blocking).Text)"
+        $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $blocking
         # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
         # re-checks every requested tool, but warns again only for one it names.
         $previous = $script:DFSessionStatus[$Record.name]
