@@ -1,0 +1,18 @@
+{
+  "name": "catppuccin-frappe",
+  "colors": {
+    "fg": "#c6d0f5",
+    "bg": "#303446",
+    "matched": "#e78284",
+    "current": "#c6d0f5",
+    "current_bg": "#414559",
+    "current_match": "#e78284",
+    "spinner": "#f2d5cf",
+    "info": "#ca9ee6",
+    "prompt": "#ca9ee6",
+    "cursor": "#f2d5cf",
+    "selected": "#f2d5cf",
+    "header": "#e78284",
+    "border": "#737994"
+  }
+}

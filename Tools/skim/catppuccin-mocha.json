@@ -1,0 +1,18 @@
+{
+  "name": "catppuccin-mocha",
+  "colors": {
+    "fg": "#cdd6f4",
+    "bg": "#1e1e2e",
+    "matched": "#f38ba8",
+    "current": "#cdd6f4",
+    "current_bg": "#313244",
+    "current_match": "#f38ba8",
+    "spinner": "#f5e0dc",
+    "info": "#cba6f7",
+    "prompt": "#cba6f7",
+    "cursor": "#f5e0dc",
+    "selected": "#f5e0dc",
+    "header": "#f38ba8",
+    "border": "#6c7086"
+  }
+}

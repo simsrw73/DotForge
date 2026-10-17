@@ -1,0 +1,18 @@
+{
+  "name": "catppuccin-latte",
+  "colors": {
+    "fg": "#4c4f69",
+    "bg": "#eff1f5",
+    "matched": "#d20f39",
+    "current": "#4c4f69",
+    "current_bg": "#ccd0da",
+    "current_match": "#d20f39",
+    "spinner": "#dc8a78",
+    "info": "#8839ef",
+    "prompt": "#8839ef",
+    "cursor": "#dc8a78",
+    "selected": "#dc8a78",
+    "header": "#d20f39",
+    "border": "#9ca0b0"
+  }
+}

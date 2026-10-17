@@ -1,0 +1,18 @@
+{
+  "name": "catppuccin-macchiato",
+  "colors": {
+    "fg": "#cad3f5",
+    "bg": "#24273a",
+    "matched": "#ed8796",
+    "current": "#cad3f5",
+    "current_bg": "#363a4f",
+    "current_match": "#ed8796",
+    "spinner": "#f4dbd6",
+    "info": "#c6a0f6",
+    "prompt": "#c6a0f6",
+    "cursor": "#f4dbd6",
+    "selected": "#f4dbd6",
+    "header": "#ed8796",
+    "border": "#6e738d"
+  }
+}

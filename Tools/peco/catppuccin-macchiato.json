@@ -1,0 +1,25 @@
+{
+  "Style": {
+    "Basic": [
+      "#cad3f5"
+    ],
+    "SavedSelection": [
+      "bold",
+      "#f4dbd6"
+    ],
+    "Selected": [
+      "#cad3f5",
+      "on_#363a4f"
+    ],
+    "Query": [
+      "#cad3f5"
+    ],
+    "Matched": [
+      "#ed8796"
+    ],
+    "Prompt": [
+      "#c6a0f6"
+    ]
+  },
+  "Layout": "top-down"
+}
