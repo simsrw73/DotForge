@@ -132,3 +132,34 @@ Describe 'broot companion: br and Alt+C' {
         (Import-DFToolDb -ToolsPath $script:Tools -Name broot).broot.roles.'directory-jump'.priority | Should -Be 3
     }
 }
+
+Describe 'broot setup' {
+    BeforeEach {
+        Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
+        Remove-Item (Get-DFToolSetupStatePath), (Join-Path $Env:XDG_CONFIG_HOME 'broot') -Recurse -Force -ErrorAction Ignore
+        Mock Test-DFToolAvailable { $true }
+        Mock Write-DFConflictNotice { }
+        Mock Write-Host { }
+        $script:SavedConfigDir = $Env:BROOT_CONFIG_DIR
+        $script:Exit = 0
+        Mock Invoke-DFBoundedProcess { [pscustomobject]@{ Lines = @(); ExitCode = $script:Exit } }
+    }
+    AfterEach { $Env:BROOT_CONFIG_DIR = $script:SavedConfigDir; Remove-DFTestGlobal -Function br; Restore-DFTestXdg; Set-DFTestConfig $null }
+
+    It 'tells broot its br is handled, once, with a note, and BROOT_CONFIG_DIR already set' {
+        Start-DFSession -Config @{ Tools = @('broot') } -ToolsPath $script:Tools 3>$null
+        Should -Invoke Invoke-DFBoundedProcess -Times 1 -Exactly -ParameterFilter {
+            ($ArgumentList -join ' ') -eq '--set-install-state installed' -and $TimeoutSeconds -eq 30 -and $Env:BROOT_CONFIG_DIR -eq (Join-Path $Env:XDG_CONFIG_HOME 'broot')
+        }
+        "$((Get-DFToolSetupState).broot.notes)" | Should -Match 'DotForge provides br'
+        Reset-DFTestSession
+        Start-DFSession -Config @{ Tools = @('broot') } -ToolsPath $script:Tools 3>$null
+        Should -Invoke Invoke-DFBoundedProcess -Times 1 -Exactly -ParameterFilter { ($ArgumentList -join ' ') -eq '--set-install-state installed' }
+    }
+    It 'still completes when broot fails, with a note to run it yourself' {
+        $script:Exit = 1
+        Start-DFSession -Config @{ Tools = @('broot') } -ToolsPath $script:Tools 3>$null
+        (Get-DFToolSetupState).PSObject.Properties['broot'] | Should -Not -BeNullOrEmpty
+        "$((Get-DFToolSetupState).broot.notes)" | Should -Match 'broot --set-install-state installed'
+    }
+}
