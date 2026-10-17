@@ -60,6 +60,6 @@ Describe 'skim key hooks' {
         Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'sk' -and $Key -eq 'History' }
         Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'sk' -and $Key -eq 'Path' }
         Initialize-DFRoleDirectoryJump -Tool ([pscustomobject]@{ name = 'skim' }) -Role 'directory-jump'
-        Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'sk' -and $Key -eq 'Directory' }
+        Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'sk' -and $Key -eq 'Directory' -and $Accent -eq '#cba6f7' }
     }
 }

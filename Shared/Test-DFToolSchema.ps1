@@ -99,6 +99,10 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                         "roles.$($r.Name).$field must be a non-empty array of strings"
                     }
                 }
+                $scored = $r.Value.PSObject.Properties['directoriesScored']
+                if ($scored -and $scored.Value -isnot [bool]) {
+                    "roles.$($r.Name).directoriesScored must be a boolean"
+                }
                 $enter = $r.Value.PSObject.Properties['enter']
                 if ($enter -and ($enter.Value -isnot [string] -or -not $enter.Value)) {
                     "roles.$($r.Name).enter must be a non-empty string"
@@ -432,7 +436,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'enter', 'directoryScan'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'directoriesScored', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))

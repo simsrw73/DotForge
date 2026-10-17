@@ -130,7 +130,7 @@ Describe 'Test-DFToolSchema' {
             $valid = '{ "name": "t", "executable": "t.exe", "roles": { "navigation": { "directories": ["t", "list"], "enter": "cd" }, "file-search": { "directoryScan": ["t", "{depth}"] } } }' | ConvertFrom-Json
             $result = Test-DFToolSchema -Tool $valid
             $result.Valid | Should -BeTrue -Because "$($result.Errors)"
-            foreach ($bad in '{ "directories": "t list" }', '{ "directories": [] }', '{ "directories": [1] }', '{ "enter": ["cd"] }', '{ "enter": "" }', '{ "directoryScan": "fd" }') {
+            foreach ($bad in '{ "directoriesScored": "yes" }', '{ "directories": "t list" }', '{ "directories": [] }', '{ "directories": [1] }', '{ "enter": ["cd"] }', '{ "enter": "" }', '{ "directoryScan": "fd" }') {
                 $field = ($bad | ConvertFrom-Json).PSObject.Properties.Name
                 $tool = ('{ "name": "t", "executable": "t.exe", "roles": { "navigation": ' + $bad + ' } }') | ConvertFrom-Json
                 $result = Test-DFToolSchema -Tool $tool

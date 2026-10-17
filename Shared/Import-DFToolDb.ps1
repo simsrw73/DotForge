@@ -341,6 +341,7 @@ function ConvertTo-DFRoleMap {
                 flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
                 # Folder sources for Alt+C (directory-jump), read with Get-DFRoleDeclaration.
                 directories   = ConvertTo-DFRoleArgv $role.Value 'directories'
+                directoriesScored = [bool](Get-DFToolRecordProperty $role.Value 'directoriesScored' $false)
                 enter         = Get-DFToolRecordProperty $role.Value 'enter' $null
                 directoryScan = ConvertTo-DFRoleArgv $role.Value 'directoryScan'
                 legacy   = $false
@@ -353,7 +354,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; enter = $null; directoryScan = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; directoriesScored = $false; enter = $null; directoryScan = $null; legacy = $true }
     }
 
     [pscustomobject]$roles

@@ -32,6 +32,10 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Alt+C's zoxide folders are trimmed and stand out.** Only folders scoring at least
+  `DirectoryJumpMinScore` (3) appear at the top, at most `DirectoryJumpRanked` (10) of them, as full
+  paths in your fzf/skim theme's accent color. broot's `:cd` also has Ctrl+Enter, since Windows
+  Terminal takes Alt+Enter for fullscreen.
 - **Alt+C is a role, `directory-jump`, and its list starts where you've been.** With fzf (or skim),
   Alt+C shows zoxide's most-used folders first, then the folders under the current one, streamed one
   level at a time down to `DirectoryJumpDepth` (6). Nearby folders show up at once, even in your home

@@ -155,7 +155,8 @@ Gaps among these:
 - **Forensics / disk:** dc3dd, dcfldd, foremost
 - **Build:** cmake, make, ctags
 - **Dev environments:** devenv.sh, nix
-- **Shell extras:** thefuck, nerdfonts, yasb, nircmd, sfsu, gpg4win, sudo (Windows)
+- **Shell extras:** thefuck, yasb, nircmd, sfsu, gpg4win, sudo (Windows)
+- **Nerd Fonts (installers):** scoop's `nerd-fonts` bucket (`scoop install nerd-fonts/JetBrainsMono-NF`), `oh-my-posh font install`, winget's Nerd Font packages (`DEVCOM.JetBrainsMonoNerdFont`). Goes with T-71's `NerdFont` setting; installing a font also needs the terminal's font setting changed (a setup note).
 - **Media / docs:** mpv, yt-dlp, pandoc, zbar
 - **Fun:** cowsay, fortune, lolcat
 - **Other:** git, sysinternals, lsof, pkill, free, uptime, lsix, yay

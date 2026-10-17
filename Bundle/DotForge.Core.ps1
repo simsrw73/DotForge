@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e27bc32eb02d4cbc1fef57a2d7dc465a1a380e771ae2e3cf54531dd87de3c361
+# sources-sha256: 45a3fc213ced056227fbf494e9d8b5cee265174924b7a6bd647a436bfe3694d4
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1233,6 +1233,7 @@ function ConvertTo-DFRoleMap {
                 flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
                 # Folder sources for Alt+C (directory-jump), read with Get-DFRoleDeclaration.
                 directories   = ConvertTo-DFRoleArgv $role.Value 'directories'
+                directoriesScored = [bool](Get-DFToolRecordProperty $role.Value 'directoriesScored' $false)
                 enter         = Get-DFToolRecordProperty $role.Value 'enter' $null
                 directoryScan = ConvertTo-DFRoleArgv $role.Value 'directoryScan'
                 legacy   = $false
@@ -1245,7 +1246,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; enter = $null; directoryScan = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; directoriesScored = $false; enter = $null; directoryScan = $null; legacy = $true }
     }
 
     [pscustomobject]$roles
@@ -1898,6 +1899,10 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                         "roles.$($r.Name).$field must be a non-empty array of strings"
                     }
                 }
+                $scored = $r.Value.PSObject.Properties['directoriesScored']
+                if ($scored -and $scored.Value -isnot [bool]) {
+                    "roles.$($r.Name).directoriesScored must be a boolean"
+                }
                 $enter = $r.Value.PSObject.Properties['enter']
                 if ($enter -and ($enter.Value -isnot [string] -or -not $enter.Value)) {
                     "roles.$($r.Name).enter must be a non-empty string"
@@ -2231,7 +2236,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'enter', 'directoryScan'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'directoriesScored', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))
@@ -3118,7 +3123,9 @@ function Get-DFDirectoryJumpCandidate {
         Streams the folders Alt+C offers: ranked folders first, then a breadth-first scan of the current folder.
     .DESCRIPTION
         First the navigation winner's ranked folders (its "directories"
-        command), shown as full paths with $HOME as ~. Then the folders under
+        command), shown as full paths and marked Ranked: those scoring at least
+        DirectoryJumpMinScore (default 3) when the tool declares scores
+        (directoriesScored), at most DirectoryJumpRanked (default 10). Then the folders under
         the current folder, one depth at a time up to -Depth, shown relative to
         it: through the file-search tool's "directoryScan" command when one is
         declared, else Get-ChildItem (hidden folders skipped). A folder already
@@ -3132,20 +3139,20 @@ function Get-DFDirectoryJumpCandidate {
         silent; once it returns $true the list ends and a running scan process
         is stopped (the picker has closed).
     .OUTPUTS
-        pscustomobject: Shown (the text to show), Path (the folder's full path).
+        pscustomobject: Shown (the text to show), Path (the folder's full path), Ranked (from the ranked list).
     #>
     [CmdletBinding()]
     param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6), [scriptblock]$StopWhen = { $false })
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($path in Get-DFRankedDirectory -StopWhen $StopWhen) {
         if (& $StopWhen) { return }
-        if ($seen.Add($path)) { [pscustomobject]@{ Shown = (Format-DFHomePath $path); Path = $path } }
+        if ($seen.Add($path)) { [pscustomobject]@{ Shown = $path; Path = $path; Ranked = $true } }
     }
     $location = Get-Location
     if ($location.Provider.Name -ne 'FileSystem') { return }
     # A pipeline, not foreach: foreach would collect the whole scan before the first folder.
     Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth -StopWhen $StopWhen | ForEach-Object {
-        if ($seen.Add($_.Path)) { $_ }
+        if ($seen.Add($_.Path)) { [pscustomobject]@{ Shown = $_.Shown; Path = $_.Path; Ranked = $false } }
     }
 }
 
@@ -3209,6 +3216,12 @@ function Get-DFRankedDirectory {
     <#
     .SYNOPSIS
         The navigation winner's ranked folders (its declared "directories" command), as full paths; nothing on failure.
+    .DESCRIPTION
+        At most DirectoryJumpRanked (default 10), in the tool's order. When
+        the tool declares directoriesScored, each line is "<score> <path>" and
+        folders scoring below DirectoryJumpMinScore (default 3) are left out.
+    .PARAMETER StopWhen
+        The stop check (see Get-DFDirectoryJumpCandidate).
     .OUTPUTS
         System.String.
     #>
@@ -3217,11 +3230,39 @@ function Get-DFRankedDirectory {
     param([scriptblock]$StopWhen = { $false })
     $argv = @(Get-DFRoleDeclaration -Role navigation -Field directories)
     if (-not $argv.Count) { return }
+    $scored = [bool](Get-DFRoleDeclaration -Role navigation -Field directoriesScored)
+    $limit = Get-DFDirectoryJumpNumber -Key DirectoryJumpRanked -Default 10
+    $minScore = Get-DFDirectoryJumpNumber -Key DirectoryJumpMinScore -Default 3
     Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
         $line = ([string]$_).Trim()
+        if ($scored) {
+            if ($line -notmatch '^(\d+(?:\.\d+)?)\s+(.+)$' -or [double]$Matches[1] -lt $minScore) { return }
+            $line = $Matches[2]
+        }
         # Canonical, so a root stays a root (C:\, not the drive-relative C:).
         if ($line -and [System.IO.Path]::IsPathRooted($line)) { ConvertTo-DFPath $line }
-    }
+    } | Select-Object -First ([int]$limit)
+}
+
+function Get-DFDirectoryJumpNumber {
+    <#
+    .SYNOPSIS
+        A numeric Alt+C setting, or its default when it's missing or isn't a non-negative number.
+    .PARAMETER Key
+        The setting.
+    .PARAMETER Default
+        Its default.
+    .OUTPUTS
+        System.Double.
+    #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][double]$Default)
+    $value = Get-DFConfig -Key $Key -Default $Default
+    $number = 0.0
+    if ([double]::TryParse([string]$value, [System.Globalization.NumberStyles]::Float, [cultureinfo]::InvariantCulture, [ref]$number) -and $number -ge 0) { return $number }
+    Write-Verbose "DotForge: $Key '$value' isn't a number of 0 or more; using $Default"
+    $Default
 }
 
 function Get-DFScannedDirectory {
@@ -3265,26 +3306,6 @@ function Get-DFScannedDirectory {
         if (-not $next.Count) { return }
         $frontier = $next
     }
-}
-
-function Format-DFHomePath {
-    <#
-    .SYNOPSIS
-        A full path with a leading $HOME shown as ~.
-    .PARAMETER Path
-        The full path.
-    .OUTPUTS
-        System.String.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param([Parameter(Mandatory)][string]$Path)
-    $homePath = $HOME.TrimEnd('\', '/')
-    if ($Path -ieq $homePath) { return '~' }
-    if ($Path.StartsWith($homePath + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return '~' + $Path.Substring($homePath.Length)
-    }
-    $Path
 }
 
 function Enter-DFDirectory {
@@ -3419,6 +3440,8 @@ $script:DFConfigKeys = [ordered]@{
     MoorTheme          = 'moor theme'
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
+    DirectoryJumpMinScore = 'lowest zoxide score Alt+C lists (default 3)'
+    DirectoryJumpRanked = 'most ranked (zoxide) folders Alt+C lists (default 10)'
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
@@ -7121,6 +7144,9 @@ function Register-DFFuzzyKeyHandler {
         Directory (Alt+c, role directory-jump).
     .PARAMETER Tool
         The tool's name, for its status.
+    .PARAMETER Accent
+        Directory only: the #rrggbb color the ranked (zoxide) folders are drawn
+        in, usually the engine's theme prompt color; without one they are bold.
     .OUTPUTS
         None.
     #>
@@ -7128,7 +7154,8 @@ function Register-DFFuzzyKeyHandler {
     param(
         [Parameter(Mandatory)][string]$Engine,
         [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key,
-        [Parameter(Mandatory)][string]$Tool
+        [Parameter(Mandatory)][string]$Tool,
+        [string]$Accent
     )
     $role, $chord = switch ($Key) {
         'History' { 'history-search', 'Ctrl+r' }
@@ -7137,7 +7164,7 @@ function Register-DFFuzzyKeyHandler {
     }
     # The handler runs later, outside the module: carry the private function along.
     $invoke = ${function:Invoke-DFFuzzyKey}
-    $handler = { & $invoke -Engine $Engine -Key $Key }.GetNewClosure()
+    $handler = { & $invoke -Engine $Engine -Key $Key -Accent $Accent }.GetNewClosure()
     # -Bind runs at once, inside Set-DFRoleKeyHandler, so it needs no closure.
     Set-DFRoleKeyHandler -Role $role -Chord $chord -Tool $Tool -Bind {
         Set-PSReadLineKeyHandler -Chord $chord -BriefDescription "DotForge $role ($Engine)" -Description "Fuzzy $role with $Engine (DotForge)" -ScriptBlock $handler
@@ -7152,12 +7179,14 @@ function Invoke-DFFuzzyKey {
         The executable.
     .PARAMETER Key
         History, Path or Directory.
+    .PARAMETER Accent
+        Directory only: the ranked folders' color (see Register-DFFuzzyKeyHandler).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key)
-    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine; return }
+    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key, [string]$Accent)
+    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine -Accent $Accent; return }
     $buffer = Get-DFReadLineBuffer
     if ($Key -eq 'History') {
         $shown = [ordered]@{}
@@ -7179,20 +7208,31 @@ function Invoke-DFDirectoryKey {
         Alt+C: streams the folder list to the engine and moves the shell to the pick; the typed line stays.
     .PARAMETER Engine
         The executable.
+    .PARAMETER Accent
+        The ranked folders' #rrggbb color; anything else draws them bold.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine)
+    param([Parameter(Mandatory)][string]$Engine, [string]$Accent)
     # Shown text -> full path, filled as the lines go out; the pick is mapped back, never parsed.
+    # The engine runs with --ansi, so it shows the color and returns the plain text.
     $paths = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
+    $escape = [char]27
+    $highlight = if ($Accent -cmatch '^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$') {
+        '{0}[38;2;{1};{2};{3}m' -f $escape, [Convert]::ToInt32($Matches[1], 16), [Convert]::ToInt32($Matches[2], 16), [Convert]::ToInt32($Matches[3], 16)
+    } else { "$escape[1m" }
+    $reset = "$escape[0m"
     # Not a closure: it runs inside this call (through Invoke-DFFuzzyEngine), in the
     # module, so it finds the private function and $paths there (and tests can mock it).
     $source = {
         param($StopWhen)
-        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object { $paths[$_.Shown] = $_.Path; $_.Shown }
+        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object {
+            $paths[$_.Shown] = $_.Path
+            if ($_.Ranked) { "$highlight$($_.Shown)$reset" } else { $_.Shown }
+        }
     }
-    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--tiebreak=index') -Stream $source)
+    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--ansi', '--tiebreak=index') -Stream $source)
     if ($picked.Count -and $paths.ContainsKey([string]$picked[0])) { [void](Enter-DFDirectory -Path $paths[[string]$picked[0]]) }
     Update-DFReadLineBuffer
 }

@@ -47,7 +47,7 @@ Describe 'fzf binds through the shared handler' {
     }
     It 'binds Alt+C (Directory) with fzf from the directory-jump hook' {
         Initialize-DFRoleDirectoryJump -Tool ([pscustomobject]@{ name = 'fzf' }) -Role 'directory-jump'
-        Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Key -eq 'Directory' -and $Tool -eq 'fzf' }
+        Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Key -eq 'Directory' -and $Tool -eq 'fzf' -and $Accent -eq '#cba6f7' }
     }
 }
 

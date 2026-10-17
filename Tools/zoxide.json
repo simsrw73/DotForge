@@ -7,7 +7,7 @@
     "directory"
   ],
   "executable": "zoxide.exe",
-  "roles": { "navigation": { "priority": 10, "directories": ["zoxide", "query", "--list"], "enter": "cd" } },
+  "roles": { "navigation": { "priority": 10, "directories": ["zoxide", "query", "--list", "--score"], "directoriesScored": true, "enter": "cd" } },
   "after": ["oh-my-posh",  "starship"],
   "packages": {
     "scoop": "zoxide",

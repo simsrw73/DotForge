@@ -39,6 +39,8 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `DirectoryJumpDepth` | int | `6` | How many levels below the current folder Alt+C's folder list scans. |
+| `DirectoryJumpMinScore` | number | `3` | Lowest zoxide score a folder needs to appear at the top of Alt+C's list. `0` shows them all. |
+| `DirectoryJumpRanked` | int | `10` | Most zoxide folders at the top of Alt+C's list. |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
 | `BatTheme`, `BrootTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |

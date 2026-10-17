@@ -24,6 +24,10 @@ Describe 'broot tool' {
         Get-Content (Join-Path $script:ConfigDir 'conf.hjson') -Raw | Should -Be (Get-Content (Join-Path $script:Tools 'broot' 'conf.hjson') -Raw)
         Test-Path (Join-Path $script:ConfigDir 'verbs.hjson') | Should -BeTrue
     }
+    It 'binds :cd to ctrl-enter as well as alt-enter, which Windows Terminal takes for fullscreen' {
+        $verbs = Get-Content (Join-Path $script:Tools 'broot' 'verbs.hjson') -Raw
+        $verbs | Should -Match '(?s)\{\s*key:\s*ctrl-enter\s+cmd:\s*":cd"\s*\}'
+    }
     It 'seeds a conf.hjson that imports no skin, so the theme passed by br decides' {
         $conf = Get-Content (Join-Path $script:Tools 'broot' 'conf.hjson') -Raw
         $conf | Should -Match 'verbs\.hjson'

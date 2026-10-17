@@ -185,6 +185,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -253,6 +254,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -264,6 +266,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -353,6 +356,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -364,6 +368,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -412,6 +417,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -569,6 +575,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -667,6 +674,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -726,6 +734,7 @@
             },
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -793,6 +802,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -964,6 +974,7 @@
               ]
             },
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1043,6 +1054,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1137,6 +1149,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": [
               "fd",
@@ -1219,6 +1232,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1304,6 +1318,7 @@
             },
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1315,6 +1330,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1326,6 +1342,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1337,6 +1354,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1348,6 +1366,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1504,6 +1523,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1596,6 +1616,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1652,6 +1673,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1720,6 +1742,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1731,6 +1754,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -1945,6 +1969,7 @@
               "theme": []
             },
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2048,6 +2073,7 @@
               ]
             },
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2131,6 +2157,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2220,6 +2247,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2314,6 +2342,7 @@
             },
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2374,6 +2403,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2385,6 +2415,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2472,6 +2503,7 @@
               "theme": []
             },
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2580,6 +2612,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2672,6 +2705,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2772,6 +2806,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2846,6 +2881,7 @@
               ]
             },
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2921,6 +2957,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -2983,6 +3020,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3065,6 +3103,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3144,6 +3183,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3323,6 +3363,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3383,6 +3424,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3394,6 +3436,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3405,6 +3448,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3416,6 +3460,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3483,6 +3528,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3546,6 +3592,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3626,6 +3673,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3699,6 +3747,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3778,6 +3827,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3875,6 +3925,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -3927,6 +3978,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4030,6 +4082,7 @@
             },
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4041,6 +4094,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4052,6 +4106,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4063,6 +4118,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4074,6 +4130,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4195,6 +4252,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4299,6 +4357,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4310,6 +4369,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4321,6 +4381,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4447,6 +4508,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4458,6 +4520,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4693,6 +4756,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4750,6 +4814,7 @@
             "env": null,
             "flags": null,
             "directories": null,
+            "directoriesScored": false,
             "enter": null,
             "directoryScan": null,
             "legacy": false
@@ -4810,7 +4875,7 @@
       }
     },
     "zoxide": {
-      "sha256": "f9b9927943582e6d020b8cd29ec2a8424c9759d21e747b75773a165dcc872198",
+      "sha256": "ade3462b360efa65456caeac5a972358c3b00a919c09085161daeb10dd386524",
       "record": {
         "name": "zoxide",
         "executable": "zoxide.exe",
@@ -4879,8 +4944,10 @@
             "directories": [
               "zoxide",
               "query",
-              "--list"
+              "--list",
+              "--score"
             ],
+            "directoriesScored": true,
             "enter": "cd",
             "directoryScan": null,
             "legacy": false

@@ -244,7 +244,7 @@ Each `Tools/*.json` must have at minimum:
   `fallback` env for when nothing in the session fills it (`docs/superpowers/specs/2026-10-16-pager-role-design.md`).
   `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) bind keys only through `Set-DFRoleKeyHandler`, which keeps a
   user's own binding (`docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md`). `directory-jump` (Alt+C)
-  does too; its folder list comes from role-block declarations (`navigation`: `directories`, `enter`;
+  does too; its folder list comes from role-block declarations (`navigation`: `directories`, `directoriesScored`, `enter`;
   `file-search`: `directoryScan`), read with `Get-DFRoleDeclaration`
   (`docs/superpowers/specs/2026-10-17-directory-jump-design.md`).
 - `setup` (optional): `seed` (destination → file under `Tools/`; a source may use `{theme}`) and `notes` (`{ text,

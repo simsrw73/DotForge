@@ -92,5 +92,10 @@ function Initialize-DFRolePathInsert {
 
 function Initialize-DFRoleDirectoryJump {
     param($Tool, $Role)
-    Register-DFFuzzyKeyHandler -Engine 'fzf' -Key Directory -Tool $Tool.name
+    # Alt+C draws zoxide's folders in this theme's prompt color.
+    $themeFile = if ($_theme -and $_theme.Native) { & $_resolveThemeFile -Tool 'fzf' -Name $_theme.Native -BundledDir $_bundledDir }
+    $accent = if ($themeFile -and (Test-Path -LiteralPath $themeFile -PathType Leaf)) {
+        try { (Get-Content -LiteralPath $themeFile -Raw | ConvertFrom-Json).colors.prompt } catch { $null }
+    }
+    Register-DFFuzzyKeyHandler -Engine 'fzf' -Key Directory -Tool $Tool.name -Accent $accent
 }

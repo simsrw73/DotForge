@@ -119,6 +119,31 @@ Describe 'shared fuzzy key handler' {
         Should -Invoke Enter-DFDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq 'C:\w\src\lib' }
         Should -Invoke Update-DFReadLineBuffer -Times 1 -ParameterFilter { -not $Replace -and -not $Insert }
     }
+    It 'Directory: ranked folders are drawn in the accent color, and the pick maps back from the plain text' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'C:\h\a'; Path = 'C:\h\a'; Ranked = $true }; [pscustomobject]@{ Shown = 'src'; Path = 'C:\w\src'; Ranked = $false } }
+        Mock Invoke-DFFuzzyEngine { $script:Sent = @(& $Stream { $false }); 'C:\h\a' }
+        Mock Enter-DFDirectory { $true }
+        Mock Update-DFReadLineBuffer { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory -Accent '#cba6f7'
+        Should -Invoke Invoke-DFFuzzyEngine -Times 1 -ParameterFilter { $Arguments -contains '--ansi' }
+        $script:Sent[0] | Should -BeExactly "$([char]27)[38;2;203;166;247mC:\h\a$([char]27)[0m"
+        $script:Sent[1] | Should -BeExactly 'src'
+        Should -Invoke Enter-DFDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq 'C:\h\a' }
+    }
+    It 'Directory: without an accent, ranked folders are bold' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'C:\h\a'; Path = 'C:\h\a'; Ranked = $true } }
+        Mock Invoke-DFFuzzyEngine { $script:Sent = @(& $Stream { $false }) }
+        Mock Update-DFReadLineBuffer { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory
+        $script:Sent[0] | Should -BeExactly "$([char]27)[1mC:\h\a$([char]27)[0m"
+    }
+    It 'Directory: an accent that isn''t a #rrggbb color is ignored' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'C:\h\a'; Path = 'C:\h\a'; Ranked = $true } }
+        Mock Invoke-DFFuzzyEngine { $script:Sent = @(& $Stream { $false }) }
+        Mock Update-DFReadLineBuffer { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory -Accent "red$([char]27)[2J"
+        $script:Sent[0] | Should -BeExactly "$([char]27)[1mC:\h\a$([char]27)[0m"
+    }
     It 'Directory: a message from the move stays on screen; the prompt is redrawn below it' {
         Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'gone'; Path = 'C:\gone' } }
         Mock Invoke-DFFuzzyEngine { @(& $Stream { $false })[0] }

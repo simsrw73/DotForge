@@ -11,7 +11,9 @@ function Get-DFDirectoryJumpCandidate {
         Streams the folders Alt+C offers: ranked folders first, then a breadth-first scan of the current folder.
     .DESCRIPTION
         First the navigation winner's ranked folders (its "directories"
-        command), shown as full paths with $HOME as ~. Then the folders under
+        command), shown as full paths and marked Ranked: those scoring at least
+        DirectoryJumpMinScore (default 3) when the tool declares scores
+        (directoriesScored), at most DirectoryJumpRanked (default 10). Then the folders under
         the current folder, one depth at a time up to -Depth, shown relative to
         it: through the file-search tool's "directoryScan" command when one is
         declared, else Get-ChildItem (hidden folders skipped). A folder already
@@ -25,20 +27,20 @@ function Get-DFDirectoryJumpCandidate {
         silent; once it returns $true the list ends and a running scan process
         is stopped (the picker has closed).
     .OUTPUTS
-        pscustomobject: Shown (the text to show), Path (the folder's full path).
+        pscustomobject: Shown (the text to show), Path (the folder's full path), Ranked (from the ranked list).
     #>
     [CmdletBinding()]
     param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6), [scriptblock]$StopWhen = { $false })
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($path in Get-DFRankedDirectory -StopWhen $StopWhen) {
         if (& $StopWhen) { return }
-        if ($seen.Add($path)) { [pscustomobject]@{ Shown = (Format-DFHomePath $path); Path = $path } }
+        if ($seen.Add($path)) { [pscustomobject]@{ Shown = $path; Path = $path; Ranked = $true } }
     }
     $location = Get-Location
     if ($location.Provider.Name -ne 'FileSystem') { return }
     # A pipeline, not foreach: foreach would collect the whole scan before the first folder.
     Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth -StopWhen $StopWhen | ForEach-Object {
-        if ($seen.Add($_.Path)) { $_ }
+        if ($seen.Add($_.Path)) { [pscustomobject]@{ Shown = $_.Shown; Path = $_.Path; Ranked = $false } }
     }
 }
 
@@ -102,6 +104,12 @@ function Get-DFRankedDirectory {
     <#
     .SYNOPSIS
         The navigation winner's ranked folders (its declared "directories" command), as full paths; nothing on failure.
+    .DESCRIPTION
+        At most DirectoryJumpRanked (default 10), in the tool's order. When
+        the tool declares directoriesScored, each line is "<score> <path>" and
+        folders scoring below DirectoryJumpMinScore (default 3) are left out.
+    .PARAMETER StopWhen
+        The stop check (see Get-DFDirectoryJumpCandidate).
     .OUTPUTS
         System.String.
     #>
@@ -110,11 +118,39 @@ function Get-DFRankedDirectory {
     param([scriptblock]$StopWhen = { $false })
     $argv = @(Get-DFRoleDeclaration -Role navigation -Field directories)
     if (-not $argv.Count) { return }
+    $scored = [bool](Get-DFRoleDeclaration -Role navigation -Field directoriesScored)
+    $limit = Get-DFDirectoryJumpNumber -Key DirectoryJumpRanked -Default 10
+    $minScore = Get-DFDirectoryJumpNumber -Key DirectoryJumpMinScore -Default 3
     Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
         $line = ([string]$_).Trim()
+        if ($scored) {
+            if ($line -notmatch '^(\d+(?:\.\d+)?)\s+(.+)$' -or [double]$Matches[1] -lt $minScore) { return }
+            $line = $Matches[2]
+        }
         # Canonical, so a root stays a root (C:\, not the drive-relative C:).
         if ($line -and [System.IO.Path]::IsPathRooted($line)) { ConvertTo-DFPath $line }
-    }
+    } | Select-Object -First ([int]$limit)
+}
+
+function Get-DFDirectoryJumpNumber {
+    <#
+    .SYNOPSIS
+        A numeric Alt+C setting, or its default when it's missing or isn't a non-negative number.
+    .PARAMETER Key
+        The setting.
+    .PARAMETER Default
+        Its default.
+    .OUTPUTS
+        System.Double.
+    #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][double]$Default)
+    $value = Get-DFConfig -Key $Key -Default $Default
+    $number = 0.0
+    if ([double]::TryParse([string]$value, [System.Globalization.NumberStyles]::Float, [cultureinfo]::InvariantCulture, [ref]$number) -and $number -ge 0) { return $number }
+    Write-Verbose "DotForge: $Key '$value' isn't a number of 0 or more; using $Default"
+    $Default
 }
 
 function Get-DFScannedDirectory {
@@ -158,26 +194,6 @@ function Get-DFScannedDirectory {
         if (-not $next.Count) { return }
         $frontier = $next
     }
-}
-
-function Format-DFHomePath {
-    <#
-    .SYNOPSIS
-        A full path with a leading $HOME shown as ~.
-    .PARAMETER Path
-        The full path.
-    .OUTPUTS
-        System.String.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param([Parameter(Mandatory)][string]$Path)
-    $homePath = $HOME.TrimEnd('\', '/')
-    if ($Path -ieq $homePath) { return '~' }
-    if ($Path.StartsWith($homePath + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return '~' + $Path.Substring($homePath.Length)
-    }
-    $Path
 }
 
 function Enter-DFDirectory {

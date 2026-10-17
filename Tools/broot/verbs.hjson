@@ -9,6 +9,14 @@
 
 verbs: [
 
+    # DotForge: Windows Terminal takes alt-enter (fullscreen), broot's own key
+    # for :cd, so ctrl-enter does it too: leave broot and move the shell (br)
+    # to the selected folder.
+    {
+        key: ctrl-enter
+        cmd: ":cd"
+    }
+
     # You should customize this standard opening of text files.
     # If you edit text files in your terminal (vi, emacs, helix, eg.), then
     #  you'll find it convenient to change the 'key' from 'ctrl-e' to 'enter'.

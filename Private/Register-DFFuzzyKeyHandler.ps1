@@ -29,6 +29,9 @@ function Register-DFFuzzyKeyHandler {
         Directory (Alt+c, role directory-jump).
     .PARAMETER Tool
         The tool's name, for its status.
+    .PARAMETER Accent
+        Directory only: the #rrggbb color the ranked (zoxide) folders are drawn
+        in, usually the engine's theme prompt color; without one they are bold.
     .OUTPUTS
         None.
     #>
@@ -36,7 +39,8 @@ function Register-DFFuzzyKeyHandler {
     param(
         [Parameter(Mandatory)][string]$Engine,
         [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key,
-        [Parameter(Mandatory)][string]$Tool
+        [Parameter(Mandatory)][string]$Tool,
+        [string]$Accent
     )
     $role, $chord = switch ($Key) {
         'History' { 'history-search', 'Ctrl+r' }
@@ -45,7 +49,7 @@ function Register-DFFuzzyKeyHandler {
     }
     # The handler runs later, outside the module: carry the private function along.
     $invoke = ${function:Invoke-DFFuzzyKey}
-    $handler = { & $invoke -Engine $Engine -Key $Key }.GetNewClosure()
+    $handler = { & $invoke -Engine $Engine -Key $Key -Accent $Accent }.GetNewClosure()
     # -Bind runs at once, inside Set-DFRoleKeyHandler, so it needs no closure.
     Set-DFRoleKeyHandler -Role $role -Chord $chord -Tool $Tool -Bind {
         Set-PSReadLineKeyHandler -Chord $chord -BriefDescription "DotForge $role ($Engine)" -Description "Fuzzy $role with $Engine (DotForge)" -ScriptBlock $handler
@@ -60,12 +64,14 @@ function Invoke-DFFuzzyKey {
         The executable.
     .PARAMETER Key
         History, Path or Directory.
+    .PARAMETER Accent
+        Directory only: the ranked folders' color (see Register-DFFuzzyKeyHandler).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key)
-    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine; return }
+    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key, [string]$Accent)
+    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine -Accent $Accent; return }
     $buffer = Get-DFReadLineBuffer
     if ($Key -eq 'History') {
         $shown = [ordered]@{}
@@ -87,20 +93,31 @@ function Invoke-DFDirectoryKey {
         Alt+C: streams the folder list to the engine and moves the shell to the pick; the typed line stays.
     .PARAMETER Engine
         The executable.
+    .PARAMETER Accent
+        The ranked folders' #rrggbb color; anything else draws them bold.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine)
+    param([Parameter(Mandatory)][string]$Engine, [string]$Accent)
     # Shown text -> full path, filled as the lines go out; the pick is mapped back, never parsed.
+    # The engine runs with --ansi, so it shows the color and returns the plain text.
     $paths = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
+    $escape = [char]27
+    $highlight = if ($Accent -cmatch '^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$') {
+        '{0}[38;2;{1};{2};{3}m' -f $escape, [Convert]::ToInt32($Matches[1], 16), [Convert]::ToInt32($Matches[2], 16), [Convert]::ToInt32($Matches[3], 16)
+    } else { "$escape[1m" }
+    $reset = "$escape[0m"
     # Not a closure: it runs inside this call (through Invoke-DFFuzzyEngine), in the
     # module, so it finds the private function and $paths there (and tests can mock it).
     $source = {
         param($StopWhen)
-        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object { $paths[$_.Shown] = $_.Path; $_.Shown }
+        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object {
+            $paths[$_.Shown] = $_.Path
+            if ($_.Ranked) { "$highlight$($_.Shown)$reset" } else { $_.Shown }
+        }
     }
-    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--tiebreak=index') -Stream $source)
+    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--ansi', '--tiebreak=index') -Stream $source)
     if ($picked.Count -and $paths.ContainsKey([string]$picked[0])) { [void](Enter-DFDirectory -Path $paths[[string]$picked[0]]) }
     Update-DFReadLineBuffer
 }

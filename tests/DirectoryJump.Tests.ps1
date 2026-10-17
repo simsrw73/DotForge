@@ -34,7 +34,8 @@ Describe 'Get-DFRoleDeclaration' {
         $db = Import-DFToolDb -Name zoxide, fd -ToolsPath (Join-Path $PSScriptRoot '..' 'Tools')
         Set-DeclarationSession @($db.zoxide, $db.fd) @{ navigation = 'zoxide' }
         Get-DFRoleDeclaration -Role navigation -Field enter | Should -Be 'cd'
-        Get-DFRoleDeclaration -Role navigation -Field directories | Should -Be @('zoxide', 'query', '--list')
+        Get-DFRoleDeclaration -Role navigation -Field directories | Should -Be @('zoxide', 'query', '--list', '--score')
+        Get-DFRoleDeclaration -Role navigation -Field directoriesScored | Should -BeTrue
         Get-DFRoleDeclaration -Role file-search -Field directoryScan | Should -Be @('fd', '--type', 'd', '--exact-depth', '{depth}')
     }
     It 'returns nothing when the declaring tool is not in the session' {
@@ -56,14 +57,17 @@ Describe 'the directory-jump role' {
         $role.hook | Should -Be 'Initialize-DFRoleDirectoryJump'
         $role.reserved.code | Should -Be @('Set-DFRoleKeyHandler', 'Register-DFFuzzyKeyHandler')
     }
-    It 'knows the DirectoryJumpDepth setting' {
+    It 'knows the DirectoryJumpDepth, DirectoryJumpMinScore and DirectoryJumpRanked settings' {
         $script:DFConfigKeys.Keys | Should -Contain 'DirectoryJumpDepth'
+        $script:DFConfigKeys.Keys | Should -Contain 'DirectoryJumpMinScore'
+        $script:DFConfigKeys.Keys | Should -Contain 'DirectoryJumpRanked'
     }
     It 'gets its folder sources from zoxide and fd' {
         $tools = Join-Path $PSScriptRoot '..' 'Tools'
         $zoxide = Get-Content (Join-Path $tools 'zoxide.json') -Raw | ConvertFrom-Json
         $fd = Get-Content (Join-Path $tools 'fd.json') -Raw | ConvertFrom-Json
-        $zoxide.roles.navigation.directories | Should -Be @('zoxide', 'query', '--list')
+        $zoxide.roles.navigation.directories | Should -Be @('zoxide', 'query', '--list', '--score')
+        $zoxide.roles.navigation.directoriesScored | Should -BeTrue
         $zoxide.roles.navigation.enter | Should -Be 'cd'
         $fd.roles.'file-search'.directoryScan | Should -Be @('fd', '--type', 'd', '--exact-depth', '{depth}')
     }
@@ -97,12 +101,34 @@ Describe 'Get-DFDirectoryJumpCandidate' {
         $list.Shown | Should -Contain 'a\b\c'
         $list.Shown | Should -Not -Contain 'a\b\c\d'
     }
-    It 'shows a ranked folder under $HOME with ~' {
+    It 'shows a ranked folder as its full path, marked Ranked' {
         $underHome = Join-Path $HOME 'dfj-test-shown'
         Set-Item function:global:Get-DFTestRanked ([scriptblock]::Create("'$underHome'"))
         Set-DeclarationSession @($script:Navigation) @{ navigation = 'zx' }
-        (@(Get-DFDirectoryJumpCandidate -Depth 1))[0].Shown | Should -Be (Join-Path '~' 'dfj-test-shown')
+        $first = (@(Get-DFDirectoryJumpCandidate -Depth 1))[0]
+        $first.Shown | Should -Be $underHome
+        $first.Ranked | Should -BeTrue
+        (@(Get-DFDirectoryJumpCandidate -Depth 1) | Where-Object Shown -eq 'a').Ranked | Should -BeFalse
         Set-Item function:global:Get-DFTestRanked { $script:Ranked }
+    }
+    It 'keeps only ranked folders scoring at least DirectoryJumpMinScore, at most DirectoryJumpRanked of them' {
+        $a = Join-Path $TestDrive 'ra'; $b = Join-Path $TestDrive 'rb'; $c = Join-Path $TestDrive 'rc'
+        Set-Item function:global:Get-DFTestScored ([scriptblock]::Create("' 320.0 $a'; '   2.0 $b'; '   4.0 $c'"))
+        $scored = [pscustomobject]@{ name = 'zs'; executable = 'zs.exe'; roles = [pscustomobject]@{ navigation = [pscustomobject]@{ directories = @('Get-DFTestScored'); directoriesScored = $true; enter = $null; directoryScan = $null } } }
+        Set-DeclarationSession @($scored) @{ navigation = 'zs' }
+        Set-DFTestConfig @{ DirectoryJumpMinScore = 3; DirectoryJumpRanked = 10 }
+        @(Get-DFDirectoryJumpCandidate -Depth 1 | Where-Object Ranked).Path | Should -Be @($a, $c)
+        Set-DFTestConfig @{ DirectoryJumpMinScore = 3; DirectoryJumpRanked = 1 }
+        @(Get-DFDirectoryJumpCandidate -Depth 1 | Where-Object Ranked).Path | Should -Be @($a)
+        Set-DFTestConfig $null
+        @(Get-DFDirectoryJumpCandidate -Depth 1 | Where-Object Ranked).Path | Should -Be @($a, $c) -Because 'the defaults are 3 and 10'
+        Remove-DFTestGlobal -Function Get-DFTestScored
+    }
+    It 'caps an unscored ranked list at DirectoryJumpRanked' {
+        Set-DeclarationSession @($script:Navigation) @{ navigation = 'zx' }
+        Set-DFTestConfig @{ DirectoryJumpRanked = 1 }
+        @(Get-DFDirectoryJumpCandidate -Depth 1 | Where-Object Ranked).Path | Should -Be @($script:Ranked[0])
+        Set-DFTestConfig $null
     }
     It 'skips hidden folders, and keeps names with spaces, quotes and brackets' {
         Set-DeclarationSession @()
