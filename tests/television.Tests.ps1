@@ -53,7 +53,8 @@ Describe 'television setup' {
         Mock Write-Host { }
         $global:DFTestTvExit = 0
         $global:DFTestTvCalls = @()
-        function global:tv { $global:DFTestTvCalls += ,@($args); $global:LASTEXITCODE = $global:DFTestTvExit }
+        function global:tv { }
+        Mock Invoke-DFBoundedProcess { $global:DFTestTvCalls += ,@($ArgumentList); [pscustomobject]@{ Lines = @(); ExitCode = $global:DFTestTvExit } }
         $script:Config = Join-Path $Env:XDG_CONFIG_HOME 'television' 'config.toml'
     }
     AfterEach {
@@ -85,6 +86,13 @@ Describe 'television setup' {
     It 'still completes when the download fails, with a note to run it by hand' {
         $global:DFTestTvExit = 1
         Start-DFSession -Config @{ Tools = @('television') } -ToolsPath $script:Tools 3>$null
+        (Get-DFToolSetupState).PSObject.Properties['television'] | Should -Not -BeNullOrEmpty
+        "$((Get-DFToolSetupState).television.notes)" | Should -Match 'tv update-channels'
+    }
+    It 'gives up on a download that hangs, still completes, and leaves the note' {
+        Mock Invoke-DFBoundedProcess { throw "DotForge: 'tv update-channels' did not finish within 60 s and was stopped." }
+        Start-DFSession -Config @{ Tools = @('television') } -ToolsPath $script:Tools 3>$null
+        Should -Invoke Invoke-DFBoundedProcess -Times 1 -ParameterFilter { $TimeoutSeconds -le 120 -and $ArgumentList -contains 'update-channels' }
         (Get-DFToolSetupState).PSObject.Properties['television'] | Should -Not -BeNullOrEmpty
         "$((Get-DFToolSetupState).television.notes)" | Should -Match 'tv update-channels'
     }
