@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: c51f13dc1e18cca0b6f03a1f11c534ac1784e1fcc3cac0b2f6a7dc89de62767b
+# sources-sha256: e0836a63f740ccebf6f6faab7fa55fc318e77796317de31bddc89c32b32428ef
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3047,19 +3047,81 @@ function Get-DFDirectoryJumpCandidate {
         ends. Outside the file system only the ranked folders are listed.
     .PARAMETER Depth
         How deep to scan. Default: the DirectoryJumpDepth setting, else 6.
+    .PARAMETER StopWhen
+        Checked between folders, and every 100 ms while a scan command is
+        silent; once it returns $true the list ends and a running scan process
+        is stopped (the picker has closed).
     .OUTPUTS
         pscustomobject: Shown (the text to show), Path (the folder's full path).
     #>
     [CmdletBinding()]
-    param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6))
+    param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6), [scriptblock]$StopWhen = { $false })
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($path in Get-DFRankedDirectory) {
+    foreach ($path in Get-DFRankedDirectory -StopWhen $StopWhen) {
+        if (& $StopWhen) { return }
         if ($seen.Add($path)) { [pscustomobject]@{ Shown = (Format-DFHomePath $path); Path = $path } }
     }
     $location = Get-Location
     if ($location.Provider.Name -ne 'FileSystem') { return }
-    foreach ($item in Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth) {
-        if ($seen.Add($item.Path)) { $item }
+    # A pipeline, not foreach: foreach would collect the whole scan before the first folder.
+    Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth -StopWhen $StopWhen | ForEach-Object {
+        if ($seen.Add($_.Path)) { $_ }
+    }
+}
+
+function Invoke-DFStoppableCommand {
+    <#
+    .SYNOPSIS
+        Runs an argv and writes its output lines as they come; a program is stopped once -StopWhen returns $true.
+    .DESCRIPTION
+        A program (an Application) runs as a process whose output is read line
+        by line, checking -StopWhen between lines and every 100 ms while it is
+        silent, and is killed when told to stop. Anything else (a function, as
+        in tests) is called in the pipeline. Errors write a verbose message and
+        end the output.
+    .PARAMETER Argv
+        The command and its arguments.
+    .PARAMETER WorkingDirectory
+        Where the program runs.
+    .PARAMETER StopWhen
+        The stop check.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string[]]$Argv, [string]$WorkingDirectory, [scriptblock]$StopWhen = { $false })
+    $application = Get-Command -Name $Argv[0] -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+    # Splatted from a variable: an inline @(...) reaches a function as one argument.
+    $rest = @($Argv | Select-Object -Skip 1)
+    if (-not $application) {
+        try { & $Argv[0] @rest 2>$null } catch { Write-Verbose "DotForge: Alt+C: '$($Argv[0])' failed: $($_.Exception.Message)" }
+        return
+    }
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new($application.Source)
+    foreach ($argument in $rest) { $startInfo.ArgumentList.Add($argument) }
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    try { $process = [System.Diagnostics.Process]::Start($startInfo) } catch { Write-Verbose "DotForge: Alt+C: couldn't start '$($Argv[0])': $($_.Exception.Message)"; return }
+    try {
+        $null = $process.StandardError.ReadToEndAsync()
+        $next = $process.StandardOutput.ReadLineAsync()
+        while ($true) {
+            if ($next.Wait(100)) {
+                $line = $next.Result
+                if ($null -eq $line) { break }
+                $line
+                $next = $process.StandardOutput.ReadLineAsync()
+            }
+            if (& $StopWhen) { break }
+        }
+    } finally {
+        if (-not $process.HasExited) { try { $process.Kill($true) } catch { Write-Verbose "DotForge: Alt+C: couldn't stop '$($Argv[0])'" } }
+        $process.Dispose()
     }
 }
 
@@ -3072,18 +3134,12 @@ function Get-DFRankedDirectory {
     #>
     [CmdletBinding()]
     [OutputType([string])]
-    param()
+    param([scriptblock]$StopWhen = { $false })
     $argv = @(Get-DFRoleDeclaration -Role navigation -Field directories)
     if (-not $argv.Count) { return }
-    try {
-        # Splatted from a variable: an inline @(...) reaches a function as one argument.
-        $rest = @($argv | Select-Object -Skip 1)
-        & $argv[0] @rest 2>$null | ForEach-Object {
-            $line = ([string]$_).Trim()
-            if ($line) { $line.TrimEnd('\', '/') }
-        }
-    } catch {
-        Write-Verbose "DotForge: Alt+C: ranked folders failed: $($_.Exception.Message)"
+    Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
+        $line = ([string]$_).Trim()
+        if ($line) { $line.TrimEnd('\', '/') }
     }
 }
 
@@ -3095,24 +3151,21 @@ function Get-DFScannedDirectory {
         The folder to scan (a file-system path).
     .PARAMETER Depth
         The deepest level to list.
+    .PARAMETER StopWhen
+        The stop check (see Get-DFDirectoryJumpCandidate).
     .OUTPUTS
         pscustomobject: Shown (relative to Root), Path.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][int]$Depth)
+    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][int]$Depth, [scriptblock]$StopWhen = { $false })
     $scan = @(Get-DFRoleDeclaration -Role file-search -Field directoryScan)
     if ($scan.Count) {
         foreach ($level in 1..$Depth) {
+            if (& $StopWhen) { return }
             $argv = @($scan | ForEach-Object { ([string]$_).Replace('{depth}', [string]$level) })
-            try {
-                $rest = @($argv | Select-Object -Skip 1)
-                & $argv[0] @rest 2>$null | ForEach-Object {
-                    $relative = ([string]$_).Trim().TrimEnd('\', '/')
-                    if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
-                }
-            } catch {
-                Write-Verbose "DotForge: Alt+C: folder scan failed: $($_.Exception.Message)"
-                return
+            Invoke-DFStoppableCommand -Argv $argv -WorkingDirectory $Root -StopWhen $StopWhen | ForEach-Object {
+                $relative = ([string]$_).Trim().TrimEnd('\', '/')
+                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
             }
         }
         return
@@ -3121,6 +3174,7 @@ function Get-DFScannedDirectory {
     foreach ($level in 1..$Depth) {
         $next = [System.Collections.Generic.List[object]]::new()
         foreach ($parent in $frontier) {
+            if (& $StopWhen) { return }
             foreach ($child in @(Get-ChildItem -LiteralPath $parent.FullName -Directory -ErrorAction Ignore)) {
                 if ($child.Name.StartsWith('.') -or $child.Attributes.HasFlag([System.IO.FileAttributes]::Hidden)) { continue }
                 $next.Add($child)
@@ -6956,7 +7010,7 @@ function New-DFToolWrapper {
 # ---- Private/Register-DFFuzzyKeyHandler.ps1
 #Requires -Version 7.2
 
-# Ctrl+R / Ctrl+T for fzf-compatible engines that ship no PowerShell bindings
+# Ctrl+R / Ctrl+T / Alt+C for fzf-compatible engines that ship no PowerShell bindings
 # (fzf, skim). Each tool's role hook passes its own executable; nothing here names
 # a tool. Design: docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md.
 
@@ -6966,18 +7020,21 @@ $script:DFHistoryLineMark = ' ␤ '
 function Register-DFFuzzyKeyHandler {
     <#
     .SYNOPSIS
-        Binds Ctrl+R (history) or Ctrl+T (paths) to an fzf-compatible engine.
+        Binds Ctrl+R (history), Ctrl+T (paths) or Alt+C (folders) to an fzf-compatible engine.
     .DESCRIPTION
         History: PSReadLine's saved history, newest first and without repeats,
         is piped to <engine> --no-sort --query <line>, and the pick replaces
         the line. Path: the engine runs its own default command
         (FZF_DEFAULT_COMMAND / SKIM_DEFAULT_COMMAND) with --multi, and the
-        picks are inserted at the cursor. Esc changes nothing. Binds through
+        picks are inserted at the cursor. Directory: the Alt+C folder list
+        (Get-DFDirectoryJumpCandidate) is streamed to <engine> --tiebreak=index,
+        and the shell moves to the pick (Enter-DFDirectory). Esc changes nothing. Binds through
         Set-DFRoleKeyHandler, so a binding the user made is kept.
     .PARAMETER Engine
         The executable, e.g. fzf or sk.
     .PARAMETER Key
-        History (Ctrl+r, role history-search) or Path (Ctrl+t, role path-insert).
+        History (Ctrl+r, role history-search), Path (Ctrl+t, role path-insert) or
+        Directory (Alt+c, role directory-jump).
     .PARAMETER Tool
         The tool's name, for its status.
     .OUTPUTS
@@ -6986,11 +7043,14 @@ function Register-DFFuzzyKeyHandler {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Engine,
-        [Parameter(Mandatory)][ValidateSet('History', 'Path')][string]$Key,
+        [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key,
         [Parameter(Mandatory)][string]$Tool
     )
-    $role = if ($Key -eq 'History') { 'history-search' } else { 'path-insert' }
-    $chord = if ($Key -eq 'History') { 'Ctrl+r' } else { 'Ctrl+t' }
+    $role, $chord = switch ($Key) {
+        'History' { 'history-search', 'Ctrl+r' }
+        'Path' { 'path-insert', 'Ctrl+t' }
+        'Directory' { 'directory-jump', 'Alt+c' }
+    }
     # The handler runs later, outside the module: carry the private function along.
     $invoke = ${function:Invoke-DFFuzzyKey}
     $handler = { & $invoke -Engine $Engine -Key $Key }.GetNewClosure()
@@ -7007,12 +7067,13 @@ function Invoke-DFFuzzyKey {
     .PARAMETER Engine
         The executable.
     .PARAMETER Key
-        History or Path.
+        History, Path or Directory.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path')][string]$Key)
+    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key)
+    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine; return }
     $buffer = Get-DFReadLineBuffer
     if ($Key -eq 'History') {
         $shown = [ordered]@{}
@@ -7025,6 +7086,30 @@ function Invoke-DFFuzzyKey {
         $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--multi'))
         if ($picked.Count) { Update-DFReadLineBuffer -Insert (Format-DFPathInsert -Path $picked); return }
     }
+    Update-DFReadLineBuffer
+}
+
+function Invoke-DFDirectoryKey {
+    <#
+    .SYNOPSIS
+        Alt+C: streams the folder list to the engine and moves the shell to the pick; the typed line stays.
+    .PARAMETER Engine
+        The executable.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Engine)
+    # Shown text -> full path, filled as the lines go out; the pick is mapped back, never parsed.
+    $paths = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
+    # Not a closure: it runs inside this call (through Invoke-DFFuzzyEngine), in the
+    # module, so it finds the private function and $paths there (and tests can mock it).
+    $source = {
+        param($StopWhen)
+        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object { $paths[$_.Shown] = $_.Path; $_.Shown }
+    }
+    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--tiebreak=index') -Stream $source)
+    if ($picked.Count -and $paths.ContainsKey([string]$picked[0])) { [void](Enter-DFDirectory -Path $paths[[string]$picked[0]]) }
     Update-DFReadLineBuffer
 }
 
@@ -7111,11 +7196,16 @@ function Invoke-DFFuzzyEngine {
         Its arguments.
     .PARAMETER InputObject
         Lines to pick from; omit it to let the engine list files itself.
+    .PARAMETER Stream
+        A source to stream lines from instead, called with one argument: a
+        scriptblock that returns $true once the engine has exited, so the source
+        can stop early (Invoke-DFFuzzyEngineStream).
     .OUTPUTS
         System.String[]: the picks.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject)
+    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject, [scriptblock]$Stream)
+    if ($Stream) { return Invoke-DFFuzzyEngineStream -Engine $Engine -Arguments $Arguments -Source $Stream }
     # PowerShell sends the items as UTF-8 ($OutputEncoding) but decodes the picks with the console's
     # code page (437 by default), which garbles any non-ASCII pick: read them as UTF-8 too.
     $consoleEncoding = [Console]::OutputEncoding
@@ -7124,6 +7214,58 @@ function Invoke-DFFuzzyEngine {
         if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
     } finally {
         [Console]::OutputEncoding = $consoleEncoding
+    }
+}
+
+function Invoke-DFFuzzyEngineStream {
+    <#
+    .SYNOPSIS
+        Runs the engine as a process and writes the source's lines to it as they come, stopping the source when the engine exits.
+    .DESCRIPTION
+        A PowerShell pipeline keeps running its upstream after a native
+        command at its end exits, so a pick made before a long scan ends would
+        wait for the scan. Here the source gets a stop check
+        ({ engine exited }) and the lines go to the engine's stdin directly,
+        UTF-8 both ways.
+    .PARAMETER Engine
+        The executable name.
+    .PARAMETER Arguments
+        Its arguments.
+    .PARAMETER Source
+        Called with the stop check; writes the lines.
+    .OUTPUTS
+        System.String[]: the picks.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [Parameter(Mandatory)][scriptblock]$Source)
+    $exe = (Get-Command -Name $Engine -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
+    if (-not $exe) { Write-Verbose "DotForge: $Engine not found"; return }
+    $utf8 = [System.Text.UTF8Encoding]::new($false)
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new($exe)
+    foreach ($argument in $Arguments) { $startInfo.ArgumentList.Add($argument) }
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.StandardInputEncoding = $utf8
+    $startInfo.StandardOutputEncoding = $utf8
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    try {
+        $output = $process.StandardOutput.ReadToEndAsync()
+        $stopWhen = { $process.HasExited }.GetNewClosure()
+        try {
+            & $Source $stopWhen | ForEach-Object {
+                if (-not $process.HasExited) {
+                    try { $process.StandardInput.WriteLine([string]$_); $process.StandardInput.Flush() } catch [System.IO.IOException] { Write-Verbose 'DotForge: the engine closed its input' }
+                }
+            }
+        } finally {
+            try { $process.StandardInput.Close() } catch [System.IO.IOException] { Write-Verbose 'DotForge: the engine closed its input' }
+        }
+        $process.WaitForExit()
+        [string[]]@($output.GetAwaiter().GetResult() -split '\r?\n' | Where-Object { $_ })
+    } finally {
+        $process.Dispose()
     }
 }
 

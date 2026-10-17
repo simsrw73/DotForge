@@ -20,19 +20,81 @@ function Get-DFDirectoryJumpCandidate {
         ends. Outside the file system only the ranked folders are listed.
     .PARAMETER Depth
         How deep to scan. Default: the DirectoryJumpDepth setting, else 6.
+    .PARAMETER StopWhen
+        Checked between folders, and every 100 ms while a scan command is
+        silent; once it returns $true the list ends and a running scan process
+        is stopped (the picker has closed).
     .OUTPUTS
         pscustomobject: Shown (the text to show), Path (the folder's full path).
     #>
     [CmdletBinding()]
-    param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6))
+    param([ValidateRange(1, 64)][int]$Depth = (Get-DFConfig -Key DirectoryJumpDepth -Default 6), [scriptblock]$StopWhen = { $false })
     $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($path in Get-DFRankedDirectory) {
+    foreach ($path in Get-DFRankedDirectory -StopWhen $StopWhen) {
+        if (& $StopWhen) { return }
         if ($seen.Add($path)) { [pscustomobject]@{ Shown = (Format-DFHomePath $path); Path = $path } }
     }
     $location = Get-Location
     if ($location.Provider.Name -ne 'FileSystem') { return }
-    foreach ($item in Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth) {
-        if ($seen.Add($item.Path)) { $item }
+    # A pipeline, not foreach: foreach would collect the whole scan before the first folder.
+    Get-DFScannedDirectory -Root $location.ProviderPath -Depth $Depth -StopWhen $StopWhen | ForEach-Object {
+        if ($seen.Add($_.Path)) { $_ }
+    }
+}
+
+function Invoke-DFStoppableCommand {
+    <#
+    .SYNOPSIS
+        Runs an argv and writes its output lines as they come; a program is stopped once -StopWhen returns $true.
+    .DESCRIPTION
+        A program (an Application) runs as a process whose output is read line
+        by line, checking -StopWhen between lines and every 100 ms while it is
+        silent, and is killed when told to stop. Anything else (a function, as
+        in tests) is called in the pipeline. Errors write a verbose message and
+        end the output.
+    .PARAMETER Argv
+        The command and its arguments.
+    .PARAMETER WorkingDirectory
+        Where the program runs.
+    .PARAMETER StopWhen
+        The stop check.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string[]]$Argv, [string]$WorkingDirectory, [scriptblock]$StopWhen = { $false })
+    $application = Get-Command -Name $Argv[0] -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+    # Splatted from a variable: an inline @(...) reaches a function as one argument.
+    $rest = @($Argv | Select-Object -Skip 1)
+    if (-not $application) {
+        try { & $Argv[0] @rest 2>$null } catch { Write-Verbose "DotForge: Alt+C: '$($Argv[0])' failed: $($_.Exception.Message)" }
+        return
+    }
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new($application.Source)
+    foreach ($argument in $rest) { $startInfo.ArgumentList.Add($argument) }
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    if ($WorkingDirectory) { $startInfo.WorkingDirectory = $WorkingDirectory }
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    try { $process = [System.Diagnostics.Process]::Start($startInfo) } catch { Write-Verbose "DotForge: Alt+C: couldn't start '$($Argv[0])': $($_.Exception.Message)"; return }
+    try {
+        $null = $process.StandardError.ReadToEndAsync()
+        $next = $process.StandardOutput.ReadLineAsync()
+        while ($true) {
+            if ($next.Wait(100)) {
+                $line = $next.Result
+                if ($null -eq $line) { break }
+                $line
+                $next = $process.StandardOutput.ReadLineAsync()
+            }
+            if (& $StopWhen) { break }
+        }
+    } finally {
+        if (-not $process.HasExited) { try { $process.Kill($true) } catch { Write-Verbose "DotForge: Alt+C: couldn't stop '$($Argv[0])'" } }
+        $process.Dispose()
     }
 }
 
@@ -45,18 +107,12 @@ function Get-DFRankedDirectory {
     #>
     [CmdletBinding()]
     [OutputType([string])]
-    param()
+    param([scriptblock]$StopWhen = { $false })
     $argv = @(Get-DFRoleDeclaration -Role navigation -Field directories)
     if (-not $argv.Count) { return }
-    try {
-        # Splatted from a variable: an inline @(...) reaches a function as one argument.
-        $rest = @($argv | Select-Object -Skip 1)
-        & $argv[0] @rest 2>$null | ForEach-Object {
-            $line = ([string]$_).Trim()
-            if ($line) { $line.TrimEnd('\', '/') }
-        }
-    } catch {
-        Write-Verbose "DotForge: Alt+C: ranked folders failed: $($_.Exception.Message)"
+    Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
+        $line = ([string]$_).Trim()
+        if ($line) { $line.TrimEnd('\', '/') }
     }
 }
 
@@ -68,24 +124,21 @@ function Get-DFScannedDirectory {
         The folder to scan (a file-system path).
     .PARAMETER Depth
         The deepest level to list.
+    .PARAMETER StopWhen
+        The stop check (see Get-DFDirectoryJumpCandidate).
     .OUTPUTS
         pscustomobject: Shown (relative to Root), Path.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][int]$Depth)
+    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][int]$Depth, [scriptblock]$StopWhen = { $false })
     $scan = @(Get-DFRoleDeclaration -Role file-search -Field directoryScan)
     if ($scan.Count) {
         foreach ($level in 1..$Depth) {
+            if (& $StopWhen) { return }
             $argv = @($scan | ForEach-Object { ([string]$_).Replace('{depth}', [string]$level) })
-            try {
-                $rest = @($argv | Select-Object -Skip 1)
-                & $argv[0] @rest 2>$null | ForEach-Object {
-                    $relative = ([string]$_).Trim().TrimEnd('\', '/')
-                    if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
-                }
-            } catch {
-                Write-Verbose "DotForge: Alt+C: folder scan failed: $($_.Exception.Message)"
-                return
+            Invoke-DFStoppableCommand -Argv $argv -WorkingDirectory $Root -StopWhen $StopWhen | ForEach-Object {
+                $relative = ([string]$_).Trim().TrimEnd('\', '/')
+                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
             }
         }
         return
@@ -94,6 +147,7 @@ function Get-DFScannedDirectory {
     foreach ($level in 1..$Depth) {
         $next = [System.Collections.Generic.List[object]]::new()
         foreach ($parent in $frontier) {
+            if (& $StopWhen) { return }
             foreach ($child in @(Get-ChildItem -LiteralPath $parent.FullName -Directory -ErrorAction Ignore)) {
                 if ($child.Name.StartsWith('.') -or $child.Attributes.HasFlag([System.IO.FileAttributes]::Hidden)) { continue }
                 $next.Add($child)

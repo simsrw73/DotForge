@@ -109,6 +109,29 @@ Describe 'shared fuzzy key handler' {
         Should -Invoke Invoke-DFFuzzyEngine -Times 1 -ParameterFilter { $Engine -eq 'sk' -and ($Arguments -join ' ') -eq '--no-sort --query git' -and @($InputObject) -contains 'git status' }
         Should -Invoke Update-DFReadLineBuffer -Times 1 -ParameterFilter { $Replace -eq 'git status' }
     }
+    It 'Directory: streams the folders with --tiebreak=index and moves to the pick''s real path' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = '~'; Path = 'C:\h' }; [pscustomobject]@{ Shown = 'src\lib'; Path = 'C:\w\src\lib' } }
+        Mock Invoke-DFFuzzyEngine { @(& $Stream { $false })[1] }
+        Mock Enter-DFDirectory { $true }
+        Mock Update-DFReadLineBuffer { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory
+        Should -Invoke Invoke-DFFuzzyEngine -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Arguments -contains '--tiebreak=index' }
+        Should -Invoke Enter-DFDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq 'C:\w\src\lib' }
+        Should -Invoke Update-DFReadLineBuffer -Times 1 -ParameterFilter { -not $Replace -and -not $Insert }
+    }
+    It 'Directory: Esc moves nowhere' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'a'; Path = 'C:' } }
+        Mock Invoke-DFFuzzyEngine { }
+        Mock Enter-DFDirectory { $true }
+        Mock Update-DFReadLineBuffer { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory
+        Should -Invoke Enter-DFDirectory -Times 0
+    }
+    It 'Directory: binds Alt+c for the directory-jump role' {
+        Mock Set-DFRoleKeyHandler { }
+        Register-DFFuzzyKeyHandler -Engine fzf -Key Directory -Tool fzf
+        Should -Invoke Set-DFRoleKeyHandler -Times 1 -ParameterFilter { $Role -eq 'directory-jump' -and $Chord -eq 'Alt+c' -and $Tool -eq 'fzf' }
+    }
     It 'History: a multi-line entry comes back exactly as saved' {
         $file = Join-Path $TestDrive 'h3.txt'
         Set-Content $file -Value @('a `', 'b')
@@ -170,5 +193,35 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+r' -ScriptBlock { Set-PSReadLineKeyHandler
     }
     It 'returns $null for a script that doesn''t parse' {
         Remove-DFKeyHandlerCall -Script 'function {' | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'streaming to the engine stops early' {
+    BeforeAll { $script:Pwsh = (Get-Process -Id $PID).Path }
+    It 'returns the pick as soon as the engine exits, and the source sees the stop' {
+        $source = { param($StopWhen) 'first'; $sw = [Diagnostics.Stopwatch]::StartNew(); while (-not (& $StopWhen) -and $sw.Elapsed.TotalSeconds -lt 20) { Start-Sleep -Milliseconds 50 }; 'never' }
+        Mock Get-Command { [pscustomobject]@{ Source = $script:Pwsh } } -ParameterFilter { $Name -eq 'fake-engine' }
+        $time = Measure-Command {
+            $script:Picked = @(Invoke-DFFuzzyEngine -Engine 'fake-engine' -Arguments @('-NoProfile', '-Command', '[Console]::In.ReadLine()') -Stream $source)
+        }
+        $script:Picked | Should -Be @('first')
+        $time.TotalSeconds | Should -BeLessThan 15
+    }
+    It 'stops a declared scan process when told to, instead of waiting for it' {
+        $marker = "dfj-scan-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+        $scan = [pscustomobject]@{ name = 'slowscan'; executable = 'x.exe'; roles = [pscustomobject]@{ 'file-search' = [pscustomobject]@{ directories = $null; enter = $null; directoryScan = @($script:Pwsh, '-NoProfile', '-Command', "'a'; Start-Sleep 30 # $marker {depth}") } } }
+        Reset-DFTestSession
+        $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $script:DFSessionToolDb['slowscan'] = $scan
+        $script:DFSessionStatus['slowscan'] = New-DFToolStatus -Name 'slowscan' -State Active -RequestedBy 'Tools'
+        $script:Seen = 0
+        Push-Location $TestDrive
+        try {
+            $time = Measure-Command { Get-DFDirectoryJumpCandidate -Depth 2 -StopWhen { $script:Seen -ge 1 } | ForEach-Object { $script:Seen++ } }
+        } finally { Pop-Location; Reset-DFTestSession }
+        $script:Seen | Should -Be 1
+        $time.TotalSeconds | Should -BeLessThan 15
+        Start-Sleep -Milliseconds 300
+        @(Get-CimInstance Win32_Process -Filter "Name like 'pwsh%'" | Where-Object { $_.CommandLine -like "*$marker*" }).Count | Should -Be 0
     }
 }

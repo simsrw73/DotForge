@@ -7,7 +7,7 @@
     "search"
   ],
   "executable": "fzf.exe",
-  "roles": { "picker": { "priority": 10, "env": { "Picker": "fzf" } }, "history-search": { "priority": 10 }, "path-insert": { "priority": 10 }, "fuzzy-finder": {} },
+  "roles": { "picker": { "priority": 10, "env": { "Picker": "fzf" } }, "history-search": { "priority": 10 }, "path-insert": { "priority": 10 }, "directory-jump": { "priority": 10 }, "fuzzy-finder": {} },
   "packages": {
     "scoop": "fzf",
     "winget": "junegunn.fzf",

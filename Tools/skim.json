@@ -7,6 +7,7 @@
     "picker": { "priority": 5, "env": { "Picker": "sk" } },
     "history-search": { "priority": 5 },
     "path-insert": { "priority": 5 },
+    "directory-jump": { "priority": 5 },
     "fuzzy-finder": {}
   },
   "packages": { "scoop": "skim", "winget": "skim-rs.skim", "crates": "skim" },

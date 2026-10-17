@@ -1209,7 +1209,7 @@
       }
     },
     "fzf": {
-      "sha256": "8d29635c5f587526295cfeaedfdaa96464c022f608075124d846346ab404695c",
+      "sha256": "cd32074117429c1213079227f22395edd6860f95b977fd84f4c866d3c0df4d0c",
       "record": {
         "name": "fzf",
         "executable": "fzf.exe",
@@ -1271,6 +1271,17 @@
             "legacy": false
           },
           "path-insert": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          },
+          "directory-jump": {
             "priority": 10,
             "optIn": false,
             "aliases": null,
@@ -3928,7 +3939,7 @@
       }
     },
     "skim": {
-      "sha256": "93fba0d58624685af69e3f9ebf3996cc5498443808017eb6e42445c47f3881f2",
+      "sha256": "c5d8f202c03adc4f070d66b6f7699ab53064731fa3a319d8cc935bf21c090e43",
       "record": {
         "name": "skim",
         "executable": "sk.exe",
@@ -3986,6 +3997,17 @@
             "legacy": false
           },
           "path-insert": {
+            "priority": 5,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          },
+          "directory-jump": {
             "priority": 5,
             "optIn": false,
             "aliases": null,

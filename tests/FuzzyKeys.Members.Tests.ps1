@@ -14,7 +14,7 @@ Describe 'PSFzf binds only the keys it won' {
         . (Join-Path $script:Tools 'PSFzf.ps1')
     }
     It 'imports PSFzf without its own Ctrl+t and Ctrl+r bindings, so they aren''t mistaken for yours' {
-        Should -Invoke Import-Module -Times 1 -ParameterFilter { $Name -eq 'PSFzf' -and $ArgumentList[0] -eq '' -and $ArgumentList[1] -eq '' }
+        Should -Invoke Import-Module -Times 1 -ParameterFilter { $Name -eq 'PSFzf' -and $ArgumentList[0] -eq '' -and $ArgumentList[1] -eq '' -and $ArgumentList[2] -eq '' -and $ArgumentList[3] -eq 'Alt+a' }
     }
     It 'binds no chord in its companion body' {
         Should -Invoke Set-PsFzfOption -Times 0 -ParameterFilter { $Rest -contains '-PSReadlineChordReverseHistory' -or $Rest -contains '-PSReadlineChordProvider' }
@@ -44,6 +44,24 @@ Describe 'fzf binds through the shared handler' {
         Initialize-DFRolePathInsert -Tool ([pscustomobject]@{ name = 'fzf' }) -Role 'path-insert'
         Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Key -eq 'History' }
         Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Key -eq 'Path' }
+    }
+    It 'binds Alt+C (Directory) with fzf from the directory-jump hook' {
+        Initialize-DFRoleDirectoryJump -Tool ([pscustomobject]@{ name = 'fzf' }) -Role 'directory-jump'
+        Should -Invoke Register-DFFuzzyKeyHandler -Times 1 -ParameterFilter { $Engine -eq 'fzf' -and $Key -eq 'Directory' -and $Tool -eq 'fzf' }
+    }
+}
+
+Describe 'directory-jump members' {
+    It 'ranks fzf over skim, and PSFzf is not a member' {
+        $db = Import-DFToolDb -ToolsPath $script:Tools -Name fzf, skim, PSFzf
+        $db['fzf'].roles.'directory-jump'.priority | Should -Be 10
+        $db['skim'].roles.'directory-jump'.priority | Should -Be 5
+        $db['PSFzf'].roles.PSObject.Properties['directory-jump'] | Should -BeNullOrEmpty
+    }
+    It 'PSFzf''s companion never calls z (zoxide is set up as cd)' {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $script:Tools 'PSFzf.ps1'), [ref]$null, [ref]$null)
+        $calls = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true) | ForEach-Object { $_.GetCommandName() }
+        $calls | Should -Not -Contain 'z'
     }
 }
 

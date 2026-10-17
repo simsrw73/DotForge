@@ -1,6 +1,6 @@
 #Requires -Version 7.2
 
-# Ctrl+R / Ctrl+T for fzf-compatible engines that ship no PowerShell bindings
+# Ctrl+R / Ctrl+T / Alt+C for fzf-compatible engines that ship no PowerShell bindings
 # (fzf, skim). Each tool's role hook passes its own executable; nothing here names
 # a tool. Design: docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md.
 
@@ -10,18 +10,21 @@ $script:DFHistoryLineMark = ' ␤ '
 function Register-DFFuzzyKeyHandler {
     <#
     .SYNOPSIS
-        Binds Ctrl+R (history) or Ctrl+T (paths) to an fzf-compatible engine.
+        Binds Ctrl+R (history), Ctrl+T (paths) or Alt+C (folders) to an fzf-compatible engine.
     .DESCRIPTION
         History: PSReadLine's saved history, newest first and without repeats,
         is piped to <engine> --no-sort --query <line>, and the pick replaces
         the line. Path: the engine runs its own default command
         (FZF_DEFAULT_COMMAND / SKIM_DEFAULT_COMMAND) with --multi, and the
-        picks are inserted at the cursor. Esc changes nothing. Binds through
+        picks are inserted at the cursor. Directory: the Alt+C folder list
+        (Get-DFDirectoryJumpCandidate) is streamed to <engine> --tiebreak=index,
+        and the shell moves to the pick (Enter-DFDirectory). Esc changes nothing. Binds through
         Set-DFRoleKeyHandler, so a binding the user made is kept.
     .PARAMETER Engine
         The executable, e.g. fzf or sk.
     .PARAMETER Key
-        History (Ctrl+r, role history-search) or Path (Ctrl+t, role path-insert).
+        History (Ctrl+r, role history-search), Path (Ctrl+t, role path-insert) or
+        Directory (Alt+c, role directory-jump).
     .PARAMETER Tool
         The tool's name, for its status.
     .OUTPUTS
@@ -30,11 +33,14 @@ function Register-DFFuzzyKeyHandler {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Engine,
-        [Parameter(Mandatory)][ValidateSet('History', 'Path')][string]$Key,
+        [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key,
         [Parameter(Mandatory)][string]$Tool
     )
-    $role = if ($Key -eq 'History') { 'history-search' } else { 'path-insert' }
-    $chord = if ($Key -eq 'History') { 'Ctrl+r' } else { 'Ctrl+t' }
+    $role, $chord = switch ($Key) {
+        'History' { 'history-search', 'Ctrl+r' }
+        'Path' { 'path-insert', 'Ctrl+t' }
+        'Directory' { 'directory-jump', 'Alt+c' }
+    }
     # The handler runs later, outside the module: carry the private function along.
     $invoke = ${function:Invoke-DFFuzzyKey}
     $handler = { & $invoke -Engine $Engine -Key $Key }.GetNewClosure()
@@ -51,12 +57,13 @@ function Invoke-DFFuzzyKey {
     .PARAMETER Engine
         The executable.
     .PARAMETER Key
-        History or Path.
+        History, Path or Directory.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path')][string]$Key)
+    param([Parameter(Mandatory)][string]$Engine, [Parameter(Mandatory)][ValidateSet('History', 'Path', 'Directory')][string]$Key)
+    if ($Key -eq 'Directory') { Invoke-DFDirectoryKey -Engine $Engine; return }
     $buffer = Get-DFReadLineBuffer
     if ($Key -eq 'History') {
         $shown = [ordered]@{}
@@ -69,6 +76,30 @@ function Invoke-DFFuzzyKey {
         $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--multi'))
         if ($picked.Count) { Update-DFReadLineBuffer -Insert (Format-DFPathInsert -Path $picked); return }
     }
+    Update-DFReadLineBuffer
+}
+
+function Invoke-DFDirectoryKey {
+    <#
+    .SYNOPSIS
+        Alt+C: streams the folder list to the engine and moves the shell to the pick; the typed line stays.
+    .PARAMETER Engine
+        The executable.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Engine)
+    # Shown text -> full path, filled as the lines go out; the pick is mapped back, never parsed.
+    $paths = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
+    # Not a closure: it runs inside this call (through Invoke-DFFuzzyEngine), in the
+    # module, so it finds the private function and $paths there (and tests can mock it).
+    $source = {
+        param($StopWhen)
+        Get-DFDirectoryJumpCandidate -StopWhen $StopWhen | ForEach-Object { $paths[$_.Shown] = $_.Path; $_.Shown }
+    }
+    $picked = @(Invoke-DFFuzzyEngine -Engine $Engine -Arguments @('--tiebreak=index') -Stream $source)
+    if ($picked.Count -and $paths.ContainsKey([string]$picked[0])) { [void](Enter-DFDirectory -Path $paths[[string]$picked[0]]) }
     Update-DFReadLineBuffer
 }
 
@@ -155,11 +186,16 @@ function Invoke-DFFuzzyEngine {
         Its arguments.
     .PARAMETER InputObject
         Lines to pick from; omit it to let the engine list files itself.
+    .PARAMETER Stream
+        A source to stream lines from instead, called with one argument: a
+        scriptblock that returns $true once the engine has exited, so the source
+        can stop early (Invoke-DFFuzzyEngineStream).
     .OUTPUTS
         System.String[]: the picks.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject)
+    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject, [scriptblock]$Stream)
+    if ($Stream) { return Invoke-DFFuzzyEngineStream -Engine $Engine -Arguments $Arguments -Source $Stream }
     # PowerShell sends the items as UTF-8 ($OutputEncoding) but decodes the picks with the console's
     # code page (437 by default), which garbles any non-ASCII pick: read them as UTF-8 too.
     $consoleEncoding = [Console]::OutputEncoding
@@ -168,6 +204,58 @@ function Invoke-DFFuzzyEngine {
         if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
     } finally {
         [Console]::OutputEncoding = $consoleEncoding
+    }
+}
+
+function Invoke-DFFuzzyEngineStream {
+    <#
+    .SYNOPSIS
+        Runs the engine as a process and writes the source's lines to it as they come, stopping the source when the engine exits.
+    .DESCRIPTION
+        A PowerShell pipeline keeps running its upstream after a native
+        command at its end exits, so a pick made before a long scan ends would
+        wait for the scan. Here the source gets a stop check
+        ({ engine exited }) and the lines go to the engine's stdin directly,
+        UTF-8 both ways.
+    .PARAMETER Engine
+        The executable name.
+    .PARAMETER Arguments
+        Its arguments.
+    .PARAMETER Source
+        Called with the stop check; writes the lines.
+    .OUTPUTS
+        System.String[]: the picks.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [Parameter(Mandatory)][scriptblock]$Source)
+    $exe = (Get-Command -Name $Engine -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
+    if (-not $exe) { Write-Verbose "DotForge: $Engine not found"; return }
+    $utf8 = [System.Text.UTF8Encoding]::new($false)
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new($exe)
+    foreach ($argument in $Arguments) { $startInfo.ArgumentList.Add($argument) }
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.StandardInputEncoding = $utf8
+    $startInfo.StandardOutputEncoding = $utf8
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    try {
+        $output = $process.StandardOutput.ReadToEndAsync()
+        $stopWhen = { $process.HasExited }.GetNewClosure()
+        try {
+            & $Source $stopWhen | ForEach-Object {
+                if (-not $process.HasExited) {
+                    try { $process.StandardInput.WriteLine([string]$_); $process.StandardInput.Flush() } catch [System.IO.IOException] { Write-Verbose 'DotForge: the engine closed its input' }
+                }
+            }
+        } finally {
+            try { $process.StandardInput.Close() } catch [System.IO.IOException] { Write-Verbose 'DotForge: the engine closed its input' }
+        }
+        $process.WaitForExit()
+        [string[]]@($output.GetAwaiter().GetResult() -split '\r?\n' | Where-Object { $_ })
+    } finally {
+        $process.Dispose()
     }
 }
 

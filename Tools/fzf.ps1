@@ -89,3 +89,8 @@ function Initialize-DFRolePathInsert {
     param($Tool, $Role)
     Register-DFFuzzyKeyHandler -Engine 'fzf' -Key Path -Tool $Tool.name
 }
+
+function Initialize-DFRoleDirectoryJump {
+    param($Tool, $Role)
+    Register-DFFuzzyKeyHandler -Engine 'fzf' -Key Directory -Tool $Tool.name
+}

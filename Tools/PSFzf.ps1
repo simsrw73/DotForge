@@ -1,27 +1,19 @@
 # Companion for PSFzf — imports the module and configures its key bindings:
 #   Ctrl+T  fzf file picker (when PSFzf wins path-insert)   Ctrl+R  history (when it wins history-search)
-#   Alt+C   fuzzy cd (through zoxide's z when zoxide is installed)
+#   Alt+A   fuzzy pick from the arguments in your history
 #   Tab     fuzzy tab completion (when PSFzf wins tab-completion)
 # plus fd for file listing and fuzzy scoop aliases. PSFzf declares
 # "after": ["psreadline"], so psreadline.ps1's settings are applied first.
 # Reads nothing from $DFConfig; writes no files.
 # Without its own Ctrl+T/Ctrl+R: importing PSFzf binds them, and the history-search and
 # path-insert hooks below bind them only when PSFzf wins (the chords are positional
-# module parameters; '' skips one). Alt+C and Alt+A keep their defaults.
-Import-Module PSFzf -ArgumentList '', '', 'Alt+c', 'Alt+a' -ErrorAction SilentlyContinue
+# module parameters; '' skips one). Alt+C belongs to the directory-jump role (fzf,
+# skim or broot), so PSFzf doesn't bind it either. Alt+A keeps its default.
+Import-Module PSFzf -ArgumentList '', '', '', 'Alt+a' -ErrorAction SilentlyContinue
 
 if (Get-Module -Name PSFzf) {
     Set-PsFzfOption -EnableFd
 
-    $commandOverride = [ScriptBlock] {
-        param($Location)
-        if (Get-Command -Name zoxide.exe -ErrorAction SilentlyContinue) {
-            z $Location
-        } else {
-            Set-Location $Location
-        }
-    }
-    Set-PsFzfOption -AltCCommand $commandOverride
 
     Set-PsFzfOption -EnableAliasFuzzyScoop
     Set-PsFzfOption -TabExpansion
