@@ -1,5 +1,5 @@
 # Companion for PSFzf — imports the module and configures its key bindings:
-#   Ctrl+T  fzf file picker, inserts the path       Ctrl+R  fuzzy history search
+#   Ctrl+T  fzf file picker (when PSFzf wins path-insert)   Ctrl+R  history (when it wins history-search)
 #   Alt+C   fuzzy cd (through zoxide's z when zoxide is installed)
 #   Tab     fuzzy tab completion (when PSFzf wins tab-completion)
 # plus fd for file listing and fuzzy scoop aliases. PSFzf declares
@@ -9,10 +9,6 @@ Import-Module PSFzf -ErrorAction SilentlyContinue
 
 if (Get-Module -Name PSFzf) {
     Set-PsFzfOption -EnableFd
-
-    Set-PsFzfOption `
-        -PSReadlineChordProvider 'Ctrl+t' `
-        -PSReadlineChordReverseHistory 'Ctrl+r'
 
     $commandOverride = [ScriptBlock] {
         param($Location)
@@ -50,4 +46,16 @@ function Initialize-DFRoleTabCompletion {
     # Startup already probed carapace (Test-DFToolAvailable remembers it); don't look it up again.
     if (Test-DFToolAvailable -Executable 'carapace.exe') { Enable-DFFzfAnsiOption }
     Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+}
+
+function Initialize-DFRoleHistorySearch {
+    param($Tool, $Role)
+    if (-not (Get-Module -Name PSFzf)) { return }
+    Set-DFRoleKeyHandler -Role $Role -Chord 'Ctrl+r' -Tool $Tool.name -Bind { Set-PsFzfOption -PSReadlineChordReverseHistory 'Ctrl+r' }
+}
+
+function Initialize-DFRolePathInsert {
+    param($Tool, $Role)
+    if (-not (Get-Module -Name PSFzf)) { return }
+    Set-DFRoleKeyHandler -Role $Role -Chord 'Ctrl+t' -Tool $Tool.name -Bind { Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' }
 }

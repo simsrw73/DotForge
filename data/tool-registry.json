@@ -988,7 +988,8 @@
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc"
-          }
+          },
+          "notes": []
         },
         "banner": {
           "script": "fastfetch.banner.ps1",
@@ -1163,7 +1164,7 @@
       }
     },
     "fzf": {
-      "sha256": "94cb08fb863dfe97ea3003478fa8b3d344ced73bda9216c3dfac9077a6659098",
+      "sha256": "8d29635c5f587526295cfeaedfdaa96464c022f608075124d846346ab404695c",
       "record": {
         "name": "fzf",
         "executable": "fzf.exe",
@@ -1207,6 +1208,30 @@
             "env": {
               "Picker": "fzf"
             },
+            "flags": null,
+            "legacy": false
+          },
+          "history-search": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "path-insert": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "fuzzy-finder": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
             "flags": null,
             "legacy": false
           }
@@ -2996,7 +3021,7 @@
       }
     },
     "PSFzf": {
-      "sha256": "c2077cc22e7d1f34e932322b5a09c416d3b17dbb7f8db003954cdc5c8ba019c1",
+      "sha256": "56aaa5111aa342a819a5bad28b9f2da638b6e2c820c3f40d24953b7464ae939f",
       "record": {
         "name": "PSFzf",
         "executable": "PSFzf",
@@ -3039,6 +3064,22 @@
           },
           "tab-completion": {
             "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "history-search": {
+            "priority": 30,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "path-insert": {
+            "priority": 30,
             "optIn": false,
             "aliases": null,
             "env": null,
@@ -3402,7 +3443,8 @@
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": "ripgrep/ripgreprc"
-          }
+          },
+          "notes": []
         },
         "banner": null,
         "installs": null,
@@ -4034,7 +4076,8 @@
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/wget/wgetrc": "wget/wgetrc"
-          }
+          },
+          "notes": []
         },
         "banner": null,
         "installs": null,

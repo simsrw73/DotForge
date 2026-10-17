@@ -8,6 +8,8 @@
 # Theme: the theme block in Tools/fzf.json (Get-DFToolTheme).
 # Theme files: $XDG_CONFIG_HOME\fzf\themes\<name>.json, else bundled Tools\fzf\.
 # Sets: FZF_DEFAULT_OPTS. Writes no files.
+# Binds Ctrl+R / Ctrl+T through the shared handler when fzf wins history-search /
+# path-insert (PSFzf outranks it).
 
 $_bundledDir = Join-Path $PSScriptRoot 'fzf'
 # Private helpers can't be called by name from a function:global: closure, but a
@@ -96,3 +98,13 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
 # Apply the session theme (Tools/fzf.json theme block: FzfTheme -> Theme -> default).
 $_theme = Get-DFToolTheme -Tool $DFCurrentTool
 Invoke-DFApplyFzfTheme -Name $_theme.Native -Implicit:(-not $_theme.Explicit)
+
+function Initialize-DFRoleHistorySearch {
+    param($Tool, $Role)
+    Register-DFFuzzyKeyHandler -Engine 'fzf' -Key History -Tool $Tool.name
+}
+
+function Initialize-DFRolePathInsert {
+    param($Tool, $Role)
+    Register-DFFuzzyKeyHandler -Engine 'fzf' -Key Path -Tool $Tool.name
+}
