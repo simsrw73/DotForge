@@ -62,6 +62,7 @@ aliases, variables and hook. **Category** roles only group tools that do the sam
 | fuzzy-finder | category | fzf, skim, television, peco, gum | | done 2026-10-17 |
 | history-search (Ctrl+R) | single | PSFzf, television, fzf, skim | atuin, mcfly | T-67 |
 | path-insert (Ctrl+T) | single | PSFzf, television, fzf, skim | | done 2026-10-17 |
+| directory-jump (Alt+C) | single | fzf, skim, broot | yazi, superfile, lf (file-manager batch) | done 2026-10-17 |
 | listing | single | eza, lsd | | |
 | package-manager | single | scoop, winget, choco | | |
 | project-env | single | direnv, mise, ps-dotenv | more env tools | T-36 |
@@ -89,7 +90,6 @@ aliases, variables and hook. **Category** roles only group tools that do the sam
 
 | Role | Candidates | Ref |
 |---|---|---|
-| directory-jump (Alt+C) | broot, yazi, superfile, fzf/PSFzf's Alt+C | T-68 |
 | file-manager | yazi, superfile, lf, broot, midnight commander, vifm, ranger | T-35 |
 | git-tui | lazygit (tool exists), gitui | T-35 |
 | process-viewer | procs (tool exists), btop, bottom, htop, glances | T-35 |
@@ -119,7 +119,7 @@ ps-dotenv, PSFzf, psreadline, psresource, pymanager, python, ripgrep, rustup, sc
 smartmontools, starship, television, Terminal-Icons, uv, vcpkg, vivid, wget, winget, zoxide
 
 Gaps among these:
-- **broot** has a record but no role: it belongs in directory-jump/file-manager (T-68).
+- **broot** is done (directory-jump, 2026-10-17); it may also join `file-manager` when that role exists.
 - **nano** has a record but isn't in the editor role.
 - **lazygit**, **procs**, **jq**, **chezmoi** and **bitwarden** have records, but their planned roles don't exist yet.
 - **bat** has no role.

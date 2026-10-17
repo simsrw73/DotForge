@@ -189,6 +189,15 @@ Two categories, and the difference matters:
 | **Why** | Only the winners of history-search and path-insert may bind those keys, so DotForge removes tv's two binding calls (`Remove-DFKeyHandlerCall`) and binds tv's functions from the role hooks. The seeded `config.toml` holds only `ui.theme`. |
 | **If it changes** | A renamed function leaves its key unbound with a status note; a script that no longer parses loads nothing, with a note. A tv that stops honoring `TELEVISION_CONFIG` falls back to `XDG_CONFIG_HOME\television`, the same folder. |
 
+### 19. broot: `--outcmd` format, install state, `--conf` order
+
+| | |
+|---|---|
+| **What** | broot 1.61 writes a cd to its `--outcmd` file as one line, `cd '<path>'`, quoted the POSIX way (a `'` becomes `'"'"'`); the file must exist before broot runs. Its "install br?" state is the file `<BROOT_CONFIG_DIR>\launcher\installed-v5`, set by `broot --set-install-state installed`. While that state is unset, broot's installer appends a line sourcing its launcher to your PowerShell and bash profiles, and writes launcher scripts under `%APPDATA%\dystroy\broot\data` (outside `BROOT_CONFIG_DIR`). With `--conf "a;b"`, a skin in `b` wins over a skin that `a` imports. broot's default config folder on Windows is `%APPDATA%\dystroy\broot\config`. |
+| **Where** | `Private/DFCdFile.ps1` (`ConvertFrom-DFShellCdLine`), `Tools/broot.ps1`, `Tools/broot.setup.ps1`, `Tools/broot.json` |
+| **Why** | `br` and Alt+C read only the folder from the outcmd file and move there themselves, instead of running it (broot's stock `br` uses `Invoke-Expression`, and fails on a `'`). Setup sets the install state once, so broot never edits your profiles. The skin is passed second, so `BrootTheme` works live. |
+| **If it changes** | A different outcmd format reads as nothing: `br` and Alt+C move nowhere, and nothing runs. A renamed install-state file brings back broot's offer to install its own `br` (setup notes how to turn it off). If `--conf` stops letting the second file win, broot shows the skin your `conf.hjson` imports, or its default. |
+
 ---
 
 ## Documented but load-bearing

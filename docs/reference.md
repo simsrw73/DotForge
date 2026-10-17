@@ -106,13 +106,14 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
 | Command | Alias | Tool | Summary |
 | --- | --- | --- | --- |
 | [Select-BwItem](#select-bwitem) | `fbw` | bitwarden | Fuzzy-picks a Bitwarden vault item and copies its password, clearing the clipboard after 30 seconds. |
+| [br](#br) |  | broot | Runs broot, and moves the shell to the folder you leave it in. |
 | [Assert-DFChoco](#assert-dfchoco) |  | choco | Returns $true when choco is on PATH; otherwise warns and returns $false. |
 | [Invoke-ChocoUpdate](#invoke-chocoupdate) | `cup` | choco | Fuzzy-picks outdated Chocolatey packages and upgrades them. |
 | [Invoke-DFChocoElevated](#invoke-dfchocoelevated) |  | choco | Runs choco with the given arguments, elevated through gsudo when available. |
@@ -2394,6 +2395,15 @@ Displays git diffs. The winner sets GIT_PAGER.
 | Members | [delta](#delta-tool) |
 | Only the winner sets | `GIT_PAGER` |
 
+### directory-jump role
+
+Changes to a folder you pick from Alt+C. Only the winner binds the key; a binding you made yourself is kept.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [broot](#broot-tool), [fzf](#fzf-tool), [skim](#skim-tool) |
+
 ### editor role
 
 Edits text files. The winner sets EDITOR and VISUAL.
@@ -2658,15 +2668,19 @@ Bitwarden CLI — open-source password manager
 
 ### broot tool
 
-Interactive file browser with fuzzy search
+Interactive file browser with fuzzy search; br moves the shell to the folder you leave it in
 
 | | |
 | --- | --- |
 | Detected by | `broot.exe` |
 | Tags | `file`, `browser`, `navigation` |
-| Install ids | scoop: `broot`<br>choco: `broot` |
+| Install ids | scoop: `broot`<br>winget: `Dystroy.broot`<br>choco: `broot` |
 | XDG method | `env` |
-| Creates | `${XDG_CONFIG_HOME}/broot` |
+| XDG variables | `BROOT_CONFIG_DIR` = `${XDG_CONFIG_HOME}/broot` |
+| Theme | key `BrootTheme`, default `catppuccin-mocha` |
+| Seeds once | `${XDG_CONFIG_HOME}/broot/conf.hjson`<br>`${XDG_CONFIG_HOME}/broot/verbs.hjson` |
+| Roles | [`directory-jump`](#directory-jump-role) |
+| Companion | [`Tools/broot.ps1`](#broot-companion), one-time `Tools/broot.setup.ps1` |
 
 ### bun tool
 
@@ -2862,7 +2876,7 @@ General-purpose command-line fuzzy finder
 | XDG method | `default` |
 | Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_DEFAULT_OPTS` = `--layout=reverse --inline-info --height=40% --border`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
 | Theme | key `FzfTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyFzfTheme` |
-| Roles | [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
+| Roles | [`directory-jump`](#directory-jump-role), [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
 | Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
 
@@ -3349,7 +3363,7 @@ Fuzzy finder in Rust that takes fzf's options
 | XDG method | `default` |
 | Environment | `SKIM_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`SKIM_DEFAULT_OPTIONS` = `--layout=reverse --inline-info --height=40% --border` |
 | Theme | key `SkimTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplySkimTheme` |
-| Roles | [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
+| Roles | [`directory-jump`](#directory-jump-role), [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
 | Sets, as the picker tool | `Picker` = `sk` |
 | Companion | [`Tools/skim.ps1`](#skim-companion) |
 
@@ -3525,6 +3539,40 @@ fbw -Type login
 ```
 
 Picks a login and copies its password for 30 seconds.
+
+**See also:** [tools](guide/tools.md)
+
+### broot companion
+
+#### br
+
+Runs broot, and moves the shell to the folder you leave it in.
+
+Opens broot in the current folder with your arguments. Leave it with a cd (alt+enter, or :cd) and the shell changes to that folder, through zoxide's cd when zoxide is your navigation tool; quit without one and nothing changes. broot's skin follows BrootTheme (Set-DFToolTheme broot &lt;flavor&gt; switches it).
+
+Defined by DotForge's broot companion. It replaces broot's own br, which DotForge's setup tells broot not to install.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Arguments` | string[] | `@()` |  | remaining args | Arguments passed to broot (a folder to open, --only-folders, ...). |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+br
+```
+
+Browses the current folder; alt+enter on a folder moves the shell there.
+
+**Example 2**
+
+```powershell
+br -f ~/projects
+```
+
+Browses only the folders under ~/projects.
 
 **See also:** [tools](guide/tools.md)
 

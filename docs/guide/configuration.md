@@ -38,9 +38,10 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `ExcludeTools` | string[] | none | Tools and `+groups` removed from `Tools`; exclusions win. |
 | `SkipSetup` | string[] | none | Tools whose one-time setup script never runs (`delta`, `mdv`). See [Safety](safety.md). |
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
+| `DirectoryJumpDepth` | int | `6` | How many levels below the current folder Alt+C's folder list scans. |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `BrootTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -99,6 +100,7 @@ mdcat: dracula
 | Tool | Key | Names | Unknown name |
 | --- | --- | --- | --- |
 | bat | `BatTheme` | any `bat --list-themes` name | bat warns when it runs and uses its default |
+| broot | `BrootTheme` | the four catppuccin flavors, or a folder holding your own `skin.hjson`; passed to broot by `br` on every run | warning; broot's own skin |
 | delta | `DeltaTheme` | `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte` | silently ignored |
 | fzf | `FzfTheme` | `catppuccin-mocha`, or `$XDG_CONFIG_HOME\fzf\themes\<name>.json` | warning; no colors set |
 | glow | `GlowTheme` | `catppuccin-mocha`, glow's `auto`, `dark`, `light`, `dracula`, `pink`, `notty`, `ascii`, `tokyo-night`, or a path | warning; `auto` |
@@ -107,9 +109,9 @@ mdcat: dracula
 | moor | `MoorTheme` | any moor `-style` name (`catppuccin-mocha`, `dracula`, `nord`, …); used only when you haven't set `MOOR` | moor uses its default style |
 | peco | `PecoTheme` | `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`; seeded once into `$XDG_CONFIG_HOME\peco\config.json` | warning; nothing seeded |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
-| skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim	hemes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
+| skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim\themes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
 | television | `TelevisionTheme` | the four catppuccin flavors; seeded once into its `config.toml` (`ui.theme`), so change it there later | warning; nothing seeded |
-| gum | `GumTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\gum	hemes\<name>.json`; sets `GUM_*` colors | warning; gum's own colors |
+| gum | `GumTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\gum\themes\<name>.json`; sets `GUM_*` colors | warning; gum's own colors |
 | vivid (`LS_COLORS`) | `VividTheme` | any `vivid themes` name | warning; `LS_COLORS` unchanged |
 
 To switch a tool's theme for the rest of the session, use `Set-DFToolTheme`:

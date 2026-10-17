@@ -32,6 +32,15 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Alt+C is a role, `directory-jump`, and its list starts where you've been.** With fzf (or skim),
+  Alt+C shows zoxide's most-used folders first, then the folders under the current one, streamed one
+  level at a time down to `DirectoryJumpDepth` (6). Nearby folders show up at once, even in your home
+  folder. Picking one moves there through zoxide's `cd`. broot can own Alt+C instead
+  (`Defaults = @{ 'directory-jump' = 'broot' }`). An Alt+C binding of your own is kept.
+- **broot follows the tool contract.** Its config is in `$XDG_CONFIG_HOME\broot`, seeded once. Its
+  skin follows `Theme` (`BrootTheme`, four catppuccin flavors) and switches live. `br` moves the
+  shell to the folder you leave broot in, reading only that folder from broot's output. Setup stops
+  broot from offering to install its own `br`, which edits your shell profiles.
 - **skim, television, peco and gum.** skim (`sk`) takes fzf's options, so it can run every DotForge
   picker (`Defaults = @{ picker = 'skim' }`) and bind Ctrl+R/Ctrl+T. television downloads its channels
   once and can own Ctrl+R (history) and Ctrl+T (smart autocomplete). peco gets a seeded config, gum
@@ -112,6 +121,8 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **Picking a folder from Alt+C failed** with "The term 'z' is not recognized": DotForge sets zoxide
+  up as `cd`, but PSFzf's Alt+C called `z`. PSFzf no longer binds Alt+C; the `directory-jump` role does.
 - **television's one-time channel download could hang the shell start** on a stalled network, and again on
   every start after Ctrl+C. It now stops after 60 s and leaves the note to run `tv update-channels` yourself.
 - **Ctrl+T inserted file names like `1kb`, `0x10` or `1e3` unquoted**, so PowerShell read them as numbers;

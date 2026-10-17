@@ -243,7 +243,10 @@ Each `Tools/*.json` must have at minimum:
   (pager: `PAGER`, `BAT_PAGER`); a flag may be an `{ ifFile, unlessFile, args }` group; a role may name a
   `fallback` env for when nothing in the session fills it (`docs/superpowers/specs/2026-10-16-pager-role-design.md`).
   `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) bind keys only through `Set-DFRoleKeyHandler`, which keeps a
-  user's own binding (`docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md`).
+  user's own binding (`docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md`). `directory-jump` (Alt+C)
+  does too; its folder list comes from role-block declarations (`navigation`: `directories`, `enter`;
+  `file-search`: `directoryScan`), read with `Get-DFRoleDeclaration`
+  (`docs/superpowers/specs/2026-10-17-directory-jump-design.md`).
 - `setup` (optional): `seed` (destination → file under `Tools/`; a source may use `{theme}`) and `notes` (`{ text,
   ifFile?, unlessFile? }`, checked before seeding, printed once at the end of the load and kept in `Get-DFToolStatus`;
   a setup script adds one with `Add-DFToolSetupNote`).

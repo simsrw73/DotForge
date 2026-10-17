@@ -85,7 +85,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |
 | procs | `fkill` process picker |
-| PSFzf | `Ctrl+T` (insert a path) and `Ctrl+R` (history) when it wins those roles (it does by default), `Alt+C` (change folder), fuzzy Tab |
+| PSFzf | `Ctrl+T` (insert a path) and `Ctrl+R` (history) when it wins those roles (it does by default), `Alt+A` (pick an argument from history), fuzzy Tab |
 | psreadline | `fprl` color theme picker; `Ctrl+P` / `Ctrl+N` history search |
 | ripgrep | `frg` search-and-open picker |
 | rustup | `frtc` picks the default toolchain |
@@ -176,8 +176,23 @@ bat isn't a pager here: when it pages, it uses the `PAGER` above.
 Ctrl+R (search history) and Ctrl+T (insert a path) are two roles, `history-search` and `path-insert`, so a different tool can own each key. Only the winner binds the key: your `Defaults` choice, otherwise PSFzf, then television, then fzf, then skim. For example, `Defaults = @{ 'history-search' = 'television'; 'path-insert' = 'skim' }`. A Ctrl+R or Ctrl+T binding you make yourself before DotForge loads is kept (`Get-DFToolStatus` says so) unless `Defaults` names a tool for that key.
 
 - **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets the same layout as fzf through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
-- **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME	elevision\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
+- **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME\television\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
 - **fzf** and **skim** bind Ctrl+R and Ctrl+T through DotForge's own handler when they win: history is newest first without repeats, and picked paths are quoted when they hold a space.
+
+### Alt+C: change folder (fzf, skim, broot)
+
+Alt+C is the `directory-jump` role: a TUI version of `cd`. Pick a folder and the shell moves there. Only the winner binds it: your `Defaults` choice, otherwise fzf, then skim, then broot. For example, `Defaults = @{ 'directory-jump' = 'broot' }`. An Alt+C binding you make yourself before DotForge loads is kept unless `Defaults` names a tool for it. PSFzf no longer binds Alt+C.
+
+With fzf or skim, the list shows zoxide's folders first, most used and most recent at the top, with no wait. Then the folders under the current one stream in, one level at a time, down to `DirectoryJumpDepth` levels (6 by default). Nearby folders show up within a moment, even in your home folder, and you can type while the deeper ones arrive. fd does the scan when it's in your `Tools` (it skips hidden folders and what `.gitignore` excludes); without it, DotForge scans by itself. Moving goes through zoxide's `cd`, so the folders you pick count toward its ranking. Without zoxide, the list is just the scan.
+
+### broot
+
+broot browses folders as a tree. `br` runs it in the current folder: leave it on a folder with alt+enter (or `:cd`) and the shell moves there. Quit any other way and nothing changes. With broot as `directory-jump`, Alt+C runs `br` on folders only.
+
+- Its config lives in `$XDG_CONFIG_HOME\broot` (`BROOT_CONFIG_DIR`). DotForge seeds `conf.hjson` and `verbs.hjson` once, from broot's own defaults.
+- Its skin follows `Theme` (`BrootTheme`; the four catppuccin flavors) and is passed after your `conf.hjson` on every `br`, so `Set-DFToolTheme broot catppuccin-latte` takes effect on the next run. For a skin of your own, put it in a folder as `skin.hjson` and set `BrootTheme` to that folder's path.
+- broot's one-time setup tells broot that DotForge provides `br`, so broot never offers to install its own. Its installer would add a line to your shell profiles.
+- DotForge's `br` reads only the target folder from what broot writes, and never runs it. broot's own `br` does run it, and fails on a folder name with a `'` in it.
 
 ### peco and gum
 
