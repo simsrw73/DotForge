@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 02562a1d0d6ccf3c55143e47c5eafc7ad07b0546a68e1b498985afa540bb6fad
+# sources-sha256: 25a35b7c86b9c1154d6cc3dc722893d0c9a30861385bcab64951d568b38152c5
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1197,6 +1197,21 @@ function ConvertTo-DFAliasMap {
     [pscustomobject]$normalized
 }
 
+function ConvertTo-DFRoleArgv {
+    <#
+    .SYNOPSIS
+        A role block's argv field as a string array (a one-element array stays an array), or $null.
+    .PARAMETER Block
+        The raw role block.
+    .PARAMETER Field
+        The field name.
+    #>
+    param([pscustomobject]$Block, [string]$Field)
+    $property = $Block.PSObject.Properties[$Field]
+    if (-not $property -or $null -eq $property.Value) { return $null }
+    , [string[]]@($property.Value)
+}
+
 function ConvertTo-DFRoleMap {
     <#
     .SYNOPSIS
@@ -1216,6 +1231,10 @@ function ConvertTo-DFRoleMap {
                 aliases  = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $role.Value 'aliases' $null)
                 env      = Get-DFToolRecordProperty $role.Value 'env' $null
                 flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
+                # Folder sources for Alt+C (directory-jump), read with Get-DFRoleDeclaration.
+                directories   = ConvertTo-DFRoleArgv $role.Value 'directories'
+                enter         = Get-DFToolRecordProperty $role.Value 'enter' $null
+                directoryScan = ConvertTo-DFRoleArgv $role.Value 'directoryScan'
                 legacy   = $false
             }
         }
@@ -1226,7 +1245,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; enter = $null; directoryScan = $null; legacy = $true }
     }
 
     [pscustomobject]$roles
@@ -1868,6 +1887,21 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                 if ($null -ne $optIn -and $optIn -isnot [bool]) {
                     "roles.$($r.Name).optIn must be a boolean"
                 }
+                # Folder sources for Alt+C (directory-jump): argv lists and a command name.
+                foreach ($field in 'directories', 'directoryScan') {
+                    $present = $r.Value.PSObject.Properties[$field]
+                    if (-not $present) { continue }
+                    $argv = $present.Value
+                    # (An empty array would make "$null -ne $argv" false, so presence is checked instead.)
+                    if (($argv -isnot [System.Collections.IList] -or -not @($argv).Count -or
+                            @($argv | Where-Object { $_ -isnot [string] -or -not $_ }).Count)) {
+                        "roles.$($r.Name).$field must be a non-empty array of strings"
+                    }
+                }
+                $enter = $r.Value.PSObject.Properties['enter']
+                if ($enter -and ($enter.Value -isnot [string] -or -not $enter.Value)) {
+                    "roles.$($r.Name).enter must be a non-empty string"
+                }
             }
         }
     }
@@ -2197,7 +2231,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env', 'flags'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))
@@ -3092,6 +3126,7 @@ $script:DFConfigKeys = [ordered]@{
     MoorTheme          = 'moor theme'
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
+    DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'
@@ -4286,6 +4321,45 @@ function ConvertTo-DFRoleBehaviors {
     [pscustomobject]@{
         Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env }
         Problem = $problem
+    }
+}
+
+# ---- Private/Get-DFRoleDeclaration.ps1
+#Requires -Version 7.2
+
+function Get-DFRoleDeclaration {
+    <#
+    .SYNOPSIS
+        Reads one field of a role block from the tool that fills the role this session.
+    .DESCRIPTION
+        For a single role, the session winner's roles.<Role>.<Field>. For a
+        category role, the first active member (by name) that declares the
+        field. So a tool says what it offers in its own record (zoxide's
+        ranked folders, fd's folder scan), and core reads it without naming
+        the tool. Returns nothing when no tool in the session declares it.
+        Never throws.
+    .PARAMETER Role
+        The role name, e.g. 'navigation'.
+    .PARAMETER Field
+        The role-block field, e.g. 'directories'.
+    .OUTPUTS
+        The field's value, or nothing.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Role, [Parameter(Mandatory)][string]$Field)
+    $definition = (Get-DFRoleDb)[$Role]
+    if (-not $definition) { return }
+    $records = if ($definition.kind -eq 'single') {
+        $winner = if ($script:DFSessionRoleWinners) { $script:DFSessionRoleWinners[$Role] }
+        if ($winner -and $winner.Winner) { $script:DFSessionToolDb[[string]$winner.Winner] }
+    } else {
+        $active = @(foreach ($name in @($script:DFSessionToolDb.Keys)) { if (Test-DFToolActive -Name $name) { $script:DFSessionToolDb[$name] } })
+        Get-DFRoleMember -Role $Role -Tools $active
+    }
+    foreach ($record in @($records)) {
+        $block = $record.roles.PSObject.Properties[$Role]?.Value
+        $value = if ($block) { $block.PSObject.Properties[$Field]?.Value }
+        if ($null -ne $value) { return $value }
     }
 }
 

@@ -305,6 +305,21 @@ function ConvertTo-DFAliasMap {
     [pscustomobject]$normalized
 }
 
+function ConvertTo-DFRoleArgv {
+    <#
+    .SYNOPSIS
+        A role block's argv field as a string array (a one-element array stays an array), or $null.
+    .PARAMETER Block
+        The raw role block.
+    .PARAMETER Field
+        The field name.
+    #>
+    param([pscustomobject]$Block, [string]$Field)
+    $property = $Block.PSObject.Properties[$Field]
+    if (-not $property -or $null -eq $property.Value) { return $null }
+    , [string[]]@($property.Value)
+}
+
 function ConvertTo-DFRoleMap {
     <#
     .SYNOPSIS
@@ -324,6 +339,10 @@ function ConvertTo-DFRoleMap {
                 aliases  = ConvertTo-DFAliasMap (Get-DFToolRecordProperty $role.Value 'aliases' $null)
                 env      = Get-DFToolRecordProperty $role.Value 'env' $null
                 flags    = ConvertTo-DFRoleFlags (Get-DFToolRecordProperty $role.Value 'flags' $null)
+                # Folder sources for Alt+C (directory-jump), read with Get-DFRoleDeclaration.
+                directories   = ConvertTo-DFRoleArgv $role.Value 'directories'
+                enter         = Get-DFToolRecordProperty $role.Value 'enter' $null
+                directoryScan = ConvertTo-DFRoleArgv $role.Value 'directoryScan'
                 legacy   = $false
             }
         }
@@ -334,7 +353,7 @@ function ConvertTo-DFRoleMap {
     # loser's top-level aliases that the role reserves are left out.
     $legacyRole = Get-DFToolRecordProperty $Tool 'role' $null
     if ($legacyRole -and -not $roles.Contains($legacyRole)) {
-        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; legacy = $true }
+        $roles[$legacyRole] = [pscustomobject]@{ priority = 0; optIn = $false; aliases = $null; env = $null; flags = $null; directories = $null; enter = $null; directoryScan = $null; legacy = $true }
     }
 
     [pscustomobject]$roles

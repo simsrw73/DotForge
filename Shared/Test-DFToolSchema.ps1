@@ -88,6 +88,21 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                 if ($null -ne $optIn -and $optIn -isnot [bool]) {
                     "roles.$($r.Name).optIn must be a boolean"
                 }
+                # Folder sources for Alt+C (directory-jump): argv lists and a command name.
+                foreach ($field in 'directories', 'directoryScan') {
+                    $present = $r.Value.PSObject.Properties[$field]
+                    if (-not $present) { continue }
+                    $argv = $present.Value
+                    # (An empty array would make "$null -ne $argv" false, so presence is checked instead.)
+                    if (($argv -isnot [System.Collections.IList] -or -not @($argv).Count -or
+                            @($argv | Where-Object { $_ -isnot [string] -or -not $_ }).Count)) {
+                        "roles.$($r.Name).$field must be a non-empty array of strings"
+                    }
+                }
+                $enter = $r.Value.PSObject.Properties['enter']
+                if ($enter -and ($enter.Value -isnot [string] -or -not $enter.Value)) {
+                    "roles.$($r.Name).enter must be a non-empty string"
+                }
             }
         }
     }
@@ -417,7 +432,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
-        role   = 'priority', 'optIn', 'aliases', 'env', 'flags'
+        role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
     $sections.Add(@('', $Tool, ''))

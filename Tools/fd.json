@@ -7,7 +7,7 @@
     "find"
   ],
   "executable": "fd.exe",
-  "roles": { "file-search": {} },
+  "roles": { "file-search": { "directoryScan": ["fd", "--type", "d", "--exact-depth", "{depth}"] } },
   "packages": {
     "scoop": "fd",
     "winget": "sharkdp.fd",

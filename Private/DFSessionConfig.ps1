@@ -36,6 +36,7 @@ $script:DFConfigKeys = [ordered]@{
     MoorTheme          = 'moor theme'
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
+    DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'

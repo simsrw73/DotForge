@@ -97,6 +97,13 @@
     "reserved": { "env": ["Picker"], "aliases": [], "code": [] },
     "description": "Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker runs."
   },
+  "directory-jump": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleDirectoryJump",
+    "reserved": { "env": [], "aliases": [], "code": ["Set-DFRoleKeyHandler", "Register-DFFuzzyKeyHandler"] },
+    "description": "Changes to a folder you pick from Alt+C. Only the winner binds the key; a binding you made yourself is kept."
+  },
   "history-search": {
     "kind": "single",
     "exclusive": false,
