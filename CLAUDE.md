@@ -213,18 +213,20 @@ Each `Tools/*.json` must have at minimum:
   by the `xdg.vars` variable, seed target, or target template), so a user's existing config is never
   hidden: a requested tool with content there is left inactive (`Conflict`) until
   `Resolve-DFToolConflict -Move | -Adopt`. `[]` when the default is the XDG location; `{ paths, move:
-  false, guide }` for one DotForge must not move. `tests/ToolNative.Coverage.Tests.ps1` enforces it.
+  false, guide }` for one DotForge must not move; `block: false` for an old home of packages, caches
+  or history, which only notes the guide in the status. `tests/ToolNative.Coverage.Tests.ps1` enforces it.
   Design: `docs/superpowers/specs/2026-10-11-config-ownership-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass
   through; `${XDG_*}` still expands) and written through `Set-DFEnv` (`Private/Set-DFEnv.ps1`):
   a value set outside DotForge is kept and noted in the tool's status; an explicit config choice
   overrides it with a warning. Keep `xdg.vars` for `${XDG_*}` path templates only.
-- `theme` (optional): `{ key, default, map, env, files, valid, fallback, command }`. Resolved per
+- `theme` (optional): `{ key, default, map, env, files, valid, fallback, command, apply }`. Resolved per
   tool key → `Theme` → `default`, translated by `map` (canonical family → native name; no central
   theme registry), checked against `valid`/`fallback` or the theme `files`, then applied through
   `env` (`{theme}` placeholder) or the wrapper. A companion that applies its theme in code reads
-  `Get-DFToolTheme -Tool $DFCurrentTool` and sets `command`. `Set-DFToolTheme` switches it live.
+  `Get-DFToolTheme -Tool $DFCurrentTool` and sets `command`, or `apply` (a global function taking
+  `-Name <value>`, which `Set-DFToolTheme` calls). `Set-DFToolTheme` switches it live.
   The legacy `themeMap` is still read when `theme.map` is absent.
 - `wrapper` (optional): `{ args, custom }`: a global function runs the executable with extra
   arguments (`{theme}`; `{ ifFile, args }` groups passed only while the file exists, `{file}`).

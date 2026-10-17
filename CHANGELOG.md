@@ -32,6 +32,13 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **starship and oh-my-posh follow `Theme`.** starship uses a copy of your `starship.toml` with only
+  its `palette` line swapped (your file is never written; when the palette already matches it reads
+  your file). oh-my-posh uses DotForge's bundled catppuccin themes when you have no config of your
+  own. `Set-DFToolTheme` switches either live. A theme block can now name an `apply` function.
+- **bun, pnpm, pipx, pip and Python keep their files under the XDG folders.** An old home that holds
+  only packages, a cache or history doesn't hold a tool back: its status says how to move it
+  (`xdg.native` `block: false`).
 - **Alt+C's zoxide folders are trimmed and stand out.** Only folders scoring at least
   `DirectoryJumpMinScore` (3) appear at the top, at most `DirectoryJumpRanked` (10) of them, as full
   paths in your fzf/skim theme's accent color. broot's `:cd` also has Ctrl+Enter, since Windows

@@ -127,6 +127,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Start-DFInshellisense](#start-dfinshellisense) |  | inshellisense | Starts an inshellisense session in this shell unless one is already running. |
 | [Select-JsonPath](#select-jsonpath) | `fjq` | jq | A live jq playground: type a filter in fzf, watch its output, and press Enter to run it. |
 | [Select-NpmScript](#select-npmscript) | `fns` | npm | Fuzzy-picks a script from the nearest package.json and runs it with the project's package manager. |
+| [Invoke-DFApplyOhMyPoshTheme](#invoke-dfapplyohmyposhtheme) |  | oh-my-posh | Switches the oh-my-posh prompt to a theme for this session. |
 | [Select-PoshTheme](#select-poshtheme) | `fpot` | oh-my-posh | Fuzzy-picks an oh-my-posh theme with a live prompt preview and applies it to this session. |
 | [Select-GitBranch](#select-gitbranch) | `fco` | posh-git | Fuzzy-picks a git branch, local or remote, and checks it out. |
 | [Select-GitFile](#select-gitfile) | `fga` | posh-git | Fuzzy-picks changed files and stages them with git add. |
@@ -141,6 +142,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Remove-ScoopPackage](#remove-scooppackage) | `srm` | scoop | Fuzzy-picks an installed scoop app and uninstalls it. |
 | [Select-ScoopPackage](#select-scooppackage) | `sins` | scoop | Searches scoop buckets, fuzzy-picks an app, and returns or runs its install command. |
 | [Invoke-DFApplySkimTheme](#invoke-dfapplyskimtheme) |  | skim | Applies a skim color theme to this session by appending a --color option to SKIM_DEFAULT_OPTIONS. |
+| [Invoke-DFApplyStarshipTheme](#invoke-dfapplystarshiptheme) |  | starship | Applies a catppuccin palette to starship for this session without editing your starship.toml. |
 | [Select-UvVenv](#select-uvvenv) | `fvenv` | uv | Fuzzy-picks a Python virtual environment below a folder and activates it. |
 | [Invoke-DFApplyLSColorsTheme](#invoke-dfapplylscolorstheme) |  | vivid | Resolves and applies an LS_COLORS value for the named vivid theme. |
 | [Select-LSColorsTheme](#select-lscolorstheme) | `fls` | vivid | Fuzzy-picks a vivid LS_COLORS theme with a live preview and applies it to this session. |
@@ -2691,8 +2693,12 @@ Bun JavaScript runtime and package manager
 | Detected by | `bun.exe` |
 | Tags | `javascript`, `dev`, `runtime`, `package-manager` |
 | Install ids | scoop: `bun`<br>winget: `Oven-sh.Bun`<br>npm: `bun` |
+| XDG method | `env` |
+| XDG variables | `BUN_INSTALL` = `${XDG_DATA_HOME}/bun`<br>`BUN_INSTALL_CACHE_DIR` = `${XDG_CACHE_HOME}/bun/install/cache` |
+| Creates | `${XDG_DATA_HOME}/bun/bin`<br>`${XDG_CACHE_HOME}/bun/install/cache` |
 | Registers after | `role:version-manager` |
 | Roles | [`js-package-manager`](#js-package-manager-role), [`js-runtime`](#js-runtime-role) |
+| Companion | `Tools/bun.ps1` |
 
 ### carapace tool
 
@@ -3136,6 +3142,7 @@ Cross-shell prompt theme engine with hundreds of built-in themes
 | XDG method | `env` |
 | XDG variables | `POSH_THEMES_PATH` = `${XDG_DATA_HOME}/oh-my-posh/themes` |
 | Creates | `${XDG_DATA_HOME}/oh-my-posh/themes`<br>`${XDG_CONFIG_HOME}/oh-my-posh` |
+| Theme | key `OhMyPoshTheme`, default `catppuccin-mocha` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`prompt`](#prompt-role) |
 | Companion | [`Tools/oh-my-posh.ps1`](#oh-my-posh-companion) |
@@ -3176,6 +3183,9 @@ Python package installer (installs into the user site-packages)
 | --- | --- |
 | Detected by | `pip.exe` |
 | Tags | `python`, `dev`, `package-manager` |
+| XDG method | `env` |
+| XDG variables | `PIP_CONFIG_FILE` = `${XDG_CONFIG_HOME}/pip/pip.ini`<br>`PIP_CACHE_DIR` = `${XDG_CACHE_HOME}/pip` |
+| Creates | `${XDG_CONFIG_HOME}/pip`<br>`${XDG_CACHE_HOME}/pip` |
 | Requires | `python` |
 | Roles | [`python-package-manager`](#python-package-manager-role) |
 
@@ -3188,6 +3198,9 @@ Installs Python applications, each in its own isolated environment
 | Detected by | `pipx` |
 | Tags | `python`, `dev`, `package-manager` |
 | Install ids | scoop: `pipx`<br>pypi: `pipx` |
+| XDG method | `env` |
+| XDG variables | `PIPX_HOME` = `${XDG_DATA_HOME}/pipx` |
+| Creates | `${XDG_DATA_HOME}/pipx` |
 | Requires | `role:python-runtime` |
 | Roles | [`python-package-manager`](#python-package-manager-role) |
 
@@ -3200,8 +3213,12 @@ Fast, disk-efficient JavaScript package manager
 | Detected by | `pnpm.cmd` |
 | Tags | `javascript`, `dev`, `package-manager` |
 | Install ids | scoop: `pnpm`<br>winget: `pnpm.pnpm`<br>npm: `pnpm` |
+| XDG method | `env` |
+| XDG variables | `PNPM_HOME` = `${XDG_DATA_HOME}/pnpm` |
+| Creates | `${XDG_DATA_HOME}/pnpm` |
 | Requires | `role:js-runtime` |
 | Roles | [`js-package-manager`](#js-package-manager-role) |
+| Companion | `Tools/pnpm.ps1` |
 
 ### posh-git tool
 
@@ -3302,6 +3319,9 @@ Python runtime
 | Detected by | `python.exe` |
 | Tags | `python`, `dev`, `runtime` |
 | Install ids | pymanager: `3`<br>uv: `3`<br>mise: `python@3`<br>scoop: `python`<br>winget: `Python.Python.3.13` |
+| XDG method | `env` |
+| XDG variables | `PYTHON_HISTORY` = `${XDG_STATE_HOME}/python/history` |
+| Creates | `${XDG_STATE_HOME}/python` |
 | Registers after | `role:version-manager` |
 | Roles | [`python-runtime`](#python-runtime-role) |
 
@@ -3389,8 +3409,9 @@ Fast, minimal, cross-shell prompt configured with a single TOML file
 | XDG method | `env` |
 | XDG variables | `STARSHIP_CONFIG` = `${XDG_CONFIG_HOME}/starship/starship.toml`<br>`STARSHIP_CACHE` = `${XDG_CACHE_HOME}/starship` |
 | Creates | `${XDG_CACHE_HOME}/starship` |
+| Theme | key `StarshipTheme`, default `catppuccin-mocha` |
 | Roles | [`prompt`](#prompt-role) |
-| Companion | `Tools/starship.ps1` |
+| Companion | [`Tools/starship.ps1`](#starship-companion), one-time `Tools/starship.setup.ps1` |
 
 ### television tool
 
@@ -3933,6 +3954,30 @@ Picks a script such as build or test and runs it.
 
 ### oh-my-posh companion
 
+#### Invoke-DFApplyOhMyPoshTheme
+
+Switches the oh-my-posh prompt to a theme for this session.
+
+Re-initializes oh-my-posh with &lt;Name&gt;.omp.json from POSH_THEMES_PATH, else DotForge's bundled catppuccin themes. It is an explicit choice, so it replaces your own config for the rest of the session. Like fpot, re-initializing replaces the prompt function, so zoxide's directory tracking stops until the next session (a known limitation).
+
+Defined by DotForge's oh-my-posh companion when oh-my-posh is your prompt; Set-DFToolTheme oh-my-posh &lt;flavor&gt; calls it.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The oh-my-posh theme name, e.g. catppuccin_latte. |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+Set-DFToolTheme oh-my-posh catppuccin-latte
+```
+
+Switches the prompt to catppuccin latte.
+
+**See also:** [tools](guide/tools.md)
+
 #### Select-PoshTheme
 
 Alias: `fpot`
@@ -4299,6 +4344,33 @@ Invoke-DFApplySkimTheme -Name catppuccin-latte
 ```
 
 Switches skim to the bundled Catppuccin Latte colors for this session.
+
+**See also:** [tools](guide/tools.md)
+
+### starship companion
+
+#### Invoke-DFApplyStarshipTheme
+
+Applies a catppuccin palette to starship for this session without editing your starship.toml.
+
+When your starship.toml sets a top-level palette other than -Name, DotForge writes a copy of it to $XDG_CACHE_HOME\\dotforge\\starship with only that palette line changed (adding the palette's table when your file lacks it) and points STARSHIP_CONFIG at the copy. When the palette already matches, or your file sets none, STARSHIP_CONFIG stays on your file, so your edits show at once.
+
+Defined by DotForge's starship companion. It runs at startup with StarshipTheme, then Theme; Set-DFToolTheme starship &lt;flavor&gt; calls it.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | The starship palette name, e.g. catppuccin_latte. |
+| `-Implicit` | switch |  |  |  | The theme came from the default, not a choice: a STARSHIP_CONFIG you set yourself is kept. |
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+Set-DFToolTheme starship catppuccin-latte
+```
+
+Switches the prompt to latte colors from the next prompt on.
 
 **See also:** [tools](guide/tools.md)
 

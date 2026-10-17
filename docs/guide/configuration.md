@@ -43,7 +43,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `DirectoryJumpRanked` | int | `10` | Most zoxide folders at the top of Alt+C's list. |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `BrootTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `BrootTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -110,6 +110,8 @@ mdcat: dracula
 | mdv | `MdvTheme` | `terminal`, `solarized-dark`, `nord`, `tokyonight`, `kanagawa`, `gruvbox`, `monokai`, `material-ocean`, `catppuccin` | warning; `terminal` |
 | moor | `MoorTheme` | any moor `-style` name (`catppuccin-mocha`, `dracula`, `nord`, …); used only when you haven't set `MOOR` | moor uses its default style |
 | peco | `PecoTheme` | `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`; seeded once into `$XDG_CONFIG_HOME\peco\config.json` | warning; nothing seeded |
+| oh-my-posh | `OhMyPoshTheme` | the four catppuccin flavors; used when you have no config of your own (`POSH_THEME` or `$XDG_CONFIG_HOME\oh-my-posh\*.omp.*`) | warning; `catppuccin-mocha` |
+| starship | `StarshipTheme` | the four catppuccin flavors; swaps the `palette` line in a copy of your `starship.toml` | warning; `catppuccin-mocha` |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim\themes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
 | television | `TelevisionTheme` | the four catppuccin flavors; seeded once into its `config.toml` (`ui.theme`), so change it there later | warning; nothing seeded |

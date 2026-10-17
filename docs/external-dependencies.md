@@ -198,6 +198,23 @@ Two categories, and the difference matters:
 | **Why** | `br` and Alt+C read only the folder from the outcmd file and move there themselves, instead of running it (broot's stock `br` uses `Invoke-Expression`, and fails on a `'`). Setup sets the install state once, so broot never edits your profiles. The skin is passed second, so `BrootTheme` works live. |
 | **If it changes** | A different outcmd format reads as nothing: `br` and Alt+C move nowhere, and nothing runs. A renamed install-state file brings back broot's offer to install its own `br` (setup notes how to turn it off). If `--conf` stops letting the second file win, broot shows the skin your `conf.hjson` imports, or its default. |
 
+### 20. starship: the `palette` key; oh-my-posh: bundled catppuccin themes
+
+| | |
+|---|---|
+| **What** | starship 1.26 picks colors from the top-level `palette = "<name>"` key and a `[palettes.<name>]` table, and reads `STARSHIP_CONFIG` on every prompt. oh-my-posh's catppuccin themes are `themes/catppuccin_{mocha,macchiato,frappe,latte}.omp.json` in its repository; DotForge ships copies (MIT, main at `913014b4abdb`) in `Tools/oh-my-posh/`. |
+| **Where** | `Tools/starship.ps1`, `Tools/starship.setup.ps1`, `Tools/oh-my-posh.ps1`, `Tools/oh-my-posh/` |
+| **Why** | Theme changes starship's colors through a palette-swapped copy of the user's config (the file is never written); oh-my-posh installs here ship no theme files. |
+| **If it changes** | If starship renames `palette`, the copy changes nothing and the user's own colors show. A newer oh-my-posh that can't read the bundled themes shows its error at init; `POSH_THEMES_PATH` copies of the same name are used first. |
+
+### 21. bun, pnpm, pipx, Python: their folder variables
+
+| | |
+|---|---|
+| **What** | bun 1.3 reads `BUN_INSTALL` (global packages, `bin`) and `BUN_INSTALL_CACHE_DIR`. pnpm reads `PNPM_HOME` and, from its docs, the `XDG_*` folders for config, store, cache and state. pipx 1.18 reads `PIPX_HOME` (default `%LOCALAPPDATA%\pipx\pipx`). Python 3.13+'s REPL reads `PYTHON_HISTORY`. pip reads `PIP_CONFIG_FILE` and `PIP_CACHE_DIR`. |
+| **Where** | `Tools/bun.json`, `Tools/bun.ps1`, `Tools/pnpm.json`, `Tools/pnpm.ps1`, `Tools/pipx.json`, `Tools/python.json`, `Tools/pip.json` |
+| **Why** | Keeps their files under the XDG folders. |
+| **If it changes** | A variable a tool stops reading leaves its files in the old default location; nothing breaks. |
 ---
 
 ## Documented but load-bearing

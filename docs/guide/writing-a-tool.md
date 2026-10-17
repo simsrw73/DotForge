@@ -64,7 +64,7 @@ To keep the tool for yourself, put the file in your own tools folder instead: se
 | `after` | | Tools (`"zoxide"`) or roles (`"role:version-manager"`) this one is registered after, when both are requested. Ordering only: it requests nothing. |
 | `requires` | | Tools (`"fzf"`) or roles (`"role:js-runtime"`) this tool can't work without. A required tool is requested automatically and registered first; if it's missing or excluded, this tool isn't activated. A role requirement orders this tool after the role's requested members; it never picks a member for the user, and never blocks. |
 | `roles` | | The roles the tool joins, e.g. `{ "pager": { "priority": 10, "env": { "PAGER": "less" } } }`; see [Joining a role](#joining-a-role). |
-| `theme` | | The tool's theme: `{ "key": "BatTheme", "default": "catppuccin-mocha", "map": { … }, "env": { "BAT_THEME": "{theme}" } }`. Optional `files` (theme files in `Tools/<files>/` and `$XDG_CONFIG_HOME\<files>\themes`: `<theme>.json`, or a `<theme>` folder for a tool that reads its theme from a folder; with `files` and no `valid`, a theme with no match is left unset), `valid` + `fallback` (names the tool accepts, and what to use otherwise), `command` (for a theme your companion applies: the command that switches it). See [Themes and wrappers](#themes-and-wrappers). |
+| `theme` | | The tool's theme: `{ "key": "BatTheme", "default": "catppuccin-mocha", "map": { … }, "env": { "BAT_THEME": "{theme}" } }`. Optional `files` (theme files in `Tools/<files>/` and `$XDG_CONFIG_HOME\<files>\themes`: `<theme>.json`, or a `<theme>` folder for a tool that reads its theme from a folder; with `files` and no `valid`, a theme with no match is left unset), `valid` + `fallback` (names the tool accepts, and what to use otherwise), `command` (for a theme your companion applies: the command that switches it), `apply` (for a theme your companion applies: a global function taking `-Name <value>`, which `Set-DFToolTheme` calls to switch it live). See [Themes and wrappers](#themes-and-wrappers). |
 | `wrapper` | | Runs the executable through a function that adds arguments: `{ "args": ["-s", "{theme}", { "ifFile": "${XDG_CONFIG_HOME}/x/config", "args": ["--config", "{file}"] }] }`. `ifFile` may use `{theme}` (lsd: `{theme}/config.yaml`); it is checked on each call. `custom: true` when your companion builds it with `New-DFToolWrapper -Invoke`. |
 | `themeMap` | | Legacy: use `theme.map`. Still read when `theme.map` is absent. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |
@@ -97,6 +97,8 @@ Where the tool keeps its config, data or state when DotForge doesn't relocate it
   }
 }
 ```
+
+An old location that holds only installed packages, a cache or history, not config the user wrote, can be declared `{ "paths": [...], "move": false, "block": false, "guide": "..." }`. The tool then stays active, and its status shows the guide instead of a conflict (bun's `~/.bun`, `~/.python_history`).
 
 1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}` or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
 2. Use `[]` when the tool's own default already is the XDG location.

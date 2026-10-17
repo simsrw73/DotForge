@@ -242,7 +242,10 @@ mdcat's theme is set through `MDCAT_THEME`, and its completions are registered. 
 
 ### oh-my-posh and starship
 
-These are prompt engines; install one. oh-my-posh uses `$Env:POSH_THEME` if you set it, otherwise the single `*.omp.*` file in `$XDG_CONFIG_HOME\oh-my-posh\` (it warns when there are none or several). starship reads `$XDG_CONFIG_HOME\starship\starship.toml`.
+These are prompt engines; install one. Both follow `Theme` (or `StarshipTheme`, `OhMyPoshTheme`), and `Set-DFToolTheme` switches them live.
+
+- **oh-my-posh** uses `$Env:POSH_THEME` if you set it, otherwise the single `*.omp.*` file in `$XDG_CONFIG_HOME\oh-my-posh\` (it warns when there are several). With neither, it uses the catppuccin theme that matches `Theme`: a same-named `.omp.json` in `POSH_THEMES_PATH`, else the copy DotForge ships (oh-my-posh's own catppuccin themes). `Set-DFToolTheme oh-my-posh catppuccin-latte` switches to that theme for the rest of the session, even over your own config.
+- **starship** reads `$XDG_CONFIG_HOME\starship\starship.toml`, which DotForge never writes. If its top-level `palette` line names a different catppuccin flavor than `Theme`, DotForge writes a copy to `$XDG_CACHE_HOME\dotforge\starship\starship.toml` with only that line changed (adding the flavor's `[palettes.*]` table if your file lacks it), and points `STARSHIP_CONFIG` at the copy. When the palette already matches, starship reads your file, so your edits show at once. While the copy is in use, an edit to your file shows from the next shell (or the next `Set-DFToolTheme starship …`). A config without a `palette` line keeps its own colors; setup says so once.
 
 `fpot` previews and applies oh-my-posh themes for the current session. It lists the `*.omp.json` files in `POSH_THEMES_PATH`, which DotForge sets to `$XDG_DATA_HOME\oh-my-posh\themes`; copy the themes you want to browse there.
 
@@ -253,6 +256,16 @@ DotForge sets Emacs editing keys, history predictions, a 10,000-entry history sa
 ### rustup, vcpkg and other relocated tools
 
 Some tools move their data under the XDG folders: rustup to `$XDG_DATA_HOME\rustup` and `$XDG_DATA_HOME\cargo`, vcpkg to `$XDG_DATA_HOME\vcpkg`. A toolchain or package already installed in the old location isn't found afterwards. Move it, or reinstall. The [safety page](safety.md) lists every relocated tool.
+
+bun, pnpm, pipx, pip and python follow too:
+
+- **bun:** global packages and their commands go in `$XDG_DATA_HOME\bun` (its `bin` goes on `PATH`), and its cache in `$XDG_CACHE_HOME\bun`.
+- **pnpm:** its global commands go in `$XDG_DATA_HOME\pnpm` (on `PATH`). pnpm reads the `XDG_*` folders itself for its config, store, cache and state.
+- **pipx:** its apps' environments go in `$XDG_DATA_HOME\pipx`. Their commands stay in `~\.local\bin`.
+- **pip:** its config file is `$XDG_CONFIG_HOME\pip\pip.ini`, and its cache `$XDG_CACHE_HOME\pip`.
+- **Python:** the REPL keeps its history in `$XDG_STATE_HOME\python\history` (Python 3.13+).
+
+An old home that holds only installed packages, a cache or history (`~\.bun`, pnpm's `%LOCALAPPDATA%\pnpm`, pipx's `%LOCALAPPDATA%\pipx\pipx`, pip's cache, `~\.python_history`) doesn't hold the tool back. `Get-DFToolStatus` says what's there and how to move it, the first time DotForge finds it. An existing `pip.ini` in `%APPDATA%\pip` is your config, so pip waits for `Resolve-DFToolConflict`, like any other tool.
 
 ### vivid
 

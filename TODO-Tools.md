@@ -72,7 +72,7 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 | navigation | single | zoxide | z? | |
 | grep | category | ripgrep | grep | |
 | file-search | category | fd | find / findutils | |
-| prompt | single | oh-my-posh, starship | gaps: neither follows `Theme` (starship has a catppuccin palette; oh-my-posh only has the `fpot` picker); `oh-my-posh init` runs every start (T-66) | |
+| prompt | single | oh-my-posh, starship | gap: `oh-my-posh init` runs every start (T-66) | done 2026-10-17 (both follow `Theme`, live) |
 | completion | category | psreadline, carapace, inshellisense, PSFzf | gaps: carapace's colors don't follow `Theme` (`carapace --style`); carapace could load after the first prompt (T-46) | |
 | tab-completion | single | carapace, inshellisense, PSFzf | gaps: same as completion (carapace colors, T-46) | |
 | elevator | category | gsudo | Windows sudo | |
@@ -81,10 +81,10 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 | system-info | category | fastfetch | winfetch, neofetch | |
 | editor | single | micro | nano (tool exists, not in role), vim, neovim, edit, VS Code; set `EDITOR`/`VISUAL` | T-35 |
 | markdown-viewer | category | glow, mdcat, mdv | frogmouth; promote to single once something uses a winner | T-35 |
-| js-runtime | category | node, bun | gaps: bun has no XDG (`BUN_INSTALL`, its install cache); node's REPL history is relocated in npm's record, not node's | |
-| js-package-manager | category | npm, pnpm, bun | gaps: pnpm and bun have no XDG (`PNPM_HOME`, store, cache) or pickers | |
-| python-runtime | category | python | gaps: no XDG (`PYTHON_HISTORY` for 3.13+, `PYTHONPYCACHEPREFIX`) | |
-| python-package-manager | category | pip, pipx, uv | gaps: pip (`PIP_CONFIG_FILE`, `PIP_CACHE_DIR`) and pipx (`PIPX_HOME`, `PIPX_BIN_DIR`) have no XDG; uv is done | |
+| js-runtime | category | node, bun | | done 2026-10-17 (bun under XDG; node's REPL history moves with npms record) |
+| js-package-manager | category | npm, pnpm, bun | | done 2026-10-17 (pnpm and bun under XDG; `Select-NpmScript` runs scripts with each project's manager) |
+| python-runtime | category | python | | done 2026-10-17 (REPL history under XDG) |
+| python-package-manager | category | pip, pipx, uv | | done 2026-10-17 (pip and pipx under XDG) |
 | rust-package-manager | category | cargo | | done 2026-10-11 (cargo installs; `CARGO_HOME` relocated with rustup; carapace completes it) |
 | powershell-package-manager | category | psresource | PowerShellGet; gaps: no installed-module picker | |
 | version-manager | category | fnm, mise, uv, rustup, pymanager | volta, asdf, nvm | |
