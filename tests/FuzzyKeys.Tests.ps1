@@ -68,6 +68,12 @@ Describe 'shared fuzzy key handler' {
     It 'quotes inserted paths that hold a space or a quote' {
         Format-DFPathInsert -Path @('a.txt', 'my file.txt', "it's.txt") | Should -Be "a.txt 'my file.txt' 'it''s.txt'"
     }
+    It 'quotes a path that PowerShell would read as code' {
+        foreach ($name in '$(calc).txt', 'a;b.txt', 'x&y', 'tick`n', '(x).txt', '@a', '{b}', 'c|d', 'e>f', '#g', '-h') {
+            Format-DFPathInsert -Path $name | Should -Be ("'" + $name.Replace("'", "''") + "'") -Because "$name must stay one literal argument"
+        }
+        Format-DFPathInsert -Path 'src/a.ps1', 'C:\x\y.txt' | Should -Be 'src/a.ps1 C:\x\y.txt'
+    }
     It 'History: runs the engine on the history with the line as query and replaces the line' {
         $file = Join-Path $TestDrive 'h2.txt'
         Set-Content $file -Value @('git status')

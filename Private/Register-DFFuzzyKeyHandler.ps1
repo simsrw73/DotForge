@@ -105,7 +105,12 @@ function Get-DFHistoryCandidate {
 function Format-DFPathInsert {
     <#
     .SYNOPSIS
-        Joins picked paths into PowerShell arguments, single-quoting any with a space or a quote.
+        Joins picked paths into PowerShell arguments, single-quoting any that isn't plainly a path.
+    .DESCRIPTION
+        A file name can hold $( ), ;, &, a backtick and more, which PowerShell
+        would run when the line is entered. Only names made of letters, digits
+        and . / \ : _ + - (not starting with -) stay bare; every other name is
+        single-quoted, with its quotes doubled.
     .PARAMETER Path
         The picked paths.
     .OUTPUTS
@@ -114,7 +119,7 @@ function Format-DFPathInsert {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string[]]$Path)
-    @(foreach ($p in $Path) { if ($p -match "[\s']") { "'" + $p.Replace("'", "''") + "'" } else { $p } }) -join ' '
+    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else { "'" + $p.Replace("'", "''") + "'" } }) -join ' '
 }
 
 function Invoke-DFFuzzyEngine {
