@@ -55,6 +55,9 @@ aliases, variables and hook. **Category** roles only group tools that do the sam
 
 ### Done (in `data/roles.json`)
 
+**Ref** says `done <date>` when every member has the whole tool contract and the role is filled;
+otherwise **Still to add** lists the missing tools and the gaps in the current members.
+
 | Role | Kind | Members today | Still to add | Ref |
 |---|---|---|---|---|
 | pager | single | less, moor, ov (fallback `more`) | bat as pager? | done 2026-10-16 |
@@ -64,26 +67,26 @@ aliases, variables and hook. **Category** roles only group tools that do the sam
 | path-insert (Ctrl+T) | single | PSFzf, television, fzf, skim | | done 2026-10-17 |
 | directory-jump (Alt+C) | single | fzf, skim, broot | yazi, superfile, lf (file-manager batch) | done 2026-10-17 |
 | listing | single | eza, lsd | | done 2026-10-16 (T-34, role behaviors) |
-| package-manager | single | scoop, winget, choco | | |
+| package-manager | single | scoop, winget, choco | gaps: winget search picker, choco XDG/pickers (T-47); update/remove polish (T-58) | T-47 |
 | project-env | single | direnv, mise, ps-dotenv | more env tools | T-36 |
 | navigation | single | zoxide | z? | |
 | grep | category | ripgrep | grep | |
 | file-search | category | fd | find / findutils | |
-| prompt | single | oh-my-posh, starship | | |
-| completion | category | psreadline, carapace, inshellisense, PSFzf | | |
-| tab-completion | single | carapace, inshellisense, PSFzf | | |
+| prompt | single | oh-my-posh, starship | gaps: neither follows `Theme` (starship has a catppuccin palette; oh-my-posh only has the `fpot` picker); `oh-my-posh init` runs every start (T-66) | |
+| completion | category | psreadline, carapace, inshellisense, PSFzf | gaps: carapace's colors don't follow `Theme` (`carapace --style`); carapace could load after the first prompt (T-46) | |
+| tab-completion | single | carapace, inshellisense, PSFzf | gaps: same as completion (carapace colors, T-46) | |
 | elevator | category | gsudo | Windows sudo | |
 | url-fetch | category | curl, wget | httpie, xh, curlie, aria2 | T-35 |
 | diff | single | delta | difftastic, livediff, winmerge, meld, kdiff3 | |
 | system-info | category | fastfetch | winfetch, neofetch | |
 | editor | single | micro | nano (tool exists, not in role), vim, neovim, edit, VS Code; set `EDITOR`/`VISUAL` | T-35 |
 | markdown-viewer | category | glow, mdcat, mdv | frogmouth; promote to single once something uses a winner | T-35 |
-| js-runtime | category | node, bun | | |
-| js-package-manager | category | npm, pnpm, bun | | |
-| python-runtime | category | python | | |
-| python-package-manager | category | pip, pipx, uv | | |
-| rust-package-manager | category | cargo | | |
-| powershell-package-manager | category | psresource | PowerShellGet | |
+| js-runtime | category | node, bun | gaps: bun has no XDG (`BUN_INSTALL`, its install cache); node's REPL history is relocated in npm's record, not node's | |
+| js-package-manager | category | npm, pnpm, bun | gaps: pnpm and bun have no XDG (`PNPM_HOME`, store, cache) or pickers | |
+| python-runtime | category | python | gaps: no XDG (`PYTHON_HISTORY` for 3.13+, `PYTHONPYCACHEPREFIX`) | |
+| python-package-manager | category | pip, pipx, uv | gaps: pip (`PIP_CONFIG_FILE`, `PIP_CACHE_DIR`) and pipx (`PIPX_HOME`, `PIPX_BIN_DIR`) have no XDG; uv is done | |
+| rust-package-manager | category | cargo | | done 2026-10-11 (cargo installs; `CARGO_HOME` relocated with rustup; carapace completes it) |
+| powershell-package-manager | category | psresource | PowerShellGet; gaps: no installed-module picker | |
 | version-manager | category | fnm, mise, uv, rustup, pymanager | volta, asdf, nvm | |
 
 ### Planned (no role yet)
