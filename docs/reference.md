@@ -4353,14 +4353,14 @@ Switches skim to the bundled Catppuccin Latte colors for this session.
 
 Applies a catppuccin palette to starship for this session without editing your starship.toml.
 
-When your starship.toml sets a top-level palette other than -Name, DotForge writes a copy of it to $XDG_CACHE_HOME\\dotforge\\starship with only that palette line changed (adding the palette's table when your file lacks it) and points STARSHIP_CONFIG at the copy. When the palette already matches, or your file sets none, STARSHIP_CONFIG stays on your file, so your edits show at once.
+When your starship.toml sets a top-level palette other than -Name, DotForge writes a copy of it to $XDG_CACHE_HOME\\dotforge\\starship\\starship-&lt;palette&gt;.toml with only that palette line changed (adding the palette's table when your file lacks it) and points STARSHIP_CONFIG at the copy. When the palette already matches, or your file sets none, STARSHIP_CONFIG stays on your file, so your edits show at once.
 
 Defined by DotForge's starship companion. It runs at startup with StarshipTheme, then Theme; Set-DFToolTheme starship &lt;flavor&gt; calls it.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string |  | yes |  | The starship palette name, e.g. catppuccin_latte. |
-| `-Implicit` | switch |  |  |  | The theme came from the default, not a choice: a STARSHIP_CONFIG you set yourself is kept. |
+| `-Implicit` | switch |  |  |  | The theme came from the default, not a choice. A STARSHIP_CONFIG you set to your own config is themed either way; one pointing elsewhere is kept unless the theme was chosen. |
 
 **Outputs:** None.
 

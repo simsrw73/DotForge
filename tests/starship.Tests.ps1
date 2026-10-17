@@ -149,6 +149,26 @@ base = "#eff1f5"
         $text | Should -Match "(?m)^palette = 'catppuccin_latte'  # flavor"
         $text | Should -Match '(?m)^palette = "keep"'
     }
+    It 'finds a palette line that comes after a multi-line format string (starship''s own preset layout)' {
+        $src = New-StarshipFixture (@(
+                '"$schema" = ''https://starship.rs/config-schema.json'''
+                ''
+                'format = """'
+                '[](red)\'
+                '$os\'
+                '[](bg:peach fg:red)\'
+                '"""'
+                ''
+                'palette = ''catppuccin_mocha'''
+                ''
+                '[palettes.catppuccin_latte]'
+                'base = "#eff1f5"'
+            ) -join "`n")
+        $path = Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes
+        $path | Should -Be $script:Copy
+        Get-Content -LiteralPath $path -Raw | Should -Match "(?m)^palette = 'catppuccin_latte'"
+        Get-Content -LiteralPath $path -Raw | Should -Match '(?m)^\[\]\(red\)\\'
+    }
     It 'gives nothing for a missing source, without an error' {
         Get-DFStarshipConfigPath -Source (Join-Path $TestDrive 'nope.toml') -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes -ErrorAction Stop | Should -BeNullOrEmpty
     }
@@ -174,7 +194,8 @@ Describe 'starship theme in a session' {
         $script:Source = Join-Path $Env:XDG_CONFIG_HOME 'starship' 'starship.toml'
         New-Item -ItemType Directory (Split-Path $script:Source) -Force | Out-Null
         Set-Content -LiteralPath $script:Source -Value "palette = `"catppuccin_mocha`"`n[palettes.catppuccin_mocha]`nbase = `"#1e1e2e`"`n" -NoNewline
-        $script:CopyPath = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'starship' 'starship.toml'
+        $script:CopyDir = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'starship'
+        $script:CopyPath = Join-Path $script:CopyDir 'starship-catppuccin_latte.toml'
         $script:Tools = Join-Path $PSScriptRoot '..' 'Tools'
     }
     AfterEach {
@@ -196,8 +217,30 @@ Describe 'starship theme in a session' {
     It 'switches live with Set-DFToolTheme' {
         Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
         $null = Set-DFToolTheme -Name starship -Theme catppuccin-frappe 3>$null
-        $Env:STARSHIP_CONFIG | Should -Be $script:CopyPath
-        Get-Content -LiteralPath $script:CopyPath -Raw | Should -Match 'palette = "catppuccin_frappe"'
+        $Env:STARSHIP_CONFIG | Should -Be (Join-Path $script:CopyDir 'starship-catppuccin_frappe.toml')
+        Get-Content -LiteralPath $Env:STARSHIP_CONFIG -Raw | Should -Match 'palette = "catppuccin_frappe"'
+    }
+    It 'gives each palette its own copy, so a switch in one shell doesn''t change another' {
+        Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
+        $null = Set-DFToolTheme -Name starship -Theme catppuccin-latte 3>$null
+        $latte = $Env:STARSHIP_CONFIG
+        $null = Set-DFToolTheme -Name starship -Theme catppuccin-frappe 3>$null
+        $Env:STARSHIP_CONFIG | Should -Not -Be $latte
+        Get-Content -LiteralPath $latte -Raw | Should -Match 'palette = "catppuccin_latte"' -Because 'another shell may still be using it'
+    }
+    It 'themes a STARSHIP_CONFIG you set yourself, without a warning, and never writes it' {
+        $mine = Join-Path $TestDrive 'mine-starship.toml'
+        Set-Content -LiteralPath $mine -Value "palette = `"catppuccin_mocha`"`n[palettes.catppuccin_latte]`nbase = `"#eff1f5`"`n" -NoNewline
+        $Env:STARSHIP_CONFIG = $mine
+        foreach ($config in @{ Tools = @('starship'); Theme = 'catppuccin-latte' }, @{ Tools = @('starship'); StarshipTheme = 'catppuccin-latte' }) {
+            Reset-DFTestSession
+            $Env:STARSHIP_CONFIG = $mine
+            $warnings = @(Start-DFSession -Config $config -ToolsPath $script:Tools 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] -and "$_" -match 'STARSHIP_CONFIG' })
+            $warnings | Should -BeNullOrEmpty
+            $Env:STARSHIP_CONFIG | Should -Be $script:CopyPath
+            Get-Content -LiteralPath $script:CopyPath -Raw | Should -Match 'palette = "catppuccin_latte"'
+        }
+        Get-Content -LiteralPath $mine -Raw | Should -Match 'palette = "catppuccin_mocha"'
     }
     It 'follows Theme in a nested shell that inherited DotForge''s copy' {
         New-Item -ItemType Directory (Split-Path $script:CopyPath) -Force | Out-Null

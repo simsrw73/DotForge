@@ -20,7 +20,14 @@ function Get-DFStarshipConfigPath {
     $text = [System.IO.File]::ReadAllText($Source)
     $lines = $text -split '(?<=\n)'
     $index = -1
+    $inString = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
+        # A multi-line string ("""...""" or '''...''') can hold lines that start with "[":
+        # skip its body. An odd count of delimiters on a line opens or closes one.
+        $delimiters = ([regex]::Matches($lines[$i], '"""|''''''')).Count
+        $wasInString = $inString
+        if ($delimiters % 2) { $inString = -not $inString }
+        if ($wasInString) { continue }
         if ($lines[$i] -match '^\s*\[') { break }   # the first table ends the top level
         if ($lines[$i] -match '^\s*palette\s*=') { $index = $i; break }
     }
@@ -48,13 +55,14 @@ function Get-DFStarshipConfigPath {
 # pointing into DotForge's own cache (a nested shell inherited it) is not the user's.
 if ($DFCurrentTool) {
 $_starshipCache = Join-Path (Get-DFXdgPath Cache) 'dotforge' 'starship'
-$_starshipCopy = Join-Path $_starshipCache 'starship.toml'
+
 $_starshipPalettes = Join-Path $PSScriptRoot 'starship' 'catppuccin-palettes.toml'
 $_starshipOwn = { param($Path) [bool]$Path -and $Path.StartsWith($_starshipCache, [System.StringComparison]::OrdinalIgnoreCase) }.GetNewClosure()
 $_starshipSource = if ($Env:STARSHIP_CONFIG -and -not (& $_starshipOwn $Env:STARSHIP_CONFIG)) { $Env:STARSHIP_CONFIG }
     else { ConvertTo-DFPath (Expand-DFXdgPath '${XDG_CONFIG_HOME}/starship/starship.toml') }
 $_starshipConfigPath = ${function:Get-DFStarshipConfigPath}
 $_setEnv = ${function:Set-DFEnv}
+$_envState = ${function:Get-DFEnvState}
 
 Set-Item -Path 'function:global:Invoke-DFApplyStarshipTheme' -Value ({
     <#
@@ -62,8 +70,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyStarshipTheme' -Value ({
         Applies a catppuccin palette to starship for this session without editing your starship.toml.
     .DESCRIPTION
         When your starship.toml sets a top-level palette other than -Name,
-        DotForge writes a copy of it to $XDG_CACHE_HOME\dotforge\starship with
-        only that palette line changed (adding the palette's table when your
+        DotForge writes a copy of it to
+        $XDG_CACHE_HOME\dotforge\starship\starship-<palette>.toml with only that
+        palette line changed (adding the palette's table when your
         file lacks it) and points STARSHIP_CONFIG at the copy. When the palette
         already matches, or your file sets none, STARSHIP_CONFIG stays on your
         file, so your edits show at once.
@@ -73,7 +82,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyStarshipTheme' -Value ({
     .PARAMETER Name
         The starship palette name, e.g. catppuccin_latte.
     .PARAMETER Implicit
-        The theme came from the default, not a choice: a STARSHIP_CONFIG you set yourself is kept.
+        The theme came from the default, not a choice. A STARSHIP_CONFIG you set to your own
+        config is themed either way; one pointing elsewhere is kept unless the theme was chosen.
     .EXAMPLE
         Set-DFToolTheme starship catppuccin-latte
 
@@ -84,9 +94,14 @@ Set-Item -Path 'function:global:Invoke-DFApplyStarshipTheme' -Value ({
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
     param([Parameter(Mandatory)][string]$Name, [switch]$Implicit)
-    $path = & $_starshipConfigPath -Source $_starshipSource -Palette $Name -Copy $_starshipCopy -PalettesFile $_starshipPalettes
+    # One copy per palette: a shell using another palette never rewrites this one.
+    $copy = Join-Path $_starshipCache "starship-$Name.toml"
+    $path = & $_starshipConfigPath -Source $_starshipSource -Palette $Name -Copy $copy -PalettesFile $_starshipPalettes
     if (-not $path) { return }
     if (& $_starshipOwn $Env:STARSHIP_CONFIG) { Remove-Item Env:STARSHIP_CONFIG -ErrorAction Ignore }
+    # 3. Your own STARSHIP_CONFIG is the source DotForge themes, not a value it competes with:
+    # mark it as DotForge's, so switching to the derived copy neither keeps it nor warns.
+    if ($Env:STARSHIP_CONFIG -and $Env:STARSHIP_CONFIG -eq $_starshipSource) { (& $_envState).Written['STARSHIP_CONFIG'] = $Env:STARSHIP_CONFIG }
     $explicit = if (-not $Implicit) { "starship theme '$Name' was applied" }
     & $_setEnv -Name 'STARSHIP_CONFIG' -Value $path -Tool 'starship' -ExplicitReason $explicit
 }.GetNewClosure())
