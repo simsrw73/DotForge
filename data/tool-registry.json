@@ -4217,7 +4217,7 @@
       }
     },
     "starship": {
-      "sha256": "bb951f0c2ea35e3eb8aa31493e3f6c8439ca7d04ad127d719a8217a94a35117e",
+      "sha256": "8eca2a670b070a87e3fecc9237e4bb13452863bb5c804d30116ce50da397e8c9",
       "record": {
         "name": "starship",
         "executable": "starship.exe",
@@ -4274,7 +4274,27 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "StarshipTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "catppuccin_mocha",
+            "catppuccin-macchiato": "catppuccin_macchiato",
+            "catppuccin-frappe": "catppuccin_frappe",
+            "catppuccin-latte": "catppuccin_latte"
+          },
+          "files": null,
+          "valid": [
+            "catppuccin_mocha",
+            "catppuccin_macchiato",
+            "catppuccin_frappe",
+            "catppuccin_latte"
+          ],
+          "fallback": "catppuccin_mocha",
+          "env": null,
+          "command": null,
+          "apply": "Invoke-DFApplyStarshipTheme"
+        },
         "wrapper": null,
         "settings": null,
         "executableExclude": [],

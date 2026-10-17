@@ -12,6 +12,14 @@
     "scoop": "starship",
     "winget": "Starship.Starship"
   },
+  "theme": {
+    "key": "StarshipTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "catppuccin_mocha", "catppuccin-macchiato": "catppuccin_macchiato", "catppuccin-frappe": "catppuccin_frappe", "catppuccin-latte": "catppuccin_latte" },
+    "valid": ["catppuccin_mocha", "catppuccin_macchiato", "catppuccin_frappe", "catppuccin_latte"],
+    "fallback": "catppuccin_mocha",
+    "apply": "Invoke-DFApplyStarshipTheme"
+  },
   "xdg": {
     "compliance": "partial",
     "method": "env",

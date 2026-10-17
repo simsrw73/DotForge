@@ -86,3 +86,132 @@ Describe 'starship companion contract' {
         $definedHook | Should -BeTrue
     }
 }
+
+Describe 'starship follows Theme through a palette-swapped copy' {
+    BeforeAll {
+        $script:Palettes = Join-Path $PSScriptRoot '..' 'Tools' 'starship' 'catppuccin-palettes.toml'
+        . (Join-Path $PSScriptRoot '..' 'Tools' 'starship.ps1')
+        function script:New-StarshipFixture([string]$Text) {
+            $file = Join-Path $TestDrive "src-$([guid]::NewGuid().ToString('N').Substring(0, 6)).toml"
+            Set-Content -LiteralPath $file -Value $Text -NoNewline
+            $file
+        }
+        $script:Full = @'
+# my layout
+"$schema" = 'x'
+palette = "catppuccin_mocha"
+format = "$all"
+
+[palettes.catppuccin_mocha]
+base = "#1e1e2e"
+
+[palettes.catppuccin_latte]
+base = "#eff1f5"
+
+[palettes.catppuccin_frappe]
+base = "#303446"
+'@
+    }
+    BeforeEach { $script:Copy = Join-Path $TestDrive "copy-$([guid]::NewGuid().ToString('N').Substring(0, 6))" 'starship.toml' }
+    AfterAll { Remove-DFTestGlobal -Function Invoke-DFApplyStarshipTheme }
+
+    It 'copies the config with only the palette line changed' {
+        $src = New-StarshipFixture $script:Full
+        $path = Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes
+        $path | Should -Be $script:Copy
+        $before = @(Get-Content -LiteralPath $src); $after = @(Get-Content -LiteralPath $path)
+        $after.Count | Should -Be $before.Count
+        @(for ($i = 0; $i -lt $before.Count; $i++) { if ($before[$i] -cne $after[$i]) { $after[$i] } }) | Should -Be @('palette = "catppuccin_latte"')
+    }
+    It 'uses the source itself when its palette already matches, or it has no palette line' {
+        $src = New-StarshipFixture $script:Full
+        Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_mocha' -Copy $script:Copy -PalettesFile $script:Palettes | Should -Be $src
+        $plain = New-StarshipFixture 'format = "$all"'
+        Get-DFStarshipConfigPath -Source $plain -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes | Should -Be $plain
+        Test-Path -LiteralPath $script:Copy | Should -BeFalse
+    }
+    It 'appends a palette table the source lacks' {
+        $src = New-StarshipFixture $script:Full
+        $path = Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_macchiato' -Copy $script:Copy -PalettesFile $script:Palettes
+        $text = Get-Content -LiteralPath $path -Raw
+        $text | Should -Match '(?m)^\[palettes\.catppuccin_macchiato\]'
+        $text | Should -Match 'base = "#24273a"'
+    }
+    It 'changes only the top-level palette line, keeping a trailing comment' {
+        $src = New-StarshipFixture @'
+palette = 'catppuccin_mocha'  # flavor
+[palettes.foo]
+palette = "keep"
+[palettes.catppuccin_latte]
+base = "#eff1f5"
+'@
+        $text = Get-Content -LiteralPath (Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes) -Raw
+        $text | Should -Match "(?m)^palette = 'catppuccin_latte'  # flavor"
+        $text | Should -Match '(?m)^palette = "keep"'
+    }
+    It 'gives nothing for a missing source, without an error' {
+        Get-DFStarshipConfigPath -Source (Join-Path $TestDrive 'nope.toml') -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes -ErrorAction Stop | Should -BeNullOrEmpty
+    }
+    It 'refreshes the copy when the source changes' {
+        $src = New-StarshipFixture $script:Full
+        $null = Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes
+        Set-Content -LiteralPath $src -Value ($script:Full.Replace('format = "$all"', 'format = "changed"')) -NoNewline
+        $null = Get-DFStarshipConfigPath -Source $src -Palette 'catppuccin_latte' -Copy $script:Copy -PalettesFile $script:Palettes
+        Get-Content -LiteralPath $script:Copy -Raw | Should -Match 'format = "changed"'
+    }
+}
+
+Describe 'starship theme in a session' {
+    BeforeEach {
+        Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
+        Remove-Item (Get-DFToolSetupStatePath), (Join-Path $Env:XDG_CONFIG_HOME 'starship'), (Join-Path $Env:XDG_CACHE_HOME 'dotforge') -Recurse -Force -ErrorAction Ignore
+        $script:SavedConfig = $Env:STARSHIP_CONFIG
+        Remove-Item Env:STARSHIP_CONFIG -ErrorAction Ignore
+        Mock Test-DFToolAvailable { $true }
+        Mock Write-DFConflictNotice { }
+        Mock Write-Host { }
+        Mock Get-DFCachedCommandOutput { '' }
+        $script:Source = Join-Path $Env:XDG_CONFIG_HOME 'starship' 'starship.toml'
+        New-Item -ItemType Directory (Split-Path $script:Source) -Force | Out-Null
+        Set-Content -LiteralPath $script:Source -Value "palette = `"catppuccin_mocha`"`n[palettes.catppuccin_mocha]`nbase = `"#1e1e2e`"`n" -NoNewline
+        $script:CopyPath = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'starship' 'starship.toml'
+        $script:Tools = Join-Path $PSScriptRoot '..' 'Tools'
+    }
+    AfterEach {
+        if ($null -ne $script:SavedConfig) { $Env:STARSHIP_CONFIG = $script:SavedConfig } else { Remove-Item Env:STARSHIP_CONFIG -ErrorAction Ignore }
+        Remove-DFTestGlobal -Function Invoke-DFApplyStarshipTheme
+        Restore-DFTestXdg; Set-DFTestConfig $null
+    }
+
+    It 'points STARSHIP_CONFIG at a latte copy when Theme is catppuccin-latte' {
+        Start-DFSession -Config @{ Tools = @('starship'); Theme = 'catppuccin-latte' } -ToolsPath $script:Tools 3>$null
+        $Env:STARSHIP_CONFIG | Should -Be $script:CopyPath
+        Get-Content -LiteralPath $script:CopyPath -Raw | Should -Match 'palette = "catppuccin_latte"'
+        Get-Content -LiteralPath $script:Source -Raw | Should -Match 'palette = "catppuccin_mocha"' -Because 'your file is never written'
+    }
+    It 'keeps your own file when the palette matches' {
+        Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
+        $Env:STARSHIP_CONFIG | Should -Be $script:Source
+    }
+    It 'switches live with Set-DFToolTheme' {
+        Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
+        $null = Set-DFToolTheme -Name starship -Theme catppuccin-frappe 3>$null
+        $Env:STARSHIP_CONFIG | Should -Be $script:CopyPath
+        Get-Content -LiteralPath $script:CopyPath -Raw | Should -Match 'palette = "catppuccin_frappe"'
+    }
+    It 'follows Theme in a nested shell that inherited DotForge''s copy' {
+        New-Item -ItemType Directory (Split-Path $script:CopyPath) -Force | Out-Null
+        Set-Content -LiteralPath $script:CopyPath -Value 'palette = "catppuccin_latte"'
+        $Env:STARSHIP_CONFIG = $script:CopyPath
+        Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
+        $Env:STARSHIP_CONFIG | Should -Be $script:Source
+    }
+    It 'notes once when your config sets no palette' {
+        Set-Content -LiteralPath $script:Source -Value 'format = "$all"' -NoNewline
+        Start-DFSession -Config @{ Tools = @('starship') } -ToolsPath $script:Tools 3>$null
+        "$((Get-DFToolSetupState).starship.notes)" | Should -Match 'sets no palette'
+    }
+    It 'knows the StarshipTheme setting' {
+        $script:DFConfigKeys.Keys | Should -Contain 'StarshipTheme'
+    }
+}

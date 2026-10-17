@@ -6,7 +6,7 @@ Describe 'generated catppuccin theme files' {
         $script:Generated = @(Get-ChildItem $script:Out -Recurse -File | ForEach-Object { [System.IO.Path]::GetRelativePath($script:Out, $_.FullName) })
     }
     It 'writes every file' {
-        $script:Generated.Count | Should -Be 29   # skim/peco/gum/broot: 4 + license each; television: 4 x 2 + license
+        $script:Generated.Count | Should -Be 31   # skim/peco/gum/broot: 4 + license each; television: 4 x 2 + license; starship: palettes + license
     }
     It 'matches the files in Tools (run build/New-DFCatppuccinThemes.ps1 after changing it)' {
         foreach ($rel in $script:Generated) {
@@ -28,6 +28,7 @@ Describe 'generated catppuccin theme files' {
             $skin = Get-Content (Join-Path $script:Out 'broot' "catppuccin-$flavor" 'skin.hjson') -Raw
             $skin | Should -Match ([regex]::Escape("directory: $rgb none Bold"))
             $skin | Should -Not -Match 'rgb\(251, 73, 52\)' -Because 'no gruvbox leftovers'
+            Get-Content (Join-Path $script:Out 'starship' 'catppuccin-palettes.toml') -Raw | Should -Match "(?s)\[palettes\.catppuccin_$flavor\]\s+rosewater = `"$($palette[$flavor].rosewater)`".*?base = `"$($palette[$flavor].base)`""
         }
     }
 }
