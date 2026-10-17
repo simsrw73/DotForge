@@ -1,0 +1,12 @@
+{
+  "name": "gum",
+  "description": "Building blocks for shell scripts: choose, filter, input, confirm, spin",
+  "tags": ["fuzzy", "scripting", "tui"],
+  "executable": "gum.exe",
+  "roles": { "fuzzy-finder": {} },
+  "packages": { "scoop": "gum", "winget": "charmbracelet.gum" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "theme": { "key": "GumTheme", "default": "catppuccin-mocha", "command": "Invoke-DFApplyGumTheme" },
+  "aliases": {},
+  "picker": null
+}

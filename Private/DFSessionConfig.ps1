@@ -30,6 +30,7 @@ $script:DFConfigKeys = [ordered]@{
     FzfTheme           = 'fzf theme'
     GlowTheme          = 'glow theme'
     LsdTheme           = 'lsd theme (dates, sizes, permissions)'
+    GumTheme           = 'gum theme (GUM_* colors)'
     MdcatTheme         = 'mdcat theme'
     MdvTheme           = 'mdv theme'
     MoorTheme          = 'moor theme'

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 9f667fe53ffbfd1cbc8d09d6bc27a6d6742442bda78a93bd0a56f014008a4ddb
+# sources-sha256: 48a2d497408ecfbf4ea29c869b054ed2b2ba25b21ee4766a63c31af212dc0879
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3086,6 +3086,7 @@ $script:DFConfigKeys = [ordered]@{
     FzfTheme           = 'fzf theme'
     GlowTheme          = 'glow theme'
     LsdTheme           = 'lsd theme (dates, sizes, permissions)'
+    GumTheme           = 'gum theme (GUM_* colors)'
     MdcatTheme         = 'mdcat theme'
     MdvTheme           = 'mdv theme'
     MoorTheme          = 'moor theme'

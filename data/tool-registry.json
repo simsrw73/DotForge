@@ -1492,6 +1492,68 @@
         "source": null
       }
     },
+    "gum": {
+      "sha256": "c839fe8336914a38784e03e21ab9437a08c9651ae8d23b5f2b5e1ec37ca01612",
+      "record": {
+        "name": "gum",
+        "executable": "gum.exe",
+        "type": "exe",
+        "description": "Building blocks for shell scripts: choose, filter, input, confirm, spin",
+        "tags": [
+          "fuzzy",
+          "scripting",
+          "tui"
+        ],
+        "packages": {
+          "scoop": "gum",
+          "winget": "charmbracelet.gum"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "fuzzy-finder": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "GumTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": "Invoke-DFApplyGumTheme"
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "inshellisense": {
       "sha256": "c41523767acb7de929116ca61ccce6377a4fee843993fa7821066be105f5b5b8",
       "record": {

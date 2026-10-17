@@ -16,6 +16,10 @@
       "smartmontools"
     ]
   },
+  "fuzzy": {
+    "description": "Fuzzy finders: fzf, skim and television (which can own Ctrl+R/Ctrl+T), peco, and gum for scripts",
+    "tools": ["fzf", "skim", "television", "peco", "gum"]
+  },
   "prompt": {
     "description": "A fast, themed prompt",
     "tools": [
