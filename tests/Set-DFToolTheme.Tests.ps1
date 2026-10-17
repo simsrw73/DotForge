@@ -16,9 +16,26 @@ Describe 'Set-DFToolTheme' {
             Set-Content (Join-Path $script:Tools 'coded.json')
         '{ "name": "seeded", "executable": "seeded.exe", "theme": { "key": "SeededTheme", "default": "nord" } }' |
             Set-Content (Join-Path $script:Tools 'seeded.json')
+        '{ "name": "applied", "executable": "applied.exe", "theme": { "key": "AppliedTheme", "default": "catppuccin-mocha", "map": { "catppuccin-latte": "latte_native", "catppuccin-mocha": "mocha_native" }, "valid": ["latte_native", "mocha_native"], "fallback": "mocha_native", "apply": "Invoke-TestApply" } }' |
+            Set-Content (Join-Path $script:Tools 'applied.json')
+        $script:Applied = @()
+        function global:Invoke-TestApply { param([string]$Name) $script:Applied += $Name }
         Remove-Item Env:THEMED_THEME -ErrorAction Ignore
     }
-    AfterEach { Remove-Item Env:THEMED_THEME -ErrorAction Ignore; Set-DFTestConfig $null; Restore-DFTestXdg }
+    AfterEach { Remove-Item Env:THEMED_THEME -ErrorAction Ignore; Remove-DFTestGlobal -Function Invoke-TestApply; Set-DFTestConfig $null; Restore-DFTestXdg }
+
+    It 'calls the theme''s apply function with the native name' {
+        Register-DFTool -Name 'applied' -ToolsPath $script:Tools
+        $script:Applied = @()
+        (Set-DFToolTheme -Name 'applied' -Theme 'catppuccin-latte').Value | Should -Be 'latte_native'
+        $script:Applied | Should -Be @('latte_native')
+    }
+    It 'falls back with a warning for an unknown theme, and still applies the fallback' {
+        Register-DFTool -Name 'applied' -ToolsPath $script:Tools
+        $script:Applied = @()
+        $null = Set-DFToolTheme -Name 'applied' -Theme 'no-such' 3>&1
+        $script:Applied | Should -Be @('mocha_native')
+    }
 
     It 'switches the theme and re-applies theme.env' {
         Register-DFTool -Name 'themed' -ToolsPath $script:Tools

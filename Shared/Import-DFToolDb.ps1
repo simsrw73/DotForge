@@ -510,6 +510,7 @@ function ConvertTo-DFThemeBlock {
         fallback = Get-DFToolRecordProperty $RawTheme 'fallback' $null
         env      = Get-DFToolRecordProperty $RawTheme 'env' $null
         command  = Get-DFToolRecordProperty $RawTheme 'command' $null
+        apply    = Get-DFToolRecordProperty $RawTheme 'apply' $null
     }
 }
 
@@ -553,7 +554,7 @@ function ConvertTo-DFToolRecord {
             read from, and 'builtin' or 'user')
 
         theme, when present, has key, default, map (falling back to the legacy
-        top-level themeMap), files, valid (string[]), fallback, env and command.
+        top-level themeMap), files, valid (string[]), fallback, env, command and apply.
 
         wrapper, when present, has args (a list of { ifFile; args } groups; a
         plain string is its own group) and custom.

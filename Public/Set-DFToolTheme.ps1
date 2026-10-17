@@ -49,6 +49,14 @@ function Set-DFToolTheme {
     $tool = if ($script:DFSessionToolDb) { $script:DFSessionToolDb[$Name] }
     if (-not $tool -or -not (Test-DFToolActive $Name)) { Write-Error "DotForge: $Name isn't active in this session."; return }
     if (-not $tool.theme) { Write-Error "DotForge: $Name has no theme to switch."; return }
+    # A companion that applies its theme in code names a function that takes the theme's value
+    # (the native name, checked against valid, or the fallback).
+    if ($tool.theme.apply) {
+        $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
+        Set-DFSessionTheme -Name $Name -Theme $resolved
+        if ($resolved.Value) { & $tool.theme.apply -Name $resolved.Value }
+        return $resolved
+    }
     if ($tool.theme.command) { Write-Error "DotForge: $Name's theme is applied by its companion; use $($tool.theme.command)."; return }
     if (-not (Test-DFThemeSwitchable -Tool $tool)) {
         Write-Error "DotForge: $Name's theme is written to its config once, at setup, so it can't be switched live; edit its config file."

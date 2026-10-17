@@ -66,7 +66,8 @@
           "env": {
             "BAT_THEME": "{theme}"
           },
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -200,7 +201,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -751,7 +753,8 @@
           "env": {
             "DELTA_FEATURES": "+{theme}"
           },
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -991,7 +994,8 @@
           "env": {
             "EZA_CONFIG_DIR": "{theme}"
           },
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -1381,7 +1385,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": "Invoke-DFApplyFzfTheme"
+          "command": "Invoke-DFApplyFzfTheme",
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -1547,7 +1552,8 @@
           ],
           "fallback": "auto",
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": {
           "args": [
@@ -1688,7 +1694,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": "Invoke-DFApplyGumTheme"
+          "command": "Invoke-DFApplyGumTheme",
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -2088,7 +2095,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": {
           "args": [
@@ -2186,7 +2194,8 @@
           "env": {
             "MDCAT_THEME": "{theme}"
           },
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -2274,7 +2283,8 @@
           ],
           "fallback": "terminal",
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -2520,7 +2530,8 @@
           "env": {
             "MOOR": "-style {theme}"
           },
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -2896,7 +2907,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -2972,7 +2984,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -3543,7 +3556,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": "Select-PSReadLineTheme"
+          "command": "Select-PSReadLineTheme",
+          "apply": null
         },
         "wrapper": null,
         "settings": {
@@ -4145,7 +4159,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": "Invoke-DFApplySkimTheme"
+          "command": "Invoke-DFApplySkimTheme",
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -4396,7 +4411,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": null
+          "command": null,
+          "apply": null
         },
         "wrapper": null,
         "settings": null,
@@ -4687,7 +4703,8 @@
           "valid": [],
           "fallback": null,
           "env": null,
-          "command": "Select-LSColorsTheme"
+          "command": "Select-LSColorsTheme",
+          "apply": null
         },
         "wrapper": null,
         "settings": null,

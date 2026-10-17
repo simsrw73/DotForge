@@ -156,8 +156,8 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
     if ($theme -isnot [pscustomobject]) { return 'theme must be an object' }
     $key = Get-DFSchemaProperty $theme 'key'
     if ($key -isnot [string] -or $key -cnotmatch '^[A-Z][A-Za-z0-9]*Theme$') { "theme.key must name the tool's config key, e.g. 'BatTheme'" }
-    foreach ($field in 'default', 'files', 'fallback', 'command') {
-        $v = Get-DFSchemaProperty $theme $field
+    foreach ($field in 'default', 'files', 'fallback', 'command', 'apply') {
+        $v = $theme.PSObject.Properties[$field]?.Value   # read directly: a helper would unroll ["x"]
         if ($null -ne $v -and ($v -isnot [string] -or -not $v)) { "theme.$field must be a non-empty string" }
     }
     $valid = $theme.PSObject.Properties['valid']?.Value   # read directly: a helper would unroll ["x"]
@@ -432,7 +432,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         banner = 'script', 'body', 'fills'
-        theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command'
+        theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command', 'apply'
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'

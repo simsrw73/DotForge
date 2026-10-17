@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 45a3fc213ced056227fbf494e9d8b5cee265174924b7a6bd647a436bfe3694d4
+# sources-sha256: 481fcba3eccab43a86bd5be17c20f5cf628ae911a5286fd9edde29460fb8eb92
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1402,6 +1402,7 @@ function ConvertTo-DFThemeBlock {
         fallback = Get-DFToolRecordProperty $RawTheme 'fallback' $null
         env      = Get-DFToolRecordProperty $RawTheme 'env' $null
         command  = Get-DFToolRecordProperty $RawTheme 'command' $null
+        apply    = Get-DFToolRecordProperty $RawTheme 'apply' $null
     }
 }
 
@@ -1445,7 +1446,7 @@ function ConvertTo-DFToolRecord {
             read from, and 'builtin' or 'user')
 
         theme, when present, has key, default, map (falling back to the legacy
-        top-level themeMap), files, valid (string[]), fallback, env and command.
+        top-level themeMap), files, valid (string[]), fallback, env, command and apply.
 
         wrapper, when present, has args (a list of { ifFile; args } groups; a
         plain string is its own group) and custom.
@@ -1956,8 +1957,8 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
     if ($theme -isnot [pscustomobject]) { return 'theme must be an object' }
     $key = Get-DFSchemaProperty $theme 'key'
     if ($key -isnot [string] -or $key -cnotmatch '^[A-Z][A-Za-z0-9]*Theme$') { "theme.key must name the tool's config key, e.g. 'BatTheme'" }
-    foreach ($field in 'default', 'files', 'fallback', 'command') {
-        $v = Get-DFSchemaProperty $theme $field
+    foreach ($field in 'default', 'files', 'fallback', 'command', 'apply') {
+        $v = $theme.PSObject.Properties[$field]?.Value   # read directly: a helper would unroll ["x"]
         if ($null -ne $v -and ($v -isnot [string] -or -not $v)) { "theme.$field must be a non-empty string" }
     }
     $valid = $theme.PSObject.Properties['valid']?.Value   # read directly: a helper would unroll ["x"]
@@ -2232,7 +2233,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
         banner = 'script', 'body', 'fills'
-        theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command'
+        theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command', 'apply'
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
         install = 'prefer'
@@ -4984,7 +4985,7 @@ function Set-DFToolThemeEnv {
 function Test-DFThemeSwitchable {
     <#
     .SYNOPSIS
-        True when DotForge itself applies a tool's theme at run time (theme.env or a wrapper's {theme}), so Set-DFToolTheme can switch it.
+        True when DotForge itself applies a tool's theme at run time (theme.env, a wrapper's {theme}, or the companion's apply function), so Set-DFToolTheme can switch it.
     .PARAMETER Tool
         A normalized tool record with a theme block.
     .OUTPUTS
@@ -4995,7 +4996,7 @@ function Test-DFThemeSwitchable {
     param([Parameter(Mandatory)][pscustomobject]$Tool)
     $hasEnv = [bool]$Tool.theme.env -and @($Tool.theme.env.PSObject.Properties).Count -gt 0
     $inWrapper = [bool]$Tool.wrapper -and @($Tool.wrapper.args | ForEach-Object { $_.args } | Where-Object { $_.Contains('{theme}') }).Count -gt 0
-    $hasEnv -or $inWrapper
+    $hasEnv -or $inWrapper -or [bool]$Tool.theme.apply
 }
 
 # ---- Private/Get-DFToolUpdate.ps1
@@ -10578,6 +10579,14 @@ function Set-DFToolTheme {
     $tool = if ($script:DFSessionToolDb) { $script:DFSessionToolDb[$Name] }
     if (-not $tool -or -not (Test-DFToolActive $Name)) { Write-Error "DotForge: $Name isn't active in this session."; return }
     if (-not $tool.theme) { Write-Error "DotForge: $Name has no theme to switch."; return }
+    # A companion that applies its theme in code names a function that takes the theme's value
+    # (the native name, checked against valid, or the fallback).
+    if ($tool.theme.apply) {
+        $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
+        Set-DFSessionTheme -Name $Name -Theme $resolved
+        if ($resolved.Value) { & $tool.theme.apply -Name $resolved.Value }
+        return $resolved
+    }
     if ($tool.theme.command) { Write-Error "DotForge: $Name's theme is applied by its companion; use $($tool.theme.command)."; return }
     if (-not (Test-DFThemeSwitchable -Tool $tool)) {
         Write-Error "DotForge: $Name's theme is written to its config once, at setup, so it can't be switched live; edit its config file."

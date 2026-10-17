@@ -126,6 +126,18 @@ Describe 'Test-DFToolSchema' {
             (Test-DFToolSchema -Tool $t).Valid | Should -BeTrue
         }
 
+        It 'accepts a theme apply function name and rejects an empty or non-string one' {
+            $valid = '{ "name": "t", "executable": "t.exe", "theme": { "key": "TTheme", "apply": "Invoke-TApply" } }' | ConvertFrom-Json
+            (Test-DFToolSchema -Tool $valid).Valid | Should -BeTrue
+            foreach ($bad in '""', '1', '["x"]') {
+                $tool = ('{ "name": "t", "executable": "t.exe", "theme": { "key": "TTheme", "apply": ' + $bad + ' } }') | ConvertFrom-Json
+                $result = Test-DFToolSchema -Tool $tool
+                $result.Valid | Should -BeFalse -Because "apply $bad is invalid"
+                "$($result.Errors)" | Should -Match 'theme\.apply'
+            }
+            (ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe", "theme": { "key": "TTheme" } }' | ConvertFrom-Json)).theme.PSObject.Properties.Name | Should -Contain 'apply'
+        }
+
         It 'accepts folder declarations in a role block and rejects wrong types' {
             $valid = '{ "name": "t", "executable": "t.exe", "roles": { "navigation": { "directories": ["t", "list"], "enter": "cd" }, "file-search": { "directoryScan": ["t", "{depth}"] } } }' | ConvertFrom-Json
             $result = Test-DFToolSchema -Tool $valid
