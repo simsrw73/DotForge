@@ -6,6 +6,8 @@
 
 # How a multi-line history entry is shown on one line in the picker.
 $script:DFHistoryLineMark = ' ␤ '
+# Set by Write-DFKeyMessage: the next redraw goes below the message instead of over it.
+$script:DFKeyMessageShown = $false
 
 function Register-DFFuzzyKeyHandler {
     <#
@@ -292,8 +294,42 @@ function Update-DFReadLineBuffer {
     } elseif ($Insert) {
         [Microsoft.PowerShell.PSConsoleReadLine]::Insert($Insert)
     }
-    # A full-screen picker leaves the prompt half-drawn.
-    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    # A full-screen picker leaves the prompt half-drawn. After a message, redraw below it:
+    # a plain redraw starts on the prompt's first row and would wipe it.
+    $below = $script:DFKeyMessageShown
+    $script:DFKeyMessageShown = $false
+    Invoke-DFPromptRedraw -Below:$below
+}
+
+function Write-DFKeyMessage {
+    <#
+    .SYNOPSIS
+        Writes one red line from a key handler, on a line of its own, and has the next redraw keep it on screen.
+    .PARAMETER Text
+        The message.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Text)
+    Write-Host ''
+    Write-Host $Text -ForegroundColor Red
+    $script:DFKeyMessageShown = $true
+}
+
+function Invoke-DFPromptRedraw {
+    <#
+    .SYNOPSIS
+        Redraws the prompt and the line being typed: in place, or (-Below) starting on the cursor's row.
+    .PARAMETER Below
+        Start on the cursor's row, below a message just written.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([switch]$Below)
+    if ($Below) { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt($null, [Console]::CursorTop) }
+    else { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt() }
 }
 
 function Remove-DFKeyHandlerCall {

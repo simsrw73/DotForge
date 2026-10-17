@@ -97,6 +97,8 @@ Describe 'broot companion: br and Alt+C' {
         Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
         $script:SavedConfigDir = $Env:BROOT_CONFIG_DIR
         $Env:BROOT_CONFIG_DIR = Join-Path $TestDrive 'brcfg'
+        # $TestDrive lasts the whole Describe: start each test without broot's install state.
+        Remove-Item -LiteralPath $Env:BROOT_CONFIG_DIR -Recurse -Force -ErrorAction Ignore
         New-Item -ItemType Directory $Env:BROOT_CONFIG_DIR -Force | Out-Null
         Set-Content (Join-Path $Env:BROOT_CONFIG_DIR 'conf.hjson') 'imports: []'
         Mock Set-DFRoleKeyHandler { }
@@ -119,6 +121,24 @@ Describe 'broot companion: br and Alt+C' {
         $argv[2] | Should -Be '--conf'
         $argv[3] | Should -Be ((Join-Path $Env:BROOT_CONFIG_DIR 'conf.hjson') + ';' + (Join-Path $script:Tools 'broot' 'catppuccin-latte' 'skin.hjson'))
         $argv[4..5] | Should -Be @('--only-folders', 'C:\x')
+    }
+    It 'passes broot''s short flags through untouched (-d is not -Debug, -p is not ambiguous)' {
+        $command = Get-Command br -CommandType Function
+        $command.CmdletBinding | Should -BeFalse
+        $command.Parameters.Keys | Should -Not -Contain 'Debug'
+    }
+    It 'sets broot''s install state before a run when it is missing, so broot never edits your profiles' {
+        Mock Invoke-DFBoundedProcess { New-Item -ItemType File -Force (Join-Path $Env:BROOT_CONFIG_DIR 'launcher' 'installed-v5') | Out-Null; [pscustomobject]@{ Lines = @(); ExitCode = 0 } }
+        Confirm-DFBrootInstallState -Executable 'broot.exe' | Should -BeTrue
+        Should -Invoke Invoke-DFBoundedProcess -Times 1 -ParameterFilter { ($ArgumentList -join ' ') -eq '--set-install-state installed' }
+        Confirm-DFBrootInstallState -Executable 'broot.exe' | Should -BeTrue
+        Should -Invoke Invoke-DFBoundedProcess -Times 1 -Exactly -Because 'the state file is there now'
+    }
+    It 'refuses to run broot when its install state can''t be set' {
+        Mock Invoke-DFBoundedProcess { [pscustomobject]@{ Lines = @(); ExitCode = 1 } }
+        Mock Write-Host { }
+        Confirm-DFBrootInstallState -Executable 'broot.exe' | Should -BeFalse
+        Should -Invoke Write-Host -Times 1 -ParameterFilter { "$Object" -like '*broot --set-install-state installed*' }
     }
     It 'passes no --conf when there is no theme skin' {
         Mock Get-DFSessionThemeValue { $null } -ParameterFilter { $Name -eq 'broot' }

@@ -22,15 +22,32 @@ function Get-DFBrootArgument {
     [string[]]$argv
 }
 
+function Confirm-DFBrootInstallState {
+    # Before every run: broot's "install br?" state must be set, or broot offers to edit your shell
+    # profiles. Setup sets it once, but the file goes with the config folder (a reset, a moved
+    # BROOT_CONFIG_DIR), so it's checked here too: one Test-Path, only when br or Alt+C runs.
+    param([Parameter(Mandatory)][string]$Executable)
+    $configDir = if ($Env:BROOT_CONFIG_DIR) { $Env:BROOT_CONFIG_DIR } else { Join-Path $Env:APPDATA 'dystroy' 'broot' 'config' }
+    $launcher = Join-Path $configDir 'launcher'
+    if (Get-ChildItem -LiteralPath $launcher -Filter 'installed-v*' -File -ErrorAction Ignore) { return $true }
+    $ok = $false
+    try { $ok = (Invoke-DFBoundedProcess -FilePath $Executable -ArgumentList '--set-install-state', 'installed' -TimeoutSeconds 30).ExitCode -eq 0 } catch { Write-Verbose "DotForge: broot: $($_.Exception.Message)" }
+    if (-not $ok) { Write-DFKeyMessage "DotForge: not running broot: its own br installer would edit your shell profiles. Run 'broot --set-install-state installed' first." }
+    $ok
+}
+
 # Captured scriptblocks keep their module binding, so the global closures below can call them.
 $_brootArgument = ${function:Get-DFBrootArgument}
+$_installState = ${function:Confirm-DFBrootInstallState}
 $_cdFile = ${function:Invoke-DFCdFileCommand}
 $_brootRun = {
     param([string[]]$Extra)
     $exe = (Get-Command -Name 'broot' -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
     if (-not $exe) { Write-Host 'DotForge: broot is not on PATH' -ForegroundColor Red; return $false }
+    if (-not (& $_installState -Executable $exe)) { return $false }
     & $_cdFile -Executable $exe -Arguments (& $_brootArgument -Extra $Extra) -Format ShellCd
 }.GetNewClosure()
+$_redraw = ${function:Update-DFReadLineBuffer}
 
 Set-Item -Path 'function:global:br' -Value ({
     <#
@@ -43,34 +60,34 @@ Set-Item -Path 'function:global:br' -Value ({
         nothing changes. broot's skin follows BrootTheme (Set-DFToolTheme broot
         <flavor> switches it).
 
-        Defined by DotForge's broot companion. It replaces broot's own br,
-        which DotForge's setup tells broot not to install.
-    .PARAMETER Arguments
-        Arguments passed to broot (a folder to open, --only-folders, ...).
+        Every argument goes to broot as it is (a folder to open, -f, -d, -p,
+        ...): br is a simple function, so PowerShell doesn't take -d for
+        -Debug. Defined by DotForge's broot companion. It replaces broot's own
+        br, which DotForge's setup tells broot not to install.
     .EXAMPLE
         br
 
         Browses the current folder; alt+enter on a folder moves the shell there.
     .EXAMPLE
-        br -f ~/projects
+        br -f -d $HOME\projects
 
-        Browses only the folders under ~/projects.
+        Browses only the folders under your projects folder, with dates.
     .OUTPUTS
         None.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
     #>
-    param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments = @())
-    [void](& $_brootRun $Arguments)
+    [void](& $_brootRun ([string[]]@($args)))
 }.GetNewClosure())
 
 function Initialize-DFRoleDirectoryJump {
     # Called by DotForge only when broot wins directory-jump: Alt+C opens broot on folders only.
     param($Tool, $Role)
     $run = $_brootRun
+    $redraw = $_redraw
     $handler = {
         [void](& $run @('--only-folders'))
-        [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+        & $redraw
     }.GetNewClosure()
     Set-DFRoleKeyHandler -Role $Role -Chord 'Alt+c' -Tool $Tool.name -Bind {
         Set-PSReadLineKeyHandler -Chord 'Alt+c' -BriefDescription 'DotForge directory-jump (broot)' -Description 'Browse folders with broot and move there (DotForge)' -ScriptBlock $handler

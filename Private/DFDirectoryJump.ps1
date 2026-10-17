@@ -112,7 +112,8 @@ function Get-DFRankedDirectory {
     if (-not $argv.Count) { return }
     Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
         $line = ([string]$_).Trim()
-        if ($line) { $line.TrimEnd('\', '/') }
+        # Canonical, so a root stays a root (C:\, not the drive-relative C:).
+        if ($line -and [System.IO.Path]::IsPathRooted($line)) { ConvertTo-DFPath $line }
     }
 }
 
@@ -138,7 +139,7 @@ function Get-DFScannedDirectory {
             $argv = @($scan | ForEach-Object { ([string]$_).Replace('{depth}', [string]$level) })
             Invoke-DFStoppableCommand -Argv $argv -WorkingDirectory $Root -StopWhen $StopWhen | ForEach-Object {
                 $relative = ([string]$_).Trim().TrimEnd('\', '/')
-                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
+                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = (ConvertTo-DFPath (Join-Path $Root $relative)) } }
             }
         }
         return
@@ -196,7 +197,7 @@ function Enter-DFDirectory {
     [OutputType([bool])]
     param([Parameter(Mandatory)][string]$Path)
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
-        Write-Host "DotForge: $Path no longer exists" -ForegroundColor Red
+        Write-DFKeyMessage "DotForge: $Path no longer exists"
         return $false
     }
     $enter = Get-DFRoleDeclaration -Role navigation -Field enter
@@ -204,7 +205,7 @@ function Enter-DFDirectory {
         if ($enter) { & $enter $Path | Out-Null } else { Set-Location -LiteralPath $Path }
         $true
     } catch {
-        Write-Host "DotForge: couldn't change to ${Path}: $($_.Exception.Message)" -ForegroundColor Red
+        Write-DFKeyMessage "DotForge: couldn't change to ${Path}: $($_.Exception.Message)"
         $false
     }
 }

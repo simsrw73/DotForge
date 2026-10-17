@@ -3550,11 +3550,7 @@ Runs broot, and moves the shell to the folder you leave it in.
 
 Opens broot in the current folder with your arguments. Leave it with a cd (alt+enter, or :cd) and the shell changes to that folder, through zoxide's cd when zoxide is your navigation tool; quit without one and nothing changes. broot's skin follows BrootTheme (Set-DFToolTheme broot &lt;flavor&gt; switches it).
 
-Defined by DotForge's broot companion. It replaces broot's own br, which DotForge's setup tells broot not to install.
-
-| Parameter | Type | Default | Required | Pipeline | Description |
-| --- | --- | --- | --- | --- | --- |
-| `-Arguments` | string[] | `@()` |  | remaining args | Arguments passed to broot (a folder to open, --only-folders, ...). |
+Every argument goes to broot as it is (a folder to open, -f, -d, -p, ...): br is a simple function, so PowerShell doesn't take -d for -Debug. Defined by DotForge's broot companion. It replaces broot's own br, which DotForge's setup tells broot not to install.
 
 **Outputs:** None.
 
@@ -3569,10 +3565,10 @@ Browses the current folder; alt+enter on a folder moves the shell there.
 **Example 2**
 
 ```powershell
-br -f ~/projects
+br -f -d $HOME\projects
 ```
 
-Browses only the folders under ~/projects.
+Browses only the folders under your projects folder, with dates.
 
 **See also:** [tools](guide/tools.md)
 

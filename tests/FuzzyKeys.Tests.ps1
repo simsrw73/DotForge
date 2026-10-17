@@ -119,6 +119,18 @@ Describe 'shared fuzzy key handler' {
         Should -Invoke Enter-DFDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq 'C:\w\src\lib' }
         Should -Invoke Update-DFReadLineBuffer -Times 1 -ParameterFilter { -not $Replace -and -not $Insert }
     }
+    It 'Directory: a message from the move stays on screen; the prompt is redrawn below it' {
+        Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'gone'; Path = 'C:\gone' } }
+        Mock Invoke-DFFuzzyEngine { @(& $Stream { $false })[0] }
+        Mock Enter-DFDirectory { Write-DFKeyMessage 'DotForge: C:\gone no longer exists'; $false }
+        Mock Write-Host { }
+        Mock Invoke-DFPromptRedraw { }
+        Invoke-DFFuzzyKey -Engine fzf -Key Directory
+        Should -Invoke Invoke-DFPromptRedraw -Times 1 -Exactly -ParameterFilter { $Below }
+        $script:DFKeyMessageShown | Should -BeFalse -Because 'the flag is used once'
+        Update-DFReadLineBuffer
+        Should -Invoke Invoke-DFPromptRedraw -Times 1 -Exactly -ParameterFilter { -not $Below }
+    }
     It 'Directory: Esc moves nowhere' {
         Mock Get-DFDirectoryJumpCandidate { [pscustomobject]@{ Shown = 'a'; Path = 'C:' } }
         Mock Invoke-DFFuzzyEngine { }

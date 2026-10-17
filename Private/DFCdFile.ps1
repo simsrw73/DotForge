@@ -65,7 +65,7 @@ function Invoke-DFCdFileCommand {
         $argv = [string[]]@($Arguments | ForEach-Object { ([string]$_).Replace('{file}', $file.FullName) })
         $exitCode = & $Run $Executable $argv | Select-Object -Last 1
         if ($exitCode -ne 0) {
-            Write-Host "DotForge: $([System.IO.Path]::GetFileName($Executable)) exited with code $exitCode" -ForegroundColor Red
+            Write-DFKeyMessage "DotForge: $([System.IO.Path]::GetFileName($Executable)) exited with code $exitCode"
             return $false
         }
         $text = [string](Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Ignore)

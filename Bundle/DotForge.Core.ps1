@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 063c512ae4edc0498f1e5756db1ad81e6b023435c387e819d33999cbd0f91158
+# sources-sha256: e27bc32eb02d4cbc1fef57a2d7dc465a1a380e771ae2e3cf54531dd87de3c361
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3092,7 +3092,7 @@ function Invoke-DFCdFileCommand {
         $argv = [string[]]@($Arguments | ForEach-Object { ([string]$_).Replace('{file}', $file.FullName) })
         $exitCode = & $Run $Executable $argv | Select-Object -Last 1
         if ($exitCode -ne 0) {
-            Write-Host "DotForge: $([System.IO.Path]::GetFileName($Executable)) exited with code $exitCode" -ForegroundColor Red
+            Write-DFKeyMessage "DotForge: $([System.IO.Path]::GetFileName($Executable)) exited with code $exitCode"
             return $false
         }
         $text = [string](Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Ignore)
@@ -3219,7 +3219,8 @@ function Get-DFRankedDirectory {
     if (-not $argv.Count) { return }
     Invoke-DFStoppableCommand -Argv $argv -StopWhen $StopWhen | ForEach-Object {
         $line = ([string]$_).Trim()
-        if ($line) { $line.TrimEnd('\', '/') }
+        # Canonical, so a root stays a root (C:\, not the drive-relative C:).
+        if ($line -and [System.IO.Path]::IsPathRooted($line)) { ConvertTo-DFPath $line }
     }
 }
 
@@ -3245,7 +3246,7 @@ function Get-DFScannedDirectory {
             $argv = @($scan | ForEach-Object { ([string]$_).Replace('{depth}', [string]$level) })
             Invoke-DFStoppableCommand -Argv $argv -WorkingDirectory $Root -StopWhen $StopWhen | ForEach-Object {
                 $relative = ([string]$_).Trim().TrimEnd('\', '/')
-                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = [System.IO.Path]::GetFullPath((Join-Path $Root $relative)) } }
+                if ($relative) { [pscustomobject]@{ Shown = $relative; Path = (ConvertTo-DFPath (Join-Path $Root $relative)) } }
             }
         }
         return
@@ -3303,7 +3304,7 @@ function Enter-DFDirectory {
     [OutputType([bool])]
     param([Parameter(Mandatory)][string]$Path)
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
-        Write-Host "DotForge: $Path no longer exists" -ForegroundColor Red
+        Write-DFKeyMessage "DotForge: $Path no longer exists"
         return $false
     }
     $enter = Get-DFRoleDeclaration -Role navigation -Field enter
@@ -3311,7 +3312,7 @@ function Enter-DFDirectory {
         if ($enter) { & $enter $Path | Out-Null } else { Set-Location -LiteralPath $Path }
         $true
     } catch {
-        Write-Host "DotForge: couldn't change to ${Path}: $($_.Exception.Message)" -ForegroundColor Red
+        Write-DFKeyMessage "DotForge: couldn't change to ${Path}: $($_.Exception.Message)"
         $false
     }
 }
@@ -7097,6 +7098,8 @@ function New-DFToolWrapper {
 
 # How a multi-line history entry is shown on one line in the picker.
 $script:DFHistoryLineMark = ' ␤ '
+# Set by Write-DFKeyMessage: the next redraw goes below the message instead of over it.
+$script:DFKeyMessageShown = $false
 
 function Register-DFFuzzyKeyHandler {
     <#
@@ -7383,8 +7386,42 @@ function Update-DFReadLineBuffer {
     } elseif ($Insert) {
         [Microsoft.PowerShell.PSConsoleReadLine]::Insert($Insert)
     }
-    # A full-screen picker leaves the prompt half-drawn.
-    [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    # A full-screen picker leaves the prompt half-drawn. After a message, redraw below it:
+    # a plain redraw starts on the prompt's first row and would wipe it.
+    $below = $script:DFKeyMessageShown
+    $script:DFKeyMessageShown = $false
+    Invoke-DFPromptRedraw -Below:$below
+}
+
+function Write-DFKeyMessage {
+    <#
+    .SYNOPSIS
+        Writes one red line from a key handler, on a line of its own, and has the next redraw keep it on screen.
+    .PARAMETER Text
+        The message.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Text)
+    Write-Host ''
+    Write-Host $Text -ForegroundColor Red
+    $script:DFKeyMessageShown = $true
+}
+
+function Invoke-DFPromptRedraw {
+    <#
+    .SYNOPSIS
+        Redraws the prompt and the line being typed: in place, or (-Below) starting on the cursor's row.
+    .PARAMETER Below
+        Start on the cursor's row, below a message just written.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([switch]$Below)
+    if ($Below) { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt($null, [Console]::CursorTop) }
+    else { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt() }
 }
 
 function Remove-DFKeyHandlerCall {

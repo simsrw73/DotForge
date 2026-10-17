@@ -131,6 +131,14 @@ Describe 'Get-DFDirectoryJumpCandidate' {
         try { $list = @(Get-DFDirectoryJumpCandidate -Depth 2) } finally { Pop-Location }
         $list.Path | Should -Be $script:Ranked
     }
+    It 'keeps a drive root as a root (C:\, not C:)' {
+        Set-Item function:global:Get-DFTestRanked { 'C:\' }
+        Set-DeclarationSession @($script:Navigation) @{ navigation = 'zx' }
+        $first = @(Get-DFDirectoryJumpCandidate -Depth 1)[0]
+        $first.Path | Should -Be 'C:\'
+        $first.Shown | Should -Be 'C:\'
+        Set-Item function:global:Get-DFTestRanked { $script:Ranked }
+    }
     It 'gives nothing extra when the ranked list fails' {
         function global:Get-DFTestRanked { throw 'boom' }
         Set-DeclarationSession @($script:Navigation) @{ navigation = 'zx' }
