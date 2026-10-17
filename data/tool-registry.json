@@ -125,7 +125,7 @@
       }
     },
     "broot": {
-      "sha256": "ea702fabf3cde6237008833ad92a1577b86ef76a777342a4ca4e3458e919b48c",
+      "sha256": "0c09d25ad8be6d0d264f697616272a655ddd19e0ac000796f835d63c3406ce9d",
       "record": {
         "name": "broot",
         "executable": "broot.exe",
@@ -177,7 +177,19 @@
         "picker": null,
         "after": [],
         "requires": [],
-        "roles": {},
+        "roles": {
+          "directory-jump": {
+            "priority": 3,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
         "themeMap": null,
         "theme": {
           "key": "BrootTheme",

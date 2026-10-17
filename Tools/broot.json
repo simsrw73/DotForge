@@ -7,6 +7,7 @@
     "navigation"
   ],
   "executable": "broot.exe",
+  "roles": { "directory-jump": { "priority": 3 } },
   "packages": {
     "scoop": "broot",
     "winget": "Dystroy.broot",
