@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0e6dc304f55dee28f91b297fd5ac0aca3fc2c8799a5b37baae3f48f5f2d01914
+# sources-sha256: d93f47bd6d63a2ffd1d2cf103150edf002481dc7e2544203ce7bfd169f8caa65
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3446,6 +3446,7 @@ $script:DFConfigKeys = [ordered]@{
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     StarshipTheme      = 'starship palette (a catppuccin flavor; applied to a copy of your starship.toml)'
+    OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'
@@ -10583,6 +10584,11 @@ function Set-DFToolTheme {
     # A companion that applies its theme in code names a function that takes the theme's value
     # (the native name, checked against valid, or the fallback).
     if ($tool.theme.apply) {
+        # Defined by the companion only when it applies the theme (a prompt engine, only when it won).
+        if (-not (Get-Command -Name $tool.theme.apply -ErrorAction Ignore)) {
+            Write-Error "DotForge: $Name's theme isn't applied in this session ($($tool.theme.apply) isn't defined)."
+            return
+        }
         $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
         Set-DFSessionTheme -Name $Name -Theme $resolved
         if ($resolved.Value) { & $tool.theme.apply -Name $resolved.Value }

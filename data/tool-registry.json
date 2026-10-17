@@ -2767,7 +2767,7 @@
       }
     },
     "oh-my-posh": {
-      "sha256": "fd65366934e19a8de0590bd28c2b9bdef1aa568dc8a4b9d81fcde33128627d60",
+      "sha256": "800dce0c8bb926ba57a6b375762981d37772ed83589d53487366a43e762bada1",
       "record": {
         "name": "oh-my-posh",
         "executable": "oh-my-posh.exe",
@@ -2824,7 +2824,27 @@
           }
         },
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "OhMyPoshTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "catppuccin_mocha",
+            "catppuccin-macchiato": "catppuccin_macchiato",
+            "catppuccin-frappe": "catppuccin_frappe",
+            "catppuccin-latte": "catppuccin_latte"
+          },
+          "files": null,
+          "valid": [
+            "catppuccin_mocha",
+            "catppuccin_macchiato",
+            "catppuccin_frappe",
+            "catppuccin_latte"
+          ],
+          "fallback": "catppuccin_mocha",
+          "env": null,
+          "command": null,
+          "apply": "Invoke-DFApplyOhMyPoshTheme"
+        },
         "wrapper": null,
         "settings": null,
         "executableExclude": [],

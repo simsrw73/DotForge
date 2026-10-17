@@ -4,6 +4,37 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
+# DotForge's bundled catppuccin themes (oh-my-posh's own, MIT): Tools\oh-my-posh\<native>.omp.json.
+$_ompBundled = Join-Path $PSScriptRoot 'oh-my-posh'
+
+function Resolve-DFOhMyPoshConfig {
+    # The config oh-my-posh starts with, first match wins: your POSH_THEME (not one pointing at a
+    # bundled theme, which a nested shell inherited), your one *.omp.* in $XDG_CONFIG_HOME\oh-my-posh
+    # (several: the first, with a warning), then the theme's file -Native in POSH_THEMES_PATH, then
+    # the bundled one. Nothing when none exists.
+    param([string]$Native, [Parameter(Mandatory)][string]$Bundled)
+    $own = $Env:POSH_THEME -and $Env:POSH_THEME.StartsWith($Bundled, [System.StringComparison]::OrdinalIgnoreCase)
+    if ($Env:POSH_THEME -and -not $own -and (Test-Path -LiteralPath $Env:POSH_THEME)) { return $Env:POSH_THEME }
+    $ompDir = Join-Path (Get-DFXdgPath Config) 'oh-my-posh'
+    $candidates = @(Get-ChildItem -LiteralPath $ompDir -Filter '*.omp.*' -ErrorAction Ignore | Sort-Object Name)
+    if ($candidates.Count -gt 1) {
+        Write-Warning "DotForge: multiple oh-my-posh configs found; using '$($candidates[0].Name)'. Set `$Env:POSH_THEME to be explicit."
+    }
+    if ($candidates.Count) { return $candidates[0].FullName }
+    Resolve-DFOhMyPoshThemeFile -Native $Native -Bundled $Bundled
+}
+
+function Resolve-DFOhMyPoshThemeFile {
+    # The theme's file: <POSH_THEMES_PATH>\<Native>.omp.json, else the bundled one; nothing when neither exists.
+    param([string]$Native, [Parameter(Mandatory)][string]$Bundled)
+    if (-not $Native) { return }
+    foreach ($dir in @($Env:POSH_THEMES_PATH, $Bundled)) {
+        if (-not $dir) { continue }
+        $file = Join-Path $dir "$Native.omp.json"
+        if (Test-Path -LiteralPath $file -PathType Leaf) { return $file }
+    }
+}
+
 function Initialize-DFRolePrompt {
     # Called by DotForge only when oh-my-posh wins the prompt role. Everything
     # here is prompt behavior: posh-git, init, and the fpot theme picker.
@@ -14,21 +45,11 @@ function Initialize-DFRolePrompt {
         $Env:POSH_GIT_ENABLED = $true
     }
 
-    # 2. Resolve config path: $Env:POSH_THEME → XDG discovery → warn
-    $ompConfig = $null
-    if ($Env:POSH_THEME -and (Test-Path $Env:POSH_THEME)) {
-        $ompConfig = $Env:POSH_THEME
-    } else {
-        $ompDir = Join-Path (Get-DFXdgPath Config) 'oh-my-posh'
-        $candidates = @(Get-ChildItem $ompDir -Filter '*.omp.*' -ErrorAction Ignore | Sort-Object Name)
-        if ($candidates.Count -eq 0) {
-            Write-Warning 'DotForge: no oh-my-posh config found. Set $Env:POSH_THEME or place *.omp.* in $XDG_CONFIG_HOME/oh-my-posh/.'
-        } elseif ($candidates.Count -eq 1) {
-            $ompConfig = $candidates[0].FullName
-        } else {
-            $ompConfig = $candidates[0].FullName
-            Write-Warning "DotForge: multiple oh-my-posh configs found; using '$($candidates[0].Name)'. Set `$Env:POSH_THEME to be explicit."
-        }
+    # 2. Resolve config path: your POSH_THEME → your XDG config → the theme's file (Theme, OhMyPoshTheme).
+    $theme = Get-DFToolTheme -Tool $Tool
+    $ompConfig = Resolve-DFOhMyPoshConfig -Native $theme.Value -Bundled $_ompBundled
+    if (-not $ompConfig) {
+        Write-Warning 'DotForge: no oh-my-posh config found. Set $Env:POSH_THEME or place *.omp.* in $XDG_CONFIG_HOME/oh-my-posh/.'
     }
 
     # 3. Initialize prompt engine
@@ -87,4 +108,37 @@ function Initialize-DFRolePrompt {
             }
     }
     Set-Alias -Name fpot -Value Select-PoshTheme -Scope Global -Force
+
+    # --- Theme switching (Set-DFToolTheme oh-my-posh <flavor>) ---
+    $themeFile = ${function:Resolve-DFOhMyPoshThemeFile}
+    $bundled = $_ompBundled
+    Set-Item -Path 'function:global:Invoke-DFApplyOhMyPoshTheme' -Value ({
+        <#
+        .SYNOPSIS
+            Switches the oh-my-posh prompt to a theme for this session.
+        .DESCRIPTION
+            Re-initializes oh-my-posh with <Name>.omp.json from POSH_THEMES_PATH,
+            else DotForge's bundled catppuccin themes. It is an explicit choice, so
+            it replaces your own config for the rest of the session. Like fpot,
+            re-initializing replaces the prompt function, so zoxide's directory
+            tracking stops until the next session (a known limitation).
+
+            Defined by DotForge's oh-my-posh companion when oh-my-posh is your
+            prompt; Set-DFToolTheme oh-my-posh <flavor> calls it.
+        .PARAMETER Name
+            The oh-my-posh theme name, e.g. catppuccin_latte.
+        .EXAMPLE
+            Set-DFToolTheme oh-my-posh catppuccin-latte
+
+            Switches the prompt to catppuccin latte.
+        .OUTPUTS
+            None.
+        .LINK
+            https://github.com/simsrw73/DotForge/blob/main/docs/guide/tools.md
+        #>
+        param([Parameter(Mandatory)][string]$Name)
+        $file = & $themeFile -Native $Name -Bundled $bundled
+        if (-not $file) { Write-Warning "DotForge: no oh-my-posh theme file for '$Name'"; return }
+        oh-my-posh init pwsh --config $file | Invoke-Expression
+    }.GetNewClosure())
 }

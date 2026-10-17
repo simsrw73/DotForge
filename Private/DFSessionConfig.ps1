@@ -41,6 +41,7 @@ $script:DFConfigKeys = [ordered]@{
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     StarshipTheme      = 'starship palette (a catppuccin flavor; applied to a copy of your starship.toml)'
+    OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'

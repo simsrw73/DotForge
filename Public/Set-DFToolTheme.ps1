@@ -52,6 +52,11 @@ function Set-DFToolTheme {
     # A companion that applies its theme in code names a function that takes the theme's value
     # (the native name, checked against valid, or the fallback).
     if ($tool.theme.apply) {
+        # Defined by the companion only when it applies the theme (a prompt engine, only when it won).
+        if (-not (Get-Command -Name $tool.theme.apply -ErrorAction Ignore)) {
+            Write-Error "DotForge: $Name's theme isn't applied in this session ($($tool.theme.apply) isn't defined)."
+            return
+        }
         $resolved = Resolve-DFToolTheme -Tool $tool -Name $Theme
         Set-DFSessionTheme -Name $Name -Theme $resolved
         if ($resolved.Value) { & $tool.theme.apply -Name $resolved.Value }
