@@ -47,8 +47,10 @@ Describe 'Set-DFRoleKeyHandler' {
         Set-DFRoleKeyHandler -Role history-search -Chord 'Ctrl+r' -Tool fzf -Bind $script:BindIt
         $script:Bound | Should -Be 1
     }
-    It 'binds nothing, without error, when PSReadLine isn''t available' {
-        Mock Get-Command { $null } -ParameterFilter { $Name -eq 'Set-PSReadLineKeyHandler' }
+    It 'binds nothing, without error, when PSReadLine isn''t loaded (a redirected host)' {
+        # pwsh 7 always ships PSReadLine, so "available" isn't the test: an interactive console has it loaded.
+        Mock Get-Module { $null } -ParameterFilter { $Name -eq 'PSReadLine' }
+        Mock Get-PSReadLineKeyHandler { }
         { Set-DFRoleKeyHandler -Role history-search -Chord 'Ctrl+r' -Tool fzf -Bind $script:BindIt } | Should -Not -Throw
         $script:Bound | Should -Be 0
     }
@@ -121,6 +123,16 @@ Describe 'shared fuzzy key handler' {
         Invoke-DFFuzzyKey -Engine fzf -Key Path
         Should -Invoke Invoke-DFFuzzyEngine -Times 1 -ParameterFilter { ($Arguments -join ' ') -eq '--multi' -and -not $PSBoundParameters.ContainsKey('InputObject') }
         Should -Invoke Update-DFReadLineBuffer -Times 1 -ParameterFilter { $Insert -eq "src/a.ps1 'my dir/b.ps1'" }
+    }
+    It 'reads the engine''s output as UTF-8, then restores the console encoding' {
+        function global:Invoke-DFTestEngine { [Console]::OutputEncoding.WebName }
+        $before = [Console]::OutputEncoding
+        try {
+            Invoke-DFFuzzyEngine -Engine 'Invoke-DFTestEngine' | Should -Be 'utf-8'
+            [Console]::OutputEncoding.WebName | Should -Be $before.WebName
+        } finally {
+            Remove-DFTestGlobal -Function 'Invoke-DFTestEngine'
+        }
     }
     It 'binds Ctrl+r for History and Ctrl+t for Path' {
         Mock Get-PSReadLineKeyHandler { }

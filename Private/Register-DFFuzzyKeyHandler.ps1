@@ -140,7 +140,15 @@ function Invoke-DFFuzzyEngine {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject)
-    if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
+    # PowerShell sends the items as UTF-8 ($OutputEncoding) but decodes the picks with the console's
+    # code page (437 by default), which garbles any non-ASCII pick: read them as UTF-8 too.
+    $consoleEncoding = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+        if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
+    } finally {
+        [Console]::OutputEncoding = $consoleEncoding
+    }
 }
 
 function Get-DFReadLineBuffer {

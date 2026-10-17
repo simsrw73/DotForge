@@ -5,7 +5,10 @@
 # plus fd for file listing and fuzzy scoop aliases. PSFzf declares
 # "after": ["psreadline"], so psreadline.ps1's settings are applied first.
 # Reads nothing from $DFConfig; writes no files.
-Import-Module PSFzf -ErrorAction SilentlyContinue
+# Without its own Ctrl+T/Ctrl+R: importing PSFzf binds them, and the history-search and
+# path-insert hooks below bind them only when PSFzf wins (the chords are positional
+# module parameters; '' skips one). Alt+C and Alt+A keep their defaults.
+Import-Module PSFzf -ArgumentList '', '', 'Alt+c', 'Alt+a' -ErrorAction SilentlyContinue
 
 if (Get-Module -Name PSFzf) {
     Set-PsFzfOption -EnableFd

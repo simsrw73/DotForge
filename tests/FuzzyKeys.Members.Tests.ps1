@@ -13,6 +13,9 @@ Describe 'PSFzf binds only the keys it won' {
         Mock Set-DFRoleKeyHandler { & $Bind }
         . (Join-Path $script:Tools 'PSFzf.ps1')
     }
+    It 'imports PSFzf without its own Ctrl+t and Ctrl+r bindings, so they aren''t mistaken for yours' {
+        Should -Invoke Import-Module -Times 1 -ParameterFilter { $Name -eq 'PSFzf' -and $ArgumentList[0] -eq '' -and $ArgumentList[1] -eq '' }
+    }
     It 'binds no chord in its companion body' {
         Should -Invoke Set-PsFzfOption -Times 0 -ParameterFilter { $Rest -contains '-PSReadlineChordReverseHistory' -or $Rest -contains '-PSReadlineChordProvider' }
     }

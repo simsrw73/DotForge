@@ -13,7 +13,8 @@ function Set-DFRoleKeyHandler {
         their reserved code). When the chord already runs a custom handler that
         DotForge didn't bind this session, it is kept and the tool's status says
         so, unless Defaults names this tool for the role: then it is replaced
-        with a warning. Without PSReadLine (a redirected host) nothing is bound.
+        with a warning. When PSReadLine isn't loaded (a redirected host, a
+        VS Code task) nothing is bound, and PSReadLine isn't loaded for it.
     .PARAMETER Role
         The role name.
     .PARAMETER Chord
@@ -32,7 +33,8 @@ function Set-DFRoleKeyHandler {
         [Parameter(Mandatory)][string]$Tool,
         [Parameter(Mandatory)][scriptblock]$Bind
     )
-    if (-not (Get-Command -Name Set-PSReadLineKeyHandler -ErrorAction Ignore)) { return }
+    # pwsh 7 always ships PSReadLine; an interactive console has already loaded it, a redirected host hasn't.
+    if (-not (Get-Module -Name PSReadLine)) { return }
     $existing = Get-PSReadLineKeyHandler -Chord $Chord -ErrorAction Ignore | Select-Object -First 1
     if ($existing -and -not $script:DFBoundKeys.Contains($Chord) -and (Test-DFCustomKeyHandler -Handler $existing)) {
         $winner = if ($script:DFSessionRoleWinners) { $script:DFSessionRoleWinners[$Role] }

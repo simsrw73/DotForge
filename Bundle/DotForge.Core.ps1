@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: bd9a61dddf58c688d49bb72369eeabf4a4908ecfc58e7caf942027b88bf7e381
+# sources-sha256: cb0490a1b00f215582768989fa716c20d311c6bb69f43b6301ddfd910eebb60f
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -6777,7 +6777,15 @@ function Invoke-DFFuzzyEngine {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Engine, [string[]]$Arguments = @(), [string[]]$InputObject)
-    if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
+    # PowerShell sends the items as UTF-8 ($OutputEncoding) but decodes the picks with the console's
+    # code page (437 by default), which garbles any non-ASCII pick: read them as UTF-8 too.
+    $consoleEncoding = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+        if ($PSBoundParameters.ContainsKey('InputObject')) { $InputObject | & $Engine @Arguments } else { & $Engine @Arguments }
+    } finally {
+        [Console]::OutputEncoding = $consoleEncoding
+    }
 }
 
 function Get-DFReadLineBuffer {
@@ -7754,7 +7762,8 @@ function Set-DFRoleKeyHandler {
         their reserved code). When the chord already runs a custom handler that
         DotForge didn't bind this session, it is kept and the tool's status says
         so, unless Defaults names this tool for the role: then it is replaced
-        with a warning. Without PSReadLine (a redirected host) nothing is bound.
+        with a warning. When PSReadLine isn't loaded (a redirected host, a
+        VS Code task) nothing is bound, and PSReadLine isn't loaded for it.
     .PARAMETER Role
         The role name.
     .PARAMETER Chord
@@ -7773,7 +7782,8 @@ function Set-DFRoleKeyHandler {
         [Parameter(Mandatory)][string]$Tool,
         [Parameter(Mandatory)][scriptblock]$Bind
     )
-    if (-not (Get-Command -Name Set-PSReadLineKeyHandler -ErrorAction Ignore)) { return }
+    # pwsh 7 always ships PSReadLine; an interactive console has already loaded it, a redirected host hasn't.
+    if (-not (Get-Module -Name PSReadLine)) { return }
     $existing = Get-PSReadLineKeyHandler -Chord $Chord -ErrorAction Ignore | Select-Object -First 1
     if ($existing -and -not $script:DFBoundKeys.Contains($Chord) -and (Test-DFCustomKeyHandler -Handler $existing)) {
         $winner = if ($script:DFSessionRoleWinners) { $script:DFSessionRoleWinners[$Role] }
