@@ -119,9 +119,25 @@ Describe 'Invoke-DFPagerExe' {
         $Global:DFTestPagerInput | Should -Contain 'spaced'
     }
 
-    It 'emits a warning when pager string contains a quoted argument' {
-        # Pager arg begins with " (not -) so it is passed as a positional string to dftest_pager
-        Invoke-DFPagerExe -Lines @('line') -Pager 'dftest_pager "--theme=Dark"' -WarningVariable w
+    It 'emits a warning when pager string contains a single-quoted argument' {
+        # Double quotes are understood (a path with a space); single quotes are not.
+        Invoke-DFPagerExe -Lines @('line') -Pager "dftest_pager '--theme=Dark'" -WarningVariable w
         $w | Should -Not -BeNullOrEmpty
+    }
+}
+
+Describe 'Invoke-DFPagerExe argument parsing' {
+    BeforeEach { function global:dfpagerstub { $global:DFPagerStubArgs = @($args) } }
+    AfterEach { Remove-DFTestGlobal -Function 'dfpagerstub'; Remove-Variable DFPagerStubArgs -Scope Global -ErrorAction Ignore }
+
+    It 'keeps a double-quoted argument with a space as one argument' {
+        # DotForge writes PAGER this way when a config path holds a space (ov --config).
+        Invoke-DFPagerExe -Lines @('x') -Pager 'dfpagerstub -F --config "C:/Users/John Smith/c.yaml"' -WarningVariable w 3>$null
+        $global:DFPagerStubArgs | Should -Be @('-F', '--config', 'C:/Users/John Smith/c.yaml')
+        "$w" | Should -BeNullOrEmpty
+    }
+    It 'still splits plain arguments on whitespace' {
+        Invoke-DFPagerExe -Lines @('x') -Pager 'dfpagerstub -F -R'
+        $global:DFPagerStubArgs | Should -Be @('-F', '-R')
     }
 }

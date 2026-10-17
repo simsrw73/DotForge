@@ -351,7 +351,7 @@ Set these in your profile, before or after importing DotForge:
 | `NO_COLOR` | `hm`, `clh`, `env`: any value turns colors off | `$Env:NO_COLOR = '1'` |
 | `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | everything; set them yourself to move the folders | `$Env:XDG_CONFIG_HOME = 'D:\dotfiles\config'` |
 
-`EDITOR` must be a single command or path; arguments such as `code -w` aren't supported. `PAGER` takes arguments, but not quoted ones: use `bat --paging=always`, not `bat --paging "always"`.
+`EDITOR` must be a single command or path; arguments such as `code -w` aren't supported. `PAGER` takes arguments; one holding a space goes in double quotes (`ov --config "C:\My Themes\ov.yaml"`). Single quotes aren't understood.
 
 ## Troubleshooting
 

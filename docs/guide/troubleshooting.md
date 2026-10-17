@@ -94,7 +94,7 @@ DotForge: 'lazygit.exe' not available - skipping lazygit
 | `cat`, `ls`, `touch`, `env` or `paste` runs a different program than `Get-Command` says | Coreutils for Windows rewrites the name first | See [Coreutils conflicts](coreutils-conflicts.md). |
 | `coreutils shadows <n> DotForge command(s)` | same | Same page. |
 | `$Env:EDITOR is not set` | `ep` or `frg` needs an editor | `$Env:EDITOR = 'code'`. |
-| `Quoted arguments in $Env:Pager are not supported` | quotes in the pager command | Use `--key=value`: `bat --paging=always`. |
+| `Single-quoted arguments in $Env:Pager are not supported` | single quotes in the pager command | Use double quotes, or `--key=value`: `bat --paging=always`. |
 | `Show-DFCliHelp: could not determine a help flag for '<cmd>'` | none of `--help`, `-help`, `-?`, `help`, `-h` produced help | `clh <cmd> -Flag <flag>`. |
 | `'<dir>' is not on PATH — shims won't be invocable until it is added` | the shims folder isn't on `PATH` | `Add-DFToPath "$HOME\.local\bin"` in your profile. |
 | `Shim '<path>' already exists. Use -Force to overwrite.` | a shim with that name exists | Add `-Force`, or pick another `-Name`. |

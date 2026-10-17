@@ -253,7 +253,7 @@ Preview commands (`-Preview 'type {}'`) run in `cmd.exe`, so use commands that w
 | `'fzf' is not on PATH` | fzf isn't installed | `Install-DFTool -Name fzf`, or set `$Env:Picker`. |
 | A picker opens with an empty list | the list scriptblock uses local variables without `.GetNewClosure()` | Add `.GetNewClosure()` to the scriptblock. |
 | `ep` warns `$Env:EDITOR is not set` | no editor configured | `$Env:EDITOR = 'code'` in your profile. |
-| `Quoted arguments in $Env:Pager are not supported` | the pager command contains quotes | Use `--key=value` form: `bat --paging=always`. |
+| `Single-quoted arguments in $Env:Pager are not supported` | the pager command contains single quotes | Use double quotes, or `--key=value` form: `bat --paging=always`. |
 | `touch`, `env` or `paste` runs a different program | Coreutils for Windows intercepts the name | See [Coreutils conflicts](coreutils-conflicts.md). |
 
 More on the [troubleshooting page](troubleshooting.md).

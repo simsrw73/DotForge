@@ -28,9 +28,13 @@ function Invoke-DFPagerExe {
         $program = $parts[0]
         $rest    = if ($parts.Count -gt 1) { $parts[1] } else { '' }
     }
-    if ($rest -match '["\x27]') {
-        Write-Warning "DotForge: Quoted arguments in `$Env:Pager are not supported. Use --key=value form (e.g. bat --theme=Dracula)."
+    # A double-quoted argument stays whole (DotForge quotes a path with a space, such as
+    # ov's --config); single quotes aren't understood.
+    if ($rest -match "\x27") {
+        Write-Warning "DotForge: Single-quoted arguments in `$Env:Pager are not supported. Use double quotes or --key=value form (e.g. bat --theme=Dracula)."
     }
-    [string[]] $pagerArgs = if ($rest) { $rest -split '\s+' } else { @() }
+    [string[]] $pagerArgs = @([regex]::Matches($rest, '"([^"]*)"|(\S+)') | ForEach-Object {
+        if ($_.Groups[1].Success) { $_.Groups[1].Value } else { $_.Groups[2].Value }
+    })
     $Lines | & $program @pagerArgs
 }
