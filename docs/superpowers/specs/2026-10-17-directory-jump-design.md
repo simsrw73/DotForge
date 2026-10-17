@@ -198,6 +198,28 @@ AppData, so each probe lists those folders before and after, and removes only wh
 4. Whether PowerShell streams pipeline output to fzf's stdin line by line, or the handler needs its
    own writer for the first lines to arrive early.
 
+## Probe results (2026-10-17, broot 1.61.0, fzf, pwsh 7)
+
+1. **Folders.**
+   - broot's default config folder on Windows is `%APPDATA%\dystroy\broot\config`, which goes in
+     `xdg.native`.
+   - The install state is a file, `<config>\launcher\installed-v5`. It follows `BROOT_CONFIG_DIR`,
+     so nothing is written outside the XDG folder.
+   - broot writes `conf.hjson`, `verbs.hjson` and `skins\` into an empty config folder on its first
+     run.
+2. **outcmd.**
+   - The file must exist before broot runs (`New-TemporaryFile` does that); a missing one fails
+     with "The system cannot find the file specified".
+   - A cd is one line, `cd '<path>'` plus a newline, quoted the POSIX way: a `'` inside the path is
+     written `'"'"'` (`cd 'C:\x\it'"'"'s'`). Spaces and `[1]` stay as they are inside the quotes.
+   - PowerShell can't parse the `'"'"'` form, so broot's stock `br` (`Invoke-Expression`) breaks on
+     such folders. DotForge's reader unquotes it as a POSIX shell would.
+3. **Skin.** **Live.** With `--conf "<conf>;<second>"`, the second file's `skin` wins over the skin
+   the first one imports. The folder color changed from the skin's to `rgb(255,0,0)`. `br` passes
+   the theme's skin file second.
+4. **Streaming.** A PowerShell pipeline streams to a native process's stdin line by line: the first
+   line arrived 3 ms after the start, while the generator still slept. No extra writer is needed.
+
 ## Out of scope
 
 - File managers (yazi, superfile, lf, mc, ranger, vifm): next batch. They join `directory-jump` the
