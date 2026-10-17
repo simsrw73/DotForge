@@ -63,7 +63,7 @@ aliases, variables and hook. **Category** roles only group tools that do the sam
 | history-search (Ctrl+R) | single | PSFzf, television, fzf, skim | atuin, mcfly | T-67 |
 | path-insert (Ctrl+T) | single | PSFzf, television, fzf, skim | | done 2026-10-17 |
 | directory-jump (Alt+C) | single | fzf, skim, broot | yazi, superfile, lf (file-manager batch) | done 2026-10-17 |
-| listing | single | eza, lsd | | |
+| listing | single | eza, lsd | | done 2026-10-16 (T-34, role behaviors) |
 | package-manager | single | scoop, winget, choco | | |
 | project-env | single | direnv, mise, ps-dotenv | more env tools | T-36 |
 | navigation | single | zoxide | z? | |
