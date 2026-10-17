@@ -51,4 +51,5 @@ function Invoke-DFToolSetup {
     if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
     Clear-DFToolSetupState -Name $Name
     Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
+    Write-DFSetupNoteNotice
 }

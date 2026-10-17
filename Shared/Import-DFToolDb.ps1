@@ -390,7 +390,10 @@ function ConvertTo-DFSetupBlock {
 
     if (-not $RawSetup) { return $null }
 
-    [pscustomobject]@{ seed = Get-DFToolRecordProperty $RawSetup 'seed' $null }
+    [pscustomobject]@{
+        seed  = Get-DFToolRecordProperty $RawSetup 'seed' $null
+        notes = @(Get-DFToolRecordProperty $RawSetup 'notes' @())
+    }
 }
 
 function ConvertTo-DFInstallsBlock {

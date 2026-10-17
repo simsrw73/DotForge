@@ -10,7 +10,9 @@ function Invoke-DFToolSeed {
         only when its destination doesn't exist, so a user's edits are never
         overwritten. This is part of the one-time setup step
         (Invoke-DFToolCompanion), so a file the user deletes on purpose isn't
-        recreated on the next load either.
+        recreated on the next load either. A source may contain {theme}: the
+        tool's theme value this session (with theme.files, the theme's own file
+        or folder, an absolute path).
     .PARAMETER Tool
         The tool record. A record without setup.seed seeds nothing.
     .PARAMETER ToolsPath
@@ -31,9 +33,16 @@ function Invoke-DFToolSeed {
     $ToolsPath = Get-DFToolFolder -Tool $Tool -Default $ToolsPath
     foreach ($s in $seed.PSObject.Properties) {
         $dest = ConvertTo-DFPath (Expand-DFXdgPath $s.Name)
-        $src = Join-Path $ToolsPath $s.Value
+        $source = [string]$s.Value
+        if ($source.Contains('{theme}')) {
+            # With theme.files the value is the theme's own file or folder (an absolute path).
+            $theme = if ($Tool.theme) { (Get-DFToolTheme -Tool $Tool).Value }
+            if (-not $theme) { throw "seed source '$source' needs a theme, and $($Tool.name) has none this session" }
+            $source = $source.Replace('{theme}', [string]$theme)
+        }
+        $src = if ([System.IO.Path]::IsPathRooted($source)) { $source } else { Join-Path $ToolsPath $source }
         if (-not (Test-Path -LiteralPath $src -PathType Leaf)) {
-            throw "seed source '$($s.Value)' not found under $ToolsPath"
+            throw "seed source '$source' not found under $ToolsPath"
         }
         $created = -not (Test-Path -LiteralPath $dest)
         if ($created) {

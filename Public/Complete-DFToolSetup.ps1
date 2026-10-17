@@ -15,7 +15,9 @@ function Complete-DFToolSetup {
         Register-DFTool checks this state before dot-sourcing a tool's
         Tools/<name>.setup.ps1 again, so once an entry exists for a tool, its
         setup script is skipped on every future Register-DFTool call --
-        forever, until the state file is deleted or the entry is removed. See
+        forever, until the state file is deleted or the entry is removed.
+        Notes added with Add-DFToolSetupNote (or declared in setup.notes) are
+        recorded with it and printed once at the end of the load. See
         docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
     .PARAMETER Name
         The tool name this setup record belongs to (matches the "name" field
@@ -51,9 +53,11 @@ function Complete-DFToolSetup {
     $entry = [PSCustomObject]@{
         ranAt   = (Get-Date).ToUniversalTime().ToString('o')
         actions = @($Actions)
+        notes   = [string[]]@(Get-DFPendingSetupNote -Name $Name)
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
     $stateFile = Get-DFToolSetupStatePath
     Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
+    Publish-DFSetupNote -Name $Name
 }

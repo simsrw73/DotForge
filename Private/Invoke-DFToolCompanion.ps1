@@ -80,10 +80,13 @@ function Invoke-DFToolCompanion {
     # own completion. With no script, the seeds are recorded here.
     $__dfCall.HasSetupScript = Test-Path $__dfCall.Setup -PathType Leaf
     $__dfCall.HasSeed = [bool]$__dfCall.Tool.PSObject.Properties['setup']?.Value?.seed
-    if (($__dfCall.HasSetupScript -or $__dfCall.HasSeed) -and
+    $__dfCall.HasNotes = [bool]@($__dfCall.Tool.PSObject.Properties['setup']?.Value?.notes | Where-Object { $_ }).Count
+    if (($__dfCall.HasSetupScript -or $__dfCall.HasSeed -or $__dfCall.HasNotes) -and
         $__dfCall.Name -notin $__dfCall.SkipSetup -and
         -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
         try {
+            # Before the seeds: a note's ifFile can then tell an existing file from a seeded one.
+            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool
             $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
             if ($__dfCall.HasSetupScript) {
                 $DFCurrentTool = $__dfCall.Tool
@@ -92,6 +95,7 @@ function Invoke-DFToolCompanion {
                 Complete-DFToolSetup -Name $__dfCall.Name -Actions $__dfCall.Seeded
             }
         } catch {
+            Clear-DFPendingSetupNote -Name $__dfCall.Name
             Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore

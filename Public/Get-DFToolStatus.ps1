@@ -54,6 +54,7 @@ function Get-DFToolStatus {
         return
     }
     Add-DFInstallHint
+    Add-DFSetupNoteDetail
     foreach ($s in $script:DFSessionStatus.Values) {
         if ($Name -and $s.Name -notin $Name) { continue }
         if ($Missing -and $s.State -ne 'Missing') { continue }

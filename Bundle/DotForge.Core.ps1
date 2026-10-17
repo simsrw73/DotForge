@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 827174c9df84396748f910836bcba5fa559db96f8bc56467f3c5903b353580d8
+# sources-sha256: 68955d6c9580a7dc14a8dfbde41dcdd1ae450577fa59695e468eda4511fe1cf9
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1282,7 +1282,10 @@ function ConvertTo-DFSetupBlock {
 
     if (-not $RawSetup) { return $null }
 
-    [pscustomobject]@{ seed = Get-DFToolRecordProperty $RawSetup 'seed' $null }
+    [pscustomobject]@{
+        seed  = Get-DFToolRecordProperty $RawSetup 'seed' $null
+        notes = @(Get-DFToolRecordProperty $RawSetup 'notes' @())
+    }
 }
 
 function ConvertTo-DFInstallsBlock {
@@ -1997,7 +2000,7 @@ function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
 function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in setup and setup.seed.
+        Schema errors in setup, setup.seed and setup.notes.
     #>
     $setup = $Tool.PSObject.Properties['setup']?.Value
     if ($null -ne $setup) {
@@ -2006,6 +2009,15 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
             'setup must be an object'
         } elseif ($null -ne $seed -and ($seed -isnot [pscustomobject] -or @($seed.PSObject.Properties | Where-Object { $_.Value -isnot [string] -or -not $_.Value }).Count)) {
             'setup.seed must map destination paths to files under Tools/'
+        }
+        $notes = if ($setup -is [pscustomobject]) { $setup.PSObject.Properties['notes']?.Value }
+        if ($null -ne $notes) {
+            $bad = $notes -isnot [array] -or @($notes | Where-Object {
+                $note = $_
+                $note -isnot [pscustomobject] -or -not ($note.PSObject.Properties['text']?.Value -is [string]) -or -not $note.text -or
+                @('ifFile', 'unlessFile' | Where-Object { $null -ne $note.PSObject.Properties[$_]?.Value -and $note.$_ -isnot [string] }).Count
+            }).Count
+            if ($bad) { 'setup.notes must be an array of { text, ifFile?, unlessFile? } objects with string values' }
         }
     }
 }
@@ -3131,6 +3143,145 @@ function Assert-DFSessionConfigured {
     $script:DFLegacyConfigWarned = $true
     Write-Warning ("DotForge: a global `$DFConfig was found but is no longer read, so none of its settings apply " +
         "(including SkipSetup, DotenvSafeMode and DotenvApprovedDirs). Pass it explicitly: Start-DFSession -Config `$DFConfig")
+}
+
+# ---- Private/DFSetupNote.ps1
+#Requires -Version 7.2
+
+# Setup notes: steps only the user can take. They are collected while a tool's
+# one-time setup runs, recorded with its setup record by Complete-DFToolSetup,
+# printed once at the end of the load and kept in Get-DFToolStatus.
+# Design: docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md.
+$script:DFPendingSetupNotes = @{}
+$script:DFNewSetupNotes = [System.Collections.Generic.List[object]]::new()
+
+function Add-DFToolSetupNote {
+    <#
+    .SYNOPSIS
+        Adds a note for the user to a tool's running one-time setup.
+    .DESCRIPTION
+        A Tools/<name>.setup.ps1 calls it before Complete-DFToolSetup, which
+        records the notes with the setup; they are printed once at the end of
+        the load and stay in Get-DFToolStatus. A repeated note is kept once.
+    .PARAMETER Name
+        The tool name.
+    .PARAMETER Text
+        What the user should do.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Text)
+    if (-not $script:DFPendingSetupNotes.ContainsKey($Name)) { $script:DFPendingSetupNotes[$Name] = [System.Collections.Generic.List[string]]::new() }
+    if (-not $script:DFPendingSetupNotes[$Name].Contains($Text)) { $script:DFPendingSetupNotes[$Name].Add($Text) }
+}
+
+function Add-DFDeclaredSetupNote {
+    <#
+    .SYNOPSIS
+        Adds a tool's declared setup.notes whose file conditions hold now, before its seeds are copied.
+    .DESCRIPTION
+        A note's ifFile/unlessFile are read like a role flag group's
+        (Resolve-DFRoleFlagGroup: {theme}, {settings.<name>}, ${XDG_*}), so
+        "ifFile: the config file" means the user already had one.
+    .PARAMETER Tool
+        A normalized tool record.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    $setup = $Tool.setup
+    if (-not $setup) { return }
+    foreach ($note in @($setup.notes)) {
+        if (-not $note) { continue }
+        $group = [pscustomobject]@{
+            ifFile     = $note.PSObject.Properties['ifFile']?.Value
+            unlessFile = $note.PSObject.Properties['unlessFile']?.Value
+            args       = @([string]$note.text)
+        }
+        foreach ($text in @(Resolve-DFRoleFlagGroup -Group $group -Tool $Tool)) { Add-DFToolSetupNote -Name $Tool.name -Text $text }
+    }
+}
+
+function Get-DFPendingSetupNote {
+    <#
+    .SYNOPSIS
+        Returns the notes collected so far by a tool's running setup.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Name)
+    if ($script:DFPendingSetupNotes.ContainsKey($Name)) { [string[]]@($script:DFPendingSetupNotes[$Name]) }
+}
+
+function Clear-DFPendingSetupNote {
+    <#
+    .SYNOPSIS
+        Forgets a tool's collected notes (its setup failed, or they were recorded).
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $script:DFPendingSetupNotes.Remove($Name)
+}
+
+function Publish-DFSetupNote {
+    <#
+    .SYNOPSIS
+        Moves a tool's recorded notes to this session's list to show at the end of the load.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    foreach ($text in @(Get-DFPendingSetupNote -Name $Name)) { $script:DFNewSetupNotes.Add([pscustomobject]@{ Tool = $Name; Text = $text }) }
+    Clear-DFPendingSetupNote -Name $Name
+}
+
+function Write-DFSetupNoteNotice {
+    <#
+    .SYNOPSIS
+        Prints, once, the setup notes recorded since the last notice.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    foreach ($note in $script:DFNewSetupNotes) { Write-Host "DotForge: $($note.Tool): $($note.Text)" -ForegroundColor Cyan }
+    $script:DFNewSetupNotes.Clear()
+}
+
+function Add-DFSetupNoteDetail {
+    <#
+    .SYNOPSIS
+        Adds each tool's recorded setup notes to its status detail, once, when the status is read.
+    .DESCRIPTION
+        Reads the setup state only when Get-DFToolStatus runs, never at startup.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    if (-not $script:DFSessionStatus) { return }
+    $todo = @($script:DFSessionStatus.Values | Where-Object { -not $_.PSObject.Properties['SetupNoted'] })
+    if (-not $todo) { return }
+    $state = Get-DFToolSetupState
+    foreach ($status in $todo) {
+        $status | Add-Member -NotePropertyName SetupNoted -NotePropertyValue $true -Force
+        $entry = $state.PSObject.Properties[$status.Name]?.Value
+        $notes = if ($entry) { $entry.PSObject.Properties['notes']?.Value }
+        foreach ($text in @($notes)) { if ($text) { Add-DFToolStatusDetail -Status $status -Text "setup note: $text" } }
+    }
 }
 
 # ---- Private/DFToolNote.ps1
@@ -5475,7 +5626,7 @@ function Set-DFXdgEnvironment {
 function Write-DFSessionNotice {
     <#
     .SYNOPSIS
-        Warns, at the end of a load, about requested tools that are missing or failed.
+        Warns, at the end of a load, about requested tools that are missing or failed, and prints new setup notes.
     .DESCRIPTION
         Silent when nothing is missing. Up to five missing tools are named,
         each with the role it was preferred for and its stand-in when one is
@@ -5486,6 +5637,7 @@ function Write-DFSessionNotice {
     #>
     [CmdletBinding()]
     param()
+    Write-DFSetupNoteNotice
     if (-not $script:DFSessionStatus) { return }
     $all = @($script:DFSessionStatus.Values)
     $missing = @($all | Where-Object State -eq 'Missing')
@@ -5883,10 +6035,13 @@ function Invoke-DFToolCompanion {
     # own completion. With no script, the seeds are recorded here.
     $__dfCall.HasSetupScript = Test-Path $__dfCall.Setup -PathType Leaf
     $__dfCall.HasSeed = [bool]$__dfCall.Tool.PSObject.Properties['setup']?.Value?.seed
-    if (($__dfCall.HasSetupScript -or $__dfCall.HasSeed) -and
+    $__dfCall.HasNotes = [bool]@($__dfCall.Tool.PSObject.Properties['setup']?.Value?.notes | Where-Object { $_ }).Count
+    if (($__dfCall.HasSetupScript -or $__dfCall.HasSeed -or $__dfCall.HasNotes) -and
         $__dfCall.Name -notin $__dfCall.SkipSetup -and
         -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
         try {
+            # Before the seeds: a note's ifFile can then tell an existing file from a seeded one.
+            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool
             $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
             if ($__dfCall.HasSetupScript) {
                 $DFCurrentTool = $__dfCall.Tool
@@ -5895,6 +6050,7 @@ function Invoke-DFToolCompanion {
                 Complete-DFToolSetup -Name $__dfCall.Name -Actions $__dfCall.Seeded
             }
         } catch {
+            Clear-DFPendingSetupNote -Name $__dfCall.Name
             Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
@@ -5941,7 +6097,9 @@ function Invoke-DFToolSeed {
         only when its destination doesn't exist, so a user's edits are never
         overwritten. This is part of the one-time setup step
         (Invoke-DFToolCompanion), so a file the user deletes on purpose isn't
-        recreated on the next load either.
+        recreated on the next load either. A source may contain {theme}: the
+        tool's theme value this session (with theme.files, the theme's own file
+        or folder, an absolute path).
     .PARAMETER Tool
         The tool record. A record without setup.seed seeds nothing.
     .PARAMETER ToolsPath
@@ -5962,9 +6120,16 @@ function Invoke-DFToolSeed {
     $ToolsPath = Get-DFToolFolder -Tool $Tool -Default $ToolsPath
     foreach ($s in $seed.PSObject.Properties) {
         $dest = ConvertTo-DFPath (Expand-DFXdgPath $s.Name)
-        $src = Join-Path $ToolsPath $s.Value
+        $source = [string]$s.Value
+        if ($source.Contains('{theme}')) {
+            # With theme.files the value is the theme's own file or folder (an absolute path).
+            $theme = if ($Tool.theme) { (Get-DFToolTheme -Tool $Tool).Value }
+            if (-not $theme) { throw "seed source '$source' needs a theme, and $($Tool.name) has none this session" }
+            $source = $source.Replace('{theme}', [string]$theme)
+        }
+        $src = if ([System.IO.Path]::IsPathRooted($source)) { $source } else { Join-Path $ToolsPath $source }
         if (-not (Test-Path -LiteralPath $src -PathType Leaf)) {
-            throw "seed source '$($s.Value)' not found under $ToolsPath"
+            throw "seed source '$source' not found under $ToolsPath"
         }
         $created = -not (Test-Path -LiteralPath $dest)
         if ($created) {
@@ -7937,7 +8102,9 @@ function Complete-DFToolSetup {
         Register-DFTool checks this state before dot-sourcing a tool's
         Tools/<name>.setup.ps1 again, so once an entry exists for a tool, its
         setup script is skipped on every future Register-DFTool call --
-        forever, until the state file is deleted or the entry is removed. See
+        forever, until the state file is deleted or the entry is removed.
+        Notes added with Add-DFToolSetupNote (or declared in setup.notes) are
+        recorded with it and printed once at the end of the load. See
         docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
     .PARAMETER Name
         The tool name this setup record belongs to (matches the "name" field
@@ -7973,11 +8140,13 @@ function Complete-DFToolSetup {
     $entry = [PSCustomObject]@{
         ranAt   = (Get-Date).ToUniversalTime().ToString('o')
         actions = @($Actions)
+        notes   = [string[]]@(Get-DFPendingSetupNote -Name $Name)
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
     $stateFile = Get-DFToolSetupStatePath
     Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
+    Publish-DFSetupNote -Name $Name
 }
 
 # ---- Public/DFAliases.ps1
@@ -8637,6 +8806,7 @@ function Get-DFToolStatus {
         return
     }
     Add-DFInstallHint
+    Add-DFSetupNoteDetail
     foreach ($s in $script:DFSessionStatus.Values) {
         if ($Name -and $s.Name -notin $Name) { continue }
         if ($Missing -and $s.State -ne 'Missing') { continue }
@@ -8970,6 +9140,7 @@ function Invoke-DFToolSetup {
     if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
     Clear-DFToolSetupState -Name $Name
     Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
+    Write-DFSetupNoteNotice
 }
 
 # ---- Public/New-DFDirectory.ps1

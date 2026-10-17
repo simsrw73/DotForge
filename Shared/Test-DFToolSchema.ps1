@@ -220,7 +220,7 @@ function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
 function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in setup and setup.seed.
+        Schema errors in setup, setup.seed and setup.notes.
     #>
     $setup = $Tool.PSObject.Properties['setup']?.Value
     if ($null -ne $setup) {
@@ -229,6 +229,15 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
             'setup must be an object'
         } elseif ($null -ne $seed -and ($seed -isnot [pscustomobject] -or @($seed.PSObject.Properties | Where-Object { $_.Value -isnot [string] -or -not $_.Value }).Count)) {
             'setup.seed must map destination paths to files under Tools/'
+        }
+        $notes = if ($setup -is [pscustomobject]) { $setup.PSObject.Properties['notes']?.Value }
+        if ($null -ne $notes) {
+            $bad = $notes -isnot [array] -or @($notes | Where-Object {
+                $note = $_
+                $note -isnot [pscustomobject] -or -not ($note.PSObject.Properties['text']?.Value -is [string]) -or -not $note.text -or
+                @('ifFile', 'unlessFile' | Where-Object { $null -ne $note.PSObject.Properties[$_]?.Value -and $note.$_ -isnot [string] }).Count
+            }).Count
+            if ($bad) { 'setup.notes must be an array of { text, ifFile?, unlessFile? } objects with string values' }
         }
     }
 }

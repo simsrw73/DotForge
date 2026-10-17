@@ -373,7 +373,7 @@ function Set-DFXdgEnvironment {
 function Write-DFSessionNotice {
     <#
     .SYNOPSIS
-        Warns, at the end of a load, about requested tools that are missing or failed.
+        Warns, at the end of a load, about requested tools that are missing or failed, and prints new setup notes.
     .DESCRIPTION
         Silent when nothing is missing. Up to five missing tools are named,
         each with the role it was preferred for and its stand-in when one is
@@ -384,6 +384,7 @@ function Write-DFSessionNotice {
     #>
     [CmdletBinding()]
     param()
+    Write-DFSetupNoteNotice
     if (-not $script:DFSessionStatus) { return }
     $all = @($script:DFSessionStatus.Values)
     $missing = @($all | Where-Object State -eq 'Missing')
