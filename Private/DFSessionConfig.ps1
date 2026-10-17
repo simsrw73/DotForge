@@ -33,6 +33,7 @@ $script:DFConfigKeys = [ordered]@{
     MdcatTheme         = 'mdcat theme'
     MdvTheme           = 'mdv theme'
     MoorTheme          = 'moor theme'
+    OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     VividTheme         = 'vivid (LS_COLORS) theme'
     PSReadLineTheme    = 'PSReadLine theme'
     PSReadLineEditMode = 'PSReadLine edit mode'

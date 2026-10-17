@@ -5,7 +5,8 @@
   "tags": ["pager", "viewer"],
   "packages": { "scoop": "ov", "winget": "noborus.ov" },
   "xdg": { "compliance": "full", "method": "default" },
-  "roles": { "pager": { "priority": 20, "flags": { "quit-if-one-screen": ["-F"], "raw-color": [], "keep-screen": ["-X"], "mouse": [], "theme": [] } } },
+  "roles": { "pager": { "priority": 20, "flags": { "quit-if-one-screen": ["-F"], "raw-color": [], "keep-screen": ["-X"], "mouse": [], "theme": [ { "ifFile": "{theme}/config.yaml", "unlessFile": "${XDG_CONFIG_HOME}/ov/config.yaml", "args": ["--config", "{file}"] } ] } } },
+  "theme": { "key": "OvTheme", "default": "catppuccin-mocha", "files": "ov" },
   "aliases": {},
   "picker": null
 }
