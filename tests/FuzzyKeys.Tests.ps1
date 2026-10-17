@@ -76,6 +76,17 @@ Describe 'shared fuzzy key handler' {
         }
         Format-DFPathInsert -Path 'src/a.ps1', 'C:\x\y.txt' | Should -Be 'src/a.ps1 C:\x\y.txt'
     }
+    It 'quotes a name that PowerShell would read as a number' {
+        foreach ($name in '1kb', '0x10', '1e3', '42', '+5', '.5', '1.5mb') {
+            $line = Format-DFPathInsert -Path $name
+            $tokens = $null; $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseInput("echo $line", [ref]$tokens, [ref]$errors)
+            $argument = $ast.EndBlock.Statements[0].PipelineElements[0].CommandElements[1]
+            $argument | Should -BeOfType ([System.Management.Automation.Language.StringConstantExpressionAst]) -Because "$name must stay a file name"
+            $argument.Value | Should -BeExactly $name
+        }
+        Format-DFPathInsert -Path 'src/a.txt', '.gitignore', 'v1.txt', 'a1' | Should -Be 'src/a.txt .gitignore v1.txt a1'
+    }
     It 'escapes every quote PowerShell accepts as a single quote' {
         foreach ($q in "'", [char]0x2018, [char]0x2019, [char]0x201A, [char]0x201B) {
             $name = "a$($q); calc $($q)b"

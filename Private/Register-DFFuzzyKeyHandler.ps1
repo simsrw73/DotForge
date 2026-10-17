@@ -109,7 +109,8 @@ function Format-DFPathInsert {
     .DESCRIPTION
         A file name can hold $( ), ;, &, a backtick and more, which PowerShell
         would run when the line is entered. Only names made of letters, digits
-        and . / \ : _ + - (not starting with -) stay bare; every other name is
+        and . / \ : _ + - (not starting with -) stay bare, unless PowerShell
+        would read them as a number (1kb, 0x10, 1e3); every other name is
         single-quoted, with every kind of single quote doubled.
     .PARAMETER Path
         The picked paths.
@@ -119,10 +120,29 @@ function Format-DFPathInsert {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string[]]$Path)
-    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else {
+    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$' -and -not (Test-DFNumericArgument $p)) { $p } else {
         # PowerShell also ends a single-quoted string at ‘ ’ ‚ ‛; its own escaper doubles them all.
         "'" + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($p) + "'"
     } }) -join ' '
+}
+
+function Test-DFNumericArgument {
+    <#
+    .SYNOPSIS
+        Tells whether PowerShell reads a bare command argument as a number (1kb, 0x10, 1e3, +5).
+    .PARAMETER Text
+        The bare argument.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Text)
+    if ($Text -notmatch '^[+.]?\d') { return $false }
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput("echo $Text", [ref]$tokens, [ref]$errors)
+    $argument = $ast.EndBlock.Statements[0].PipelineElements[0].CommandElements[1]
+    -not ($argument -is [System.Management.Automation.Language.StringConstantExpressionAst])
 }
 
 function Invoke-DFFuzzyEngine {
