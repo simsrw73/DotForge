@@ -3632,6 +3632,98 @@
         "source": null
       }
     },
+    "skim": {
+      "sha256": "93fba0d58624685af69e3f9ebf3996cc5498443808017eb6e42445c47f3881f2",
+      "record": {
+        "name": "skim",
+        "executable": "sk.exe",
+        "type": "exe",
+        "description": "Fuzzy finder in Rust that takes fzf's options",
+        "tags": [
+          "fuzzy",
+          "picker",
+          "search"
+        ],
+        "packages": {
+          "scoop": "skim",
+          "winget": "skim-rs.skim",
+          "crates": "skim"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": {
+          "SKIM_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+          "SKIM_DEFAULT_OPTIONS": "--layout=reverse\n--inline-info\n--height=40%\n--border"
+        },
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "picker": {
+            "priority": 5,
+            "optIn": false,
+            "aliases": null,
+            "env": {
+              "Picker": "sk"
+            },
+            "flags": null,
+            "legacy": false
+          },
+          "history-search": {
+            "priority": 5,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "path-insert": {
+            "priority": 5,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          },
+          "fuzzy-finder": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "SkimTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": "Invoke-DFApplySkimTheme"
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "smartmontools": {
       "sha256": "1bb9203b4824c86edb8506ee344645970bb7d7b1f53d39c65448e579b53de1da",
       "record": {

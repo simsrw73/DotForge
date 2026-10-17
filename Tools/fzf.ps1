@@ -16,6 +16,7 @@ $_bundledDir = Join-Path $PSScriptRoot 'fzf'
 # captured scriptblock keeps its module binding, so capture them here.
 $_resolveThemeFile = ${function:Resolve-DFThemeFile}
 $_setEnv = ${function:Set-DFEnv}
+$_colorOption = ${function:ConvertTo-DFColorOption}
 
 Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     <#
@@ -66,29 +67,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
         return
     }
 
-    $theme = Get-Content $path -Raw | ConvertFrom-Json
-    $colorsProp = $theme.PSObject.Properties['colors']?.Value
-    if (-not $colorsProp) { return }
-
-    # A theme file's key/value pair becomes a raw, unquoted token in
-    # FZF_DEFAULT_OPTS, which fzf tokenizes as additional CLI flags -- an
-    # unvalidated value (e.g. containing a newline) could inject an extra
-    # flag such as --bind=execute(...). Only accept fzf's own documented
-    # --color value grammar (hex, -1, 0-255, 'default', a color name, each
-    # optionally chained with :modifier); anything else is skipped with a
-    # warning, matching Tools/psreadline.ps1's identical hex-validation guard.
-    $validKey   = '^[A-Za-z][A-Za-z0-9_-]*\+?$'
-    $validValue = '^(#[0-9A-Fa-f]{3,8}|-1|[0-9]{1,3}|default|[A-Za-z]+(:(bold|underline|reverse|italic|dim|strikethrough))*)$'
-    $pairs = @($colorsProp.PSObject.Properties | ForEach-Object {
-        if ($_.Name -cmatch $validKey -and [string]$_.Value -cmatch $validValue) {
-            "$($_.Name):$($_.Value)"
-        } else {
-            Write-Warning "DotForge: invalid fzf color entry '$($_.Name)':'$($_.Value)' — skipping"
-        }
-    })
-    if ($pairs.Count -eq 0) { return }
-
-    $colorArg = '--color=' + ($pairs -join ',')
+    # ConvertTo-DFColorOption accepts only fzf's color grammar, so a theme file can't inject an option.
+    $colorArg = & $_colorOption -Path $path -Tool 'fzf'
+    if (-not $colorArg) { return }
     $existing = [string]$Env:FZF_DEFAULT_OPTS
     $value = if ($existing) { "$existing`n$colorArg" } else { $colorArg }
     $explicit = if (-not $Implicit) { "fzf theme '$Name' was applied" }

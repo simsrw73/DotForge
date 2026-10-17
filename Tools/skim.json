@@ -1,0 +1,21 @@
+{
+  "name": "skim",
+  "description": "Fuzzy finder in Rust that takes fzf's options",
+  "tags": ["fuzzy", "picker", "search"],
+  "executable": "sk.exe",
+  "roles": {
+    "picker": { "priority": 5, "env": { "Picker": "sk" } },
+    "history-search": { "priority": 5 },
+    "path-insert": { "priority": 5 },
+    "fuzzy-finder": {}
+  },
+  "packages": { "scoop": "skim", "winget": "skim-rs.skim", "crates": "skim" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "env": {
+    "SKIM_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
+    "SKIM_DEFAULT_OPTIONS": "--layout=reverse\n--inline-info\n--height=40%\n--border"
+  },
+  "theme": { "key": "SkimTheme", "default": "catppuccin-mocha", "command": "Invoke-DFApplySkimTheme" },
+  "aliases": {},
+  "picker": null
+}
