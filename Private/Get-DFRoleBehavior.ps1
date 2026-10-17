@@ -119,7 +119,8 @@ function Get-DFRolePicker {
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
         $copy = [ordered]@{}
         foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
-        $copy['list'] = (@($command) + $resolved.Args) -join ' '
+        # The list becomes PowerShell code (Set-DFPickerFunction), so each argument is a literal.
+        $copy['list'] = (@($command) + @($resolved.Args | ForEach-Object { ConvertTo-DFPowerShellLiteral $_ })) -join ' '
         [pscustomobject]$copy
     }
     if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
@@ -159,8 +160,14 @@ function Resolve-DFRoleFlagGroup {
     $file = if ($ifFile) { & $expand $ifFile }
     if ($ifFile -and -not ($file -and (Test-Path -LiteralPath $file -PathType Leaf))) { return }
     if ($unlessFile) {
+        # Fail closed: a guard path that can't be named can't be shown absent.
         $other = & $expand $unlessFile
-        if ($other -and (Test-Path -LiteralPath $other -PathType Leaf)) { return }
+        if (-not $other -or (Test-Path -LiteralPath $other -PathType Leaf)) { return }
+    }
+    # A path ends up inside a command line (PAGER, a picker's list): never let it carry shell syntax.
+    if ($file -and $file -match '[`"$%\r\n]') {
+        if ($Tool) { Add-DFToolNote -Tool $Tool.name -Note "skipped a flag group: unsafe characters in path '$file'" }
+        return
     }
     [string[]]@(foreach ($arg in @($Group.args)) { if ($file) { ([string]$arg).Replace('{file}', $file) } else { [string]$arg } })
 }
@@ -194,10 +201,25 @@ function Get-DFRoleBehaviorEnv {
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.env.Keys) {
         $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
-        $quoted = foreach ($a in $resolved.Args) { if ($a -match '\s') { "`"$a`"" } else { $a } }
+        $quoted = foreach ($a in $resolved.Args) { if ($a -match '[\s;&|<>()''^]') { "`"$a`"" } else { $a } }
         $values[$name] = (@($command) + @($quoted)) -join ' '
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
     if ($missing.Count) { Add-DFRoleMissingWordNote -Tool $Tool -Role $RoleDefinition.name -Missing $missing }
     $values
+}
+function ConvertTo-DFPowerShellLiteral {
+    <#
+    .SYNOPSIS
+        An argument as PowerShell source: bare when plainly safe, else a single-quoted literal.
+    .PARAMETER Value
+        The argument.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowEmptyString()][string]$Value)
+    if ($Value -match '^[A-Za-z0-9_./:=+,@-]+$') { return $Value }
+    "'" + $Value.Replace("'", "''") + "'"
 }

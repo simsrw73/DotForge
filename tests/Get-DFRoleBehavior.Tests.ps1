@@ -102,3 +102,35 @@ Describe 'Get-DFRoleBehaviorEnv' {
         (Get-DFRoleBehaviorEnv -RoleDefinition $script:EnvRole -Block $tool.roles.pager -Tool $tool)['PAGER'] | Should -Be 'lsx --config "C:/Program Files/x.yaml"'
     }
 }
+
+Describe 'role behaviors keep data from becoming code' {
+    BeforeEach { Clear-DFToolNote -Tool 'lsx'; Set-DFTestXdg }
+    AfterEach { Restore-DFTestXdg }
+
+    It 'quotes a picker argument that is not plainly safe as a PowerShell literal' {
+        $tool = New-Member '{ "long": [], "all": [], "color": ["--x=$(Get-Date);rm -rf"], "one-per-line": ["-1"], "literal": ["it''s"] }'
+        $list = (Get-DFRolePicker -RoleDefinition $script:Role -Block $tool.roles.listing -Tool $tool)[0].list
+        $list | Should -Be "lsx -1 '--x=`$(Get-Date);rm -rf' 'it''s'"
+        $tokens = $null; $errors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($list, [ref]$tokens, [ref]$errors)
+        $errors | Should -BeNullOrEmpty
+        @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.SubExpressionAst] }, $true)).Count | Should -Be 0
+    }
+
+    It 'drops a group whose path holds a shell-active character, with a note' {
+        $odd = Join-Path $TestDrive 'a$b'; New-Item -ItemType Directory -Force $odd | Out-Null; Set-Content (Join-Path $odd 'c.yaml') 'x'
+        $role = ConvertTo-DFRoleRecord -Name 'pager' -Role ('{ "kind": "single", "hook": "Initialize-DFRolePager",
+            "behaviors": { "words": { "theme": "t" }, "env": { "PAGER": ["theme"] } } }' | ConvertFrom-Json)
+        $tool = ConvertTo-DFToolRecord ("{ ""name"": ""lsx"", ""executable"": ""lsx.exe"", ""roles"": { ""pager"": { ""flags"": { ""theme"": [{ ""ifFile"": ""$($odd.Replace('\','/'))/c.yaml"", ""args"": [""--config"", ""{file}""] }] } } } }" | ConvertFrom-Json)
+        Mock ConvertTo-DFToolExePathToken { 'lsx' }
+        (Get-DFRoleBehaviorEnv -RoleDefinition $role -Block $tool.roles.pager -Tool $tool)['PAGER'] | Should -Be 'lsx'
+        Get-DFToolNote -Tool 'lsx' | Should -Match 'unsafe'
+    }
+
+    It 'skips a group whose unlessFile cannot be resolved' {
+        $cfg = Join-Path $TestDrive 'c.yaml'; Set-Content $cfg 'x'
+        $flags = [pscustomobject]@{ theme = @([pscustomobject]@{ ifFile = $cfg; unlessFile = '{settings.missing}/own.yaml'; args = @('--config', '{file}') }) }
+        $tool = [pscustomobject]@{ name = 'lsx'; executable = 'lsx.exe'; settings = $null; theme = $null }
+        (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -BeNullOrEmpty
+    }
+}
