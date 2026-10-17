@@ -1,0 +1,39 @@
+{
+  "name": "television",
+  "description": "Fast, hackable fuzzy finder with channels for files, git, env and more",
+  "tags": ["fuzzy", "picker", "search"],
+  "executable": "tv.exe",
+  "roles": { "history-search": { "priority": 20 }, "path-insert": { "priority": 20 }, "fuzzy-finder": {} },
+  "packages": {
+    "scoop": { "id": "television", "feed": { "name": "extras", "url": "https://github.com/ScoopInstaller/Extras" } },
+    "winget": "alexpasmantier.television",
+    "crates": "television"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": { "TELEVISION_CONFIG": "${XDG_CONFIG_HOME}/television" },
+    "native": {
+      "TELEVISION_CONFIG": [],
+      "${XDG_CONFIG_HOME}/television/config.toml": ["${LOCALAPPDATA}/television/config/config.toml"]
+    }
+  },
+  "theme": { "key": "TelevisionTheme", "default": "catppuccin-mocha", "files": "television" },
+  "setup": {
+    "seed": {
+      "${XDG_CONFIG_HOME}/television/config.toml": "{theme}/config.toml",
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-mocha.toml": "television/catppuccin-mocha/theme.toml",
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-macchiato.toml": "television/catppuccin-macchiato/theme.toml",
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-frappe.toml": "television/catppuccin-frappe/theme.toml",
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-latte.toml": "television/catppuccin-latte/theme.toml"
+    },
+    "notes": [
+      {
+        "text": "your television config.toml predates DotForge; set ui.theme = \"catppuccin-mocha\" (or catppuccin-macchiato, -frappe, -latte) in it to use the DotForge theme.",
+        "ifFile": "${XDG_CONFIG_HOME}/television/config.toml"
+      }
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

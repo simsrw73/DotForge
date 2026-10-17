@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 38a7552620e225a9c57aec0bf2d2f3a2f674b5ceaf0ff5ed1e99285a1fc6b652
+# sources-sha256: 02e6efc4f98655d068aeb018ee08a5b4c091b250c0544f282d4678e939944b9e
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2010,7 +2010,9 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
         } elseif ($null -ne $seed -and ($seed -isnot [pscustomobject] -or @($seed.PSObject.Properties | Where-Object { $_.Value -isnot [string] -or -not $_.Value }).Count)) {
             'setup.seed must map destination paths to files under Tools/'
         }
-        $notes = if ($setup -is [pscustomobject]) { $setup.PSObject.Properties['notes']?.Value }
+        # Assigned directly: an if-statement's output would unroll a one-note array.
+        $notes = $null
+        if ($setup -is [pscustomobject]) { $notes = $setup.PSObject.Properties['notes']?.Value }
         if ($null -ne $notes) {
             $bad = $notes -isnot [array] -or @($notes | Where-Object {
                 $note = $_
@@ -3089,6 +3091,7 @@ $script:DFConfigKeys = [ordered]@{
     MoorTheme          = 'moor theme'
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
+    TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'
     PSReadLineTheme    = 'PSReadLine theme'
     PSReadLineEditMode = 'PSReadLine edit mode'

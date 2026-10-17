@@ -230,7 +230,9 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
         } elseif ($null -ne $seed -and ($seed -isnot [pscustomobject] -or @($seed.PSObject.Properties | Where-Object { $_.Value -isnot [string] -or -not $_.Value }).Count)) {
             'setup.seed must map destination paths to files under Tools/'
         }
-        $notes = if ($setup -is [pscustomobject]) { $setup.PSObject.Properties['notes']?.Value }
+        # Assigned directly: an if-statement's output would unroll a one-note array.
+        $notes = $null
+        if ($setup -is [pscustomobject]) { $notes = $setup.PSObject.Properties['notes']?.Value }
         if ($null -ne $notes) {
             $bad = $notes -isnot [array] -or @($notes | Where-Object {
                 $note = $_

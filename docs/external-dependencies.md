@@ -180,6 +180,15 @@ Two categories, and the difference matters:
 | **Why** | The theme block sets `MOOR=-style <theme> -quit-if-one-screen`, and by the env precedence rule only when `MOOR` is unset, so a user's own value wins. |
 | **If it changes** | If `-style` is renamed, moor rejects the option: set `MOOR` yourself, or update the theme block. |
 
+### 18. television: `tv init power-shell` function names, `TELEVISION_CONFIG`, partial config
+
+| | |
+|---|---|
+| **What** | `tv init power-shell` (tv 0.15.9) prints tv's completer, the functions `Invoke-TvShellHistory` and `Invoke-TvSmartAutocomplete`, then two `Set-PSReadLineKeyHandler` calls binding Ctrl+R and Ctrl+T. tv honors `TELEVISION_CONFIG`, writes a full default `config.toml` on its first run when none exists, and accepts a partial `config.toml` (its defaults fill the rest). `tv update-channels` downloads its channels into `<config>\cable`. |
+| **Where** | `Tools/television.ps1`, `Tools/television.setup.ps1`, `Tools/television.json` |
+| **Why** | Only the winners of history-search and path-insert may bind those keys, so DotForge removes tv's two binding calls (`Remove-DFKeyHandlerCall`) and binds tv's functions from the role hooks. The seeded `config.toml` holds only `ui.theme`. |
+| **If it changes** | A renamed function leaves its key unbound with a status note; a script that no longer parses loads nothing, with a note. A tv that stops honoring `TELEVISION_CONFIG` falls back to `XDG_CONFIG_HOME\television`, the same folder. |
+
 ---
 
 ## Documented but load-bearing

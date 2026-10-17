@@ -115,6 +115,9 @@ Describe 'setup.notes schema' {
     It 'accepts notes with text and optional conditions' {
         Get-NoteSchemaError @([pscustomobject]@{ text = 'x' }, [pscustomobject]@{ text = 'y'; ifFile = 'a'; unlessFile = 'b' }) | Should -BeNullOrEmpty
     }
+    It 'accepts a single note (a one-element array)' {
+        Get-NoteSchemaError @([pscustomobject]@{ text = 'x' }) | Should -BeNullOrEmpty
+    }
     It 'rejects a note without text, a non-string condition, or a non-array' {
         Get-NoteSchemaError @([pscustomobject]@{ ifFile = 'a' }) | Should -Match 'setup\.notes'
         Get-NoteSchemaError @([pscustomobject]@{ text = 'x'; ifFile = 3 }) | Should -Match 'setup\.notes'
