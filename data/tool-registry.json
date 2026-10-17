@@ -3834,7 +3834,7 @@
       }
     },
     "television": {
-      "sha256": "dced6bb52bf3f2aea53e469fe5a30342eecfba0c0857fd4cfe984deb4212f03a",
+      "sha256": "0dad6099e64827b26c4680cb2e98d2400595f9795dbff8152c66665c2c6b9ae0",
       "record": {
         "name": "television",
         "executable": "tv.exe",
@@ -3875,6 +3875,30 @@
               "paths": [
                 "${LOCALAPPDATA}/television/config/config.toml"
               ],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/television/themes/catppuccin-mocha.toml": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/television/themes/catppuccin-macchiato.toml": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/television/themes/catppuccin-frappe.toml": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/television/themes/catppuccin-latte.toml": {
+              "paths": [],
               "move": true,
               "guide": null,
               "setting": null

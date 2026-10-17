@@ -15,7 +15,11 @@
     "vars": { "TELEVISION_CONFIG": "${XDG_CONFIG_HOME}/television" },
     "native": {
       "TELEVISION_CONFIG": [],
-      "${XDG_CONFIG_HOME}/television/config.toml": ["${LOCALAPPDATA}/television/config/config.toml"]
+      "${XDG_CONFIG_HOME}/television/config.toml": ["${LOCALAPPDATA}/television/config/config.toml"],
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-mocha.toml": [],
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-macchiato.toml": [],
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-frappe.toml": [],
+      "${XDG_CONFIG_HOME}/television/themes/catppuccin-latte.toml": []
     }
   },
   "theme": { "key": "TelevisionTheme", "default": "catppuccin-mocha", "files": "television" },
