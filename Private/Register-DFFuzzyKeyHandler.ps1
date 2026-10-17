@@ -110,7 +110,7 @@ function Format-DFPathInsert {
         A file name can hold $( ), ;, &, a backtick and more, which PowerShell
         would run when the line is entered. Only names made of letters, digits
         and . / \ : _ + - (not starting with -) stay bare; every other name is
-        single-quoted, with its quotes doubled.
+        single-quoted, with every kind of single quote doubled.
     .PARAMETER Path
         The picked paths.
     .OUTPUTS
@@ -119,7 +119,10 @@ function Format-DFPathInsert {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string[]]$Path)
-    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else { "'" + $p.Replace("'", "''") + "'" } }) -join ' '
+    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else {
+        # PowerShell also ends a single-quoted string at ‘ ’ ‚ ‛; its own escaper doubles them all.
+        "'" + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($p) + "'"
+    } }) -join ' '
 }
 
 function Invoke-DFFuzzyEngine {

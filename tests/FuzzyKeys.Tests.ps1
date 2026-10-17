@@ -74,6 +74,17 @@ Describe 'shared fuzzy key handler' {
         }
         Format-DFPathInsert -Path 'src/a.ps1', 'C:\x\y.txt' | Should -Be 'src/a.ps1 C:\x\y.txt'
     }
+    It 'escapes every quote PowerShell accepts as a single quote' {
+        foreach ($q in "'", [char]0x2018, [char]0x2019, [char]0x201A, [char]0x201B) {
+            $name = "a$($q); calc $($q)b"
+            $line = Format-DFPathInsert -Path $name
+            $tokens = $null; $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseInput("echo $line", [ref]$tokens, [ref]$errors)
+            $errors.Count | Should -Be 0
+            $ast.EndBlock.Statements[0].PipelineElements[0].CommandElements.Count | Should -Be 2 -Because "U+$('{0:X4}' -f [int][char]$q) must not end the quoted name"
+            $ast.EndBlock.Statements[0].PipelineElements[0].CommandElements[1].Value | Should -BeExactly $name
+        }
+    }
     It 'History: runs the engine on the history with the line as query and replaces the line' {
         $file = Join-Path $TestDrive 'h2.txt'
         Set-Content $file -Value @('git status')

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 32af4b6d0b66657f42af69047663437651d785b13ed1a9e059dc35efb1e653b7
+# sources-sha256: bd9a61dddf58c688d49bb72369eeabf4a4908ecfc58e7caf942027b88bf7e381
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -6747,7 +6747,7 @@ function Format-DFPathInsert {
         A file name can hold $( ), ;, &, a backtick and more, which PowerShell
         would run when the line is entered. Only names made of letters, digits
         and . / \ : _ + - (not starting with -) stay bare; every other name is
-        single-quoted, with its quotes doubled.
+        single-quoted, with every kind of single quote doubled.
     .PARAMETER Path
         The picked paths.
     .OUTPUTS
@@ -6756,7 +6756,10 @@ function Format-DFPathInsert {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string[]]$Path)
-    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else { "'" + $p.Replace("'", "''") + "'" } }) -join ' '
+    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else {
+        # PowerShell also ends a single-quoted string at ‘ ’ ‚ ‛; its own escaper doubles them all.
+        "'" + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($p) + "'"
+    } }) -join ' '
 }
 
 function Invoke-DFFuzzyEngine {
