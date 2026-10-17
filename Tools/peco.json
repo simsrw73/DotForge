@@ -1,0 +1,17 @@
+{
+  "name": "peco",
+  "description": "Simplistic interactive filtering tool",
+  "tags": ["fuzzy", "filter", "search"],
+  "executable": "peco.exe",
+  "roles": { "fuzzy-finder": {} },
+  "packages": { "scoop": "peco", "winget": "peco.peco" },
+  "xdg": {
+    "compliance": "full",
+    "method": "default",
+    "native": { "${XDG_CONFIG_HOME}/peco/config.json": ["${HOME}/.config/peco/config.json", "${HOME}/.peco/config.json"] }
+  },
+  "theme": { "key": "PecoTheme", "default": "catppuccin-mocha", "files": "peco" },
+  "setup": { "seed": { "${XDG_CONFIG_HOME}/peco/config.json": "{theme}" } },
+  "aliases": {},
+  "picker": null
+}

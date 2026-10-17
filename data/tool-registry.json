@@ -2644,6 +2644,83 @@
         "source": null
       }
     },
+    "peco": {
+      "sha256": "6d8c58a3c11a896896ab4e3b75f473646c4977cbec309042c871cab79373c0f6",
+      "record": {
+        "name": "peco",
+        "executable": "peco.exe",
+        "type": "exe",
+        "description": "Simplistic interactive filtering tool",
+        "tags": [
+          "fuzzy",
+          "filter",
+          "search"
+        ],
+        "packages": {
+          "scoop": "peco",
+          "winget": "peco.peco"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full",
+          "native": {
+            "${XDG_CONFIG_HOME}/peco/config.json": {
+              "paths": [
+                "${HOME}/.config/peco/config.json",
+                "${HOME}/.peco/config.json"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null
+            }
+          }
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "fuzzy-finder": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "PecoTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "peco",
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/peco/config.json": "{theme}"
+          },
+          "notes": []
+        },
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "pip": {
       "sha256": "828f7e360834755ac3371e851411a97928ab746969552c74b1dc4da0e33dc1af",
       "record": {

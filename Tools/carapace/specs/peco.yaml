@@ -1,0 +1,36 @@
+# Carapace spec for peco.
+#
+# peco has no completion generator and carapace ships no peco completer. DotForge
+# deploys this to $XDG_CONFIG_HOME/carapace/specs/ (Tools/carapace.ps1).
+#
+# Hand-authored from `peco --help` (peco 0.6.0), so it can drift from the
+# installed binary; catalogued in docs/external-dependencies.md.
+name: peco
+description: Simplistic interactive filtering tool
+flags:
+  -h, --help: Show help
+  --version: Print the version
+  --query=: Initial value for the query
+  --rcfile=: Path to the settings file
+  -b, --buffer-size=: Lines to keep in the search buffer
+  --null: Expect NUL as the separator for input and output
+  --initial-index=: Index of the initially selected line (0 based)
+  --initial-filter=: Default filter
+  --prompt=: Prompt string
+  --layout=: Layout
+  --select-1: Select the only line and exit when the input has one
+  --exit-0: Exit with status 1 when the input is empty
+  --select-all: Select all lines and exit
+  --on-cancel=: What a cancel returns
+  --selection-prefix=: Prefix for selected lines instead of color
+  --exec=: Command to run on the selection
+  --print-query: Print the query as the first output line
+  --color=: Color mode
+  --height=: Height in lines or percent
+completion:
+  flag:
+    layout: [top-down, bottom-up, top-down-query-bottom]
+    on-cancel: [success, error]
+    color: [auto, none]
+    initial-filter: [IgnoreCase, CaseSensitive, SmartCase, Regexp, Fuzzy]
+    rcfile: ["$files"]
