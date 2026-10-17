@@ -37,6 +37,9 @@ function Invoke-DFToolCompanion {
     .PARAMETER SetupOnly
         Run only the setup step and return before the companion
         (Invoke-DFToolSetup).
+    .PARAMETER SeededPath
+        Files the tool's earlier setup seeded, so a note's ifFile doesn't take
+        them for the user's own (Invoke-DFToolSetup).
     .OUTPUTS
         None
     #>
@@ -57,7 +60,10 @@ function Invoke-DFToolCompanion {
         [AllowEmptyCollection()]
         [object[]]$WonRoles = @(),
 
-        [switch]$SetupOnly
+        [switch]$SetupOnly,
+
+        [AllowEmptyCollection()]
+        [string[]]$SeededPath = @()
     )
 
     # The companion body and its hooks are dot-sourced into this scope, so they
@@ -86,16 +92,18 @@ function Invoke-DFToolCompanion {
         -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
         try {
             # Before the seeds: a note's ifFile can then tell an existing file from a seeded one.
-            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool
-            $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
+            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool -SeededPath $SeededPath
+            # Kept pending, so Complete-DFToolSetup records them whoever calls it.
+            Set-DFPendingSeedAction -Name $__dfCall.Name -Actions @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
             if ($__dfCall.HasSetupScript) {
                 $DFCurrentTool = $__dfCall.Tool
                 . ($__dfCall.Setup)
             } else {
-                Complete-DFToolSetup -Name $__dfCall.Name -Actions $__dfCall.Seeded
+                Complete-DFToolSetup -Name $__dfCall.Name
             }
         } catch {
             Clear-DFPendingSetupNote -Name $__dfCall.Name
+            Clear-DFPendingSeedAction -Name $__dfCall.Name
             Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore

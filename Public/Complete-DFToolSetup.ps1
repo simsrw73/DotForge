@@ -52,12 +52,13 @@ function Complete-DFToolSetup {
     $state = Get-DFToolSetupState
     $entry = [PSCustomObject]@{
         ranAt   = (Get-Date).ToUniversalTime().ToString('o')
-        actions = @($Actions)
+        actions = @(@(Get-DFPendingSeedAction -Name $Name) + @($Actions))
         notes   = [string[]]@(Get-DFPendingSetupNote -Name $Name)
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
     $stateFile = Get-DFToolSetupStatePath
     Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
+    Clear-DFPendingSeedAction -Name $Name
     Publish-DFSetupNote -Name $Name
 }

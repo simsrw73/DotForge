@@ -53,3 +53,74 @@ function Invoke-DFToolSeed {
         @{ type = 'seedConfig'; path = $dest; created = $created }
     }
 }
+
+# The seed actions of a tool's running one-time setup, recorded with it by
+# Complete-DFToolSetup, so a setup script doesn't have to pass them on.
+$script:DFPendingSeedActions = @{}
+
+function Set-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Keeps a running setup's seed actions until Complete-DFToolSetup records them.
+    .PARAMETER Name
+        The tool name.
+    .PARAMETER Actions
+        The actions Invoke-DFToolSeed returned.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [AllowEmptyCollection()][object[]]$Actions = @())
+    $script:DFPendingSeedActions[$Name] = @($Actions)
+}
+
+function Get-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Returns a running setup's seed actions.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        System.Object[].
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    if ($script:DFPendingSeedActions.ContainsKey($Name)) { @($script:DFPendingSeedActions[$Name]) }
+}
+
+function Clear-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Forgets a setup's seed actions: recorded, or the setup failed.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $script:DFPendingSeedActions.Remove($Name)
+}
+
+function Get-DFSeededPath {
+    <#
+    .SYNOPSIS
+        The files a tool's recorded setup created by seeding (not ones it found and kept).
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Name)
+    $entry = (Get-DFToolSetupState).PSObject.Properties[$Name]?.Value
+    if (-not $entry) { return }
+    [string[]]@(foreach ($action in @($entry.actions)) {
+        if (-not $action) { continue }
+        $type = if ($action -is [System.Collections.IDictionary]) { $action['type'] } else { $action.PSObject.Properties['type']?.Value }
+        $created = if ($action -is [System.Collections.IDictionary]) { $action['created'] } else { $action.PSObject.Properties['created']?.Value }
+        $path = if ($action -is [System.Collections.IDictionary]) { $action['path'] } else { $action.PSObject.Properties['path']?.Value }
+        if ($type -eq 'seedConfig' -and $created -and $path) { [string]$path }
+    })
+}

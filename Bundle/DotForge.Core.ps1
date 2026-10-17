@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: cb0490a1b00f215582768989fa716c20d311c6bb69f43b6301ddfd910eebb60f
+# sources-sha256: 02562a1d0d6ccf3c55143e47c5eafc7ad07b0546a68e1b498985afa540bb6fad
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3229,24 +3229,32 @@ function Add-DFDeclaredSetupNote {
     .DESCRIPTION
         A note's ifFile/unlessFile are read like a role flag group's
         (Resolve-DFRoleFlagGroup: {theme}, {settings.<name>}, ${XDG_*}), so
-        "ifFile: the config file" means the user already had one.
+        "ifFile: the config file" means the user already had one. A file in
+        -SeededPath was created by an earlier setup, so it doesn't count.
     .PARAMETER Tool
         A normalized tool record.
+    .PARAMETER SeededPath
+        Files an earlier setup of this tool seeded (setup run again).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [AllowEmptyCollection()][string[]]$SeededPath = @())
     $setup = $Tool.setup
     if (-not $setup) { return }
     foreach ($note in @($setup.notes)) {
         if (-not $note) { continue }
+        $ifFile = $note.PSObject.Properties['ifFile']?.Value
+        # The second argument comes back as the expanded ifFile path ({file}).
         $group = [pscustomobject]@{
-            ifFile     = $note.PSObject.Properties['ifFile']?.Value
+            ifFile     = $ifFile
             unlessFile = $note.PSObject.Properties['unlessFile']?.Value
-            args       = @([string]$note.text)
+            args       = @([string]$note.text, '{file}')
         }
-        foreach ($text in @(Resolve-DFRoleFlagGroup -Group $group -Tool $Tool)) { Add-DFToolSetupNote -Name $Tool.name -Text $text }
+        $resolved = @(Resolve-DFRoleFlagGroup -Group $group -Tool $Tool)
+        if (-not $resolved.Count) { continue }
+        if ($ifFile -and $resolved[1] -in $SeededPath) { continue }
+        Add-DFToolSetupNote -Name $Tool.name -Text $resolved[0]
     }
 }
 
@@ -6038,6 +6046,9 @@ function Invoke-DFToolCompanion {
     .PARAMETER SetupOnly
         Run only the setup step and return before the companion
         (Invoke-DFToolSetup).
+    .PARAMETER SeededPath
+        Files the tool's earlier setup seeded, so a note's ifFile doesn't take
+        them for the user's own (Invoke-DFToolSetup).
     .OUTPUTS
         None
     #>
@@ -6058,7 +6069,10 @@ function Invoke-DFToolCompanion {
         [AllowEmptyCollection()]
         [object[]]$WonRoles = @(),
 
-        [switch]$SetupOnly
+        [switch]$SetupOnly,
+
+        [AllowEmptyCollection()]
+        [string[]]$SeededPath = @()
     )
 
     # The companion body and its hooks are dot-sourced into this scope, so they
@@ -6087,16 +6101,18 @@ function Invoke-DFToolCompanion {
         -not (Get-DFToolSetupState).PSObject.Properties[$__dfCall.Name]) {
         try {
             # Before the seeds: a note's ifFile can then tell an existing file from a seeded one.
-            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool
-            $__dfCall.Seeded = @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
+            Add-DFDeclaredSetupNote -Tool $__dfCall.Tool -SeededPath $SeededPath
+            # Kept pending, so Complete-DFToolSetup records them whoever calls it.
+            Set-DFPendingSeedAction -Name $__dfCall.Name -Actions @(Invoke-DFToolSeed -Tool $__dfCall.Tool -ToolsPath $__dfCall.Folder)
             if ($__dfCall.HasSetupScript) {
                 $DFCurrentTool = $__dfCall.Tool
                 . ($__dfCall.Setup)
             } else {
-                Complete-DFToolSetup -Name $__dfCall.Name -Actions $__dfCall.Seeded
+                Complete-DFToolSetup -Name $__dfCall.Name
             }
         } catch {
             Clear-DFPendingSetupNote -Name $__dfCall.Name
+            Clear-DFPendingSeedAction -Name $__dfCall.Name
             Write-Warning "DotForge: $($__dfCall.Name) one-time setup failed: $($_.Exception.Message)"
         }
         Remove-Variable -Name DFCurrentTool -ErrorAction Ignore
@@ -6185,6 +6201,77 @@ function Invoke-DFToolSeed {
         }
         @{ type = 'seedConfig'; path = $dest; created = $created }
     }
+}
+
+# The seed actions of a tool's running one-time setup, recorded with it by
+# Complete-DFToolSetup, so a setup script doesn't have to pass them on.
+$script:DFPendingSeedActions = @{}
+
+function Set-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Keeps a running setup's seed actions until Complete-DFToolSetup records them.
+    .PARAMETER Name
+        The tool name.
+    .PARAMETER Actions
+        The actions Invoke-DFToolSeed returned.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [AllowEmptyCollection()][object[]]$Actions = @())
+    $script:DFPendingSeedActions[$Name] = @($Actions)
+}
+
+function Get-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Returns a running setup's seed actions.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        System.Object[].
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    if ($script:DFPendingSeedActions.ContainsKey($Name)) { @($script:DFPendingSeedActions[$Name]) }
+}
+
+function Clear-DFPendingSeedAction {
+    <#
+    .SYNOPSIS
+        Forgets a setup's seed actions: recorded, or the setup failed.
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $script:DFPendingSeedActions.Remove($Name)
+}
+
+function Get-DFSeededPath {
+    <#
+    .SYNOPSIS
+        The files a tool's recorded setup created by seeding (not ones it found and kept).
+    .PARAMETER Name
+        The tool name.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Name)
+    $entry = (Get-DFToolSetupState).PSObject.Properties[$Name]?.Value
+    if (-not $entry) { return }
+    [string[]]@(foreach ($action in @($entry.actions)) {
+        if (-not $action) { continue }
+        $type = if ($action -is [System.Collections.IDictionary]) { $action['type'] } else { $action.PSObject.Properties['type']?.Value }
+        $created = if ($action -is [System.Collections.IDictionary]) { $action['created'] } else { $action.PSObject.Properties['created']?.Value }
+        $path = if ($action -is [System.Collections.IDictionary]) { $action['path'] } else { $action.PSObject.Properties['path']?.Value }
+        if ($type -eq 'seedConfig' -and $created -and $path) { [string]$path }
+    })
 }
 
 # ---- Private/Invoke-DFTopoSort.ps1
@@ -6746,7 +6833,8 @@ function Format-DFPathInsert {
     .DESCRIPTION
         A file name can hold $( ), ;, &, a backtick and more, which PowerShell
         would run when the line is entered. Only names made of letters, digits
-        and . / \ : _ + - (not starting with -) stay bare; every other name is
+        and . / \ : _ + - (not starting with -) stay bare, unless PowerShell
+        would read them as a number (1kb, 0x10, 1e3); every other name is
         single-quoted, with every kind of single quote doubled.
     .PARAMETER Path
         The picked paths.
@@ -6756,10 +6844,29 @@ function Format-DFPathInsert {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string[]]$Path)
-    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$') { $p } else {
+    @(foreach ($p in $Path) { if ($p -cmatch '^[\w./\\:+][\w./\\:+-]*$' -and -not (Test-DFNumericArgument $p)) { $p } else {
         # PowerShell also ends a single-quoted string at ‘ ’ ‚ ‛; its own escaper doubles them all.
         "'" + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($p) + "'"
     } }) -join ' '
+}
+
+function Test-DFNumericArgument {
+    <#
+    .SYNOPSIS
+        Tells whether PowerShell reads a bare command argument as a number (1kb, 0x10, 1e3, +5).
+    .PARAMETER Text
+        The bare argument.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Text)
+    if ($Text -notmatch '^[+.]?\d') { return $false }
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput("echo $Text", [ref]$tokens, [ref]$errors)
+    $argument = $ast.EndBlock.Statements[0].PipelineElements[0].CommandElements[1]
+    -not ($argument -is [System.Management.Automation.Language.StringConstantExpressionAst])
 }
 
 function Invoke-DFFuzzyEngine {
@@ -8477,13 +8584,14 @@ function Complete-DFToolSetup {
     $state = Get-DFToolSetupState
     $entry = [PSCustomObject]@{
         ranAt   = (Get-Date).ToUniversalTime().ToString('o')
-        actions = @($Actions)
+        actions = @(@(Get-DFPendingSeedAction -Name $Name) + @($Actions))
         notes   = [string[]]@(Get-DFPendingSetupNote -Name $Name)
     }
     $state | Add-Member -MemberType NoteProperty -Name $Name -Value $entry -Force
 
     $stateFile = Get-DFToolSetupStatePath
     Write-DFFileAtomic -Path $stateFile -Value ($state | ConvertTo-Json -Depth 10)
+    Clear-DFPendingSeedAction -Name $Name
     Publish-DFSetupNote -Name $Name
 }
 
@@ -9476,8 +9584,10 @@ function Invoke-DFToolSetup {
     }
     # Re-running setup is what the command is for, so only -WhatIf stops here; no prompt otherwise.
     if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
+    # A file the last setup seeded is DotForge's, not one the user already had.
+    $seededPath = @(Get-DFSeededPath -Name $Name)
     Clear-DFToolSetupState -Name $Name
-    Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
+    Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly -SeededPath $seededPath
     Write-DFSetupNoteNotice
 }
 

@@ -49,7 +49,9 @@ function Invoke-DFToolSetup {
     }
     # Re-running setup is what the command is for, so only -WhatIf stops here; no prompt otherwise.
     if ($WhatIfPreference -and -not $PSCmdlet.ShouldProcess($Name, 'Run the one-time setup again')) { return }
+    # A file the last setup seeded is DotForge's, not one the user already had.
+    $seededPath = @(Get-DFSeededPath -Name $Name)
     Clear-DFToolSetupState -Name $Name
-    Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly
+    Invoke-DFToolCompanion -Tool $tool -ToolsPath $toolsDir -SetupOnly -SeededPath $seededPath
     Write-DFSetupNoteNotice
 }

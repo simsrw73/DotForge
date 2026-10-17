@@ -35,24 +35,32 @@ function Add-DFDeclaredSetupNote {
     .DESCRIPTION
         A note's ifFile/unlessFile are read like a role flag group's
         (Resolve-DFRoleFlagGroup: {theme}, {settings.<name>}, ${XDG_*}), so
-        "ifFile: the config file" means the user already had one.
+        "ifFile: the config file" means the user already had one. A file in
+        -SeededPath was created by an earlier setup, so it doesn't count.
     .PARAMETER Tool
         A normalized tool record.
+    .PARAMETER SeededPath
+        Files an earlier setup of this tool seeded (setup run again).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [AllowEmptyCollection()][string[]]$SeededPath = @())
     $setup = $Tool.setup
     if (-not $setup) { return }
     foreach ($note in @($setup.notes)) {
         if (-not $note) { continue }
+        $ifFile = $note.PSObject.Properties['ifFile']?.Value
+        # The second argument comes back as the expanded ifFile path ({file}).
         $group = [pscustomobject]@{
-            ifFile     = $note.PSObject.Properties['ifFile']?.Value
+            ifFile     = $ifFile
             unlessFile = $note.PSObject.Properties['unlessFile']?.Value
-            args       = @([string]$note.text)
+            args       = @([string]$note.text, '{file}')
         }
-        foreach ($text in @(Resolve-DFRoleFlagGroup -Group $group -Tool $Tool)) { Add-DFToolSetupNote -Name $Tool.name -Text $text }
+        $resolved = @(Resolve-DFRoleFlagGroup -Group $group -Tool $Tool)
+        if (-not $resolved.Count) { continue }
+        if ($ifFile -and $resolved[1] -in $SeededPath) { continue }
+        Add-DFToolSetupNote -Name $Tool.name -Text $resolved[0]
     }
 }
 

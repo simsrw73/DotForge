@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-70**.
+git history, not here. IDs are never reused; the next free one is **T-71**.
 
 ## Priority 1 — Release Readiness
 
@@ -49,6 +49,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 
 - [ ] **T-53 Dynamic fzf preview sizing** — replace the hardcoded `right:60%` with sizing from content length or terminal width.
 - [ ] **T-54 `$HOME` vs `$LOCALAPPDATA`** — let users choose the root of the XDG folders.
+- [ ] **T-70 Fuzzy-key and television minors** — deferred from the fuzzy-finder review (2026-10-17): (1) Ctrl+R re-reads the whole history file each time, ≈5 s at 200k lines (`Get-DFHistoryCandidate`, `Private/Register-DFFuzzyKeyHandler.ps1`); (2) `$script:DFBoundKeys` tracks only the chord, so a binding made after load is overwritten by a later `Register-DFTool`, and after `Import-Module -Force` DotForge's own binding looks like the user's (`Private/Set-DFRoleKeyHandler.ps1`); (3) only a custom scriptblock handler counts as the user's, so a remap to a built-in PSReadLine function is replaced without a note (`Test-DFCustomKeyHandler`); (4) the `-Bind` block of `Register-DFFuzzyKeyHandler` reads the caller's variables through dynamic scope; (5) an unparsable `tv init` output isn't cached, so `tv init` runs on every start (`Tools/television.ps1`); (6) setup notes stay pending when a setup script neither throws nor calls `Complete-DFToolSetup` (`Private/Invoke-DFToolCompanion.ps1`); (7) tv's `Get-AvailableSpaceBelowPrompt` becomes a global command (`Tools/television.ps1`).
 
 ## After 1.0: trifle (frozen)
 

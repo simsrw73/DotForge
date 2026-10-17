@@ -112,6 +112,13 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **television's one-time channel download could hang the shell start** on a stalled network, and again on
+  every start after Ctrl+C. It now stops after 60 s and leaves the note to run `tv update-channels` yourself.
+- **Ctrl+T inserted file names like `1kb`, `0x10` or `1e3` unquoted**, so PowerShell read them as numbers;
+  they are now quoted.
+- **Running a tool's setup again (`Invoke-DFToolSetup`) took DotForge's own seeded config for yours** and
+  showed a note meant for a config you already had. A setup script's seeded files are now recorded too.
+
 - **`pg` split a double-quoted `PAGER` argument** (a path with a space) into pieces; it now keeps it whole.
 - **eza's and lsd's dates, sizes and permissions ignored your theme** (eza's dates were a dark blue).
   DotForge themed only file names (vivid's `LS_COLORS`). eza and lsd now get catppuccin's own themes for

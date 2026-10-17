@@ -650,11 +650,11 @@ throw 'boom: setup deliberately fails'
             (Get-DFToolSetupState).PSObject.Properties['seedtool'] | Should -BeNullOrEmpty
         }
 
-        It 'runs a setup script after the seeds, and leaves recording to it' {
+        It 'runs a setup script after the seeds, which records them with its own actions' {
             'if (Test-Path (Join-Path $Env:XDG_CONFIG_HOME "seedtool" "config.conf")) { Complete-DFToolSetup -Name seedtool -Actions @(@{ type = "script" }) }' |
                 Set-Content (Join-Path $script:TmpTools 'seedtool.setup.ps1')
             Register-DFTool -Name 'seedtool' -ToolsPath $script:TmpTools
-            (Get-DFToolSetupState).seedtool.actions[0].type | Should -Be 'script'
+            @((Get-DFToolSetupState).seedtool.actions.type) | Should -Be @('seedConfig', 'script')
         }
 
         It 'warns and records nothing when a seed source is missing, so the next load retries' {

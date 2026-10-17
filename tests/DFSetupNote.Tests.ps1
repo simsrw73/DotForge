@@ -68,6 +68,27 @@ Describe 'setup notes' {
         Start-DFSession -Config @{ Tools = @('nt') } -ToolsPath $tools 3>$null
         @((Get-DFToolSetupState).nt.notes) | Should -Be @('from the script')
     }
+    It 'records the seeds with the setup when a setup script completes it' {
+        $json = $script:NotesJson
+        $tools = New-NoteTool $json @{ 'nt.setup.ps1' = "Complete-DFToolSetup -Name nt -Actions @(@{ type = 'own' })" }
+        Start-DFSession -Config @{ Tools = @('nt') } -ToolsPath $tools 3>$null
+        @((Get-DFToolSetupState).nt.actions.type) | Should -Be @('seedConfig', 'own')
+    }
+    It 'does not mistake its own seeded file for the user''s when setup runs again' {
+        $tools = New-NoteTool $script:NotesJson @{ 'nt.setup.ps1' = 'Complete-DFToolSetup -Name nt' }
+        Start-DFSession -Config @{ Tools = @('nt') } -ToolsPath $tools 3>$null
+        Invoke-DFToolSetup -Name nt -ToolsPath $tools -Confirm:$false
+        @((Get-DFToolSetupState).nt.notes) | Should -Be @('always')
+    }
+    It 'still notes the user''s own file when setup runs again' {
+        $tools = New-NoteTool $script:NotesJson @{ 'nt.setup.ps1' = 'Complete-DFToolSetup -Name nt' }
+        $own = Join-Path $Env:XDG_CONFIG_HOME 'nt' 'c.conf'
+        New-Item -ItemType Directory (Split-Path $own) -Force | Out-Null
+        Set-Content $own 'mine' -NoNewline
+        Start-DFSession -Config @{ Tools = @('nt') } -ToolsPath $tools 3>$null
+        Invoke-DFToolSetup -Name nt -ToolsPath $tools -Confirm:$false
+        @((Get-DFToolSetupState).nt.notes) | Should -Be @('always', 'you had a config')
+    }
     It 'drops the notes of a setup that fails, so the retry starts clean' {
         $tools = New-NoteTool '{ "name": "nt", "executable": "nt.exe" }' @{
             'nt.setup.ps1' = "Add-DFToolSetupNote -Name nt -Text 'half done'`nthrow 'boom'"
