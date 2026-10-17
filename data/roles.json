@@ -97,6 +97,20 @@
     "reserved": { "env": ["Picker"], "aliases": [], "code": [] },
     "description": "Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker runs."
   },
+  "history-search": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleHistorySearch",
+    "reserved": { "env": [], "aliases": [], "code": ["Set-DFRoleKeyHandler", "Register-DFFuzzyKeyHandler"] },
+    "description": "Searches command history from Ctrl+R. Only the winner binds the key; a binding you made yourself is kept."
+  },
+  "path-insert": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRolePathInsert",
+    "reserved": { "env": [], "aliases": [], "code": ["Set-DFRoleKeyHandler", "Register-DFFuzzyKeyHandler"] },
+    "description": "Inserts picked paths at the cursor from Ctrl+T. Only the winner binds the key; a binding you made yourself is kept."
+  },
   "editor": {
     "kind": "single",
     "exclusive": false,
@@ -119,6 +133,7 @@
     "reserved": { "env": [], "aliases": [], "code": ["Set-PSReadLineKeyHandler -Key Tab"] },
     "description": "Owns the Tab key. The winner binds Tab; the others still register their completers."
   },
+  "fuzzy-finder":    { "kind": "category", "description": "Filters a list interactively as you type." },
   "markdown-viewer": { "kind": "category", "description": "Renders Markdown in the terminal." },
   "completion":      { "kind": "category", "description": "Adds or improves Tab completion." },
   "grep":            { "kind": "category", "description": "Searches file contents." },
