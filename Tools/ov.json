@@ -5,7 +5,7 @@
   "tags": ["pager", "viewer"],
   "packages": { "scoop": "ov", "winget": "noborus.ov" },
   "xdg": { "compliance": "full", "method": "default" },
-  "roles": { "pager": { "priority": 20, "env": { "PAGER": "ov --quit-if-one-screen" } } },
+  "roles": { "pager": { "priority": 20, "flags": { "quit-if-one-screen": ["-F"], "raw-color": [], "keep-screen": ["-X"], "mouse": [], "theme": [] } } },
   "aliases": {},
   "picker": null
 }

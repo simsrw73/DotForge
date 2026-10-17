@@ -5,8 +5,8 @@
   "tags": ["pager", "viewer"],
   "packages": { "scoop": "moor" },
   "xdg": { "compliance": "none", "method": "default" },
-  "theme": { "key": "MoorTheme", "default": "catppuccin-mocha", "env": { "MOOR": "-style {theme} -quit-if-one-screen" } },
-  "roles": { "pager": { "priority": 30, "env": { "PAGER": "moor" } } },
+  "theme": { "key": "MoorTheme", "default": "catppuccin-mocha", "env": { "MOOR": "-style {theme}" } },
+  "roles": { "pager": { "priority": 30, "flags": { "quit-if-one-screen": ["-quit-if-one-screen"], "raw-color": [], "keep-screen": ["-no-clear-on-exit"], "mouse": ["-mousemode", "scroll"], "theme": [] } } },
   "aliases": {},
   "picker": null
 }

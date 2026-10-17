@@ -10,13 +10,14 @@ BeforeDiscovery {
 BeforeAll {
     $root = Split-Path $PSScriptRoot -Parent
     $script:Roles = Get-Content (Join-Path $root 'data/roles.json') -Raw | ConvertFrom-Json -AsHashtable
-    $script:AllReservedEnv = @($script:Roles.Values | ForEach-Object { if ($_['reserved']) { $_['reserved']['env'] } } | Where-Object { $_ })
+    # A role's behaviors.env variables are reserved too (Get-DFRoleDb adds them to reserved.env).
+    $script:AllReservedEnv = @($script:Roles.Values | ForEach-Object { if ($_['reserved']) { $_['reserved']['env'] }; if ($_['behaviors'] -and $_['behaviors']['env']) { $_['behaviors']['env'].Keys } } | Where-Object { $_ })
     # A role with behaviors reserves its behavior aliases and picker aliases (Get-DFRoleDb derives the same set).
     $script:ReservedAliasesOf = @{}
     foreach ($roleName in $script:Roles.Keys) {
         $def = $script:Roles[$roleName]
         $script:ReservedAliasesOf[$roleName] = if ($def['behaviors']) {
-            @(@($def['behaviors']['aliases'].Keys) + @($def['behaviors']['pickers'] | ForEach-Object { $_['alias'] } | Where-Object { $_ }))
+            @(@(if ($def['behaviors']['aliases']) { $def['behaviors']['aliases'].Keys }) + @($def['behaviors']['pickers'] | Where-Object { $_ } | ForEach-Object { $_['alias'] } | Where-Object { $_ }))
         } elseif ($def['reserved']) { @($def['reserved']['aliases'] | Where-Object { $_ }) } else { @() }
     }
     $script:AllReservedAliases = @($script:ReservedAliasesOf.Values | ForEach-Object { $_ } | Where-Object { $_ })
@@ -92,10 +93,21 @@ Describe 'Role contract: <Name>' -ForEach $script:ToolCases {
         foreach ($role in $memberships.Keys) {
             $behaviors = $script:Roles[$role]['behaviors']
             if (-not $behaviors) { continue }
-            $used = @(@($behaviors['aliases'].Values | ForEach-Object { $_ }) + @($behaviors['pickers'] | ForEach-Object { $_['list'] }) | Select-Object -Unique)
+            $used = @(@(if ($behaviors['aliases']) { $behaviors['aliases'].Values | ForEach-Object { $_ } }) + @($behaviors['pickers'] | Where-Object { $_ } | ForEach-Object { $_['list'] }) +
+                @(if ($behaviors['env']) { $behaviors['env'].Values | ForEach-Object { $_ } }) | Where-Object { $_ } | Select-Object -Unique)
             $mapped = @(if ($memberships[$role]['flags']) { $memberships[$role]['flags'].Keys })
             foreach ($word in $used) { $word | Should -BeIn $mapped -Because "$Name joins '$role' but has no flag for '$word'" }
             foreach ($word in $mapped) { $word | Should -BeIn @($behaviors['words'].Keys) -Because "'$word' is not one of '$role''s words" }
+        }
+    }
+
+    It 'sets no behaviors.env variable in its role block env' {
+        $memberships = Get-RoleMemberships $JsonPath
+        foreach ($role in $memberships.Keys) {
+            $behaviors = $script:Roles[$role]['behaviors']
+            if (-not $behaviors -or -not $behaviors['env']) { continue }
+            $set = @(if ($memberships[$role]['env']) { $memberships[$role]['env'].Keys })
+            foreach ($var in $behaviors['env'].Keys) { $var | Should -Not -BeIn $set -Because "'$role' builds $var from behaviors" }
         }
     }
 

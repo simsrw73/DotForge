@@ -14,15 +14,15 @@ Describe 'moor theme' {
         Set-DFTestConfig $null
     }
 
-    It 'sets MOOR to the configured style and quit-if-one-screen when unset' {
+    It 'sets MOOR to the configured style when unset (the pager role passes quit-if-one-screen)' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
         Set-DFToolThemeEnv -Tool $script:Moor -Theme (Resolve-DFToolTheme -Tool $script:Moor)
-        $Env:MOOR | Should -Be '-style catppuccin-mocha -quit-if-one-screen'
+        $Env:MOOR | Should -Be '-style catppuccin-mocha'
     }
     It 'lets MoorTheme override the shared theme' {
         Set-DFTestConfig @{ Theme = 'catppuccin-mocha'; MoorTheme = 'dracula' }
         Set-DFToolThemeEnv -Tool $script:Moor -Theme (Resolve-DFToolTheme -Tool $script:Moor) -WarningAction SilentlyContinue
-        $Env:MOOR | Should -Be '-style dracula -quit-if-one-screen'
+        $Env:MOOR | Should -Be '-style dracula'
     }
     It 'leaves a MOOR the user set alone' {
         $Env:MOOR = '-no-linenumbers'

@@ -66,7 +66,21 @@
     "exclusive": false,
     "hook": "Initialize-DFRolePager",
     "reserved": { "env": ["PAGER"], "aliases": [], "code": [] },
-    "description": "Pages long output. The winner sets PAGER, which DotForge's own pager also reads."
+    "description": "Pages long output. The winner sets PAGER and BAT_PAGER, which DotForge's own pager also reads; with no pager, more.",
+    "fallback": { "env": { "PAGER": "more", "BAT_PAGER": "more" } },
+    "behaviors": {
+      "words": {
+        "quit-if-one-screen": "don't page output that fits one screen",
+        "raw-color": "pass color codes through",
+        "keep-screen": "leave the output on screen when quitting",
+        "mouse": "scroll with the mouse wheel",
+        "theme": "the session theme, where the pager takes it as an argument"
+      },
+      "env": {
+        "PAGER":     ["quit-if-one-screen", "raw-color", "keep-screen", "mouse", "theme"],
+        "BAT_PAGER": ["quit-if-one-screen", "raw-color", "keep-screen", "mouse", "theme"]
+      }
+    }
   },
   "diff": {
     "kind": "single",

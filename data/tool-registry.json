@@ -1645,7 +1645,7 @@
       }
     },
     "less": {
-      "sha256": "aaf5f99d63e89fcbe6045113ac863fa97e50b3b838ad4ff66307e8a448f8f082",
+      "sha256": "c92fbfea723e6b2850c01714797d498a7e0a3afb1408b6073c02c66c80ebb941",
       "record": {
         "name": "less",
         "executable": "less.exe",
@@ -1709,10 +1709,22 @@
             "priority": 10,
             "optIn": false,
             "aliases": null,
-            "env": {
-              "PAGER": "${DF_TOOL_EXE}"
+            "env": null,
+            "flags": {
+              "quit-if-one-screen": [
+                "-F"
+              ],
+              "raw-color": [
+                "-R"
+              ],
+              "keep-screen": [
+                "-X"
+              ],
+              "mouse": [
+                "--mouse"
+              ],
+              "theme": []
             },
-            "flags": null,
             "legacy": false
           }
         },
@@ -2173,7 +2185,7 @@
       }
     },
     "moor": {
-      "sha256": "ded781dd83c37b024feaea85219727eb4f189f15357ad0d57624dd5f73a2159a",
+      "sha256": "0b89a1ea3c05cc4362ffab1c700768425e629f7f8fdfba524ef1c5460cfa8017",
       "record": {
         "name": "moor",
         "executable": "moor.exe",
@@ -2204,10 +2216,21 @@
             "priority": 30,
             "optIn": false,
             "aliases": null,
-            "env": {
-              "PAGER": "moor"
+            "env": null,
+            "flags": {
+              "quit-if-one-screen": [
+                "-quit-if-one-screen"
+              ],
+              "raw-color": [],
+              "keep-screen": [
+                "-no-clear-on-exit"
+              ],
+              "mouse": [
+                "-mousemode",
+                "scroll"
+              ],
+              "theme": []
             },
-            "flags": null,
             "legacy": false
           }
         },
@@ -2220,7 +2243,7 @@
           "valid": [],
           "fallback": null,
           "env": {
-            "MOOR": "-style {theme} -quit-if-one-screen"
+            "MOOR": "-style {theme}"
           },
           "command": null
         },
@@ -2517,7 +2540,7 @@
       }
     },
     "ov": {
-      "sha256": "a29c0376b47e6286e90258bb7e12211eca3c95e6ebb1a252cd4eda9364972ac4",
+      "sha256": "02fcdc9f7a464be4b5c6178d7710faeb10f94bcaafab7078fdbd11cfb59c2e12",
       "record": {
         "name": "ov",
         "executable": "ov.exe",
@@ -2549,10 +2572,18 @@
             "priority": 20,
             "optIn": false,
             "aliases": null,
-            "env": {
-              "PAGER": "ov --quit-if-one-screen"
+            "env": null,
+            "flags": {
+              "quit-if-one-screen": [
+                "-F"
+              ],
+              "raw-color": [],
+              "keep-screen": [
+                "-X"
+              ],
+              "mouse": [],
+              "theme": []
             },
-            "flags": null,
             "legacy": false
           }
         },

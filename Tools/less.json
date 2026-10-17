@@ -7,7 +7,7 @@
   ],
   "executable": "less.exe",
   "executableExclude": ["*\\Git\\usr\\bin\\*"],
-  "roles": { "pager": { "priority": 10, "env": { "PAGER": "${DF_TOOL_EXE}" } } },
+  "roles": { "pager": { "priority": 10, "flags": { "quit-if-one-screen": ["-F"], "raw-color": ["-R"], "keep-screen": ["-X"], "mouse": ["--mouse"], "theme": [] } } },
   "packages": {
     "scoop": "less",
     "winget": "jftuga.less",

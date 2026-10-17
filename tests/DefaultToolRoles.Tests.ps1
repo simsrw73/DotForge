@@ -232,19 +232,19 @@ Describe 'moor/ov/less share role: pager (real tool records)' {
 
     It 'makes moor the pager by priority' {
         Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
-        $Env:PAGER | Should -Be 'moor'
+        $Env:PAGER | Should -Be 'C:/fake/moor.exe -quit-if-one-screen -no-clear-on-exit -mousemode scroll'
     }
 
-    It 'uses ov with quit-if-one-screen when Defaults.pager = ov' {
+    It 'uses ov with the pager role''s flags when Defaults.pager = ov' {
         Set-DFTestConfig @{ Defaults = @{ pager = 'ov' } }
         Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
-        $Env:PAGER | Should -Be 'ov --quit-if-one-screen'
+        $Env:PAGER | Should -BeLike 'C:/fake/ov.exe -F -X*'
     }
 
     It 'points PAGER at the native less, skipping Git''s MSYS build, when Defaults.pager = less' {
         Set-DFTestConfig @{ Defaults = @{ pager = 'less' } }
         Register-DFTool -Name moor, ov, less, bat -ToolsPath $script:RealTools -WarningAction SilentlyContinue
-        $Env:PAGER | Should -Be 'C:/scoop/shims/less.exe'
+        $Env:PAGER | Should -Be 'C:/scoop/shims/less.exe -F -R -X --mouse'
     }
 
     It 'no longer counts bat as a pager' {
