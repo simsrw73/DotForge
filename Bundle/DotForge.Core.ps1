@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: e0836a63f740ccebf6f6faab7fa55fc318e77796317de31bddc89c32b32428ef
+# sources-sha256: a9c3009edaa9775bc54ac6fa2e36dd9acb6056902ad647c47da9aa4d94c2059d
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3339,6 +3339,7 @@ $script:DFConfigKeys = [ordered]@{
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
+    BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'

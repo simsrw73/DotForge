@@ -1,6 +1,6 @@
 {
   "name": "broot",
-  "description": "Interactive file browser with fuzzy search",
+  "description": "Interactive file browser with fuzzy search; br moves the shell to the folder you leave it in",
   "tags": [
     "file",
     "browser",
@@ -9,15 +9,25 @@
   "executable": "broot.exe",
   "packages": {
     "scoop": "broot",
+    "winget": "Dystroy.broot",
     "choco": "broot"
   },
   "xdg": {
     "compliance": "full",
     "method": "env",
-    "vars": {},
-    "dirs": [
-      "${XDG_CONFIG_HOME}/broot"
-    ]
+    "vars": { "BROOT_CONFIG_DIR": "${XDG_CONFIG_HOME}/broot" },
+    "native": {
+      "BROOT_CONFIG_DIR": ["${APPDATA}/dystroy/broot/config"],
+      "${XDG_CONFIG_HOME}/broot/conf.hjson": [],
+      "${XDG_CONFIG_HOME}/broot/verbs.hjson": []
+    }
+  },
+  "theme": { "key": "BrootTheme", "default": "catppuccin-mocha", "files": "broot" },
+  "setup": {
+    "seed": {
+      "${XDG_CONFIG_HOME}/broot/conf.hjson": "broot/conf.hjson",
+      "${XDG_CONFIG_HOME}/broot/verbs.hjson": "broot/verbs.hjson"
+    }
   },
   "aliases": {},
   "picker": null

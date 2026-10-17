@@ -37,6 +37,7 @@ $script:DFConfigKeys = [ordered]@{
     OvTheme            = 'ov theme (passed with --config unless you have your own ov config)'
     SkimTheme          = 'skim theme'
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
+    BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'

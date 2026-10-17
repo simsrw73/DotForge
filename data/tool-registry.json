@@ -125,12 +125,12 @@
       }
     },
     "broot": {
-      "sha256": "099bb0342e0ec8dd8d28354da8bdbd9ac46fe65c678cca9b0b26d489b04701d6",
+      "sha256": "ea702fabf3cde6237008833ad92a1577b86ef76a777342a4ca4e3458e919b48c",
       "record": {
         "name": "broot",
         "executable": "broot.exe",
         "type": "exe",
-        "description": "Interactive file browser with fuzzy search",
+        "description": "Interactive file browser with fuzzy search; br moves the shell to the folder you leave it in",
         "tags": [
           "file",
           "browser",
@@ -138,17 +138,39 @@
         ],
         "packages": {
           "scoop": "broot",
+          "winget": "Dystroy.broot",
           "choco": "broot"
         },
         "xdg": {
           "method": "env",
-          "vars": {},
-          "dirs": [
-            "${XDG_CONFIG_HOME}/broot"
-          ],
+          "vars": {
+            "BROOT_CONFIG_DIR": "${XDG_CONFIG_HOME}/broot"
+          },
+          "dirs": [],
           "instructions": null,
           "compliance": "full",
-          "native": null
+          "native": {
+            "BROOT_CONFIG_DIR": {
+              "paths": [
+                "${APPDATA}/dystroy/broot/config"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/broot/conf.hjson": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/broot/verbs.hjson": {
+              "paths": [],
+              "move": true,
+              "guide": null,
+              "setting": null
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -157,12 +179,27 @@
         "requires": [],
         "roles": {},
         "themeMap": null,
-        "theme": null,
+        "theme": {
+          "key": "BrootTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "broot",
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null
+        },
         "wrapper": null,
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/broot/conf.hjson": "broot/conf.hjson",
+            "${XDG_CONFIG_HOME}/broot/verbs.hjson": "broot/verbs.hjson"
+          },
+          "notes": []
+        },
         "banner": null,
         "installs": null,
         "install": null,
