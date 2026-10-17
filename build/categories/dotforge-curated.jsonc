@@ -86,6 +86,29 @@
     "ids": { "scoop": "fzf", "winget": "junegunn.fzf", "choco": "fzf" },
     "relatedTo": ["fd", "ripgrep", "PSFzf"], "popularity": 3
   },
+  "skim": {
+    "function": ["fuzzy-finder"], "worksWith": ["text", "filesystem"], "interface": "tui",
+    "alternativeTo": ["fzf"],
+    "ids": { "scoop": "skim", "winget": "skim-rs.skim", "crates": "skim" },
+    "relatedTo": ["fzf", "fd"], "popularity": 1
+  },
+  "television": {
+    "function": ["fuzzy-finder"], "worksWith": ["text", "filesystem", "git", "environment-vars"], "interface": "tui",
+    "alternativeTo": ["fzf"],
+    "ids": { "scoop": "television", "winget": "alexpasmantier.television", "crates": "television" },
+    "relatedTo": ["fzf", "fd", "bat"], "popularity": 1
+  },
+  "peco": {
+    "function": ["fuzzy-finder"], "worksWith": ["text"], "interface": "tui",
+    "alternativeTo": ["fzf"],
+    "ids": { "scoop": "peco", "winget": "peco.peco" },
+    "popularity": 1
+  },
+  "gum": {
+    "function": ["fuzzy-finder", "shell-enhancement"], "worksWith": ["text"], "interface": "tui",
+    "ids": { "scoop": "gum", "winget": "charmbracelet.gum" },
+    "popularity": 1
+  },
   "fnm": {
     "function": ["package-manager"], "worksWith": ["binaries"], "interface": "cli",
     "ids": { "scoop": "fnm", "winget": "Schniz.fnm", "choco": "fnm" }, "popularity": 2

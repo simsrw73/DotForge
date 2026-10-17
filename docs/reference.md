@@ -102,11 +102,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [grep](#grep-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -122,6 +122,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-DFApplyFzfTheme](#invoke-dfapplyfzftheme) |  | fzf | Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS. |
 | [Read-MarkdownFile](#read-markdownfile) | `fgl` | glow | Fuzzy-picks a Markdown file below a folder and reads it in glow's pager. |
 | [please](#please) |  | gsudo | Re-runs the previous command elevated, through gsudo. |
+| [Invoke-DFApplyGumTheme](#invoke-dfapplygumtheme) |  | gum | Applies a gum color theme to this session through gum's GUM_\* color variables. |
 | [Start-DFInshellisense](#start-dfinshellisense) |  | inshellisense | Starts an inshellisense session in this shell unless one is already running. |
 | [Select-JsonPath](#select-jsonpath) | `fjq` | jq | A live jq playground: type a filter in fzf, watch its output, and press Enter to run it. |
 | [Select-NpmScript](#select-npmscript) | `fns` | npm | Fuzzy-picks a script from the nearest package.json and runs it with the project's package manager. |
@@ -138,6 +139,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Invoke-ScoopUpdate](#invoke-scoopupdate) | `sup` | scoop | Fuzzy-picks installed scoop apps and updates them. |
 | [Remove-ScoopPackage](#remove-scooppackage) | `srm` | scoop | Fuzzy-picks an installed scoop app and uninstalls it. |
 | [Select-ScoopPackage](#select-scooppackage) | `sins` | scoop | Searches scoop buckets, fuzzy-picks an app, and returns or runs its install command. |
+| [Invoke-DFApplySkimTheme](#invoke-dfapplyskimtheme) |  | skim | Applies a skim color theme to this session by appending a --color option to SKIM_DEFAULT_OPTIONS. |
 | [Select-UvVenv](#select-uvvenv) | `fvenv` | uv | Fuzzy-picks a Python virtual environment below a folder and activates it. |
 | [Invoke-DFApplyLSColorsTheme](#invoke-dfapplylscolorstheme) |  | vivid | Resolves and applies an LS_COLORS value for the named vivid theme. |
 | [Select-LSColorsTheme](#select-lscolorstheme) | `fls` | vivid | Fuzzy-picks a vivid LS_COLORS theme with a live preview and applies it to this session. |
@@ -197,7 +199,7 @@ Complete-DFToolSetup [-Name] <string> [[-Actions] <Object[]>] [<CommonParameters
 
 Call this from a Tools/&lt;name&gt;.setup.ps1 companion as its own last line, only once the script's work has actually succeeded. Merges an entry for -Name into the persisted state file at $XDG_STATE_HOME/dotforge/setup-state.json, recording the UTC time it ran and an opaque -Actions record whose shape the calling tool defines -- DotForge core never interprets it.
 
-Register-DFTool checks this state before dot-sourcing a tool's Tools/&lt;name&gt;.setup.ps1 again, so once an entry exists for a tool, its setup script is skipped on every future Register-DFTool call -- forever, until the state file is deleted or the entry is removed. See docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
+Register-DFTool checks this state before dot-sourcing a tool's Tools/&lt;name&gt;.setup.ps1 again, so once an entry exists for a tool, its setup script is skipped on every future Register-DFTool call -- forever, until the state file is deleted or the entry is removed. Notes added with Add-DFToolSetupNote (or declared in setup.notes) are recorded with it and printed once at the end of the load. See docs/superpowers/specs/2026-09-04-tool-setup-lifecycle-design.md.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -2420,6 +2422,15 @@ Finds files by name.
 | Kind | category |
 | Members | [fd](#fd-tool) |
 
+### fuzzy-finder role
+
+Filters a list interactively as you type.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fzf](#fzf-tool), [gum](#gum-tool), [peco](#peco-tool), [skim](#skim-tool), [television](#television-tool) |
+
 ### grep role
 
 Searches file contents.
@@ -2428,6 +2439,15 @@ Searches file contents.
 | --- | --- |
 | Kind | category |
 | Members | [ripgrep](#ripgrep-tool) |
+
+### history-search role
+
+Searches command history from Ctrl+R. Only the winner binds the key; a binding you made yourself is kept.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [fzf](#fzf-tool), [PSFzf](#psfzf-tool), [skim](#skim-tool), [television](#television-tool) |
 
 ### js-package-manager role
 
@@ -2495,6 +2515,15 @@ Pages long output. The winner sets PAGER and BAT_PAGER, which DotForge's own pag
 | Only the winner sets | `PAGER`, `BAT_PAGER` |
 | With no winner | `PAGER` = `more`, `BAT_PAGER` = `more` |
 
+### path-insert role
+
+Inserts picked paths at the cursor from Ctrl+T. Only the winner binds the key; a binding you made yourself is kept.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [fzf](#fzf-tool), [PSFzf](#psfzf-tool), [skim](#skim-tool), [television](#television-tool) |
+
 ### picker role
 
 Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker runs.
@@ -2502,7 +2531,7 @@ Fuzzy-picks from a list. The winner sets Picker, which every DotForge picker run
 | | |
 | --- | --- |
 | Kind | single |
-| Members | [fzf](#fzf-tool) |
+| Members | [fzf](#fzf-tool), [skim](#skim-tool) |
 | Only the winner sets | `Picker` |
 | Requires | Accepts fzf's command-line options and reads candidates on stdin. |
 
@@ -2833,7 +2862,7 @@ General-purpose command-line fuzzy finder
 | XDG method | `default` |
 | Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_DEFAULT_OPTS` = `--layout=reverse --inline-info --height=40% --border`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
 | Theme | key `FzfTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyFzfTheme` |
-| Roles | [`picker`](#picker-role) |
+| Roles | [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
 | Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
 
@@ -2879,6 +2908,20 @@ Windows sudo — run commands with elevated privileges without a UAC prompt per 
 | XDG method | `default` |
 | Roles | [`elevator`](#elevator-role) |
 | Companion | [`Tools/gsudo.ps1`](#gsudo-companion) |
+
+### gum tool
+
+Building blocks for shell scripts: choose, filter, input, confirm, spin
+
+| | |
+| --- | --- |
+| Detected by | `gum.exe` |
+| Tags | `fuzzy`, `scripting`, `tui` |
+| Install ids | scoop: `gum`<br>winget: `charmbracelet.gum` |
+| XDG method | `default` |
+| Theme | key `GumTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyGumTheme` |
+| Roles | [`fuzzy-finder`](#fuzzy-finder-role) |
+| Companion | [`Tools/gum.ps1`](#gum-companion) |
 
 ### inshellisense tool
 
@@ -3097,6 +3140,20 @@ Feature-rich terminal pager with headers, columns and sections
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `ov -F -X [--config <file> if {theme}/config.yaml exists, unless ${XDG_CONFIG_HOME}/ov/config.yaml exists]`<br>`BAT_PAGER` = `ov -F -X [--config <file> if {theme}/config.yaml exists, unless ${XDG_CONFIG_HOME}/ov/config.yaml exists]` |
 
+### peco tool
+
+Simplistic interactive filtering tool
+
+| | |
+| --- | --- |
+| Detected by | `peco.exe` |
+| Tags | `fuzzy`, `filter`, `search` |
+| Install ids | scoop: `peco`<br>winget: `peco.peco` |
+| XDG method | `default` |
+| Theme | key `PecoTheme`, default `catppuccin-mocha` |
+| Seeds once | `${XDG_CONFIG_HOME}/peco/config.json` |
+| Roles | [`fuzzy-finder`](#fuzzy-finder-role) |
+
 ### pip tool
 
 Python package installer (installs into the user site-packages)
@@ -3183,7 +3240,7 @@ PowerShell wrapper around fzf with PSReadLine key handler integration
 | XDG method | `default` |
 | Requires | `fzf` |
 | Registers after | `psreadline` |
-| Roles | [`completion`](#completion-role), [`tab-completion`](#tab-completion-role) |
+| Roles | [`completion`](#completion-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`tab-completion`](#tab-completion-role) |
 | Companion | `Tools/PSFzf.ps1` |
 
 ### psreadline tool
@@ -3280,6 +3337,22 @@ Windows command-line installer
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/scoop.ps1`](#scoop-companion) |
 
+### skim tool
+
+Fuzzy finder in Rust that takes fzf's options
+
+| | |
+| --- | --- |
+| Detected by | `sk.exe` |
+| Tags | `fuzzy`, `picker`, `search` |
+| Install ids | scoop: `skim`<br>winget: `skim-rs.skim`<br>crates: `skim` |
+| XDG method | `default` |
+| Environment | `SKIM_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`SKIM_DEFAULT_OPTIONS` = `--layout=reverse --inline-info --height=40% --border` |
+| Theme | key `SkimTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplySkimTheme` |
+| Roles | [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
+| Sets, as the picker tool | `Picker` = `sk` |
+| Companion | [`Tools/skim.ps1`](#skim-companion) |
+
 ### smartmontools tool
 
 Reads drive health (SMART); DotForge's startup banner shows a line per drive
@@ -3304,6 +3377,22 @@ Fast, minimal, cross-shell prompt configured with a single TOML file
 | Creates | `${XDG_CACHE_HOME}/starship` |
 | Roles | [`prompt`](#prompt-role) |
 | Companion | `Tools/starship.ps1` |
+
+### television tool
+
+Fast, hackable fuzzy finder with channels for files, git, env and more
+
+| | |
+| --- | --- |
+| Detected by | `tv.exe` |
+| Tags | `fuzzy`, `picker`, `search` |
+| Install ids | scoop: `television` (feed `extras`)<br>winget: `alexpasmantier.television`<br>crates: `television` |
+| XDG method | `env` |
+| XDG variables | `TELEVISION_CONFIG` = `${XDG_CONFIG_HOME}/television` |
+| Theme | key `TelevisionTheme`, default `catppuccin-mocha` |
+| Seeds once | `${XDG_CONFIG_HOME}/television/config.toml`<br>`${XDG_CONFIG_HOME}/television/themes/catppuccin-mocha.toml`<br>`${XDG_CONFIG_HOME}/television/themes/catppuccin-macchiato.toml`<br>`${XDG_CONFIG_HOME}/television/themes/catppuccin-frappe.toml`<br>`${XDG_CONFIG_HOME}/television/themes/catppuccin-latte.toml` |
+| Roles | [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role) |
+| Companion | `Tools/television.ps1`, one-time `Tools/television.setup.ps1` |
 
 ### Terminal-Icons tool
 
@@ -3684,6 +3773,31 @@ please
 ```
 
 The first command fails with access denied; please runs it again elevated.
+
+**See also:** [tools](guide/tools.md)
+
+### gum companion
+
+#### Invoke-DFApplyGumTheme
+
+Applies a gum color theme to this session through gum's GUM_\* color variables.
+
+Resolves -Name to a theme file: an absolute path is used as is, otherwise $XDG_CONFIG_HOME\\gum\\themes\\&lt;Name&gt;.json, then DotForge's bundled Tools\\gum\\&lt;Name&gt;.json. Each entry of the file's "env" object (a GUM_\* variable and a #rrggbb color) is set for this session; a variable you set outside DotForge is kept unless you call this yourself. Entries that aren't GUM_\* variables with a hex color are skipped with a warning.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file. |
+| `-Implicit` | switch |  |  |  | Used by the companion at startup when the theme came from Theme or the default: a GUM_\* variable you set outside DotForge is then kept as is. |
+
+**Outputs:** None. Changes GUM_\* environment variables for the current session.
+
+**Example 1**
+
+```powershell
+Invoke-DFApplyGumTheme -Name catppuccin-frappe
+```
+
+Switches gum to the bundled Catppuccin Frappé colors for this session.
 
 **See also:** [tools](guide/tools.md)
 
@@ -4116,6 +4230,31 @@ sins ripgrep
 ```
 
 Pick ripgrep and press Enter to get: scoop install ripgrep
+
+**See also:** [tools](guide/tools.md)
+
+### skim companion
+
+#### Invoke-DFApplySkimTheme
+
+Applies a skim color theme to this session by appending a --color option to SKIM_DEFAULT_OPTIONS.
+
+Resolves -Name to a theme file: an absolute path is used as is, otherwise $XDG_CONFIG_HOME\\skim\\themes\\&lt;Name&gt;.json, then DotForge's bundled Tools\\skim\\&lt;Name&gt;.json. The file's "colors" object of skim color elements (fg, bg, matched, current, current_bg, ...) becomes one --color=name:value,... option appended to $Env:SKIM_DEFAULT_OPTIONS. skim merges repeated --color options in order, so the last theme applied wins. Invalid entries are skipped with a warning; an unknown theme name warns and changes nothing.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  | yes |  | A theme name (e.g. catppuccin-mocha) or the full path to a theme JSON file. |
+| `-Implicit` | switch |  |  |  | Used by the companion at startup when the theme came from Theme or the default: a SKIM_DEFAULT_OPTIONS you set outside DotForge is then kept as is. Without it, the colors are appended to it. |
+
+**Outputs:** None. Changes $Env:SKIM_DEFAULT_OPTIONS for the current session.
+
+**Example 1**
+
+```powershell
+Invoke-DFApplySkimTheme -Name catppuccin-latte
+```
+
+Switches skim to the bundled Catppuccin Latte colors for this session.
 
 **See also:** [tools](guide/tools.md)
 

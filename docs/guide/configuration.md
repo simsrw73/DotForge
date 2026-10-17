@@ -40,7 +40,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `Defaults` | hashtable | none | Role → tool: which installed tool fills each role (`prompt`, `pager`, `listing`, …). See [Choose a tool for each role](#choose-a-tool-for-each-role). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PSReadLineTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -105,7 +105,11 @@ mdcat: dracula
 | mdcat | `MdcatTheme` | `auto`, `dark`, `light`, `catppuccin-mocha`, `catppuccin-latte`, `gruvbox-dark`, `gruvbox-light`, `dracula`, `nord`, `solarized-dark`, `solarized-light` | warning; `auto` |
 | mdv | `MdvTheme` | `terminal`, `solarized-dark`, `nord`, `tokyonight`, `kanagawa`, `gruvbox`, `monokai`, `material-ocean`, `catppuccin` | warning; `terminal` |
 | moor | `MoorTheme` | any moor `-style` name (`catppuccin-mocha`, `dracula`, `nord`, …); used only when you haven't set `MOOR` | moor uses its default style |
+| peco | `PecoTheme` | `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`; seeded once into `$XDG_CONFIG_HOME\peco\config.json` | warning; nothing seeded |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
+| skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim	hemes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
+| television | `TelevisionTheme` | the four catppuccin flavors; seeded once into its `config.toml` (`ui.theme`), so change it there later | warning; nothing seeded |
+| gum | `GumTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\gum	hemes\<name>.json`; sets `GUM_*` colors | warning; gum's own colors |
 | vivid (`LS_COLORS`) | `VividTheme` | any `vivid themes` name | warning; `LS_COLORS` unchanged |
 
 To switch a tool's theme for the rest of the session, use `Set-DFToolTheme`:
@@ -194,6 +198,8 @@ ov also follows your theme (`OvTheme`, else `Theme`) unless you have your own
 ### Your own variables win, unless you pick a tool
 
 A role's variables are `PAGER` and `BAT_PAGER` (pager), `EDITOR` and `VISUAL` (editor), `Picker` (picker) and `GIT_PAGER` (diff). If you set one yourself, say `$Env:PAGER = 'less'` in your profile, DotForge keeps it. The exception is when you also name a different tool in `Defaults`, such as `Defaults = @{ pager = 'bat' }`. Then the `Defaults` choice wins, and DotForge warns at each startup until you remove one of the two settings. `Get-DFRole` shows a kept value of yours under `Overridden`.
+
+Ctrl+R and Ctrl+T are roles too, `history-search` and `path-insert`: `Defaults = @{ 'history-search' = 'television' }` gives Ctrl+R to television. A Ctrl+R or Ctrl+T binding you make before DotForge loads is kept unless `Defaults` names a tool for it. See [Ctrl+R and Ctrl+T](tools.md#ctrlr-and-ctrlt-psfzf-television-fzf-skim).
 
 Which manager installs from a shared registry is a role too: `Defaults = @{ 'js-package-manager' = 'pnpm' }` makes pnpm, not npm, install npm-registry packages. The same goes for `python-package-manager` (PyPI: uv, then pipx, then pip), `rust-package-manager` (crates) and `powershell-package-manager` (the PowerShell Gallery).
 

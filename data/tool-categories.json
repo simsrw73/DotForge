@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-11",
+  "updated": "2026-10-17",
   "taxonomy": {
     "function": [
       "search",
@@ -672,6 +672,21 @@
       },
       "popularity": 1
     },
+    "gum": {
+      "function": [
+        "fuzzy-finder",
+        "shell-enhancement"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "tui",
+      "ids": {
+        "scoop": "gum",
+        "winget": "charmbracelet.gum"
+      },
+      "popularity": 1
+    },
     "httpie": {
       "function": [
         "http-client"
@@ -1055,6 +1070,23 @@
       "interface": "cli",
       "popularity": 0
     },
+    "peco": {
+      "function": [
+        "fuzzy-finder"
+      ],
+      "worksWith": [
+        "text"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "fzf"
+      ],
+      "ids": {
+        "scoop": "peco",
+        "winget": "peco.peco"
+      },
+      "popularity": 1
+    },
     "pip": {
       "function": [
         "package-manager"
@@ -1335,6 +1367,29 @@
       ],
       "popularity": 1
     },
+    "skim": {
+      "function": [
+        "fuzzy-finder"
+      ],
+      "worksWith": [
+        "text",
+        "filesystem"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "fzf"
+      ],
+      "ids": {
+        "scoop": "skim",
+        "winget": "skim-rs.skim",
+        "crates": "skim"
+      },
+      "relatedTo": [
+        "fzf",
+        "fd"
+      ],
+      "popularity": 1
+    },
     "smartmontools": {
       "function": [
         "system-info"
@@ -1381,6 +1436,32 @@
         "navi"
       ],
       "popularity": 2
+    },
+    "television": {
+      "function": [
+        "fuzzy-finder"
+      ],
+      "worksWith": [
+        "text",
+        "filesystem",
+        "git",
+        "environment-vars"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "fzf"
+      ],
+      "ids": {
+        "scoop": "television",
+        "winget": "alexpasmantier.television",
+        "crates": "television"
+      },
+      "relatedTo": [
+        "fzf",
+        "fd",
+        "bat"
+      ],
+      "popularity": 1
     },
     "Terminal-Icons": {
       "function": [

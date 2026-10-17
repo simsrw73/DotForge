@@ -6,6 +6,10 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Ctrl+R and Ctrl+T are roles.** `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) let a
+  different tool own each key; only the winner binds it (PSFzf, then television, then fzf, then
+  skim; pick with `Defaults`). PSFzf still binds both by default. A Ctrl+R or Ctrl+T binding you
+  make before DotForge loads is now kept unless `Defaults` names a tool for that key.
 - **Pagers behave alike.** moor, ov and less now all skip paging output that fits one screen, keep
   colors, leave the output on screen when you quit and scroll with the mouse wheel. `BAT_PAGER`
   follows the same pager, so bat pages the same way. `MOOR` now holds only its style.
@@ -27,6 +31,15 @@ All notable changes to DotForge are documented here.
   name is a schema error that names the new one. DotForge's own managers are renamed.
 
 ### Added
+
+- **skim, television, peco and gum.** skim (`sk`) takes fzf's options, so it can run every DotForge
+  picker (`Defaults = @{ picker = 'skim' }`) and bind Ctrl+R/Ctrl+T. television downloads its channels
+  once and can own Ctrl+R (history) and Ctrl+T (smart autocomplete). peco gets a seeded config, gum
+  its colors. All four follow `Theme` in four catppuccin flavors (`SkimTheme`, `TelevisionTheme`,
+  `PecoTheme`, `GumTheme`). `+fuzzy` requests all of them with fzf.
+- **Setup notes.** A tool's one-time setup can tell you about a step only you can take (`setup.notes`,
+  or `Add-DFToolSetupNote` from a setup script). Notes print once at the end of the load and stay in
+  `Get-DFToolStatus`. A `setup.seed` source may use `{theme}`.
 
 - **`more` pages when no pager is installed.** A role can now name a fallback.
 - **ov follows your theme** (`OvTheme`, else `Theme`) with catppuccin colors, unless you have your own ov config.

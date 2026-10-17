@@ -69,7 +69,7 @@ To keep the tool for yourself, put the file in your own tools folder instead: se
 | `themeMap` | | Legacy: use `theme.map`. Still read when `theme.map` is absent. |
 | `settings` | | Free-form values for the tool's companion script (`$DFCurrentTool.settings`). |
 | `prewarm` | | `false` stops DotForge pre-loading a module tool in the background. |
-| `setup` | | `{ "seed": { "<destination>": "<file under Tools/>" } }`: default config files copied once, in the one-time setup step (see below). |
+| `setup` | | `{ "seed": { "<destination>": "<file under Tools/>" }, "notes": [ { "text", "ifFile"?, "unlessFile"? } ] }`: default config files copied once, and notes for steps only the user can take, in the one-time setup step (see below). |
 
 ### `xdg.method`
 
@@ -262,6 +262,11 @@ names in `args`) or doesn't (`unlessFile`); paths may use `{theme}`, `${XDG_*}` 
 A role can also name a `fallback` for when no requested tool fills it; `pager` falls back
 to `more`.
 
+The key-binding roles, `history-search` (Ctrl+R) and `path-insert` (Ctrl+T), bind only through
+`Set-DFRoleKeyHandler -Role -Chord -Tool -Bind { … }` from the hook; it keeps a binding the user made
+themselves. An engine that takes fzf's options and ships no PowerShell bindings calls
+`Register-DFFuzzyKeyHandler -Engine <exe> -Key History|Path -Tool $Tool.name` instead (fzf, skim).
+
 starship's companion is a complete example:
 
 <!-- fragment -->
@@ -287,6 +292,8 @@ Setup runs at most once per machine, the first time the tool is activated, befor
 "setup": { "seed": { "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc" } }
 ```
 
+A source may use `{theme}`, the tool's theme this session. With `theme.files` that's the theme's own file or folder, so a tool can seed a themed config: `"${XDG_CONFIG_HOME}/peco/config.json": "{theme}"` or `"…/config.toml": "{theme}/config.toml"`.
+
 A file that already exists is kept. Because seeding is part of setup, a file the user deletes on purpose isn't recreated on the next load. Files DotForge owns and must keep current (carapace's specs, delta's theme) are deployed by the companion on every load instead.
 
 **A setup script.** For a persistent change the user may later undo, such as a line in their global git config, add `Tools/<name>.setup.ps1`. It runs after the seeds:
@@ -297,6 +304,8 @@ A file that already exists is kept. Because seeding is part of setup, a file the
 - Without a script, DotForge records the seeds itself.
 - Users can opt out of the whole setup step with `SkipSetup = @('<name>')` in their `Start-DFSession` config.
 - `Invoke-DFToolSetup -Name <name>` runs setup again (a deleted seed comes back; `-Force` also replaces an edited one).
+
+**Setup notes.** When the user has to do something DotForge can't, say so with a note rather than printing from the script. Declare it in `setup.notes`, optionally with `ifFile`/`unlessFile` (read like a role flag group's). Conditions are checked *before* the seeds are copied, so `ifFile` on a seed's own destination means "the user already had one" (television's note about `ui.theme`). A setup script adds one with `Add-DFToolSetupNote -Name <name> -Text '…'` before `Complete-DFToolSetup`. Notes are printed once, at the end of the load, and stay in `Get-DFToolStatus <name>`.
 
 ## Check your work
 

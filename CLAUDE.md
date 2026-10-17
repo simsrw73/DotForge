@@ -242,6 +242,11 @@ Each `Tools/*.json` must have at minimum:
   (`docs/superpowers/specs/2026-10-16-role-behaviors-design.md`). `behaviors.env` builds variables the same way
   (pager: `PAGER`, `BAT_PAGER`); a flag may be an `{ ifFile, unlessFile, args }` group; a role may name a
   `fallback` env for when nothing in the session fills it (`docs/superpowers/specs/2026-10-16-pager-role-design.md`).
+  `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) bind keys only through `Set-DFRoleKeyHandler`, which keeps a
+  user's own binding (`docs/superpowers/specs/2026-10-17-fuzzy-finders-design.md`).
+- `setup` (optional): `seed` (destination → file under `Tools/`; a source may use `{theme}`) and `notes` (`{ text,
+  ifFile?, unlessFile? }`, checked before seeding, printed once at the end of the load and kept in `Get-DFToolStatus`;
+  a setup script adds one with `Add-DFToolSetupNote`).
 - `requires` (optional): tools (`"fzf"`) or roles (`"role:js-runtime"`) the tool can't work without.
   Read a `requires`/`after` entry only through `ConvertFrom-DFToolReference`, and list a role's members
   among records only through `Get-DFRoleMember` (`Shared/DFToolReference.ps1`).

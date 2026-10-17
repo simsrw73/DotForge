@@ -8,7 +8,7 @@
 
 ## Groups
 
-Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less, fastfetch, smartmontools; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget.
+Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less, fastfetch, smartmontools; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget; `+fuzzy`: fzf, skim, television, peco, gum.
 
 ## Quick start
 
@@ -57,7 +57,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
 | Prompt | oh-my-posh, starship |
 | Editor | micro, nano |
-| Fuzzy finding and navigation | fzf, zoxide |
+| Fuzzy finding and navigation | fzf, skim, television, peco, gum, zoxide |
 | Pager | moor, ov, less (one sets `PAGER`; see below) |
 | Package managers | choco, npm, scoop, winget |
 | Development | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv, vcpkg |
@@ -85,7 +85,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |
 | procs | `fkill` process picker |
-| PSFzf | `Ctrl+T` (insert a path), `Ctrl+R` (history), `Alt+C` (change folder), fuzzy Tab |
+| PSFzf | `Ctrl+T` (insert a path) and `Ctrl+R` (history) when it wins those roles (it does by default), `Alt+C` (change folder), fuzzy Tab |
 | psreadline | `fprl` color theme picker; `Ctrl+P` / `Ctrl+N` history search |
 | ripgrep | `frg` search-and-open picker |
 | rustup | `frtc` picks the default toolchain |
@@ -165,11 +165,24 @@ These fill the `project-env` role, so only one is active: your `Defaults['projec
 
 These fill the `pager` role, so one of them sets `PAGER`: your `Defaults['pager']` choice, otherwise moor, then ov, then less. A `PAGER` you set yourself is kept unless you name a different tool in `Defaults`.
 
-- **moor** gets `MOOR=-style <theme> -quit-if-one-screen` from your theme (`MoorTheme` or `Theme`), unless you've set `MOOR` yourself.
-- **ov** runs as `ov --quit-if-one-screen`. Its colors come only from `$XDG_CONFIG_HOME\ov\config.yaml`, which DotForge doesn't write; `ov --generate-config` prints a starting file.
+- **moor** gets `MOOR=-style <theme>` from your theme (`MoorTheme` or `Theme`), unless you've set `MOOR` yourself.
+- **ov** gets a catppuccin config that follows your theme (`OvTheme` or `Theme`), passed with `--config` unless you have your own `$XDG_CONFIG_HOME\ov\config.yaml`.
 - **less**: DotForge points `PAGER` at the native Windows build (scoop, winget `jftuga.less` or choco), not Git for Windows' copy in `Git\usr\bin`, which needs `TERM` set correctly. With only Git's copy installed, `PAGER` is plain `less`. Key bindings come from `$XDG_CONFIG_HOME\less\lesskey` (`LESSKEYIN`) and search history goes to `$XDG_STATE_HOME\less\history`.
 
 bat isn't a pager here: when it pages, it uses the `PAGER` above.
+
+### Ctrl+R and Ctrl+T: PSFzf, television, fzf, skim
+
+Ctrl+R (search history) and Ctrl+T (insert a path) are two roles, `history-search` and `path-insert`, so a different tool can own each key. Only the winner binds the key: your `Defaults` choice, otherwise PSFzf, then television, then fzf, then skim. For example, `Defaults = @{ 'history-search' = 'television'; 'path-insert' = 'skim' }`. A Ctrl+R or Ctrl+T binding you make yourself before DotForge loads is kept (`Get-DFToolStatus` says so) unless `Defaults` names a tool for that key.
+
+- **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets the same layout as fzf through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
+- **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME	elevision\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
+- **fzf** and **skim** bind Ctrl+R and Ctrl+T through DotForge's own handler when they win: history is newest first without repeats, and picked paths are quoted when they hold a space.
+
+### peco and gum
+
+- **peco** gets a catppuccin `$XDG_CONFIG_HOME\peco\config.json` once (`PecoTheme` or `Theme`); after that the file is yours.
+- **gum** gets catppuccin colors through its `GUM_*` variables (`GumTheme` or `Theme`); a `GUM_*` color you set yourself is kept. Nothing else changes, since scripts expect gum's stock behavior.
 
 ### fnm and zoxide
 

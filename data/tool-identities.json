@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-11",
+  "updated": "2026-10-17",
   "tools": {
     "bat": {
       "packages": {
@@ -146,6 +146,13 @@
       },
       "linkedVia": "curated"
     },
+    "gum": {
+      "packages": {
+        "scoop": "gum",
+        "winget": "charmbracelet.gum"
+      },
+      "linkedVia": "curated"
+    },
     "inshellisense": {
       "packages": {
         "npm": "@microsoft/inshellisense"
@@ -249,6 +256,14 @@
       },
       "linkedVia": "curated"
     },
+    "peco": {
+      "packages": {
+        "scoop": "peco",
+        "winget": "peco.peco"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/peco/peco"
+    },
     "pipx": {
       "packages": {
         "scoop": "pipx",
@@ -324,6 +339,15 @@
       },
       "linkedVia": "curated"
     },
+    "skim": {
+      "packages": {
+        "scoop": "skim",
+        "winget": "skim-rs.skim",
+        "crates": "skim"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/skim-rs/skim"
+    },
     "smartmontools": {
       "packages": {
         "scoop": "smartmontools",
@@ -337,6 +361,15 @@
         "winget": "Starship.Starship"
       },
       "linkedVia": "curated"
+    },
+    "television": {
+      "packages": {
+        "scoop": "television",
+        "winget": "alexpasmantier.television",
+        "crates": "television"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/alexpasmantier/television"
     },
     "Terminal-Icons": {
       "packages": {
