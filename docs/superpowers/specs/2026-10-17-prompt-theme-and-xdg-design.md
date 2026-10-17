@@ -150,6 +150,34 @@ outside DotForge are kept, as always.
 6. starship 1.26: is `STARSHIP_CONFIG` read on every prompt render, so a changed variable takes
    effect at the next prompt?
 
+## Probe results (2026-10-17)
+
+1. **pnpm** isn't installed here, so this comes from pnpm's settings docs:
+   - With `XDG_*` set, pnpm uses `$XDG_CONFIG_HOME/pnpm/rc` (config), `$XDG_DATA_HOME/pnpm/store`
+     (store), `$XDG_CACHE_HOME/pnpm` (cache) and `$XDG_STATE_HOME/pnpm` (state).
+   - Otherwise it uses `%LOCALAPPDATA%\pnpm` (config\rc, store), `%LOCALAPPDATA%\pnpm-cache` and
+     `%LOCALAPPDATA%\pnpm-state`.
+   - DotForge exports `XDG_*`, so pnpm follows them by itself. Only `PNPM_HOME` (the global bin) is
+     set.
+2. **bun 1.3.14:**
+   - `BUN_INSTALL_CACHE_DIR` moves the cache: `bun pm cache` printed the scratch folder.
+   - Global installs live in `$BUN_INSTALL\install\global`, and their binaries in `$BUN_INSTALL\bin`.
+   - The default home is `~/.bun`, which here holds only `install\cache`.
+3. **pipx 1.18.2 defaults** (with `PIPX_HOME` unset): `PIPX_HOME = %LOCALAPPDATA%\pipx\pipx`, and
+   `PIPX_BIN_DIR = ~/.local/bin`, which is already `XDG_BIN_HOME`. So the native is
+   `${LOCALAPPDATA}/pipx/pipx`, and `PIPX_BIN_DIR` is set to `${XDG_BIN_HOME}` (the same folder;
+   stated explicitly).
+4. **Python 3.14.3** has the new REPL (`_pyrepl`), which reads `PYTHON_HISTORY` (added in 3.13).
+   The default history file is `~/.python_history`, which exists and is empty here.
+5. **oh-my-posh:**
+   - Its repository's themes are `themes/catppuccin_{mocha,macchiato,frappe,latte}.omp.json`.
+   - They were copied unchanged into `Tools/oh-my-posh/`, with its MIT license (`COPYING` →
+     `LICENSE`), from main at `913014b4abdb`.
+   - oh-my-posh isn't installed on this machine (only a stale PATH entry), so rendering a bundled
+     theme is a hand check.
+6. **starship 1.26.0** reads `STARSHIP_CONFIG` on each `starship prompt` call: two calls with
+   different files printed `AAA`, then `BBB`. A changed variable takes effect at the next prompt.
+
 ## Out of scope
 
 - Seeding a starship layout for new users.
