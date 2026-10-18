@@ -1,0 +1,23 @@
+{
+  "name": "btop",
+  "description": "Resource monitor (btop4win): processes, CPU, memory, disks and network. The btop-lhm build adds hardware sensors and needs admin rights",
+  "tags": ["system", "process", "monitor"],
+  "executable": "btop.exe",
+  "roles": { "process-viewer": {} },
+  "after": ["role:elevator"],
+  "packages": { "scoop": "btop", "winget": "aristocratos.btop4win" },
+  "theme": {
+    "key": "BtopTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "catppuccin_mocha", "catppuccin-macchiato": "catppuccin_macchiato", "catppuccin-frappe": "catppuccin_frappe", "catppuccin-latte": "catppuccin_latte" },
+    "valid": ["catppuccin_mocha", "catppuccin_macchiato", "catppuccin_frappe", "catppuccin_latte"],
+    "fallback": "catppuccin_mocha"
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "default",
+    "instructions": "btop4win keeps btop.conf and its themes folder beside btop.exe (scoop persists them) and has no config flag, so it can't be relocated. Setup copies the catppuccin themes into that themes folder; choosing one (color_theme in btop.conf, or btop's options menu) is yours."
+  },
+  "aliases": {},
+  "picker": null
+}

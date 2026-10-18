@@ -338,6 +338,85 @@
         "source": null
       }
     },
+    "btop": {
+      "sha256": "771cba18024fc1d6c038899d7f9db562a98bb55e52731b5ec44a61bf47f54ec7",
+      "record": {
+        "name": "btop",
+        "executable": "btop.exe",
+        "type": "exe",
+        "description": "Resource monitor (btop4win): processes, CPU, memory, disks and network. The btop-lhm build adds hardware sensors and needs admin rights",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "scoop": "btop",
+          "winget": "aristocratos.btop4win"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": "btop4win keeps btop.conf and its themes folder beside btop.exe (scoop persists them) and has no config flag, so it can't be relocated. Setup copies the catppuccin themes into that themes folder; choosing one (color_theme in btop.conf, or btop's options menu) is yours.",
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [
+          "role:elevator"
+        ],
+        "requires": [],
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "BtopTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "catppuccin_mocha",
+            "catppuccin-macchiato": "catppuccin_macchiato",
+            "catppuccin-frappe": "catppuccin_frappe",
+            "catppuccin-latte": "catppuccin_latte"
+          },
+          "files": null,
+          "valid": [
+            "catppuccin_mocha",
+            "catppuccin_macchiato",
+            "catppuccin_frappe",
+            "catppuccin_latte"
+          ],
+          "fallback": "catppuccin_mocha",
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "bun": {
       "sha256": "f49a5f3143e5c05cbf98894018f67bc9c0b351a98a81eebb74523c78d374d7f5",
       "record": {
