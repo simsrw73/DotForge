@@ -43,7 +43,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `DirectoryJumpRanked` | int | `10` | Most zoxide folders at the top of Alt+C's list. |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `BrootTheme`, `DeltaTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -110,6 +110,10 @@ mdcat: dracula
 | mdv | `MdvTheme` | `terminal`, `solarized-dark`, `nord`, `tokyonight`, `kanagawa`, `gruvbox`, `monokai`, `material-ocean`, `catppuccin` | warning; `terminal` |
 | moor | `MoorTheme` | any moor `-style` name (`catppuccin-mocha`, `dracula`, `nord`, …); used only when you haven't set `MOOR` | moor uses its default style |
 | peco | `PecoTheme` | `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`; seeded once into `$XDG_CONFIG_HOME\peco\config.json` | warning; nothing seeded |
+| bottom | `BottomTheme` | `default`, `default-light`, `gruvbox`, `gruvbox-light`, `nord`, `nord-light` (catppuccin-latte maps to `default-light`, the dark flavors to `default`) | warning; `default` |
+| btop | `BtopTheme` | the four catppuccin flavors; only names the theme in setup's note, since `btop.conf` is yours | warning; `catppuccin_mocha` |
+| duf | `DufTheme` | `dark`, `light`, `ansi` (catppuccin-latte maps to `light`) | warning; `dark` |
+| procs | `ProcsTheme` | `auto`, `dark`, `light` (catppuccin-latte maps to `light`) | warning; `dark` |
 | oh-my-posh | `OhMyPoshTheme` | the four catppuccin flavors; used when you have no config of your own (`POSH_THEME` or `$XDG_CONFIG_HOME\oh-my-posh\*.omp.*`) | warning; `catppuccin-mocha` |
 | starship | `StarshipTheme` | the four catppuccin flavors; swaps the `palette` line in a copy of your `starship.toml` | warning; `catppuccin-mocha` |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |

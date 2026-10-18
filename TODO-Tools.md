@@ -65,6 +65,8 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 | fuzzy-finder | category | fzf, skim, television, peco, gum | | done 2026-10-17 |
 | history-search (Ctrl+R) | single | PSFzf, television, fzf, skim | atuin, mcfly | T-67 |
 | path-insert (Ctrl+T) | single | PSFzf, television, fzf, skim | | done 2026-10-17 |
+| process-viewer | category | procs, btop, bottom, glances, ntop, pstop | instant replay (T-72) | done 2026-10-17 |
+| disk-usage | category | dust, dua, gdu, duf | | done 2026-10-17 |
 | directory-jump (Alt+C) | single | fzf, skim, broot | yazi, superfile, lf (file-manager batch) | done 2026-10-17 |
 | listing | single | eza, lsd | | done 2026-10-16 (T-34, role behaviors) |
 | package-manager | single | scoop, winget, choco | gaps: winget search picker, choco XDG/pickers (T-47); update/remove polish (T-58) | T-47 |
@@ -75,7 +77,7 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 | prompt | single | oh-my-posh, starship | gap: `oh-my-posh init` runs every start (T-66) | done 2026-10-17 (both follow `Theme`, live) |
 | completion | category | psreadline, carapace, inshellisense, PSFzf | gaps: carapace's colors don't follow `Theme` (`carapace --style`); carapace could load after the first prompt (T-46) | |
 | tab-completion | single | carapace, inshellisense, PSFzf | gaps: same as completion (carapace colors, T-46) | |
-| elevator | category | gsudo | Windows sudo | |
+| elevator | category | gsudo | | done 2026-10-17 (Windows `sudo` is used by DotForge's elevation, not a separate tool) |
 | url-fetch | category | curl, wget | httpie, xh, curlie, aria2 | T-35 |
 | diff | single | delta | difftastic, livediff, winmerge, meld, kdiff3 | |
 | system-info | category | fastfetch | winfetch, neofetch | |
@@ -95,8 +97,6 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 |---|---|---|
 | file-manager | yazi, superfile, lf, broot, midnight commander, vifm, ranger | T-35 |
 | git-tui | lazygit (tool exists), gitui | T-35 |
-| process-viewer | procs (tool exists), btop, bottom, htop, glances | T-35 |
-| disk-usage | dust, dua, gdu, ncdu, duf | T-35 |
 | json | jq (tool exists), jaq, gojq, fx, jless, jid; yq, dasel | T-35 |
 | dotfiles | chezmoi (tool exists), yadm, stow | T-35 |
 | quick-help | tldr, tealdeer (two clients for the tldr pages), cheat.sh (cht) | T-35 |
@@ -135,8 +135,8 @@ Gaps among these:
 - **file-manager / directory-jump:** yazi, superfile, lf, mc (midnight commander), ranger, vifm
 - **url-fetch:** aria2, httpie, xh, curlie
 - **git-tui:** gitui
-- **process-viewer:** btop, bottom, htop, glances, ntop, pstop, top
-- **disk-usage:** dust, dua, gdu, ncdu, duf
+- **process-viewer:** done (htop is pstop's link on Windows; top has no Windows build)
+- **disk-usage:** done (ncdu has no Windows build; gdu is its port)
 - **json:** jaq, gojq, fx, jless, jid, jc, yq, dasel, xidel
 - **dotfiles:** yadm, stow
 - **quick-help:** tldr, tealdeer (two clients for the same tldr pages), cheat.sh (cht)
@@ -166,5 +166,5 @@ Gaps among these:
 
 ### Unclear (check before adding)
 
-- **Linux-only, or no native Windows build:** iptables, ip, yay, lsix, locate/mlocate, free, uptime, pkill, lsof, ntop, tcpdump.
+- **Linux-only, or no native Windows build:** iptables, ip, yay, lsix, locate/mlocate, free, uptime, pkill, lsof, tcpdump, ncdu, htop (pstop installs an htop link).
 - **Covered elsewhere:** `z` and zoxide (zoxide is done), `rg` and ripgrep, `tmux` and psmux.

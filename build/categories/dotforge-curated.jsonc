@@ -202,6 +202,24 @@
     "function": ["system-info"], "worksWith": ["filesystem"], "interface": "cli",
     "ids": { "scoop": "smartmontools", "winget": "smartmontools.smartmontools" }, "popularity": 1
   },
+  "btop": {
+    "function": ["process-monitor", "system-info"], "worksWith": ["processes"], "interface": "tui",
+    "alternativeTo": ["top"],
+    "ids": { "scoop": "btop", "winget": "aristocratos.btop4win" },
+    "relatedTo": ["bottom", "glances", "procs"], "popularity": 2
+  },
+  "ntop": {
+    "function": ["process-monitor"], "worksWith": ["processes"], "interface": "tui",
+    "alternativeTo": ["top"],
+    "ids": { "scoop": "ntop", "winget": "gsass1.NTop" },
+    "relatedTo": ["pstop", "btop"], "popularity": 1
+  },
+  "pstop": {
+    "function": ["process-monitor"], "worksWith": ["processes"], "interface": "tui",
+    "alternativeTo": ["top"],
+    "ids": { "winget": "marlocarlo.pstop" },
+    "relatedTo": ["ntop", "btop"], "popularity": 1
+  },
   "procs": {
     "function": ["process-monitor"], "worksWith": ["processes"], "interface": "cli",
     "alternativeTo": ["ps"],

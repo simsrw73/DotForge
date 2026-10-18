@@ -32,6 +32,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Process viewers and disk-usage tools.** procs, btop, bottom, glances, ntop and pstop (the
+  `process-viewer` category) and dust, dua, gdu and duf (`disk-usage`) follow the tool contract:
+  install ids, XDG config folders where the tool allows it, light or dark colors from `Theme`, and
+  completions. `+admin-tools` adds dust. When btop-lhm (the hardware-sensor build, which needs admin
+  rights) is the btop on `PATH` and gsudo is in your `Tools`, `btop` runs it through gsudo.
 - **starship and oh-my-posh follow `Theme`.** starship uses a copy of your `starship.toml` with only
   its `palette` line swapped (your file is never written; when the palette already matches it reads
   your file). oh-my-posh uses DotForge's bundled catppuccin themes when you have no config of your

@@ -102,11 +102,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [broot](#broot-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gh](#gh-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [disk-usage](#disk-usage-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [process-viewer](#process-viewer-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -114,6 +114,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | --- | --- | --- | --- |
 | [Select-BwItem](#select-bwitem) | `fbw` | bitwarden | Fuzzy-picks a Bitwarden vault item and copies its password, clearing the clipboard after 30 seconds. |
 | [br](#br) |  | broot | Runs broot, and moves the shell to the folder you leave it in. |
+| [btop](#btop) |  | btop | Runs btop-lhm through your elevator (gsudo), in this console. |
 | [Assert-DFChoco](#assert-dfchoco) |  | choco | Returns $true when choco is on PATH; otherwise warns and returns $false. |
 | [Invoke-ChocoUpdate](#invoke-chocoupdate) | `cup` | choco | Fuzzy-picks outdated Chocolatey packages and upgrades them. |
 | [Invoke-DFChocoElevated](#invoke-dfchocoelevated) |  | choco | Runs choco with the given arguments, elevated through gsudo when available. |
@@ -2406,6 +2407,15 @@ Changes to a folder you pick from Alt+C. Only the winner binds the key; a bindin
 | Kind | single |
 | Members | [broot](#broot-tool), [fzf](#fzf-tool), [skim](#skim-tool) |
 
+### disk-usage role
+
+Shows what uses disk space, and free space per drive.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [dua](#dua-tool), [duf](#duf-tool), [dust](#dust-tool), [gdu](#gdu-tool) |
+
 ### editor role
 
 Edits text files. The winner sets EDITOR and VISUAL.
@@ -2556,6 +2566,15 @@ Installs modules from the PowerShell Gallery.
 | Kind | category |
 | Members | [psresource](#psresource-tool) |
 
+### process-viewer role
+
+Shows running processes and system load.
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [bottom](#bottom-tool), [btop](#btop-tool), [glances](#glances-tool), [ntop](#ntop-tool), [procs](#procs-tool), [pstop](#pstop-tool) |
+
 ### project-env role
 
 Loads per-directory environment variables. Two active hooks would fight over the same variables.
@@ -2668,6 +2687,20 @@ Bitwarden CLI — open-source password manager
 | Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/bitwarden.ps1`](#bitwarden-companion) |
 
+### bottom tool
+
+Graphical process and system monitor (btm)
+
+| | |
+| --- | --- |
+| Detected by | `btm.exe` |
+| Tags | `system`, `process`, `monitor` |
+| Install ids | scoop: `bottom`<br>winget: `Clement.bottom` |
+| XDG method | `wrapper` |
+| Theme | key `BottomTheme`, default `catppuccin-mocha` |
+| Wraps | `btm` adds `--theme`, `{theme}`, `-C {file}` when `${XDG_CONFIG_HOME}/bottom/bottom.toml` exists |
+| Roles | [`process-viewer`](#process-viewer-role) |
+
 ### broot tool
 
 Interactive file browser with fuzzy search; br moves the shell to the folder you leave it in
@@ -2683,6 +2716,21 @@ Interactive file browser with fuzzy search; br moves the shell to the folder you
 | Seeds once | `${XDG_CONFIG_HOME}/broot/conf.hjson`<br>`${XDG_CONFIG_HOME}/broot/verbs.hjson` |
 | Roles | [`directory-jump`](#directory-jump-role) |
 | Companion | [`Tools/broot.ps1`](#broot-companion), one-time `Tools/broot.setup.ps1` |
+
+### btop tool
+
+Resource monitor (btop4win): processes, CPU, memory, disks and network. The btop-lhm build adds hardware sensors and needs admin rights
+
+| | |
+| --- | --- |
+| Detected by | `btop.exe` |
+| Tags | `system`, `process`, `monitor` |
+| Install ids | scoop: `btop`<br>winget: `aristocratos.btop4win` |
+| XDG method | `default` |
+| Theme | key `BtopTheme`, default `catppuccin-mocha` |
+| Registers after | `role:elevator` |
+| Roles | [`process-viewer`](#process-viewer-role) |
+| Companion | [`Tools/btop.ps1`](#btop-companion), one-time `Tools/btop.setup.ps1` |
 
 ### bun tool
 
@@ -2810,6 +2858,45 @@ Container runtime and management
 | Creates | `${XDG_CONFIG_HOME}/docker` |
 | Pickers | `fdc` (Select-DockerContainer): lists `docker ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}'`; Enter runs `docker exec -it {} sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'`<br>`fdi` (Select-DockerImage): lists `docker images --format '{{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}'`; Enter outputs the selection |
 
+### dua tool
+
+Disk usage analyzer with an interactive mode (dua i) for finding and deleting what's big
+
+| | |
+| --- | --- |
+| Detected by | `dua.exe` |
+| Tags | `disk`, `files`, `system` |
+| Install ids | scoop: `dua`<br>winget: `Byron.dua-cli` |
+| XDG method | `default` |
+| Roles | [`disk-usage`](#disk-usage-role) |
+| Companion | `Tools/dua.ps1` |
+
+### duf tool
+
+Shows free and used space per drive (a df alternative)
+
+| | |
+| --- | --- |
+| Detected by | `duf.exe` |
+| Tags | `disk`, `system` |
+| Install ids | scoop: `duf`<br>winget: `muesli.duf` |
+| XDG method | `default` |
+| Theme | key `DufTheme`, default `catppuccin-mocha` |
+| Wraps | `duf` adds `-theme`, `{theme}` |
+| Roles | [`disk-usage`](#disk-usage-role) |
+
+### dust tool
+
+Shows which folders use the most disk space, as a tree
+
+| | |
+| --- | --- |
+| Detected by | `dust.exe` |
+| Tags | `disk`, `files`, `system` |
+| Install ids | scoop: `dust`<br>winget: `bootandy.dust` |
+| XDG method | `default` |
+| Roles | [`disk-usage`](#disk-usage-role) |
+
 ### eza tool
 
 Modern ls replacement with icons, Git integration, and color
@@ -2886,6 +2973,19 @@ General-purpose command-line fuzzy finder
 | Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
 
+### gdu tool
+
+Fast disk usage analyzer with an interactive view (ncdu's Windows-capable port)
+
+| | |
+| --- | --- |
+| Detected by | `gdu.exe` |
+| Tags | `disk`, `files`, `system` |
+| Install ids | scoop: `gdu`<br>winget: `dundee.gdu` |
+| XDG method | `wrapper` |
+| Wraps | `gdu` adds `--config-file {file}` when `${XDG_CONFIG_HOME}/gdu/gdu.yaml` exists |
+| Roles | [`disk-usage`](#disk-usage-role) |
+
 ### gh tool
 
 GitHub CLI
@@ -2897,6 +2997,20 @@ GitHub CLI
 | Install ids | scoop: `gh`<br>winget: `GitHub.cli`<br>choco: `gh` |
 | XDG method | `default` |
 | Pickers | `fpr` (Select-GHPr): lists `gh pr list --json number,title,author | ConvertFrom-Json | ForEach-Object { "$($_.number)'t$($_.title) ($($_.author.login))" }`; Enter runs `gh pr checkout {}`<br>`fgi` (Select-GHIssue): lists `gh issue list --json number,title | ConvertFrom-Json | ForEach-Object { "$($_.number)'t$($_.title)" }`; Enter runs `gh issue view {} --web` |
+
+### glances tool
+
+Cross-platform system monitor with a web and API mode
+
+| | |
+| --- | --- |
+| Detected by | `glances.exe` |
+| Tags | `system`, `process`, `monitor` |
+| Install ids | pypi: `glances` |
+| XDG method | `wrapper` |
+| Wraps | `glances` adds `-C {file}` when `${XDG_CONFIG_HOME}/glances/glances.conf` exists |
+| Requires | `role:python-runtime` |
+| Roles | [`process-viewer`](#process-viewer-role) |
 
 ### glow tool
 
@@ -3130,6 +3244,18 @@ Node.js package manager
 | Roles | [`js-package-manager`](#js-package-manager-role) |
 | Companion | [`Tools/npm.ps1`](#npm-companion) |
 
+### ntop tool
+
+htop-like process viewer for Windows (NTop)
+
+| | |
+| --- | --- |
+| Detected by | `ntop.exe` |
+| Tags | `system`, `process`, `monitor` |
+| Install ids | scoop: `ntop`<br>winget: `gsass1.NTop` |
+| XDG method | `default` |
+| Roles | [`process-viewer`](#process-viewer-role) |
+
 ### oh-my-posh tool
 
 Cross-shell prompt theme engine with hundreds of built-in themes
@@ -3242,8 +3368,11 @@ Modern replacement for ps
 | Detected by | `procs.exe` |
 | Tags | `system`, `process`, `monitor` |
 | Install ids | scoop: `procs`<br>choco: `procs` |
-| XDG method | `default` |
+| XDG method | `wrapper` |
+| Theme | key `ProcsTheme`, default `catppuccin-mocha` |
+| Wraps | `procs` adds `--theme`, `{theme}`, `--load-config {file}` when `${XDG_CONFIG_HOME}/procs/config.toml` exists |
 | Picker | `` (): lists ``; Enter runs `` |
+| Roles | [`process-viewer`](#process-viewer-role) |
 | Companion | [`Tools/procs.ps1`](#procs-companion) |
 
 ### ps-dotenv tool
@@ -3298,6 +3427,18 @@ PowerShell module installer (PSResourceGet; installs from the PowerShell Gallery
 | Detected by | module `Microsoft.PowerShell.PSResourceGet` |
 | Tags | `powershell`, `package-manager` |
 | Roles | [`powershell-package-manager`](#powershell-package-manager-role) |
+
+### pstop tool
+
+htop-like system monitor for Windows (winget's install adds an htop link to it; htop itself has no Windows build)
+
+| | |
+| --- | --- |
+| Detected by | `pstop.exe` |
+| Tags | `system`, `process`, `monitor` |
+| Install ids | winget: `marlocarlo.pstop` |
+| XDG method | `default` |
+| Roles | [`process-viewer`](#process-viewer-role) |
 
 ### pymanager tool
 
@@ -3590,6 +3731,28 @@ br -f -d $HOME\projects
 ```
 
 Browses only the folders under your projects folder, with dates.
+
+**See also:** [tools](guide/tools.md)
+
+### btop companion
+
+#### btop
+
+Runs btop-lhm through your elevator (gsudo), in this console.
+
+btop-lhm reads hardware sensors through LibreHardwareMonitor and needs admin rights. Running it through the elevator keeps it in this console and uses the elevator's cached credentials instead of a UAC prompt every time. Your arguments go to btop unchanged.
+
+Defined by DotForge's btop companion only when btop-lhm is the build on PATH and an elevator is active this session.
+
+**Outputs:** None.
+
+**Example 1**
+
+```powershell
+btop
+```
+
+Opens btop-lhm with admin rights in this console.
 
 **See also:** [tools](guide/tools.md)
 

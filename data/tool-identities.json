@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-17",
+  "updated": "2026-10-18",
   "tools": {
     "bat": {
       "packages": {
@@ -18,12 +18,28 @@
       },
       "linkedVia": "curated"
     },
+    "bottom": {
+      "packages": {
+        "scoop": "bottom",
+        "winget": "Clement.bottom"
+      },
+      "linkedVia": "curated"
+    },
     "broot": {
       "packages": {
         "scoop": "broot",
+        "winget": "Dystroy.broot",
         "choco": "broot"
       },
       "linkedVia": "curated"
+    },
+    "btop": {
+      "packages": {
+        "scoop": "btop",
+        "winget": "aristocratos.btop4win"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/aristocratos/btop4win"
     },
     "bun": {
       "packages": {
@@ -78,6 +94,29 @@
       },
       "linkedVia": "curated"
     },
+    "dua": {
+      "packages": {
+        "scoop": "dua",
+        "winget": "Byron.dua-cli"
+      },
+      "linkedVia": "curated"
+    },
+    "duf": {
+      "packages": {
+        "scoop": "duf",
+        "winget": "muesli.duf"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/muesli/duf"
+    },
+    "dust": {
+      "packages": {
+        "scoop": "dust",
+        "winget": "bootandy.dust"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/bootandy/dust"
+    },
     "eza": {
       "packages": {
         "scoop": "eza",
@@ -122,11 +161,25 @@
       "linkedVia": "repo",
       "repo": "https://github.com/junegunn/fzf"
     },
+    "gdu": {
+      "packages": {
+        "scoop": "gdu",
+        "winget": "dundee.gdu"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/dundee/gdu"
+    },
     "gh": {
       "packages": {
         "scoop": "gh",
         "winget": "GitHub.cli",
         "choco": "gh"
+      },
+      "linkedVia": "curated"
+    },
+    "glances": {
+      "packages": {
+        "pypi": "glances"
       },
       "linkedVia": "curated"
     },
@@ -242,6 +295,14 @@
       },
       "linkedVia": "curated"
     },
+    "ntop": {
+      "packages": {
+        "scoop": "ntop",
+        "winget": "gsass1.NTop"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/gsass1/ntop"
+    },
     "oh-my-posh": {
       "packages": {
         "scoop": "oh-my-posh",
@@ -304,6 +365,12 @@
       "packages": {
         "psgallery": "PSFzf",
         "scoop": "psfzf"
+      },
+      "linkedVia": "curated"
+    },
+    "pstop": {
+      "packages": {
+        "winget": "marlocarlo.pstop"
       },
       "linkedVia": "curated"
     },

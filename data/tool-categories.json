@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-17",
+  "updated": "2026-10-18",
   "taxonomy": {
     "function": [
       "search",
@@ -172,6 +172,29 @@
         "fd"
       ],
       "popularity": 1
+    },
+    "btop": {
+      "function": [
+        "process-monitor",
+        "system-info"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "top"
+      ],
+      "ids": {
+        "scoop": "btop",
+        "winget": "aristocratos.btop4win"
+      },
+      "relatedTo": [
+        "bottom",
+        "glances",
+        "procs"
+      ],
+      "popularity": 2
     },
     "bun": {
       "function": [
@@ -1021,6 +1044,27 @@
       "interface": "cli",
       "popularity": 3
     },
+    "ntop": {
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "top"
+      ],
+      "ids": {
+        "scoop": "ntop",
+        "winget": "gsass1.NTop"
+      },
+      "relatedTo": [
+        "pstop",
+        "btop"
+      ],
+      "popularity": 1
+    },
     "oh-my-posh": {
       "function": [
         "prompt"
@@ -1233,6 +1277,26 @@
         "psgallery": "Microsoft.PowerShell.PSResourceGet"
       },
       "popularity": 2
+    },
+    "pstop": {
+      "function": [
+        "process-monitor"
+      ],
+      "worksWith": [
+        "processes"
+      ],
+      "interface": "tui",
+      "alternativeTo": [
+        "top"
+      ],
+      "ids": {
+        "winget": "marlocarlo.pstop"
+      },
+      "relatedTo": [
+        "ntop",
+        "btop"
+      ],
+      "popularity": 1
     },
     "pymanager": {
       "function": [

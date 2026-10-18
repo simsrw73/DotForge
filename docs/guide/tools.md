@@ -51,7 +51,9 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Completion | carapace, inshellisense |
 | Files and folders | bat, broot, eza, fd, lsd, ripgrep, vivid |
 | Text and data | glow, jq, mdcat, mdv |
-| System | fastfetch, gsudo, procs, smartmontools |
+| System | fastfetch, gsudo, smartmontools |
+| Processes | procs, btop, bottom, glances, ntop, pstop (the `process-viewer` category) |
+| Disk usage | dust, dua, gdu, duf (the `disk-usage` category) |
 | Network | curl, wget |
 | Containers | docker |
 | Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
@@ -85,6 +87,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | oh-my-posh | `fpot` prompt theme picker (when it wins the `prompt` role) |
 | posh-git | `fco` (checkout branch), `flog` (show commit), `fga` (stage files), `fstash` (apply stash) |
 | procs | `fkill` process picker |
+| btop | `btop` runs btop-lhm through gsudo, when btop-lhm is the build on `PATH` and gsudo is in your `Tools` |
 | PSFzf | `Ctrl+T` (insert a path) and `Ctrl+R` (history) when it wins those roles (it does by default), `Alt+A` (pick an argument from history), fuzzy Tab |
 | psreadline | `fprl` color theme picker; `Ctrl+P` / `Ctrl+N` history search |
 | ripgrep | `frg` search-and-open picker |
@@ -231,6 +234,18 @@ glow hello.md
 ### gsudo
 
 `sudo` runs gsudo. If Windows' own `sudo.exe` would otherwise win, DotForge moves gsudo's folder to the front of `PATH`. `please` runs the previous command again, elevated, in a new process.
+
+Windows' own `sudo` isn't a separate DotForge tool: when DotForge needs admin rights (an install through choco), it uses gsudo if it's in your `Tools`, else Windows' `sudo` when it's turned on in inline mode, else a separate administrator window.
+
+### Process viewers and disk usage
+
+These tools all do their own thing and live side by side; none of them takes a classic name such as `top`, `du` or `df`. `Get-DFRole process-viewer` and `Get-DFRole disk-usage` list them. `+admin-tools` installs a sensible pair: procs and dust.
+
+- **procs**, **bottom** (`btm`) and **duf** follow `Theme` with their own light or dark colors (`ProcsTheme`, `BottomTheme`, `DufTheme`).
+- **Config folders:** procs, bottom, glances and gdu read their config from `$XDG_CONFIG_HOME\<tool>\` once you create it there (for example `$XDG_CONFIG_HOME\bottom\bottom.toml`), and dust reads `$XDG_CONFIG_HOME\dust\config.toml` itself. A config you already have in the tool's own location (for example `%APPDATA%\bottom\bottom.toml`) holds the tool back until you run `Resolve-DFToolConflict`.
+- **dua** keeps its config in `%APPDATA%\dua-cli` whatever `XDG_CONFIG_HOME` says, and has no flag to change that.
+- **btop** comes in two builds, both installed as `btop.exe`. Plain `btop` (the default) runs as you. `btop-lhm` (`scoop install btop-lhm`) adds hardware sensors through LibreHardwareMonitor and needs admin rights; with gsudo in your `Tools`, DotForge runs it through gsudo in the same console. btop keeps `btop.conf` beside its exe, so it can't move under XDG; setup copies catppuccin themes into its themes folder, and you choose one with `color_theme` in `btop.conf` or in btop's options.
+- **pstop:** winget's install also adds an `htop` link to pstop. htop itself has no Windows build. ncdu has none either; gdu is its port.
 
 ### lsd
 

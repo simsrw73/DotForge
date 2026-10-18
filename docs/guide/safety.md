@@ -24,10 +24,13 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | Tool | Variable | New location |
 | --- | --- | --- |
 | bat | `BAT_CONFIG_PATH` | `$XDG_CONFIG_HOME\bat\bat.conf` |
+| bottom | `-C` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\bottom\bottom.toml` |
 | bun | `BUN_INSTALL`, `BUN_INSTALL_CACHE_DIR` | `$XDG_DATA_HOME\bun` (global packages), `$XDG_CACHE_HOME\bun\install\cache` |
 | chezmoi | `CHEZMOI_CONFIG_DIR` | `$XDG_CONFIG_HOME\chezmoi` |
 | curl | `CURL_HOME` | `$XDG_CONFIG_HOME\curl` |
 | docker | `DOCKER_CONFIG` | `$XDG_CONFIG_HOME\docker` |
+| gdu | `--config-file` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\gdu\gdu.yaml` |
+| glances | `-C` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\glances\glances.conf` |
 | fnm | `FNM_DIR` | `$XDG_DATA_HOME\fnm` (installed Node versions) |
 | lazygit | `LG_CONFIG_FILE` | `$XDG_CONFIG_HOME\lazygit\config.yml` |
 | less | `LESSHISTFILE`, `LESSKEY` | `$XDG_STATE_HOME\less\history`, `$XDG_CONFIG_HOME\less\lesskey` |
@@ -35,6 +38,7 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | micro | `MICRO_CONFIG_HOME` | `$XDG_CONFIG_HOME\micro` |
 | npm | `NPM_CONFIG_USERCONFIG`, `NODE_REPL_HISTORY` | `$XDG_CONFIG_HOME\npm\npmrc`, `$XDG_DATA_HOME\node_repl_history` |
 | oh-my-posh | `POSH_THEMES_PATH` | `$XDG_DATA_HOME\oh-my-posh\themes` |
+| procs | `--load-config` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\procs\config.toml` |
 | pip | `PIP_CONFIG_FILE`, `PIP_CACHE_DIR` | `$XDG_CONFIG_HOME\pip\pip.ini`, `$XDG_CACHE_HOME\pip` |
 | pipx | `PIPX_HOME` | `$XDG_DATA_HOME\pipx` (installed apps' environments) |
 | pnpm | `PNPM_HOME` | `$XDG_DATA_HOME\pnpm` (global commands) |

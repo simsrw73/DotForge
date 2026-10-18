@@ -215,6 +215,14 @@ Two categories, and the difference matters:
 | **Where** | `Tools/bun.json`, `Tools/bun.ps1`, `Tools/pnpm.json`, `Tools/pnpm.ps1`, `Tools/pipx.json`, `Tools/python.json`, `Tools/pip.json` |
 | **Why** | Keeps their files under the XDG folders. |
 | **If it changes** | A variable a tool stops reading leaves its files in the old default location; nothing breaks. |
+### 22. btop-lhm detection; config flags of the admin tools
+
+| | |
+|---|---|
+| **What** | btop4win's two scoop builds both install `btop.exe`; only btop-lhm's folder holds `LibreHardwareMonitorLib.dll`, and its exe asks for admin rights itself (UAC). btop4win keeps `btop.conf` and `themes\` beside the exe and has no config flag. procs `--load-config`, bottom `-C` (which creates a default config at a missing path), glances `-C`, gdu `--config-file`; dua ignores `XDG_CONFIG_HOME` (`%APPDATA%\dua-cli`); dust reads `$XDG_CONFIG_HOME/dust/config.toml` (verified versions in the admin-tools spec). |
+| **Where** | `Tools/btop.ps1`, `Tools/btop.setup.ps1`, `Tools/procs.json`, `Tools/bottom.json`, `Tools/glances.json`, `Tools/gdu.json`, `Tools/dust.json`, `Tools/dua.json` |
+| **Why** | btop-lhm runs through the active elevator; the others' configs move under XDG once the user creates them there. |
+| **If it changes** | If btop-lhm drops the DLL, btop isn't wrapped and Windows prompts as usual. A renamed config flag makes the wrapper pass an option the tool rejects, shown as its own error; the ifFile guard means it only happens once the user has an XDG config. |
 ---
 
 ## Documented but load-bearing
