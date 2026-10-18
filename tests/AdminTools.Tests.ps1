@@ -9,7 +9,7 @@ Describe 'admin categories' {
         $db = Get-DFRoleDb
         foreach ($name in 'process-viewer', 'disk-usage') {
             $db[$name].kind | Should -Be 'category'
-            $db[$name].PSObject.Properties['hook'] | Should -BeNullOrEmpty
+            $db[$name].hook | Should -BeNullOrEmpty
             $db[$name].description | Should -Not -BeNullOrEmpty
         }
     }
