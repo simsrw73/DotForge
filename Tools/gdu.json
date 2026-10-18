@@ -1,0 +1,23 @@
+{
+  "name": "gdu",
+  "description": "Fast disk usage analyzer with an interactive view (ncdu's Windows-capable port)",
+  "tags": ["disk", "files", "system"],
+  "executable": "gdu.exe",
+  "roles": { "disk-usage": {} },
+  "packages": { "scoop": "gdu", "winget": "dundee.gdu" },
+  "wrapper": {
+    "args": [
+      { "ifFile": "${XDG_CONFIG_HOME}/gdu/gdu.yaml", "args": ["--config-file", "{file}"] }
+    ]
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/gdu/gdu.yaml": ["${HOME}/.gdu.yaml"]
+    },
+    "instructions": "gdu reads ~/.gdu.yaml; its wrapper passes --config-file only once $XDG_CONFIG_HOME/gdu/gdu.yaml exists."
+  },
+  "aliases": {},
+  "picker": null
+}

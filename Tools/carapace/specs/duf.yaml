@@ -1,0 +1,20 @@
+# Carapace spec for duf. duf has no completer and carapace has none, so DotForge
+# deploys this (Tools/carapace.ps1). duf's flags are Go-style, one dash.
+# Hand-authored from `duf --help` (duf 0.9.1).
+name: duf
+description: Disk usage and free space per drive
+flags:
+  -all: Include pseudo, duplicate and inaccessible file systems
+  -hide=: Hide device types
+  -only=: Show only device types
+  -output=: Output fields
+  -sort=: Sort output by field
+  -theme=: Color theme
+  -json: Output all devices in JSON format
+  -inodes: List inode information instead of block usage
+  -width=: Max output width
+  -version: Display version
+completion:
+  flag:
+    theme: ["dark", "light", "ansi"]
+    sort: ["mountpoint", "size", "used", "avail", "usage", "inodes", "inodes_used", "inodes_avail", "inodes_usage", "type", "filesystem"]

@@ -1,0 +1,19 @@
+{
+  "name": "duf",
+  "description": "Shows free and used space per drive (a df alternative)",
+  "tags": ["disk", "system"],
+  "executable": "duf.exe",
+  "roles": { "disk-usage": {} },
+  "packages": { "scoop": "duf", "winget": "muesli.duf" },
+  "theme": {
+    "key": "DufTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "dark", "catppuccin-macchiato": "dark", "catppuccin-frappe": "dark", "catppuccin-latte": "light" },
+    "valid": ["dark", "light", "ansi"],
+    "fallback": "dark"
+  },
+  "wrapper": { "args": ["-theme", "{theme}"] },
+  "xdg": { "compliance": "none", "method": "default" },
+  "aliases": {},
+  "picker": null
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dust",
+  "description": "Shows which folders use the most disk space, as a tree",
+  "tags": ["disk", "files", "system"],
+  "executable": "dust.exe",
+  "roles": { "disk-usage": {} },
+  "packages": { "scoop": "dust", "winget": "bootandy.dust" },
+  "xdg": {
+    "compliance": "full",
+    "method": "default",
+    "instructions": "dust reads $XDG_CONFIG_HOME/dust/config.toml itself (verified dust 1.2.6), and also ~/.dust.toml."
+  },
+  "aliases": {},
+  "picker": null
+}

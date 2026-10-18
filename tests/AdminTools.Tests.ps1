@@ -68,3 +68,51 @@ Describe 'process viewers follow the tool contract' {
         $script:DFConfigKeys.Keys | Should -Contain 'BottomTheme'
     }
 }
+
+Describe 'disk-usage tools follow the tool contract' {
+    BeforeEach {
+        Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
+        Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'gdu') -Recurse -Force -ErrorAction Ignore
+        Mock Test-DFToolAvailable { $true }
+        Mock Write-DFConflictNotice { }
+        foreach ($exe in 'gdu.exe', 'duf.exe') { Set-Item "function:global:$exe" -Value { "args=$($args -join '|')" } }
+    }
+    AfterEach {
+        Remove-DFTestGlobal -Function 'gdu.exe', 'duf.exe', 'gdu', 'duf'
+        Restore-DFTestXdg; Set-DFTestConfig $null
+    }
+
+    It 'joins disk-usage: <Name>' -ForEach @(@{ Name = 'dust' }, @{ Name = 'dua' }, @{ Name = 'gdu' }, @{ Name = 'duf' }) {
+        $record = (Import-DFToolDb -ToolsPath $script:Tools -Name $Name)[$Name]
+        $record.roles.PSObject.Properties.Name | Should -Contain 'disk-usage'
+    }
+    It 'passes gdu its XDG config only once it exists, and your arguments unchanged' {
+        Register-DFTool -Name gdu -ToolsPath $script:Tools 3>$null 6>$null
+        gdu -d -p x | Should -Be 'args=-d|-p|x'
+        $config = Join-Path $Env:XDG_CONFIG_HOME 'gdu' 'gdu.yaml'
+        New-Item -ItemType File -Force $config | Out-Null
+        gdu | Should -Be "args=--config-file|$config"
+    }
+    It 'gives duf a light or dark theme from Theme' {
+        Set-DFTestConfig @{ Theme = 'catppuccin-latte' }
+        Register-DFTool -Name duf -ToolsPath $script:Tools 3>$null 6>$null
+        duf | Should -Be 'args=-theme|light'
+        Reset-DFTestSession; Remove-DFTestGlobal -Function duf
+        Set-DFTestConfig @{ Theme = 'catppuccin-mocha' }
+        Register-DFTool -Name duf -ToolsPath $script:Tools 3>$null 6>$null
+        duf | Should -Be 'args=-theme|dark'
+    }
+    It 'registers dua''s own completions, cached' {
+        Mock Get-DFCachedCommandOutput { '$global:DuaCompleterLoaded = $true' } -ParameterFilter { $Name -eq 'dua-completions' }
+        Register-DFTool -Name dua -ToolsPath $script:Tools 3>$null 6>$null
+        $global:DuaCompleterLoaded | Should -BeTrue
+        Remove-Variable DuaCompleterLoaded -Scope Global -ErrorAction Ignore
+    }
+    It 'puts dust in +admin-tools' {
+        $groups = Get-Content (Join-Path $PSScriptRoot '..' 'data' 'groups.json') -Raw | ConvertFrom-Json
+        $groups.'admin-tools'.tools | Should -Contain 'dust'
+    }
+    It 'knows DufTheme' {
+        $script:DFConfigKeys.Keys | Should -Contain 'DufTheme'
+    }
+}

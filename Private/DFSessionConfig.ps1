@@ -44,6 +44,7 @@ $script:DFConfigKeys = [ordered]@{
     OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
     ProcsTheme         = 'procs color theme (dark or light, from Theme)'
     BtopTheme          = 'btop catppuccin flavor named in the setup note (btop.conf is yours)'
+    DufTheme           = 'duf theme (dark or light, from Theme)'
     BottomTheme        = 'bottom built-in theme (default, default-light, gruvbox, nord, ...; from Theme)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'

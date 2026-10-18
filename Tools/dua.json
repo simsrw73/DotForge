@@ -1,0 +1,15 @@
+{
+  "name": "dua",
+  "description": "Disk usage analyzer with an interactive mode (dua i) for finding and deleting what's big",
+  "tags": ["disk", "files", "system"],
+  "executable": "dua.exe",
+  "roles": { "disk-usage": {} },
+  "packages": { "scoop": "dua", "winget": "Byron.dua-cli" },
+  "xdg": {
+    "compliance": "none",
+    "method": "default",
+    "instructions": "dua reads %APPDATA%\\dua-cli\\config.toml whatever XDG_CONFIG_HOME says, and has no config flag (verified dua 2.46.0), so it can't be relocated."
+  },
+  "aliases": {},
+  "picker": null
+}

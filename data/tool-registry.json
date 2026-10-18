@@ -1135,6 +1135,211 @@
         "source": null
       }
     },
+    "dua": {
+      "sha256": "efca485bef1c245fa9e180f999828613964be65a4345f138a88bc9f824c6cbb8",
+      "record": {
+        "name": "dua",
+        "executable": "dua.exe",
+        "type": "exe",
+        "description": "Disk usage analyzer with an interactive mode (dua i) for finding and deleting what's big",
+        "tags": [
+          "disk",
+          "files",
+          "system"
+        ],
+        "packages": {
+          "scoop": "dua",
+          "winget": "Byron.dua-cli"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": "dua reads %APPDATA%\\dua-cli\\config.toml whatever XDG_CONFIG_HOME says, and has no config flag (verified dua 2.46.0), so it can't be relocated.",
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "disk-usage": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "duf": {
+      "sha256": "fc076165f5a44b824e04092ba16ac11e904d6735c065d1ef9e3ad38990876c2d",
+      "record": {
+        "name": "duf",
+        "executable": "duf.exe",
+        "type": "exe",
+        "description": "Shows free and used space per drive (a df alternative)",
+        "tags": [
+          "disk",
+          "system"
+        ],
+        "packages": {
+          "scoop": "duf",
+          "winget": "muesli.duf"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "disk-usage": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "DufTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "dark",
+            "catppuccin-macchiato": "dark",
+            "catppuccin-frappe": "dark",
+            "catppuccin-latte": "light"
+          },
+          "files": null,
+          "valid": [
+            "dark",
+            "light",
+            "ansi"
+          ],
+          "fallback": "dark",
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": null,
+              "args": [
+                "-theme"
+              ]
+            },
+            {
+              "ifFile": null,
+              "args": [
+                "{theme}"
+              ]
+            }
+          ],
+          "custom": false
+        },
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "dust": {
+      "sha256": "33eb355127374cebee0c72cf21a3af41f0d2f0223ae972810656f3df23106c0c",
+      "record": {
+        "name": "dust",
+        "executable": "dust.exe",
+        "type": "exe",
+        "description": "Shows which folders use the most disk space, as a tree",
+        "tags": [
+          "disk",
+          "files",
+          "system"
+        ],
+        "packages": {
+          "scoop": "dust",
+          "winget": "bootandy.dust"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": "dust reads $XDG_CONFIG_HOME/dust/config.toml itself (verified dust 1.2.6), and also ~/.dust.toml.",
+          "compliance": "full",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "disk-usage": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "eza": {
       "sha256": "9a6eaeb6fde286c5e3e4ae7f36fff1b66a12a880e56d228d86d58990784be4d1",
       "record": {
@@ -1621,6 +1826,84 @@
           "apply": null
         },
         "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "gdu": {
+      "sha256": "8223b273f2e94cf73a3cfaec29ea23f0f46d1b3fbb55c6aabafe91cdd5205456",
+      "record": {
+        "name": "gdu",
+        "executable": "gdu.exe",
+        "type": "exe",
+        "description": "Fast disk usage analyzer with an interactive view (ncdu's Windows-capable port)",
+        "tags": [
+          "disk",
+          "files",
+          "system"
+        ],
+        "packages": {
+          "scoop": "gdu",
+          "winget": "dundee.gdu"
+        },
+        "xdg": {
+          "method": "wrapper",
+          "vars": null,
+          "dirs": [],
+          "instructions": "gdu reads ~/.gdu.yaml; its wrapper passes --config-file only once $XDG_CONFIG_HOME/gdu/gdu.yaml exists.",
+          "compliance": "none",
+          "native": {
+            "${XDG_CONFIG_HOME}/gdu/gdu.yaml": {
+              "paths": [
+                "${HOME}/.gdu.yaml"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null,
+              "block": true
+            }
+          }
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "disk-usage": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": "${XDG_CONFIG_HOME}/gdu/gdu.yaml",
+              "args": [
+                "--config-file",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": false
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
