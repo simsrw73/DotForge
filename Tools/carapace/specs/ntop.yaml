@@ -1,0 +1,13 @@
+# Carapace spec for ntop (NTop). No completer exists, so DotForge deploys this
+# (Tools/carapace.ps1). Hand-authored from `ntop -h` (NTop 0.3.21).
+name: ntop
+description: htop-like process viewer for Windows
+flags:
+  -C: Use a monochrome color scheme
+  -h: Show help
+  -p=: Show only the given PIDs
+  -n=: Show only processes containing one of the name parts
+  -s=: Sort by this column
+  -u=: Show only this user's processes
+  -d: Do not run in interactive mode
+  -v: Print version

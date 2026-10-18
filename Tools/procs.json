@@ -7,13 +7,31 @@
     "monitor"
   ],
   "executable": "procs.exe",
+  "roles": { "process-viewer": {} },
   "packages": {
     "scoop": "procs",
     "choco": "procs"
   },
+  "theme": {
+    "key": "ProcsTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "dark", "catppuccin-macchiato": "dark", "catppuccin-frappe": "dark", "catppuccin-latte": "light" },
+    "valid": ["auto", "dark", "light"],
+    "fallback": "dark"
+  },
+  "wrapper": {
+    "args": [
+      "--theme", "{theme}",
+      { "ifFile": "${XDG_CONFIG_HOME}/procs/config.toml", "args": ["--load-config", "{file}"] }
+    ]
+  },
   "xdg": {
     "compliance": "none",
-    "method": "default"
+    "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/procs/config.toml": ["${HOME}/.procs.toml", "${APPDATA}/procs/config.toml"]
+    },
+    "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists."
   },
   "aliases": {},
   "picker": "custom"

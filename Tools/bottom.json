@@ -1,0 +1,31 @@
+{
+  "name": "bottom",
+  "description": "Graphical process and system monitor (btm)",
+  "tags": ["system", "process", "monitor"],
+  "executable": "btm.exe",
+  "roles": { "process-viewer": {} },
+  "packages": { "scoop": "bottom", "winget": "Clement.bottom" },
+  "theme": {
+    "key": "BottomTheme",
+    "default": "catppuccin-mocha",
+    "map": { "catppuccin-mocha": "default", "catppuccin-macchiato": "default", "catppuccin-frappe": "default", "catppuccin-latte": "default-light" },
+    "valid": ["default", "default-light", "gruvbox", "gruvbox-light", "nord", "nord-light"],
+    "fallback": "default"
+  },
+  "wrapper": {
+    "args": [
+      "--theme", "{theme}",
+      { "ifFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml", "args": ["-C", "{file}"] }
+    ]
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/bottom/bottom.toml": ["${APPDATA}/bottom/bottom.toml"]
+    },
+    "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default."
+  },
+  "aliases": {},
+  "picker": null
+}

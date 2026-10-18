@@ -126,6 +126,118 @@
         "source": null
       }
     },
+    "bottom": {
+      "sha256": "25a034ab1edf32b7574393aeb04c5ce8730b0c6eec3237c07f892aaece1813be",
+      "record": {
+        "name": "bottom",
+        "executable": "btm.exe",
+        "type": "exe",
+        "description": "Graphical process and system monitor (btm)",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "scoop": "bottom",
+          "winget": "Clement.bottom"
+        },
+        "xdg": {
+          "method": "wrapper",
+          "vars": null,
+          "dirs": [],
+          "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default.",
+          "compliance": "none",
+          "native": {
+            "${XDG_CONFIG_HOME}/bottom/bottom.toml": {
+              "paths": [
+                "${APPDATA}/bottom/bottom.toml"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null,
+              "block": true
+            }
+          }
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "BottomTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "default",
+            "catppuccin-macchiato": "default",
+            "catppuccin-frappe": "default",
+            "catppuccin-latte": "default-light"
+          },
+          "files": null,
+          "valid": [
+            "default",
+            "default-light",
+            "gruvbox",
+            "gruvbox-light",
+            "nord",
+            "nord-light"
+          ],
+          "fallback": "default",
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": null,
+              "args": [
+                "--theme"
+              ]
+            },
+            {
+              "ifFile": null,
+              "args": [
+                "{theme}"
+              ]
+            },
+            {
+              "ifFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml",
+              "args": [
+                "-C",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": false
+        },
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "broot": {
       "sha256": "0c09d25ad8be6d0d264f697616272a655ddd19e0ac000796f835d63c3406ce9d",
       "record": {
@@ -1511,6 +1623,85 @@
         "source": null
       }
     },
+    "glances": {
+      "sha256": "03e5974d361d593673ce50350a87b59a80e9100727b2225ed623cd191661bf3c",
+      "record": {
+        "name": "glances",
+        "executable": "glances.exe",
+        "type": "exe",
+        "description": "Cross-platform system monitor with a web and API mode",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "pypi": "glances"
+        },
+        "xdg": {
+          "method": "wrapper",
+          "vars": null,
+          "dirs": [],
+          "instructions": "glances reads %APPDATA%\\glances\\glances.conf; its wrapper passes -C only once $XDG_CONFIG_HOME/glances/glances.conf exists.",
+          "compliance": "none",
+          "native": {
+            "${XDG_CONFIG_HOME}/glances/glances.conf": {
+              "paths": [
+                "${APPDATA}/glances/glances.conf"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null,
+              "block": true
+            }
+          }
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "role:python-runtime"
+        ],
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": "${XDG_CONFIG_HOME}/glances/glances.conf",
+              "args": [
+                "-C",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": false
+        },
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "glow": {
       "sha256": "0931c7e9d4fe892112156e3b26e36f9df6ccf5ed298ee7d4356bc0fc7a753c3e",
       "record": {
@@ -2817,6 +3008,63 @@
         "source": null
       }
     },
+    "ntop": {
+      "sha256": "3de6ba415f41825725ea67a836eb56bacbd4ce1119a99a7ce8ad2fd400ba1251",
+      "record": {
+        "name": "ntop",
+        "executable": "ntop.exe",
+        "type": "exe",
+        "description": "htop-like process viewer for Windows (NTop)",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "scoop": "ntop",
+          "winget": "gsass1.NTop"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
     "oh-my-posh": {
       "sha256": "800dce0c8bb926ba57a6b375762981d37772ed83589d53487366a43e762bada1",
       "record": {
@@ -3440,7 +3688,7 @@
       }
     },
     "procs": {
-      "sha256": "b31d77da61b27a561edb7041e9e26754f06ca3fe0a3de171329cd64a2dc16f18",
+      "sha256": "27083f5ce1b1313bf6ab7979ea17e4f1fc63c74943c973a504ce214d4f5cfa3c",
       "record": {
         "name": "procs",
         "executable": "procs.exe",
@@ -3456,22 +3704,88 @@
           "choco": "procs"
         },
         "xdg": {
-          "method": "default",
+          "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": null,
+          "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists.",
           "compliance": "none",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/procs/config.toml": {
+              "paths": [
+                "${HOME}/.procs.toml",
+                "${APPDATA}/procs/config.toml"
+              ],
+              "move": true,
+              "guide": null,
+              "setting": null,
+              "block": true
+            }
+          }
         },
         "env": null,
         "aliases": {},
         "picker": "custom",
         "after": [],
         "requires": [],
-        "roles": {},
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
         "themeMap": null,
-        "theme": null,
-        "wrapper": null,
+        "theme": {
+          "key": "ProcsTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "dark",
+            "catppuccin-macchiato": "dark",
+            "catppuccin-frappe": "dark",
+            "catppuccin-latte": "light"
+          },
+          "files": null,
+          "valid": [
+            "auto",
+            "dark",
+            "light"
+          ],
+          "fallback": "dark",
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": {
+          "args": [
+            {
+              "ifFile": null,
+              "args": [
+                "--theme"
+              ]
+            },
+            {
+              "ifFile": null,
+              "args": [
+                "{theme}"
+              ]
+            },
+            {
+              "ifFile": "${XDG_CONFIG_HOME}/procs/config.toml",
+              "args": [
+                "--load-config",
+                "{file}"
+              ]
+            }
+          ],
+          "custom": false
+        },
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
@@ -3803,6 +4117,62 @@
             "feeds": null
           }
         ],
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "pstop": {
+      "sha256": "18640141a6dbca3787951bd590600cec07f94aa4eaa965f5ab8d55e2a6c338bb",
+      "record": {
+        "name": "pstop",
+        "executable": "pstop.exe",
+        "type": "exe",
+        "description": "htop-like system monitor for Windows (winget's install adds an htop link to it; htop itself has no Windows build)",
+        "tags": [
+          "system",
+          "process",
+          "monitor"
+        ],
+        "packages": {
+          "winget": "marlocarlo.pstop"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "process-viewer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "setup": null,
+        "banner": null,
+        "installs": null,
         "install": null,
         "folder": null,
         "source": null

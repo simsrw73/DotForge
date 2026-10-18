@@ -1,0 +1,11 @@
+{
+  "name": "ntop",
+  "description": "htop-like process viewer for Windows (NTop)",
+  "tags": ["system", "process", "monitor"],
+  "executable": "ntop.exe",
+  "roles": { "process-viewer": {} },
+  "packages": { "scoop": "ntop", "winget": "gsass1.NTop" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "aliases": {},
+  "picker": null
+}

@@ -1,0 +1,19 @@
+# Carapace spec for glances. glances has no PowerShell completer and carapace has
+# none, so DotForge deploys this (Tools/carapace.ps1). Hand-authored from
+# `glances --help` (glances 4.5.7); the most used flags only.
+name: glances
+description: Cross-platform system monitor
+flags:
+  -C, --config=: Path to the configuration file
+  -w, --webserver: Run the web server
+  -s, --server: Run in server mode
+  -c, --client=: Connect to a Glances server
+  -t, --time=: Refresh time in seconds
+  -1, --percpu: Show each CPU
+  --disable-bg: Disable background colors
+  --export=: Export stats to a module
+  -V, --version: Show the version
+  -h, --help: Show help
+completion:
+  flag:
+    config: ["$files"]

@@ -1,0 +1,22 @@
+# Carapace spec for bottom (btm). bottom ships no PowerShell completer and carapace
+# has none, so DotForge deploys this to $XDG_CONFIG_HOME/carapace/specs/
+# (Tools/carapace.ps1). Hand-authored from `btm --help` (bottom 0.14.9).
+name: btm
+description: Graphical process and system monitor
+flags:
+  -C, --config_location=: Path to the config file
+  --theme=: Pre-defined colour theme
+  -b, --basic: Basic mode
+  -T, --tree: Show processes as a tree
+  -r, --rate=: Refresh rate
+  -g, --group_processes: Group processes with the same name
+  -u, --current_usage: CPU usage relative to the current load
+  -a, --hide_avg_cpu: Hide the average CPU entry
+  -n, --unnormalized_cpu: Show CPU usage unnormalized
+  --battery: Show the battery widget
+  -h, --help: Print help
+  -V, --version: Print version
+completion:
+  flag:
+    theme: ["default", "default-light", "gruvbox", "gruvbox-light", "nord", "nord-light"]
+    config_location: ["$files"]

@@ -1,0 +1,9 @@
+# Carapace spec for pstop. No completer exists, so DotForge deploys this
+# (Tools/carapace.ps1). Hand-authored from `pstop --help`. --install-alias is left
+# out: it edits your PowerShell profile.
+name: pstop
+description: htop-like system monitor for Windows
+flags:
+  -c, --compact: Compact mode
+  --bench: Benchmark startup time and exit
+  -h, --help: Show help

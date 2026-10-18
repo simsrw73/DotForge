@@ -1,0 +1,24 @@
+{
+  "name": "glances",
+  "description": "Cross-platform system monitor with a web and API mode",
+  "tags": ["system", "process", "monitor"],
+  "executable": "glances.exe",
+  "roles": { "process-viewer": {} },
+  "requires": ["role:python-runtime"],
+  "packages": { "pypi": "glances" },
+  "wrapper": {
+    "args": [
+      { "ifFile": "${XDG_CONFIG_HOME}/glances/glances.conf", "args": ["-C", "{file}"] }
+    ]
+  },
+  "xdg": {
+    "compliance": "none",
+    "method": "wrapper",
+    "native": {
+      "${XDG_CONFIG_HOME}/glances/glances.conf": ["${APPDATA}/glances/glances.conf"]
+    },
+    "instructions": "glances reads %APPDATA%\\glances\\glances.conf; its wrapper passes -C only once $XDG_CONFIG_HOME/glances/glances.conf exists."
+  },
+  "aliases": {},
+  "picker": null
+}

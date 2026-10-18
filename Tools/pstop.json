@@ -1,0 +1,11 @@
+{
+  "name": "pstop",
+  "description": "htop-like system monitor for Windows (winget's install adds an htop link to it; htop itself has no Windows build)",
+  "tags": ["system", "process", "monitor"],
+  "executable": "pstop.exe",
+  "roles": { "process-viewer": {} },
+  "packages": { "winget": "marlocarlo.pstop" },
+  "xdg": { "compliance": "none", "method": "default" },
+  "aliases": {},
+  "picker": null
+}

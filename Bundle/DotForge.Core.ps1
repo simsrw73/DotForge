@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 834cc642f259d8c2d950885b3422f483ca37853c442d2128088c30343527d52f
+# sources-sha256: ae81b332f52eebfa7f34a0e35a0a633455dbea634759dc1f8cbd552c1b3a9fee
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3451,6 +3451,8 @@ $script:DFConfigKeys = [ordered]@{
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     StarshipTheme      = 'starship palette (a catppuccin flavor; applied to a copy of your starship.toml)'
     OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
+    ProcsTheme         = 'procs color theme (dark or light, from Theme)'
+    BottomTheme        = 'bottom built-in theme (default, default-light, gruvbox, nord, ...; from Theme)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
     VividTheme         = 'vivid (LS_COLORS) theme'
