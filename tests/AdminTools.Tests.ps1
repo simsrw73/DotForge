@@ -43,7 +43,7 @@ Describe 'process viewers follow the tool contract' {
         $config = Join-Path $Env:XDG_CONFIG_HOME 'procs' 'config.toml'
         New-Item -ItemType File -Force $config | Out-Null
         Register-DFTool -Name procs -ToolsPath $script:Tools 3>$null 6>$null
-        procs | Should -Be "args=--theme|dark|--load-config|$config"
+        procs | Should -Be "args=--load-config|$config"
     }
     It 'gives bottom a light or dark built-in theme and its XDG config' {
         Set-DFTestConfig @{ Theme = 'catppuccin-latte' }
@@ -51,7 +51,23 @@ Describe 'process viewers follow the tool contract' {
         btm -d | Should -Be 'args=--theme|default-light|-d'
         $config = Join-Path $Env:XDG_CONFIG_HOME 'bottom' 'bottom.toml'
         New-Item -ItemType File -Force $config | Out-Null
-        btm | Should -Be "args=--theme|default-light|-C|$config"
+        btm | Should -Be "args=-C|$config"
+    }
+    It 'leaves your own --theme and -C to bottom, passing each only once' {
+        Register-DFTool -Name bottom -ToolsPath $script:Tools 3>$null 6>$null
+        btm --theme nord | Should -Be 'args=--theme|nord'
+        $config = Join-Path $Env:XDG_CONFIG_HOME 'bottom' 'bottom.toml'
+        New-Item -ItemType File -Force $config | Out-Null
+        btm | Should -Be "args=-C|$config" -Because 'with your own config, its theme is yours'
+        btm -C other.toml | Should -Be 'args=-C|other.toml'
+    }
+    It 'leaves your own --theme and --load-config to procs, passing each only once' {
+        Register-DFTool -Name procs -ToolsPath $script:Tools 3>$null 6>$null
+        procs --theme light | Should -Be 'args=--theme|light'
+        $config = Join-Path $Env:XDG_CONFIG_HOME 'procs' 'config.toml'
+        New-Item -ItemType File -Force $config | Out-Null
+        procs | Should -Be "args=--load-config|$config"
+        procs --load-config x.toml | Should -Be 'args=--load-config|x.toml'
     }
     It 'passes glances its XDG config only once it exists' {
         Register-DFTool -Name glances -ToolsPath $script:Tools 3>$null 6>$null

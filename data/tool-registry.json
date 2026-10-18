@@ -127,7 +127,7 @@
       }
     },
     "bottom": {
-      "sha256": "25a034ab1edf32b7574393aeb04c5ce8730b0c6eec3237c07f892aaece1813be",
+      "sha256": "bb4fa5886d258969e353f242df2b8bf6cb0a00887e4ddec397bfdf3a7f0b9cda",
       "record": {
         "name": "bottom",
         "executable": "btm.exe",
@@ -146,7 +146,7 @@
           "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default.",
+          "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default. bottom rejects a repeated option, so --theme is passed only when you pass none and have no config of your own there, and -C only when you pass none.",
           "compliance": "none",
           "native": {
             "${XDG_CONFIG_HOME}/bottom/bottom.toml": {
@@ -207,18 +207,22 @@
           "args": [
             {
               "ifFile": null,
-              "args": [
+              "unlessFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml",
+              "unlessArg": [
                 "--theme"
-              ]
-            },
-            {
-              "ifFile": null,
+              ],
               "args": [
+                "--theme",
                 "{theme}"
               ]
             },
             {
               "ifFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml",
+              "unlessFile": null,
+              "unlessArg": [
+                "-C",
+                "--config_location"
+              ],
               "args": [
                 "-C",
                 "{file}"
@@ -1259,12 +1263,16 @@
           "args": [
             {
               "ifFile": null,
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "-theme"
               ]
             },
             {
               "ifFile": null,
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "{theme}"
               ]
@@ -1506,6 +1514,8 @@
           "args": [
             {
               "ifFile": "{settings.configPath}",
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "--config",
                 "{file}"
@@ -1896,6 +1906,8 @@
           "args": [
             {
               "ifFile": "${XDG_CONFIG_HOME}/gdu/gdu.yaml",
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "--config-file",
                 "{file}"
@@ -2045,6 +2057,8 @@
           "args": [
             {
               "ifFile": "${XDG_CONFIG_HOME}/glances/glances.conf",
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "-C",
                 "{file}"
@@ -2155,12 +2169,16 @@
           "args": [
             {
               "ifFile": null,
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "-s"
               ]
             },
             {
               "ifFile": null,
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "{theme}"
               ]
@@ -2702,6 +2720,8 @@
           "args": [
             {
               "ifFile": "{theme}/config.yaml",
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "--config-file",
                 "{file}"
@@ -2709,6 +2729,8 @@
             },
             {
               "ifFile": "${XDG_CONFIG_HOME}/lsd/config.yaml",
+              "unlessFile": null,
+              "unlessArg": [],
               "args": [
                 "--config-file",
                 "{file}"
@@ -4050,7 +4072,7 @@
       }
     },
     "procs": {
-      "sha256": "27083f5ce1b1313bf6ab7979ea17e4f1fc63c74943c973a504ce214d4f5cfa3c",
+      "sha256": "80f486e0df563a9a279a8d510feb970bfa063dd37b989f966887eae37f03b8c1",
       "record": {
         "name": "procs",
         "executable": "procs.exe",
@@ -4069,7 +4091,7 @@
           "method": "wrapper",
           "vars": null,
           "dirs": [],
-          "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists.",
+          "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists. procs rejects a repeated option, so the wrapper passes --theme only when you pass none and have no config of your own there, and --load-config only when you pass none.",
           "compliance": "none",
           "native": {
             "${XDG_CONFIG_HOME}/procs/config.toml": {
@@ -4128,18 +4150,22 @@
           "args": [
             {
               "ifFile": null,
-              "args": [
+              "unlessFile": "${XDG_CONFIG_HOME}/procs/config.toml",
+              "unlessArg": [
                 "--theme"
-              ]
-            },
-            {
-              "ifFile": null,
+              ],
               "args": [
+                "--theme",
                 "{theme}"
               ]
             },
             {
               "ifFile": "${XDG_CONFIG_HOME}/procs/config.toml",
+              "unlessFile": null,
+              "unlessArg": [
+                "--load-config",
+                "--use-config"
+              ],
               "args": [
                 "--load-config",
                 "{file}"

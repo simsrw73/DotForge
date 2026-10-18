@@ -117,7 +117,9 @@ function New-DFToolWrapper {
                 elseif ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
         if ($group.ifFile -and -not $file) { continue }   # its file can't be named: never pass the group
         [pscustomobject]@{
-            IfFile = $file
+            IfFile     = $file
+            UnlessFile = if ($group.PSObject.Properties['unlessFile']?.Value) { Expand-DFToolToken -Tool $Tool -Text $group.unlessFile }
+            UnlessArg  = [string[]]@($group.PSObject.Properties['unlessArg']?.Value)
             # A {theme} group fills {file} per call, once its path is known.
             Args   = [string[]]@(foreach ($arg in $group.args) { if ($file -and -not $file.Contains('{theme}')) { $arg.Replace('{file}', $file) } else { $arg } })
         }
@@ -132,6 +134,11 @@ function New-DFToolWrapper {
             $file = & $_dfCanonical $file.Replace('{theme}', $theme)
         }
         if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        # Your own config owns this (unlessFile), or you passed the option yourself (unlessArg):
+        # a tool that rejects a repeated option must get only yours.
+        if ($group.UnlessFile -and (Test-Path -LiteralPath $group.UnlessFile -PathType Leaf)) { continue }
+        $yours = foreach ($given in $args) { foreach ($flag in $group.UnlessArg) { if ([string]$given -ceq $flag -or ([string]$given).StartsWith("$flag=", [System.StringComparison]::Ordinal)) { $flag } } }
+        if ($yours) { continue }
         foreach ($arg in $group.Args) { $arg.Replace('{file}', [string]$file).Replace('{theme}', $theme) }
     })
     if ($MyInvocation.ExpectingInput) { $input | & $_dfExe @declared @args; return }

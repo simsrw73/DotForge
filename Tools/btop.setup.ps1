@@ -7,10 +7,12 @@ $_target = if ($_exe) { Resolve-DFExecutableTarget -Path $_exe }
 $_copied = @()
 if ($_target -and (Test-Path -LiteralPath $_target -PathType Leaf)) {
     $_themes = Join-Path (Split-Path $_target) 'themes'
-    New-DFDirectory $_themes | Out-Null
+    # A failed folder or copy throws, so setup records nothing and the next load retries.
+    if (Test-Path -LiteralPath $_themes -PathType Leaf) { throw "btop's themes path $_themes is a file, not a folder" }
+    New-DFDirectory $_themes -ErrorAction Stop | Out-Null
     foreach ($_file in Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'btop') -Filter 'catppuccin_*.theme') {
         $_dest = Join-Path $_themes $_file.Name
-        if (-not (Test-Path -LiteralPath $_dest)) { Copy-Item -LiteralPath $_file.FullName -Destination $_dest; $_copied += $_dest }
+        if (-not (Test-Path -LiteralPath $_dest)) { Copy-Item -LiteralPath $_file.FullName -Destination $_dest -ErrorAction Stop; $_copied += $_dest }
     }
     $_flavor = (Get-DFToolTheme -Tool $DFCurrentTool).Value
     Add-DFToolSetupNote -Name 'btop' -Text "catppuccin themes are in btop's themes folder; to use one, set color_theme = `"$_flavor`" in $(Join-Path (Split-Path $_target) 'btop.conf'), or pick it in btop's options (Esc)."

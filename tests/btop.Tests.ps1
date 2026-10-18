@@ -83,6 +83,16 @@ Describe 'btop setup: catppuccin themes' {
         "$((Get-DFToolSetupState).btop.notes)" | Should -Match 'color_theme = "catppuccin_latte"'
         Get-Content (Join-Path $script:Dir 'btop.conf') -Raw | Should -Match 'color_theme = "Default"' -Because 'btop.conf is yours'
     }
+    It 'records nothing and promises nothing when the themes can''t be copied, so the next load retries' {
+        $themes = Join-Path $script:Dir 'themes'
+        Remove-Item $themes -Recurse -Force
+        Set-Content $themes 'not a folder'
+        # A user's shell, where a failed copy is a non-terminating error (the gate runs with Stop).
+        $ErrorActionPreference = 'Continue'
+        Start-DFSession -Config @{ Tools = @('btop') } -ToolsPath $script:Tools 2>$null 3>$null
+        (Get-DFToolSetupState).PSObject.Properties['btop'] | Should -BeNullOrEmpty
+        "$(Get-DFPendingSetupNote -Name btop)" | Should -Not -Match 'themes are in'
+    }
     It 'joins process-viewer and orders after the elevator' {
         $record = (Import-DFToolDb -ToolsPath $script:Tools -Name btop).btop
         $record.roles.PSObject.Properties.Name | Should -Contain 'process-viewer'

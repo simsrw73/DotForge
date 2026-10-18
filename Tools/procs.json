@@ -21,8 +21,8 @@
   },
   "wrapper": {
     "args": [
-      "--theme", "{theme}",
-      { "ifFile": "${XDG_CONFIG_HOME}/procs/config.toml", "args": ["--load-config", "{file}"] }
+      { "unlessArg": ["--theme"], "unlessFile": "${XDG_CONFIG_HOME}/procs/config.toml", "args": ["--theme", "{theme}"] },
+      { "ifFile": "${XDG_CONFIG_HOME}/procs/config.toml", "unlessArg": ["--load-config", "--use-config"], "args": ["--load-config", "{file}"] }
     ]
   },
   "xdg": {
@@ -31,7 +31,7 @@
     "native": {
       "${XDG_CONFIG_HOME}/procs/config.toml": ["${HOME}/.procs.toml", "${APPDATA}/procs/config.toml"]
     },
-    "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists."
+    "instructions": "procs reads ~/.procs.toml or its OS config folder; its wrapper passes --load-config only once $XDG_CONFIG_HOME/procs/config.toml exists. procs rejects a repeated option, so the wrapper passes --theme only when you pass none and have no config of your own there, and --load-config only when you pass none."
   },
   "aliases": {},
   "picker": "custom"

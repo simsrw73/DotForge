@@ -2698,7 +2698,7 @@ Graphical process and system monitor (btm)
 | Install ids | scoop: `bottom`<br>winget: `Clement.bottom` |
 | XDG method | `wrapper` |
 | Theme | key `BottomTheme`, default `catppuccin-mocha` |
-| Wraps | `btm` adds `--theme`, `{theme}`, `-C {file}` when `${XDG_CONFIG_HOME}/bottom/bottom.toml` exists |
+| Wraps | `btm` adds `--theme {theme}` when `` exists, `-C {file}` when `${XDG_CONFIG_HOME}/bottom/bottom.toml` exists |
 | Roles | [`process-viewer`](#process-viewer-role) |
 
 ### broot tool
@@ -3370,7 +3370,7 @@ Modern replacement for ps
 | Install ids | scoop: `procs`<br>choco: `procs` |
 | XDG method | `wrapper` |
 | Theme | key `ProcsTheme`, default `catppuccin-mocha` |
-| Wraps | `procs` adds `--theme`, `{theme}`, `--load-config {file}` when `${XDG_CONFIG_HOME}/procs/config.toml` exists |
+| Wraps | `procs` adds `--theme {theme}` when `` exists, `--load-config {file}` when `${XDG_CONFIG_HOME}/procs/config.toml` exists |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`process-viewer`](#process-viewer-role) |
 | Companion | [`Tools/procs.ps1`](#procs-companion) |

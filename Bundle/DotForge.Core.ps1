@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: b730747c3acb48abf150dbc4ca4715a010d452a7591a10f7528fa092cb63124a
+# sources-sha256: 26abee0094889bff752c2c526d72a611e1bb3a0a16da67059ac90aaee4873966
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1411,7 +1411,7 @@ function ConvertTo-DFThemeBlock {
 function ConvertTo-DFWrapperBlock {
     <#
     .SYNOPSIS
-        Normalizes a tool's wrapper block: args becomes a list of { ifFile; args } groups, custom a boolean.
+        Normalizes a tool's wrapper block: args becomes a list of { ifFile; unlessFile; unlessArg; args } groups, custom a boolean.
     .PARAMETER RawWrapper
         The parsed wrapper object, or $null.
     .OUTPUTS
@@ -1422,10 +1422,12 @@ function ConvertTo-DFWrapperBlock {
     if ($null -eq $RawWrapper) { return $null }
     $groups = foreach ($entry in @($RawWrapper.PSObject.Properties['args']?.Value)) {
         if ($null -eq $entry) { continue }
-        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; args = [string[]]@($entry) }; continue }
+        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; unlessFile = $null; unlessArg = [string[]]@(); args = [string[]]@($entry) }; continue }
         [pscustomobject]@{
-            ifFile = Get-DFToolRecordProperty $entry 'ifFile' $null
-            args   = [string[]]@($entry.PSObject.Properties['args']?.Value)
+            ifFile     = Get-DFToolRecordProperty $entry 'ifFile' $null
+            unlessFile = Get-DFToolRecordProperty $entry 'unlessFile' $null
+            unlessArg  = [string[]]@($entry.PSObject.Properties['unlessArg']?.Value | Where-Object { $_ })
+            args       = [string[]]@($entry.PSObject.Properties['args']?.Value)
         }
     }
     [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
@@ -1972,7 +1974,7 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
 function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in wrapper: args is an array of strings and { ifFile, args } groups; {theme} needs a theme that always has a value.
+        Schema errors in wrapper: args is an array of strings and { ifFile?, unlessFile?, unlessArg?, args } groups; {theme} needs a theme that always has a value.
     #>
     $wrapper = Get-DFSchemaProperty $Tool 'wrapper'
     if ($null -eq $wrapper) { return }
@@ -1986,9 +1988,16 @@ function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
         $entry = $entries[$n]
         if ($entry -is [string]) { if ($entry.Contains('{theme}')) { $usesTheme = $true }; continue }
         $inner = if ($entry -is [pscustomobject]) { $entry.PSObject.Properties['args']?.Value }
-        $ifFile = if ($entry -is [pscustomobject]) { Get-DFSchemaProperty $entry 'ifFile' }
-        if ($ifFile -isnot [string] -or -not $ifFile -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
-            "wrapper.args[$n] must be a string or { ifFile, args: [strings] }"; continue
+        # Assigned directly: an if-expression would unroll a one-element unlessArg array.
+        $ifFile = $entry.PSObject.Properties['ifFile']?.Value
+        $unlessFile = $entry.PSObject.Properties['unlessFile']?.Value
+        $unlessArg = $entry.PSObject.Properties['unlessArg']?.Value
+        $badCondition = ($null -ne $ifFile -and ($ifFile -isnot [string] -or -not $ifFile)) -or
+            ($null -ne $unlessFile -and ($unlessFile -isnot [string] -or -not $unlessFile)) -or
+            ($null -ne $unlessArg -and ($unlessArg -isnot [array] -or @($unlessArg | Where-Object { $_ -isnot [string] -or -not $_ }).Count))
+        $noCondition = $null -eq $ifFile -and $null -eq $unlessFile -and $null -eq $unlessArg
+        if ($badCondition -or $noCondition -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
+            "wrapper.args[$n] must be a string or { ifFile?, unlessFile?, unlessArg?: [strings], args: [strings] } with at least one condition"; continue
         }
         if (@($inner | Where-Object { $_.Contains('{theme}') }).Count) { $usesTheme = $true }
     }
@@ -7109,7 +7118,9 @@ function New-DFToolWrapper {
                 elseif ($group.ifFile) { Expand-DFToolToken -Tool $Tool -Text $group.ifFile }
         if ($group.ifFile -and -not $file) { continue }   # its file can't be named: never pass the group
         [pscustomobject]@{
-            IfFile = $file
+            IfFile     = $file
+            UnlessFile = if ($group.PSObject.Properties['unlessFile']?.Value) { Expand-DFToolToken -Tool $Tool -Text $group.unlessFile }
+            UnlessArg  = [string[]]@($group.PSObject.Properties['unlessArg']?.Value)
             # A {theme} group fills {file} per call, once its path is known.
             Args   = [string[]]@(foreach ($arg in $group.args) { if ($file -and -not $file.Contains('{theme}')) { $arg.Replace('{file}', $file) } else { $arg } })
         }
@@ -7124,6 +7135,11 @@ function New-DFToolWrapper {
             $file = & $_dfCanonical $file.Replace('{theme}', $theme)
         }
         if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        # Your own config owns this (unlessFile), or you passed the option yourself (unlessArg):
+        # a tool that rejects a repeated option must get only yours.
+        if ($group.UnlessFile -and (Test-Path -LiteralPath $group.UnlessFile -PathType Leaf)) { continue }
+        $yours = foreach ($given in $args) { foreach ($flag in $group.UnlessArg) { if ([string]$given -ceq $flag -or ([string]$given).StartsWith("$flag=", [System.StringComparison]::Ordinal)) { $flag } } }
+        if ($yours) { continue }
         foreach ($arg in $group.Args) { $arg.Replace('{file}', [string]$file).Replace('{theme}', $theme) }
     })
     if ($MyInvocation.ExpectingInput) { $input | & $_dfExe @declared @args; return }

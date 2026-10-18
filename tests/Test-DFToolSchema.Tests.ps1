@@ -126,6 +126,16 @@ Describe 'Test-DFToolSchema' {
             (Test-DFToolSchema -Tool $t).Valid | Should -BeTrue
         }
 
+        It 'accepts wrapper groups with unlessArg and unlessFile, and rejects wrong types' {
+            $valid = '{ "name": "t", "executable": "t.exe", "wrapper": { "args": [ { "unlessArg": ["--x"], "unlessFile": "${XDG_CONFIG_HOME}/t/c", "args": ["--x", "1"] }, { "ifFile": "${XDG_CONFIG_HOME}/t/c", "unlessArg": ["-C"], "args": ["-C", "{file}"] } ] } }' | ConvertFrom-Json
+            $result = Test-DFToolSchema -Tool $valid
+            $result.Valid | Should -BeTrue -Because "$($result.Errors)"
+            foreach ($bad in '{ "unlessArg": "--x", "args": ["a"] }', '{ "unlessFile": 1, "args": ["a"] }', '{ "args": ["a"] }') {
+                $tool = ('{ "name": "t", "executable": "t.exe", "wrapper": { "args": [ ' + $bad + ' ] } }') | ConvertFrom-Json
+                (Test-DFToolSchema -Tool $tool).Valid | Should -BeFalse -Because "$bad is invalid"
+            }
+        }
+
         It 'accepts a theme apply function name and rejects an empty or non-string one' {
             $valid = '{ "name": "t", "executable": "t.exe", "theme": { "key": "TTheme", "apply": "Invoke-TApply" } }' | ConvertFrom-Json
             (Test-DFToolSchema -Tool $valid).Valid | Should -BeTrue

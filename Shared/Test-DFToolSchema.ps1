@@ -169,7 +169,7 @@ function Get-DFThemeSchemaError ([PSCustomObject]$Tool) {
 function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in wrapper: args is an array of strings and { ifFile, args } groups; {theme} needs a theme that always has a value.
+        Schema errors in wrapper: args is an array of strings and { ifFile?, unlessFile?, unlessArg?, args } groups; {theme} needs a theme that always has a value.
     #>
     $wrapper = Get-DFSchemaProperty $Tool 'wrapper'
     if ($null -eq $wrapper) { return }
@@ -183,9 +183,16 @@ function Get-DFWrapperSchemaError ([PSCustomObject]$Tool) {
         $entry = $entries[$n]
         if ($entry -is [string]) { if ($entry.Contains('{theme}')) { $usesTheme = $true }; continue }
         $inner = if ($entry -is [pscustomobject]) { $entry.PSObject.Properties['args']?.Value }
-        $ifFile = if ($entry -is [pscustomobject]) { Get-DFSchemaProperty $entry 'ifFile' }
-        if ($ifFile -isnot [string] -or -not $ifFile -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
-            "wrapper.args[$n] must be a string or { ifFile, args: [strings] }"; continue
+        # Assigned directly: an if-expression would unroll a one-element unlessArg array.
+        $ifFile = $entry.PSObject.Properties['ifFile']?.Value
+        $unlessFile = $entry.PSObject.Properties['unlessFile']?.Value
+        $unlessArg = $entry.PSObject.Properties['unlessArg']?.Value
+        $badCondition = ($null -ne $ifFile -and ($ifFile -isnot [string] -or -not $ifFile)) -or
+            ($null -ne $unlessFile -and ($unlessFile -isnot [string] -or -not $unlessFile)) -or
+            ($null -ne $unlessArg -and ($unlessArg -isnot [array] -or @($unlessArg | Where-Object { $_ -isnot [string] -or -not $_ }).Count))
+        $noCondition = $null -eq $ifFile -and $null -eq $unlessFile -and $null -eq $unlessArg
+        if ($badCondition -or $noCondition -or $inner -isnot [array] -or @($inner | Where-Object { $_ -isnot [string] }).Count) {
+            "wrapper.args[$n] must be a string or { ifFile?, unlessFile?, unlessArg?: [strings], args: [strings] } with at least one condition"; continue
         }
         if (@($inner | Where-Object { $_.Contains('{theme}') }).Count) { $usesTheme = $true }
     }

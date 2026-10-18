@@ -14,8 +14,8 @@
   },
   "wrapper": {
     "args": [
-      "--theme", "{theme}",
-      { "ifFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml", "args": ["-C", "{file}"] }
+      { "unlessArg": ["--theme"], "unlessFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml", "args": ["--theme", "{theme}"] },
+      { "ifFile": "${XDG_CONFIG_HOME}/bottom/bottom.toml", "unlessArg": ["-C", "--config_location"], "args": ["-C", "{file}"] }
     ]
   },
   "xdg": {
@@ -24,7 +24,7 @@
     "native": {
       "${XDG_CONFIG_HOME}/bottom/bottom.toml": ["${APPDATA}/bottom/bottom.toml"]
     },
-    "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default."
+    "instructions": "bottom reads %APPDATA%\\bottom\\bottom.toml; -C at a missing path would create a default config there, so the wrapper passes -C only once $XDG_CONFIG_HOME/bottom/bottom.toml exists. Themes are bottom's built-ins: catppuccin-latte maps to default-light, the dark flavors to default. bottom rejects a repeated option, so --theme is passed only when you pass none and have no config of your own there, and -C only when you pass none."
   },
   "aliases": {},
   "picker": null

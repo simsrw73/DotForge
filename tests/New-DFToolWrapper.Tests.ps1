@@ -25,6 +25,18 @@ Describe 'New-DFToolWrapper' {
         New-DFToolWrapper -Tool (New-WrappedTool @('--a', '--b'))
         dfwrapped --mine | Should -Be 'args=--a|--b|--mine'
     }
+    It 'skips a group when you pass one of its unlessArg flags yourself, or while its unlessFile exists' {
+        $mine = Join-Path $TestDrive 'mine.conf'
+        Remove-Item $mine -ErrorAction Ignore
+        $group = [pscustomobject]@{ unlessArg = @('--theme', '-t'); unlessFile = $mine; args = @('--theme', 'dark') }
+        New-DFToolWrapper -Tool (New-WrappedTool @($group, '--always'))
+        dfwrapped x | Should -Be 'args=--theme|dark|--always|x'
+        dfwrapped --theme nord | Should -Be 'args=--always|--theme|nord'
+        dfwrapped --theme=nord | Should -Be 'args=--always|--theme=nord'
+        dfwrapped -t nord | Should -Be 'args=--always|-t|nord'
+        Set-Content $mine 'x'
+        dfwrapped x | Should -Be 'args=--always|x'
+    }
     It 'passes an ifFile group only while the file exists, reading {file}' {
         $cfg = Join-Path $TestDrive 'w.conf'
         New-DFToolWrapper -Tool (New-WrappedTool @([pscustomobject]@{ ifFile = $cfg; args = @('--config', '{file}') }))

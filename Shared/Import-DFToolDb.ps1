@@ -518,7 +518,7 @@ function ConvertTo-DFThemeBlock {
 function ConvertTo-DFWrapperBlock {
     <#
     .SYNOPSIS
-        Normalizes a tool's wrapper block: args becomes a list of { ifFile; args } groups, custom a boolean.
+        Normalizes a tool's wrapper block: args becomes a list of { ifFile; unlessFile; unlessArg; args } groups, custom a boolean.
     .PARAMETER RawWrapper
         The parsed wrapper object, or $null.
     .OUTPUTS
@@ -529,10 +529,12 @@ function ConvertTo-DFWrapperBlock {
     if ($null -eq $RawWrapper) { return $null }
     $groups = foreach ($entry in @($RawWrapper.PSObject.Properties['args']?.Value)) {
         if ($null -eq $entry) { continue }
-        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; args = [string[]]@($entry) }; continue }
+        if ($entry -is [string]) { [pscustomobject]@{ ifFile = $null; unlessFile = $null; unlessArg = [string[]]@(); args = [string[]]@($entry) }; continue }
         [pscustomobject]@{
-            ifFile = Get-DFToolRecordProperty $entry 'ifFile' $null
-            args   = [string[]]@($entry.PSObject.Properties['args']?.Value)
+            ifFile     = Get-DFToolRecordProperty $entry 'ifFile' $null
+            unlessFile = Get-DFToolRecordProperty $entry 'unlessFile' $null
+            unlessArg  = [string[]]@($entry.PSObject.Properties['unlessArg']?.Value | Where-Object { $_ })
+            args       = [string[]]@($entry.PSObject.Properties['args']?.Value)
         }
     }
     [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
