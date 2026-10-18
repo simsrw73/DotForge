@@ -117,6 +117,28 @@ For each tool:
 Never leave a TUI running: run with `--help`/`--version` only, under a timeout, with stdin from
 `/dev/null`. Never run btop-lhm (it needs admin).
 
+## Probe results (2026-10-17)
+
+| Tool | Version | Config on Windows → XDG approach | Theme | Completions | Ids |
+|---|---|---|---|---|---|
+| procs | 0.14.12 | `~/.procs.toml` (or the OS config folder); `--load-config <path>` → wrapper `{ ifFile: ${XDG_CONFIG_HOME}/procs/config.toml }` | `--theme auto\|dark\|light` → latte = light, others = dark | carapace (common) | scoop `procs`, choco `procs` (existing) |
+| bottom (`btm`) | 0.14.9 | `%APPDATA%\bottom\bottom.toml`; `-C/--config_location` → wrapper `{ ifFile }` (with a missing path, btm would create a default there, hence ifFile) | `--theme default\|default-light\|gruvbox(-light)\|nord(-light)` → latte = default-light, others = default | none → DotForge carapace spec | scoop `bottom`, winget `Clement.bottom` |
+| glances | 4.5.7 | `%APPDATA%\glances\glances.conf`; `-C <file>` → wrapper `{ ifFile }` | none to map | none → spec | pypi `glances` (pipx, uv) |
+| ntop | 0.3.21 | no config; flags only (`-C` monochrome) | none | none → spec | scoop `ntop`, winget `gsass1.NTop` |
+| pstop | — | no config; `--compact`; `--install-alias` would edit the profile (DotForge never runs it) | none | none → spec | winget `marlocarlo.pstop` |
+| btop (btop4win) | 1.0.5 | `btop.conf` and `themes\` beside the exe (scoop persists them); **no config flag**, so no XDG relocation | catppuccin `.theme` files (catppuccin/btop, MIT, main `f437574b600f`) copied into btop's `themes` folder at setup; `color_theme` stays the user's to set (setup note) | carapace (bridge) | scoop `btop` (plain), `btop-lhm` (opt-in); winget `aristocratos.btop4win` |
+| dust | 1.2.6 | reads `$XDG_CONFIG_HOME/dust/config.toml` itself (verified: a scratch `reverse = true` flipped the output); also `~/.dust.toml` → method `default`, native `${HOME}/.dust.toml` | colors only (no theme) | carapace (bridge) | scoop `dust`, winget `bootandy.dust` |
+| dua | 2.46.0 | `%APPDATA%\dua-cli\config.toml` regardless of `XDG_CONFIG_HOME` (verified with `dua config edit`); no config flag → no relocation | none | `dua completions powershell` (native generator) | scoop `dua`, winget `Byron.dua-cli` |
+| gdu | 5.38.0 | `~/.gdu.yaml`; `--config-file <path>` → wrapper `{ ifFile: ${XDG_CONFIG_HOME}/gdu/gdu.yaml }` | style in config only | carapace (common) | scoop `gdu`, winget `dundee.gdu` |
+| duf | 0.9.1 | no config | `-theme dark\|light\|ansi` → latte = light, others = dark | none → spec | scoop `duf`, winget `muesli.duf` |
+
+**btop builds:** btop-lhm's folder holds `LibreHardwareMonitorLib.dll` (and `btop.sys`); plain btop's
+doesn't. The user's `btop` scoop shim points at btop-lhm. Detection = the DLL beside the resolved
+exe (through the shim's `path =` line when the command is a scoop shim).
+
+**Probe hygiene:** `dua config edit` (with `EDITOR=echo`) created `%APPDATA%\dua-cli\config.toml`.
+That folder didn't exist before, so it was removed.
+
 ## Out of scope
 
 - The instant-replay feature.
