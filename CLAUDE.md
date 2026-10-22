@@ -85,7 +85,7 @@ DotForge/
   the working tree: uncommitted edits and new files, never gitignored ones). `Start-DFSession` prints a
   one-line notice when it runs a dev build, so a private test build is never mistaken for a release. Publishing there needs no permission; installing it changes
   the user's shell, so the user runs `./build/Publish-DFLocal.ps1 -Install` (or asks you to). Gallery releases
-  still follow Releasing below. `LocalGallery` is `C:\Users\simsr\repos\Local_PSGallery`, registered for
+  still follow Releasing below. `LocalGallery` is `~\repos\Local_PSGallery`, registered for
   PSResourceGet; an old PowerShellGet 3.0 beta on this machine shadows PSResourceGet's command names, so
   scripts call them module-qualified (`Microsoft.PowerShell.PSResourceGet\Publish-PSResource`).
 - **Use a worktree** (`../DotForge-<topic>`) for risky or parallel work.
