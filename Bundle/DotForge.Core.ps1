@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 34b395f55c9134f00f1dba68bc8541405dc33304ed0e960cff2672a377d03304
+# sources-sha256: a6a4cc376ffaefb5785dea60aca3784c60effc5f9596b5f8cf0d6dd448a0c24d
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -101,9 +101,9 @@ function Test-DFNerdFontName {
     .SYNOPSIS
         True when a Fonts registry value name is a Nerd Font's.
     .DESCRIPTION
-        Matches, ignoring case and spaces, "NerdFont" anywhere, or a name ending in
-        NF, NFM or NFP (the short family names Nerd Fonts uses, e.g. "CaskaydiaCove
-        NF") before an optional style and the "(TrueType)"/"(OpenType)" suffix.
+        Matches, ignoring case and spaces, "NerdFont" anywhere, or NF, NFM or NFP as
+        a word of its own (the short family names Nerd Fonts uses, e.g.
+        "CaskaydiaCove NF Bold"), before the "(TrueType)"/"(OpenType)" suffix.
     .PARAMETER Name
         The registry value name.
     .OUTPUTS
@@ -330,6 +330,32 @@ function Get-DFInstallBlock {
     $blocks = @($Manager.installs | Where-Object { $_ })
     if (-not $Source) { return $blocks | Select-Object -First 1 }
     $blocks | Where-Object { $_.from -eq $Source } | Select-Object -First 1
+}
+
+# ---- Shared/DFInteractiveHost.ps1
+#Requires -Version 7.2
+
+# Shared: Install-DFTool, the banner and Install-DFNerdFont (DotForge.Helpers) all ask it.
+
+function Test-DFInteractiveHost {
+    <#
+    .SYNOPSIS
+        Whether there is a person to ask: an interactive console host whose input isn't redirected, not started with -NonInteractive.
+    .DESCRIPTION
+        A scheduled task or CI step started as `pwsh -NonInteractive -File x.ps1`
+        has a real console, but Read-Host throws there, so the command line is
+        checked too (-NonInteractive, or any prefix of it such as -noni).
+    .PARAMETER CommandLine
+        The process's arguments. Default: [Environment]::GetCommandLineArgs().
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([string[]]$CommandLine = [Environment]::GetCommandLineArgs())
+    $nonInteractive = @($CommandLine | Where-Object { $_ -match '^[-/]noni' -and 'nonInteractive'.StartsWith($_.Substring(1), [StringComparison]::OrdinalIgnoreCase) })
+    if ($nonInteractive) { return $false }
+    [Environment]::UserInteractive -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected
 }
 
 # ---- Shared/DFToolOwnership.ps1
@@ -3427,27 +3453,6 @@ function Test-DFElevated {
     ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-function Test-DFInteractiveHost {
-    <#
-    .SYNOPSIS
-        Whether there is a person to ask: an interactive console host whose input isn't redirected, not started with -NonInteractive.
-    .DESCRIPTION
-        A scheduled task or CI step started as `pwsh -NonInteractive -File x.ps1`
-        has a real console, but Read-Host throws there, so the command line is
-        checked too (-NonInteractive, or any prefix of it such as -noni).
-    .PARAMETER CommandLine
-        The process's arguments. Default: [Environment]::GetCommandLineArgs().
-    .OUTPUTS
-        System.Boolean.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param([string[]]$CommandLine = [Environment]::GetCommandLineArgs())
-    $nonInteractive = @($CommandLine | Where-Object { $_ -match '^[-/]noni' -and 'nonInteractive'.StartsWith($_.Substring(1), [StringComparison]::OrdinalIgnoreCase) })
-    if ($nonInteractive) { return $false }
-    [Environment]::UserInteractive -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected
-}
-
 function Read-DFInstallChoice {
     <#
     .SYNOPSIS
@@ -3481,6 +3486,8 @@ function Read-DFInstallChoice {
 # Whether a Nerd Font is installed, read once per session ($null: not read yet).
 $script:DFNerdFontPresent = $null
 $script:DFNerdFontNoticed = $false
+# Whether a tool left its icons out this session (Test-DFIconsOn said no): only then does the load say so.
+$script:DFIconsWithheld = $false
 
 function Get-DFFontRegistryEntry {
     <#
@@ -3572,7 +3579,10 @@ function Test-DFIconsOn {
     param()
     $setting = Get-DFConfig NerdFont
     if ($null -ne $setting) { return [bool]$setting }
-    Test-DFNerdFontPresent
+    # Asked only where icons would be drawn, so a "no" means something was left out.
+    $on = Test-DFNerdFontPresent
+    if (-not $on) { $script:DFIconsWithheld = $true }
+    $on
 }
 
 function Reset-DFIconsOn {
@@ -3586,6 +3596,7 @@ function Reset-DFIconsOn {
     param()
     $script:DFNerdFontPresent = $null
     $script:DFNerdFontNoticed = $false
+    $script:DFIconsWithheld = $false
 }
 
 function Get-DFNerdFontChange {
@@ -3622,8 +3633,9 @@ function Write-DFNerdFontNotice {
     .SYNOPSIS
         At the end of a load, says why icons are off, or names a Nerd Font that has just appeared.
     .DESCRIPTION
-        Once per session, Windows only. While no Nerd Font is installed and NerdFont
-        isn't set, every load warns that icons are off and how to fix it. When a Nerd
+        Once per session, Windows only. While no Nerd Font is installed, NerdFont
+        isn't set and a requested tool left its icons out, every load warns that
+        icons are off and how to fix it. When a Nerd
         Font has appeared since the last load (Get-DFNerdFontChange), a one-time note
         says to select it in the terminal, which DotForge can't do or see.
     .OUTPUTS
@@ -3635,9 +3647,12 @@ function Write-DFNerdFontNotice {
     $script:DFNerdFontNoticed = $true
     $change = Get-DFNerdFontChange
     if ($change.NewlyPresent) {
-        Write-Host "DotForge: Nerd Font installed: $(@($change.Faces)[0]). Select it as your terminal's font to see icons." -ForegroundColor Cyan
+        # A text font to select: not the symbols-only one, and the plain build before Mono or Propo.
+        $faces = @($change.Faces)
+        $face = @($faces | Where-Object { $_ -notmatch 'Symbols' -and $_ -notmatch '\b(Mono|Propo|NFM|NFP)$' }) + @($faces | Where-Object { $_ -notmatch 'Symbols' }) + $faces | Select-Object -First 1
+        Write-Host "DotForge: Nerd Font installed: $face. Select it as your terminal's font to see icons." -ForegroundColor Cyan
     }
-    if (-not $change.Present -and $null -eq (Get-DFConfig NerdFont)) {
+    if (-not $change.Present -and $script:DFIconsWithheld -and $null -eq (Get-DFConfig NerdFont)) {
         Write-Warning 'DotForge: No Nerd Font installed, so icons are off. Run Install-DFNerdFont, or set NerdFont = $true if your terminal already has one.'
     }
 }
@@ -3666,7 +3681,7 @@ $script:DFConfigKeys = [ordered]@{
     InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
     ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
     NerdFont           = 'Icons: $true on, $false off; unset detects an installed Nerd Font (Windows)'
-    ShowBanner         ='Show the startup banner (fastfetch, drive health, public IP)'
+    ShowBanner         = 'Show the startup banner (fastfetch, drive health, public IP)'
     BannerLineDelay    = 'Milliseconds between banner lines; 0 prints at once'
     BannerWait         = 'Longest wait, in ms, for an unfinished banner part'
     BannerClear        = 'Clear the screen before the banner; $false keeps scrollback'

@@ -160,10 +160,22 @@ Describe 'Write-DFNerdFontNotice' {
     }
     AfterEach { Restore-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null }
 
-    It 'says why icons are off when no Nerd Font is installed' -Skip:(-not $IsWindows) {
+    It 'says why icons are off when a tool left its icons out' -Skip:(-not $IsWindows) {
+        Mock Get-DFNerdFontFace { }
         Mock Get-DFNerdFontChange { [pscustomobject]@{ Present = $false; Faces = @(); NewlyPresent = $false } }
+        Test-DFIconsOn | Out-Null
         Write-DFNerdFontNotice -WarningVariable w 3>$null
         "$w" | Should -BeExactly 'DotForge: No Nerd Font installed, so icons are off. Run Install-DFNerdFont, or set NerdFont = $true if your terminal already has one.'
+    }
+    It 'stays quiet when no tool this load draws icons' -Skip:(-not $IsWindows) {
+        Mock Get-DFNerdFontChange { [pscustomobject]@{ Present = $false; Faces = @(); NewlyPresent = $false } }
+        Write-DFNerdFontNotice -WarningVariable w 3>$null
+        "$w" | Should -BeNullOrEmpty
+    }
+    It 'names a text font, not the symbols-only one, in the one-time note' -Skip:(-not $IsWindows) {
+        Mock Get-DFNerdFontChange { [pscustomobject]@{ Present = $true; Faces = @('Symbols Nerd Font Mono', 'Hack Nerd Font Mono', 'Hack Nerd Font'); NewlyPresent = $true } }
+        Write-DFNerdFontNotice 3>$null
+        Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter { $Object -eq 'DotForge: Nerd Font installed: Hack Nerd Font. Select it as your terminal''s font to see icons.' }
     }
     It 'stays quiet when NerdFont is set either way' -ForEach @(@{ Value = $true }, @{ Value = $false }) {
         Set-DFTestConfig @{ NerdFont = $Value }
@@ -178,7 +190,9 @@ Describe 'Write-DFNerdFontNotice' {
         Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter { $Object -eq 'DotForge: Nerd Font installed: Hack Nerd Font. Select it as your terminal''s font to see icons.' }
     }
     It 'runs once per session from Write-DFSessionNotice' -Skip:(-not $IsWindows) {
+        Mock Get-DFNerdFontFace { }
         Mock Get-DFNerdFontChange { [pscustomobject]@{ Present = $false; Faces = @(); NewlyPresent = $false } }
+        Test-DFIconsOn | Out-Null
         Write-DFSessionNotice -WarningVariable w1 3>$null
         Write-DFSessionNotice -WarningVariable w2 3>$null
         "$w1" | Should -Match 'No Nerd Font installed'

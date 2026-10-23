@@ -17,7 +17,7 @@ DotForge can do the first and check it. It can't do the second, or see whether y
 
 ## When no Nerd Font is installed
 
-On Windows, DotForge checks at each start whether a Nerd Font is installed. If none is, it turns off the icons it controls, so nothing shows `?` boxes, and says why at the end of the load:
+On Windows, DotForge checks at each start whether a Nerd Font is installed. If none is, it turns off the icons it controls, so nothing shows `?` boxes. When one of your tools would have drawn icons, it says why at the end of the load:
 
 ```text
 WARNING: DotForge: No Nerd Font installed, so icons are off. Run Install-DFNerdFont, or set NerdFont = $true if your terminal already has one.

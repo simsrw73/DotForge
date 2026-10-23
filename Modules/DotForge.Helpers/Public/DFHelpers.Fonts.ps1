@@ -58,6 +58,10 @@ function Install-DFNerdFont {
         # The Nerd Font and Mono builds; Propo's proportional spacing doesn't suit a terminal.
         $fontFiles = Get-ChildItem -LiteralPath (Join-Path $work 'files') -Recurse -File |
             Where-Object { $_.Extension -in '.ttf', '.otf' -and $_.BaseName -match 'NerdFont(Mono)?-' }
+        if (-not $fontFiles) {
+            Write-Error "The $Name download holds no Nerd Font files (*NerdFont-*, *NerdFontMono-*); nothing was installed. The release may have renamed them."
+            return
+        }
         $installed = [System.Collections.Generic.List[string]]::new()
         $skipped = [System.Collections.Generic.List[string]]::new()
         foreach ($file in $fontFiles) {
@@ -67,6 +71,7 @@ function Install-DFNerdFont {
     } finally {
         Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction Ignore
     }
-    Write-Host "Installed $face. Select `"$face`" as your terminal's font, then open a new shell to see icons."
+    $done = if ($installed.Count) { "Installed $face." } else { "$face is already installed." }
+    Write-Host "$done Select `"$face`" as your terminal's font, then open a new shell to see icons."
     [pscustomobject]@{ Name = $Name; Face = $face; Files = [string[]]$installed.ToArray(); Skipped = [string[]]$skipped.ToArray() }
 }

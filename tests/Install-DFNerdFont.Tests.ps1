@@ -54,6 +54,24 @@ Describe 'Install-DFNerdFont' -Skip:(-not $IsWindows) {
         Should -Invoke Send-DFFontChange -Times 0
     }
 
+    It 'says the font was already installed when every file was' {
+        Mock Install-DFFontFile { $false }
+        Install-DFNerdFont -Name Hack | Out-Null
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match '^Hack Nerd Font is already installed\.' }
+        Should -Invoke Write-Host -Times 0 -ParameterFilter { "$Object" -match '^Installed' }
+    }
+
+    It 'fails, claiming nothing, when the download holds no Nerd Font files' {
+        $empty = Join-Path $TestDrive "empty-$([guid]::NewGuid().ToString('N').Substring(0, 6))"
+        New-Item -ItemType Directory $empty -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $empty 'README.md') 'x'
+        [IO.Compression.ZipFile]::CreateFromDirectory($empty, "$empty.zip")
+        $script:Zip = "$empty.zip"
+        Install-DFNerdFont -Name Hack -ErrorVariable err -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+        "$err" | Should -Match 'no Nerd Font files'
+        Should -Invoke Write-Host -Times 0 -ParameterFilter { "$Object" -match '^Installed' }
+    }
+
     It 'changes nothing with -WhatIf' {
         Install-DFNerdFont -Name Hack -WhatIf | Out-Null
         Should -Invoke Save-DFNerdFontArchive -Times 0
@@ -111,22 +129,31 @@ Describe 'Select-DFNerdFontName' -Skip:(-not $IsWindows) {
 
     It 'installs CaskaydiaMono and says so when it can''t ask' {
         Mock Test-DFFzfAvailable { $false }
-        Mock Test-DFPromptHost { $false }
+        Mock Test-DFInteractiveHost { $false }
         Select-DFNerdFontName | Should -Be 'CaskaydiaMono'
         Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'CaskaydiaMono' }
     }
 
     It 'offers a numbered list without fzf, Enter taking the first' {
         Mock Test-DFFzfAvailable { $false }
-        Mock Test-DFPromptHost { $true }
+        Mock Test-DFInteractiveHost { $true }
         Mock Read-Host { '' }
         Select-DFNerdFontName | Should -Be 'CaskaydiaMono'
         Mock Read-Host { '5' }
         Select-DFNerdFontName | Should -Be 'Hack'
     }
 
+    It 'never opens fzf when no one can answer it' {
+        Mock Test-DFFzfAvailable { $true }
+        Mock Test-DFInteractiveHost { $false }
+        Mock Invoke-DFPicker { 'Hack' }
+        Select-DFNerdFontName | Should -Be 'CaskaydiaMono'
+        Should -Invoke Invoke-DFPicker -Times 0
+    }
+
     It 'lists the fonts in the picker, CaskaydiaMono first' {
         Mock Test-DFFzfAvailable { $true }
+        Mock Test-DFInteractiveHost { $true }
         Mock Invoke-DFPicker { $script:Listed = @(& $List); 'FiraCode' }
         Select-DFNerdFontName | Should -Be 'FiraCode'
         $script:Listed | Should -Be @('CaskaydiaMono', 'JetBrainsMono', 'FiraCode', 'Meslo', 'Hack')

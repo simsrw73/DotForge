@@ -141,19 +141,6 @@ function Test-DFFzfAvailable {
     [bool](Get-Command fzf -CommandType Application -ErrorAction Ignore)
 }
 
-function Test-DFPromptHost {
-    <#
-    .SYNOPSIS
-        True when someone can answer a prompt: an interactive session whose input isn't redirected.
-    .OUTPUTS
-        System.Boolean.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param()
-    [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
-}
-
 function Select-DFNerdFontName {
     <#
     .SYNOPSIS
@@ -165,12 +152,13 @@ function Select-DFNerdFontName {
     [OutputType([string])]
     param()
     $names = [string[]]@($script:DFNerdFontChoices.Keys)
-    if (Test-DFFzfAvailable) {
-        return Invoke-DFPicker -List { $names }.GetNewClosure() -Header 'Select a Nerd Font to install  [Enter to install]'
-    }
-    if (-not (Test-DFPromptHost)) {
+    # The host first: fzf in a scheduled task or over a pipe has no one to answer it either.
+    if (-not (Test-DFInteractiveHost)) {
         Write-Host "No way to ask which font: installing $($names[0]). Pass -Name to choose another."
         return $names[0]
+    }
+    if (Test-DFFzfAvailable) {
+        return Invoke-DFPicker -List { $names }.GetNewClosure() -Header 'Select a Nerd Font to install  [Enter to install]'
     }
     for ($i = 0; $i -lt $names.Count; $i++) { Write-Host ("  {0}. {1}" -f ($i + 1), $script:DFNerdFontChoices[$names[$i]]) }
     $answer = Read-Host "Font to install [1-$($names.Count), Enter for 1]"

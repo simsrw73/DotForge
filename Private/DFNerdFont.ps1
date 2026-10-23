@@ -5,6 +5,8 @@
 # Whether a Nerd Font is installed, read once per session ($null: not read yet).
 $script:DFNerdFontPresent = $null
 $script:DFNerdFontNoticed = $false
+# Whether a tool left its icons out this session (Test-DFIconsOn said no): only then does the load say so.
+$script:DFIconsWithheld = $false
 
 function Get-DFFontRegistryEntry {
     <#
@@ -96,7 +98,10 @@ function Test-DFIconsOn {
     param()
     $setting = Get-DFConfig NerdFont
     if ($null -ne $setting) { return [bool]$setting }
-    Test-DFNerdFontPresent
+    # Asked only where icons would be drawn, so a "no" means something was left out.
+    $on = Test-DFNerdFontPresent
+    if (-not $on) { $script:DFIconsWithheld = $true }
+    $on
 }
 
 function Reset-DFIconsOn {
@@ -110,6 +115,7 @@ function Reset-DFIconsOn {
     param()
     $script:DFNerdFontPresent = $null
     $script:DFNerdFontNoticed = $false
+    $script:DFIconsWithheld = $false
 }
 
 function Get-DFNerdFontChange {
@@ -146,8 +152,9 @@ function Write-DFNerdFontNotice {
     .SYNOPSIS
         At the end of a load, says why icons are off, or names a Nerd Font that has just appeared.
     .DESCRIPTION
-        Once per session, Windows only. While no Nerd Font is installed and NerdFont
-        isn't set, every load warns that icons are off and how to fix it. When a Nerd
+        Once per session, Windows only. While no Nerd Font is installed, NerdFont
+        isn't set and a requested tool left its icons out, every load warns that
+        icons are off and how to fix it. When a Nerd
         Font has appeared since the last load (Get-DFNerdFontChange), a one-time note
         says to select it in the terminal, which DotForge can't do or see.
     .OUTPUTS
@@ -159,9 +166,12 @@ function Write-DFNerdFontNotice {
     $script:DFNerdFontNoticed = $true
     $change = Get-DFNerdFontChange
     if ($change.NewlyPresent) {
-        Write-Host "DotForge: Nerd Font installed: $(@($change.Faces)[0]). Select it as your terminal's font to see icons." -ForegroundColor Cyan
+        # A text font to select: not the symbols-only one, and the plain build before Mono or Propo.
+        $faces = @($change.Faces)
+        $face = @($faces | Where-Object { $_ -notmatch 'Symbols' -and $_ -notmatch '\b(Mono|Propo|NFM|NFP)$' }) + @($faces | Where-Object { $_ -notmatch 'Symbols' }) + $faces | Select-Object -First 1
+        Write-Host "DotForge: Nerd Font installed: $face. Select it as your terminal's font to see icons." -ForegroundColor Cyan
     }
-    if (-not $change.Present -and $null -eq (Get-DFConfig NerdFont)) {
+    if (-not $change.Present -and $script:DFIconsWithheld -and $null -eq (Get-DFConfig NerdFont)) {
         Write-Warning 'DotForge: No Nerd Font installed, so icons are off. Run Install-DFNerdFont, or set NerdFont = $true if your terminal already has one.'
     }
 }

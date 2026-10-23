@@ -9,9 +9,9 @@ function Test-DFNerdFontName {
     .SYNOPSIS
         True when a Fonts registry value name is a Nerd Font's.
     .DESCRIPTION
-        Matches, ignoring case and spaces, "NerdFont" anywhere, or a name ending in
-        NF, NFM or NFP (the short family names Nerd Fonts uses, e.g. "CaskaydiaCove
-        NF") before an optional style and the "(TrueType)"/"(OpenType)" suffix.
+        Matches, ignoring case and spaces, "NerdFont" anywhere, or NF, NFM or NFP as
+        a word of its own (the short family names Nerd Fonts uses, e.g.
+        "CaskaydiaCove NF Bold"), before the "(TrueType)"/"(OpenType)" suffix.
     .PARAMETER Name
         The registry value name.
     .OUTPUTS
