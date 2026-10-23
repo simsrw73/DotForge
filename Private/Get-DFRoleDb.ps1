@@ -135,7 +135,7 @@ function ConvertTo-DFRoleRecord {
 function ConvertTo-DFRoleBehaviors {
     <#
     .SYNOPSIS
-        Normalizes a role's behaviors block: words, aliases (name -> words) and pickers (list as words).
+        Normalizes a role's behaviors block: words, aliases (name -> words), pickers (list as words), env and nerdFontWords.
     .DESCRIPTION
         Returns a Value of $null when the role has none. A problem (a word used but
         not defined) is returned as a string for ConvertTo-DFRoleRecord to report.
@@ -157,11 +157,13 @@ function ConvertTo-DFRoleBehaviors {
     foreach ($var in @($Behaviors.PSObject.Properties['env']?.Value.PSObject.Properties)) {
         if ($var) { $env[$var.Name] = [string[]]@($var.Value) }
     }
-    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ })
+    # Words that draw Nerd Font icons: left out while icons are off (Select-DFRoleWord).
+    $nerdFontWords = [string[]]@($Behaviors.PSObject.Properties['nerdFontWords']?.Value | Where-Object { $_ })
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ }) + @($nerdFontWords)
     $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
     $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
     [pscustomobject]@{
-        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env }
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env; nerdFontWords = $nerdFontWords }
         Problem = $problem
     }
 }

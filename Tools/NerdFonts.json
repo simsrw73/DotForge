@@ -1,0 +1,18 @@
+{
+  "name": "NerdFonts",
+  "type": "module",
+  "description": "PowerShell module that installs Nerd Fonts for you or for every user (Install-NerdFont)",
+  "tags": ["fonts", "installer", "module"],
+  "executable": "NerdFonts",
+  "prewarm": false,
+  "roles": { "font-installer": {} },
+  "packages": { "psgallery": "NerdFonts" },
+  "xdg": { "compliance": "none", "method": "default", "native": [] },
+  "setup": {
+    "notes": [
+      { "text": "Install a font with Install-NerdFont -Name <font> -Scope CurrentUser, then restart your terminal: the module doesn't tell running apps about a new font." }
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

@@ -60,6 +60,7 @@ $sectionByFile = [ordered]@{
     'DFHelpers.Clipboard'        = 'Clipboard, pager and utilities'
     'DFHelpers.Pager'            = 'Core'
     'DFHelpers.Utility'          = 'Clipboard, pager and utilities'
+    'DFHelpers.Fonts'            = 'Core'
     'Find-DFPackage'             = 'Package catalog'
     'Get-DFCategoryList'         = 'Package catalog'
     'Get-DFCommandConflict'      = 'Core'

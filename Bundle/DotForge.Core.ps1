@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 26abee0094889bff752c2c526d72a611e1bb3a0a16da67059ac90aaee4873966
+# sources-sha256: 34b395f55c9134f00f1dba68bc8541405dc33304ed0e960cff2672a377d03304
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -87,6 +87,58 @@ function Get-DFXdgPath {
         }
     }
     ConvertTo-DFPath $value
+}
+
+# ---- Shared/DFFontName.ps1
+#Requires -Version 7.2
+
+# Names in the Windows Fonts registry keys: "<Face> <Style> (TrueType)", or, for a
+# font registered by its file, "<FaceNoSpaces>-<Style> (TrueType)". Shared because the
+# core detects Nerd Fonts and Install-DFNerdFont (DotForge.Helpers) registers them.
+
+function Test-DFNerdFontName {
+    <#
+    .SYNOPSIS
+        True when a Fonts registry value name is a Nerd Font's.
+    .DESCRIPTION
+        Matches, ignoring case and spaces, "NerdFont" anywhere, or a name ending in
+        NF, NFM or NFP (the short family names Nerd Fonts uses, e.g. "CaskaydiaCove
+        NF") before an optional style and the "(TrueType)"/"(OpenType)" suffix.
+    .PARAMETER Name
+        The registry value name.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Name)
+    $bare = $Name -replace '\s*\((TrueType|OpenType)\)\s*$', ''
+    if (($bare -replace '\s', '') -match 'NerdFont') { return $true }
+    $bare -match '(^|[\s-])NF[MP]?(\s|-|$)'
+}
+
+function ConvertTo-DFFontFaceName {
+    <#
+    .SYNOPSIS
+        The family name a terminal lists for a Fonts registry value name or font file name.
+    .DESCRIPTION
+        Drops the "(TrueType)" suffix, a file extension and the style ("Regular",
+        "BoldItalic", ...), and spaces a compact Nerd Font name: "HackNerdFontMono-Bold"
+        becomes "Hack Nerd Font Mono".
+    .PARAMETER Name
+        A registry value name or a font file name.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Name)
+    $face = $Name -replace '\s*\((TrueType|OpenType)\)\s*$', '' -replace '\.(ttf|otf)$', ''
+    # A file-style name: the style follows the last '-'.
+    if ($face -notmatch '\s' -and $face -match '^(.+)-[^-]+$') { $face = $Matches[1] }
+    $face = $face -creplace '(?<=\S)NerdFont(?=Mono|Propo|$)', ' Nerd Font' -creplace 'Nerd Font(Mono|Propo)$', 'Nerd Font $1'
+    $styles = 'Regular|Bold|Italic|BoldItalic|Light|LightItalic|Medium|MediumItalic|SemiBold|SemiBoldItalic|ExtraLight|ExtraLightItalic|ExtraBold|ExtraBoldItalic|Thin|ThinItalic|Black|BlackItalic|SemiLight|SemiLightItalic|Retina|Book|Oblique'
+    ($face -replace "(\s+($styles))+$", '').Trim()
 }
 
 # ---- Shared/DFInstallSource.ps1
@@ -1285,6 +1337,7 @@ function ConvertTo-DFPickerEntry {
         list              = Get-DFToolRecordProperty $RawPicker 'list' $null
         list_accepts_path = [bool](Get-DFToolRecordProperty $RawPicker 'list_accepts_path' $false)
         preview           = Get-DFToolRecordProperty $RawPicker 'preview' ''
+        preview_plain     = Get-DFToolRecordProperty $RawPicker 'preview_plain' ''
         preview_window    = Get-DFToolRecordProperty $RawPicker 'preview_window' 'right:60%'
         ansi              = [bool](Get-DFToolRecordProperty $RawPicker 'ansi' $false)
         header            = Get-DFToolRecordProperty $RawPicker 'header' ''
@@ -1444,6 +1497,7 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
+            nerdFont $null ('required': the tool only draws icons, so it isn't loaded while icons are off),
             packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
             folder / source $null (the loader sets them: where the JSON was
@@ -1470,7 +1524,8 @@ function ConvertTo-DFToolRecord {
         default) and feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
         present, has prefer (string[]); each alias is
         { command; args[] } with a missing args meaning none; an object picker
-        has every field, with preview '', preview_window 'right:60%',
+        has every field, with preview '', preview_plain '' (the preview used
+        while icons are off), preview_window 'right:60%',
         header '', ansi and list_accepts_path $false. A non-object picker (the
         "custom" marker) is kept as is, and so is the free-form settings
         object, whose shape each tool's companion owns. Unknown fields are
@@ -1516,6 +1571,7 @@ function ConvertTo-DFToolRecord {
         settings          = Get-DFToolRecordProperty $Tool 'settings' $null
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
+        nerdFont          = Get-DFToolRecordProperty $Tool 'nerdFont' $null
         setup             = $setup
         banner            = ConvertTo-DFBannerField (Get-DFToolRecordProperty $Tool 'banner' $null)
         installs          = $installs
@@ -2078,7 +2134,7 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
 function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in requires and prewarm.
+        Schema errors in requires, prewarm and nerdFont.
     #>
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
     if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
@@ -2086,6 +2142,8 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
     }
     $prewarm = Get-DFSchemaProperty $Tool 'prewarm'
     if ($null -ne $prewarm -and $prewarm -isnot [bool]) { 'prewarm must be a boolean (true/false, not a string)' }
+    $nerdFont = Get-DFSchemaProperty $Tool 'nerdFont'
+    if ($null -ne $nerdFont -and $nerdFont -ne 'required') { "nerdFont must be ""required"" (the tool only draws icons), not '$nerdFont'" }
 }
 
 function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
@@ -2240,8 +2298,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper'
-        picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont'
+        picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_plain', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
@@ -2299,7 +2357,7 @@ function Test-DFToolSchema {
         Returns a result object: Valid, Errors and Warnings.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm, nerdFont and role blocks.
         Each section is checked by its own step; their error messages are collected, in
         order, into the result's Errors. Field names that look like misspellings of known
         fields go into Warnings: a tool with only warnings is still valid.
@@ -3415,6 +3473,175 @@ function Read-DFInstallChoice {
     }
 }
 
+# ---- Private/DFNerdFont.ps1
+#Requires -Version 7.2
+
+# Whether icons are on: the NerdFont setting, else whether a Nerd Font is installed.
+# Design: docs/superpowers/specs/2026-10-23-fonts-design.md.
+# Whether a Nerd Font is installed, read once per session ($null: not read yet).
+$script:DFNerdFontPresent = $null
+$script:DFNerdFontNoticed = $false
+
+function Get-DFFontRegistryEntry {
+    <#
+    .SYNOPSIS
+        The fonts registered for this user and for the machine whose names match a pattern, with their files.
+    .DESCRIPTION
+        Reads the HKCU and HKLM "Windows NT\CurrentVersion\Fonts" keys, HKCU first.
+        A per-user value holds the font file's full path; a machine value holds a
+        file name under $Env:windir\Fonts. Only these keys say what survives a
+        reboot (fonts loaded with AddFontResource alone are gone after it). A
+        machine can list hundreds of fonts, so names are filtered before anything
+        else is read, and entries stream (a caller may stop at the first). Nothing
+        off Windows.
+    .PARAMETER Pattern
+        A regex the value name must match.
+    .OUTPUTS
+        PSCustomObject { Name; Path }.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Pattern)
+    if (-not $IsWindows) { return }
+    $fontsDir = Join-Path $Env:windir 'Fonts'
+    foreach ($hive in [Microsoft.Win32.Registry]::CurrentUser, [Microsoft.Win32.Registry]::LocalMachine) {
+        $key = $hive.OpenSubKey('Software\Microsoft\Windows NT\CurrentVersion\Fonts')
+        if (-not $key) { continue }
+        try {
+            foreach ($name in @($key.GetValueNames()) -match $Pattern) {
+                $value = [string]$key.GetValue($name)
+                if (-not $value) { continue }
+                $path = if ([IO.Path]::IsPathRooted($value)) { $value } else { Join-Path $fontsDir $value }
+                [pscustomobject]@{ Name = $name; Path = $path }
+            }
+        } finally { $key.Dispose() }
+    }
+}
+
+function Get-DFNerdFontFace {
+    <#
+    .SYNOPSIS
+        The faces of the installed Nerd Fonts whose files exist.
+    .DESCRIPTION
+        Only Nerd Font names (Test-DFNerdFontName) have their file checked, so a
+        font deleted by hand without its registry value doesn't count.
+    .PARAMETER First
+        Stop at the first one: enough to know a Nerd Font is installed.
+    .OUTPUTS
+        System.String[]: distinct face names, e.g. "Hack Nerd Font".
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([switch]$First)
+    # A cheap regex narrows the names before Test-DFNerdFontName decides. One pipeline,
+    # so Select-Object -First stops the registry read at the first installed one.
+    $installed = { (Test-DFNerdFontName -Name $_.Name) -and [IO.File]::Exists($_.Path) }
+    $entries = if ($First) {
+        Get-DFFontRegistryEntry -Pattern '(?i)nerd|nf' | Where-Object $installed | Select-Object -First 1
+    } else {
+        Get-DFFontRegistryEntry -Pattern '(?i)nerd|nf' | Where-Object $installed
+    }
+    [string[]]@($entries | ForEach-Object { ConvertTo-DFFontFaceName -Name $_.Name } | Select-Object -Unique)
+}
+
+function Test-DFNerdFontPresent {
+    <#
+    .SYNOPSIS
+        True when a Nerd Font is installed, read once per session; always true off Windows, where DotForge can't tell.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+    if (-not $IsWindows) { return $true }
+    if ($null -eq $script:DFNerdFontPresent) { $script:DFNerdFontPresent = [bool]@(Get-DFNerdFontFace -First).Count }
+    $script:DFNerdFontPresent
+}
+function Test-DFIconsOn {
+    <#
+    .SYNOPSIS
+        True when tools may draw Nerd Font icons: the NerdFont setting, else whether a Nerd Font is installed.
+    .DESCRIPTION
+        The one place that decides it. Role words, picker previews and records
+        marked nerdFont: "required" all follow it.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+    $setting = Get-DFConfig NerdFont
+    if ($null -ne $setting) { return [bool]$setting }
+    Test-DFNerdFontPresent
+}
+
+function Reset-DFIconsOn {
+    <#
+    .SYNOPSIS
+        Forgets this session's Nerd Font detection, so the next check reads the registry again.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    $script:DFNerdFontPresent = $null
+    $script:DFNerdFontNoticed = $false
+}
+
+function Get-DFNerdFontChange {
+    <#
+    .SYNOPSIS
+        Whether a Nerd Font is installed now, and whether it appeared since the last load.
+    .DESCRIPTION
+        Compares with $XDG_STATE_HOME\dotforge\nerd-font.json ({ "present": bool }),
+        written only when the answer changes. With no file yet, this load is the
+        baseline: NewlyPresent is $false, so a user who already had a Nerd Font
+        never hears about it.
+    .OUTPUTS
+        PSCustomObject { Present; Faces; NewlyPresent }.
+    #>
+    [CmdletBinding()]
+    param()
+    $present = Test-DFNerdFontPresent
+    $stateFile = Join-Path (Get-DFXdgPath State) 'dotforge' 'nerd-font.json'
+    $previous = $null
+    if (Test-Path -LiteralPath $stateFile -PathType Leaf) {
+        try { $previous = (Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json).PSObject.Properties['present']?.Value } catch { $previous = $null }
+    }
+    if ($previous -ne $present) { Write-DFFileAtomic -Path $stateFile -Value (@{ present = $present } | ConvertTo-Json -Compress) }
+    [pscustomobject]@{
+        Present      = $present
+        # The face names only when they are shown: listing them all costs more than detecting one.
+        Faces        = if ($present -and $previous -eq $false) { [string[]]@(Get-DFNerdFontFace) } else { [string[]]@() }
+        NewlyPresent = $present -and $previous -eq $false
+    }
+}
+
+function Write-DFNerdFontNotice {
+    <#
+    .SYNOPSIS
+        At the end of a load, says why icons are off, or names a Nerd Font that has just appeared.
+    .DESCRIPTION
+        Once per session, Windows only. While no Nerd Font is installed and NerdFont
+        isn't set, every load warns that icons are off and how to fix it. When a Nerd
+        Font has appeared since the last load (Get-DFNerdFontChange), a one-time note
+        says to select it in the terminal, which DotForge can't do or see.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param()
+    if (-not $IsWindows -or $script:DFNerdFontNoticed) { return }
+    $script:DFNerdFontNoticed = $true
+    $change = Get-DFNerdFontChange
+    if ($change.NewlyPresent) {
+        Write-Host "DotForge: Nerd Font installed: $(@($change.Faces)[0]). Select it as your terminal's font to see icons." -ForegroundColor Cyan
+    }
+    if (-not $change.Present -and $null -eq (Get-DFConfig NerdFont)) {
+        Write-Warning 'DotForge: No Nerd Font installed, so icons are off. Run Install-DFNerdFont, or set NerdFont = $true if your terminal already has one.'
+    }
+}
+
 # ---- Private/DFSessionConfig.ps1
 #Requires -Version 7.2
 
@@ -3438,7 +3665,8 @@ $script:DFConfigKeys = [ordered]@{
     InstallVia          = 'Tool -> source to install it from (beats everything, including ExcludeSources)'
     InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
     ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
-    ShowBanner         = 'Show the startup banner (fastfetch, drive health, public IP)'
+    NerdFont           = 'Icons: $true on, $false off; unset detects an installed Nerd Font (Windows)'
+    ShowBanner         ='Show the startup banner (fastfetch, drive health, public IP)'
     BannerLineDelay    = 'Milliseconds between banner lines; 0 prints at once'
     BannerWait         = 'Longest wait, in ms, for an unfinished banner part'
     BannerClear        = 'Clear the screen before the banner; $false keeps scrollback'
@@ -4292,6 +4520,35 @@ function Resolve-DFRoleWords {
     [pscustomobject]@{ Args = [string[]]$argList.ToArray(); Missing = [string[]]$missing.ToArray() }
 }
 
+function Select-DFRoleWord {
+    <#
+    .SYNOPSIS
+        A role's words, without the ones that draw Nerd Font icons while icons are off.
+    .DESCRIPTION
+        The one place icon words are dropped (behaviors.nerdFontWords, Test-DFIconsOn).
+        A dropped word is not a missing flag; the winner's status says icons are off.
+    .PARAMETER Words
+        The words of one alias, picker list or variable.
+    .PARAMETER RoleDefinition
+        The role record, with behaviors.
+    .PARAMETER Tool
+        The winner's tool record, for its status note.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [AllowEmptyCollection()][string[]]$Words,
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $iconWords = @($RoleDefinition.behaviors.nerdFontWords)
+    if (-not $iconWords.Count -or -not @($Words | Where-Object { $_ -in $iconWords }).Count -or (Test-DFIconsOn)) { return [string[]]@($Words) }
+    Add-DFToolNote -Tool $Tool.name -Note 'icons off: no Nerd Font (see NerdFont)'
+    [string[]]@($Words | Where-Object { $_ -notin $iconWords })
+}
+
 function Add-DFRoleMissingWordNote {
     <#
     .SYNOPSIS
@@ -4344,7 +4601,7 @@ function Get-DFRoleBehaviorAlias {
     $aliases = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.aliases.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words $RoleDefinition.behaviors.aliases[$name] -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         $aliases[$name] = [pscustomobject]@{ command = $command; args = $resolved.Args }
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
@@ -4377,7 +4634,7 @@ function Get-DFRolePicker {
     $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
     $missing = [ordered]@{}
     $pickers = foreach ($picker in @($RoleDefinition.behaviors.pickers)) {
-        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words @($picker.list) -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
         $copy = [ordered]@{}
         foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
@@ -4462,7 +4719,7 @@ function Get-DFRoleBehaviorEnv {
     $values = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.env.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words $RoleDefinition.behaviors.env[$name] -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         # git runs PAGER through sh, and bat/delta split it shell-style: a backslash is an escape
         # there, so paths use forward slashes (as ${DF_TOOL_EXE} does), and an argument with a
         # space or shell punctuation is double-quoted.
@@ -4630,7 +4887,7 @@ function ConvertTo-DFRoleRecord {
 function ConvertTo-DFRoleBehaviors {
     <#
     .SYNOPSIS
-        Normalizes a role's behaviors block: words, aliases (name -> words) and pickers (list as words).
+        Normalizes a role's behaviors block: words, aliases (name -> words), pickers (list as words), env and nerdFontWords.
     .DESCRIPTION
         Returns a Value of $null when the role has none. A problem (a word used but
         not defined) is returned as a string for ConvertTo-DFRoleRecord to report.
@@ -4652,11 +4909,13 @@ function ConvertTo-DFRoleBehaviors {
     foreach ($var in @($Behaviors.PSObject.Properties['env']?.Value.PSObject.Properties)) {
         if ($var) { $env[$var.Name] = [string[]]@($var.Value) }
     }
-    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ })
+    # Words that draw Nerd Font icons: left out while icons are off (Select-DFRoleWord).
+    $nerdFontWords = [string[]]@($Behaviors.PSObject.Properties['nerdFontWords']?.Value | Where-Object { $_ })
+    $used = @($aliases.Values | ForEach-Object { $_ }) + @($pickers | ForEach-Object { @($_.list) }) + @($env.Values | ForEach-Object { $_ }) + @($nerdFontWords)
     $undefined = @($used | Where-Object { $_ -notin $words } | Select-Object -Unique)
     $problem = if ($undefined) { "behaviors use undefined word(s): $($undefined -join ', ')" }
     [pscustomobject]@{
-        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env }
+        Value   = [pscustomobject]@{ words = $words; aliases = $aliases; pickers = $pickers; env = $env; nerdFontWords = $nerdFontWords }
         Problem = $problem
     }
 }
@@ -5802,6 +6061,11 @@ function Invoke-DFSessionActivation {
     try {
         foreach ($tool in $tools) {
             if ((Test-DFToolActive $tool.name) -and $tool.name -notin $Reactivate) { continue }
+            # A tool that only draws icons waits for a Nerd Font; the load says why (Write-DFNerdFontNotice).
+            if ($tool.nerdFont -eq 'required' -and -not (Test-DFIconsOn)) {
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Excluded -RequestedBy $requestedBy[$tool.name] -Detail 'needs a Nerd Font (icons are off; see NerdFont)'
+                continue
+            }
             $blocker = @(Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs)
             if ($blocker) {
                 # Installed, but a tool it needs isn't active: Blocked. Not installed: Missing (Install-DFTool -Missing).
@@ -5926,6 +6190,7 @@ function Start-DFActivationPrewarm {
     param([AllowEmptyCollection()][object[]]$Tools = @())
     $prewarmModules = @(foreach ($tool in $Tools) {
         if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
+            -not ($tool.nerdFont -eq 'required' -and -not (Test-DFIconsOn)) -and
             (Test-DFToolAvailable -Executable $tool.executable -Type 'module')) { $tool.executable }
     })
     if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
@@ -6092,7 +6357,7 @@ function Set-DFXdgEnvironment {
 function Write-DFSessionNotice {
     <#
     .SYNOPSIS
-        Warns, at the end of a load, about requested tools that are missing or failed, and prints new setup notes.
+        Warns, at the end of a load, about requested tools that are missing or failed, prints new setup notes, and says why icons are off.
     .DESCRIPTION
         Silent when nothing is missing. Up to five missing tools are named,
         each with the role it was preferred for and its stand-in when one is
@@ -6104,6 +6369,7 @@ function Write-DFSessionNotice {
     [CmdletBinding()]
     param()
     Write-DFSetupNoteNotice
+    Write-DFNerdFontNotice
     if (-not $script:DFSessionStatus) { return }
     $all = @($script:DFSessionStatus.Values)
     $missing = @($all | Where-Object State -eq 'Missing')
@@ -6965,9 +7231,12 @@ function Set-DFPickerFunction {
         [scriptblock]::Create("param(`$v) " + $picker.action.Replace('{}', '$v'))
     }
     $parse = if ($picker.parse) { [scriptblock]::Create($picker.parse) }
+    # A preview that draws icons may declare a plain one for while icons are off.
+    $plain = $picker.PSObject.Properties['preview_plain']?.Value
+    $preview = if ($plain -and -not (Test-DFIconsOn)) { $plain } else { $picker.preview }
     $show = {
         param([scriptblock]$List)
-        Invoke-DFPicker -List $List -Preview $picker.preview -PreviewWindow $picker.preview_window `
+        Invoke-DFPicker -List $List -Preview $preview -PreviewWindow $picker.preview_window `
             -Ansi:$picker.ansi -Header $picker.header -Parse $parse -Action $action
     }.GetNewClosure()
 

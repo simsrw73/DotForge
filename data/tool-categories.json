@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-18",
+  "updated": "2026-10-23",
   "taxonomy": {
     "function": [
       "search",
@@ -556,6 +556,22 @@
       },
       "popularity": 2
     },
+    "fontget": {
+      "function": [
+        "package-manager"
+      ],
+      "interface": "cli",
+      "ids": {
+        "winget": "Graphixa.FontGet",
+        "scoop": "fontget"
+      },
+      "relatedTo": [
+        "NerdFonts",
+        "GoogleFonts",
+        "gfcli"
+      ],
+      "popularity": 1
+    },
     "fx": {
       "function": [
         "json-processing"
@@ -601,6 +617,20 @@
       "relatedTo": [
         "ncdu",
         "dust"
+      ],
+      "popularity": 1
+    },
+    "gfcli": {
+      "function": [
+        "package-manager"
+      ],
+      "interface": "cli",
+      "ids": {
+        "npm": "google-font-cli"
+      },
+      "relatedTo": [
+        "GoogleFonts",
+        "fontget"
       ],
       "popularity": 1
     },
@@ -651,6 +681,21 @@
         "scoop": "glow",
         "choco": "glow"
       },
+      "popularity": 1
+    },
+    "GoogleFonts": {
+      "function": [
+        "package-manager"
+      ],
+      "interface": "cli",
+      "ids": {
+        "psgallery": "GoogleFonts"
+      },
+      "relatedTo": [
+        "NerdFonts",
+        "gfcli",
+        "fontget"
+      ],
       "popularity": 1
     },
     "gping": {
@@ -1012,6 +1057,20 @@
         "dust",
         "duf",
         "gdu"
+      ],
+      "popularity": 1
+    },
+    "NerdFonts": {
+      "function": [
+        "package-manager"
+      ],
+      "interface": "cli",
+      "ids": {
+        "psgallery": "NerdFonts"
+      },
+      "relatedTo": [
+        "GoogleFonts",
+        "fontget"
       ],
       "popularity": 1
     },

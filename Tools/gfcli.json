@@ -1,0 +1,12 @@
+{
+  "name": "gfcli",
+  "description": "Google Fonts command line: search, download and install Google Fonts",
+  "tags": ["fonts", "installer", "google-fonts"],
+  "executable": "gfcli",
+  "roles": { "font-installer": {} },
+  "requires": ["role:js-runtime"],
+  "packages": { "npm": "google-font-cli" },
+  "xdg": { "compliance": "none", "method": "default", "native": [] },
+  "aliases": {},
+  "picker": null
+}

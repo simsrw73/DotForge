@@ -70,6 +70,7 @@ Install a tool you don't have yet with `Install-DFTool -Name ripgrep`. To run th
 | [Getting started](docs/guide/getting-started.md) | install DotForge and set up your profile, step by step |
 | [Configuration](docs/guide/configuration.md) | choose tools, change themes, pick between eza and lsd, and set every configuration key |
 | [Tools](docs/guide/tools.md) | see the 43 tools and the commands each adds |
+| [Fonts and icons](docs/guide/fonts.md) | install a Nerd Font so tools can draw icons, and add font installers |
 | [Pickers and helpers](docs/guide/pickers-and-helpers.md) | use the fuzzy pickers and general commands, and build your own picker |
 | [Completion](docs/guide/completion.md) | set up Tab completion with Carapace, PSFzf or inshellisense |
 | [Package catalog](docs/guide/package-catalog.md) | search every package catalog at once with `trifle` (experimental) |

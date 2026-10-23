@@ -31,6 +31,7 @@
     "function": "Select-Directory",
     "list": "zoxide query --list",
     "preview": "eza --icons --color=always {}",
+    "preview_plain": "eza --color=always {}",
     "preview_window": "right:60%",
     "ansi": false,
     "header": "Select directory  [Enter to cd]",

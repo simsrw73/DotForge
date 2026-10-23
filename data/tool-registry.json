@@ -74,6 +74,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -118,6 +119,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -234,6 +236,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -328,6 +331,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/broot/conf.hjson": "broot/conf.hjson",
@@ -413,6 +417,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -511,6 +516,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -613,6 +619,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -662,6 +669,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -750,6 +758,7 @@
             "list": "chezmoi managed --path-style absolute --include files",
             "list_accepts_path": false,
             "preview": "bat --color=always --line-range=:200 {}",
+            "preview_plain": "",
             "preview_window": "right:60%",
             "ansi": false,
             "header": "Select dotfile  [Enter to chezmoi edit]",
@@ -766,6 +775,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -821,6 +831,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -921,6 +932,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -993,6 +1005,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1050,6 +1063,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1103,6 +1117,7 @@
             "list": "docker ps --format '{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}'",
             "list_accepts_path": false,
             "preview": "docker logs --tail 50 {1}",
+            "preview_plain": "",
             "preview_window": "right:60%:wrap",
             "ansi": false,
             "header": "Select running container  [Enter to open a shell in it]",
@@ -1115,6 +1130,7 @@
             "list": "docker images --format '{{.Repository}}:{{.Tag}}\\t{{.ID}}\\t{{.Size}}'",
             "list_accepts_path": false,
             "preview": "docker image history {2}",
+            "preview_plain": "",
             "preview_window": "right:60%",
             "ansi": false,
             "header": "Select image  [Enter to output repo:tag]",
@@ -1131,6 +1147,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1188,6 +1205,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1283,6 +1301,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1340,6 +1359,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1444,6 +1464,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1529,6 +1550,7 @@
         },
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/fastfetch/config.jsonc": "fastfetch/config.jsonc"
@@ -1582,6 +1604,7 @@
             "list": "fd --color=always",
             "list_accepts_path": false,
             "preview": "bat --color=always --line-range=:100 {}",
+            "preview_plain": "",
             "preview_window": "right:60%",
             "ansi": true,
             "header": "Select file  [Enter to output path]",
@@ -1617,6 +1640,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1695,6 +1719,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -1717,6 +1742,76 @@
             "feeds": null
           }
         ],
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "fontget": {
+      "sha256": "879515c37767771c1a1897c775273cdc523b32a756eb1b5eeda8626822f3c765",
+      "record": {
+        "name": "fontget",
+        "executable": "fontget.exe",
+        "type": "exe",
+        "description": "Font installer with many sources: Google Fonts, Nerd Fonts, Fontsource, Fontshare and more",
+        "tags": [
+          "fonts",
+          "installer"
+        ],
+        "packages": {
+          "winget": "Graphixa.FontGet",
+          "scoop": {
+            "id": "fontget",
+            "feed": {
+              "name": "fontget",
+              "url": "https://github.com/Graphixa/scoop-bucket"
+            }
+          }
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "font-installer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
+        "setup": {
+          "seed": null,
+          "notes": [
+            {
+              "text": "FontGet's per-user installs don't survive a reboot yet (https://github.com/Graphixa/FontGet/issues/9). Install with --scope machine (admin), or use Install-DFNerdFont or the NerdFonts module."
+            }
+          ]
+        },
+        "banner": null,
+        "installs": null,
         "install": null,
         "folder": null,
         "source": null
@@ -1839,6 +1934,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1919,6 +2015,66 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "gfcli": {
+      "sha256": "aec0e55dbcf35a35a01b3360c2e16d45e038672d5a05f8bd68a833e1f4ac8e3a",
+      "record": {
+        "name": "gfcli",
+        "executable": "gfcli",
+        "type": "exe",
+        "description": "Google Fonts command line: search, download and install Google Fonts",
+        "tags": [
+          "fonts",
+          "installer",
+          "google-fonts"
+        ],
+        "packages": {
+          "npm": "google-font-cli"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [
+          "role:js-runtime"
+        ],
+        "roles": {
+          "font-installer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -1961,6 +2117,7 @@
             "list": "gh pr list --json number,title,author | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title) ($($_.author.login))\" }",
             "list_accepts_path": false,
             "preview": "gh pr view {1}",
+            "preview_plain": "",
             "preview_window": "right:60%:wrap",
             "ansi": false,
             "header": "Select pull request  [Enter to check it out]",
@@ -1973,6 +2130,7 @@
             "list": "gh issue list --json number,title | ConvertFrom-Json | ForEach-Object { \"$($_.number)`t$($_.title)\" }",
             "list_accepts_path": false,
             "preview": "gh issue view {1}",
+            "preview_plain": "",
             "preview_window": "right:60%:wrap",
             "ansi": false,
             "header": "Select issue  [Enter to open it in the browser]",
@@ -1989,6 +2147,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2070,6 +2229,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2189,7 +2349,73 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "GoogleFonts": {
+      "sha256": "7702fecfe698b13aacf833fd6ae3bea9535fb20ec4b5547053a4a13778d814fc",
+      "record": {
+        "name": "GoogleFonts",
+        "executable": "GoogleFonts",
+        "type": "module",
+        "description": "PowerShell module that installs Google Fonts for you or for every user (Install-GoogleFont)",
+        "tags": [
+          "fonts",
+          "installer",
+          "module",
+          "google-fonts"
+        ],
+        "packages": {
+          "psgallery": "GoogleFonts"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "font-installer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": false,
+        "nerdFont": null,
+        "setup": {
+          "seed": null,
+          "notes": [
+            {
+              "text": "Install a font with Install-GoogleFont -Name <font> -Scope CurrentUser, then restart your terminal: the module doesn't tell running apps about a new font."
+            }
+          ]
+        },
         "banner": null,
         "installs": null,
         "install": null,
@@ -2248,6 +2474,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2315,6 +2542,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2387,6 +2615,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2432,6 +2661,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2501,6 +2731,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2607,6 +2838,7 @@
           "*\\Git\\usr\\bin\\*"
         ],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2742,6 +2974,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2823,6 +3056,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2913,6 +3147,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -2988,6 +3223,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3061,6 +3297,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -3161,6 +3398,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3203,7 +3441,72 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": null,
+        "folder": null,
+        "source": null
+      }
+    },
+    "NerdFonts": {
+      "sha256": "a46f93a7eb24b1a502a5426dc94a5e4be050557cd60741cc3036b8cdce6736c0",
+      "record": {
+        "name": "NerdFonts",
+        "executable": "NerdFonts",
+        "type": "module",
+        "description": "PowerShell module that installs Nerd Fonts for you or for every user (Install-NerdFont)",
+        "tags": [
+          "fonts",
+          "installer",
+          "module"
+        ],
+        "packages": {
+          "psgallery": "NerdFonts"
+        },
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "none",
+          "native": null
+        },
+        "env": null,
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "font-installer": {
+            "priority": 0,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": null,
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": false,
+        "nerdFont": null,
+        "setup": {
+          "seed": null,
+          "notes": [
+            {
+              "text": "Install a font with Install-NerdFont -Name <font> -Scope CurrentUser, then restart your terminal: the module doesn't tell running apps about a new font."
+            }
+          ]
+        },
         "banner": null,
         "installs": null,
         "install": null,
@@ -3259,6 +3562,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3354,6 +3658,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -3441,6 +3746,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3533,6 +3839,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3618,6 +3925,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -3696,6 +4004,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/peco/config.json": "{theme}"
@@ -3783,6 +4092,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -3888,6 +4198,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -3989,6 +4300,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -4063,6 +4375,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4177,6 +4490,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4239,6 +4553,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": false,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4336,6 +4651,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4424,6 +4740,7 @@
         },
         "executableExclude": [],
         "prewarm": false,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4470,6 +4787,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": false,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -4558,6 +4876,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4607,6 +4926,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -4702,6 +5022,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4784,6 +5105,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/ripgrep/ripgreprc": "ripgrep/ripgreprc"
@@ -4855,6 +5177,7 @@
             "list": "rustup toolchain list",
             "list_accepts_path": false,
             "preview": "",
+            "preview_plain": "",
             "preview_window": "right:60%",
             "ansi": false,
             "header": "Select Rust toolchain  [Enter to make it the default]",
@@ -4884,6 +5207,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -4937,6 +5261,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -5099,6 +5424,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -5135,6 +5461,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": {
           "script": "smartmontools.banner.ps1",
@@ -5233,6 +5560,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -5378,6 +5706,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/television/config.toml": "{theme}/config.toml",
@@ -5401,7 +5730,7 @@
       }
     },
     "Terminal-Icons": {
-      "sha256": "c05b4519ce3ba8cf748131e16837cd4a645b32d1739588362c900247e4819d47",
+      "sha256": "816819468dd91707caa19d1f683cee5e249473b4e9562380742bd907141f5ca1",
       "record": {
         "name": "Terminal-Icons",
         "executable": "Terminal-Icons",
@@ -5435,6 +5764,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": "required",
         "setup": null,
         "banner": null,
         "installs": null,
@@ -5508,6 +5838,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -5617,6 +5948,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -5671,6 +6003,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,
@@ -5748,6 +6081,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": {
           "seed": {
             "${XDG_CONFIG_HOME}/wget/wgetrc": "wget/wgetrc"
@@ -5806,6 +6140,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": [
@@ -5855,7 +6190,7 @@
       }
     },
     "zoxide": {
-      "sha256": "ade3462b360efa65456caeac5a972358c3b00a919c09085161daeb10dd386524",
+      "sha256": "9102aac5bec5610d1231fac23300bf3929426d29ced4bbb4e881a09460702d47",
       "record": {
         "name": "zoxide",
         "executable": "zoxide.exe",
@@ -5903,6 +6238,7 @@
             "list": "zoxide query --list",
             "list_accepts_path": false,
             "preview": "eza --icons --color=always {}",
+            "preview_plain": "eza --color=always {}",
             "preview_window": "right:60%",
             "ansi": false,
             "header": "Select directory  [Enter to cd]",
@@ -5940,6 +6276,7 @@
         "settings": null,
         "executableExclude": [],
         "prewarm": true,
+        "nerdFont": null,
         "setup": null,
         "banner": null,
         "installs": null,

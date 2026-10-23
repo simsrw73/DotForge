@@ -5,7 +5,9 @@
 BeforeAll {
     $script:Repo = Split-Path $PSScriptRoot -Parent
     function script:Invoke-DFChild([string]$Script) {
-        $code = "`$ErrorActionPreference = 'Stop'; Import-Module '$script:Repo/DotForge.psd1'; $Script"
+        # A session writes state (the Nerd Font baseline, ...): keep the child's XDG folders in $TestDrive.
+        $xdg = foreach ($kind in 'CONFIG', 'DATA', 'STATE', 'CACHE') { "`$Env:XDG_$($kind)_HOME = '$(Join-Path $TestDrive "child-$kind")'; " }
+        $code = "$($xdg -join '')`$ErrorActionPreference = 'Stop'; Import-Module '$script:Repo/DotForge.psd1'; $Script"
         $out = pwsh -NoProfile -NonInteractive -Command $code 2>&1
         @($out | ForEach-Object { "$_" })
     }

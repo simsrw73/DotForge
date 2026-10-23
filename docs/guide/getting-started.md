@@ -12,6 +12,7 @@ You need:
 - Windows 11.
 - At least one package manager: [scoop](https://scoop.sh), [winget](https://learn.microsoft.com/windows/package-manager/winget/) or [Chocolatey](https://chocolatey.org/). DotForge installs tools through it.
 - [fzf](https://github.com/junegunn/fzf), for the fuzzy pickers. It's optional, but most of the interactive commands need it.
+- A [Nerd Font](fonts.md) selected in your terminal, for icons. Optional: without one, DotForge turns icons off and says how to install one (`Install-DFNerdFont`).
 
 Check your PowerShell version:
 
@@ -214,6 +215,7 @@ Some managers need administrator rights (choco). In an elevated shell the comman
 
 - [Configuration](configuration.md): every configuration key, themes, and choosing which tool fills each role.
 - [Tools](tools.md): the 43 tools DotForge configures, and the commands each one adds.
+- [Fonts and icons](fonts.md): install a Nerd Font and see which icons depend on it.
 - [Pickers and helpers](pickers-and-helpers.md): the fuzzy pickers and general commands you get from importing the module.
 - [Package catalog](package-catalog.md): `trifle`, which searches every package catalog at once.
 - [Reference](../reference.md): every command and parameter.

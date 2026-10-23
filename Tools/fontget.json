@@ -1,0 +1,19 @@
+{
+  "name": "fontget",
+  "description": "Font installer with many sources: Google Fonts, Nerd Fonts, Fontsource, Fontshare and more",
+  "tags": ["fonts", "installer"],
+  "executable": "fontget.exe",
+  "roles": { "font-installer": {} },
+  "packages": {
+    "winget": "Graphixa.FontGet",
+    "scoop": { "id": "fontget", "feed": { "name": "fontget", "url": "https://github.com/Graphixa/scoop-bucket" } }
+  },
+  "xdg": { "compliance": "none", "method": "default", "native": [] },
+  "setup": {
+    "notes": [
+      { "text": "FontGet's per-user installs don't survive a reboot yet (https://github.com/Graphixa/FontGet/issues/9). Install with --scope machine (admin), or use Install-DFNerdFont or the NerdFonts module." }
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

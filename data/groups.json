@@ -84,6 +84,15 @@
       "glow"
     ]
   },
+  "fonts": {
+    "description": "Font installers: Nerd Fonts and Google Fonts for you alone, no admin rights",
+    "tools": [
+      "NerdFonts",
+      "GoogleFonts",
+      "fontget",
+      "gfcli"
+    ]
+  },
   "package-managers": {
     "description": "Windows package managers and their fuzzy pickers",
     "tools": [

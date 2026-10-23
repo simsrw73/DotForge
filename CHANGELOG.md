@@ -32,6 +32,15 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Nerd Font icons follow what's installed.** On Windows, DotForge checks for a Nerd Font at each
+  start. Without one, it turns off the icons it controls (eza and lsd in `ls`/`ll`/`la`/`ff`, `fzo`'s
+  preview, Terminal-Icons, the bundled oh-my-posh themes) and says why. The `NerdFont` setting
+  overrides the check. See `docs/guide/fonts.md`.
+- **`Install-DFNerdFont`** installs a Nerd Font for you alone, without admin rights, registered so it
+  survives a reboot, and names the font to select in your terminal.
+- **Font installers:** `+fonts` (NerdFonts, GoogleFonts, fontget, gfcli), all in the new
+  `font-installer` role.
+
 - **Process viewers and disk-usage tools.** procs, btop, bottom, glances, ntop and pstop (the
   `process-viewer` category) and dust, dua, gdu and duf (`disk-usage`) follow the tool contract:
   install ids, XDG config folders where the tool allows it, light or dark colors from `Theme`, and

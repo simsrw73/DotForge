@@ -30,6 +30,35 @@ function Resolve-DFRoleWords {
     [pscustomobject]@{ Args = [string[]]$argList.ToArray(); Missing = [string[]]$missing.ToArray() }
 }
 
+function Select-DFRoleWord {
+    <#
+    .SYNOPSIS
+        A role's words, without the ones that draw Nerd Font icons while icons are off.
+    .DESCRIPTION
+        The one place icon words are dropped (behaviors.nerdFontWords, Test-DFIconsOn).
+        A dropped word is not a missing flag; the winner's status says icons are off.
+    .PARAMETER Words
+        The words of one alias, picker list or variable.
+    .PARAMETER RoleDefinition
+        The role record, with behaviors.
+    .PARAMETER Tool
+        The winner's tool record, for its status note.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [AllowEmptyCollection()][string[]]$Words,
+        [Parameter(Mandatory)][PSCustomObject]$RoleDefinition,
+        [Parameter(Mandatory)][PSCustomObject]$Tool
+    )
+    $iconWords = @($RoleDefinition.behaviors.nerdFontWords)
+    if (-not $iconWords.Count -or -not @($Words | Where-Object { $_ -in $iconWords }).Count -or (Test-DFIconsOn)) { return [string[]]@($Words) }
+    Add-DFToolNote -Tool $Tool.name -Note 'icons off: no Nerd Font (see NerdFont)'
+    [string[]]@($Words | Where-Object { $_ -notin $iconWords })
+}
+
 function Add-DFRoleMissingWordNote {
     <#
     .SYNOPSIS
@@ -82,7 +111,7 @@ function Get-DFRoleBehaviorAlias {
     $aliases = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.aliases.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.aliases[$name] -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words $RoleDefinition.behaviors.aliases[$name] -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         $aliases[$name] = [pscustomobject]@{ command = $command; args = $resolved.Args }
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $name | Where-Object { $_ }) }
     }
@@ -115,7 +144,7 @@ function Get-DFRolePicker {
     $command = [IO.Path]::GetFileNameWithoutExtension([string]$Tool.executable)
     $missing = [ordered]@{}
     $pickers = foreach ($picker in @($RoleDefinition.behaviors.pickers)) {
-        $resolved = Resolve-DFRoleWords -Words @($picker.list) -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words @($picker.list) -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         foreach ($word in $resolved.Missing) { $missing[$word] = @(@($missing[$word]) + $picker.alias | Where-Object { $_ }) }
         $copy = [ordered]@{}
         foreach ($p in $picker.PSObject.Properties) { $copy[$p.Name] = $p.Value }
@@ -200,7 +229,7 @@ function Get-DFRoleBehaviorEnv {
     $values = [ordered]@{}
     $missing = [ordered]@{}
     foreach ($name in $RoleDefinition.behaviors.env.Keys) {
-        $resolved = Resolve-DFRoleWords -Words $RoleDefinition.behaviors.env[$name] -Flags $Block.flags -Tool $Tool
+        $resolved = Resolve-DFRoleWords -Words (Select-DFRoleWord -Words $RoleDefinition.behaviors.env[$name] -RoleDefinition $RoleDefinition -Tool $Tool) -Flags $Block.flags -Tool $Tool
         # git runs PAGER through sh, and bat/delta split it shell-style: a backslash is an escape
         # there, so paths use forward slashes (as ${DF_TOOL_EXE} does), and an argument with a
         # space or shell punctuation is double-quoted.

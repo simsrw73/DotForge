@@ -127,6 +127,22 @@ Describe 'ConvertTo-DFRoleRecord behaviors' {
         "$w" | Should -Match "lnog"
     }
 
+    It 'reads nerdFontWords, empty when absent' {
+        $role = ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": { "words": { "long": "d", "icons": "i" }, "aliases": { "ll": ["long", "icons"] }, "nerdFontWords": ["icons"] } }'
+        (ConvertTo-DFRoleRecord -Name 'listing' -Role $role).behaviors.nerdFontWords | Should -Be @('icons')
+        $plain = ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": { "words": { "long": "d" }, "aliases": { "ll": ["long"] } } }'
+        @((ConvertTo-DFRoleRecord -Name 'listing' -Role $plain).behaviors.nerdFontWords).Count | Should -Be 0
+    }
+
+    It 'rejects nerdFontWords naming an undefined word' {
+        $role = ConvertFrom-RoleJson '{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": { "words": { "long": "d" }, "aliases": { "ll": ["long"] }, "nerdFontWords": ["nope"] } }'
+        ConvertTo-DFRoleRecord -Name 'listing' -Role $role -WarningVariable w 3>$null | Should -BeNullOrEmpty
+        "$w" | Should -Match 'nope'
+    }
+
     It 'rejects behaviors on a category role' {
         $role = ConvertFrom-RoleJson '{ "kind": "category", "behaviors": { "words": { "a": "x" }, "aliases": { "q": ["a"] } } }'
         ConvertTo-DFRoleRecord -Name 'grep' -Role $role 3>$null | Should -BeNullOrEmpty

@@ -51,9 +51,12 @@ function Set-DFPickerFunction {
         [scriptblock]::Create("param(`$v) " + $picker.action.Replace('{}', '$v'))
     }
     $parse = if ($picker.parse) { [scriptblock]::Create($picker.parse) }
+    # A preview that draws icons may declare a plain one for while icons are off.
+    $plain = $picker.PSObject.Properties['preview_plain']?.Value
+    $preview = if ($plain -and -not (Test-DFIconsOn)) { $plain } else { $picker.preview }
     $show = {
         param([scriptblock]$List)
-        Invoke-DFPicker -List $List -Preview $picker.preview -PreviewWindow $picker.preview_window `
+        Invoke-DFPicker -List $List -Preview $preview -PreviewWindow $picker.preview_window `
             -Ansi:$picker.ansi -Header $picker.header -Parse $parse -Action $action
     }.GetNewClosure()
 

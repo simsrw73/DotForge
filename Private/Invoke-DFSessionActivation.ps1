@@ -84,6 +84,11 @@ function Invoke-DFSessionActivation {
     try {
         foreach ($tool in $tools) {
             if ((Test-DFToolActive $tool.name) -and $tool.name -notin $Reactivate) { continue }
+            # A tool that only draws icons waits for a Nerd Font; the load says why (Write-DFNerdFontNotice).
+            if ($tool.nerdFont -eq 'required' -and -not (Test-DFIconsOn)) {
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Excluded -RequestedBy $requestedBy[$tool.name] -Detail 'needs a Nerd Font (icons are off; see NerdFont)'
+                continue
+            }
             $blocker = @(Get-DFActivationBlocker -Tool $tool -Requirements $requirements @pathArgs)
             if ($blocker) {
                 # Installed, but a tool it needs isn't active: Blocked. Not installed: Missing (Install-DFTool -Missing).
@@ -208,6 +213,7 @@ function Start-DFActivationPrewarm {
     param([AllowEmptyCollection()][object[]]$Tools = @())
     $prewarmModules = @(foreach ($tool in $Tools) {
         if ($tool.type -eq 'module' -and $tool.prewarm -and -not (Test-DFToolActive $tool.name) -and
+            -not ($tool.nerdFont -eq 'required' -and -not (Test-DFIconsOn)) -and
             (Test-DFToolAvailable -Executable $tool.executable -Type 'module')) { $tool.executable }
     })
     if ($prewarmModules) { Start-DFModulePrewarm -ModuleNames $prewarmModules }
@@ -374,7 +380,7 @@ function Set-DFXdgEnvironment {
 function Write-DFSessionNotice {
     <#
     .SYNOPSIS
-        Warns, at the end of a load, about requested tools that are missing or failed, and prints new setup notes.
+        Warns, at the end of a load, about requested tools that are missing or failed, prints new setup notes, and says why icons are off.
     .DESCRIPTION
         Silent when nothing is missing. Up to five missing tools are named,
         each with the role it was preferred for and its stand-in when one is
@@ -386,6 +392,7 @@ function Write-DFSessionNotice {
     [CmdletBinding()]
     param()
     Write-DFSetupNoteNotice
+    Write-DFNerdFontNotice
     if (-not $script:DFSessionStatus) { return }
     $all = @($script:DFSessionStatus.Values)
     $missing = @($all | Where-Object State -eq 'Missing')

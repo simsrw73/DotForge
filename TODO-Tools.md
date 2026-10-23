@@ -44,6 +44,7 @@ Collections of tools that can be installed, managed, uninstalled together as a g
 | rust-dev | rustup, cargo |
 | admin-tools | gsudo, procs, fastfetch, curl, wget |
 | markdown | glow |
+| fonts | NerdFonts, GoogleFonts, fontget, gfcli |
 | package-managers | scoop, winget |
 
 Not yet a group: Required, Recommended, File Tools, Network Tools.
@@ -67,6 +68,7 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 | path-insert (Ctrl+T) | single | PSFzf, television, fzf, skim | | done 2026-10-17 |
 | process-viewer | category | procs, btop, bottom, glances, ntop, pstop | instant replay (T-72) | done 2026-10-17 |
 | disk-usage | category | dust, dua, gdu, duf | | done 2026-10-17 |
+| font-installer | category | NerdFonts, GoogleFonts, fontget, gfcli | | done 2026-10-23 (`Install-DFNerdFont` installs a first Nerd Font; no font = icons off, `NerdFont`) |
 | directory-jump (Alt+C) | single | fzf, skim, broot | yazi, superfile, lf (file-manager batch) | done 2026-10-17 |
 | listing | single | eza, lsd | | done 2026-10-16 (T-34, role behaviors) |
 | package-manager | single | scoop, winget, choco | gaps: winget search picker, choco XDG/pickers (T-47); update/remove polish (T-58) | T-47 |
@@ -159,7 +161,7 @@ Gaps among these:
 - **Build:** cmake, make, ctags
 - **Dev environments:** devenv.sh, nix
 - **Shell extras:** thefuck, yasb, nircmd, sfsu, gpg4win, sudo (Windows)
-- **Nerd Fonts (installers):** scoop's `nerd-fonts` bucket (`scoop install nerd-fonts/JetBrainsMono-NF`), `oh-my-posh font install`, winget's Nerd Font packages (`DEVCOM.JetBrainsMonoNerdFont`). Goes with T-71's `NerdFont` setting; installing a font also needs the terminal's font setting changed (a setup note).
+- **Fonts:** done 2026-10-23 (`font-installer`, `+fonts`, `Install-DFNerdFont`; the scoop `nerd-fonts` bucket is documented in `docs/guide/fonts.md`, not a tool). Not onboarded: winget's `DEVCOM.*NerdFont` and choco's packages install machine-wide with admin rights.
 - **Media / docs:** mpv, yt-dlp, pandoc, zbar
 - **Fun:** cowsay, fortune, lolcat
 - **Other:** git, sysinternals, lsof, pkill, free, uptime, lsix, yay

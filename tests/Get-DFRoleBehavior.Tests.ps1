@@ -134,3 +134,38 @@ Describe 'role behaviors keep data from becoming code' {
         (Resolve-DFRoleWords -Words @('theme') -Flags $flags -Tool $tool).Args | Should -BeNullOrEmpty
     }
 }
+
+Describe 'icon words follow the Nerd Font gate' {
+    BeforeAll {
+        $script:IconRole = ConvertTo-DFRoleRecord -Name 'listing' -Role ('{ "kind": "single", "hook": "Initialize-DFRoleListing",
+            "behaviors": {
+              "words": { "long": "d", "icons": "i", "icons-always": "I", "one-per-line": "1" },
+              "aliases": { "ll": ["long", "icons"] },
+              "pickers": [ { "alias": "ff", "function": "Select-File", "list": ["one-per-line", "icons-always"] } ],
+              "env": { "LSX": ["long", "icons"] },
+              "nerdFontWords": ["icons", "icons-always"] } }' | ConvertFrom-Json)
+        $script:IconTool = New-Member '{ "long": ["--long"], "icons": ["--icons=auto"], "icons-always": ["--icons=always"], "one-per-line": ["-1"] }'
+    }
+    BeforeEach { Clear-DFToolNote -Tool 'lsx' }
+
+    It 'leaves the icon words out of aliases, pickers and env when icons are off' {
+        Mock Test-DFIconsOn { $false }
+        (Get-DFRoleBehaviorAlias -RoleDefinition $script:IconRole -Block $script:IconTool.roles.listing -Tool $script:IconTool).ll.args | Should -Be @('--long')
+        @(Get-DFRolePicker -RoleDefinition $script:IconRole -Block $script:IconTool.roles.listing -Tool $script:IconTool)[0].list | Should -Be 'lsx -1'
+        (Get-DFRoleBehaviorEnv -RoleDefinition $script:IconRole -Block $script:IconTool.roles.listing -Tool $script:IconTool)['LSX'] | Should -Match '--long$'
+    }
+
+    It 'notes once that icons are off, and never as a missing word' {
+        Mock Test-DFIconsOn { $false }
+        $member = New-Member '{ "long": ["--long"], "one-per-line": ["-1"] }'
+        Get-DFRoleBehaviorAlias -RoleDefinition $script:IconRole -Block $member.roles.listing -Tool $member | Out-Null
+        Get-DFRolePicker -RoleDefinition $script:IconRole -Block $member.roles.listing -Tool $member | Out-Null
+        Get-DFToolNote -Tool 'lsx' | Should -Be @('icons off: no Nerd Font (see NerdFont)')
+    }
+
+    It 'keeps the icon words when icons are on' {
+        Mock Test-DFIconsOn { $true }
+        (Get-DFRoleBehaviorAlias -RoleDefinition $script:IconRole -Block $script:IconTool.roles.listing -Tool $script:IconTool).ll.args | Should -Be @('--long', '--icons=auto')
+        Get-DFToolNote -Tool 'lsx' | Should -BeNullOrEmpty
+    }
+}

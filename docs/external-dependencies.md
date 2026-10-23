@@ -223,6 +223,15 @@ Two categories, and the difference matters:
 | **Where** | `Tools/btop.ps1`, `Tools/btop.setup.ps1`, `Tools/procs.json`, `Tools/bottom.json`, `Tools/glances.json`, `Tools/gdu.json`, `Tools/dust.json`, `Tools/dua.json` |
 | **Why** | btop-lhm runs through the active elevator; the others' configs move under XDG once the user creates them there. |
 | **If it changes** | If btop-lhm drops the DLL, btop isn't wrapped and Windows prompts as usual. A renamed config flag makes the wrapper pass an option the tool rejects, shown as its own error; the ifFile guard means it only happens once the user has an XDG config. |
+
+### 23. Windows font registration; Nerd Font names; FontGet's per-user installs
+
+| | |
+|---|---|
+| **What** | A font survives a sign-in only with a value under `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` (per user: the file's full path) or the HKLM key (machine: a file name under `%windir%\Fonts`); `AddFontResourceW` lasts for the session. Nerd Fonts names its families `<Name> Nerd Font` (`… Mono`, `… Propo`) or, for long names, `<Name> NF`/`NFM`/`NFP`, and its release zips are at `releases/latest/download/<Name>.zip`. FontGet 2.7.0 writes the registry value only for machine-scope installs, so its per-user fonts are gone after a reboot ([Graphixa/FontGet#9](https://github.com/Graphixa/FontGet/issues/9)). |
+| **Where** | `Private/DFNerdFont.ps1`, `Shared/DFFontName.ps1`, `Modules/DotForge.Helpers/Private/DFFontInstall.ps1`, `Tools/fontget.json` |
+| **Why** | Detecting a Nerd Font decides whether icons are on; `Install-DFNerdFont` installs one per user without admin rights. |
+| **If it changes** | A new naming scheme makes detection miss a Nerd Font: icons turn off and the load says so, and `NerdFont = $true` restores them. A moved release asset makes `Install-DFNerdFont` fail with the download error. When FontGet#9 is fixed, drop `Tools/fontget.json`'s setup note. |
 ---
 
 ## Documented but load-bearing

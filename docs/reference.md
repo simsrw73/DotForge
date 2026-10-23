@@ -22,6 +22,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [Get-DFTool](#get-dftool) |  | Queries the DotForge tool registry. |
 | [Get-DFToolGroup](#get-dftoolgroup) |  | Lists DotForge's predefined tool groups and their members. |
 | [Get-DFToolStatus](#get-dftoolstatus) |  | Shows what this session's Start-DFSession decided for each requested tool. |
+| [Install-DFNerdFont](#install-dfnerdfont) |  | Installs a Nerd Font for the current user, so tools can draw their icons. |
 | [Install-DFTool](#install-dftool) |  | Installs missing tools: everything the session reported missing (-Missing), or the named tools. |
 | [Invoke-DFPicker](#invoke-dfpicker) |  | Generalized fzf picker. Handles list -&gt; fzf -&gt; parse -&gt; action skeleton. |
 | [Invoke-DFToolSetup](#invoke-dftoolsetup) |  | Runs a tool's one-time setup again: its seeded config files, then its setup script. |
@@ -102,11 +103,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [disk-usage](#disk-usage-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [process-viewer](#process-viewer-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [disk-usage](#disk-usage-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [font-installer](#font-installer-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [process-viewer](#process-viewer-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -554,6 +555,44 @@ Get-DFToolStatus -Conflict
 ```
 
 Lists the requested tools DotForge left alone because your existing config would be hidden.
+
+### Install-DFNerdFont
+
+Installs a Nerd Font for the current user, so tools can draw their icons.
+
+```text
+Install-DFNerdFont [[-Name] <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Downloads the font from the latest Nerd Fonts release and installs its Nerd Font and Mono builds for you alone, without admin rights, registered so they survive a reboot. Without -Name, it asks which one: in fzf when it is installed, else from a numbered list, else (no one to ask) it installs CaskaydiaMono and says so. Files already installed are skipped.
+
+DotForge can't change your terminal's font: select the face it names in your terminal's settings (Windows Terminal: Settings &gt; Profiles &gt; Defaults &gt; Appearance &gt; Font face), then open a new shell. The next DotForge load sees the font and turns icons on (unless NerdFont is $false).
+
+Windows only. Elsewhere, install a Nerd Font with your package manager or one of the font installer tools (+fonts).
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string |  |  |  | The font: CaskaydiaMono, JetBrainsMono, FiraCode, Meslo or Hack. Allowed: CaskaydiaMono, JetBrainsMono, FiraCode, Meslo, Hack. |
+
+**Outputs:** PSCustomObject { Name; Face; Files; Skipped }: the font, the face to select, and the files installed or already there. Nothing with -WhatIf or when the picker is cancelled.
+
+**Example 1**
+
+```powershell
+Install-DFNerdFont -Name JetBrainsMono
+```
+
+Installs JetBrainsMono Nerd Font and says to select it in the terminal.
+
+**Example 2**
+
+```powershell
+Install-DFNerdFont
+```
+
+Asks which font to install.
+
+**See also:** [fonts](guide/fonts.md)
 
 ### Install-DFTool
 
@@ -2444,6 +2483,15 @@ Finds files by name.
 | Kind | category |
 | Members | [fd](#fd-tool) |
 
+### font-installer role
+
+Installs fonts (Install-DFNerdFont installs a first Nerd Font without one).
+
+| | |
+| --- | --- |
+| Kind | category |
+| Members | [fontget](#fontget-tool), [gfcli](#gfcli-tool), [GoogleFonts](#googlefonts-tool), [NerdFonts](#nerdfonts-tool) |
+
 ### fuzzy-finder role
 
 Filters a list interactively as you type.
@@ -2957,6 +3005,18 @@ Fast Node.js version manager with automatic per-directory switching
 | Roles | [`version-manager`](#version-manager-role) |
 | Companion | [`Tools/fnm.ps1`](#fnm-companion) |
 
+### fontget tool
+
+Font installer with many sources: Google Fonts, Nerd Fonts, Fontsource, Fontshare and more
+
+| | |
+| --- | --- |
+| Detected by | `fontget.exe` |
+| Tags | `fonts`, `installer` |
+| Install ids | winget: `Graphixa.FontGet`<br>scoop: `fontget` (feed `fontget`) |
+| XDG method | `default` |
+| Roles | [`font-installer`](#font-installer-role) |
+
 ### fzf tool
 
 General-purpose command-line fuzzy finder
@@ -2985,6 +3045,19 @@ Fast disk usage analyzer with an interactive view (ncdu's Windows-capable port)
 | XDG method | `wrapper` |
 | Wraps | `gdu` adds `--config-file {file}` when `${XDG_CONFIG_HOME}/gdu/gdu.yaml` exists |
 | Roles | [`disk-usage`](#disk-usage-role) |
+
+### gfcli tool
+
+Google Fonts command line: search, download and install Google Fonts
+
+| | |
+| --- | --- |
+| Detected by | `gfcli` |
+| Tags | `fonts`, `installer`, `google-fonts` |
+| Install ids | npm: `google-font-cli` |
+| XDG method | `default` |
+| Requires | `role:js-runtime` |
+| Roles | [`font-installer`](#font-installer-role) |
 
 ### gh tool
 
@@ -3029,6 +3102,18 @@ Render Markdown on the CLI
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`markdown-viewer`](#markdown-viewer-role) |
 | Companion | [`Tools/glow.ps1`](#glow-companion) |
+
+### GoogleFonts tool
+
+PowerShell module that installs Google Fonts for you or for every user (Install-GoogleFont)
+
+| | |
+| --- | --- |
+| Detected by | module `GoogleFonts` |
+| Tags | `fonts`, `installer`, `module`, `google-fonts` |
+| Install ids | psgallery: `GoogleFonts` |
+| XDG method | `default` |
+| Roles | [`font-installer`](#font-installer-role) |
 
 ### gsudo tool
 
@@ -3214,6 +3299,18 @@ Small, simple terminal text editor (GNU nano)
 | Tags | `editor`, `text` |
 | Install ids | scoop: `nano` |
 | XDG method | `default` |
+
+### NerdFonts tool
+
+PowerShell module that installs Nerd Fonts for you or for every user (Install-NerdFont)
+
+| | |
+| --- | --- |
+| Detected by | module `NerdFonts` |
+| Tags | `fonts`, `installer`, `module` |
+| Install ids | psgallery: `NerdFonts` |
+| XDG method | `default` |
+| Roles | [`font-installer`](#font-installer-role) |
 
 ### node tool
 

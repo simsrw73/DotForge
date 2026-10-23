@@ -8,7 +8,7 @@
 
 ## Groups
 
-Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less, fastfetch, smartmontools; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget; `+fuzzy`: fzf, skim, television, peco, gum.
+Request a group in `Start-DFSession -Config` with its leading `+`; use `Get-DFToolGroup` to inspect it. `+core`: psreadline, PSFzf, fzf, eza, bat, fd, ripgrep, zoxide, carapace, less, fastfetch, smartmontools; `+prompt`: starship; `+git`: delta, gh, lazygit; `+dev-tools`: jq, micro, mise, chezmoi; `+javascript-dev`: fnm, node, npm; `+python-dev`: uv, python, pip, pipx; `+rust-dev`: rustup, cargo; `+admin-tools`: gsudo, procs, fastfetch, curl, wget; `+markdown`: glow; `+package-managers`: scoop, winget; `+fuzzy`: fzf, skim, television, peco, gum; `+fonts`: NerdFonts, GoogleFonts, fontget, gfcli (see [Fonts and icons](fonts.md)).
 
 ## Quick start
 

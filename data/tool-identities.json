@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-18",
+  "updated": "2026-10-23",
   "tools": {
     "bat": {
       "packages": {
@@ -152,6 +152,14 @@
       "linkedVia": "repo",
       "repo": "https://github.com/schniz/fnm"
     },
+    "fontget": {
+      "packages": {
+        "winget": "Graphixa.FontGet",
+        "scoop": "fontget"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/Graphixa/FontGet"
+    },
     "fzf": {
       "packages": {
         "scoop": "fzf",
@@ -168,6 +176,13 @@
       },
       "linkedVia": "repo",
       "repo": "https://github.com/dundee/gdu"
+    },
+    "gfcli": {
+      "packages": {
+        "npm": "google-font-cli"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/t2sever/gfcli"
     },
     "gh": {
       "packages": {
@@ -190,6 +205,12 @@
       },
       "linkedVia": "repo",
       "repo": "https://github.com/charmbracelet/glow"
+    },
+    "GoogleFonts": {
+      "packages": {
+        "psgallery": "GoogleFonts"
+      },
+      "linkedVia": "curated"
     },
     "gsudo": {
       "packages": {
@@ -282,6 +303,12 @@
     "nano": {
       "packages": {
         "scoop": "nano"
+      },
+      "linkedVia": "curated"
+    },
+    "NerdFonts": {
+      "packages": {
+        "psgallery": "NerdFonts"
       },
       "linkedVia": "curated"
     },

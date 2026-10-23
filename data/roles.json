@@ -58,7 +58,8 @@
           "header": "Select file  [Enter to output path]",
           "action": "output"
         }
-      ]
+      ],
+      "nerdFontWords": ["icons", "icons-always"]
     }
   },
   "pager": {
@@ -147,6 +148,7 @@
   "file-search":     { "kind": "category", "description": "Finds files by name." },
   "process-viewer":  { "kind": "category", "description": "Shows running processes and system load." },
   "disk-usage":      { "kind": "category", "description": "Shows what uses disk space, and free space per drive." },
+  "font-installer":  { "kind": "category", "description": "Installs fonts (Install-DFNerdFont installs a first Nerd Font without one)." },
   "system-info":     { "kind": "category", "description": "Shows system information." },
   "url-fetch":       { "kind": "category", "description": "Downloads files and calls HTTP APIs." },
   "version-manager": { "kind": "category", "description": "Installs and switches language runtime versions." },

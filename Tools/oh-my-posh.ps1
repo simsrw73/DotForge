@@ -26,9 +26,11 @@ function Resolve-DFOhMyPoshConfig {
 
 function Resolve-DFOhMyPoshThemeFile {
     # The theme's file: <POSH_THEMES_PATH>\<Native>.omp.json, else the bundled one; nothing when neither exists.
+    # While icons are off (no Nerd Font), the bundled theme is its copy without glyphs, in plain\.
     param([string]$Native, [Parameter(Mandatory)][string]$Bundled)
     if (-not $Native) { return }
-    foreach ($dir in @($Env:POSH_THEMES_PATH, $Bundled)) {
+    $bundledDir = if (Test-DFIconsOn) { $Bundled } else { Join-Path $Bundled 'plain' }
+    foreach ($dir in @($Env:POSH_THEMES_PATH, $bundledDir)) {
         if (-not $dir) { continue }
         $file = Join-Path $dir "$Native.omp.json"
         if (Test-Path -LiteralPath $file -PathType Leaf) { return $file }

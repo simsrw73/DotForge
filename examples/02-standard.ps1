@@ -15,6 +15,11 @@ $DFConfig = @{
     # Only the winner applies the role; the others stay usable by name.
     Defaults = @{ listing = 'eza'; prompt = 'oh-my-posh' }
 
+    # Icons need a Nerd Font. Without one installed, DotForge turns them off and
+    # says so; Install-DFNerdFont installs one. Set NerdFont when your terminal
+    # brings its own icon font (WezTerm), or to keep icons off:
+    #   NerdFont = $true
+
     # If Coreutils for Windows is installed, its readline hook rewrites command
     # names before PowerShell resolves them, so DotForge aliases sharing a name
     # (cat, touch, env, paste) never run. Register-DFTool warns once; see

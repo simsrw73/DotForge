@@ -8,6 +8,7 @@
     "module"
   ],
   "executable": "Terminal-Icons",
+  "nerdFont": "required",
   "packages": {
     "psgallery": "Terminal-Icons"
   },

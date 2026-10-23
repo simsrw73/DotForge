@@ -41,6 +41,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `DirectoryJumpDepth` | int | `6` | How many levels below the current folder Alt+C's folder list scans. |
 | `DirectoryJumpMinScore` | number | `3` | Lowest zoxide score a folder needs to appear at the top of Alt+C's list. `0` shows them all. |
 | `DirectoryJumpRanked` | int | `10` | Most zoxide folders at the top of Alt+C's list. |
+| `NerdFont` | bool | detected | `$true` turns Nerd Font icons on, `$false` off. Unset, icons follow whether a Nerd Font is installed (Windows). See [Fonts and icons](fonts.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
 | `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |

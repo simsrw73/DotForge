@@ -392,6 +392,7 @@ function ConvertTo-DFPickerEntry {
         list              = Get-DFToolRecordProperty $RawPicker 'list' $null
         list_accepts_path = [bool](Get-DFToolRecordProperty $RawPicker 'list_accepts_path' $false)
         preview           = Get-DFToolRecordProperty $RawPicker 'preview' ''
+        preview_plain     = Get-DFToolRecordProperty $RawPicker 'preview_plain' ''
         preview_window    = Get-DFToolRecordProperty $RawPicker 'preview_window' 'right:60%'
         ansi              = [bool](Get-DFToolRecordProperty $RawPicker 'ansi' $false)
         header            = Get-DFToolRecordProperty $RawPicker 'header' ''
@@ -551,6 +552,7 @@ function ConvertTo-DFToolRecord {
         exists on the result; absent ones get their default:
 
             type 'exe', description '', tags @(), after @(), requires @(), prewarm $true,
+            nerdFont $null ('required': the tool only draws icons, so it isn't loaded while icons are off),
             packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
             folder / source $null (the loader sets them: where the JSON was
@@ -577,7 +579,8 @@ function ConvertTo-DFToolRecord {
         default) and feeds ($null, or { list; add; id = '{feed}/{id}' }); install, when
         present, has prefer (string[]); each alias is
         { command; args[] } with a missing args meaning none; an object picker
-        has every field, with preview '', preview_window 'right:60%',
+        has every field, with preview '', preview_plain '' (the preview used
+        while icons are off), preview_window 'right:60%',
         header '', ansi and list_accepts_path $false. A non-object picker (the
         "custom" marker) is kept as is, and so is the free-form settings
         object, whose shape each tool's companion owns. Unknown fields are
@@ -623,6 +626,7 @@ function ConvertTo-DFToolRecord {
         settings          = Get-DFToolRecordProperty $Tool 'settings' $null
         executableExclude = [object[]]@(Get-DFToolRecordProperty $Tool 'executableExclude' @())
         prewarm           = [bool](Get-DFToolRecordProperty $Tool 'prewarm' $true)
+        nerdFont          = Get-DFToolRecordProperty $Tool 'nerdFont' $null
         setup             = $setup
         banner            = ConvertTo-DFBannerField (Get-DFToolRecordProperty $Tool 'banner' $null)
         installs          = $installs

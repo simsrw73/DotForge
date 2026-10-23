@@ -1,0 +1,18 @@
+{
+  "name": "GoogleFonts",
+  "type": "module",
+  "description": "PowerShell module that installs Google Fonts for you or for every user (Install-GoogleFont)",
+  "tags": ["fonts", "installer", "module", "google-fonts"],
+  "executable": "GoogleFonts",
+  "prewarm": false,
+  "roles": { "font-installer": {} },
+  "packages": { "psgallery": "GoogleFonts" },
+  "xdg": { "compliance": "none", "method": "default", "native": [] },
+  "setup": {
+    "notes": [
+      { "text": "Install a font with Install-GoogleFont -Name <font> -Scope CurrentUser, then restart your terminal: the module doesn't tell running apps about a new font." }
+    ]
+  },
+  "aliases": {},
+  "picker": null
+}

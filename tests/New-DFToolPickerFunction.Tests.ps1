@@ -132,3 +132,42 @@ Describe 'New-DFToolPickerFunction' {
         $global:DFTestListArguments | Should -Be @('.')
     }
 }
+
+Describe 'a picker''s plain preview' {
+    BeforeEach {
+        Set-Item function:global:Invoke-DFPicker -Value {
+            param([scriptblock]$List, [string]$Preview)
+            $global:DFTestPreview = $Preview
+        }
+    }
+    AfterEach {
+        Remove-DFTestGlobal -Function 'Select-TestThing'
+        Remove-DFTestGlobal -Function 'Invoke-DFPicker'
+        Remove-Variable -Name 'DFTestPreview' -Scope Global -ErrorAction Ignore
+    }
+
+    It 'uses preview_plain while icons are off' {
+        Mock Test-DFIconsOn { $false }
+        New-DFToolPickerFunction -Tool ('{ "name": "t", "picker": { "function": "Select-TestThing", "list": "echo one", "preview": "x --icons {}", "preview_plain": "x {}" } }' | ConvertFrom-Json)
+        Select-TestThing
+        $global:DFTestPreview | Should -Be 'x {}'
+    }
+
+    It 'uses preview while icons are on' {
+        Mock Test-DFIconsOn { $true }
+        New-DFToolPickerFunction -Tool ('{ "name": "t", "picker": { "function": "Select-TestThing", "list": "echo one", "preview": "x --icons {}", "preview_plain": "x {}" } }' | ConvertFrom-Json)
+        Select-TestThing
+        $global:DFTestPreview | Should -Be 'x --icons {}'
+    }
+
+    It 'uses preview when there is no preview_plain, icons on or off' {
+        Mock Test-DFIconsOn { $false }
+        New-DFToolPickerFunction -Tool ('{ "name": "t", "picker": { "function": "Select-TestThing", "list": "echo one", "preview": "x --icons {}" } }' | ConvertFrom-Json)
+        Select-TestThing
+        $global:DFTestPreview | Should -Be 'x --icons {}'
+    }
+
+    It 'normalizes preview_plain to empty' {
+        (ConvertTo-DFPickerEntry ('{ "function": "f", "list": "l" }' | ConvertFrom-Json)).preview_plain | Should -Be ''
+    }
+}

@@ -1,6 +1,7 @@
 BeforeAll {
     . "$PSScriptRoot/TestSupport.ps1"
     foreach ($f in Get-DFTestModuleFile) { . $f }
+    Reset-DFTestSession
     $script:Listing = (Get-DFRoleDb -Path "$PSScriptRoot/../data/roles.json")['listing']
     function script:Get-ListingAliases([string]$Name) {
         $tool = Get-DFTestToolRecord $Name
@@ -38,5 +39,24 @@ Describe 'listing behaviors' {
 
     It 'eza no longer declares its own ff picker' {
         (Get-DFTestToolRecord 'eza').picker | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'listing behaviors without a Nerd Font' {
+    BeforeEach { Mock Test-DFIconsOn { $false } }
+
+    It 'eza: <Alias> has no icons' -ForEach @(
+        @{ Alias = 'ls'; Expected = @('--color=auto', '--group-directories-first', '--no-quotes') }
+        @{ Alias = 'll'; Expected = @('--long', '--color=auto', '--group-directories-first', '--git', '--no-quotes') }
+    ) {
+        (Get-ListingAliases 'eza').$Alias.args | Should -Be $Expected
+    }
+
+    It 'ff lists without icons: <Name>' -ForEach @(
+        @{ Name = 'eza'; List = 'eza -1 --color=always --no-quotes' }
+        @{ Name = 'lsd'; List = 'lsd -1 --color=always --literal' }
+    ) {
+        $tool = Get-DFTestToolRecord $Name
+        (Get-DFRolePicker -RoleDefinition $script:Listing -Block $tool.roles.listing -Tool $tool)[0].list | Should -Be $List
     }
 }

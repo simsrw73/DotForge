@@ -273,7 +273,7 @@ function Get-DFSetupSchemaError ([PSCustomObject]$Tool) {
 function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in requires and prewarm.
+        Schema errors in requires, prewarm and nerdFont.
     #>
     $requires = $Tool.PSObject.Properties['requires']?.Value   # read directly: a helper would unroll ["x"]
     if ($null -ne $requires -and ($requires -isnot [array] -or @($requires | Where-Object { $_ -isnot [string] -or -not (ConvertFrom-DFToolReference -Reference $_) }).Count)) {
@@ -281,6 +281,8 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
     }
     $prewarm = Get-DFSchemaProperty $Tool 'prewarm'
     if ($null -ne $prewarm -and $prewarm -isnot [bool]) { 'prewarm must be a boolean (true/false, not a string)' }
+    $nerdFont = Get-DFSchemaProperty $Tool 'nerdFont'
+    if ($null -ne $nerdFont -and $nerdFont -ne 'required') { "nerdFont must be ""required"" (the tool only draws icons), not '$nerdFont'" }
 }
 
 function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
@@ -435,8 +437,8 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper'
-        picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_window', 'ansi',
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont'
+        picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_plain', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'
         setup  = 'seed'
@@ -494,7 +496,7 @@ function Test-DFToolSchema {
         Returns a result object: Valid, Errors and Warnings.
     .DESCRIPTION
         Private validator for tool JSON records: required fields, enum values, and the
-        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm and role blocks.
+        shapes of picker, aliases, env, themeMap, theme, wrapper, after, requires, setup, prewarm, nerdFont and role blocks.
         Each section is checked by its own step; their error messages are collected, in
         order, into the result's Errors. Field names that look like misspellings of known
         fields go into Warnings: a tool with only warnings is still valid.

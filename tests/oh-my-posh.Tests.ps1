@@ -22,6 +22,14 @@ Describe 'Resolve-DFOhMyPoshConfig' {
     It 'uses the bundled theme when you have no config' {
         Resolve-DFOhMyPoshConfig -Native 'catppuccin_latte' -Bundled $script:Bundled | Should -Be (Join-Path $script:Bundled 'catppuccin_latte.omp.json')
     }
+    It 'uses the plain bundled theme while icons are off' {
+        Mock Test-DFIconsOn { $false }
+        Resolve-DFOhMyPoshConfig -Native 'catppuccin_latte' -Bundled $script:Bundled | Should -Be (Join-Path $script:Bundled 'plain' 'catppuccin_latte.omp.json')
+    }
+    It 'uses the icon bundled theme while icons are on' {
+        Mock Test-DFIconsOn { $true }
+        Resolve-DFOhMyPoshConfig -Native 'catppuccin_latte' -Bundled $script:Bundled | Should -Be (Join-Path $script:Bundled 'catppuccin_latte.omp.json')
+    }
     It 'prefers a same-named theme in POSH_THEMES_PATH over the bundled one' {
         $themes = Join-Path $TestDrive 'themes'; New-Item -ItemType Directory $themes -Force | Out-Null
         Set-Content (Join-Path $themes 'catppuccin_latte.omp.json') '{}'
@@ -90,5 +98,18 @@ Describe 'Set-DFToolTheme when the apply function is not defined this session' {
         Set-DFToolTheme -Name x -Theme a -ErrorAction SilentlyContinue -ErrorVariable e | Out-Null
         "$e" | Should -Match "isn't applied in this session"
         Reset-DFTestSession
+    }
+}
+
+Describe 'the plain bundled themes' {
+    It 'exist for every bundled theme and draw no Nerd Font glyph: <Name>' -ForEach @(
+        @{ Name = 'catppuccin_mocha' }, @{ Name = 'catppuccin_macchiato' }, @{ Name = 'catppuccin_frappe' }, @{ Name = 'catppuccin_latte' }
+    ) {
+        $file = Join-Path $script:Bundled 'plain' "$Name.omp.json"
+        $text = Get-Content -LiteralPath $file -Raw
+        { $text | ConvertFrom-Json } | Should -Not -Throw
+        # The JSON may hold a glyph as itself or as a \uXXXX escape: check both.
+        $text | Should -Not -Match '[\uE000-\uF8FF]'
+        $text | Should -Not -Match '\\u[eEfF][0-8a-fA-F][0-9a-fA-F]{2}'
     }
 }

@@ -41,6 +41,8 @@
         'New-DFUuid',
         # Layer 3 — Tool Operations: your own tools
         'New-DFTool',
+        # Layer 3 — Tool Operations: fonts
+        'Install-DFNerdFont',
         'Resolve-DFToolConflict'
     )
     CmdletsToExport   = @()
