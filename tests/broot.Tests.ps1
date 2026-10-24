@@ -13,7 +13,9 @@ Describe 'broot tool' {
         Mock Write-DFConflictNotice { }
         Mock Write-Host { }
         Mock Invoke-DFBoundedProcess { [pscustomobject]@{ Lines = @(); ExitCode = 0 } }
+        # Start unset: a developer may have BROOT_CONFIG_DIR in their own environment.
         $script:SavedConfigDir = $Env:BROOT_CONFIG_DIR
+        $Env:BROOT_CONFIG_DIR = $null
         $script:ConfigDir = Join-Path $Env:XDG_CONFIG_HOME 'broot'
     }
     AfterEach { $Env:BROOT_CONFIG_DIR = $script:SavedConfigDir; Restore-DFTestXdg; Set-DFTestConfig $null }
@@ -165,6 +167,7 @@ Describe 'broot setup' {
         Mock Write-DFConflictNotice { }
         Mock Write-Host { }
         $script:SavedConfigDir = $Env:BROOT_CONFIG_DIR
+        $Env:BROOT_CONFIG_DIR = $null
         $script:Exit = 0
         Mock Invoke-DFBoundedProcess { [pscustomobject]@{ Lines = @(); ExitCode = $script:Exit } }
     }

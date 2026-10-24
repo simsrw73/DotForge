@@ -4,9 +4,13 @@ BeforeAll {
     $script:CompanionPath = Join-Path $PSScriptRoot '../Tools/choco.ps1'
     # Real loading sets $DFCurrentTool before dot-sourcing a companion (the sidecar contract); so do these tests.
     $script:DFCurrentTool = ConvertTo-DFToolRecord (Get-Content (Join-Path $PSScriptRoot '../Tools/choco.json') -Raw | ConvertFrom-Json)
+    # Pester mocks only commands that exist: stand in for choco when it isn't installed; removed in AfterAll.
+    $script:StubbedChoco = -not (Get-Command choco -ErrorAction Ignore)
+    if ($script:StubbedChoco) { function global:choco { } }
+}
 
-
-
+AfterAll {
+    if ($script:StubbedChoco) { Remove-DFTestGlobal -Function 'choco' }
 }
 
 Describe 'choco pickers' {

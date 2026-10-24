@@ -56,11 +56,15 @@ Describe 'television setup' {
         function global:tv { }
         Mock Invoke-DFBoundedProcess { $global:DFTestTvCalls += ,@($ArgumentList); [pscustomobject]@{ Lines = @(); ExitCode = $global:DFTestTvExit } }
         $script:Config = Join-Path $Env:XDG_CONFIG_HOME 'television' 'config.toml'
+        # Start unset: a developer may have TELEVISION_CONFIG in their own environment.
+        $script:SavedTvConfig = $Env:TELEVISION_CONFIG
+        $Env:TELEVISION_CONFIG = $null
     }
     AfterEach {
         Remove-DFTestGlobal -Function 'tv'
         Remove-Variable -Scope Global -Name DFTestTvExit, DFTestTvCalls -ErrorAction Ignore
         Remove-Module DotForge.Television -ErrorAction Ignore
+        $Env:TELEVISION_CONFIG = $script:SavedTvConfig
         Restore-DFTestXdg; Set-DFTestConfig $null
     }
 
