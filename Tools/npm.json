@@ -25,8 +25,6 @@
       "NODE_REPL_HISTORY": ["${HOME}/.node_repl_history"],
       "NPM_CONFIG_CACHE": {
         "paths": ["${LOCALAPPDATA}/npm-cache"],
-        "move": false,
-        "block": false,
         "guide": "it's only npm's download cache; delete it to free the space."
       }
     },

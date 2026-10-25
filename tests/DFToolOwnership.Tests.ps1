@@ -55,7 +55,6 @@ Describe 'Config ownership detection' {
         $conflicts.Count | Should -Be 1
         $conflicts[0].OldPaths | Should -Be @(ConvertTo-DFPath (Join-Path $script:FakeApp 't'))
         $conflicts[0].Target | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 't'))
-        $conflicts[0].Move | Should -BeTrue
     }
     It 'reports a conflict even when the XDG location has content too' {
         New-Item -ItemType File -Force (Join-Path $script:FakeApp 't' 'config') | Out-Null
@@ -79,6 +78,10 @@ Describe 'Config ownership detection' {
         $result = Find-DFToolConflict -Tool $script:Tool -Ownership @{}
         $result.Conflicts | Should -BeNullOrEmpty
         $result.Complete | Should -BeFalse
+    }
+    It 'expands ${SCOOP} like the other roots' {
+        Mock Get-DFNativeRoot { if ($Name -eq 'SCOOP') { 'C:\s' } }
+        Expand-DFNativePath '${SCOOP}/persist/x' | Should -Be (ConvertTo-DFPath 'C:\s\persist\x')
     }
     It 'expands an unset root to nothing, so that path is skipped' {
         Expand-DFNativePath '${LOCALAPPDATA}/t' | Should -BeNullOrEmpty

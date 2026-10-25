@@ -33,6 +33,8 @@ function Invoke-DFToolSeed {
     $ToolsPath = Get-DFToolFolder -Tool $Tool -Default $ToolsPath
     foreach ($s in $seed.PSObject.Properties) {
         $dest = ConvertTo-DFPath (Expand-DFXdgPath $s.Name)
+        # A linked location is the user's existing data: never seed into it.
+        if (Test-DFInLinkedPath -Name $Tool.name -Path $dest) { continue }
         $source = [string]$s.Value
         if ($source.Contains('{theme}')) {
             # With theme.files the value is the theme's own file or folder (an absolute path).

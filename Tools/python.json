@@ -12,7 +12,7 @@
     "method": "env",
     "vars": { "PYTHON_HISTORY": "${XDG_STATE_HOME}/python/history" },
     "native": {
-      "PYTHON_HISTORY": { "paths": ["${HOME}/.python_history"], "move": false, "block": false, "guide": "that's your Python REPL history; to keep it, copy it to $XDG_STATE_HOME\\python\\history, then delete it." }
+      "PYTHON_HISTORY": { "paths": ["${HOME}/.python_history"], "guide": "that's your Python REPL history; to keep it, copy it to $XDG_STATE_HOME\\python\\history, then delete it." }
     },
     "dirs": ["${XDG_STATE_HOME}/python"]
   },

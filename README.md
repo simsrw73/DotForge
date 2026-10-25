@@ -6,14 +6,13 @@
 
 **[Install from the PowerShell Gallery](https://www.powershellgallery.com/packages/DotForge)** — `Install-PSResource -Name DotForge -Scope CurrentUser`
 
-> [!WARNING]
-> **Registering a tool that's already installed can make it lose track of its existing files.**
+> [!NOTE]
+> **A tool that's already installed keeps its existing files where they are.**
 > DotForge relocates many tools' config/data/cache to XDG-standard paths (e.g. `RUSTUP_HOME`/
-> `CARGO_HOME` for `rustup`, `UV_TOOL_DIR` for `uv`, PSReadLine's history file). If that tool
+> `CARGO_HOME` for `rustup`, `UV_TOOL_DIR` for `uv`, PSReadLine's history file). When a tool
 > already has files at its old default location — an existing Rust toolchain, tools installed
-> with uv, prior command history — it won't find them once DotForge points it somewhere else.
-> DotForge never moves or deletes them. Move them yourself, reinstall, or set the variable
-> yourself first to keep the old location. [Safety](docs/guide/safety.md#relocated-tool-data)
+> with uv, prior command history — DotForge links the XDG folder to them instead, and never
+> moves or deletes them. [Safety](docs/guide/safety.md#relocated-tool-data)
 > lists every tool affected.
 
 The goal of this tool is to make it easy to use commonly useful command line tools with a consistent and out-of-the-box useful configuration. For each tool it does its best to enforce XDG style standard directories (yes, on Windows) as I find this makes it easier to manage my configurations (with chezmoi). It also sets sensible, common default options, applies a standard color theme across all output, provides useful pickers with fzf as well as useful aliases. It also wires in shell integrations and hooks trying to ensure that they don't overwrite each other (fzf, zoxide, direnv, carapace, inshellisense, etc.). And it provides command line completions through carapace and inshellisense with occasional manual additions added through carapace's extension mechanism.

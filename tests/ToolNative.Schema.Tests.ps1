@@ -10,17 +10,16 @@ BeforeAll {
 # xdg.native: a tool's own default locations for what DotForge relocates
 # (docs/superpowers/specs/2026-10-11-config-ownership-design.md).
 Describe 'xdg.native' {
-    It 'normalizes a list to paths, move true and no guide' {
+    It 'normalizes a list to paths and no guide' {
         $entry = (ConvertTo-DFToolRecord (New-NativeRecord ([pscustomobject]@{ T_CONF = @('${HOME}/.t') }))).xdg.native.T_CONF
         $entry.paths | Should -Be @('${HOME}/.t')
-        $entry.move | Should -BeTrue
         $entry.guide | Should -BeNullOrEmpty
+        $entry.PSObject.Properties.Name | Should -Not -Contain 'move'
+        $entry.PSObject.Properties.Name | Should -Not -Contain 'block'
     }
-    It 'keeps an object entry''s move and guide' {
-        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); move = $false; guide = 'do x' } }
-        $entry = (ConvertTo-DFToolRecord (New-NativeRecord $raw)).xdg.native.T_CONF
-        $entry.move | Should -BeFalse
-        $entry.guide | Should -Be 'do x'
+    It 'keeps an object entry''s guide' {
+        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); guide = 'do x' } }
+        (ConvertTo-DFToolRecord (New-NativeRecord $raw)).xdg.native.T_CONF.guide | Should -Be 'do x'
     }
     It 'keeps the setting that can override the target' {
         $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); setting = 'configFile' } }
@@ -40,13 +39,11 @@ Describe 'xdg.native' {
     It 'rejects a key that is neither a variable, a seed target nor an XDG template' {
         (Test-DFToolSchema (New-NativeRecord ([pscustomobject]@{ NOPE = @('${HOME}/.t') }))).Errors | Should -Match "xdg.native key 'NOPE'"
     }
-    It 'rejects move false without a guide' {
-        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); move = $false } }
-        (Test-DFToolSchema (New-NativeRecord $raw)).Errors | Should -Match 'guide'
-    }
-    It 'rejects a text move' {
-        $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); move = 'false'; guide = 'g' } }
-        (Test-DFToolSchema (New-NativeRecord $raw)).Errors | Should -Match 'move'
+    It 'rejects the retired move and block fields' {
+        foreach ($field in 'move', 'block') {
+            $raw = [pscustomobject]@{ T_CONF = [pscustomobject]@{ paths = @('${HOME}/.t'); $field = $false; guide = 'g' } }
+            (Test-DFToolSchema (New-NativeRecord $raw)).Errors | Should -Match "xdg.native.T_CONF.$field was retired"
+        }
     }
     It 'accepts an XDG target template as a key' {
         (Test-DFToolSchema (New-NativeRecord ([pscustomobject]@{ '${XDG_STATE_HOME}/t/history' = @('${APPDATA}/t/history') }))).Errors |

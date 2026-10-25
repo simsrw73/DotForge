@@ -270,7 +270,7 @@ DotForge sets Emacs editing keys, history predictions, a 10,000-entry history sa
 
 ### rustup, uv and other relocated tools
 
-Some tools move their data under the XDG folders: rustup to `$XDG_DATA_HOME\rustup` and `$XDG_DATA_HOME\cargo`, uv's tools and Pythons to `$XDG_DATA_HOME\uv`. A toolchain or package already installed in the old location isn't found afterwards. Move it, or reinstall. `Install-DFTool` and `Update-DFTool` set these variables while the installer runs, so installing rustup, or a crate through cargo, lands in the new folders without setting anything first. The [safety page](safety.md) lists every relocated tool.
+Some tools move their data under the XDG folders: rustup to `$XDG_DATA_HOME\rustup` and `$XDG_DATA_HOME\cargo`, uv's tools and Pythons to `$XDG_DATA_HOME\uv`. A toolchain or package already installed in the old location stays there, linked from the XDG folder. `Install-DFTool` and `Update-DFTool` set these variables while the installer runs, so installing rustup, or a crate through cargo, lands in the new folders without setting anything first. The [safety page](safety.md) lists every relocated tool.
 
 bun, pnpm, pipx, pip and python follow too:
 
@@ -280,7 +280,7 @@ bun, pnpm, pipx, pip and python follow too:
 - **pip:** its config file is `$XDG_CONFIG_HOME\pip\pip.ini`, and its cache `$XDG_CACHE_HOME\pip`.
 - **Python:** the REPL keeps its history in `$XDG_STATE_HOME\python\history` (Python 3.13+).
 
-An old home that holds only installed packages, a cache or history (`~\.bun`, pnpm's `%LOCALAPPDATA%\pnpm`, pipx's `%LOCALAPPDATA%\pipx\pipx`, pip's cache, `~\.python_history`) doesn't hold the tool back. `Get-DFToolStatus` says what's there and how to move it, the first time DotForge finds it. An existing `pip.ini` in `%APPDATA%\pip` is your config, so pip waits for `Resolve-DFToolConflict`, like any other tool.
+An old home that already holds packages or history (`~\.bun`, pnpm's `%LOCALAPPDATA%\pnpm`, pipx's `%LOCALAPPDATA%\pipx\pipx`, `~\.python_history`, an existing `pip.ini`) stays where it is: DotForge links the XDG location to it. Caches are never linked; an old cache can simply be deleted.
 
 ### vivid
 

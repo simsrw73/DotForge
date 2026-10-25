@@ -9,27 +9,24 @@
 function Get-DFNativeRoot {
     <#
     .SYNOPSIS
-        The folder a ${HOME}, ${APPDATA} or ${LOCALAPPDATA} template names, or $null when it's unset.
+        The folder a ${HOME}, ${APPDATA}, ${LOCALAPPDATA} or ${SCOOP} template names, or $null when it's unset.
     .DESCRIPTION
         The one place those roots are read. The test suite's loader sets the
         script variable DFTestNativeRoot (tests/TestSupport.ps1), so no test
         looks in the developer's real home. It is a script variable, never an
         environment variable, so it can't outlive a test run in a live shell.
     .PARAMETER Name
-        HOME, APPDATA or LOCALAPPDATA.
+        HOME, APPDATA, LOCALAPPDATA or SCOOP (where a manager keeps data beside the program).
     .OUTPUTS
         System.String.
     #>
     [CmdletBinding()]
     [OutputType([string])]
-    param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA')][string]$Name)
+    param([Parameter(Mandatory)][ValidateSet('HOME', 'APPDATA', 'LOCALAPPDATA', 'SCOOP')][string]$Name)
     $testRoot = Get-Variable -Name DFTestNativeRoot -Scope Script -ValueOnly -ErrorAction Ignore
     if ($testRoot) { return Join-Path $testRoot $Name }
-    switch ($Name) {
-        'HOME' { $HOME }
-        'APPDATA' { $Env:APPDATA }
-        'LOCALAPPDATA' { $Env:LOCALAPPDATA }
-    }
+    # Every root but HOME is the environment variable of that name.
+    if ($Name -eq 'HOME') { $HOME } else { [Environment]::GetEnvironmentVariable($Name) }
 }
 
 function Expand-DFNativePath {
@@ -45,7 +42,7 @@ function Expand-DFNativePath {
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Template)
     $path = $Template
-    foreach ($root in 'HOME', 'APPDATA', 'LOCALAPPDATA') {
+    foreach ($root in 'HOME', 'APPDATA', 'LOCALAPPDATA', 'SCOOP') {
         $token = '${' + $root + '}'
         if (-not $path.Contains($token)) { continue }
         $value = Get-DFNativeRoot -Name $root
@@ -187,125 +184,94 @@ function Save-DFToolOwnership {
 function Find-DFToolConflict {
     <#
     .SYNOPSIS
-        Finds a requested tool's old locations that hold content DotForge would hide.
+        Finds where a requested tool's existing data is, for each location DotForge relocates, and what to do about it.
     .DESCRIPTION
         An owned tool is not checked (no file-system calls). For each relocated
-        path (Get-DFToolRelocation), an old location with content is a conflict
-        unless it is the target or inside it. A variable already set in the
-        process is the user's choice, which DotForge leaves alone, so it is
-        skipped and Complete is false: the tool can't be recorded as owned on
-        that check.
+        path (Get-DFToolRelocation), the existing location is the variable's
+        value when it was set outside DotForge (not what DotForge last wrote)
+        and differs from the XDG path, else the first xdg.native path with
+        content. With the XDG location empty, the action is Link: DotForge links
+        it to the existing data and leaves the variable unset. With content in
+        both, the action is Conflict. A variable DotForge itself set earlier
+        makes the check incomplete (Complete false): the tool can't be recorded
+        as owned on that check.
     .PARAMETER Tool
         A normalized tool record.
     .PARAMETER Ownership
         Read-DFToolOwnership result.
+    .PARAMETER Written
+        Variable -> the value DotForge last wrote (Get-DFEnvState's Written),
+        so a value DotForge set isn't taken for one set outside it.
     .OUTPUTS
-        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Target,
-        TargetHasContent, Move, Guide, Block) and Complete. A conflict with
-        Block false (xdg.native block: false) doesn't hold the tool back.
+        pscustomobject: Conflicts (each with Tool, Key, OldPaths, Existing,
+        Target, TargetHasContent, Guide, Action: Link or Conflict) and Complete.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][PSCustomObject]$Tool,
-        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership,
+        [AllowEmptyCollection()][hashtable]$Written = @{}
     )
     if ($Ownership.ContainsKey($Tool.name)) { return [pscustomobject]@{ Conflicts = @(); Complete = $true } }
     $complete = $true
     $sep = [IO.Path]::DirectorySeparatorChar
+    $written = $Written
+    $inside = { param($path, $target) $path -eq $target -or $path.StartsWith($target + $sep, [StringComparison]::OrdinalIgnoreCase) }
     $conflicts = foreach ($reloc in @(Get-DFToolRelocation -Tool $Tool)) {
-        if ($reloc.Key -cnotmatch '^\$\{' -and [Environment]::GetEnvironmentVariable($reloc.Key, 'Process')) { $complete = $false; continue }
-        if (-not $reloc.Native) { continue }
-        $found = @(foreach ($template in $reloc.Native.paths) {
-            $old = Expand-DFNativePath $template
-            if (-not $old) { continue }
-            if ($old -eq $reloc.Target -or $old.StartsWith($reloc.Target + $sep, [StringComparison]::OrdinalIgnoreCase)) { continue }
-            if (Test-DFPathHasContent -Path $old) { $old }
-        })
-        if ($found) {
-            [pscustomobject]@{
-                Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Target = $reloc.Target
-                TargetHasContent = Test-DFPathHasContent -Path $reloc.Target
-                Move = $reloc.Native.move; Guide = $reloc.Native.guide; Block = $reloc.Native.block
+        $found = @()
+        if ($reloc.Key -cnotmatch '^\$\{') {
+            $value = [Environment]::GetEnvironmentVariable($reloc.Key, 'Process')
+            if ($value -and $written.ContainsKey($reloc.Key) -and $written[$reloc.Key] -ceq $value) { $complete = $false; continue }
+            if ($value) {
+                $outside = ConvertTo-DFPath $value
+                if (-not (& $inside $outside $reloc.Target) -and (Test-Path -LiteralPath $outside)) { $found = @($outside) }
+                else {
+                    # The user's own choice, not checked against the native paths: not a complete check.
+                    $complete = $false
+                    continue
+                }
             }
+        }
+        if (-not $found -and $reloc.Native) {
+            $found = @(foreach ($template in $reloc.Native.paths) {
+                $old = Expand-DFNativePath $template
+                if (-not $old -or (& $inside $old $reloc.Target)) { continue }
+                if (Test-DFPathHasContent -Path $old) { $old }
+            })
+        }
+        if (-not $found) { continue }
+        # A link DotForge made earlier (and lost track of) already points there: link again, idempotently.
+        $hasContent = (Test-DFPathHasContent -Path $reloc.Target) -and -not (Get-DFToolLinkTarget -Path $reloc.Target)
+        [pscustomobject]@{
+            Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Existing = $found[0]; Target = $reloc.Target
+            TargetHasContent = $hasContent; Guide = $reloc.Native?.guide
+            Action = if ($hasContent) { 'Conflict' } else { 'Link' }
         }
     }
     [pscustomobject]@{ Conflicts = @($conflicts); Complete = $complete }
 }
 
-function Invoke-DFPendingRemoval {
-    <#
-    .SYNOPSIS
-        Retries moving a moved tool's old copies aside, once the new location still holds every moved file.
-    .DESCRIPTION
-        Checks sizes only (hashes were checked when the files moved; hashing a
-        large folder on every load would be too slow). A changed or missing
-        file keeps that old copy and warns: the user checks it, deletes the old
-        copy themselves, and runs Resolve-DFToolConflict <tool> -Done. A copy
-        that can't be renamed yet (in use) warns, with the reason, and is
-        retried on the next load. A renamed copy is never deleted.
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Ownership
-        Read-DFToolOwnership result; the tool's pending list is updated in it.
-    .OUTPUTS
-        System.Boolean: whether the tool's entry changed.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][hashtable]$Ownership)
-    $entry = $Ownership[$Name]
-    $before = @($entry.pending)
-    $left = @(foreach ($item in $before) {
-        $changed = @(foreach ($file in @($item.Files)) {
-            $path = if ($file.Path) { Join-Path $item.Target $file.Path } else { $item.Target }
-            $info = Get-Item -LiteralPath $path -Force -ErrorAction Ignore
-            if (-not $info -or $info.Length -ne $file.Length) { $path }
-        })
-        if ($changed) {
-            Write-Warning "DotForge: $Name's moved config changed since the move ($($changed -join ', ')), so $($item.OldPath) was kept. Check it, delete $($item.OldPath) yourself, then run Resolve-DFToolConflict $Name -Done."
-            $item
-            continue
-        }
-        try {
-            $aside = Rename-DFOldCopy -Path $item.OldPath
-            Write-Host "DotForge: $Name's old copy is now $aside; delete it when you're satisfied."
-        } catch {
-            Write-Warning "DotForge: couldn't move $($item.OldPath) aside ($($_.Exception.Message)), so DotForge tries again on the next load. To stop this, move it yourself and run Resolve-DFToolConflict $Name -Done."
-            $item
-        }
-    })
-    # Items only ever leave the list, so an unchanged count means nothing changed.
-    if ($left.Count -eq $before.Count) { return $false }
-    if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
-    $true
-}
-
 function Get-DFConflictAdvice {
     <#
     .SYNOPSIS
-        What to do about a tool whose old config location holds the user's config: one rule, used by the status detail and Resolve-DFToolConflict.
+        What to do about a tool whose old and XDG locations both hold content: one rule, used by the status detail and Resolve-DFToolConflict.
     .DESCRIPTION
-        A location DotForge must not move (move: false) needs the tool's own
-        instructions, then -Adopt. When the XDG location already has files,
-        DotForge has been using that copy, so -Adopt. Otherwise -Move.
-        Each instruction is given once, even when several paths share it.
+        -Adopt keeps the existing data: the XDG copy is set aside and the XDG
+        location linked to the existing one. A record's guide says how to keep
+        the XDG copy instead. Each guide is given once, even when several
+        paths share it.
     .PARAMETER Name
         The tool.
     .PARAMETER Conflicts
-        Find-DFToolConflict's Conflicts.
+        Find-DFToolConflict's Conflicts with Action Conflict.
     .OUTPUTS
-        pscustomobject: Action (Manual, Adopt or Move) and Text.
+        pscustomobject: Action (Adopt) and Text.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Conflicts)
-    $guides = @($Conflicts | Where-Object { -not $_.Move } | ForEach-Object Guide | Where-Object { $_ } | Select-Object -Unique)
-    $inUse = @($Conflicts | Where-Object TargetHasContent | ForEach-Object Target | Select-Object -Unique)
-    $leave = "or remove $Name from Tools."
-    if (@($Conflicts | Where-Object { -not $_.Move })) {
-        return [pscustomobject]@{ Action = 'Manual'; Text = "$($guides -join ' ') Then run Resolve-DFToolConflict $Name -Adopt, $leave" }
-    }
-    if ($inUse) {
-        return [pscustomobject]@{ Action = 'Adopt'; Text = "$($inUse -join ', ') has config too: if that is the copy you use, copy anything you need from the old one into it and run Resolve-DFToolConflict $Name -Adopt, $leave" }
-    }
-    [pscustomobject]@{ Action = 'Move'; Text = "Run Resolve-DFToolConflict $Name -Move (or -Adopt), $leave" }
+    $guides = @($Conflicts | ForEach-Object Guide | Where-Object { $_ } | Select-Object -Unique)
+    $inUse = @($Conflicts | ForEach-Object Target | Select-Object -Unique)
+    $text = "$($inUse -join ', ') has content too. Run Resolve-DFToolConflict $Name -Adopt to keep the existing copy and link to it (the XDG copy is set aside, never deleted), or remove $Name from Tools."
+    if ($guides) { $text += " To keep the XDG copy instead: $($guides -join ' ')" }
+    [pscustomobject]@{ Action = 'Adopt'; Text = $text }
 }

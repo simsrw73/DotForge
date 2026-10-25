@@ -260,7 +260,7 @@ function ConvertTo-DFBannerField {
 function ConvertTo-DFNativeMap {
     <#
     .SYNOPSIS
-        Normalizes xdg.native: each key's old locations as { paths, move, guide, setting }.
+        Normalizes xdg.native: each key's old locations as { paths, guide, setting }.
     .PARAMETER RawNative
         See the synopsis.
     #>
@@ -272,12 +272,10 @@ function ConvertTo-DFNativeMap {
         $map[$p.Name] = if ($p.Value -is [pscustomobject]) {
             [pscustomobject]@{
                 paths = [string[]]@(Get-DFToolRecordProperty $p.Value 'paths' @())
-                move  = [bool](Get-DFToolRecordProperty $p.Value 'move' $true)
                 guide = Get-DFToolRecordProperty $p.Value 'guide' $null
                 setting = Get-DFToolRecordProperty $p.Value 'setting' $null
-                block = [bool](Get-DFToolRecordProperty $p.Value 'block' $true)
             }
-        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); move = $true; guide = $null; setting = $null; block = $true } }
+        } else { [pscustomobject]@{ paths = [string[]]@($p.Value); guide = $null; setting = $null } }
     }
     [pscustomobject]$map
 }

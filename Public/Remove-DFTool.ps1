@@ -95,6 +95,7 @@ function Remove-DFTool {
         $result = ConvertTo-DFManagerResult -Tool $toolName -Outcome $outcome -Manager $found.Manager.name -Success 'Removed'
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName
+            Remove-DFToolLinkSet -Name $toolName
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result

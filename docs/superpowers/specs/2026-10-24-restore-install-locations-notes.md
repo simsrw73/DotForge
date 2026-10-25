@@ -208,6 +208,9 @@ keeps things, it links the XDG location to the real one, so the user still finds
 location is the variable's current value, so no per-source data is needed. A tool with no variable
 uses its `xdg.native` paths as the link target.
 
+**Done (DotForge, 2026-10-25):** existing data is linked, never moved; no manager detection; `-Adopt`
+links and `-Move`/`-Done` are gone; spec `2026-10-25-link-existing-design.md` (also closes T-83).
+
 **Decided (2026-10-25):** link config, data and state; never cache.
 
 | Kind | Link? | Why |

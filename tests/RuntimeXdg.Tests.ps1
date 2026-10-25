@@ -54,19 +54,12 @@ Describe 'bun, pnpm, python, pip and pipx under XDG' {
         Start-DFSession -Config @{ Tools = @('pipx') } -ToolsPath $script:Tools 3>$null
         $Env:PIPX_HOME | Should -Be (Join-Path $TestDrive 'my-pipx')
     }
-    It 'still waits on an existing pip.ini, which DotForge would hide' {
+    It 'keeps an existing pip.ini where it is, and loads pip' {
         New-Item -ItemType File -Force (Join-Path $script:FakeRoot 'APPDATA' 'pip' 'pip.ini') | Out-Null
         Start-DFSession -Config @{ Tools = @('python', 'pip') } -ToolsPath $script:Tools 3>$null
-        (Get-DFToolStatus pip).State | Should -Be 'Conflict'
+        (Get-DFToolStatus pip).State | Should -Be 'Active'
+        (Get-DFToolStatus pip).Detail | Should -Match 'pip\.ini'
+        $Env:PIP_CONFIG_FILE | Should -BeNullOrEmpty
     }
 }
 
-Describe 'a native entry that does not block' {
-    It 'normalizes block, defaulting to true, and the schema wants a boolean' {
-        $native = ConvertTo-DFNativeMap ('{ "A": { "paths": ["${HOME}/.a"], "move": false, "guide": "g", "block": false }, "B": ["${HOME}/.b"] }' | ConvertFrom-Json)
-        $native.A.block | Should -BeFalse
-        $native.B.block | Should -BeTrue
-        $bad = '{ "name": "t", "executable": "t.exe", "xdg": { "method": "env", "vars": { "A": "${XDG_DATA_HOME}/a" }, "native": { "A": { "paths": ["${HOME}/.a"], "move": false, "guide": "g", "block": "no" } } } }' | ConvertFrom-Json
-        "$((Test-DFToolSchema -Tool $bad).Errors)" | Should -Match 'block'
-    }
-}

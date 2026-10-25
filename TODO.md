@@ -2,7 +2,7 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-86**.
+git history, not here. IDs are never reused; the next free one is **T-87**.
 
 ## Priority 1 — Release Readiness
 
@@ -15,8 +15,8 @@ git history, not here. IDs are never reused; the next free one is **T-86**.
 
 ## Priority 2 — Open Problems
 
+- [ ] **T-86 Warn about a tool installed from a source its record avoids** — at first run, for a tool installed before or outside DotForge from a source its record's `install.avoid` names (rustup or pnpm from scoop). No manager detection: the location can tell (a link target or kept variable under `$SCOOP`). Small design first. From the manager-choice and link-existing specs (2026-10-25).
 - [ ] **T-82 Python install manager's location** — pymanager installs runtimes into `%LOCALAPPDATA%\Python`. It can move only through a config file (`install_dir`, `download_dir`; user file `%APPDATA%\Python\pymanager.json`, or one named by `PYTHON_MANAGER_CONFIG`), and moving makes installed runtimes unusable until reinstalled. Left as is for now (2026-10-25); take a deeper look: whether to relocate it, how existing runtimes move, and where `global_dir` goes.
-- [ ] **T-83 Locations depend on how a tool was installed** — the user's rule (2026-10-25): from scoop, leave the tool's data where scoop puts it and link it into the XDG folder (piece 6's link fallback); from winget and not installed yet, set the variable if the install honors it; from winget and already installed, use the existing Conflict and Move/Adopt. First case: bitwarden (`BITWARDENCLI_APPDATA_DIR`; scoop keeps the vault in its `bw-data` persist folder, winget in `%APPDATA%\Bitwarden CLI`). rustup and pnpm from scoop need the same (notes, Decision 5). Design with piece 6. Also warn, at first run, about a tool already installed from a source its record avoids (`install.avoid`; manager-choice spec).
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).
 - [ ] **T-9 Red `?` on a line by itself in some help output** — a broken ANSI sequence or a `Get-Help` rendering artifact; investigate.
 - [ ] **T-10 Path-normalization follow-ups** — (d) tests use `C:\` literals, so macOS/Linux stays unverified.

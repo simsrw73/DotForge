@@ -14,7 +14,7 @@
       "PIPX_HOME": "${XDG_DATA_HOME}/pipx"
     },
     "native": {
-      "PIPX_HOME": { "paths": ["${LOCALAPPDATA}/pipx/pipx", "${HOME}/pipx"], "move": false, "block": false, "guide": "pipx's old home holds the environments of the apps it installed: run pipx list with PIPX_HOME pointing there, reinstall them, then delete it." }
+      "PIPX_HOME": { "paths": ["${LOCALAPPDATA}/pipx/pipx", "${HOME}/pipx"], "guide": "pipx's old home holds the environments of the apps it installed: run pipx list with PIPX_HOME pointing there, reinstall them, then delete it." }
     },
     "dirs": ["${XDG_DATA_HOME}/pipx"]
   },

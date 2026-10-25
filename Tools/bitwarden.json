@@ -12,8 +12,17 @@
     "winget": "Bitwarden.CLI"
   },
   "xdg": {
-    "compliance": "none",
-    "method": "default"
+    "compliance": "partial",
+    "method": "env",
+    "vars": {
+      "BITWARDENCLI_APPDATA_DIR": "${XDG_DATA_HOME}/bitwarden"
+    },
+    "native": {
+      "BITWARDENCLI_APPDATA_DIR": {
+        "paths": ["${SCOOP}/persist/bitwarden-cli/bw-data", "${APPDATA}/Bitwarden CLI"],
+        "guide": "that folder holds your vault data: to keep the XDG copy instead, log in again with bw login once DotForge points bw there."
+      }
+    }
   },
   "aliases": {},
   "picker": "custom"

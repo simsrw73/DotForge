@@ -13,7 +13,7 @@
     "method": "env",
     "vars": { "PNPM_HOME": "${XDG_DATA_HOME}/pnpm" },
     "native": {
-      "PNPM_HOME": { "paths": ["${LOCALAPPDATA}/pnpm"], "move": false, "block": false, "guide": "pnpm's old home holds its global commands and store: reinstall your global packages with pnpm add -g, then delete it. pnpm reads XDG_CONFIG_HOME, XDG_CACHE_HOME and XDG_STATE_HOME itself for the rest." }
+      "PNPM_HOME": { "paths": ["${LOCALAPPDATA}/pnpm"], "guide": "pnpm's old home holds its global commands and store: reinstall your global packages with pnpm add -g, then delete it. pnpm reads XDG_CONFIG_HOME, XDG_CACHE_HOME and XDG_STATE_HOME itself for the rest." }
     },
     "dirs": ["${XDG_DATA_HOME}/pnpm"]
   },

@@ -3,8 +3,8 @@ BeforeAll {
     foreach ($f in Get-DFTestModuleFile) { . $f }
 }
 
-# Handing a tool's config over to DotForge without moving anything (-Adopt),
-# and clearing unfinished removals (-Done).
+# Keeping a tool's existing data when the XDG location holds content too (-Adopt): the XDG copy is
+# set aside, never deleted, and the XDG location linked to the existing data.
 Describe 'Resolve-DFToolConflict' {
     BeforeEach {
         Set-DFTestXdg
@@ -13,8 +13,6 @@ Describe 'Resolve-DFToolConflict' {
         $script:FakeHome = Join-Path $TestDrive 'home'
         Remove-Item $script:FakeHome, (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
         Mock Get-DFNativeRoot { if ($Name -eq 'HOME') { $script:FakeHome } }
-        Mock Get-Process { }
-        Mock Rename-DFOldCopy { }
         Mock Write-Host { }
         $script:UserTools = Join-Path $Env:XDG_CONFIG_HOME 'dotforge' 'tools'
         New-Item -ItemType Directory -Force $script:UserTools | Out-Null
@@ -23,6 +21,13 @@ Describe 'Resolve-DFToolConflict' {
            xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna') } } } |
             ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
         New-Item -ItemType File -Force (Join-Path $script:FakeHome '.owna' 'cfg') | Out-Null
+        Set-Content (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg') 'xdg copy' -Force -ErrorAction Ignore
+        if (-not (Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg'))) {
+            New-Item -ItemType Directory -Force (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Out-Null
+            Set-Content (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg') 'xdg copy'
+        }
+        $script:Xdg = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
+        $script:Old = ConvertTo-DFPath (Join-Path $script:FakeHome '.owna')
     }
     AfterEach {
         $script:DFToolDb = $null
@@ -30,11 +35,29 @@ Describe 'Resolve-DFToolConflict' {
         Restore-DFTestXdg
     }
 
-    It '-Adopt records ownership and moves nothing' {
+    It '-Adopt sets the XDG copy aside and links to the existing data' {
         $result = Resolve-DFToolConflict owna -Adopt -Confirm:$false
         $result.Action | Should -Be 'Adopt'
-        (Read-DFToolOwnership)['owna'].how | Should -Be 'adopt'
-        Test-Path (Join-Path $script:FakeHome '.owna' 'cfg') | Should -BeTrue
+        Get-DFToolLinkTarget -Path $script:Xdg | Should -Be $script:Old
+        Get-Content "$script:Xdg.dotforge-moved\cfg" | Should -Be 'xdg copy'
+        @($result.Aside) | Should -Be @("$script:Xdg.dotforge-moved")
+        $entry = (Read-DFToolOwnership)['owna']
+        $entry.how | Should -Be 'linked'
+        @($entry.links).Count | Should -Be 1
+        Test-Path (Join-Path $script:Old 'cfg') | Should -BeTrue
+    }
+    It '-Adopt changes nothing, and says why, when the XDG copy can''t be set aside' {
+        Mock Rename-DFOldCopy { throw 'The process cannot access the file because it is being used.' }
+        $result = Resolve-DFToolConflict owna -Adopt -Confirm:$false
+        @($result.Problems) | Should -Match 'being used'
+        Get-DFToolLinkTarget -Path $script:Xdg | Should -BeNullOrEmpty
+        Get-Content (Join-Path $script:Xdg 'cfg') | Should -Be 'xdg copy'
+        (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
+    }
+    It 'has no -Move or -Done any more' {
+        $params = (Get-Command Resolve-DFToolConflict).Parameters.Keys
+        $params | Should -Not -Contain 'Move'
+        $params | Should -Not -Contain 'Done'
     }
     It '-Adopt -WhatIf records nothing' {
         Resolve-DFToolConflict owna -Adopt -WhatIf | Out-Null
@@ -44,13 +67,6 @@ Describe 'Resolve-DFToolConflict' {
         Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'clean' } }
         (Resolve-DFToolConflict owna -Adopt -Confirm:$false).Action | Should -Be 'AlreadyOwned'
         (Read-DFToolOwnership)['owna'].how | Should -Be 'clean'
-    }
-    It '-Done clears pending and keeps ownership' {
-        Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'move'; pending = @(@{ OldPath = 'p'; Target = 't'; Files = @() }) } }
-        Resolve-DFToolConflict owna -Done -Confirm:$false | Out-Null
-        $entry = (Read-DFToolOwnership)['owna']
-        $entry.how | Should -Be 'move'
-        $entry.PSObject.Properties['pending'] | Should -BeNullOrEmpty
     }
     It 'errors for an unknown tool' {
         { Resolve-DFToolConflict nosuch -Adopt -Confirm:$false -ErrorAction Stop 3>$null } | Should -Throw '*nosuch*'
@@ -70,42 +86,35 @@ Describe 'Resolve-DFToolConflict, guided' {
         Set-DFTestXdg
         Remove-Item (Join-Path $TestDrive 'xdg') -Recurse -Force -ErrorAction Ignore
         Mock Write-Host { }
-        $conflict = { param($Tool, $Target, [bool]$Move = $true, [bool]$InUse = $false)
-            [pscustomobject]@{ Tool = $Tool; Key = 'K'; OldPaths = @("C:\old\$Tool"); Target = $Target; TargetHasContent = $InUse; Move = $Move; Guide = 'Do it by hand.' } }
+        $conflict = { param($Tool, $Target)
+            [pscustomobject]@{ Tool = $Tool; Key = 'K'; OldPaths = @("C:\old\$Tool"); Existing = "C:\old\$Tool"; Target = $Target; TargetHasContent = $true; Guide = 'Do it by hand.'; Action = 'Conflict' } }
         $script:Waiting = @(
             [pscustomobject]@{ Name = 'aa'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'aa' 'C:\new\aa') }
-            [pscustomobject]@{ Name = 'bb'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'bb' 'C:\new\bb' -InUse $true) }
-            [pscustomobject]@{ Name = 'cc'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'cc' 'C:\new\cc' -Move $false) })
+            [pscustomobject]@{ Name = 'bb'; State = 'Conflict'; Detail = 'd'; Conflicts = @(& $conflict 'bb' 'C:\new\bb') })
         Mock Get-DFToolStatus { $script:Waiting } -ParameterFilter { $Conflict }
         Mock Test-DFConflictPrompt { $true }
         Mock Import-DFToolDb { @{ $Name[0] = [pscustomobject]@{ name = $Name[0] } } }
-        Mock Invoke-DFConflictMove { $Result.Action = 'Move'; $Result }
+        Mock Invoke-DFConflictAdopt { $Result }
     }
     AfterEach { Restore-DFTestXdg }
 
-    It 'offers each tool''s advised action as the default, and does what you pick' {
+    It 'offers Adopt as the default for each tool, and adopts on Enter' {
         Mock Read-DFConflictChoice { '' }     # Enter: take the default
-        $results = @(Resolve-DFToolConflict)
-        Should -Invoke Read-DFConflictChoice -Times 3 -Exactly
-        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Move' }
-        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Adopt' }
-        Should -Invoke Read-DFConflictChoice -Times 1 -Exactly -ParameterFilter { $Default -eq 'Skip' }
-        ($results | Where-Object Tool -eq 'aa').Action | Should -Be 'Move'
-        (Read-DFToolOwnership)['bb'].how | Should -Be 'adopt'
-        (Read-DFToolOwnership).ContainsKey('cc') | Should -BeFalse
+        $null = @(Resolve-DFToolConflict)
+        Should -Invoke Read-DFConflictChoice -Times 2 -Exactly -ParameterFilter { $Default -eq 'Adopt' }
+        Should -Invoke Invoke-DFConflictAdopt -Times 2 -Exactly
     }
     It 'skips a tool you skip' {
         Mock Read-DFConflictChoice { 'S' }
         $null = Resolve-DFToolConflict
-        (Read-DFToolOwnership).Count | Should -Be 0
-        Should -Invoke Invoke-DFConflictMove -Times 0 -Exactly
+        Should -Invoke Invoke-DFConflictAdopt -Times 0 -Exactly
     }
     It 'only lists the tools when it can''t ask' {
         Mock Test-DFConflictPrompt { $false }
         Mock Read-DFConflictChoice { 'A' }
         $null = Resolve-DFToolConflict
         Should -Invoke Read-DFConflictChoice -Times 0 -Exactly
-        Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'cc' }
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'bb' }
         (Read-DFToolOwnership).Count | Should -Be 0
     }
     It 'says so when nothing is waiting' {

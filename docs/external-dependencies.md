@@ -234,6 +234,15 @@ Two categories, and the difference matters:
 | **If it changes** | A new naming scheme makes detection miss a Nerd Font: icons turn off and the load says so, and `NerdFont = $true` restores them. A moved release asset makes `Install-DFNerdFont` fail with the download error. When FontGet#9 is fixed, drop `Tools/fontget.json`'s setup note. |
 ---
 
+### 24. Bitwarden CLI: `bw-data` beside the program (scoop's persist folder)
+
+| | |
+|---|---|
+| **What** | Bitwarden CLI uses a `bw-data` folder next to `bw.exe` when one exists, before `%APPDATA%\Bitwarden CLI`; scoop's manifest persists it as `$SCOOP\persist\bitwarden-cli\bw-data`. DotForge lists that path in bitwarden's `xdg.native`, so an existing scoop vault is linked from `$XDG_DATA_HOME\bitwarden` and `BITWARDENCLI_APPDATA_DIR` is left unset. |
+| **Where** | `Tools/bitwarden.json` (`xdg.native`) |
+| **Why** | Setting `BITWARDENCLI_APPDATA_DIR` would point bw away from the logged-in vault scoop keeps. |
+| **If it changes** | If scoop stops persisting `bw-data`, or bw stops preferring it, the path has no content and is skipped: a fresh install then uses `$XDG_DATA_HOME\bitwarden`. Nothing breaks; an old vault would need a new `bw login`. |
+
 ## Documented but load-bearing
 
 These are public API. They are listed because DotForge visibly misbehaves if they change.

@@ -483,13 +483,17 @@ function Select-DFOwnedRecord {
 function Test-DFToolOwnership {
     <#
     .SYNOPSIS
-        Checks one installed tool against the ownership table: false (and status Conflict) when its old config location holds the user's config.
+        Checks one installed tool against its existing data: links an empty XDG location to it, or returns false (status Conflict) when both hold content.
     .DESCRIPTION
-        A tool with no conflict, a complete check and a relocated path is
-        listed in State.Clean, to be recorded as owned (how: clean) if it ends
-        up active (Complete-DFToolOwnership). An owned tool's unfinished
-        removals from Resolve-DFToolConflict -Move are retried. Changes go into
-        State.Table and their names into State.Changed.
+        For each location Find-DFToolConflict classifies as Link, the XDG
+        location is linked to the existing data (New-DFToolLink) and the tool
+        is recorded as owned with how 'linked' and its links; registration then
+        leaves those variables unset and seeds nothing inside them. An owned
+        linked tool's links are checked: one whose target is gone is removed,
+        with a note, and the tool behaves as fresh again. A tool with no
+        conflict, a complete check and a relocated path is listed in
+        State.Clean, to be recorded as owned (how: clean) if it ends up active.
+        Changes go into State.Table and their names into State.Changed.
     .PARAMETER Record
         The tool record.
     .PARAMETER State
@@ -507,37 +511,108 @@ function Test-DFToolOwnership {
         [Parameter(Mandatory)][hashtable]$RequestedBy
     )
     $table = $State.Table
-    $check = Find-DFToolConflict -Tool $Record -Ownership $table
-    # An old location that only holds caches, installed packages or history (xdg.native block:
-    # false) is noted with its guide; the tool stays active.
-    # Kept in the ownership state, not Add-DFToolNote: registration clears a tool's notes first.
-    $oldNotes = @(foreach ($note in @($check.Conflicts | Where-Object { $_.Block -eq $false })) {
-            "$(@($note.OldPaths) -join ', ') isn't used any more: $($note.Guide)"
-        })
-    if ($oldNotes -and $State.PSObject.Properties['Notes']) { $State.Notes[$Record.name] = $oldNotes }
-    $blocking = @($check.Conflicts | Where-Object { $_.Block -ne $false })
+    $name = $Record.name
+    $notes = [System.Collections.Generic.List[string]]::new()
+    if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') {
+        $kept = Confirm-DFToolLinks -Name $name -Entry $table[$name] -Notes $notes
+        if ($kept.Count -ne @($table[$name].links).Count) {
+            if ($kept.Count) { $table[$name].links = @($kept) } else { $table.Remove($name) }
+            $null = $State.Changed.Add($name)
+        }
+    }
+    $check = Find-DFToolConflict -Tool $Record -Ownership $table -Written (Get-DFEnvState).Written
+    $blocking = @($check.Conflicts | Where-Object Action -eq 'Conflict')
     if ($blocking) {
+        Set-DFToolLinkState -Name $name
         $paths = @($blocking.OldPaths) -join ', '
-        $status = New-DFToolStatus -Name $Record.name -State Conflict -RequestedBy $RequestedBy[$Record.name] -Detail "your existing config at $paths would be hidden. $((Get-DFConflictAdvice -Name $Record.name -Conflicts $blocking).Text)"
+        $status = New-DFToolStatus -Name $name -State Conflict -RequestedBy $RequestedBy[$name] -Detail "your existing data at $paths and the XDG location both hold content. $((Get-DFConflictAdvice -Name $name -Conflicts $blocking).Text)"
         $status | Add-Member -NotePropertyName Conflicts -NotePropertyValue $blocking
         # Write-DFSessionNotice warns once per conflict: a later Register-DFTool
         # re-checks every requested tool, but warns again only for one it names.
-        $previous = $script:DFSessionStatus[$Record.name]
-        $warned = $Record.name -notin $State.Reactivate -and $previous -and $previous.State -eq 'Conflict' -and
+        $previous = $script:DFSessionStatus[$name]
+        $warned = $name -notin $State.Reactivate -and $previous -and $previous.State -eq 'Conflict' -and
             $previous.PSObject.Properties['Warned'] -and $previous.Warned
         $status | Add-Member -NotePropertyName Warned -NotePropertyValue ([bool]$warned)
-        $script:DFSessionStatus[$Record.name] = $status
+        $script:DFSessionStatus[$name] = $status
         return $false
     }
-    if (-not $State.Readable) { return $true }
-    if ($check.Complete -and -not $table.ContainsKey($Record.name) -and @(Get-DFToolRelocation -Tool $Record)) {
-        $null = $State.Clean.Add($Record.name)
+    $toLink = @($check.Conflicts | Where-Object Action -eq 'Link')
+    if ($toLink) {
+        $links = @(foreach ($item in $toLink) {
+            $made = New-DFToolLinkFor -Path $item.Target -Target $item.Existing -Notes $notes
+            [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $made }
+        })
+        if ($State.Readable) {
+            $table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $links }
+            $null = $State.Changed.Add($name)
+        }
     }
-    if ($table.ContainsKey($Record.name) -and $table[$Record.name].PSObject.Properties['pending']) {
-        if (Invoke-DFPendingRemoval -Name $Record.name -Ownership $table) { $null = $State.Changed.Add($Record.name) }
+    Set-DFToolLinkState -Name $name -Links @(if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') { $table[$name].links })
+    if ($notes.Count -and $State.PSObject.Properties['Notes']) { $State.Notes[$name] = [string[]]$notes }
+    if (-not $State.Readable) { return $true }
+    if ($check.Complete -and -not $toLink -and -not $table.ContainsKey($name) -and @(Get-DFToolRelocation -Tool $Record)) {
+        $null = $State.Clean.Add($name)
     }
     $true
 }
+
+function New-DFToolLinkFor {
+    <#
+    .SYNOPSIS
+        Links one XDG location to a tool's existing data and notes it in the tool's status; returns whether the link exists.
+    .PARAMETER Path
+        The XDG location.
+    .PARAMETER Target
+        The existing data.
+    .PARAMETER Notes
+        The tool's status notes; one is added per link (or per link that can't be made).
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Target, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
+    $result = New-DFToolLink -Path $Path -Target $Target
+    if ($result.Made) { $Notes.Add("linked $Path to your existing $Target") } else { $Notes.Add("your existing data is at $Target; $($result.Note)") }
+    $result.Made
+}
+
+function Confirm-DFToolLinks {
+    <#
+    .SYNOPSIS
+        Checks an owned linked tool's links: removes one whose target is gone (with a note), retries one that couldn't be made, and returns the links still in use.
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Entry
+        Its ownership entry (how linked).
+    .PARAMETER Notes
+        The tool's status notes.
+    .OUTPUTS
+        PSCustomObject[]: the links to keep.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][PSCustomObject]$Entry, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
+    $kept = [System.Collections.Generic.List[object]]::new()
+    foreach ($link in @($Entry.links)) {
+        if (-not (Test-Path -LiteralPath $link.target)) {
+            Remove-DFToolLink -Path $link.path
+            $Notes.Add("$($link.target) is gone (was $Name uninstalled?), so DotForge removed its link at $($link.path) and uses the XDG location again")
+            continue
+        }
+        $made = if ((Get-DFToolLinkTarget -Path $link.path) -eq (ConvertTo-DFPath $link.target)) {
+            $Notes.Add("linked $($link.path) to your existing $($link.target)")
+            $true
+        } elseif (-not (Test-Path -LiteralPath $link.path)) {
+            New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $Notes
+        } else {
+            $Notes.Add("$($link.path) is no longer DotForge's link to $($link.target); DotForge leaves it alone")
+            $true
+        }
+        $kept.Add([pscustomobject]@{ key = $link.key; path = $link.path; target = $link.target; made = $made })
+    }
+    , $kept.ToArray()
+}
+
 function Complete-DFToolOwnership {
     <#
     .SYNOPSIS

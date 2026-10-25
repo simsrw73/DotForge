@@ -126,18 +126,22 @@ All notable changes to DotForge are documented here.
   silences its "isn't installed" notice if you don't want drive lines). The default fastfetch config
   drops the Packages and physical-disk lines and gains `@DF:publicip@` / `@DF:drives@` placeholders.
   Tool records can add banner lines with a `banner` field.
-- **DotForge never hides config you already have.** A tool you list in `Tools` whose own default
-  location still holds your config or data (bat's `%APPDATA%\bat\config`, zoxide's database, your
-  PowerShell history, …) is left alone entirely, with a warning on each load, until you decide:
-  `Resolve-DFToolConflict <tool> -Move` checks that nothing refers to the old location, copies it to
-  the XDG location, verifies every file, and renames the old copy to `<name>.dotforge-moved`, never deleting it (a copy in use is
-  retried on later loads); `-Adopt` takes over without moving anything. `Get-DFToolStatus -Conflict`
-  lists the tools waiting, each with the advised action, and one warning per load names them all;
-  `Resolve-DFToolConflict` with no tool name goes through them one at a time. Tool records declare
-  their old locations in `xdg.native`.
-  **If you already use DotForge:** a tool whose old location still holds files next to the XDG copy
-  DotForge has been using (most often PowerShell's own history file) is left inactive after the
-  upgrade until you run `Resolve-DFToolConflict <tool> -Adopt` once; the warning says so.
+- **DotForge never hides config or data you already have, and never moves it.** A tool you list in
+  `Tools` whose own default location already holds your config or data (bat's `%APPDATA%\bat\config`,
+  zoxide's database, an existing Rust toolchain, a Bitwarden vault in scoop's folder, …) keeps it
+  there: DotForge links the empty XDG location to it (a junction; a single file gets a symlink when
+  Developer Mode is on), leaves the variable that would hide it unset, and loads the tool, so it works
+  the same inside and outside DotForge's shells. A variable you or a package manager set (scoop's
+  `env_set`) is kept, and the XDG location linked to where it points. Links are listed in
+  `Get-DFToolStatus`, removed by `Remove-DFTool` (never their targets), and cleaned up when their
+  target disappears. Only a tool with content in both places waits, with a warning on each load:
+  `Resolve-DFToolConflict <tool> -Adopt` keeps the existing copy (the XDG copy is renamed to
+  `<name>.dotforge-moved`, never deleted) and links to it; the tool's guide says how to keep the XDG
+  copy instead. `Resolve-DFToolConflict` with no tool name goes through them one at a time. Tool
+  records declare their old locations in `xdg.native` (roots `${HOME}`, `${APPDATA}`,
+  `${LOCALAPPDATA}`, `${SCOOP}`); bitwarden now uses `$XDG_DATA_HOME\bitwarden` for a fresh install.
+  **If you used a development build:** `-Move` and `-Done` are gone, and `-Adopt` now keeps the
+  existing copy rather than the XDG one. A tool already resolved stays as it is.
 - **Your own tools, without forking DotForge:** tool records in `$XDG_CONFIG_HOME\dotforge\tools` load
   with DotForge's own, and one with a shipped tool's name replaces that tool. Their companion, setup
   and manage scripts and data files are read from the same folder. `New-DFTool -Name` starts a record

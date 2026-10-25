@@ -14,13 +14,16 @@ function Set-DFToolXdgConfig {
         Invoke-DFToolSetup), never here on every load.
     .PARAMETER Tool
         The tool record (from the tool JSON database) to configure.
+    .PARAMETER Skip
+        Variables to leave unset: they point at the user's existing data, which the XDG location links to.
     .OUTPUTS
         None
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [PSCustomObject]$Tool
+        [PSCustomObject]$Tool,
+        [AllowEmptyCollection()][string[]]$Skip = @()
     )
 
     $xdg = $Tool.xdg
@@ -30,7 +33,7 @@ function Set-DFToolXdgConfig {
             # A tool's vars are defaults: a variable the user set outside DotForge
             # (profile, system) is kept, one DotForge wrote is updated (Set-DFEnv).
             foreach ($var in @($xdg.vars?.PSObject.Properties)) {
-                if ($var) { Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name }
+                if ($var -and $var.Name -notin $Skip) { Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name }
             }
             $xdg.dirs | Where-Object { $_ } |
                 ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }

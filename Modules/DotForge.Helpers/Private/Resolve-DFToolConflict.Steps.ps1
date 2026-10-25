@@ -1,7 +1,7 @@
 #Requires -Version 7.2
 
 # The steps of Resolve-DFToolConflict. See
-# docs/superpowers/specs/2026-10-11-config-ownership-design.md.
+# docs/superpowers/specs/2026-10-25-link-existing-design.md.
 
 function New-DFConflictResult {
     <#
@@ -10,7 +10,7 @@ function New-DFConflictResult {
     .PARAMETER Tool
         The tool.
     .PARAMETER Action
-        Move, Adopt or Done.
+        Adopt.
     .OUTPUTS
         DotForge.ConflictResult.
     #>
@@ -19,288 +19,69 @@ function New-DFConflictResult {
         PSTypeName = 'DotForge.ConflictResult'
         Tool       = $Tool
         Action     = $Action
-        Moved      = [string[]]@()
+        Linked     = [string[]]@()
         Aside      = [string[]]@()
-        Pending    = [string[]]@()
         Problems   = [string[]]@()
     }
 }
 
-function Complete-DFConflictPending {
+function Invoke-DFConflictAdopt {
     <#
     .SYNOPSIS
-        Resolve-DFToolConflict -Done: forgets a move's unfinished removals, keeping ownership.
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Ownership
-        Read-DFToolOwnership result (updated and saved).
-    .PARAMETER Result
-        The result object to return.
-    .PARAMETER Cmdlet
-        The caller's $PSCmdlet, for ShouldProcess.
-    .OUTPUTS
-        DotForge.ConflictResult.
-    #>
-    param([string]$Name, [hashtable]$Ownership, $Result, $Cmdlet)
-    $entry = $Ownership[$Name]
-    if (-not ($entry -and $entry.PSObject.Properties['pending'])) {
-        Write-Host "$Name has no unfinished removals."
-        return $Result
-    }
-    $Result.Pending = [string[]]@($entry.pending | ForEach-Object OldPath)
-    if ($Cmdlet.ShouldProcess($Name, "Stop retrying the removal of $($Result.Pending -join ', ')")) {
-        $entry.PSObject.Properties.Remove('pending')
-        Save-DFToolOwnership -Ownership $Ownership -Name $Name
-        $Result.Pending = [string[]]@()
-    }
-    $Result
-}
-
-function Invoke-DFConflictMove {
-    <#
-    .SYNOPSIS
-        Resolve-DFToolConflict -Move.
+        Resolve-DFToolConflict -Adopt: sets each XDG copy in the way aside, links every XDG location to the existing data, and records the links.
+    .DESCRIPTION
+        All renames happen first; if one fails, the ones already done are
+        renamed back and nothing else changes. Then each location is linked
+        (New-DFToolLink) and the tool recorded as owned, how 'linked'.
     .PARAMETER Tool
         The tool record.
     .PARAMETER Ownership
-        Read-DFToolOwnership result.
+        Read-DFToolOwnership result; the tool's entry is added and saved.
     .PARAMETER Result
-        The result object to fill and return.
+        New-DFConflictResult.
     .PARAMETER Cmdlet
-        The caller's $PSCmdlet, for ShouldProcess.
+        Resolve-DFToolConflict's $PSCmdlet, for ShouldProcess.
     .OUTPUTS
         DotForge.ConflictResult.
     #>
-    param($Tool, [hashtable]$Ownership, $Result, $Cmdlet)
-    $conflicts = @((Find-DFToolConflict -Tool $Tool -Ownership $Ownership).Conflicts)
-    if (-not $conflicts) {
-        Write-Host "Nothing of $($Tool.name)'s is in its old locations; DotForge takes it over on its next load."
-        return $Result
-    }
-    $Result.Problems = [string[]]@(Get-DFMoveProblem -Tool $Tool -Conflicts $conflicts)
-    if ($Result.Problems) {
-        Write-Warning "DotForge: $($Tool.name)'s config can't be moved safely yet:"
-        foreach ($problem in $Result.Problems) { Write-Warning "  $problem" }
-        return $Result
-    }
-    $plan = ($conflicts | ForEach-Object { "$(@($_.OldPaths)[0]) -> $($_.Target)" }) -join '; '
-    if (-not $Cmdlet.ShouldProcess($Tool.name, "Move $plan, then rename the old copies to <name>.dotforge-moved")) { return $Result }
-
-    $pending = Copy-DFConflictLocation -Conflicts $conflicts
-    $Result.Moved = [string[]]@($pending.Target)
-    # Recorded before anything is removed, so a crash leaves a record of what moved.
-    $Ownership[$Tool.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'move'; pending = @($pending) }
-    Save-DFToolOwnership -Ownership $Ownership -Name $Tool.name
-    $left = @(foreach ($item in $pending) {
-        try { $Result.Aside = [string[]](@($Result.Aside) + (Rename-DFOldCopy -Path $item.OldPath)) }
-        catch {
-            Write-Warning "DotForge: couldn't move $($item.OldPath) aside ($($_.Exception.Message)); DotForge tries again on the next load."
-            $item
-        }
-    })
-    $entry = $Ownership[$Tool.name]
-    if ($left) { $entry.pending = $left } else { $entry.PSObject.Properties.Remove('pending') }
-    Save-DFToolOwnership -Ownership $Ownership -Name $Tool.name
-    $Result.Pending = [string[]]@($left | ForEach-Object OldPath)
-    foreach ($aside in $Result.Aside) { Write-Host "Your old copy is now $aside; delete it when you're satisfied." }
-    Write-Host "DotForge now owns $($Tool.name)'s config. Load it with: Register-DFTool -Name $($Tool.name)"
-    $Result
-}
-
-function Copy-DFConflictLocation {
-    <#
-    .SYNOPSIS
-        Copies each conflict's old location to its target, verified; on any failure removes every target it made and throws.
-    .PARAMETER Conflicts
-        Find-DFToolConflict's Conflicts (each with one old path, checked by Get-DFMoveProblem).
-    .OUTPUTS
-        One pending item per conflict: OldPath, Target, Files (Copy-DFVerified's manifest).
-    #>
-    param([Parameter(Mandatory)][object[]]$Conflicts)
-    $done = [System.Collections.Generic.List[object]]::new()
-    try {
-        foreach ($conflict in $Conflicts) {
-            $old = @($conflict.OldPaths)[0]
-            $files = Copy-DFVerified -Source $old -Target $conflict.Target
-            $done.Add([pscustomobject]@{ OldPath = $old; Target = $conflict.Target; Files = @($files) })
-        }
-    } catch {
-        foreach ($item in $done) { Remove-Item -LiteralPath $item.Target -Recurse -Force -ErrorAction Ignore }
-        throw
-    }
-    $done.ToArray()
-}
-
-function Copy-DFVerified {
-    <#
-    .SYNOPSIS
-        Copies a file or folder to Target through a staging copy, checking every file's size and SHA-256.
-    .PARAMETER Source
-        The old location.
-    .PARAMETER Target
-        The XDG location (empty, by Get-DFMoveProblem).
-    .OUTPUTS
-        The manifest: Path (relative; empty for a single file), Length and
-        Hash per file. Throws, with staging removed, when a copy differs.
-    #>
-    param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Target)
-    $staging = "$Target.dotforge-staging"
-    Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction Ignore
-    New-DFDirectory (Split-Path $Target) | Out-Null
-    $isFile = Test-Path -LiteralPath $Source -PathType Leaf
-    $activity = "Checking the copy of $Source"
-    try {
-        Copy-Item -LiteralPath $Source -Destination $staging -Recurse -Force -ErrorAction Stop
-        $files = @(if ($isFile) { Get-Item -LiteralPath $Source -Force } else { Get-ChildItem -LiteralPath $Source -File -Recurse -Force })
-        $count = 0
-        $manifest = foreach ($file in $files) {
-            $count++
-            Write-Progress -Activity $activity -Status $file.Name -PercentComplete ($count * 100 / $files.Count)
-            $relative = if ($isFile) { '' } else { [IO.Path]::GetRelativePath($Source, $file.FullName) }
-            $copy = if ($isFile) { $staging } else { Join-Path $staging $relative }
-            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-            $copyInfo = Get-Item -LiteralPath $copy -Force -ErrorAction Ignore
-            if (-not $copyInfo -or $copyInfo.Length -ne $file.Length -or (Get-FileHash -LiteralPath $copy -Algorithm SHA256).Hash -ne $hash) {
-                throw "DotForge: the copy of $($file.FullName) didn't verify; nothing was moved."
-            }
-            [pscustomobject]@{ Path = $relative; Length = $file.Length; Hash = $hash }
-        }
-        Write-Progress -Activity $activity -Completed
-        # The target holds no files (checked), but may be an empty folder.
-        if (Test-Path -LiteralPath $Target) { Remove-Item -LiteralPath $Target -Recurse -Force -ErrorAction Stop }
-        Move-Item -LiteralPath $staging -Destination $Target -ErrorAction Stop
-        @($manifest)
-    } catch {
-        Write-Progress -Activity $activity -Completed
-        Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction Ignore
-        throw
-    }
-}
-
-function Get-DFPathSpelling {
-    <#
-    .SYNOPSIS
-        The ways a config file might write a path: both separators, ~, and the environment-variable forms.
-    .PARAMETER Path
-        A canonical path.
-    .OUTPUTS
-        System.String[].
-    #>
-    param([Parameter(Mandatory)][string]$Path)
-    $forms = [System.Collections.Generic.List[string]]::new()
-    $forms.Add($Path)
-    $roots = @(
-        @{ Value = Get-DFNativeRoot -Name HOME; Names = '~', '$HOME', '${HOME}', '%USERPROFILE%', '$env:USERPROFILE' }
-        @{ Value = Get-DFNativeRoot -Name APPDATA; Names = '%APPDATA%', '$env:APPDATA', '${APPDATA}' }
-        @{ Value = Get-DFNativeRoot -Name LOCALAPPDATA; Names = '%LOCALAPPDATA%', '$env:LOCALAPPDATA', '${LOCALAPPDATA}' }
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][pscustomobject]$Tool,
+        [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$Ownership,
+        [Parameter(Mandatory)][pscustomobject]$Result,
+        [Parameter(Mandatory)]$Cmdlet
     )
-    foreach ($root in $roots) {
-        if (-not $root.Value) { continue }
-        $base = ConvertTo-DFPath $root.Value
-        if (-not $Path.StartsWith($base, [StringComparison]::OrdinalIgnoreCase)) { continue }
-        $rest = $Path.Substring($base.Length)
-        foreach ($rootName in $root.Names) { $forms.Add($rootName + $rest) }
+    $items = @((Find-DFToolConflict -Tool $Tool -Ownership $Ownership -Written ($global:DFEnvState?.Written ?? @{})).Conflicts)
+    if (-not $items) {
+        Write-Host "$($Tool.name) has no existing data in the way; DotForge links or uses the XDG locations when it loads it."
+        $Result.Action = 'Nothing'
+        return $Result
     }
-    @($forms | ForEach-Object { $_; $_.Replace('\', '/') } | Select-Object -Unique)
-}
-
-function Get-DFPathPattern {
-    <#
-    .SYNOPSIS
-        Case-insensitive patterns matching each spelling as a whole path: what follows it must end the path or continue it with a separator.
-    .DESCRIPTION
-        So ~\.fnm matches ~\.fnm\aliases and "~\.fnm" but not ~\.fnm-old.
-    .PARAMETER Spelling
-        Get-DFPathSpelling result.
-    .OUTPUTS
-        System.String[].
-    #>
-    param([Parameter(Mandatory)][string[]]$Spelling)
-    foreach ($form in $Spelling) { '(?i)' + [regex]::Escape($form) + '(?=$|[\\/;:,"''`\s)\]])' }
-}
-
-function Find-DFOldPathReference {
-    <#
-    .SYNOPSIS
-        Text files under Root that name any of the spellings, as "<file>:<line>".
-    .DESCRIPTION
-        Text means under 1 MB with no NUL byte in the first 8 KB. Matching
-        ignores case.
-    .PARAMETER Root
-        A file or folder.
-    .PARAMETER Spelling
-        Get-DFPathSpelling result.
-    .OUTPUTS
-        System.String[].
-    #>
-    param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string[]]$Spelling)
-    $files = if (Test-Path -LiteralPath $Root -PathType Leaf) { Get-Item -LiteralPath $Root -Force }
-             else { Get-ChildItem -LiteralPath $Root -File -Recurse -Force -ErrorAction Ignore }
-    foreach ($file in $files) {
-        if ($file.Length -ge 1MB) { continue }
-        $head = [byte[]]::new([Math]::Min(8KB, $file.Length))
-        $stream = [IO.File]::Open($file.FullName, 'Open', 'Read', 'ReadWrite')
-        try { $null = $stream.Read($head, 0, $head.Length) } finally { $stream.Dispose() }
-        if ($head -contains 0) { continue }
-        foreach ($hit in @(Select-String -LiteralPath $file.FullName -Pattern (Get-DFPathPattern -Spelling $Spelling) -ErrorAction Ignore)) {
-            "$($file.FullName):$($hit.LineNumber)"
+    $what = @($items | ForEach-Object { "$($_.Target) -> $($_.Existing)" }) -join ', '
+    if (-not $Cmdlet.ShouldProcess($Tool.name, "Set the XDG copies aside and link: $what")) { return $Result }
+    $renamed = [System.Collections.Generic.List[object]]::new()
+    foreach ($item in @($items | Where-Object Action -eq 'Conflict')) {
+        try {
+            $aside = Rename-DFOldCopy -Path $item.Target
+            $renamed.Add([pscustomobject]@{ From = $item.Target; To = $aside })
+        } catch {
+            $Result.Problems = [string[]](@($Result.Problems) + "couldn't set $($item.Target) aside: $($_.Exception.Message)")
+            foreach ($done in $renamed) { Rename-Item -LiteralPath $done.To -NewName (Split-Path $done.From -Leaf) -ErrorAction Ignore }
+            Write-Warning "DotForge: nothing changed for $($Tool.name): $($Result.Problems -join '; ')"
+            return $Result
         }
     }
-}
-
-function Get-DFMoveProblem {
-    <#
-    .SYNOPSIS
-        Why moving a tool's old config to its XDG location isn't safe yet; nothing when it is.
-    .DESCRIPTION
-        Each line says what to fix. Checked: the tool allows the move; one old
-        copy per path; the target is empty; no text file under the old
-        location, and no user or session environment variable, names the old
-        location; the tool isn't running.
-    .PARAMETER Tool
-        The tool record.
-    .PARAMETER Conflicts
-        Find-DFToolConflict's Conflicts.
-    .OUTPUTS
-        System.String[].
-    #>
-    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][object[]]$Conflicts)
-    $problems = foreach ($conflict in $Conflicts) {
-        if (-not $conflict.Move) { "$($conflict.Key): DotForge doesn't move this one. $($conflict.Guide)"; continue }
-        if (@($conflict.OldPaths).Count -gt 1) {
-            "$($conflict.Key): there are copies in $(@($conflict.OldPaths) -join ' and '); keep one and delete the others, then run this again."
-            continue
-        }
-        if (Test-DFPathHasContent -Path $conflict.Target) {
-            "$($conflict.Key): $($conflict.Target) already has files; merge them yourself, or run Resolve-DFToolConflict $($Tool.name) -Adopt."
-        }
-        $old = @($conflict.OldPaths)[0]
-        # A junction or symbolic link keeps an absolute target (fnm's default
-        # alias points inside its own folder): copying it would leave it
-        # pointing at the old copy.
-        $links = @(@(Get-Item -LiteralPath $old -Force) + @(Get-ChildItem -LiteralPath $old -Recurse -Force -ErrorAction Ignore) |
-            Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint } | ForEach-Object FullName)
-        foreach ($link in $links) { "$link is a link, which DotForge can't move safely; move $old yourself, then run Resolve-DFToolConflict $($Tool.name) -Adopt." }
-        $spellings = Get-DFPathSpelling -Path $old
-        foreach ($reference in @(Find-DFOldPathReference -Root $old -Spelling $spellings)) {
-            "$reference names the old location; change it to $($conflict.Target), then run this again."
-        }
-        $patterns = Get-DFPathPattern -Spelling $spellings
-        foreach ($scope in 'User', 'Process') {
-            $vars = [Environment]::GetEnvironmentVariables($scope)
-            foreach ($key in $vars.Keys) {
-                $value = "$($vars[$key])"
-                if (@($patterns | Where-Object { $value -match $_ })) {
-                    "the environment variable $key names $old; change it first."
-                }
-            }
-        }
-    }
-    if ($Tool.type -ne 'module') {
-        $exe = [IO.Path]::GetFileNameWithoutExtension($Tool.executable)
-        if (Get-Process -Name $exe -ErrorAction Ignore) { "$exe is running; close $exe first." }
-    }
-    @($problems | Select-Object -Unique)
+    $Result.Aside = [string[]]@($renamed.To)
+    $links = @(foreach ($item in $items) {
+        $made = (New-DFToolLink -Path $item.Target -Target $item.Existing).Made
+        if ($made) { $Result.Linked = [string[]](@($Result.Linked) + $item.Target) }
+        [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $made }
+    })
+    $Ownership[$Tool.name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $links }
+    Save-DFToolOwnership -Ownership $Ownership -Name $Tool.name
+    if ($renamed.Count) { Write-Host "Set aside (delete when you're satisfied): $($renamed.To -join ', ')" }
+    Write-Host "Linked $what. Load it with: Register-DFTool -Name $($Tool.name)"
+    $Result
 }
 
 function Invoke-DFConflictGuide {
@@ -308,10 +89,8 @@ function Invoke-DFConflictGuide {
     .SYNOPSIS
         Resolve-DFToolConflict with no tool name: goes through every tool waiting on the user, offering each one's advised action.
     .DESCRIPTION
-        The advice comes from Get-DFConflictAdvice (Move, Adopt, or Skip for
-        a location DotForge must not move). Enter takes it; A, M or S picks.
-        Where it can't ask (no interactive console), it only lists the tools
-        and their advice.
+        Enter adopts (Get-DFConflictAdvice); A adopts, S skips. Where it can't
+        ask (no interactive console), it only lists the tools and their advice.
     .OUTPUTS
         DotForge.ConflictResult per tool resolved.
     #>
@@ -320,18 +99,14 @@ function Invoke-DFConflictGuide {
     $waiting = @(Get-DFToolStatus -Conflict 3>$null)
     if (-not $waiting) { Write-Host 'No tools are waiting on your existing config.'; return }
     $ask = Test-DFConflictPrompt
-    $defaults = @{ Move = 'Move'; Adopt = 'Adopt'; Manual = 'Skip' }
     $resolved = [System.Collections.Generic.List[string]]::new()
     foreach ($status in $waiting) {
         $advice = Get-DFConflictAdvice -Name $status.Name -Conflicts @($status.Conflicts)
-        Write-Host "$($status.Name): your config at $(@($status.Conflicts.OldPaths) -join ', ') would be hidden. $($advice.Text)"
+        Write-Host "$($status.Name): your existing data at $(@($status.Conflicts.OldPaths) -join ', ') and the XDG location both hold content. $($advice.Text)"
         if (-not $ask) { continue }
-        $default = $defaults[$advice.Action]
-        $answer = Read-DFConflictChoice -Name $status.Name -Default $default
-        $choice = switch -Regex ("$answer".Trim()) { '^$' { $default } '^[Aa]' { 'Adopt' } '^[Mm]' { 'Move' } default { 'Skip' } }
-        if ($choice -eq 'Skip') { continue }
-        $result = if ($choice -eq 'Adopt') { Resolve-DFToolConflict -Name $status.Name -Adopt -Confirm:$false }
-                  else { Resolve-DFToolConflict -Name $status.Name -Move -Confirm:$false }
+        $answer = Read-DFConflictChoice -Name $status.Name -Default $advice.Action
+        if ("$answer".Trim() -notmatch '^([Aa]|$)') { continue }
+        $result = Resolve-DFToolConflict -Name $status.Name -Adopt -Confirm:$false
         $result
         if ($result -and -not @($result.Problems)) { $resolved.Add($status.Name) }
     }
@@ -358,12 +133,12 @@ function Read-DFConflictChoice {
     .PARAMETER Name
         The tool.
     .PARAMETER Default
-        What Enter does: Move, Adopt or Skip.
+        What Enter does: Adopt.
     .OUTPUTS
         System.String.
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Default)
-    Read-Host "  $Name - [A]dopt, [M]ove or [S]kip (Enter: $Default)"
+    Read-Host "  $Name - [A]dopt or [S]kip (Enter: $Default)"
 }

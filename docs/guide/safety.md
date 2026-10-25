@@ -17,9 +17,9 @@
 
 ## Relocated tool data
 
-This is the change most likely to surprise you. For many tools, DotForge sets environment variables that point the tool at XDG folders. A tool that already had files in its old default location **won't see them** afterwards: an installed Rust toolchain, vcpkg packages, zoxide's folder history, and so on.
+For many tools, DotForge sets environment variables that point the tool at XDG folders. A tool that already has files in its old default location keeps them there: DotForge links the empty XDG location to them and leaves that variable unset, so the tool still finds its toolchains, packages or history, inside and outside DotForge's shells ([When DotForge finds your existing config](configuration.md#when-dotforge-finds-your-existing-config)). Only a tool with content in both places waits for you.
 
-DotForge never moves or deletes the old files. It also never overrides a variable you've already set, so setting one yourself (for example `$Env:RUSTUP_HOME = "$HOME\.rustup"` before `Register-DFTool`) keeps a tool where it was.
+DotForge never moves or deletes your files, and removing a link never touches what it points to. It also never overrides a variable you've already set; if that variable points elsewhere, DotForge links the XDG location there too.
 
 | Tool | Variable | New location |
 | --- | --- | --- |

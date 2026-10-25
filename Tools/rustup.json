@@ -23,12 +23,10 @@
     "native": {
       "RUSTUP_HOME": {
         "paths": ["${HOME}/.rustup"],
-        "move": false,
         "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them."
       },
       "CARGO_HOME": {
         "paths": ["${HOME}/.cargo"],
-        "move": false,
         "guide": "rustup keeps absolute paths inside ~/.rustup and ~/.cargo; follow https://rust-lang.github.io/rustup/installation/index.html to move them."
       }
     },

@@ -41,6 +41,18 @@ Describe 'Remove-DFTool' {
         $null = Remove-DFTool -Name glow -Confirm:$false
         Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Environment -and $Environment.Contains('GLOW_X') }
     }
+    It 'removes the links DotForge made for the tool, never what they point to' {
+        $target = Join-Path $TestDrive 'glow-existing'
+        New-Item -ItemType Directory -Force $target | Out-Null
+        Set-Content (Join-Path $target 'glow.yml') 'mine'
+        $link = Join-Path $Env:XDG_CONFIG_HOME 'glow'
+        $null = New-DFToolLink -Path $link -Target $target
+        Save-DFToolOwnership -Ownership @{ glow = [pscustomobject]@{ since = 'x'; how = 'linked'; links = @([pscustomobject]@{ key = 'K'; path = (ConvertTo-DFPath $link); target = (ConvertTo-DFPath $target); made = $true }) } }
+        $null = Remove-DFTool -Name glow -Confirm:$false
+        Get-DFToolLinkTarget -Path $link | Should -BeNullOrEmpty
+        Get-Content (Join-Path $target 'glow.yml') | Should -Be 'mine'
+        (Read-DFToolOwnership).ContainsKey('glow') | Should -BeFalse
+    }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Refused'

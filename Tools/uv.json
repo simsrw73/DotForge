@@ -23,14 +23,10 @@
     "native": {
       "UV_TOOL_DIR": {
         "paths": ["${APPDATA}/uv/tools"],
-        "move": false,
-        "block": false,
         "guide": "uv's old tools folder holds the environments of the tools it installed, which don't work once moved: run uv tool list with UV_TOOL_DIR pointing there, install each again with uv tool install, then delete it."
       },
       "UV_PYTHON_INSTALL_DIR": {
         "paths": ["${APPDATA}/uv/python"],
-        "move": false,
-        "block": false,
         "guide": "uv's old Python folder holds the Pythons it installed: install the versions you use again with uv python install, then delete it."
       }
     },

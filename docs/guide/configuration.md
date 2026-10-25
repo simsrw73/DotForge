@@ -305,13 +305,14 @@ Disk WD10EZEX      HDD · no bad sectors · 29°C · 84,115 h
 
 ## When DotForge finds your existing config
 
-Why: you already use a tool, and its config or data is in the tool's own default place. DotForge points tools at XDG folders (bat's config at `$XDG_CONFIG_HOME\bat\bat.conf`, zoxide's database under `$XDG_DATA_HOME`), so taking over would hide what you have.
+Why: you already use a tool, and its config or data is in the tool's own default place (or wherever a variable you or a package manager set points). DotForge points tools at XDG folders (bat's config at `$XDG_CONFIG_HOME\bat\bat.conf`, zoxide's database under `$XDG_DATA_HOME`), so taking over would hide what you have.
 
-DotForge never does that on its own:
+DotForge never moves or hides it:
 
 1. A tool you don't list in `Tools` is never touched.
-2. A tool you list, with nothing in its old location, is DotForge's from then on.
-3. A tool you list that still has config or data in its old location is left alone entirely (no variables, aliases, pickers or setup) until you decide. Each load warns:
+2. A tool you list, with nothing in its old location, uses the XDG folders from then on.
+3. A tool you list whose data is already somewhere else, with the XDG location empty, keeps its data where it is: DotForge links the XDG location to it (a junction; a single file gets a symlink when Windows Developer Mode is on), leaves the variable that would hide it unset, and loads the tool. Everything stays findable under `~\.config` and `~\.local`, and the tool works the same inside and outside DotForge's shells. `Get-DFToolStatus <tool>` lists its links.
+4. A tool whose old location and XDG location both hold content waits, inactive, until you decide. Each load warns:
 
 <!-- fragment -->
 
@@ -319,34 +320,19 @@ DotForge never does that on its own:
 WARNING: DotForge: 2 tools are waiting on your existing config: bat, zoxide. See Get-DFToolStatus -Conflict, or run Resolve-DFToolConflict to go through them.
 ```
 
-`Get-DFToolStatus -Conflict` lists every tool waiting on you, with where its config is and what DotForge advises: `-Move` when the XDG location is empty, `-Adopt` when it already has config (DotForge has been using that copy), or the tool's own instructions when DotForge must not move it (rustup, vcpkg).
-
-`Resolve-DFToolConflict` with no tool name goes through them one at a time: Enter takes the advice; `A`, `M` or `S` adopts, moves or skips. Or decide for each tool yourself:
+`Resolve-DFToolConflict` with no tool name goes through them one at a time: Enter or `A` adopts, `S` skips. Or decide for each tool yourself:
 
 | You want | Run |
 | --- | --- |
-| DotForge to move the config for you | `Resolve-DFToolConflict bat -Move` |
-| DotForge to take over without moving anything (you moved or merged it yourself, or don't need the old copy) | `Resolve-DFToolConflict bat -Adopt` |
+| To keep your existing copy | `Resolve-DFToolConflict bat -Adopt`: the XDG copy is renamed to `<name>.dotforge-moved` (never deleted) and the XDG location linked to your existing copy |
+| To keep the XDG copy | Follow the tool's guide in `Get-DFToolStatus bat`, usually: copy what you need into the XDG copy, then delete or rename the old one |
 | DotForge to leave the tool alone | Remove it from `Tools` |
 
 Then load it with `Register-DFTool -Name bat`, or open a new shell.
 
-### What `-Move` does
+`Remove-DFTool` removes the links DotForge made, never what they point to. When a link's target disappears (you uninstalled the tool another way), DotForge removes the link on the next load and says so.
 
-<!-- fragment -->
-
-```powershell
-Resolve-DFToolConflict bat -Move -WhatIf   # shows the plan, changes nothing
-Resolve-DFToolConflict bat -Move
-```
-
-1. **It checks first, and changes nothing if any check fails.** The XDG location must be empty, the tool must not be running, and no text file in the old location and no environment variable (PATH included) may name the old location: a hook script with a hard-coded path would break after the move, so it is listed as `file:line` for you to change.
-2. **It copies, then verifies.** Files are copied to a staging folder beside the XDG location, every file's size and SHA-256 hash is compared with the original, and only then is the staging folder renamed into place.
-3. **It moves the old copy out of the way, never deleting it.** The old location is renamed to `<name>.dotforge-moved` next to where it was; delete it yourself when you're satisfied. A copy that can't be renamed yet (a file open in an editor or a running shell) stays put: DotForge retries on each later load, checks the new location still matches what it moved, and warns, with the reason, until it's done. `Resolve-DFToolConflict bat -Done` stops the retries once you've dealt with it yourself.
-
-A few locations DotForge never moves, because the tool keeps absolute paths inside them (rustup's `~\.rustup` and `~\.cargo`, vcpkg's root, oh-my-posh's installed themes). The warning names the tool's own instructions instead; follow them, then run `-Adopt`.
-
-DotForge's variables apply inside the PowerShell sessions it starts. A program you run from cmd, Git Bash or Explorer still uses the old location.
+For everything natively in the XDG folders, without links: uninstall the tool the way it was installed, then install it with `Install-DFTool`, which sets its variables before the installer runs. Copy anything you want to keep first.
 
 ## Prefer a package manager
 
@@ -408,9 +394,9 @@ Set these in your profile, before or after importing DotForge:
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |
 | `PAGER was '<value>' but $DFConfig.Defaults.pager is '<tool>'` | you set the variable and also chose a different tool | Remove one of the two settings. |
-| `N tools are waiting on your existing config: ...` | those tools' own config locations have your config, and DotForge hasn't been told it may take over | Run `Resolve-DFToolConflict`; see [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
-| `<path> names the old location; change it to <path>` from `Resolve-DFToolConflict -Move` | a config file refers to the folder being moved | Edit that line to the new location, then run `-Move` again. |
-| `<path> is still in use; DotForge tries again on the next load` | a moved tool's old copy was open | Close what holds it and open a new shell; or delete it yourself and run `Resolve-DFToolConflict <tool> -Done`. |
+| `N tools are waiting on your existing config: ...` | those tools have content both in their own location and in the XDG location | Run `Resolve-DFToolConflict`; see [When DotForge finds your existing config](#when-dotforge-finds-your-existing-config). |
+| `couldn't set <path> aside` from `Resolve-DFToolConflict -Adopt` | a file in the XDG copy is open | Close what holds it and run `-Adopt` again; nothing was changed. |
+| `turn on Developer Mode to let DotForge link <path> to <target>` | the tool's existing config is a single file, and file links need Developer Mode | Turn on Developer Mode (Settings > System > For developers); the tool works meanwhile, from its existing file. |
 | No drive lines in the banner | smartmontools isn't installed, or isn't in `Tools` | `Install-DFTool smartmontools`, and keep `+core` (or `smartmontools`) in `Tools`. |
 | `@DF:...` text from fastfetch, or no Public IP line | an older fastfetch config without the placeholders, or one run outside DotForge | Add the placeholder entries shown in [Startup banner](#startup-banner). |
 | Tab completion stopped working after changing keys | `Set-PSReadLineOption -EditMode` ran after session start | Use `PSReadLineEditMode` in the session configuration. |

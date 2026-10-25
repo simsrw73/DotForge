@@ -84,7 +84,7 @@ Non-path values (flags, theme names) belong in `env`, not `xdg.vars`.
 
 ### `xdg.native`
 
-Where the tool keeps its config, data or state when DotForge doesn't relocate it, so DotForge can find a user's existing config before hiding it ([When DotForge finds your existing config](configuration.md#when-dotforge-finds-your-existing-config)). One entry per relocated path, keyed by its `xdg.vars` variable, its `setup.seed` target, or (for a path a wrapper or companion sets) the target template itself:
+Where the tool keeps its config, data or state when DotForge doesn't relocate it, so DotForge finds a user's existing data and links the XDG location to it instead of hiding it ([When DotForge finds your existing config](configuration.md#when-dotforge-finds-your-existing-config)). One entry per relocated path, keyed by its `xdg.vars` variable, its `setup.seed` target, or (for a path a wrapper or companion sets) the target template itself:
 
 <!-- fragment -->
 
@@ -98,11 +98,11 @@ Where the tool keeps its config, data or state when DotForge doesn't relocate it
 }
 ```
 
-An old location that holds only installed packages, a cache or history, not config the user wrote, can be declared `{ "paths": [...], "move": false, "block": false, "guide": "..." }`. The tool then stays active, and its status shows the guide instead of a conflict (bun's `~/.bun`, `~/.python_history`).
+The object form `{ "paths": [...], "guide": "..." }` adds a guide: how to keep the XDG copy instead, shown when both locations hold content (`move` and `block` were retired: DotForge never moves data).
 
-1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}` or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
+1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}`, `${SCOOP}` (where a manager keeps data beside the program, e.g. `${SCOOP}/persist/bitwarden-cli/bw-data`) or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
 2. Use `[]` when the tool's own default already is the XDG location.
-3. When DotForge must not move a location itself, use `{ "paths": [...], "move": false, "guide": "<how to move it, with a link>" }`.
+3. Order matters: the first path with content is the one DotForge links to.
 4. When a `settings` field can point the tool somewhere else (fastfetch's `configPath`), add `"setting": "configPath"` to the object form: that value, when set, is the target.
 5. Caches need no entry. `tests/ToolNative.Coverage.Tests.ps1` fails when a relocated config, data or state path has none.
 

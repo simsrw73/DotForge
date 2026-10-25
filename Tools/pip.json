@@ -15,7 +15,7 @@
     },
     "native": {
       "PIP_CONFIG_FILE": ["${APPDATA}/pip/pip.ini", "${HOME}/pip/pip.ini"],
-      "PIP_CACHE_DIR": { "paths": ["${LOCALAPPDATA}/pip/cache"], "move": false, "block": false, "guide": "it's only pip's download cache; delete it to free the space." }
+      "PIP_CACHE_DIR": { "paths": ["${LOCALAPPDATA}/pip/cache"], "guide": "it's only pip's download cache; delete it to free the space." }
     },
     "dirs": ["${XDG_CONFIG_HOME}/pip", "${XDG_CACHE_HOME}/pip"]
   },

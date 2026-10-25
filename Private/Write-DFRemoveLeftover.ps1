@@ -74,3 +74,24 @@ function Write-DFRemoveLeftover {
     foreach ($line in $lines) { Write-Host "  $line" }
     Write-Host '  its aliases and functions stay until you open a new shell'
 }
+
+function Remove-DFToolLinkSet {
+    <#
+    .SYNOPSIS
+        Removes the links DotForge made for a removed tool (never what they point to) and its ownership entry.
+    .PARAMETER Name
+        The removed tool.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name)
+    $ownership = Read-DFToolOwnership
+    if ($null -eq $ownership -or -not $ownership.ContainsKey($Name)) { return }
+    foreach ($link in @($ownership[$Name].PSObject.Properties['links']?.Value)) {
+        if ($link) { Remove-DFToolLink -Path $link.path }
+    }
+    $ownership.Remove($Name)
+    Save-DFToolOwnership -Ownership $ownership -Name $Name
+    Set-DFToolLinkState -Name $Name
+}

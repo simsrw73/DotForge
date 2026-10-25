@@ -211,12 +211,14 @@ Each `Tools/*.json` must have at minimum:
 - `xdg.method`: one of `default | env | wrapper | manual` (`wrapper`: the `wrapper` block builds it; seed a default config file with `setup.seed`, not an xdg method)
 - `xdg.vars`: env vars to set when applying XDG config — values are `${XDG_*}` path templates only (expanded via `Expand-DFXdgPath`). Non-path values (flag strings, etc.) belong in `env` below, never in `xdg.vars`.
 - `xdg.native`: the tool's own default locations for each relocated config, data or state path (keyed
-  by the `xdg.vars` variable, seed target, or target template), so a user's existing config is never
-  hidden: a requested tool with content there is left inactive (`Conflict`) until
-  `Resolve-DFToolConflict -Move | -Adopt`. `[]` when the default is the XDG location; `{ paths, move:
-  false, guide }` for one DotForge must not move; `block: false` for an old home of packages, caches
-  or history, which only notes the guide in the status. `tests/ToolNative.Coverage.Tests.ps1` enforces it.
-  Design: `docs/superpowers/specs/2026-10-11-config-ownership-design.md`.
+  by the `xdg.vars` variable, seed target, or target template; roots `${HOME}`, `${APPDATA}`,
+  `${LOCALAPPDATA}`, `${SCOOP}`), so a user's existing data is never hidden: with the XDG location
+  empty, DotForge links it to the existing data (junction; file symlink with Developer Mode) and leaves
+  that variable unset; with content in both, the tool is a `Conflict` until `Resolve-DFToolConflict
+  -Adopt`. Never moves data; caches are never linked; links are recorded in `ownership.json` and
+  removed with the tool, never their targets (`Shared/DFToolLink.ps1`). `[]` when the default is the
+  XDG location; `{ paths, guide }` adds how to keep the XDG copy instead. `tests/ToolNative.Coverage.Tests.ps1`
+  enforces it. Design: `docs/superpowers/specs/2026-10-25-link-existing-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass
   through; `${XDG_*}` still expands) and written through `Set-DFEnv` (`Private/Set-DFEnv.ps1`):

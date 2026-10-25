@@ -16,10 +16,16 @@ BeforeAll {
     function New-OldConfig([string]$Name) {
         New-Item -ItemType File -Force (Join-Path $script:FakeHome ".$Name" 'cfg') | Out-Null
     }
+    # Content in both the old and the XDG location: the one case that is still a Conflict.
+    function New-BothConfig([string]$Name) {
+        New-OldConfig $Name
+        New-Item -ItemType File -Force (Join-Path $Env:XDG_CONFIG_HOME $Name 'cfg') | Out-Null
+    }
 }
 
-# A requested tool whose old config location holds the user's config is left
-# alone until they resolve it (docs/superpowers/specs/2026-10-11-config-ownership-design.md).
+# A requested tool whose old location holds the user's data, with the XDG location empty, is
+# linked and activated; with both holding content it is left alone until they resolve it
+# (docs/superpowers/specs/2026-10-25-link-existing-design.md).
 Describe 'Activation and config ownership' {
     BeforeEach {
         Set-DFTestXdg
@@ -51,24 +57,25 @@ Describe 'Activation and config ownership' {
         (Read-DFToolOwnership)['owna'].how | Should -Be 'clean'
     }
     It 'skips a conflicted tool entirely and warns once' {
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name owna -WarningVariable warnings 3>$null
         (Get-DFToolStatus owna).State | Should -Be 'Conflict'
         $Env:OWN_A | Should -BeNullOrEmpty
         Get-Alias ownax -Scope Global -ErrorAction Ignore | Should -BeNullOrEmpty
         @($warnings | Where-Object { "$_" -match 'waiting on your existing config: owna' }).Count | Should -Be 1
-        (Get-DFToolStatus owna).Detail | Should -Match 'Resolve-DFToolConflict owna -Move'
+        (Get-DFToolStatus owna).Detail | Should -Match 'Resolve-DFToolConflict owna -Adopt'
+        (Get-DFToolStatus owna).Detail | Should -Not -Match '-Move'
         (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
     }
     It 'blocks a tool that requires a conflicted tool' {
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name ownb 3>$null
         (Get-DFToolStatus ownb).State | Should -Be 'Blocked'
         (Get-DFToolStatus ownb).Detail | Should -Match 'owna'
         $Env:OWN_B | Should -BeNullOrEmpty
     }
     It 'says a blocked tool is waiting on another, not that it is missing' {
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name ownb -WarningVariable warnings 3>$null
         "$warnings" | Should -Match 'ownb \(requires owna'
         "$warnings" | Should -Not -Match "isn't installed"
@@ -88,30 +95,31 @@ Describe 'Activation and config ownership' {
         (Get-DFToolStatus owna).State | Should -Be 'Active'
     }
     It 'lists conflicts with Get-DFToolStatus -Conflict' {
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name owna 3>$null
         (Get-DFToolStatus -Conflict).Name | Should -Be @('owna')
     }
-    It 'names the guide instead of -Move when the location must not be moved' {
-        Write-OwnRecord owna OWN_A -Native @{ OWN_A = @{ paths = @('${HOME}/.owna'); move = $false; guide = 'Use owna''s own mover.' } }
-        New-OldConfig owna
+    It 'adds the record''s guide to the advice' {
+        Write-OwnRecord owna OWN_A -Native @{ OWN_A = @{ paths = @('${HOME}/.owna'); guide = 'Use owna''s own mover.' } }
+        New-BothConfig owna
         Register-DFTool -Name owna 3>$null
         (Get-DFToolStatus owna).Detail | Should -Match "Use owna's own mover"
-        (Get-DFToolStatus owna).Detail | Should -Not -Match '-Move'
+        (Get-DFToolStatus owna).Detail | Should -Match '-Adopt'
     }
     It 'gives each tool''s instructions once, even when several of its paths share them' {
         Write-OwnRecord owna OWN_A -Native @{
-            OWN_A = @{ paths = @('${HOME}/.owna'); move = $false; guide = 'Use owna''s own mover.' }
-            '${XDG_DATA_HOME}/owna' = @{ paths = @('${HOME}/.owna-data'); move = $false; guide = 'Use owna''s own mover.' } }
-        New-OldConfig owna
+            OWN_A = @{ paths = @('${HOME}/.owna'); guide = 'Use owna''s own mover.' }
+            '${XDG_DATA_HOME}/owna' = @{ paths = @('${HOME}/.owna-data'); guide = 'Use owna''s own mover.' } }
+        New-BothConfig owna
         New-Item -ItemType File -Force (Join-Path $script:FakeHome '.owna-data' 'db') | Out-Null
+        New-Item -ItemType File -Force (Join-Path $Env:XDG_DATA_HOME 'owna' 'db') | Out-Null
         Register-DFTool -Name owna 3>$null
         ([regex]::Matches((Get-DFToolStatus owna).Detail, "own mover")).Count | Should -Be 1
     }
     It 'names every waiting tool in one warning' {
         Write-OwnRecord ownc OWN_C
-        New-OldConfig owna
-        New-OldConfig ownc
+        New-BothConfig owna
+        New-BothConfig ownc
         Register-DFTool -Name owna, ownc -WarningVariable warnings 3>$null
         @($warnings | Where-Object { "$_" -match 'waiting on your existing config' }).Count | Should -Be 1
         "$warnings" | Should -Match '2 tools are waiting on your existing config: owna, ownc'
@@ -127,7 +135,7 @@ Describe 'Activation and config ownership' {
     It 'gives a role to another member when its preferred member is in conflict' {
         Write-OwnRecord owna OWN_A -Roles @{ navigation = @{ priority = 90 } }
         Write-OwnRecord ownc OWN_C -Roles @{ navigation = @{ priority = 10 } }
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name owna, ownc 3>$null
         (Get-DFToolStatus owna).State | Should -Be 'Conflict'
         (Get-DFToolStatus ownc).Roles | Should -Contain 'navigation'
@@ -137,83 +145,113 @@ Describe 'Activation and config ownership' {
     It 'checks a tool that only reaches PATH during the load' {
         # fnm puts node and npm on PATH only when its companion runs: the tool
         # isn't installed when the load starts, but is when its turn comes.
-        New-OldConfig owna
+        New-BothConfig owna
         $script:AvailableCalls = 0
         Mock Test-DFToolAvailable { $script:AvailableCalls++; $script:AvailableCalls -gt 1 }
         Register-DFTool -Name owna 3>$null
         (Get-DFToolStatus owna).State | Should -Be 'Conflict'
         $Env:OWN_A | Should -BeNullOrEmpty
     }
-    It 'points to -Adopt, not -Move, when the XDG location already has files too' {
-        New-OldConfig owna
-        New-Item -ItemType File -Force (Join-Path $Env:XDG_CONFIG_HOME 'owna' 'cfg') | Out-Null
-        Register-DFTool -Name owna 3>$null
-        (Get-DFToolStatus owna).Detail | Should -Match 'Resolve-DFToolConflict owna -Adopt'
-        (Get-DFToolStatus owna).Detail | Should -Not -Match '-Move'
-    }
-
     It 'records ownership only for tools that end up active' {
         # ownb has no old config, but requires owna, which is in conflict.
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name ownb 3>$null
         (Get-DFToolStatus ownb).State | Should -Be 'Blocked'
         (Read-DFToolOwnership).ContainsKey('ownb') | Should -BeFalse
     }
     It 'warns about a conflict once, not again on a later Register-DFTool' {
         Write-OwnRecord ownc OWN_C
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name owna 3>$null
         Register-DFTool -Name ownc -WarningVariable warnings 3>$null
         "$warnings" | Should -Not -Match 'waiting on your existing config'
     }
     It 'warns again when you name the conflicted tool again' {
-        New-OldConfig owna
+        New-BothConfig owna
         Register-DFTool -Name owna 3>$null
         Register-DFTool -Name owna -WarningVariable warnings 3>$null
         "$warnings" | Should -Match 'waiting on your existing config: owna'
     }
 
-    # A move whose old copy was in use leaves it pending; later loads retry.
-    Context 'pending removals' {
-        BeforeEach {
-            $script:Old = ConvertTo-DFPath (Join-Path $script:FakeHome '.owna')
-            $script:Target = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
-            New-Item -ItemType Directory -Force $script:Target, $script:Old | Out-Null
-            Set-Content (Join-Path $script:Target 'cfg') 'v'
-            Set-Content (Join-Path $script:Old 'cfg') 'v'
-            $length = (Get-Item (Join-Path $script:Target 'cfg')).Length
-            Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'move'; pending = @(
-                [pscustomobject]@{ OldPath = $script:Old; Target = $script:Target
-                    Files = @([pscustomobject]@{ Path = 'cfg'; Length = $length; Hash = 'h' }) }) } }
-        }
-        It 'moves the old copy aside, says where, and clears pending' {
-            Mock Rename-DFOldCopy { "$Path.dotforge-moved" }
-            Mock Write-Host { }
+    Context 'links to existing data' {
+        It 'links an empty XDG location to existing data, leaves the variable unset, and activates the tool' {
+            New-OldConfig owna
             Register-DFTool -Name owna 3>$null
-            Should -Invoke Write-Host -ParameterFilter { "$Object" -match [regex]::Escape("$script:Old.dotforge-moved") }
-            Should -Invoke Rename-DFOldCopy -Times 1 -Exactly -ParameterFilter { $Path -eq $script:Old }
-            (Read-DFToolOwnership)['owna'].PSObject.Properties['pending'] | Should -BeNullOrEmpty
+            $xdg = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+            Get-DFToolLinkTarget -Path $xdg | Should -Be (ConvertTo-DFPath (Join-Path $script:FakeHome '.owna'))
+            $Env:OWN_A | Should -BeNullOrEmpty
+            Get-Alias ownax -Scope Global -ErrorAction Ignore | Should -Not -BeNullOrEmpty
+            $entry = (Read-DFToolOwnership)['owna']
+            $entry.how | Should -Be 'linked'
+            @($entry.links).Count | Should -Be 1
+            (Get-DFToolStatus owna).Detail | Should -Match 'linked'
+        }
+        It 'changes nothing on a second registration' {
+            New-OldConfig owna
+            Register-DFTool -Name owna 3>$null
+            $before = Get-Content (Get-DFToolOwnershipPath) -Raw
+            Register-DFTool -Name owna 3>$null
+            Get-Content (Get-DFToolOwnershipPath) -Raw | Should -Be $before
             (Get-DFToolStatus owna).State | Should -Be 'Active'
         }
-        It 'keeps pending and warns while the old copy is still in use' {
-            Mock Rename-DFOldCopy { throw 'Access to the path is denied.' }
-            Register-DFTool -Name owna -WarningVariable warnings 3>$null
-            "$warnings" | Should -Match ([regex]::Escape($script:Old))
-            "$warnings" | Should -Match 'Access to the path is denied'
-            (Read-DFToolOwnership)['owna'].pending | Should -Not -BeNullOrEmpty
+        It 'still sets a variable whose location is fresh' {
+            $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
+                xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna'; OWN_A_DATA = '${XDG_DATA_HOME}/owna' }
+                    native = @{ OWN_A = @('${HOME}/.owna'); OWN_A_DATA = @('${HOME}/.owna-data') } } }
+            $rec | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+            New-OldConfig owna
+            try {
+                Register-DFTool -Name owna 3>$null
+                $Env:OWN_A | Should -BeNullOrEmpty
+                $Env:OWN_A_DATA | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_DATA_HOME 'owna'))
+            } finally { [Environment]::SetEnvironmentVariable('OWN_A_DATA', $null, 'Process') }
         }
-        It 'keeps the old copy, and says so, when the new one changed size' {
-            Mock Rename-DFOldCopy { }
-            Set-Content (Join-Path $script:Target 'cfg') 'much longer now'
-            Register-DFTool -Name owna -WarningVariable warnings 3>$null
-            Should -Invoke Rename-DFOldCopy -Times 0 -Exactly
-            "$warnings" | Should -Match '-Done'
+        It 'links to where a variable set outside DotForge points' {
+            $mine = Join-Path $TestDrive 'mine-owna'
+            New-Item -ItemType File -Force (Join-Path $mine 'cfg') | Out-Null
+            [Environment]::SetEnvironmentVariable('OWN_A', $mine, 'Process')
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -Be (ConvertTo-DFPath $mine)
+            $Env:OWN_A | Should -Be $mine
         }
-        It 'does nothing for an owned tool with no pending removals' {
+        It 'never checks a tool already owned as clean' {
             Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'clean' } }
-            Mock Invoke-DFPendingRemoval { throw 'called' }
+            New-OldConfig owna
+            Mock Test-DFPathHasContent { $true }
+            Register-DFTool -Name owna 3>$null
+            Should -Invoke Test-DFPathHasContent -Times 0 -Exactly
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
+        }
+        It 'removes a link whose target is gone, says so, and sets the variable again' {
+            New-OldConfig owna
+            Register-DFTool -Name owna 3>$null
+            [IO.Directory]::Delete((Join-Path $script:FakeHome '.owna'), $true)
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
+            (Get-DFToolStatus owna).Detail | Should -Match 'gone'
+            $Env:OWN_A | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna'))
+            (Read-DFToolOwnership)['owna'].how | Should -Not -Be 'linked'
+        }
+        It 'notes a single file it can''t link without Developer Mode, and leaves its variable unset' {
+            Write-OwnRecord owna OWN_A -Native @{ OWN_A = @('${HOME}/.ownarc') }
+            New-Item -ItemType File -Force (Join-Path $script:FakeHome '.ownarc') | Out-Null
+            Mock Test-DFDeveloperMode { $false }
             Register-DFTool -Name owna 3>$null
             (Get-DFToolStatus owna).State | Should -Be 'Active'
+            $Env:OWN_A | Should -BeNullOrEmpty
+            (Get-DFToolStatus owna).Detail | Should -Match 'Developer Mode'
+        }
+        It 'never writes a seed into a linked folder' {
+            $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
+                xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna') } }
+                setup = @{ seed = @{ '${XDG_CONFIG_HOME}/owna/seeded.conf' = 'owna/seeded.conf' } } }
+            $rec | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+            New-Item -ItemType File -Force (Join-Path $script:UserTools 'owna' 'seeded.conf') | Out-Null
+            New-OldConfig owna
+            Register-DFTool -Name owna 3>$null
+            Test-Path (Join-Path $script:FakeHome '.owna' 'seeded.conf') | Should -BeFalse
         }
     }
+
 }

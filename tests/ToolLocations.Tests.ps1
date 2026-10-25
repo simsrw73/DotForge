@@ -26,6 +26,12 @@ Describe 'Tool locations' {
         $chezmoi.xdg.method | Should -Be 'default'
         @($chezmoi.xdg.vars?.PSObject.Properties | Where-Object { $_ }).Count | Should -Be 0
     }
+    It 'gives bitwarden a data folder, with scoop''s and winget''s vault folders as known locations' {
+        $bw = Record bitwarden
+        $bw.xdg.method | Should -Be 'env'
+        $bw.xdg.vars.BITWARDENCLI_APPDATA_DIR | Should -Be '${XDG_DATA_HOME}/bitwarden'
+        $bw.xdg.native.BITWARDENCLI_APPDATA_DIR.paths | Should -Be @('${SCOOP}/persist/bitwarden-cli/bw-data', '${APPDATA}/Bitwarden CLI')
+    }
     It 'avoids scoop for rustup and pnpm, saying why' {
         foreach ($name in 'rustup', 'pnpm') {
             (Record $name).install.avoid.scoop | Should -Not -BeNullOrEmpty

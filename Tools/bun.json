@@ -15,8 +15,8 @@
       "BUN_INSTALL_CACHE_DIR": "${XDG_CACHE_HOME}/bun/install/cache"
     },
     "native": {
-      "BUN_INSTALL": { "paths": ["${HOME}/.bun"], "move": false, "block": false, "guide": "bun's old home holds its global packages (install\\global) and their commands (bin): reinstall them with bun add -g, then delete ~/.bun. If bun itself was installed there, keep it on PATH or reinstall bun with scoop or winget." },
-      "BUN_INSTALL_CACHE_DIR": { "paths": ["${HOME}/.bun/install/cache"], "move": false, "block": false, "guide": "it's only bun's download cache; delete it to free the space." }
+      "BUN_INSTALL": { "paths": ["${HOME}/.bun"], "guide": "bun's old home holds its global packages (install\\global) and their commands (bin): reinstall them with bun add -g, then delete ~/.bun. If bun itself was installed there, keep it on PATH or reinstall bun with scoop or winget." },
+      "BUN_INSTALL_CACHE_DIR": { "paths": ["${HOME}/.bun/install/cache"], "guide": "it's only bun's download cache; delete it to free the space." }
     },
     "dirs": ["${XDG_DATA_HOME}/bun/bin", "${XDG_CACHE_HOME}/bun/install/cache"]
   },

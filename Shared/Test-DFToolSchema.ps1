@@ -411,7 +411,7 @@ function Get-DFBannerSchemaError ([PSCustomObject]$Tool) {
 function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in xdg.native: each key names something DotForge relocates; move is a boolean; move false needs a guide.
+        Schema errors in xdg.native: each key names something DotForge relocates; move and block were retired (existing data is linked, never moved).
     #>
     $xdg = Get-DFSchemaProperty $Tool 'xdg'
     $native = Get-DFSchemaProperty $xdg 'native'
@@ -425,11 +425,9 @@ function Get-DFNativeSchemaError ([PSCustomObject]$Tool) {
         }
         $entry = $p.Value
         if ($entry -is [pscustomobject]) {
-            $move = Get-DFSchemaProperty $entry 'move'
-            if ($null -ne $move -and $move -isnot [bool]) { "xdg.native.$($p.Name).move must be true or false" }
-            $block = Get-DFSchemaProperty $entry 'block'
-            if ($null -ne $block -and $block -isnot [bool]) { "xdg.native.$($p.Name).block must be true or false" }
-            if ($move -eq $false -and -not (Get-DFSchemaProperty $entry 'guide')) { "xdg.native.$($p.Name) has move false, so it needs a guide" }
+            foreach ($retired in 'move', 'block') {
+                if ($entry.PSObject.Properties[$retired]) { "xdg.native.$($p.Name).$retired was retired: DotForge links existing data instead of moving it" }
+            }
             if (@(Get-DFSchemaProperty $entry 'paths' | Where-Object { $_ -isnot [string] })) { "xdg.native.$($p.Name).paths must be strings" }
             $setting = Get-DFSchemaProperty $entry 'setting'
             if ($null -ne $setting -and $setting -isnot [string]) { "xdg.native.$($p.Name).setting must name a settings field" }
