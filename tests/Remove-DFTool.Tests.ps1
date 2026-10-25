@@ -11,7 +11,7 @@ Describe 'Remove-DFTool' {
             scoop = Rec '{ "name": "scoop", "executable": "scoop.cmd", "packages": { "winget": "ScoopInstaller.Scoop" }, "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "remove": ["scoop","uninstall","{id}"], "list": "Get-FakeScoopInstalled" } }'
             fzf   = Rec '{ "name": "fzf", "executable": "fzf.exe", "packages": { "scoop": "fzf" } }'
             PSFzf = Rec '{ "name": "PSFzf", "executable": "PSFzf", "type": "module", "requires": ["fzf"], "packages": { "scoop": "psfzf" } }'
-            glow  = Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" }, "setup": { "seed": { "${XDG_CONFIG_HOME}/glow/glow.yml": "glow/glow.yml" } } }'
+            glow  = Rec '{ "name": "glow", "executable": "glow.exe", "xdg": { "method": "env", "vars": { "GLOW_X": "${XDG_CONFIG_HOME}/glow" } }, "packages": { "scoop": "glow" }, "setup": { "seed": { "${XDG_CONFIG_HOME}/glow/glow.yml": "glow/glow.yml" } } }'
         }
         Mock Import-DFToolDb { $script:Db }
         Mock Get-DFToolStatus { foreach ($n in 'fzf', 'PSFzf', 'glow') { New-DFToolStatus -Name $n -State Active } }
@@ -34,6 +34,10 @@ Describe 'Remove-DFTool' {
         $r = Remove-DFTool -Name glow -Confirm:$false
         $r.Result | Should -Be 'Removed'
         Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Operation -eq 'remove' -and $Manager.name -eq 'scoop' -and ($Ids -join ',') -eq 'glow' }
+    }
+    It "gives the remove command the tool's variables" {
+        $null = Remove-DFTool -Name glow -Confirm:$false
+        Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Environment -and $Environment.Contains('GLOW_X') }
     }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false

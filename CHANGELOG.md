@@ -6,6 +6,12 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Installers see their tools' location variables.** `Install-DFTool`, `Update-DFTool` and
+  `Remove-DFTool` set the `xdg.vars` of the tools involved, of the package manager and of the tools it
+  requires, for the manager's command only: installing rustup, or a crate through cargo, now writes to
+  `$XDG_DATA_HOME\rustup` and `\cargo` instead of `~\.rustup` and `~\.cargo`. A value you set outside
+  DotForge is kept, and every variable is put back afterwards, except one the manager changed itself.
+
 - **Ctrl+R and Ctrl+T are roles.** `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) let a
   different tool own each key; only the winner binds it (PSFzf, then television, then fzf, then
   skim; pick with `Defaults`). PSFzf still binds both by default. A Ctrl+R or Ctrl+T binding you

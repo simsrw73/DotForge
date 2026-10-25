@@ -100,6 +100,14 @@ While registering, for tools you have installed:
 
 When you use them: package managers (`Install-DFTool`, picker actions), `gsudo` (`please`, `sudo`, Chocolatey pickers), `pipx list` (`trifle`'s installed check), `gh` (`trifle -GitInfo`), and whatever command a picker's preview runs. `trifle` refreshes stale catalog data on background threads in the same PowerShell process.
 
+While a package manager installs, updates or removes a tool, DotForge sets the location variables of
+that tool, of the manager and of what the manager needs (cargo needs rustup's `RUSTUP_HOME` and
+`CARGO_HOME`), for that one command, so the installer writes to the XDG folders. A variable you set
+outside DotForge is kept, and every variable goes back to what it was when the command ends, unless
+the manager itself changed it (scoop saves some to your Windows environment). A separate
+administrator window (Chocolatey without gsudo) doesn't get them; Chocolatey installs for the whole
+machine anyway.
+
 ## Network
 
 | Command | Sends | To |

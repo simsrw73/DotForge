@@ -39,6 +39,16 @@ Describe 'Invoke-DFManagerBatch' {
         $null = Invoke-DFManagerBatch -Operation update -Manager $script:Mgr -Block $block -Ids a -Elevation ([pscustomobject]@{ Method = 'RunAs' })
         Should -Invoke Invoke-DFManagerCommand -Times 1 -ParameterFilter { $Elevation.Method -eq 'RunAs' }
     }
+    It 'passes -Environment to every manager command' {
+        $block = [pscustomobject]@{ batch = $false; install = [string[]]@('m', 'i', '{id}') }
+        $null = Invoke-DFManagerBatch -Operation install -Manager $script:Mgr -Block $block -Ids a, b -Environment ([ordered]@{ X = 'y' })
+        Should -Invoke Invoke-DFManagerCommand -Times 2 -Exactly -ParameterFilter { $Environment['X'] -eq 'y' }
+    }
+    It 'passes -Environment to a function operation' {
+        $block = [pscustomobject]@{ batch = $true; update = [pscustomobject]@{ function = 'Update-X'; args = [pscustomobject]@{ Name = '{id}' } } }
+        $null = Invoke-DFManagerBatch -Operation update -Manager $script:Mgr -Block $block -Ids a -Environment ([ordered]@{ X = 'y' })
+        Should -Invoke Invoke-DFManagerCommand -Times 1 -Exactly -ParameterFilter { $Function -eq 'Update-X' -and $Environment['X'] -eq 'y' }
+    }
     It 'reports an operation the manager does not declare, without calling it' {
         $r = @(Invoke-DFManagerBatch -Operation update -Manager $script:Mgr -Block ([pscustomobject]@{ batch = $true; update = $null }) -Ids a)
         $r[0].Id | Should -Be 'a'

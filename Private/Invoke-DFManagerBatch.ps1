@@ -24,6 +24,8 @@ function Invoke-DFManagerBatch {
         Package ids, already feed-qualified where the manager needs it.
     .PARAMETER Elevation
         From Get-DFElevationMethod, for a block that needs administrator rights.
+    .PARAMETER Environment
+        Variables every call sees while it runs (Get-DFInstallEnvironment).
     .OUTPUTS
         PSCustomObject per id: Id, ExitCode, Output.
     #>
@@ -34,7 +36,8 @@ function Invoke-DFManagerBatch {
         [Parameter(Mandatory)][pscustomobject]$Manager,
         [Parameter(Mandatory)][pscustomobject]$Block,
         [Parameter(Mandatory)][string[]]$Ids,
-        [pscustomobject]$Elevation
+        [pscustomobject]$Elevation,
+        [System.Collections.IDictionary]$Environment
     )
     $spec = if ($Operation -eq 'install') {
         if ($Block.install) { $Block.install } elseif ($Block.function) { [pscustomobject]@{ function = $Block.function; args = $Block.args } }
@@ -48,14 +51,14 @@ function Invoke-DFManagerBatch {
     if ($Block.batch) { $groups.Add($Ids) } else { foreach ($id in $Ids) { $groups.Add(@($id)) } }
     foreach ($group in $groups) {
         $r = if ($spec -is [array]) {
-            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Argv (Expand-DFInstallArgv -Template $spec -Values @{ ids = $group }) -Elevation $Elevation
+            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Argv (Expand-DFInstallArgv -Template $spec -Values @{ ids = $group }) -Elevation $Elevation -Environment $Environment
         } else {
             $arguments = @{}
             foreach ($p in $spec.args.PSObject.Properties) {
                 # ($true -eq '{id}' is true in PowerShell, so check the type first.)
                 $arguments[$p.Name] = if ($p.Value -is [string] -and $p.Value -eq '{id}') { [string[]]$group } else { $p.Value }
             }
-            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Function $spec.function -Arguments $arguments
+            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Function $spec.function -Arguments $arguments -Environment $Environment
         }
         foreach ($id in $group) { [pscustomobject]@{ Id = $id; ExitCode = $r.ExitCode; Output = $r.Output } }
     }
@@ -69,6 +72,8 @@ function Invoke-DFManagerOperation {
         update or remove.
     .PARAMETER Found
         Find-DFToolSource's result for the first tool (Manager, Block).
+    .PARAMETER Tool
+        The tool records being updated or removed, for their location variables (Get-DFInstallEnvironment).
     .PARAMETER Ids
         The installed package ids.
     .PARAMETER ToolDb
@@ -81,6 +86,7 @@ function Invoke-DFManagerOperation {
     param(
         [Parameter(Mandatory)][ValidateSet('update', 'remove')][string]$Operation,
         [Parameter(Mandatory)][pscustomobject]$Found,
+        [Parameter(Mandatory)][pscustomobject[]]$Tool,
         [Parameter(Mandatory)][string[]]$Ids,
         [Parameter(Mandatory)][hashtable]$ToolDb
     )
@@ -88,7 +94,8 @@ function Invoke-DFManagerOperation {
         $method = Get-DFElevationMethod -ToolDb $ToolDb
         if ($method.Method -ne 'Direct') { $method }
     }
-    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation
+    $environment = Get-DFInstallEnvironment -Tool $Tool -Manager $Found.Manager -ToolDb $ToolDb
+    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation -Environment $environment
 }
 
 function ConvertTo-DFManagerResult {

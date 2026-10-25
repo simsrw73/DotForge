@@ -20,11 +20,13 @@ Describe 'Invoke-DFInstallPlan' {
     BeforeEach {
         Set-DFTestXdg; Reset-DFTestSession; Set-DFTestConfig $null
         $script:Calls = [System.Collections.Generic.List[string]]::new()
+        $script:Envs = @{}
         $script:Fail = @()
         Mock Invoke-DFManagerCommand {
             $line = ($Argv -join ' ')
             if ($Elevation) { $line = "[$($Elevation.Method)] $line" }
             $script:Calls.Add($line)
+            $script:Envs[$line] = @(if ($Environment) { $Environment.Keys })
             [pscustomobject]@{ ExitCode = $(if (@($Argv | Where-Object { $_ -in $script:Fail }).Count) { 1 } else { 0 }); Output = 'out' }
         }
         Mock Update-DFPathFromRegistry { }
@@ -32,13 +34,13 @@ Describe 'Invoke-DFInstallPlan' {
         Mock Test-DFElevated { $false }
         $script:Db = @{}
         foreach ($r in @(
-            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true, "feeds": { "list": ["scoop","bucket","list"], "add": ["scoop","bucket","add","{name}","{url}"], "id": "{feed}/{id}" } } }'),
+            (Rec '{ "name": "scoop", "executable": "scoop.cmd", "xdg": { "method": "env", "vars": { "SCOOP_X": "${XDG_DATA_HOME}/scoop" } }, "installs": { "from": "scoop", "install": ["scoop","install","{id}"], "batch": true, "feeds": { "list": ["scoop","bucket","list"], "add": ["scoop","bucket","add","{name}","{url}"], "id": "{feed}/{id}" } } }'),
             (Rec '{ "name": "choco", "executable": "choco.exe", "installs": { "from": "choco", "install": ["choco","install","{id}","-y"], "batch": true, "elevate": true } }'),
             (Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} } }'),
-            (Rec '{ "name": "fnm", "executable": "fnm.exe", "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"], "reactivate": true } }'),
+            (Rec '{ "name": "fnm", "executable": "fnm.exe", "xdg": { "method": "env", "vars": { "FNM_DIR": "${XDG_DATA_HOME}/fnm" } }, "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"], "reactivate": true } }'),
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'),
-            (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "choco": "glow" } }'),
-            (Rec '{ "name": "dotenv", "executable": "Dotenv", "type": "module", "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://u" } } } }')
+            (Rec '{ "name": "glow", "executable": "glow.exe", "xdg": { "method": "env", "vars": { "GLOW_X": "${XDG_CONFIG_HOME}/glow" } }, "packages": { "scoop": "glow", "choco": "glow" } }'),
+            (Rec '{ "name": "dotenv", "executable": "Dotenv", "type": "module", "xdg": { "method": "env", "vars": { "DOTENV_X": "${XDG_CONFIG_HOME}/dotenv" } }, "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://u" } } } }')
         )) { $script:Db[$r.name] = $r }
         $script:Installed = @('scoop')
         $script:Avail = { param($m) $m.name -in $script:Installed }
@@ -52,6 +54,26 @@ Describe 'Invoke-DFInstallPlan' {
         $r = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
         $script:Calls | Should -Be @('scoop install fnm glow', 'fnm install lts')
         ($r | Where-Object Result -eq 'Installed').Tool | Should -Be @('fnm', 'glow', 'node')
+    }
+    It "gives a batch its tools' variables" {
+        $plan = New-DFInstallPlan -Name fnm, glow -ToolDb $script:Db -IsAvailable $script:Avail
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        $script:Envs['scoop install fnm glow'] | Should -Contain 'FNM_DIR'
+        $script:Envs['scoop install fnm glow'] | Should -Contain 'GLOW_X'
+        $script:Envs['scoop install fnm glow'] | Should -Contain 'SCOOP_X'
+    }
+    It "gives the manager's variables to its own installs" {
+        $plan = New-DFInstallPlan -Name fnm, node -ToolDb $script:Db -IsAvailable $script:Avail
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        $script:Envs['fnm install lts'] | Should -Contain 'FNM_DIR'
+        $script:Envs['fnm install lts'] | Should -Not -Contain 'SCOOP_X'
+    }
+    It "gives feed commands the manager's variables only, and each command its own" {
+        $plan = New-DFInstallPlan -Name dotenv -ToolDb $script:Db -IsAvailable $script:Avail
+        $null = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        $script:Envs['scoop bucket list'] | Should -Be @('SCOOP_X')
+        $script:Envs['scoop bucket add insomnia https://u'] | Should -Be @('SCOOP_X')
+        $script:Envs['scoop install insomnia/ps-dotenv'] | Should -Contain 'DOTENV_X'
     }
     It 're-activates a manager that asks for it, and merges PATH, after its stage' {
         $plan = New-DFInstallPlan -Name fnm, node -ToolDb $script:Db -IsAvailable $script:Avail

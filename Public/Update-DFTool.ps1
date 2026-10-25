@@ -77,7 +77,7 @@ function Update-DFTool {
         $found = $group.Group[0].Found
         $tools = @($group.Group.Tool)
         if (-not $PSCmdlet.ShouldProcess("$($tools -join ', ') through $($found.Manager.name)", 'Update')) { continue }
-        $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
+        $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Tool @($tools | ForEach-Object { $db[$_] }) -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
         $outcomes = @(Resolve-DFPartialUpdate -Found $found -Rows @($group.Group) -Outcomes $outcomes)
         for ($n = 0; $n -lt $tools.Count; $n++) {
             $results.Add((ConvertTo-DFManagerResult -Tool $tools[$n] -Outcome $outcomes[$n] -Manager $found.Manager.name -Success 'Updated'))

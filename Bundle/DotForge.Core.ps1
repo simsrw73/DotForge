@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 66692773283b3929a6aab87f01827967d0a422befa05199d98f63f485f390413
+# sources-sha256: 8c9febc82c43c7c81ccbfb9edc4a3b5b9d5c679028d61573c40339522958d8ce
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -4544,6 +4544,81 @@ function Get-DFGroupDb {
     $db
 }
 
+# ---- Private/Get-DFInstallEnvironment.ps1
+#Requires -Version 7.2
+
+function Get-DFInstallEnvironment {
+    <#
+    .SYNOPSIS
+        Returns the location variables a package-manager command should see: its tools', its manager's, and those of the tools the manager requires.
+    .DESCRIPTION
+        An installer that reads a tool's location variables (rustup reads
+        RUSTUP_HOME and CARGO_HOME) writes to its default folder unless they
+        are set while it runs. The variables come, in this order, from:
+          - each -Tool's xdg.vars (the tools being installed, updated or removed);
+          - the -Manager's xdg.vars;
+          - the xdg.vars of every tool the manager requires, following the
+            chain (cargo -> rustup). Only tool references are followed: a
+            role: requirement orders, it never names one tool. A name with no
+            record is skipped.
+        Only records whose xdg.method is env count, as at registration
+        (Set-DFToolXdgConfig), and only xdg.vars: the env map holds flags and
+        themes, which an installer doesn't need. When two sources name the
+        same variable with different values, the later one wins (the manager
+        and its runtimes run the command), with a verbose message.
+        Invoke-DFManagerCommand -Environment applies the result.
+    .PARAMETER Tool
+        The tool records the command acts on; empty for a feed command.
+    .PARAMETER Manager
+        The manager's tool record.
+    .PARAMETER ToolDb
+        Name -> tool record, for the manager's requires chain.
+    .OUTPUTS
+        System.Collections.Specialized.OrderedDictionary: variable -> expanded value.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param(
+        [AllowEmptyCollection()][pscustomobject[]]$Tool = @(),
+        [Parameter(Mandatory)][pscustomobject]$Manager,
+        [Parameter(Mandatory)][hashtable]$ToolDb
+    )
+    $sources = [System.Collections.Generic.List[pscustomobject]]::new()
+    foreach ($record in $Tool) { if ($record) { $sources.Add($record) } }
+    $sources.Add($Manager)
+    # The manager's requires chain, breadth first; the visited set ends a cycle.
+    $visited = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $null = $visited.Add($Manager.name)
+    $queue = [System.Collections.Generic.Queue[pscustomobject]]::new()
+    $queue.Enqueue($Manager)
+    while ($queue.Count) {
+        foreach ($entry in @($queue.Dequeue().requires)) {
+            $reference = ConvertFrom-DFToolReference -Reference $entry
+            if (-not $reference -or $reference.Kind -ne 'Tool' -or -not $visited.Add($reference.Name)) { continue }
+            $required = $ToolDb[$reference.Name]
+            if (-not $required) { continue }
+            $sources.Add($required)
+            $queue.Enqueue($required)
+        }
+    }
+
+    $environment = [ordered]@{}
+    $from = @{}
+    foreach ($source in $sources) {
+        if ($source.xdg.method -ne 'env') { continue }
+        foreach ($var in @($source.xdg.vars?.PSObject.Properties)) {
+            if (-not $var) { continue }
+            $value = Expand-DFXdgPath $var.Value
+            if ($environment.Contains($var.Name) -and $environment[$var.Name] -ne $value) {
+                Write-Verbose "DotForge: $($var.Name) from $($source.name) ($value) replaces the one from $($from[$var.Name]) ($($environment[$var.Name])) for this command."
+            }
+            $environment[$var.Name] = $value
+            $from[$var.Name] = $source.name
+        }
+    }
+    $environment
+}
+
 # ---- Private/Get-DFRoleBehavior.ps1
 #Requires -Version 7.2
 
@@ -5433,7 +5508,10 @@ function Invoke-DFInstallPlan {
             as gsudo, Windows' sudo, or a separate admin window), or is
             reported as failed when no one can answer the admin prompt;
           - when a batch fails, each of its tools is re-checked: one bad id
-            doesn't fail the tools that did install.
+            doesn't fail the tools that did install;
+          - every command sees the location variables of its tools, its
+            manager and the tools the manager requires
+            (Get-DFInstallEnvironment); a feed command only the manager's.
         After the stage:
           - PATH is merged from the registry;
           - managers with installs.reactivate that installed something are
@@ -5486,12 +5564,13 @@ function Invoke-DFInstallPlan {
             if (-not $ready) { continue }
             # Feeds first, each once, and only those the manager doesn't list yet.
             if ($blk.feeds) {
+                $feedEnvironment = Get-DFInstallEnvironment -Manager $m -ToolDb $ToolDb
                 $feeds = @($ready | Where-Object { $_.Ref.Feed } | ForEach-Object { $_.Ref.Feed } | Sort-Object name -Unique)
                 if ($feeds) {
-                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
+                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{}) -Environment $feedEnvironment).Output
                     $names = @($listed -split "`r?`n" | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $_ })
                     foreach ($f in $feeds | Where-Object { $_.name -notin $names }) {
-                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
+                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url }) -Environment $feedEnvironment
                         if ($r.ExitCode -ne 0) { Write-Warning "DotForge: could not add $($m.name) feed '$($f.name)' ($($f.url))." }
                     }
                 }
@@ -5503,7 +5582,8 @@ function Invoke-DFInstallPlan {
             }
             # One call for the whole batch when the manager supports it, else one per tool.
             $ids = [string[]]@($ready | ForEach-Object { & $idOf $_ })
-            $results = @(Invoke-DFManagerBatch -Operation install -Manager $m -Block $blk -Ids $ids -Elevation $batch.Elevation)
+            $environment = Get-DFInstallEnvironment -Tool @($ready | ForEach-Object { $ToolDb[$_.Tool] }) -Manager $m -ToolDb $ToolDb
+            $results = @(Invoke-DFManagerBatch -Operation install -Manager $m -Block $blk -Ids $ids -Elevation $batch.Elevation -Environment $environment)
             $batched = $blk.batch -and $ready.Count -gt 1
             for ($n = 0; $n -lt $ready.Count; $n++) {
                 $it = $ready[$n]; $r = $results[$n]
@@ -5560,6 +5640,8 @@ function Invoke-DFManagerBatch {
         Package ids, already feed-qualified where the manager needs it.
     .PARAMETER Elevation
         From Get-DFElevationMethod, for a block that needs administrator rights.
+    .PARAMETER Environment
+        Variables every call sees while it runs (Get-DFInstallEnvironment).
     .OUTPUTS
         PSCustomObject per id: Id, ExitCode, Output.
     #>
@@ -5570,7 +5652,8 @@ function Invoke-DFManagerBatch {
         [Parameter(Mandatory)][pscustomobject]$Manager,
         [Parameter(Mandatory)][pscustomobject]$Block,
         [Parameter(Mandatory)][string[]]$Ids,
-        [pscustomobject]$Elevation
+        [pscustomobject]$Elevation,
+        [System.Collections.IDictionary]$Environment
     )
     $spec = if ($Operation -eq 'install') {
         if ($Block.install) { $Block.install } elseif ($Block.function) { [pscustomobject]@{ function = $Block.function; args = $Block.args } }
@@ -5584,14 +5667,14 @@ function Invoke-DFManagerBatch {
     if ($Block.batch) { $groups.Add($Ids) } else { foreach ($id in $Ids) { $groups.Add(@($id)) } }
     foreach ($group in $groups) {
         $r = if ($spec -is [array]) {
-            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Argv (Expand-DFInstallArgv -Template $spec -Values @{ ids = $group }) -Elevation $Elevation
+            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Argv (Expand-DFInstallArgv -Template $spec -Values @{ ids = $group }) -Elevation $Elevation -Environment $Environment
         } else {
             $arguments = @{}
             foreach ($p in $spec.args.PSObject.Properties) {
                 # ($true -eq '{id}' is true in PowerShell, so check the type first.)
                 $arguments[$p.Name] = if ($p.Value -is [string] -and $p.Value -eq '{id}') { [string[]]$group } else { $p.Value }
             }
-            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Function $spec.function -Arguments $arguments
+            Invoke-DFManagerCommand -Operation $Operation -Manager $Manager -Function $spec.function -Arguments $arguments -Environment $Environment
         }
         foreach ($id in $group) { [pscustomobject]@{ Id = $id; ExitCode = $r.ExitCode; Output = $r.Output } }
     }
@@ -5605,6 +5688,8 @@ function Invoke-DFManagerOperation {
         update or remove.
     .PARAMETER Found
         Find-DFToolSource's result for the first tool (Manager, Block).
+    .PARAMETER Tool
+        The tool records being updated or removed, for their location variables (Get-DFInstallEnvironment).
     .PARAMETER Ids
         The installed package ids.
     .PARAMETER ToolDb
@@ -5617,6 +5702,7 @@ function Invoke-DFManagerOperation {
     param(
         [Parameter(Mandatory)][ValidateSet('update', 'remove')][string]$Operation,
         [Parameter(Mandatory)][pscustomobject]$Found,
+        [Parameter(Mandatory)][pscustomobject[]]$Tool,
         [Parameter(Mandatory)][string[]]$Ids,
         [Parameter(Mandatory)][hashtable]$ToolDb
     )
@@ -5624,7 +5710,8 @@ function Invoke-DFManagerOperation {
         $method = Get-DFElevationMethod -ToolDb $ToolDb
         if ($method.Method -ne 'Direct') { $method }
     }
-    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation
+    $environment = Get-DFInstallEnvironment -Tool $Tool -Manager $Found.Manager -ToolDb $ToolDb
+    Invoke-DFManagerBatch -Operation $Operation -Manager $Found.Manager -Block $Found.Block -Ids $Ids -Elevation $elevation -Environment $environment
 }
 
 function ConvertTo-DFManagerResult {
@@ -5762,6 +5849,15 @@ function Invoke-DFManagerCommand {
         Parameters for -Function.
     .PARAMETER Elevation
         From Get-DFElevationMethod; omit (or $null) when the command doesn't need administrator rights.
+    .PARAMETER Environment
+        Variables the command sees while it runs (Get-DFInstallEnvironment).
+        One set outside DotForge is kept; one unset or still holding what
+        DotForge wrote (Get-DFEnvState) is set. Afterwards each goes back to
+        its previous value, even when the command throws, unless the command
+        changed it itself (scoop's in-process shim saves some to the Windows
+        environment), so the session agrees with the manager. A separate
+        administrator window (RunAs) starts from the saved user environment
+        and doesn't get them.
     .OUTPUTS
         PSCustomObject: ExitCode, Output.
     #>
@@ -5773,47 +5869,101 @@ function Invoke-DFManagerCommand {
         [string[]]$Argv = @(),
         [string]$Function,
         [hashtable]$Arguments = @{},
-        [pscustomobject]$Elevation
+        [pscustomobject]$Elevation,
+        [System.Collections.IDictionary]$Environment
     )
-    if ($Function) {
-        try {
-            $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
-            return [pscustomobject]@{ ExitCode = 0; Output = $out }
-        } catch {
-            return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
+    $changes = @(if ($Environment) { Set-DFCommandEnvironment -Environment $Environment -Manager $Manager.name })
+    try {
+        if ($Function) {
+            try {
+                $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
+                return [pscustomobject]@{ ExitCode = 0; Output = $out }
+            } catch {
+                return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
+            }
         }
-    }
-    $method = if ($Elevation) { $Elevation.Method } else { 'None' }
-    if ($method -eq 'Unavailable') {
-        return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
-    }
-    if ($method -eq 'RunAs') {
-        # Start-Process joins -ArgumentList with spaces, so quote what would split.
-        $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
-        try {
-            $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
-        } catch {
-            # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
-            $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
-            $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
-            return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+        $method = if ($Elevation) { $Elevation.Method } else { 'None' }
+        if ($method -eq 'Unavailable') {
+            return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
         }
-        return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+        if ($method -eq 'RunAs') {
+            # Start-Process joins -ArgumentList with spaces, so quote what would split.
+            $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
+            try {
+                $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
+            } catch {
+                # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
+                $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
+                $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
+                return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+            }
+            return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+        }
+        $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+        # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
+        # never sets an exit code: don't read a stale one from an earlier command.
+        $global:LASTEXITCODE = 0
+        # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
+        # warning stream (scoop's "Installed apps:"), which would print mid-command.
+        $items = & $exe @rest *>&1
+        # list and outdated output is parsed: keep stderr and warnings out of it
+        # (pip's "[notice] A new release of pip is available" would break its JSON).
+        if ($Operation -in 'list', 'outdated') {
+            $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+        }
+        $out = $items | Out-String
+        [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+    } finally {
+        Restore-DFCommandEnvironment -Changes $changes
     }
-    $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
-    # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
-    # never sets an exit code: don't read a stale one from an earlier command.
-    $global:LASTEXITCODE = 0
-    # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
-    # warning stream (scoop's "Installed apps:"), which would print mid-command.
-    $items = & $exe @rest *>&1
-    # list and outdated output is parsed: keep stderr and warnings out of it
-    # (pip's "[notice] A new release of pip is available" would break its JSON).
-    if ($Operation -in 'list', 'outdated') {
-        $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+}
+
+function Set-DFCommandEnvironment {
+    <#
+    .SYNOPSIS
+        Sets a manager command's variables in this process, keeping any set outside DotForge, and returns what it changed.
+    .PARAMETER Environment
+        Variable -> value (Get-DFInstallEnvironment).
+    .PARAMETER Manager
+        The manager's name (for messages).
+    .OUTPUTS
+        PSCustomObject per variable set: Name, Previous ($null when unset), Value.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([Parameter(Mandatory)][System.Collections.IDictionary]$Environment, [string]$Manager)
+    $written = (Get-DFEnvState).Written
+    foreach ($name in @($Environment.Keys)) {
+        $value = [string]$Environment[$name]
+        $current = [Environment]::GetEnvironmentVariable($name)
+        if ($current -ceq $value) { continue }
+        # Set-DFEnv's rule: a value DotForge didn't write was set outside it.
+        if ($null -ne $current -and -not ($written.ContainsKey($name) -and $written[$name] -ceq $current)) {
+            Write-Verbose "DotForge: keeping $name=$current, set outside DotForge, for this $Manager command."
+            continue
+        }
+        [Environment]::SetEnvironmentVariable($name, $value)
+        [pscustomobject]@{ Name = $name; Previous = $current; Value = $value }
     }
-    $out = $items | Out-String
-    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+}
+
+function Restore-DFCommandEnvironment {
+    <#
+    .SYNOPSIS
+        Puts back the variables Set-DFCommandEnvironment changed, except one the command itself changed since.
+    .PARAMETER Changes
+        Set-DFCommandEnvironment's result.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Changes = @())
+    foreach ($change in $Changes) {
+        if ([Environment]::GetEnvironmentVariable($change.Name) -cne $change.Value) { continue }
+        # ($null would reach .NET as "", which leaves the variable set but empty.)
+        $previous = if ($null -eq $change.Previous) { [NullString]::Value } else { $change.Previous }
+        [Environment]::SetEnvironmentVariable($change.Name, $previous)
+    }
 }
 
 # ---- Private/Invoke-DFPackageManagerPicker.ps1
@@ -10879,7 +11029,7 @@ function Remove-DFTool {
             [pscustomobject]@{ Tool = $toolName; Result = 'NotInstalled'; Detail = $found.Detail }
             continue
         }
-        $outcome = @(Invoke-DFManagerOperation -Operation remove -Found $found -Ids @($found.Id) -ToolDb $db)[0]
+        $outcome = @(Invoke-DFManagerOperation -Operation remove -Found $found -Tool $db[$toolName] -Ids @($found.Id) -ToolDb $db)[0]
         $result = ConvertTo-DFManagerResult -Tool $toolName -Outcome $outcome -Manager $found.Manager.name -Success 'Removed'
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName
@@ -11166,7 +11316,7 @@ function Update-DFTool {
         $found = $group.Group[0].Found
         $tools = @($group.Group.Tool)
         if (-not $PSCmdlet.ShouldProcess("$($tools -join ', ') through $($found.Manager.name)", 'Update')) { continue }
-        $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
+        $outcomes = @(Invoke-DFManagerOperation -Operation update -Found $found -Tool @($tools | ForEach-Object { $db[$_] }) -Ids ([string[]]@($group.Group.Found.Id)) -ToolDb $db)
         $outcomes = @(Resolve-DFPartialUpdate -Found $found -Rows @($group.Group) -Outcomes $outcomes)
         for ($n = 0; $n -lt $tools.Count; $n++) {
             $results.Add((ConvertTo-DFManagerResult -Tool $tools[$n] -Outcome $outcomes[$n] -Manager $found.Manager.name -Success 'Updated'))

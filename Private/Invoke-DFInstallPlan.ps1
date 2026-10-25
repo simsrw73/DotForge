@@ -13,7 +13,10 @@ function Invoke-DFInstallPlan {
             as gsudo, Windows' sudo, or a separate admin window), or is
             reported as failed when no one can answer the admin prompt;
           - when a batch fails, each of its tools is re-checked: one bad id
-            doesn't fail the tools that did install.
+            doesn't fail the tools that did install;
+          - every command sees the location variables of its tools, its
+            manager and the tools the manager requires
+            (Get-DFInstallEnvironment); a feed command only the manager's.
         After the stage:
           - PATH is merged from the registry;
           - managers with installs.reactivate that installed something are
@@ -66,12 +69,13 @@ function Invoke-DFInstallPlan {
             if (-not $ready) { continue }
             # Feeds first, each once, and only those the manager doesn't list yet.
             if ($blk.feeds) {
+                $feedEnvironment = Get-DFInstallEnvironment -Manager $m -ToolDb $ToolDb
                 $feeds = @($ready | Where-Object { $_.Ref.Feed } | ForEach-Object { $_.Ref.Feed } | Sort-Object name -Unique)
                 if ($feeds) {
-                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{})).Output
+                    $listed = (Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.list -Values @{}) -Environment $feedEnvironment).Output
                     $names = @($listed -split "`r?`n" | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $_ })
                     foreach ($f in $feeds | Where-Object { $_.name -notin $names }) {
-                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url })
+                        $r = Invoke-DFManagerCommand -Operation install -Manager $m -Argv (Expand-DFInstallArgv -Template $blk.feeds.add -Values @{ name = $f.name; url = $f.url }) -Environment $feedEnvironment
                         if ($r.ExitCode -ne 0) { Write-Warning "DotForge: could not add $($m.name) feed '$($f.name)' ($($f.url))." }
                     }
                 }
@@ -83,7 +87,8 @@ function Invoke-DFInstallPlan {
             }
             # One call for the whole batch when the manager supports it, else one per tool.
             $ids = [string[]]@($ready | ForEach-Object { & $idOf $_ })
-            $results = @(Invoke-DFManagerBatch -Operation install -Manager $m -Block $blk -Ids $ids -Elevation $batch.Elevation)
+            $environment = Get-DFInstallEnvironment -Tool @($ready | ForEach-Object { $ToolDb[$_.Tool] }) -Manager $m -ToolDb $ToolDb
+            $results = @(Invoke-DFManagerBatch -Operation install -Manager $m -Block $blk -Ids $ids -Elevation $batch.Elevation -Environment $environment)
             $batched = $blk.batch -and $ready.Count -gt 1
             for ($n = 0; $n -lt $ready.Count; $n++) {
                 $it = $ready[$n]; $r = $results[$n]

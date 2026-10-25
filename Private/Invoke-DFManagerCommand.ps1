@@ -50,6 +50,15 @@ function Invoke-DFManagerCommand {
         Parameters for -Function.
     .PARAMETER Elevation
         From Get-DFElevationMethod; omit (or $null) when the command doesn't need administrator rights.
+    .PARAMETER Environment
+        Variables the command sees while it runs (Get-DFInstallEnvironment).
+        One set outside DotForge is kept; one unset or still holding what
+        DotForge wrote (Get-DFEnvState) is set. Afterwards each goes back to
+        its previous value, even when the command throws, unless the command
+        changed it itself (scoop's in-process shim saves some to the Windows
+        environment), so the session agrees with the manager. A separate
+        administrator window (RunAs) starts from the saved user environment
+        and doesn't get them.
     .OUTPUTS
         PSCustomObject: ExitCode, Output.
     #>
@@ -61,45 +70,99 @@ function Invoke-DFManagerCommand {
         [string[]]$Argv = @(),
         [string]$Function,
         [hashtable]$Arguments = @{},
-        [pscustomobject]$Elevation
+        [pscustomobject]$Elevation,
+        [System.Collections.IDictionary]$Environment
     )
-    if ($Function) {
-        try {
-            $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
-            return [pscustomobject]@{ ExitCode = 0; Output = $out }
-        } catch {
-            return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
+    $changes = @(if ($Environment) { Set-DFCommandEnvironment -Environment $Environment -Manager $Manager.name })
+    try {
+        if ($Function) {
+            try {
+                $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
+                return [pscustomobject]@{ ExitCode = 0; Output = $out }
+            } catch {
+                return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
+            }
         }
-    }
-    $method = if ($Elevation) { $Elevation.Method } else { 'None' }
-    if ($method -eq 'Unavailable') {
-        return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
-    }
-    if ($method -eq 'RunAs') {
-        # Start-Process joins -ArgumentList with spaces, so quote what would split.
-        $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
-        try {
-            $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
-        } catch {
-            # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
-            $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
-            $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
-            return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+        $method = if ($Elevation) { $Elevation.Method } else { 'None' }
+        if ($method -eq 'Unavailable') {
+            return [pscustomobject]@{ ExitCode = 1; Output = "$($Manager.name) needs administrator rights: $($Elevation.Detail)" }
         }
-        return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+        if ($method -eq 'RunAs') {
+            # Start-Process joins -ArgumentList with spaces, so quote what would split.
+            $quoted = @($Argv | Select-Object -Skip 1 | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } })
+            try {
+                $process = Start-Process -FilePath $Argv[0] -ArgumentList $quoted -Verb RunAs -Wait -PassThru -ErrorAction Stop
+            } catch {
+                # A declined UAC prompt is Win32 error 1223 (ERROR_CANCELLED), usually wrapped by Start-Process.
+                $win32 = @($_.Exception, $_.Exception.InnerException) | Where-Object { $_ -is [System.ComponentModel.Win32Exception] } | Select-Object -First 1
+                $code = if ($win32) { $win32.NativeErrorCode } else { 1 }
+                return [pscustomobject]@{ ExitCode = $code; Output = "the administrator prompt was declined or failed: $($_.Exception.Message)" }
+            }
+            return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = "ran in a separate administrator window (exit code $($process.ExitCode))" }
+        }
+        $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
+        # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
+        # never sets an exit code: don't read a stale one from an earlier command.
+        $global:LASTEXITCODE = 0
+        # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
+        # warning stream (scoop's "Installed apps:"), which would print mid-command.
+        $items = & $exe @rest *>&1
+        # list and outdated output is parsed: keep stderr and warnings out of it
+        # (pip's "[notice] A new release of pip is available" would break its JSON).
+        if ($Operation -in 'list', 'outdated') {
+            $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+        }
+        $out = $items | Out-String
+        [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+    } finally {
+        Restore-DFCommandEnvironment -Changes $changes
     }
-    $exe, $rest = if ($method -in 'Elevator', 'WindowsSudo') { $Elevation.Executable, $Argv } else { $Argv[0], @($Argv | Select-Object -Skip 1) }
-    # A manager can resolve to a .ps1 shim (scoop.ps1) that runs in-process and
-    # never sets an exit code: don't read a stale one from an earlier command.
-    $global:LASTEXITCODE = 0
-    # *>&1, not 2>&1: an in-process .ps1 shim also writes to the host and the
-    # warning stream (scoop's "Installed apps:"), which would print mid-command.
-    $items = & $exe @rest *>&1
-    # list and outdated output is parsed: keep stderr and warnings out of it
-    # (pip's "[notice] A new release of pip is available" would break its JSON).
-    if ($Operation -in 'list', 'outdated') {
-        $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
+}
+
+function Set-DFCommandEnvironment {
+    <#
+    .SYNOPSIS
+        Sets a manager command's variables in this process, keeping any set outside DotForge, and returns what it changed.
+    .PARAMETER Environment
+        Variable -> value (Get-DFInstallEnvironment).
+    .PARAMETER Manager
+        The manager's name (for messages).
+    .OUTPUTS
+        PSCustomObject per variable set: Name, Previous ($null when unset), Value.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([Parameter(Mandatory)][System.Collections.IDictionary]$Environment, [string]$Manager)
+    $written = (Get-DFEnvState).Written
+    foreach ($name in @($Environment.Keys)) {
+        $value = [string]$Environment[$name]
+        $current = [Environment]::GetEnvironmentVariable($name)
+        if ($current -ceq $value) { continue }
+        # Set-DFEnv's rule: a value DotForge didn't write was set outside it.
+        if ($null -ne $current -and -not ($written.ContainsKey($name) -and $written[$name] -ceq $current)) {
+            Write-Verbose "DotForge: keeping $name=$current, set outside DotForge, for this $Manager command."
+            continue
+        }
+        [Environment]::SetEnvironmentVariable($name, $value)
+        [pscustomobject]@{ Name = $name; Previous = $current; Value = $value }
     }
-    $out = $items | Out-String
-    [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+}
+
+function Restore-DFCommandEnvironment {
+    <#
+    .SYNOPSIS
+        Puts back the variables Set-DFCommandEnvironment changed, except one the command itself changed since.
+    .PARAMETER Changes
+        Set-DFCommandEnvironment's result.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Changes = @())
+    foreach ($change in $Changes) {
+        if ([Environment]::GetEnvironmentVariable($change.Name) -cne $change.Value) { continue }
+        # ($null would reach .NET as "", which leaves the variable set but empty.)
+        $previous = if ($null -eq $change.Previous) { [NullString]::Value } else { $change.Previous }
+        [Environment]::SetEnvironmentVariable($change.Name, $previous)
+    }
 }

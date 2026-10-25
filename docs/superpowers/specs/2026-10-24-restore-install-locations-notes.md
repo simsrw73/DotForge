@@ -96,6 +96,11 @@ uses, which today lives inside `profile.ps1` (`$DFConfig`).
 **Decided: A**, with DotForge owning the file's location (an XDG config path), so it's a DotForge
 feature, not a dotfiles trick.
 
+**Done (2026-10-25):** DotForge `f0adc6d`: `Start-DFSession` without `-Config` reads
+`~/.config/dotforge/config.psd1`; `-Config` replaces it entirely. Dotfiles `d8b5462`: the settings
+live in `linked/dotforge/config.psd1`, `~/.config/dotforge` links there, and the profile passes the
+file with `-Config` until a release after 0.7.1 is installed.
+
 **Problem found:** PSResourceGet installs `CurrentUser` modules to `Documents\PowerShell\Modules`,
 which is OneDrive-redirected here (`OneDrive\Documents\PowerShell\Modules`). No variable changes that.
 DotForge, PSFzf, Terminal-Icons, posh-git, NerdFonts and GoogleFonts all land there. Separate decision
@@ -120,6 +125,11 @@ of those bites.
 | C. Run every install inside a session where all requested tools are activated, installed or not | No install-specific code | Activating a missing tool runs its companion; fragile; sets far more than needed |
 
 **Decided: A**, with B only for the rare variable an installer needs but the session doesn't.
+
+**Done (DotForge, 2026-10-25):** `Get-DFInstallEnvironment` and `Invoke-DFManagerCommand
+-Environment` (spec `2026-10-25-install-environment-design.md`, T-76/T-77). The dotfiles half (the
+packages script runs `Start-DFSession` and `Install-DFTool -Missing -UseDefaults`) waits for a Gallery
+release.
 
 **Problem found: scoop's own variables.** These variables belong to the tools, and every tool reads
 whatever value it finds. But scoop writes them itself, from a manifest's `env_set` field

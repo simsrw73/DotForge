@@ -78,3 +78,66 @@ Describe 'Invoke-DFManagerCommand' {
         Should -Invoke Start-Process -Times 0
     }
 }
+
+Describe 'Invoke-DFManagerCommand -Environment' {
+    BeforeAll {
+        function script:Probe { [CmdletBinding()] param($Name) [Environment]::GetEnvironmentVariable($Name) }
+        function script:Boom { [CmdletBinding()] param($Name) throw 'no' }
+        function script:SetsIt { [CmdletBinding()] param($Name) Set-Item "Env:\$Name" 'from-manager' }
+    }
+    BeforeEach {
+        $script:SavedState = $global:DFEnvState
+        $global:DFEnvState = $null
+        $script:Var = "DF_TEST_$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+        $script:Wanted = [ordered]@{ $script:Var = 'C:\x' }
+        $script:Run = { param($Function = 'Probe') Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Function $Function -Arguments @{ Name = $script:Var } -Environment $script:Wanted }
+    }
+    AfterEach {
+        Remove-Item "Env:\$script:Var" -ErrorAction Ignore
+        $global:DFEnvState = $script:SavedState
+    }
+
+    It 'passes an unset variable to the command' {
+        (& $script:Run).Output.Trim() | Should -Be 'C:\x'
+        Test-Path "Env:\$script:Var" | Should -BeFalse
+    }
+    It 'updates a variable DotForge wrote' {
+        Set-Item "Env:\$script:Var" 'old'
+        (Get-DFEnvState).Written[$script:Var] = 'old'
+        (& $script:Run).Output.Trim() | Should -Be 'C:\x'
+        (Get-Item "Env:\$script:Var").Value | Should -Be 'old'
+    }
+    It 'keeps a variable set outside DotForge' {
+        Set-Item "Env:\$script:Var" 'mine'
+        $out = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Function Probe -Arguments @{ Name = $script:Var } -Environment $script:Wanted -Verbose 4>&1
+        ($out | Where-Object { $_ -isnot [System.Management.Automation.VerboseRecord] }).Output.Trim() | Should -Be 'mine'
+        "$(@($out | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] }))" | Should -BeLike "*$script:Var*"
+        (Get-Item "Env:\$script:Var").Value | Should -Be 'mine'
+    }
+    It 'leaves an outside value that equals the wanted one in place' {
+        Set-Item "Env:\$script:Var" 'C:\x'
+        $null = & $script:Run
+        (Get-Item "Env:\$script:Var").Value | Should -Be 'C:\x'
+    }
+    It 'restores after the command throws' {
+        (& $script:Run 'Boom').ExitCode | Should -Be 1
+        Test-Path "Env:\$script:Var" | Should -BeFalse
+    }
+    It "restores after an argv whose program doesn't exist" {
+        try { $null = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Argv 'df-no-such-exe-zz' -Environment $script:Wanted } catch { }
+        Test-Path "Env:\$script:Var" | Should -BeFalse
+    }
+    It 'keeps a value the command itself set' {
+        $null = & $script:Run 'SetsIt'
+        (Get-Item "Env:\$script:Var").Value | Should -Be 'from-manager'
+    }
+    It 'passes the variables to a child process' {
+        $r = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Argv (Get-Process -Id $PID).Path, '-NoProfile', '-Command', "`$env:$script:Var" -Environment $script:Wanted
+        $r.Output.Trim() | Should -Be 'C:\x'
+    }
+    It 'leaves Get-DFEnvState unchanged' {
+        $null = & $script:Run
+        (Get-DFEnvState).Written.Count | Should -Be 0
+        (Get-DFEnvState).Kept.Count | Should -Be 0
+    }
+}

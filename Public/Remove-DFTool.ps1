@@ -91,7 +91,7 @@ function Remove-DFTool {
             [pscustomobject]@{ Tool = $toolName; Result = 'NotInstalled'; Detail = $found.Detail }
             continue
         }
-        $outcome = @(Invoke-DFManagerOperation -Operation remove -Found $found -Ids @($found.Id) -ToolDb $db)[0]
+        $outcome = @(Invoke-DFManagerOperation -Operation remove -Found $found -Tool $db[$toolName] -Ids @($found.Id) -ToolDb $db)[0]
         $result = ConvertTo-DFManagerResult -Tool $toolName -Outcome $outcome -Manager $found.Manager.name -Success 'Removed'
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName

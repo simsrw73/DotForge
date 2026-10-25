@@ -26,7 +26,7 @@ Describe 'Update-DFTool' {
             winget  = Rec '{ "name": "winget", "executable": "winget.exe", "installs": { "from": "winget", "install": ["winget","install","{id}"], "update": ["winget","upgrade","{id}"], "outdated": "Get-FakeOutdated" } }'
             cargo   = Rec '{ "name": "cargo", "executable": "cargo.exe", "installs": { "from": "crates", "install": ["cargo","install","{id}"], "update": ["cargo","install","--force","{id}"] } }'
             fnm     = Rec '{ "name": "fnm", "executable": "fnm.exe", "installs": { "from": "fnm", "install": ["fnm","install","{id}"] } }'
-            fzf     = Rec '{ "name": "fzf", "executable": "fzf.exe", "packages": { "scoop": "fzf" } }'
+            fzf     = Rec '{ "name": "fzf", "executable": "fzf.exe", "xdg": { "method": "env", "vars": { "FZF_X": "${XDG_CONFIG_HOME}/fzf" } }, "packages": { "scoop": "fzf" } }'
             bat     = Rec '{ "name": "bat", "executable": "bat.exe", "packages": { "winget": "sharkdp.bat" } }'
             lazygit = Rec '{ "name": "lazygit", "executable": "lazygit.exe", "packages": { "crates": "lazygit" } }'
             node    = Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'
@@ -46,6 +46,10 @@ Describe 'Update-DFTool' {
         Mock Write-Host { }
     }
 
+    It "gives the update command the tools' variables" {
+        $null = Update-DFTool -Name fzf
+        Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Environment -and $Environment.Contains('FZF_X') }
+    }
     It 'shows the table for the active tools and updates nothing when called bare' {
         $rows = @(Update-DFTool)
         $rows.Tool | Should -Be @('fzf', 'bat', 'lazygit', 'node')
