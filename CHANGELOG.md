@@ -6,6 +6,12 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **uv's tools and Pythons, and npm's cache, move under the XDG folders.** uv gets `UV_TOOL_DIR`
+  (`$XDG_DATA_HOME\uv\tools`) and `UV_PYTHON_INSTALL_DIR` (`$XDG_DATA_HOME\uv\python`); npm gets
+  `NPM_CONFIG_CACHE` (`$XDG_CACHE_HOME\npm`). Tools or Pythons already in uv's old folders keep working
+  but aren't listed by uv; `Get-DFToolStatus` says how to reinstall them. chezmoi no longer gets
+  `CHEZMOI_CONFIG_DIR`, which it never read (it follows `XDG_CONFIG_HOME`), and vcpkg no longer gets
+  `VCPKG_ROOT`: where vcpkg is installed is scoop's or your clone's to say, not DotForge's.
 - **Installers see their tools' location variables.** `Install-DFTool`, `Update-DFTool` and
   `Remove-DFTool` set the `xdg.vars` of the tools involved, of the package manager and of the tools it
   requires, for the manager's command only: installing rustup, or a crate through cargo, now writes to

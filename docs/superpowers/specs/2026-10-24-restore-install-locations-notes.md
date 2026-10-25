@@ -316,6 +316,11 @@ posh-git, ps-dotenv, PSFzf, Terminal-Icons (Phase 3's OneDrive note applies to t
 2. Records missing variables: uv (`UV_TOOL_DIR`, `UV_PYTHON_INSTALL_DIR`), npm (`NPM_CONFIG_CACHE`),
    mise (all three), bitwarden (`BITWARDENCLI_APPDATA_DIR`). To verify: pymanager's install root,
    chezmoi's `CHEZMOI_CONFIG_DIR`.
+   **Done (2026-10-25):** uv and npm declared. mise needs nothing: it follows the `XDG_*` variables on
+   Windows (checked with `mise doctor`). chezmoi ignores `CHEZMOI_CONFIG_DIR` and follows
+   `XDG_CONFIG_HOME` (checked), so its record sets nothing. vcpkg's `VCPKG_ROOT` dropped (the
+   installer's). pymanager: config file only (`install_dir`), left for now (T-82). bitwarden depends on
+   the manager that installed it (T-83, with piece 6).
 3. scoop's `env_set` writes desktop variables that DotForge then defers to (Decision 5): harmless for
    git/vcpkg/oh-my-posh, overridable for fnm/uv/bun/bat, fixed at install for rustup/pnpm. vcpkg's
    record is wrong for a scoop install.

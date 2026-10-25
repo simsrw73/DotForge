@@ -2844,9 +2844,7 @@ Manage your dotfiles across multiple diverse machines
 | Detected by | `chezmoi.exe` |
 | Tags | `dotfiles`, `config`, `dev` |
 | Install ids | scoop: `chezmoi`<br>winget: `twpayne.chezmoi`<br>choco: `chezmoi` |
-| XDG method | `env` |
-| XDG variables | `CHEZMOI_CONFIG_DIR` = `${XDG_CONFIG_HOME}/chezmoi` |
-| Creates | `${XDG_CONFIG_HOME}/chezmoi` |
+| XDG method | `default` |
 | Aliases | `cz` → `chezmoi` |
 | Picker | `czf` (Edit-DotFile): lists `chezmoi managed --path-style absolute --include files`; Enter runs `chezmoi edit {}` |
 
@@ -3347,7 +3345,7 @@ Node.js package manager
 | Detected by | `npm.cmd` |
 | Tags | `node`, `javascript`, `dev`, `package-manager` |
 | XDG method | `env` |
-| XDG variables | `NPM_CONFIG_USERCONFIG` = `${XDG_CONFIG_HOME}/npm/npmrc`<br>`NODE_REPL_HISTORY` = `${XDG_DATA_HOME}/node_repl_history` |
+| XDG variables | `NPM_CONFIG_USERCONFIG` = `${XDG_CONFIG_HOME}/npm/npmrc`<br>`NODE_REPL_HISTORY` = `${XDG_DATA_HOME}/node_repl_history`<br>`NPM_CONFIG_CACHE` = `${XDG_CACHE_HOME}/npm` |
 | Creates | `${XDG_CONFIG_HOME}/npm` |
 | Aliases | `nls` → `npm list -g --depth=0` |
 | Picker | `` (): lists ``; Enter runs `` |
@@ -3703,7 +3701,7 @@ Extremely fast Python package and project manager
 | Tags | `python`, `dev`, `package-manager` |
 | Install ids | scoop: `uv`<br>winget: `astral-sh.uv` |
 | XDG method | `env` |
-| XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv` |
+| XDG variables | `UV_CACHE_DIR` = `${XDG_CACHE_HOME}/uv`<br>`UV_TOOL_DIR` = `${XDG_DATA_HOME}/uv/tools`<br>`UV_PYTHON_INSTALL_DIR` = `${XDG_DATA_HOME}/uv/python` |
 | Creates | `${XDG_CACHE_HOME}/uv` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`python-package-manager`](#python-package-manager-role), [`version-manager`](#version-manager-role) |
@@ -3719,8 +3717,8 @@ C/C++ library package manager
 | Tags | `cpp`, `dev`, `package-manager` |
 | Install ids | scoop: `vcpkg` |
 | XDG method | `env` |
-| XDG variables | `VCPKG_ROOT` = `${XDG_DATA_HOME}/vcpkg`<br>`VCPKG_DOWNLOADS` = `${XDG_CACHE_HOME}/vcpkg/downloads` |
-| Creates | `${XDG_DATA_HOME}/vcpkg`<br>`${XDG_CACHE_HOME}/vcpkg/downloads` |
+| XDG variables | `VCPKG_DOWNLOADS` = `${XDG_CACHE_HOME}/vcpkg/downloads` |
+| Creates | `${XDG_CACHE_HOME}/vcpkg/downloads` |
 | Companion | `Tools/vcpkg.ps1` |
 
 ### vivid tool

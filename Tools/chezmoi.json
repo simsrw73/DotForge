@@ -13,17 +13,8 @@
     "choco": "chezmoi"
   },
   "xdg": {
-    "compliance": "partial",
-    "method": "env",
-    "vars": {
-      "CHEZMOI_CONFIG_DIR": "${XDG_CONFIG_HOME}/chezmoi"
-    },
-    "native": {
-      "CHEZMOI_CONFIG_DIR": ["${HOME}/.config/chezmoi"]
-    },
-    "dirs": [
-      "${XDG_CONFIG_HOME}/chezmoi"
-    ]
+    "compliance": "full",
+    "method": "default"
   },
   "aliases": {
     "cz": {

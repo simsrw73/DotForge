@@ -706,7 +706,7 @@
       }
     },
     "chezmoi": {
-      "sha256": "eb5040c3f3f4c83eac78676a67d1a857788510aa2cc28dd7ac7bfc5c93c4589a",
+      "sha256": "4b680c7d78fbeed403dbce66b6d9fd0d10220d4e428af12441466b5cf5815544",
       "record": {
         "name": "chezmoi",
         "executable": "chezmoi.exe",
@@ -723,26 +723,12 @@
           "choco": "chezmoi"
         },
         "xdg": {
-          "method": "env",
-          "vars": {
-            "CHEZMOI_CONFIG_DIR": "${XDG_CONFIG_HOME}/chezmoi"
-          },
-          "dirs": [
-            "${XDG_CONFIG_HOME}/chezmoi"
-          ],
+          "method": "default",
+          "vars": null,
+          "dirs": [],
           "instructions": null,
-          "compliance": "partial",
-          "native": {
-            "CHEZMOI_CONFIG_DIR": {
-              "paths": [
-                "${HOME}/.config/chezmoi"
-              ],
-              "move": true,
-              "guide": null,
-              "setting": null,
-              "block": true
-            }
-          }
+          "compliance": "full",
+          "native": null
         },
         "env": null,
         "aliases": {
@@ -3577,7 +3563,7 @@
       }
     },
     "npm": {
-      "sha256": "de76e127763376845d8bb7aaaf756e2602507e58bac4dedc371f91c5e7332e8c",
+      "sha256": "f304a080e716265fa98c883c3dad678786b1e29a3224e5da79949635d86bf849",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -3594,7 +3580,8 @@
           "method": "env",
           "vars": {
             "NPM_CONFIG_USERCONFIG": "${XDG_CONFIG_HOME}/npm/npmrc",
-            "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history"
+            "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history",
+            "NPM_CONFIG_CACHE": "${XDG_CACHE_HOME}/npm"
           },
           "dirs": [
             "${XDG_CONFIG_HOME}/npm"
@@ -3619,6 +3606,15 @@
               "guide": null,
               "setting": null,
               "block": true
+            },
+            "NPM_CONFIG_CACHE": {
+              "paths": [
+                "${LOCALAPPDATA}/npm-cache"
+              ],
+              "move": false,
+              "guide": "it's only npm's download cache; delete it to free the space.",
+              "setting": null,
+              "block": false
             }
           }
         },
@@ -5774,7 +5770,7 @@
       }
     },
     "uv": {
-      "sha256": "50a61c2d29e7638c7fdd09c79f19a526754924dfa6117b51742ba56337c8ca62",
+      "sha256": "b493c98e87624e6e00d79e51065070895bf081b64969ad5af49b97f86e6c96c8",
       "record": {
         "name": "uv",
         "executable": "uv.exe",
@@ -5792,14 +5788,35 @@
         "xdg": {
           "method": "env",
           "vars": {
-            "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv"
+            "UV_CACHE_DIR": "${XDG_CACHE_HOME}/uv",
+            "UV_TOOL_DIR": "${XDG_DATA_HOME}/uv/tools",
+            "UV_PYTHON_INSTALL_DIR": "${XDG_DATA_HOME}/uv/python"
           },
           "dirs": [
             "${XDG_CACHE_HOME}/uv"
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": null
+          "native": {
+            "UV_TOOL_DIR": {
+              "paths": [
+                "${APPDATA}/uv/tools"
+              ],
+              "move": false,
+              "guide": "uv's old tools folder holds the environments of the tools it installed, which don't work once moved: run uv tool list with UV_TOOL_DIR pointing there, install each again with uv tool install, then delete it.",
+              "setting": null,
+              "block": false
+            },
+            "UV_PYTHON_INSTALL_DIR": {
+              "paths": [
+                "${APPDATA}/uv/python"
+              ],
+              "move": false,
+              "guide": "uv's old Python folder holds the Pythons it installed: install the versions you use again with uv python install, then delete it.",
+              "setting": null,
+              "block": false
+            }
+          }
         },
         "env": null,
         "aliases": {},
@@ -5898,7 +5915,7 @@
       }
     },
     "vcpkg": {
-      "sha256": "b77179c0b98452a9cb01b230f40c59ebfcf0379deb18730c2be2717b39bb537e",
+      "sha256": "d08d3f5eafc1ce9f605558d936e111b98e4ed6042c6eb2ac1d1c76918483c185",
       "record": {
         "name": "vcpkg",
         "executable": "vcpkg.exe",
@@ -5915,26 +5932,14 @@
         "xdg": {
           "method": "env",
           "vars": {
-            "VCPKG_ROOT": "${XDG_DATA_HOME}/vcpkg",
             "VCPKG_DOWNLOADS": "${XDG_CACHE_HOME}/vcpkg/downloads"
           },
           "dirs": [
-            "${XDG_DATA_HOME}/vcpkg",
             "${XDG_CACHE_HOME}/vcpkg/downloads"
           ],
           "instructions": null,
           "compliance": "partial",
-          "native": {
-            "VCPKG_ROOT": {
-              "paths": [
-                "${HOME}/vcpkg"
-              ],
-              "move": false,
-              "guide": "vcpkg roots are chosen when you clone it; follow https://learn.microsoft.com/vcpkg/get_started/get-started to relocate it.",
-              "setting": null,
-              "block": true
-            }
-          }
+          "native": null
         },
         "env": null,
         "aliases": {},

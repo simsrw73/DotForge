@@ -26,7 +26,6 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | bat | `BAT_CONFIG_PATH` | `$XDG_CONFIG_HOME\bat\bat.conf` |
 | bottom | `-C` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\bottom\bottom.toml` |
 | bun | `BUN_INSTALL`, `BUN_INSTALL_CACHE_DIR` | `$XDG_DATA_HOME\bun` (global packages), `$XDG_CACHE_HOME\bun\install\cache` |
-| chezmoi | `CHEZMOI_CONFIG_DIR` | `$XDG_CONFIG_HOME\chezmoi` |
 | curl | `CURL_HOME` | `$XDG_CONFIG_HOME\curl` |
 | docker | `DOCKER_CONFIG` | `$XDG_CONFIG_HOME\docker` |
 | gdu | `--config-file` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\gdu\gdu.yaml` |
@@ -36,7 +35,7 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | less | `LESSHISTFILE`, `LESSKEY` | `$XDG_STATE_HOME\less\history`, `$XDG_CONFIG_HOME\less\lesskey` |
 | mdv | `MDV_CONFIG_PATH` | `$XDG_CONFIG_HOME\mdv` |
 | micro | `MICRO_CONFIG_HOME` | `$XDG_CONFIG_HOME\micro` |
-| npm | `NPM_CONFIG_USERCONFIG`, `NODE_REPL_HISTORY` | `$XDG_CONFIG_HOME\npm\npmrc`, `$XDG_DATA_HOME\node_repl_history` |
+| npm | `NPM_CONFIG_USERCONFIG`, `NODE_REPL_HISTORY`, `NPM_CONFIG_CACHE` | `$XDG_CONFIG_HOME\npm\npmrc`, `$XDG_DATA_HOME\node_repl_history`, `$XDG_CACHE_HOME\npm` |
 | oh-my-posh | `POSH_THEMES_PATH` | `$XDG_DATA_HOME\oh-my-posh\themes` |
 | procs | `--load-config` (wrapper, once the file exists) | `$XDG_CONFIG_HOME\procs\config.toml` |
 | pip | `PIP_CONFIG_FILE`, `PIP_CACHE_DIR` | `$XDG_CONFIG_HOME\pip\pip.ini`, `$XDG_CACHE_HOME\pip` |
@@ -47,8 +46,8 @@ DotForge never moves or deletes the old files. It also never overrides a variabl
 | ripgrep | `RIPGREP_CONFIG_PATH` | `$XDG_CONFIG_HOME\ripgrep\ripgreprc` |
 | rustup | `RUSTUP_HOME`, `CARGO_HOME` | `$XDG_DATA_HOME\rustup`, `$XDG_DATA_HOME\cargo` (toolchains and installed crates) |
 | starship | `STARSHIP_CONFIG`, `STARSHIP_CACHE` | `$XDG_CONFIG_HOME\starship\starship.toml`, `$XDG_CACHE_HOME\starship` |
-| uv | `UV_CACHE_DIR` | `$XDG_CACHE_HOME\uv` |
-| vcpkg | `VCPKG_ROOT`, `VCPKG_DOWNLOADS` | `$XDG_DATA_HOME\vcpkg`, `$XDG_CACHE_HOME\vcpkg\downloads` |
+| uv | `UV_CACHE_DIR`, `UV_TOOL_DIR`, `UV_PYTHON_INSTALL_DIR` | `$XDG_CACHE_HOME\uv`, `$XDG_DATA_HOME\uv\tools` (installed tools' environments), `$XDG_DATA_HOME\uv\python` |
+| vcpkg | `VCPKG_DOWNLOADS` | `$XDG_CACHE_HOME\vcpkg\downloads` (`VCPKG_ROOT` is where vcpkg is installed, left to scoop or your own clone) |
 | wget | `WGETRC` | `$XDG_CONFIG_HOME\wget\wgetrc` |
 | zoxide | `_ZO_DATA_DIR` | `$XDG_DATA_HOME\zoxide` (folder history) |
 

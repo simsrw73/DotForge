@@ -268,9 +268,9 @@ These are prompt engines; install one. Both follow `Theme` (or `StarshipTheme`, 
 
 DotForge sets Emacs editing keys, history predictions, a 10,000-entry history saved incrementally without duplicates, and a color theme. It moves the history file to `$XDG_STATE_HOME\psreadline\history`; your old history in PowerShell's default location isn't copied there. See [configuration](configuration.md#command-line-editing-keys) to keep Windows keys.
 
-### rustup, vcpkg and other relocated tools
+### rustup, uv and other relocated tools
 
-Some tools move their data under the XDG folders: rustup to `$XDG_DATA_HOME\rustup` and `$XDG_DATA_HOME\cargo`, vcpkg to `$XDG_DATA_HOME\vcpkg`. A toolchain or package already installed in the old location isn't found afterwards. Move it, or reinstall. `Install-DFTool` and `Update-DFTool` set these variables while the installer runs, so installing rustup, or a crate through cargo, lands in the new folders without setting anything first. The [safety page](safety.md) lists every relocated tool.
+Some tools move their data under the XDG folders: rustup to `$XDG_DATA_HOME\rustup` and `$XDG_DATA_HOME\cargo`, uv's tools and Pythons to `$XDG_DATA_HOME\uv`. A toolchain or package already installed in the old location isn't found afterwards. Move it, or reinstall. `Install-DFTool` and `Update-DFTool` set these variables while the installer runs, so installing rustup, or a crate through cargo, lands in the new folders without setting anything first. The [safety page](safety.md) lists every relocated tool.
 
 bun, pnpm, pipx, pip and python follow too:
 

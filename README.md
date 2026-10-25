@@ -9,9 +9,9 @@
 > [!WARNING]
 > **Registering a tool that's already installed can make it lose track of its existing files.**
 > DotForge relocates many tools' config/data/cache to XDG-standard paths (e.g. `RUSTUP_HOME`/
-> `CARGO_HOME` for `rustup`, `VCPKG_ROOT` for `vcpkg`, PSReadLine's history file). If that tool
-> already has files at its old default location — an existing Rust toolchain, installed vcpkg
-> packages, prior command history — it won't find them once DotForge points it somewhere else.
+> `CARGO_HOME` for `rustup`, `UV_TOOL_DIR` for `uv`, PSReadLine's history file). If that tool
+> already has files at its old default location — an existing Rust toolchain, tools installed
+> with uv, prior command history — it won't find them once DotForge points it somewhere else.
 > DotForge never moves or deletes them. Move them yourself, reinstall, or set the variable
 > yourself first to keep the old location. [Safety](docs/guide/safety.md#relocated-tool-data)
 > lists every tool affected.

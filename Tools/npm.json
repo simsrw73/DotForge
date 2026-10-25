@@ -17,11 +17,18 @@
     "method": "env",
     "vars": {
       "NPM_CONFIG_USERCONFIG": "${XDG_CONFIG_HOME}/npm/npmrc",
-      "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history"
+      "NODE_REPL_HISTORY": "${XDG_DATA_HOME}/node_repl_history",
+      "NPM_CONFIG_CACHE": "${XDG_CACHE_HOME}/npm"
     },
     "native": {
       "NPM_CONFIG_USERCONFIG": ["${HOME}/.npmrc"],
-      "NODE_REPL_HISTORY": ["${HOME}/.node_repl_history"]
+      "NODE_REPL_HISTORY": ["${HOME}/.node_repl_history"],
+      "NPM_CONFIG_CACHE": {
+        "paths": ["${LOCALAPPDATA}/npm-cache"],
+        "move": false,
+        "block": false,
+        "guide": "it's only npm's download cache; delete it to free the space."
+      }
     },
     "dirs": [
       "${XDG_CONFIG_HOME}/npm"
