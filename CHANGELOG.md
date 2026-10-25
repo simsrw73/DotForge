@@ -11,6 +11,8 @@ All notable changes to DotForge are documented here.
   requires, for the manager's command only: installing rustup, or a crate through cargo, now writes to
   `$XDG_DATA_HOME\rustup` and `\cargo` instead of `~\.rustup` and `~\.cargo`. A value you set outside
   DotForge is kept, and every variable is put back afterwards, except one the manager changed itself.
+  gsudo passes them to an elevated command; Windows' own `sudo` doesn't, and DotForge warns when it
+  runs one.
 
 - **Ctrl+R and Ctrl+T are roles.** `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) let a
   different tool own each key; only the winner binds it (PSFzf, then television, then fzf, then

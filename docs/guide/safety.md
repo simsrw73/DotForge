@@ -105,9 +105,10 @@ that tool, of the manager and of what the manager needs, for each of them you re
 haven't left in a conflict (cargo needs rustup's `RUSTUP_HOME` and
 `CARGO_HOME`), for that one command, so the installer writes to the XDG folders. A variable you set
 outside DotForge is kept, and every variable goes back to what it was when the command ends, unless
-the manager itself changed it (scoop saves some to your Windows environment). A separate
-administrator window (Chocolatey without gsudo) doesn't get them; Chocolatey installs for the whole
-machine anyway.
+the manager itself changed it (scoop saves some to your Windows environment). gsudo passes
+them to an elevated command; Windows' own `sudo` and a separate administrator window (Chocolatey
+without gsudo) don't, and DotForge warns when Windows' `sudo` runs one. Chocolatey installs for the
+whole machine anyway.
 
 ## Network
 

@@ -84,7 +84,8 @@ This covers every way a command runs:
 |---|---|
 | argv, in this console (scoop's `.ps1` shim runs in-process; exes are child processes) | yes |
 | `-Function` (PSResourceGet) | yes, in-process |
-| an elevator (gsudo) or Windows' `sudo` inline | to verify: gsudo copies the caller's environment by default; Windows sudo inline needs checking. If either doesn't, the command's output says the variables were not passed |
+| an elevator (gsudo) | yes (checked 2026-10-25) |
+| Windows' `sudo` inline | no (checked 2026-10-25): a warning and the command's output name the variables not passed (T-81) |
 | `RunAs` (a separate administrator window) | no: an elevated window starts from the user's saved environment. Only choco uses it, and choco installs machine-wide, outside XDG. Documented, not worked around |
 
 ### Who passes them

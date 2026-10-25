@@ -135,6 +135,24 @@ Describe 'Invoke-DFManagerCommand -Environment' {
         $r = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Argv (Get-Process -Id $PID).Path, '-NoProfile', '-Command', "`$env:$script:Var" -Environment $script:Wanted
         $r.Output.Trim() | Should -Be 'C:\x'
     }
+    It "says Windows' sudo doesn't pass the variables, in the output and as a warning" {
+        function global:dffake-winsudo { 'ran' }
+        try {
+            $r = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Argv 'm', 'install', 'x' -Environment $script:Wanted `
+                -Elevation ([pscustomobject]@{ Method = 'WindowsSudo'; Executable = 'dffake-winsudo' }) -WarningVariable warned 3>$null
+            $r.Output | Should -BeLike "*not passed through Windows' sudo: $script:Var*"
+            "$warned" | Should -BeLike "*$script:Var*"
+        } finally { Remove-DFTestGlobal -Function dffake-winsudo }
+    }
+    It "says nothing about Windows' sudo without variables" {
+        function global:dffake-winsudo { 'ran' }
+        try {
+            $r = Invoke-DFManagerCommand -Operation install -Manager $script:Mgr -Argv 'm', 'install', 'x' -Environment ([ordered]@{}) `
+                -Elevation ([pscustomobject]@{ Method = 'WindowsSudo'; Executable = 'dffake-winsudo' }) -WarningVariable warned 3>$null
+            $r.Output | Should -Not -BeLike '*not passed*'
+            $warned | Should -BeNullOrEmpty
+        } finally { Remove-DFTestGlobal -Function dffake-winsudo }
+    }
     It 'leaves Get-DFEnvState unchanged' {
         $null = & $script:Run
         (Get-DFEnvState).Written.Count | Should -Be 0

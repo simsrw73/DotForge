@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 514a56ce511c8e795e8a044869025fd2c6fdbba5fc47707303e5cad53b1c17bd
+# sources-sha256: 816aa0e0e4e897deb7dce89747e33465dd8108c4db94f225be385ab38c112044
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -5864,7 +5864,8 @@ function Invoke-DFManagerCommand {
         changed it itself (scoop's in-process shim saves some to the Windows
         environment), so the session agrees with the manager. A separate
         administrator window (RunAs) starts from the saved user environment
-        and doesn't get them.
+        and doesn't get them, nor does Windows' sudo: then a warning and the
+        output name the variables not passed. gsudo passes them.
     .OUTPUTS
         PSCustomObject: ExitCode, Output.
     #>
@@ -5919,7 +5920,15 @@ function Invoke-DFManagerCommand {
             $items = $items | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] -and $_ -isnot [System.Management.Automation.WarningRecord] }
         }
         $out = $items | Out-String
-        [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+        $exitCode = $LASTEXITCODE
+        # Windows' sudo starts the elevated command without this process's
+        # environment (checked 2026-10-25; gsudo passes it).
+        if ($method -eq 'WindowsSudo' -and $Environment -and $Environment.Count) {
+            $note = "DotForge's install variables were not passed through Windows' sudo: $(@($Environment.Keys) -join ', ')"
+            Write-Warning "DotForge: $($Manager.name): $note. The install may use the tool's default folders; installing gsudo avoids this."
+            $out += "($note)"
+        }
+        [pscustomobject]@{ ExitCode = $exitCode; Output = $out }
     } finally {
         Restore-DFCommandEnvironment -Changes $changes
     }
