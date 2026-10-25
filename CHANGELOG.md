@@ -45,12 +45,12 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
-- **`InstallAlways`: one package manager for everything.** `InstallAlways = 'scoop'` installs every
-  tool scoop, winget or choco carries from scoop, and skips one scoop doesn't have (the summary says
-  why). `InstallVia` and `-Via` still pick a tool's source; PowerShell modules, npm tools and crates,
-  which no system manager has, install as usual.
+- **`IncludeSources`: only the package managers you allow.** `IncludeSources = @('scoop', 'psgallery',
+  'npm')` makes `Install-DFTool` use those sources and no other, registries included; a tool none of
+  them has is not installed (the summary says why). It's the opposite of `ExcludeSources`, and
+  `InstallVia` and `-Via` still pick a tool's source.
 - **Records can avoid a source.** `install.avoid` maps a source to why it installs the tool badly;
-  that source goes last unless you name it, and then the plan and the result say why. rustup and pnpm
+  that source goes last unless you name it or it's the only one allowed, and then the plan and the result say why. rustup and pnpm
   avoid scoop, whose installs keep their files in scoop's own folders.
 - **A config file.** `Start-DFSession` with no `-Config` reads `~/.config/dotforge/config.psd1`
   (`$XDG_CONFIG_HOME/dotforge/config.psd1`): the same keys, as a PowerShell data file (comments, no

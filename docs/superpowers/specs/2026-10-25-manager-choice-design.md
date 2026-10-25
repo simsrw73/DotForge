@@ -4,6 +4,16 @@
 **Context:** `docs/superpowers/specs/2026-10-24-restore-install-locations-notes.md`, Decision 5 and
 rule 1.
 
+> **Amended 2026-10-25 (the user's reframe, after it shipped unreleased):** `InstallAlways` is
+> replaced by **`IncludeSources`**, an allow-list beside `ExcludeSources`: only the sources it lists
+> are used, for **every** source, registries and version managers included (the user's choice), and
+> `InstallOrder` still orders them. `InstallAlways = 'scoop'` is now `IncludeSources = @('scoop', ...)`
+> with whatever registries the user wants. `-Via` and `InstallVia` (when the tool has that package)
+> beat both lists, as before. A tool no allowed source has gets the existing "no source left" Gap,
+> naming IncludeSources, ExcludeSources or both. An unknown entry warns. An avoided source stays
+> last, and is used when it's the only one allowed. The decisions below about `InstallAlways`
+> (1–3, the Order and Config sections) are superseded; `install.avoid` and the warning stand.
+
 ## Why
 
 A record already ranks the sources that suit its tool (`install.prefer`), and the user already has

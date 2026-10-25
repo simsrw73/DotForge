@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: ea578442da1a3f23a7212e0d6ecc9270b7bbf347300314c5202ecd7391806ce7
+# sources-sha256: 29a7485aa5dee9466325a99c6bec917dd59d9c3302cf78c41586f758f04bb50a
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -192,42 +192,20 @@ function Get-DFBuiltInSourceOrder {
     [string[]]@($system + $other | Select-Object -Unique)
 }
 
-function Get-DFInstallAlways {
+function Test-DFSourceAllowed {
     <#
     .SYNOPSIS
-        Returns the source the InstallAlways setting imposes on one tool, or nothing.
-    .DESCRIPTION
-        InstallAlways covers a tool only when the tool has a package in some
-        system manager's source (a member of the package-manager role: scoop,
-        winget, choco); a tool only a registry or version manager provides
-        (PowerShell Gallery, npm, fnm) installs as usual. -Via or InstallVia
-        naming a source the tool has a package in beats it; one naming a
-        source it hasn't doesn't count, so a typo never loosens InstallAlways.
-        A source DotForge doesn't know warns and is ignored.
-    .PARAMETER Tool
-        The tool record.
-    .PARAMETER ToolDb
-        Name -> tool record; must include the manager records.
-    .PARAMETER Via
-        Tool -> source for this call (Install-DFTool -Via).
+        Whether the user's IncludeSources and ExcludeSources allow a source (before any per-tool InstallVia).
+    .PARAMETER Source
+        The source name.
     .OUTPUTS
-        System.String, or nothing.
+        System.Boolean.
     #>
     [CmdletBinding()]
-    [OutputType([string])]
-    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][hashtable]$ToolDb, [hashtable]$Via = @{})
-    $always = Get-DFConfig InstallAlways
-    if (-not $always) { return }
-    if ($always -notin (Get-DFBuiltInSourceOrder -ToolDb $ToolDb)) {
-        Write-DFInstallWarning "DotForge: InstallAlways names '$always', which no package manager installs from; ignoring it."
-        return
-    }
-    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
-    $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
-    if ($pinned -and $pinned -in $have) { return }
-    $managers = @($ToolDb.Values | Where-Object installs)
-    $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers | ForEach-Object { $_.installs.from })
-    if (@($have | Where-Object { $_ -in $system }).Count) { $always }
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Source)
+    $included = @(Get-DFConfig IncludeSources | Where-Object { $_ })
+    ($Source -notin @(Get-DFConfig ExcludeSources)) -and (-not $included -or $Source -in $included)
 }
 
 function Get-DFToolInstallPreference {
@@ -253,15 +231,16 @@ function Get-DFToolInstallPreference {
 function Get-DFInstallSourceOrder {
     <#
     .SYNOPSIS
-        Orders one tool's candidate sources: -Via, InstallVia, InstallAlways, the tool's install.prefer, InstallOrder, then DotForge's order.
+        Orders one tool's candidate sources: -Via, InstallVia, the tool's install.prefer, InstallOrder, then DotForge's order.
     .DESCRIPTION
-        Only sources the tool has a package for are returned. ExcludeSources
-        removes a source unless InstallVia or InstallAlways names it for this
-        tool. An InstallVia source the tool has no package for warns and is
-        ignored. A tool InstallAlways covers (Get-DFInstallAlways) gets that
-        source alone, or nothing when it has no package there. Sources the
-        record avoids (install.avoid) go last, unless -Via, InstallVia or
-        InstallAlways names them.
+        Only sources the tool has a package for are returned. When
+        IncludeSources is set, only the sources it lists are used, registries
+        included; ExcludeSources removes the sources it lists. -Via or
+        InstallVia naming a source for this tool beats both. An InstallVia
+        source the tool has no package for warns and is ignored, so it never
+        loosens either list. An IncludeSources entry DotForge doesn't know
+        warns. Sources the record avoids (install.avoid) go last, unless -Via
+        or InstallVia names them.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -281,16 +260,14 @@ function Get-DFInstallSourceOrder {
         Write-DFInstallWarning "DotForge: InstallVia for $($Tool.name) names '$pinned', which has no package for it; ignoring that."
         $pinned = $null
     }
-    $excluded = @(Get-DFConfig ExcludeSources)
-    $always = if (-not $pinned) { Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via }
-    if ($always) {
-        if ($always -in $excluded) { Write-DFInstallWarning "DotForge: InstallAlways names '$always', which ExcludeSources also lists; using it." }
-        return [string[]]@($always | Where-Object { $_ -in $have })
+    $known = Get-DFBuiltInSourceOrder -ToolDb $ToolDb
+    foreach ($unknown in @(Get-DFConfig IncludeSources) | Where-Object { $_ -and $_ -notin $known }) {
+        Write-DFInstallWarning "DotForge: IncludeSources lists '$unknown', which no package manager installs from; ignoring that entry."
     }
     $preference = Get-DFToolInstallPreference -Tool $Tool
-    $ordered = @(@($pinned) + $preference.Prefer + @(Get-DFConfig InstallOrder) + (Get-DFBuiltInSourceOrder -ToolDb $ToolDb) + $have |
+    $ordered = @(@($pinned) + $preference.Prefer + @(Get-DFConfig InstallOrder) + $known + $have |
         Where-Object { $_ -and $_ -in $have } | Select-Object -Unique)
-    $ordered = @($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
+    $ordered = @($ordered | Where-Object { $_ -eq $pinned -or (Test-DFSourceAllowed -Source $_) })
     # Sources the record avoids go last, unless the user named one for this tool.
     $avoided = @($preference.Avoid.Keys)
     [string[]]@(@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $avoided }) + @($ordered | Where-Object { $_ -ne $pinned -and $_ -in $avoided }))
@@ -342,14 +319,17 @@ function Resolve-DFInstallSource {
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
     $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources; AvoidReason = $null }
     if (-not $sources) {
-        $always = Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via
-        if ($always) {
-            $result.Gap = "InstallAlways is $always, which has no package for it"
-            return $result
-        }
         $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
-        $result.Gap = if (-not $have) { 'no package in any source' }
-                      else { "no source left (only $($have -join ', ') $(if ($have.Count -eq 1) { 'has' } else { 'have' }) it, and ExcludeSources removes $(if ($have.Count -eq 1) { 'it' } else { 'them' }))" }
+        if (-not $have) { $result.Gap = 'no package in any source'; return $result }
+        $one = $have.Count -eq 1
+        $them = if ($one) { 'it' } else { 'them' }
+        $included = @(Get-DFConfig IncludeSources | Where-Object { $_ })
+        $byInclude = $included -and @($have | Where-Object { $_ -notin $included }).Count
+        $byExclude = @($have | Where-Object { $_ -in @(Get-DFConfig ExcludeSources) }).Count
+        $why = if ($byInclude -and $byExclude) { "IncludeSources and ExcludeSources rule $them out" }
+               elseif ($byInclude) { "IncludeSources doesn't list $them" }
+               else { "ExcludeSources removes $them" }
+        $result.Gap = "no source left (only $($have -join ', ') $(if ($one) { 'has' } else { 'have' }) it, and $why)"
         return $result
     }
     foreach ($s in $sources) {
@@ -3772,9 +3752,9 @@ $script:DFConfigKeys = [ordered]@{
     SkipConflictCheck  = 'Skip the coreutils shadowing check'
     IgnoreConflicts    = 'Command names left out of the shadowing check'
     ShimsPath          = 'Folder New-DFShim writes to'
-    InstallVia          = 'Tool -> source to install it from (beats everything, including InstallAlways and ExcludeSources)'
-    InstallAlways       = 'One source for every tool a system manager carries; a tool it lacks is skipped'
+    InstallVia          = 'Tool -> source to install it from (beats everything, including IncludeSources and ExcludeSources)'
     InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
+    IncludeSources      = 'The only sources Install-DFTool uses, registries included (unless InstallVia names another)'
     ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
     NerdFont           = 'Icons: $true on, $false off; unset detects an installed Nerd Font (Windows)'
     ShowBanner         = 'Show the startup banner (fastfetch, drive health, public IP)'
@@ -4225,11 +4205,10 @@ function Find-DFToolSource {
         Finds which manager a tool was installed through, by asking the managers of its own sources.
     .DESCRIPTION
         Asks only the managers of the sources in the tool's packages, in
-        install precedence (Get-DFInstallSourceOrder: InstallVia,
-        InstallAlways, the tool's install.prefer, InstallOrder, DotForge's
-        order), then any source that order left out (ExcludeSources, or every
-        other one under InstallAlways), since a tool may have been installed
-        through it before. Managers that aren't installed are skipped. The first
+        install precedence (Get-DFInstallSourceOrder: InstallVia, the tool's
+        install.prefer, InstallOrder, DotForge's order), then any source that
+        order left out (IncludeSources, ExcludeSources), since a tool may have
+        been installed through it before. Managers that aren't installed are skipped. The first
         manager whose list has the tool's id (or its feed-qualified id) wins,
         so a tool installed twice is reported under the first one found. A
         manager that declares no list (a version manager such as fnm) gets

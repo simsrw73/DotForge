@@ -62,11 +62,8 @@ Describe 'Find-DFToolSource' {
         $r.Manager | Should -BeNullOrEmpty
         $r.Detail | Should -Be 'no manager for scoop, winget is installed'
     }
-    It 'still finds a tool installed through another source under InstallAlways' {
-        foreach ($name in 'scoop', 'winget') {
-            $script:Db[$name] | Add-Member -NotePropertyName roles -NotePropertyValue ([pscustomobject]@{ 'package-manager' = [pscustomobject]@{ priority = 10 } }) -Force
-        }
-        Set-DFTestConfig @{ InstallAlways = 'scoop' }
+    It 'still finds a tool installed through a source IncludeSources leaves out' {
+        Set-DFTestConfig @{ IncludeSources = @('scoop') }
         function script:Get-FakeScoopInstalled { param($Manager) }
         function script:Get-FakeWingetInstalled { param($Manager) [pscustomobject]@{ Id = 'BurntSushi.ripgrep.MSVC'; Installed = '14.0'; Available = $null } }
         (Find-DFToolSource -Tool $script:Tool -ToolDb $script:Db).Manager.name | Should -Be 'winget'

@@ -47,9 +47,9 @@ each one is self-contained; the same keys go in your file.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `InstallVia` | hashtable | none | Tool → source to install it from, e.g. `@{ glow = 'scoop' }`. Beats everything, including `InstallAlways` and `ExcludeSources`. |
-| `InstallAlways` | string | none | One source for every tool a system manager (scoop, winget, choco) carries, e.g. `'scoop'`. A tool that source has no package for is not installed (`InstallVia` can still name another for it). Tools only a registry or version manager has (PowerShell modules, npm tools, crates) install as usual. |
+| `InstallVia` | hashtable | none | Tool → source to install it from, e.g. `@{ glow = 'scoop' }`. Beats everything, including `IncludeSources` and `ExcludeSources`. |
 | `InstallOrder` | string[] | DotForge's order | Sources `Install-DFTool` prefers, in order (`scoop`, `winget`, `choco`, `npm`, `crates`, `psgallery`, …). Ordering only: a source you leave out is still used. A tool's own preference (`install.prefer` in its record) comes first. |
+| `IncludeSources` | string[] | every source | The only sources `Install-DFTool` uses, registries included, e.g. `@('scoop', 'psgallery', 'npm', 'crates', 'fnm')`. A tool none of them has is not installed. `InstallVia` can still name another for one tool. |
 | `ExcludeSources` | string[] | none | Sources `Install-DFTool` never uses, unless `InstallVia` names one for a tool. |
 | `Tools` | string[] | none | Tool names and `+groups` to configure. |
 | `ExcludeTools` | string[] | none | Tools and `+groups` removed from `Tools`; exclusions win. |
@@ -364,14 +364,13 @@ Install-DFTool -Name ripgrep -WhatIf
 For each tool, `Install-DFTool` takes the first source that has a package for it and a manager you have (or are installing in the same run):
 
 1. `InstallVia` for that tool;
-2. `InstallAlways`: for a tool a system manager carries, that source and no other;
-3. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
-4. `InstallOrder`;
-5. DotForge's order: scoop, winget, choco, then the registries.
+2. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
+3. `InstallOrder`;
+4. DotForge's order: scoop, winget, choco, then the registries.
 
-A record can also mark a source as bad for its tool (`install.avoid`; rustup and pnpm avoid scoop, whose installs keep their files in scoop's own folders). That source goes last, unless you name it with `-Via`, `InstallVia` or `InstallAlways`; then it's used, and the plan and the result say why it's a poor fit.
+Which sources may be used at all: `IncludeSources` (only these) and `ExcludeSources` (never these), unless `InstallVia` names one for a tool. With `IncludeSources = @('scoop')`, nothing comes from anywhere else, PowerShell modules and npm tools included, so list every source you want.
 
-`ExcludeSources` removes a source unless `InstallVia` or `InstallAlways` names it. `-Via` picks the source for one call: `Install-DFTool -Name glow -Via scoop`.
+A record can also mark a source as bad for its tool (`install.avoid`; rustup and pnpm avoid scoop, whose installs keep their files in scoop's own folders). That source goes last, unless you name it with `-Via` or `InstallVia`, or it's the only one allowed; then it's used, and the plan and the result say why it's a poor fit. `-Via` picks the source for one call: `Install-DFTool -Name glow -Via scoop`.
 
 ## Command-line editing keys
 

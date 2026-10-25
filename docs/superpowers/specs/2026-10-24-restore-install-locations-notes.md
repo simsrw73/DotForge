@@ -193,9 +193,9 @@ package for X falls through to the rest of the order (with the once-only notice,
 per-tool `InstallVia` still beats it; and where X is especially bad for a tool, the once-only notice
 says so but the install still goes through X.
 
-**Done (DotForge, 2026-10-25):** `InstallAlways` (strict: a tool X lacks is skipped; only tools a
-system manager carries) and `install.avoid` (ranked last, reason shown when used); spec
-`2026-10-25-manager-choice-design.md`. The first-run warning is part of T-83.
+**Done (DotForge, 2026-10-25):** `install.avoid` (ranked last, reason shown when used), and rule 1
+as `IncludeSources`: the user reframed `InstallAlways` as an allow-list beside `ExcludeSources`,
+applying to every source, registries included; spec `2026-10-25-manager-choice-design.md`. The first-run warning is part of T-83.
 
 **Decided: the session never contradicts the desktop.** When a manager has set a tool's variable in
 the Windows environment and rewrites it on every update, DotForge keeps that value in the session (as

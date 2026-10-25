@@ -53,52 +53,46 @@ Describe 'Get-DFInstallSourceOrder' {
         $o[0] | Should -Be 'winget'
         "$w" | Should -Match "InstallVia.*glow.*crates"
     }
-    It 'InstallAlways beats install.prefer and InstallOrder' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallOrder = @('choco') }
-        Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db | Should -Be @('scoop')
+    It 'uses only the sources IncludeSources lists, in the usual order' {
+        Set-DFTestConfig @{ IncludeSources = @('choco', 'scoop') }
+        Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db | Should -Be @('scoop', 'choco')
     }
-    It 'skips a tool the InstallAlways source has no package for' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop' }
-        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db).Count | Should -Be 0
-        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All).Gap |
-            Should -Be 'InstallAlways is scoop, which has no package for it'
-    }
-    It 'leaves a tool no system manager carries alone' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop' }
+    It 'applies IncludeSources to registries too' {
+        Set-DFTestConfig @{ IncludeSources = @('scoop') }
+        @(Get-DFInstallSourceOrder -Tool $script:Db.mod -ToolDb $script:Db).Count | Should -Be 0
+        Set-DFTestConfig @{ IncludeSources = @('scoop', 'psgallery') }
         Get-DFInstallSourceOrder -Tool $script:Db.mod -ToolDb $script:Db | Should -Be @('psgallery')
-        Get-DFInstallSourceOrder -Tool $script:Db.ish -ToolDb $script:Db | Should -Be @('npm')
     }
-    It 'lets InstallVia and -Via beat InstallAlways' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ glow = 'winget' } }
+    It 'says IncludeSources left nothing for a tool' {
+        Set-DFTestConfig @{ IncludeSources = @('scoop') }
+        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All).Gap |
+            Should -Be "no source left (only winget has it, and IncludeSources doesn't list it)"
+        Set-DFTestConfig @{ IncludeSources = @('scoop', 'winget'); ExcludeSources = @('winget') }
+        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All).Gap |
+            Should -Be 'no source left (only winget has it, and ExcludeSources removes it)'
+        $two = Rec '{ "name": "two", "executable": "two.exe", "packages": { "winget": "Two.Two", "choco": "two" } }'
+        (Resolve-DFInstallSource -Tool $two -ToolDb $script:Db -IsAvailable $script:All).Gap |
+            Should -Be 'no source left (only winget, choco have it, and IncludeSources and ExcludeSources rule them out)'
+    }
+    It 'lets InstallVia and -Via name a source IncludeSources leaves out' {
+        Set-DFTestConfig @{ IncludeSources = @('scoop'); InstallVia = @{ glow = 'winget' } }
         (Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db)[0] | Should -Be 'winget'
         (Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -Via @{ glow = 'choco' })[0] | Should -Be 'choco'
-        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ wgonly = 'winget' } }
-        Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db | Should -Be @('winget')
     }
-    It 'lets InstallAlways win over ExcludeSources, with a warning' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop'; ExcludeSources = @('scoop') }
-        $o = Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -WarningVariable w 3>$null
-        $o | Should -Be @('scoop')
-        "$w" | Should -Match 'InstallAlways.*ExcludeSources'
+    It "doesn't let a bad InstallVia pin loosen IncludeSources" {
+        Set-DFTestConfig @{ IncludeSources = @('scoop'); InstallVia = @{ wgonly = 'npm' } }
+        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db 3>$null).Count | Should -Be 0
     }
-    It 'warns about an unknown InstallAlways source once per install, and ignores it' {
-        Set-DFTestConfig @{ InstallAlways = 'nope' }
+    It 'warns about an unknown IncludeSources entry once per install, and ignores it' {
+        Set-DFTestConfig @{ IncludeSources = @('scoop', 'nope') }
         $script:DFInstallWarned = [System.Collections.Generic.HashSet[string]]::new()
         try {
             $first = Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -WarningVariable w1 3>$null
             $null = Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db -WarningVariable w2 3>$null
         } finally { $script:DFInstallWarned = $null }
-        $first | Should -Be @('winget', 'scoop', 'choco')
-        "$w1" | Should -Match "InstallAlways.*nope"
+        $first | Should -Be @('scoop')
+        "$w1" | Should -Match "IncludeSources.*nope"
         @($w2).Count | Should -Be 0
-    }
-    It 'keeps InstallAlways strict when InstallVia or -Via names a source the tool has no package for' {
-        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ wgonly = 'npm' } }
-        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db 3>$null).Count | Should -Be 0
-        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All 3>$null).Gap |
-            Should -Be 'InstallAlways is scoop, which has no package for it'
-        Set-DFTestConfig @{ InstallAlways = 'scoop' }
-        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db -Via @{ wgonly = 'npm' } 3>$null).Count | Should -Be 0
     }
     It 'reads install.avoid under StrictMode Latest, empty or not' {
         Set-StrictMode -Version Latest
@@ -117,7 +111,9 @@ Describe 'Get-DFInstallSourceOrder' {
         (Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db -Via @{ fd = 'choco' })[0] | Should -Be 'choco'
         Set-DFTestConfig @{ InstallVia = @{ fd = 'choco' } }
         (Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db)[0] | Should -Be 'choco'
-        Set-DFTestConfig @{ InstallAlways = 'choco' }
+    }
+    It 'still uses an avoided source when IncludeSources allows nothing else' {
+        Set-DFTestConfig @{ IncludeSources = @('choco') }
         Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db | Should -Be @('choco')
     }
 }
