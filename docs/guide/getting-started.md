@@ -122,17 +122,26 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('+core', '+prompt') }
 ```
 
-To customize what DotForge does (tools, themes, and which tool wins `ls`), pass your hashtable to `Start-DFSession -Config`. The [configuration guide](configuration.md) lists every setting:
+To customize what DotForge does (tools, themes, and which tool wins `ls`), keep your settings in
+`~/.config/dotforge/config.psd1` instead. The [configuration guide](configuration.md) lists every
+setting:
+
+<!-- fragment -->
 
 ```powershell
-$DFConfig = @{
-    Tools     = @('+core', '+prompt')
-    Theme     = 'catppuccin-mocha'
-    Defaults  = @{ listing = 'eza' }
+@{
+    Tools        = @('+core', '+prompt')
+    Theme        = 'catppuccin-mocha'
+    Defaults     = @{ listing = 'eza' }
     ExcludeTools = @('lsd')
 }
+```
+
+Then `Start-DFSession`, with no `-Config`, reads that file:
+
+```powershell
 Import-Module DotForge
-Start-DFSession -Config $DFConfig
+Start-DFSession
 ```
 
 Open a new terminal to check that it loads without errors.
@@ -158,7 +167,7 @@ Then install everything that's missing at once:
 
 ```powershell
 Import-Module DotForge
-Start-DFSession -Config $DFConfig
+Start-DFSession
 Install-DFTool -Missing
 ```
 

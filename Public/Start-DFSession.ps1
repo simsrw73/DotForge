@@ -6,7 +6,12 @@ function Start-DFSession {
         Configures the tools you request for this PowerShell session. Call it once, from your profile.
     .DESCRIPTION
         Start-DFSession is DotForge's profile entry point:
-          1. Stores -Config as the session's configuration (unknown keys warn).
+          1. Stores the configuration (unknown keys warn): -Config when given,
+             else the config file, $XDG_CONFIG_HOME/dotforge/config.psd1
+             (~/.config/dotforge/config.psd1). -Config replaces the file
+             entirely; the two are never merged. The file is a PowerShell data
+             file (literal values and comments, no code). A missing or
+             unreadable file warns, naming it, and configures nothing.
           2. Exports the XDG folders (XDG_CONFIG_HOME and the rest).
           3. Resolves Tools and ExcludeTools: +groups expand, exclusions win.
           4. Reads only the requested tools' records, checks which are
@@ -38,15 +43,22 @@ function Start-DFSession {
             SkipConflictCheck  $true skips the coreutils shadowing check.
             IgnoreConflicts    Command names left out of that check.
     .PARAMETER Config
-        The session configuration hashtable. Required.
+        The session configuration hashtable. Optional: without it, the config
+        file is read. When given, the config file is not read at all.
     .PARAMETER ToolsPath
         Read tool records and companions from this folder instead of the
         module's Tools/. For testing and custom tool sets.
     .EXAMPLE
         Import-Module DotForge
+        Start-DFSession
+
+        Configures what ~/.config/dotforge/config.psd1 asks for, e.g. a file
+        holding @{ Tools = @('+core', 'starship'); Theme = 'catppuccin-mocha' }.
+    .EXAMPLE
+        Import-Module DotForge
         Start-DFSession -Config @{ Tools = @('+core', 'starship'); ExcludeTools = @('less') }
 
-        Configures every +core tool except less, plus starship.
+        Configures every +core tool except less, plus starship, ignoring the config file.
     .EXAMPLE
         $DFConfig = @{ Tools = @('+core', '+git'); Defaults = @{ pager = 'moor' }; Theme = 'catppuccin-mocha' }
         Start-DFSession -Config $DFConfig
@@ -60,12 +72,14 @@ function Start-DFSession {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$Config,
+        [System.Collections.IDictionary]$Config,
         [string]$ToolsPath
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
 
     Write-DFDevBuildNotice
+    # -Config replaces the config file entirely; the two are never merged.
+    if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = Read-DFConfigFile }
     Set-DFSessionConfig -Config $Config
     Set-DFXdgEnvironment
 

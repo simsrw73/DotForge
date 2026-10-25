@@ -94,6 +94,48 @@ function Set-DFSessionConfig {
     $script:DFSessionConfigured = $true
 }
 
+function Get-DFConfigFilePath {
+    <#
+    .SYNOPSIS
+        Returns the path of the config file Start-DFSession reads without -Config.
+    .DESCRIPTION
+        $XDG_CONFIG_HOME/dotforge/config.psd1 (~/.config/dotforge/config.psd1
+        when XDG_CONFIG_HOME is unset). The file needn't exist.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    param()
+    ConvertTo-DFPath (Join-Path (Get-DFXdgPath Config) 'dotforge' 'config.psd1')
+}
+
+function Read-DFConfigFile {
+    <#
+    .SYNOPSIS
+        Reads the config file, or returns an empty configuration with a warning when it is missing or unreadable.
+    .DESCRIPTION
+        The file is a PowerShell data file (Import-PowerShellDataFile): the same
+        keys as Start-DFSession -Config, comments allowed, no code. A file that
+        is missing, malformed or holds code warns, naming the file, and yields
+        an empty configuration, so a typo never stops a shell from starting.
+    .OUTPUTS
+        System.Collections.Hashtable.
+    #>
+    [CmdletBinding()]
+    param()
+    $path = Get-DFConfigFilePath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        Write-Warning "DotForge: no config file at $path, so no tools are configured. Put your settings there (see Get-Help Start-DFSession)."
+        return @{}
+    }
+    try {
+        Import-PowerShellDataFile -LiteralPath $path -ErrorAction Stop
+    } catch {
+        Write-Warning "DotForge: can't read $path, so no tools are configured: $($_.Exception.Message)"
+        @{}
+    }
+}
+
 function Copy-DFConfigValue {
     <#
     .SYNOPSIS

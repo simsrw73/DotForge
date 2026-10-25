@@ -148,6 +148,61 @@ Describe 'Start-DFSession' {
     }
 }
 
+Describe 'Start-DFSession config file' {
+    BeforeEach {
+        Set-DFTestXdg
+        Set-DFTestConfig $null
+        Reset-DFTestSession
+        $script:Tools = Join-Path $TestDrive "tools-$([guid]::NewGuid().ToString('N').Substring(0, 6))"
+        New-Item -ItemType Directory $script:Tools | Out-Null
+        $global:DFTestActivated = @()
+        New-SessionTool 'alpha'
+        New-SessionTool 'beta'
+        Mock Test-DFToolAvailable { $true }
+        Mock Write-DFConflictNotice { }
+        # $TestDrive (and so the XDG folders) lasts the whole Describe: start each test without a file.
+        $script:File = Join-Path $Env:XDG_CONFIG_HOME 'dotforge' 'config.psd1'
+        Remove-Item $script:File -ErrorAction Ignore
+        New-Item -ItemType Directory (Split-Path $script:File) -Force | Out-Null
+    }
+    AfterEach {
+        Restore-DFTestXdg
+        Set-DFTestConfig $null
+        Remove-Variable DFTestActivated -Scope Global -ErrorAction Ignore
+    }
+
+    It 'reads the config file when -Config is not given' {
+        Set-Content $script:File "@{ Tools = @('alpha'); Theme = 'nord' }"
+        Start-DFSession -ToolsPath $script:Tools 3>$null
+        $global:DFTestActivated | Should -Be @('alpha')
+        Get-DFConfig Theme | Should -Be 'nord'
+    }
+    It 'lets -Config replace the file entirely' {
+        Set-Content $script:File "@{ Tools = @('alpha'); Theme = 'nord' }"
+        Start-DFSession -Config @{ Tools = @('beta') } -ToolsPath $script:Tools 3>$null
+        $global:DFTestActivated | Should -Be @('beta')
+        Get-DFConfig Theme | Should -BeNullOrEmpty
+    }
+    It 'configures nothing without a file or -Config, and says where the file goes' {
+        Start-DFSession -ToolsPath $script:Tools -WarningVariable w 3>$null
+        $global:DFTestActivated | Should -BeNullOrEmpty
+        "$w" | Should -BeLike "*$script:File*"
+    }
+    It 'warns about a file it can''t read, naming it, and still starts' {
+        Set-Content $script:File "@{ Tools = @('alpha')"
+        Start-DFSession -ToolsPath $script:Tools -WarningVariable w 3>$null
+        $global:DFTestActivated | Should -BeNullOrEmpty
+        "$w" | Should -BeLike "*$script:File*"
+        $Env:XDG_STATE_HOME | Should -BeLike "$TestDrive*"
+    }
+    It 'refuses code in the file: it is data only' {
+        Set-Content $script:File "@{ Tools = @((Get-Date).ToString()) }"
+        Start-DFSession -ToolsPath $script:Tools -WarningVariable w 3>$null
+        $global:DFTestActivated | Should -BeNullOrEmpty
+        "$w" | Should -BeLike "*$script:File*"
+    }
+}
+
 Describe 'Get-DFToolStatus before any session' {
     BeforeEach { $script:DFSessionStatus = $null }
     It 'says Start-DFSession has not run, and returns nothing' {

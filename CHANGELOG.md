@@ -32,6 +32,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **A config file.** `Start-DFSession` with no `-Config` reads `~/.config/dotforge/config.psd1`
+  (`$XDG_CONFIG_HOME/dotforge/config.psd1`): the same keys, as a PowerShell data file (comments, no
+  code). Your profile shrinks to `Start-DFSession`, and a restore script can read the same settings.
+  `-Config` still works and replaces the file entirely. A missing or unreadable file warns and starts
+  the shell with nothing configured.
 - **Nerd Font icons follow what's installed.** On Windows, DotForge checks for a Nerd Font at each
   start. Without one, it turns off the icons it controls (eza and lsd in `ls`/`ll`/`la`/`ff`, `fzo`'s
   preview, Terminal-Icons, the bundled oh-my-posh themes) and says why. The `NerdFont` setting

@@ -2,22 +2,30 @@
 
 **Audience:** DotForge users who want to change its defaults.  
 **Topic:** session configuration, themes, choosing which tool fills each role, and the environment variables DotForge reads.
-**Goal:** a configuration hashtable in your profile that sets your theme, your package manager and the tools you want.
+**Goal:** a config file that sets your theme, your package manager and the tools you want.
 
 ## Quick start
 
-Pass a configuration hashtable to `Start-DFSession -Config`. Every key is optional except `Tools`:
+Put your settings in `~/.config/dotforge/config.psd1` (in `$XDG_CONFIG_HOME/dotforge` when that is
+set). Every key is optional except `Tools`:
+
+<!-- fragment -->
 
 ```powershell
-$DFConfig = @{
-    Tools               = @('+core')
-    Theme               = 'catppuccin-mocha'
-    InstallOrder        = @('scoop', 'winget')
-    Defaults            = @{ listing = 'eza' }
-    ExcludeTools        = @('lsd')
+@{
+    Tools        = @('+core')
+    Theme        = 'catppuccin-mocha'
+    InstallOrder = @('scoop', 'winget')
+    Defaults     = @{ listing = 'eza' }
+    ExcludeTools = @('lsd')
 }
+```
+
+Your profile then needs only:
+
+```powershell
 Import-Module DotForge
-Start-DFSession -Config $DFConfig
+Start-DFSession
 ```
 
 1. `Theme` sets one color theme for every tool that has themes.
@@ -26,6 +34,14 @@ Start-DFSession -Config $DFConfig
 4. `ExcludeTools` leaves lsd unconfigured, even when a group requested it.
 
 A key you don't set keeps its default. A misspelled key warns at startup and names the closest known key. To see what the session is using, read a setting back with `Get-DFConfig`, e.g. `Get-DFConfig Theme`.
+
+The file is a PowerShell data file: the same hashtable you would write in a script, with comments,
+`$true` and `$false`, but no code (no variables, no commands). A file that is missing or can't be read
+warns, naming it, and the shell starts with no tools configured; it never stops the shell.
+
+`Start-DFSession -Config <hashtable>` uses that hashtable instead, for scripts and one-off sessions.
+It replaces the file entirely: the two are never merged. The examples in this guide pass `-Config` so
+each one is self-contained; the same keys go in your file.
 
 ## All settings
 
@@ -55,7 +71,7 @@ A key you don't set keeps its default. A misspelled key warns at startup and nam
 | `BannerWait` | int | `300` | Longest wait, in milliseconds, for an unfinished banner line before its last known value is used. |
 | `BannerClear` | bool | `$true` | Clear the screen before the banner; `$false` keeps your scrollback. |
 
-DotForge reads the hashtable you pass to `Start-DFSession -Config`, so a change takes effect the next time you call it (or in a new shell).
+DotForge reads your config file (or the hashtable you pass to `Start-DFSession -Config`) when `Start-DFSession` runs, so a change takes effect the next time you call it (or in a new shell).
 
 ## Themes
 
@@ -383,7 +399,8 @@ Set these in your profile, before or after importing DotForge:
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| A setting has no effect | the hashtable was not passed to `Start-DFSession`, or the key is misspelled | Pass it with `-Config`; check the key against [All settings](#all-settings). |
+| A setting has no effect | the key is misspelled, or `-Config` was passed, which replaces your config file | Check the key against [All settings](#all-settings); put it in the hashtable you pass, or drop `-Config`. |
+| `no config file at <path>` or `can't read <path>` | the file is missing, has a syntax error, or holds code | Create or fix the file; only literal values are allowed. |
 | `fzf theme '<name>' not found` or `PSReadLine theme '<name>' not found` | the shared `Theme` names a theme those tools don't ship | Set `FzfTheme`/`PSReadLineTheme` to `catppuccin-mocha`, or add a theme file. |
 | `$DFConfig.Defaults['<role>'] names '<tool>', which is not a <role> tool` | misspelled tool, or a tool that can't fill that role | Pick one of the tools the warning lists. |
 | `<tools> can each fill the <role> role; using <tool>` | two tools that would conflict are installed and `Defaults` doesn't choose | Add the `Defaults` line the warning shows. |

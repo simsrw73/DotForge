@@ -50,7 +50,7 @@ function Get-DFToolStatus {
         [switch]$Conflict
     )
     if (-not $script:DFSessionStatus) {
-        Write-Warning 'DotForge: no session yet. Start-DFSession -Config @{ Tools = @(...) } configures the tools you request.'
+        Write-Warning 'DotForge: no session yet. Start-DFSession configures the tools your config file (~/.config/dotforge/config.psd1) requests.'
         return
     }
     Add-DFInstallHint

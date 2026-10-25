@@ -25,6 +25,10 @@ Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('+core') }
 ```
 
+The examples pass `-Config` so each one runs on its own. In your own profile, keep the settings in
+`~/.config/dotforge/config.psd1` and call `Start-DFSession` with no `-Config`; see the
+[configuration guide](../docs/guide/configuration.md#quick-start).
+
 ## Common patterns
 
 ### Install missing tools on first run

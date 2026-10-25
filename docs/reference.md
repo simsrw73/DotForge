@@ -1136,12 +1136,17 @@ Switches bat's BAT_THEME.
 Configures the tools you request for this PowerShell session. Call it once, from your profile.
 
 ```text
-Start-DFSession [-Config] <IDictionary> [[-ToolsPath] <string>] [<CommonParameters>]
+Start-DFSession [[-Config] <IDictionary>] [[-ToolsPath] <string>] [<CommonParameters>]
 ```
 
 ```text
 Start-DFSession is DotForge's profile entry point:
-  1. Stores -Config as the session's configuration (unknown keys warn).
+  1. Stores the configuration (unknown keys warn): -Config when given,
+     else the config file, $XDG_CONFIG_HOME/dotforge/config.psd1
+     (~/.config/dotforge/config.psd1). -Config replaces the file
+     entirely; the two are never merged. The file is a PowerShell data
+     file (literal values and comments, no code). A missing or
+     unreadable file warns, naming it, and configures nothing.
   2. Exports the XDG folders (XDG_CONFIG_HOME and the rest).
   3. Resolves Tools and ExcludeTools: +groups expand, exclusions win.
   4. Reads only the requested tools' records, checks which are
@@ -1172,7 +1177,7 @@ Config keys (see docs/guide/configuration.md for all of them):
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Config` | Collections.IDictionary |  | yes |  | The session configuration hashtable. Required. |
+| `-Config` | Collections.IDictionary |  |  |  | The session configuration hashtable. Optional: without it, the config file is read. When given, the config file is not read at all. |
 | `-ToolsPath` | string |  |  |  | Read tool records and companions from this folder instead of the module's Tools/. For testing and custom tool sets. |
 
 **Outputs:** None. See Get-DFToolStatus for what the session decided.
@@ -1181,12 +1186,21 @@ Config keys (see docs/guide/configuration.md for all of them):
 
 ```powershell
 Import-Module DotForge
+Start-DFSession
+```
+
+Configures what ~/.config/dotforge/config.psd1 asks for, e.g. a file holding @{ Tools = @('+core', 'starship'); Theme = 'catppuccin-mocha' }.
+
+**Example 2**
+
+```powershell
+Import-Module DotForge
 Start-DFSession -Config @{ Tools = @('+core', 'starship'); ExcludeTools = @('less') }
 ```
 
-Configures every +core tool except less, plus starship.
+Configures every +core tool except less, plus starship, ignoring the config file.
 
-**Example 2**
+**Example 3**
 
 ```powershell
 $DFConfig = @{ Tools = @('+core', '+git'); Defaults = @{ pager = 'moor' }; Theme = 'catppuccin-mocha' }

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: a6a4cc376ffaefb5785dea60aca3784c60effc5f9596b5f8cf0d6dd448a0c24d
+# sources-sha256: 66692773283b3929a6aab87f01827967d0a422befa05199d98f63f485f390413
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -3752,6 +3752,48 @@ function Set-DFSessionConfig {
     }
     $script:DFSessionConfig = Copy-DFConfigValue $Config
     $script:DFSessionConfigured = $true
+}
+
+function Get-DFConfigFilePath {
+    <#
+    .SYNOPSIS
+        Returns the path of the config file Start-DFSession reads without -Config.
+    .DESCRIPTION
+        $XDG_CONFIG_HOME/dotforge/config.psd1 (~/.config/dotforge/config.psd1
+        when XDG_CONFIG_HOME is unset). The file needn't exist.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    param()
+    ConvertTo-DFPath (Join-Path (Get-DFXdgPath Config) 'dotforge' 'config.psd1')
+}
+
+function Read-DFConfigFile {
+    <#
+    .SYNOPSIS
+        Reads the config file, or returns an empty configuration with a warning when it is missing or unreadable.
+    .DESCRIPTION
+        The file is a PowerShell data file (Import-PowerShellDataFile): the same
+        keys as Start-DFSession -Config, comments allowed, no code. A file that
+        is missing, malformed or holds code warns, naming the file, and yields
+        an empty configuration, so a typo never stops a shell from starting.
+    .OUTPUTS
+        System.Collections.Hashtable.
+    #>
+    [CmdletBinding()]
+    param()
+    $path = Get-DFConfigFilePath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        Write-Warning "DotForge: no config file at $path, so no tools are configured. Put your settings there (see Get-Help Start-DFSession)."
+        return @{}
+    }
+    try {
+        Import-PowerShellDataFile -LiteralPath $path -ErrorAction Stop
+    } catch {
+        Write-Warning "DotForge: can't read $path, so no tools are configured: $($_.Exception.Message)"
+        @{}
+    }
 }
 
 function Copy-DFConfigValue {
@@ -10101,7 +10143,7 @@ function Get-DFToolStatus {
         [switch]$Conflict
     )
     if (-not $script:DFSessionStatus) {
-        Write-Warning 'DotForge: no session yet. Start-DFSession -Config @{ Tools = @(...) } configures the tools you request.'
+        Write-Warning 'DotForge: no session yet. Start-DFSession configures the tools your config file (~/.config/dotforge/config.psd1) requests.'
         return
     }
     Add-DFInstallHint
@@ -10932,7 +10974,12 @@ function Start-DFSession {
         Configures the tools you request for this PowerShell session. Call it once, from your profile.
     .DESCRIPTION
         Start-DFSession is DotForge's profile entry point:
-          1. Stores -Config as the session's configuration (unknown keys warn).
+          1. Stores the configuration (unknown keys warn): -Config when given,
+             else the config file, $XDG_CONFIG_HOME/dotforge/config.psd1
+             (~/.config/dotforge/config.psd1). -Config replaces the file
+             entirely; the two are never merged. The file is a PowerShell data
+             file (literal values and comments, no code). A missing or
+             unreadable file warns, naming it, and configures nothing.
           2. Exports the XDG folders (XDG_CONFIG_HOME and the rest).
           3. Resolves Tools and ExcludeTools: +groups expand, exclusions win.
           4. Reads only the requested tools' records, checks which are
@@ -10964,15 +11011,22 @@ function Start-DFSession {
             SkipConflictCheck  $true skips the coreutils shadowing check.
             IgnoreConflicts    Command names left out of that check.
     .PARAMETER Config
-        The session configuration hashtable. Required.
+        The session configuration hashtable. Optional: without it, the config
+        file is read. When given, the config file is not read at all.
     .PARAMETER ToolsPath
         Read tool records and companions from this folder instead of the
         module's Tools/. For testing and custom tool sets.
     .EXAMPLE
         Import-Module DotForge
+        Start-DFSession
+
+        Configures what ~/.config/dotforge/config.psd1 asks for, e.g. a file
+        holding @{ Tools = @('+core', 'starship'); Theme = 'catppuccin-mocha' }.
+    .EXAMPLE
+        Import-Module DotForge
         Start-DFSession -Config @{ Tools = @('+core', 'starship'); ExcludeTools = @('less') }
 
-        Configures every +core tool except less, plus starship.
+        Configures every +core tool except less, plus starship, ignoring the config file.
     .EXAMPLE
         $DFConfig = @{ Tools = @('+core', '+git'); Defaults = @{ pager = 'moor' }; Theme = 'catppuccin-mocha' }
         Start-DFSession -Config $DFConfig
@@ -10986,12 +11040,14 @@ function Start-DFSession {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$Config,
+        [System.Collections.IDictionary]$Config,
         [string]$ToolsPath
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
 
     Write-DFDevBuildNotice
+    # -Config replaces the config file entirely; the two are never merged.
+    if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = Read-DFConfigFile }
     Set-DFSessionConfig -Config $Config
     Set-DFXdgEnvironment
 
