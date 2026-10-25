@@ -36,6 +36,8 @@ Describe 'Remove-DFTool' {
         Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Operation -eq 'remove' -and $Manager.name -eq 'scoop' -and ($Ids -join ',') -eq 'glow' }
     }
     It "gives the remove command the tool's variables" {
+        $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $script:DFSessionStatus['glow'] = New-DFToolStatus -Name glow -State Active -RequestedBy Tools
         $null = Remove-DFTool -Name glow -Confirm:$false
         Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Environment -and $Environment.Contains('GLOW_X') }
     }

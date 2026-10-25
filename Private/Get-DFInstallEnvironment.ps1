@@ -14,7 +14,12 @@ function Get-DFInstallEnvironment {
             chain (cargo -> rustup). Only tool references are followed: a
             role: requirement orders, it never names one tool. A name with no
             record is skipped.
-        Only records whose xdg.method is env count, as at registration
+        Only tools this session requested count, Active or Missing (not yet
+        installed): those are the ones whose variables a session sets. A tool
+        in Conflict keeps its data where the user has it, and one the session
+        didn't request isn't relocated, so a cargo whose rustup lives in
+        ~\.rustup isn't pointed at an empty folder. Without a session nothing
+        is set. Only records whose xdg.method is env count, as at registration
         (Set-DFToolXdgConfig), and only xdg.vars: the env map holds flags and
         themes, which an installer doesn't need. When two sources name the
         same variable with different values, the later one wins (the manager
@@ -57,8 +62,10 @@ function Get-DFInstallEnvironment {
 
     $environment = [ordered]@{}
     $from = @{}
+    $status = $script:DFSessionStatus
     foreach ($source in $sources) {
         if ($source.xdg.method -ne 'env') { continue }
+        if (-not ($status -and $status.Contains($source.name) -and $status[$source.name].State -in 'Active', 'Missing')) { continue }
         foreach ($var in @($source.xdg.vars?.PSObject.Properties)) {
             if (-not $var) { continue }
             $value = Expand-DFXdgPath $var.Value

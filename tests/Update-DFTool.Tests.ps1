@@ -47,6 +47,8 @@ Describe 'Update-DFTool' {
     }
 
     It "gives the update command the tools' variables" {
+        $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $script:DFSessionStatus['fzf'] = New-DFToolStatus -Name fzf -State Active -RequestedBy Tools
         $null = Update-DFTool -Name fzf
         Should -Invoke Invoke-DFManagerBatch -Times 1 -Exactly -ParameterFilter { $Environment -and $Environment.Contains('FZF_X') }
     }

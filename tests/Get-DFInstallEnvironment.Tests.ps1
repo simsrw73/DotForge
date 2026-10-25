@@ -21,9 +21,12 @@ Describe 'Get-DFInstallEnvironment' {
             (Rec '{ "name": "b", "executable": "b.exe", "requires": ["a"], "xdg": { "method": "env", "vars": { "B_HOME": "${XDG_DATA_HOME}/b" } } }'),
             (Rec '{ "name": "t1", "executable": "t1.exe", "xdg": { "method": "env", "vars": { "FNM_DIR": "${XDG_CACHE_HOME}/x" } } }')
         )) { $script:Db[$r.name] = $r }
+        # Only tools this session requested count: every one is Active unless a test says otherwise.
+        $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+        foreach ($name in $script:Db.Keys) { $script:DFSessionStatus[$name] = New-DFToolStatus -Name $name -State Active -RequestedBy 'Tools' }
         $script:Env = { param($Tool, $Manager) Get-DFInstallEnvironment -Tool @($Tool | ForEach-Object { $script:Db[$_] }) -Manager $script:Db[$Manager] -ToolDb $script:Db }
     }
-    AfterEach { Restore-DFTestXdg }
+    AfterEach { Restore-DFTestXdg; $script:DFSessionStatus = $null }
 
     It "returns the tool's own variables" {
         $e = & $script:Env 'bat' 'scoop'
@@ -49,6 +52,22 @@ Describe 'Get-DFInstallEnvironment' {
     }
     It 'ignores the env map and non-env methods' {
         @((& $script:Env @('bat', 'wrapped') 'scoop').Keys) | Should -Be @('BAT_CONFIG_DIR')
+    }
+    It 'includes a requested tool that is not installed yet' {
+        $script:DFSessionStatus['bat'] = New-DFToolStatus -Name bat -State Missing -RequestedBy 'Tools'
+        @((& $script:Env 'bat' 'scoop').Keys) | Should -Be @('BAT_CONFIG_DIR')
+    }
+    It "skips a tool in Conflict: its data stays where the user has it" {
+        $script:DFSessionStatus['rustup'] = New-DFToolStatus -Name rustup -State Conflict -RequestedBy 'Tools'
+        (& $script:Env @() 'cargo').Count | Should -Be 0
+    }
+    It "skips a tool the session didn't request" {
+        $script:DFSessionStatus.Remove('rustup')
+        (& $script:Env @() 'cargo').Count | Should -Be 0
+    }
+    It 'returns nothing without a session' {
+        $script:DFSessionStatus = $null
+        (& $script:Env 'bat' 'fnm').Count | Should -Be 0
     }
     It 'lets the later source win a clash, verbosely' {
         $out = Get-DFInstallEnvironment -Tool $script:Db['t1'] -Manager $script:Db['fnm'] -ToolDb $script:Db -Verbose 4>&1

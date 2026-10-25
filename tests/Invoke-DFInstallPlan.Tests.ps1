@@ -42,6 +42,9 @@ Describe 'Invoke-DFInstallPlan' {
             (Rec '{ "name": "glow", "executable": "glow.exe", "xdg": { "method": "env", "vars": { "GLOW_X": "${XDG_CONFIG_HOME}/glow" } }, "packages": { "scoop": "glow", "choco": "glow" } }'),
             (Rec '{ "name": "dotenv", "executable": "Dotenv", "type": "module", "xdg": { "method": "env", "vars": { "DOTENV_X": "${XDG_CONFIG_HOME}/dotenv" } }, "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://u" } } } }')
         )) { $script:Db[$r.name] = $r }
+        # The session requested every tool, so their location variables count (Get-DFInstallEnvironment).
+        $script:DFSessionStatus = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+        foreach ($name in $script:Db.Keys) { $script:DFSessionStatus[$name] = New-DFToolStatus -Name $name -State Missing -RequestedBy 'Tools' }
         $script:Installed = @('scoop')
         $script:Avail = { param($m) $m.name -in $script:Installed }
         # After a successful install, the tool is "found".

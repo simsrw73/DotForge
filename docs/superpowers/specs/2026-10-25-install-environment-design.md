@@ -50,6 +50,11 @@ returns an ordered dictionary, variable → expanded value, from:
    `ConvertFrom-DFToolReference`; only tool references are followed, never `role:` ones (a role
    requirement orders, it never names one tool), and a name missing from `-ToolDb` is skipped.
 
+Only tools this session requested count: state Active or Missing in the session status. A tool in
+Conflict keeps its data where the user has it, and one the session didn't request isn't relocated, so
+a cargo whose rustup still lives in `~\.rustup` isn't pointed at an empty folder. Without a session
+nothing is set. *(Added after the final review: the first version took every record in the chain.)*
+
 Only `xdg.vars`, never `env`: an installer needs locations, and `env` holds flags and themes
 (`FZF_DEFAULT_OPTS`, `LESS`). Only records whose `xdg.method` is `env`, matching
 `Set-DFToolXdgConfig`. Values go through `Expand-DFXdgPath`, as at registration.

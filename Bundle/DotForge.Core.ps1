@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 8c9febc82c43c7c81ccbfb9edc4a3b5b9d5c679028d61573c40339522958d8ce
+# sources-sha256: 514a56ce511c8e795e8a044869025fd2c6fdbba5fc47707303e5cad53b1c17bd
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -4561,7 +4561,12 @@ function Get-DFInstallEnvironment {
             chain (cargo -> rustup). Only tool references are followed: a
             role: requirement orders, it never names one tool. A name with no
             record is skipped.
-        Only records whose xdg.method is env count, as at registration
+        Only tools this session requested count, Active or Missing (not yet
+        installed): those are the ones whose variables a session sets. A tool
+        in Conflict keeps its data where the user has it, and one the session
+        didn't request isn't relocated, so a cargo whose rustup lives in
+        ~\.rustup isn't pointed at an empty folder. Without a session nothing
+        is set. Only records whose xdg.method is env count, as at registration
         (Set-DFToolXdgConfig), and only xdg.vars: the env map holds flags and
         themes, which an installer doesn't need. When two sources name the
         same variable with different values, the later one wins (the manager
@@ -4604,8 +4609,10 @@ function Get-DFInstallEnvironment {
 
     $environment = [ordered]@{}
     $from = @{}
+    $status = $script:DFSessionStatus
     foreach ($source in $sources) {
         if ($source.xdg.method -ne 'env') { continue }
+        if (-not ($status -and $status.Contains($source.name) -and $status[$source.name].State -in 'Active', 'Missing')) { continue }
         foreach ($var in @($source.xdg.vars?.PSObject.Properties)) {
             if (-not $var) { continue }
             $value = Expand-DFXdgPath $var.Value
