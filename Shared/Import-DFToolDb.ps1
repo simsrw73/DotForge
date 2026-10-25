@@ -478,15 +478,20 @@ function ConvertTo-DFManagerOperation {
 function ConvertTo-DFInstallBlock {
     <#
     .SYNOPSIS
-        Normalizes a tool record's install block (its preferred sources).
+        Normalizes a tool record's install block: prefer (its preferred sources) and avoid (source -> why it's bad for this tool).
+    .DESCRIPTION
+        Always returns the block, empty when the record has none, so install.prefer and install.avoid read without checks.
     .PARAMETER RawInstall
         See the synopsis.
     #>
     param($RawInstall)
 
-    if (-not $RawInstall) { return $null }
-
-    [pscustomobject]@{ prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @()) }
+    if (-not $RawInstall) { return [pscustomobject]@{ prefer = [string[]]@(); avoid = [pscustomobject]@{} } }
+    $avoid = Get-DFToolRecordProperty $RawInstall 'avoid' $null
+    [pscustomobject]@{
+        prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @())
+        avoid  = if ($avoid -is [pscustomobject]) { $avoid } else { [pscustomobject]@{} }
+    }
 }
 
 function ConvertTo-DFThemeBlock {

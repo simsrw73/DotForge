@@ -78,7 +78,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -123,7 +126,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -240,7 +246,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -341,7 +350,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -421,7 +433,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -550,7 +565,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -623,7 +641,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -700,7 +721,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -765,7 +789,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -851,7 +878,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -922,7 +952,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -995,7 +1028,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1053,7 +1089,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1137,7 +1176,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1195,7 +1237,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1291,7 +1336,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1349,7 +1397,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1454,7 +1505,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1551,7 +1605,10 @@
           ]
         },
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1630,7 +1687,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1728,7 +1788,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1798,7 +1861,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -1924,7 +1990,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2005,7 +2074,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2064,7 +2136,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2137,7 +2212,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2219,7 +2297,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2339,7 +2420,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2404,7 +2488,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2464,7 +2551,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2532,7 +2622,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2605,7 +2698,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2651,7 +2747,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2721,7 +2820,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2828,7 +2930,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -2964,7 +3069,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3046,7 +3154,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3137,7 +3248,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3213,7 +3327,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3307,7 +3424,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3388,7 +3508,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3431,7 +3554,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3495,7 +3621,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3556,7 +3685,8 @@
           "prefer": [
             "fnm",
             "mise"
-          ]
+          ],
+          "avoid": {}
         },
         "folder": null,
         "source": null
@@ -3688,7 +3818,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3746,7 +3879,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3839,7 +3975,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -3925,7 +4064,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4009,7 +4151,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4123,7 +4268,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4225,13 +4373,16 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
     },
     "pnpm": {
-      "sha256": "9e3bd1ceb74dfcee600807895b3e0dfd80deca0693922e0d3a95564e91c53619",
+      "sha256": "e9c079da3da671f0895d01c03e4761dedeb3b5f9ace743eb172670697a3a86f0",
       "record": {
         "name": "pnpm",
         "executable": "pnpm.cmd",
@@ -4330,7 +4481,12 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {
+            "scoop": "scoop's post-install saves its own store, cache and state folders in pnpm's config, so PNPM_HOME alone doesn't move them."
+          }
+        },
         "folder": null,
         "source": null
       }
@@ -4375,7 +4531,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4490,7 +4649,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4553,7 +4715,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4651,7 +4816,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4740,7 +4908,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4819,7 +4990,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4876,7 +5050,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -4945,7 +5122,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5026,7 +5206,8 @@
           "prefer": [
             "pymanager",
             "uv"
-          ]
+          ],
+          "avoid": {}
         },
         "folder": null,
         "source": null
@@ -5110,13 +5291,16 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
     },
     "rustup": {
-      "sha256": "4a4d713d64ed98394360470e9b09938529bc527f8a9f3f95be047398d17ed71c",
+      "sha256": "61ed7880c75986324c3f7657600b34d7457b83b1bdcdc25263aca1cc5a9c9edb",
       "record": {
         "name": "rustup",
         "executable": "rustup.exe",
@@ -5207,7 +5391,12 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {
+            "scoop": "scoop's installer sets CARGO_HOME and RUSTUP_HOME to its own folder before rustup-init runs, so toolchains never land in the XDG folders."
+          }
+        },
         "folder": null,
         "source": null
       }
@@ -5302,7 +5491,10 @@
             }
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5424,7 +5616,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5467,7 +5662,10 @@
           ]
         },
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5560,7 +5758,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5720,7 +5921,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5764,7 +5968,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5909,7 +6116,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -5957,7 +6167,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -6012,7 +6225,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -6095,7 +6311,10 @@
         },
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -6189,7 +6408,10 @@
             "feeds": null
           }
         ],
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }
@@ -6285,7 +6507,10 @@
         "setup": null,
         "banner": null,
         "installs": null,
-        "install": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
         "folder": null,
         "source": null
       }

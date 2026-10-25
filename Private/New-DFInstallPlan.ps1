@@ -84,7 +84,7 @@ function New-DFInstallPlan {
         $needsElevator = $r.Block.elevate -and -not $elevated -and $elevatorPlanned
         $deps = @(@($required) + $(if ($want.Contains($r.Manager.name)) { $r.Manager.name }) + $(if ($needsElevator) { $elevatorPlanned.name }) |
             Where-Object { $_ -and $_ -ne $t.name } | Select-Object -Unique)
-        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Block = $r.Block; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0 }
+        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Block = $r.Block; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0; AvoidReason = $r.AvoidReason }
     }
 
     # Tools that depend (transitively) on a gap can't be installed either.

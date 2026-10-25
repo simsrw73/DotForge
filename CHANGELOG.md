@@ -19,7 +19,6 @@ All notable changes to DotForge are documented here.
   DotForge is kept, and every variable is put back afterwards, except one the manager changed itself.
   gsudo passes them to an elevated command; Windows' own `sudo` doesn't, and DotForge warns when it
   runs one.
-
 - **Ctrl+R and Ctrl+T are roles.** `history-search` (Ctrl+R) and `path-insert` (Ctrl+T) let a
   different tool own each key; only the winner binds it (PSFzf, then television, then fzf, then
   skim; pick with `Defaults`). PSFzf still binds both by default. A Ctrl+R or Ctrl+T binding you
@@ -46,6 +45,13 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`InstallAlways`: one package manager for everything.** `InstallAlways = 'scoop'` installs every
+  tool scoop, winget or choco carries from scoop, and skips one scoop doesn't have (the summary says
+  why). `InstallVia` and `-Via` still pick a tool's source; PowerShell modules, npm tools and crates,
+  which no system manager has, install as usual.
+- **Records can avoid a source.** `install.avoid` maps a source to why it installs the tool badly;
+  that source goes last unless you name it, and then the plan and the result say why. rustup and pnpm
+  avoid scoop, whose installs keep their files in scoop's own folders.
 - **A config file.** `Start-DFSession` with no `-Config` reads `~/.config/dotforge/config.psd1`
   (`$XDG_CONFIG_HOME/dotforge/config.psd1`): the same keys, as a PowerShell data file (comments, no
   code). Your profile shrinks to `Start-DFSession`, and a restore script can read the same settings.

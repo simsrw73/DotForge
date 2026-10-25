@@ -95,7 +95,7 @@ function Invoke-DFInstallPlan {
                 $t = $ToolDb[$it.Tool]
                 # A failed batch may still have installed some of its tools.
                 $ok = $r.ExitCode -eq 0 -or ($batched -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
-                if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
+                if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)$(if ($it.AvoidReason) { " ($($it.AvoidReason))" })" }
                 else { & $set $it.Tool 'Failed' (Format-DFManagerFailure -Tool $it.Tool -Manager $m.name -Output $r.Output) }
             }
             if (@($results | Where-Object ExitCode -eq 0).Count -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }

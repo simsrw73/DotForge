@@ -11,7 +11,11 @@ BeforeAll {
             (Rec '{ "name": "npm", "executable": "npm.cmd", "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "install": ["npm","i","-g","{id}"] } }'),
             (Rec '{ "name": "pnpm", "executable": "pnpm.cmd", "roles": { "js-package-manager": { "priority": 20 } }, "installs": { "from": "npm", "install": ["pnpm","add","-g","{id}"] } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow", "winget": "charm.glow", "choco": "glow" }, "install": { "prefer": ["winget"] } }'),
-            (Rec '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }')
+            (Rec '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }'),
+            (Rec '{ "name": "psresource", "executable": "Microsoft.PowerShell.PSResourceGet", "type": "module", "installs": { "from": "psgallery", "function": "Install-PSResource", "args": { "Name": "{id}" } } }'),
+            (Rec '{ "name": "mod", "executable": "Mod", "type": "module", "packages": { "psgallery": "Mod" } }'),
+            (Rec '{ "name": "wgonly", "executable": "wg.exe", "packages": { "winget": "Only.Winget" } }'),
+            (Rec '{ "name": "fd", "executable": "fd.exe", "packages": { "scoop": "fd", "winget": "sharkdp.fd", "choco": "fd" }, "install": { "avoid": { "choco": "choco is bad here" } } }')
         )) { $db[$r.name] = $r }
         $db
     }
@@ -48,6 +52,56 @@ Describe 'Get-DFInstallSourceOrder' {
         $o = Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -WarningVariable w 3>$null
         $o[0] | Should -Be 'winget'
         "$w" | Should -Match "InstallVia.*glow.*crates"
+    }
+    It 'InstallAlways beats install.prefer and InstallOrder' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallOrder = @('choco') }
+        Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db | Should -Be @('scoop')
+    }
+    It 'skips a tool the InstallAlways source has no package for' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop' }
+        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db).Count | Should -Be 0
+        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All).Gap |
+            Should -Be 'InstallAlways is scoop, which has no package for it'
+    }
+    It 'leaves a tool no system manager carries alone' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop' }
+        Get-DFInstallSourceOrder -Tool $script:Db.mod -ToolDb $script:Db | Should -Be @('psgallery')
+        Get-DFInstallSourceOrder -Tool $script:Db.ish -ToolDb $script:Db | Should -Be @('npm')
+    }
+    It 'lets InstallVia and -Via beat InstallAlways' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ glow = 'winget' } }
+        (Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db)[0] | Should -Be 'winget'
+        (Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -Via @{ glow = 'choco' })[0] | Should -Be 'choco'
+        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ wgonly = 'winget' } }
+        Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db | Should -Be @('winget')
+    }
+    It 'lets InstallAlways win over ExcludeSources, with a warning' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop'; ExcludeSources = @('scoop') }
+        $o = Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -WarningVariable w 3>$null
+        $o | Should -Be @('scoop')
+        "$w" | Should -Match 'InstallAlways.*ExcludeSources'
+    }
+    It 'warns about an unknown InstallAlways source once per install, and ignores it' {
+        Set-DFTestConfig @{ InstallAlways = 'nope' }
+        $script:DFInstallWarned = [System.Collections.Generic.HashSet[string]]::new()
+        try {
+            $first = Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db -WarningVariable w1 3>$null
+            $null = Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db -WarningVariable w2 3>$null
+        } finally { $script:DFInstallWarned = $null }
+        $first | Should -Be @('winget', 'scoop', 'choco')
+        "$w1" | Should -Match "InstallAlways.*nope"
+        @($w2).Count | Should -Be 0
+    }
+    It 'ranks an avoided source last' {
+        Set-DFTestConfig @{ InstallOrder = @('choco', 'scoop') }
+        Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
+    }
+    It 'keeps an avoided source first when the user names it' {
+        (Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db -Via @{ fd = 'choco' })[0] | Should -Be 'choco'
+        Set-DFTestConfig @{ InstallVia = @{ fd = 'choco' } }
+        (Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db)[0] | Should -Be 'choco'
+        Set-DFTestConfig @{ InstallAlways = 'choco' }
+        Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db | Should -Be @('choco')
     }
 }
 
@@ -92,6 +146,14 @@ Describe 'Resolve-DFInstallSource' {
         Set-DFTestConfig @{ ExcludeSources = @('choco') }
         (Resolve-DFInstallSource -Tool $db.only -ToolDb $db -IsAvailable $script:All).Gap |
             Should -Match 'no source left.*choco.*ExcludeSources'
+    }
+    It 'still installs from an avoided source when nothing else is available, naming the reason' {
+        $r = Resolve-DFInstallSource -Tool $script:Db.fd -ToolDb $script:Db -IsAvailable { param($m) $m.name -eq 'choco' }
+        $r.Source | Should -Be 'choco'
+        $r.AvoidReason | Should -Be 'choco is bad here'
+    }
+    It 'has no AvoidReason for an ordinary source' {
+        (Resolve-DFInstallSource -Tool $script:Db.fd -ToolDb $script:Db -IsAvailable $script:All).AvoidReason | Should -BeNullOrEmpty
     }
     It 'reports a tool with no packages at all' {
         $db = New-Db

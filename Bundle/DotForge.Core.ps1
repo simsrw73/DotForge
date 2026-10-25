@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 816aa0e0e4e897deb7dce89747e33465dd8108c4db94f225be385ab38c112044
+# sources-sha256: 2f52afa15f387ca9b140778b2cbd6a4e23297441f96a23e2657aa4541282d1fd
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -192,14 +192,54 @@ function Get-DFBuiltInSourceOrder {
     [string[]]@($system + $other | Select-Object -Unique)
 }
 
+function Get-DFInstallAlways {
+    <#
+    .SYNOPSIS
+        Returns the source the InstallAlways setting imposes on one tool, or nothing.
+    .DESCRIPTION
+        InstallAlways covers a tool only when the tool has a package in some
+        system manager's source (a member of the package-manager role: scoop,
+        winget, choco); a tool only a registry or version manager provides
+        (PowerShell Gallery, npm, fnm) installs as usual. -Via or InstallVia
+        naming a source for the tool beats it. A source DotForge doesn't know
+        warns and is ignored.
+    .PARAMETER Tool
+        The tool record.
+    .PARAMETER ToolDb
+        Name -> tool record; must include the manager records.
+    .PARAMETER Via
+        Tool -> source for this call (Install-DFTool -Via).
+    .OUTPUTS
+        System.String, or nothing.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][hashtable]$ToolDb, [hashtable]$Via = @{})
+    $always = Get-DFConfig InstallAlways
+    if (-not $always) { return }
+    if ($always -notin (Get-DFBuiltInSourceOrder -ToolDb $ToolDb)) {
+        Write-DFInstallWarning "DotForge: InstallAlways names '$always', which no package manager installs from; ignoring it."
+        return
+    }
+    if ($Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]) { return }
+    $managers = @($ToolDb.Values | Where-Object installs)
+    $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers | ForEach-Object { $_.installs.from })
+    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
+    if (@($have | Where-Object { $_ -in $system }).Count) { $always }
+}
+
 function Get-DFInstallSourceOrder {
     <#
     .SYNOPSIS
-        Orders one tool's candidate sources: InstallVia, the tool's install.prefer, InstallOrder, then DotForge's order.
+        Orders one tool's candidate sources: -Via, InstallVia, InstallAlways, the tool's install.prefer, InstallOrder, then DotForge's order.
     .DESCRIPTION
         Only sources the tool has a package for are returned. ExcludeSources
-        removes a source unless InstallVia names it for this tool. An
-        InstallVia source the tool has no package for warns and is ignored.
+        removes a source unless InstallVia or InstallAlways names it for this
+        tool. An InstallVia source the tool has no package for warns and is
+        ignored. A tool InstallAlways covers (Get-DFInstallAlways) gets that
+        source alone, or nothing when it has no package there. Sources the
+        record avoids (install.avoid) go last, unless -Via, InstallVia or
+        InstallAlways names them.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -220,9 +260,17 @@ function Get-DFInstallSourceOrder {
         $pinned = $null
     }
     $excluded = @(Get-DFConfig ExcludeSources)
+    $always = if (-not $pinned) { Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via }
+    if ($always) {
+        if ($always -in $excluded) { Write-DFInstallWarning "DotForge: InstallAlways names '$always', which ExcludeSources also lists; using it." }
+        return [string[]]@($always | Where-Object { $_ -in $have })
+    }
     $ordered = @(@($pinned) + @($Tool.install?.prefer) + @(Get-DFConfig InstallOrder) + (Get-DFBuiltInSourceOrder -ToolDb $ToolDb) + $have |
         Where-Object { $_ -and $_ -in $have } | Select-Object -Unique)
-    [string[]]@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
+    $ordered = @($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
+    # Sources the record avoids go last, unless the user named one for this tool.
+    $avoided = @($Tool.install?.avoid?.PSObject.Properties.Name)
+    [string[]]@(@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $avoided }) + @($ordered | Where-Object { $_ -ne $pinned -and $_ -in $avoided }))
 }
 
 function Resolve-DFInstallSource {
@@ -254,8 +302,8 @@ function Resolve-DFInstallSource {
         not, such a manager is passed over like an unavailable one.
     .OUTPUTS
         PSCustomObject: Tool, Source, Manager, Block (the manager's installs
-        block for Source), Ref, Gap, Options, and Sources (the candidate order
-        it walked).
+        block for Source), Ref, Gap, Options, Sources (the candidate order it
+        walked), and AvoidReason (why the record avoids Source, when it does).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -269,8 +317,13 @@ function Resolve-DFInstallSource {
         [bool]$CanElevate = $true
     )
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
-    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources }
+    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources; AvoidReason = $null }
     if (-not $sources) {
+        $always = Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via
+        if ($always) {
+            $result.Gap = "InstallAlways is $always, which has no package for it"
+            return $result
+        }
         $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
         $result.Gap = if (-not $have) { 'no package in any source' }
                       else { "no source left (only $($have -join ', ') $(if ($have.Count -eq 1) { 'has' } else { 'have' }) it, and ExcludeSources removes $(if ($have.Count -eq 1) { 'it' } else { 'them' }))" }
@@ -289,6 +342,7 @@ function Resolve-DFInstallSource {
             $result.Manager = $pick
             $result.Block = Get-DFInstallBlock -Manager $pick -Source $s
             $result.Ref = Get-DFPackageRef $Tool.packages.$s
+            $result.AvoidReason = $Tool.install?.avoid?.PSObject.Properties[$s]?.Value
             return $result
         }
     }
@@ -1449,15 +1503,20 @@ function ConvertTo-DFManagerOperation {
 function ConvertTo-DFInstallBlock {
     <#
     .SYNOPSIS
-        Normalizes a tool record's install block (its preferred sources).
+        Normalizes a tool record's install block: prefer (its preferred sources) and avoid (source -> why it's bad for this tool).
+    .DESCRIPTION
+        Always returns the block, empty when the record has none, so install.prefer and install.avoid read without checks.
     .PARAMETER RawInstall
         See the synopsis.
     #>
     param($RawInstall)
 
-    if (-not $RawInstall) { return $null }
-
-    [pscustomobject]@{ prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @()) }
+    if (-not $RawInstall) { return [pscustomobject]@{ prefer = [string[]]@(); avoid = [pscustomobject]@{} } }
+    $avoid = Get-DFToolRecordProperty $RawInstall 'avoid' $null
+    [pscustomobject]@{
+        prefer = [string[]]@(Get-DFToolRecordProperty $RawInstall 'prefer' @())
+        avoid  = if ($avoid -is [pscustomobject]) { $avoid } else { [pscustomobject]@{} }
+    }
 }
 
 function ConvertTo-DFThemeBlock {
@@ -2175,7 +2234,7 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
 function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in installs (one block or a list) and install.prefer.
+        Schema errors in installs (one block or a list), install.prefer and install.avoid.
     #>
     # installs: a package manager's install recipe; install.prefer: this tool's preferred sources.
     $insRaw = $Tool.PSObject.Properties['installs']?.Value   # read directly: a helper would unroll [ ... ]
@@ -2209,8 +2268,21 @@ function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
     $inst = Get-DFSchemaProperty $Tool 'install'
     if ($null -ne $inst) {
         $have = @((Get-DFSchemaProperty $Tool 'packages')?.PSObject.Properties.Name)
-        $bad = @(@($inst.PSObject.Properties['prefer']?.Value) | Where-Object { $_ -and $_ -notin $have })
+        $prefer = @($inst.PSObject.Properties['prefer']?.Value)
+        $bad = @($prefer | Where-Object { $_ -and $_ -notin $have })
         if ($bad) { "install.prefer names sources the tool has no package for: $($bad -join ', ')" }
+        $avoid = $inst.PSObject.Properties['avoid']?.Value
+        if ($null -ne $avoid -and $avoid -isnot [pscustomobject]) { 'install.avoid must be an object: source -> why it is bad for this tool' }
+        elseif ($null -ne $avoid) {
+            foreach ($entry in $avoid.PSObject.Properties) {
+                if ($entry.Value -isnot [string] -or -not $entry.Value) { "install.avoid.$($entry.Name) must be a reason (text)" }
+            }
+            $avoided = @($avoid.PSObject.Properties.Name)
+            $bad = @($avoided | Where-Object { $_ -notin $have })
+            if ($bad) { "install.avoid names sources the tool has no package for: $($bad -join ', ')" }
+            $both = @($avoided | Where-Object { $_ -in $prefer })
+            if ($both) { "install.prefer and install.avoid both name: $($both -join ', ')" }
+        }
     }
 }
 
@@ -2333,7 +2405,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command', 'apply'
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
-        install = 'prefer'
+        install = 'prefer', 'avoid'
         role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'directoriesScored', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()
@@ -3677,7 +3749,8 @@ $script:DFConfigKeys = [ordered]@{
     SkipConflictCheck  = 'Skip the coreutils shadowing check'
     IgnoreConflicts    = 'Command names left out of the shadowing check'
     ShimsPath          = 'Folder New-DFShim writes to'
-    InstallVia          = 'Tool -> source to install it from (beats everything, including ExcludeSources)'
+    InstallVia          = 'Tool -> source to install it from (beats everything, including InstallAlways and ExcludeSources)'
+    InstallAlways       = 'One source for every tool a system manager carries; a tool it lacks is skipped'
     InstallOrder        = 'Preferred source order for Install-DFTool (ordering only)'
     ExcludeSources      = 'Sources Install-DFTool never uses (unless InstallVia names one)'
     NerdFont           = 'Icons: $true on, $false off; unset detects an installed Nerd Font (Windows)'
@@ -4129,10 +4202,11 @@ function Find-DFToolSource {
         Finds which manager a tool was installed through, by asking the managers of its own sources.
     .DESCRIPTION
         Asks only the managers of the sources in the tool's packages, in
-        install precedence (Get-DFInstallSourceOrder: InstallVia, the tool's
-        install.prefer, InstallOrder, DotForge's order), then any source that
-        ExcludeSources left out, since a tool may have been installed through
-        it before. Managers that aren't installed are skipped. The first
+        install precedence (Get-DFInstallSourceOrder: InstallVia,
+        InstallAlways, the tool's install.prefer, InstallOrder, DotForge's
+        order), then any source that order left out (ExcludeSources, or every
+        other one under InstallAlways), since a tool may have been installed
+        through it before. Managers that aren't installed are skipped. The first
         manager whose list has the tool's id (or its feed-qualified id) wins,
         so a tool installed twice is reported under the first one found. A
         manager that declares no list (a version manager such as fnm) gets
@@ -5597,7 +5671,7 @@ function Invoke-DFInstallPlan {
                 $t = $ToolDb[$it.Tool]
                 # A failed batch may still have installed some of its tools.
                 $ok = $r.ExitCode -eq 0 -or ($batched -and (Test-DFToolAvailable -Executable $t.executable -Type $t.type -Force))
-                if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)" }
+                if ($ok) { & $set $it.Tool 'Installed' "via $($m.name)$(if ($it.AvoidReason) { " ($($it.AvoidReason))" })" }
                 else { & $set $it.Tool 'Failed' (Format-DFManagerFailure -Tool $it.Tool -Manager $m.name -Output $r.Output) }
             }
             if (@($results | Where-Object ExitCode -eq 0).Count -and $blk.reactivate -and -not $reactivate.Contains($m.name)) { $reactivate.Add($m.name) }
@@ -7351,7 +7425,7 @@ function New-DFInstallPlan {
         $needsElevator = $r.Block.elevate -and -not $elevated -and $elevatorPlanned
         $deps = @(@($required) + $(if ($want.Contains($r.Manager.name)) { $r.Manager.name }) + $(if ($needsElevator) { $elevatorPlanned.name }) |
             Where-Object { $_ -and $_ -ne $t.name } | Select-Object -Unique)
-        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Block = $r.Block; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0 }
+        $items[$t.name] = [pscustomobject]@{ Tool = $t.name; Source = $r.Source; Manager = $r.Manager; Block = $r.Block; Ref = $r.Ref; ProvidedBy = $null; DependsOn = [string[]]$deps; Stage = 0; AvoidReason = $r.AvoidReason }
     }
 
     # Tools that depend (transitively) on a gap can't be installed either.
@@ -9328,7 +9402,7 @@ function Write-DFDevBuildNotice {
 function Write-DFInstallPlan {
     <#
     .SYNOPSIS
-        Prints an install plan: stages, manager batches, feeds to add, elevation, and gaps.
+        Prints an install plan: stages, manager batches, feeds to add, elevation, sources a record avoids, and gaps.
     .PARAMETER Plan
         From New-DFInstallPlan.
     .OUTPUTS
@@ -9344,6 +9418,10 @@ function Write-DFInstallPlan {
         })
         $parts += @($s.Provided | ForEach-Object { "$($_.Tool) (comes with $($_.ProvidedBy))" })
         Write-Host ("  stage {0}  {1}" -f $s.Number, ($parts -join "`n           "))
+    }
+    # A source the tool's record avoids, used because the user named it or nothing else has the tool.
+    foreach ($item in @($Plan.Stages | ForEach-Object { $_.Batches } | ForEach-Object { $_.Items } | Where-Object { $_.AvoidReason })) {
+        Write-Host "  note: $($item.Tool) from $($item.Source): $($item.AvoidReason)" -ForegroundColor Yellow
     }
     foreach ($g in $Plan.Gaps) {
         Write-Host "  not installed: $($g.Tool) — $($g.Reason)$(if ($g.Dependents) { "; also waiting: $($g.Dependents -join ', ')" })" -ForegroundColor Yellow

@@ -48,14 +48,54 @@ function Get-DFBuiltInSourceOrder {
     [string[]]@($system + $other | Select-Object -Unique)
 }
 
+function Get-DFInstallAlways {
+    <#
+    .SYNOPSIS
+        Returns the source the InstallAlways setting imposes on one tool, or nothing.
+    .DESCRIPTION
+        InstallAlways covers a tool only when the tool has a package in some
+        system manager's source (a member of the package-manager role: scoop,
+        winget, choco); a tool only a registry or version manager provides
+        (PowerShell Gallery, npm, fnm) installs as usual. -Via or InstallVia
+        naming a source for the tool beats it. A source DotForge doesn't know
+        warns and is ignored.
+    .PARAMETER Tool
+        The tool record.
+    .PARAMETER ToolDb
+        Name -> tool record; must include the manager records.
+    .PARAMETER Via
+        Tool -> source for this call (Install-DFTool -Via).
+    .OUTPUTS
+        System.String, or nothing.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool, [Parameter(Mandatory)][hashtable]$ToolDb, [hashtable]$Via = @{})
+    $always = Get-DFConfig InstallAlways
+    if (-not $always) { return }
+    if ($always -notin (Get-DFBuiltInSourceOrder -ToolDb $ToolDb)) {
+        Write-DFInstallWarning "DotForge: InstallAlways names '$always', which no package manager installs from; ignoring it."
+        return
+    }
+    if ($Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]) { return }
+    $managers = @($ToolDb.Values | Where-Object installs)
+    $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers | ForEach-Object { $_.installs.from })
+    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
+    if (@($have | Where-Object { $_ -in $system }).Count) { $always }
+}
+
 function Get-DFInstallSourceOrder {
     <#
     .SYNOPSIS
-        Orders one tool's candidate sources: InstallVia, the tool's install.prefer, InstallOrder, then DotForge's order.
+        Orders one tool's candidate sources: -Via, InstallVia, InstallAlways, the tool's install.prefer, InstallOrder, then DotForge's order.
     .DESCRIPTION
         Only sources the tool has a package for are returned. ExcludeSources
-        removes a source unless InstallVia names it for this tool. An
-        InstallVia source the tool has no package for warns and is ignored.
+        removes a source unless InstallVia or InstallAlways names it for this
+        tool. An InstallVia source the tool has no package for warns and is
+        ignored. A tool InstallAlways covers (Get-DFInstallAlways) gets that
+        source alone, or nothing when it has no package there. Sources the
+        record avoids (install.avoid) go last, unless -Via, InstallVia or
+        InstallAlways names them.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -76,9 +116,17 @@ function Get-DFInstallSourceOrder {
         $pinned = $null
     }
     $excluded = @(Get-DFConfig ExcludeSources)
+    $always = if (-not $pinned) { Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via }
+    if ($always) {
+        if ($always -in $excluded) { Write-DFInstallWarning "DotForge: InstallAlways names '$always', which ExcludeSources also lists; using it." }
+        return [string[]]@($always | Where-Object { $_ -in $have })
+    }
     $ordered = @(@($pinned) + @($Tool.install?.prefer) + @(Get-DFConfig InstallOrder) + (Get-DFBuiltInSourceOrder -ToolDb $ToolDb) + $have |
         Where-Object { $_ -and $_ -in $have } | Select-Object -Unique)
-    [string[]]@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
+    $ordered = @($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
+    # Sources the record avoids go last, unless the user named one for this tool.
+    $avoided = @($Tool.install?.avoid?.PSObject.Properties.Name)
+    [string[]]@(@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $avoided }) + @($ordered | Where-Object { $_ -ne $pinned -and $_ -in $avoided }))
 }
 
 function Resolve-DFInstallSource {
@@ -110,8 +158,8 @@ function Resolve-DFInstallSource {
         not, such a manager is passed over like an unavailable one.
     .OUTPUTS
         PSCustomObject: Tool, Source, Manager, Block (the manager's installs
-        block for Source), Ref, Gap, Options, and Sources (the candidate order
-        it walked).
+        block for Source), Ref, Gap, Options, Sources (the candidate order it
+        walked), and AvoidReason (why the record avoids Source, when it does).
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]
@@ -125,8 +173,13 @@ function Resolve-DFInstallSource {
         [bool]$CanElevate = $true
     )
     $sources = @(Get-DFInstallSourceOrder -Tool $Tool -ToolDb $ToolDb -Via $Via)
-    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources }
+    $result = [pscustomobject]@{ Tool = $Tool.name; Source = $null; Manager = $null; Block = $null; Ref = $null; Gap = $null; Options = @(); Sources = [string[]]$sources; AvoidReason = $null }
     if (-not $sources) {
+        $always = Get-DFInstallAlways -Tool $Tool -ToolDb $ToolDb -Via $Via
+        if ($always) {
+            $result.Gap = "InstallAlways is $always, which has no package for it"
+            return $result
+        }
         $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties.Name })
         $result.Gap = if (-not $have) { 'no package in any source' }
                       else { "no source left (only $($have -join ', ') $(if ($have.Count -eq 1) { 'has' } else { 'have' }) it, and ExcludeSources removes $(if ($have.Count -eq 1) { 'it' } else { 'them' }))" }
@@ -145,6 +198,7 @@ function Resolve-DFInstallSource {
             $result.Manager = $pick
             $result.Block = Get-DFInstallBlock -Manager $pick -Source $s
             $result.Ref = Get-DFPackageRef $Tool.packages.$s
+            $result.AvoidReason = $Tool.install?.avoid?.PSObject.Properties[$s]?.Value
             return $result
         }
     }

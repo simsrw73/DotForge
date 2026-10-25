@@ -80,10 +80,11 @@ function Find-DFToolSource {
         Finds which manager a tool was installed through, by asking the managers of its own sources.
     .DESCRIPTION
         Asks only the managers of the sources in the tool's packages, in
-        install precedence (Get-DFInstallSourceOrder: InstallVia, the tool's
-        install.prefer, InstallOrder, DotForge's order), then any source that
-        ExcludeSources left out, since a tool may have been installed through
-        it before. Managers that aren't installed are skipped. The first
+        install precedence (Get-DFInstallSourceOrder: InstallVia,
+        InstallAlways, the tool's install.prefer, InstallOrder, DotForge's
+        order), then any source that order left out (ExcludeSources, or every
+        other one under InstallAlways), since a tool may have been installed
+        through it before. Managers that aren't installed are skipped. The first
         manager whose list has the tool's id (or its feed-qualified id) wins,
         so a tool installed twice is reported under the first one found. A
         manager that declares no list (a version manager such as fnm) gets

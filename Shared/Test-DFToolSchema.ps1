@@ -288,7 +288,7 @@ function Get-DFActivationSchemaError ([PSCustomObject]$Tool) {
 function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
     <#
     .SYNOPSIS
-        Schema errors in installs (one block or a list) and install.prefer.
+        Schema errors in installs (one block or a list), install.prefer and install.avoid.
     #>
     # installs: a package manager's install recipe; install.prefer: this tool's preferred sources.
     $insRaw = $Tool.PSObject.Properties['installs']?.Value   # read directly: a helper would unroll [ ... ]
@@ -322,8 +322,21 @@ function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
     $inst = Get-DFSchemaProperty $Tool 'install'
     if ($null -ne $inst) {
         $have = @((Get-DFSchemaProperty $Tool 'packages')?.PSObject.Properties.Name)
-        $bad = @(@($inst.PSObject.Properties['prefer']?.Value) | Where-Object { $_ -and $_ -notin $have })
+        $prefer = @($inst.PSObject.Properties['prefer']?.Value)
+        $bad = @($prefer | Where-Object { $_ -and $_ -notin $have })
         if ($bad) { "install.prefer names sources the tool has no package for: $($bad -join ', ')" }
+        $avoid = $inst.PSObject.Properties['avoid']?.Value
+        if ($null -ne $avoid -and $avoid -isnot [pscustomobject]) { 'install.avoid must be an object: source -> why it is bad for this tool' }
+        elseif ($null -ne $avoid) {
+            foreach ($entry in $avoid.PSObject.Properties) {
+                if ($entry.Value -isnot [string] -or -not $entry.Value) { "install.avoid.$($entry.Name) must be a reason (text)" }
+            }
+            $avoided = @($avoid.PSObject.Properties.Name)
+            $bad = @($avoided | Where-Object { $_ -notin $have })
+            if ($bad) { "install.avoid names sources the tool has no package for: $($bad -join ', ')" }
+            $both = @($avoided | Where-Object { $_ -in $prefer })
+            if ($both) { "install.prefer and install.avoid both name: $($both -join ', ')" }
+        }
     }
 }
 
@@ -446,7 +459,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
         theme  = 'key', 'default', 'map', 'files', 'valid', 'fallback', 'env', 'command', 'apply'
         wrapper = 'args', 'custom'
         installs = 'from', 'install', 'update', 'remove', 'list', 'outdated', 'function', 'args', 'batch', 'elevate', 'reactivate', 'feeds'
-        install = 'prefer'
+        install = 'prefer', 'avoid'
         role   = 'priority', 'optIn', 'aliases', 'env', 'flags', 'directories', 'directoriesScored', 'enter', 'directoryScan'
     }
     $sections = [System.Collections.Generic.List[object]]::new()

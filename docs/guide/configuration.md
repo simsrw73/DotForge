@@ -47,7 +47,8 @@ each one is self-contained; the same keys go in your file.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `InstallVia` | hashtable | none | Tool → source to install it from, e.g. `@{ glow = 'scoop' }`. Beats everything, including `ExcludeSources`. |
+| `InstallVia` | hashtable | none | Tool → source to install it from, e.g. `@{ glow = 'scoop' }`. Beats everything, including `InstallAlways` and `ExcludeSources`. |
+| `InstallAlways` | string | none | One source for every tool a system manager (scoop, winget, choco) carries, e.g. `'scoop'`. A tool that source has no package for is not installed (`InstallVia` can still name another for it). Tools only a registry or version manager has (PowerShell modules, npm tools, crates) install as usual. |
 | `InstallOrder` | string[] | DotForge's order | Sources `Install-DFTool` prefers, in order (`scoop`, `winget`, `choco`, `npm`, `crates`, `psgallery`, …). Ordering only: a source you leave out is still used. A tool's own preference (`install.prefer` in its record) comes first. |
 | `ExcludeSources` | string[] | none | Sources `Install-DFTool` never uses, unless `InstallVia` names one for a tool. |
 | `Tools` | string[] | none | Tool names and `+groups` to configure. |
@@ -363,11 +364,14 @@ Install-DFTool -Name ripgrep -WhatIf
 For each tool, `Install-DFTool` takes the first source that has a package for it and a manager you have (or are installing in the same run):
 
 1. `InstallVia` for that tool;
-2. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
-3. `InstallOrder`;
-4. DotForge's order: scoop, winget, choco, then the registries.
+2. `InstallAlways`: for a tool a system manager carries, that source and no other;
+3. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
+4. `InstallOrder`;
+5. DotForge's order: scoop, winget, choco, then the registries.
 
-`ExcludeSources` removes a source unless `InstallVia` names it. `-Via` picks the source for one call: `Install-DFTool -Name glow -Via scoop`.
+A record can also mark a source as bad for its tool (`install.avoid`; rustup and pnpm avoid scoop, whose installs keep their files in scoop's own folders). That source goes last, unless you name it with `-Via`, `InstallVia` or `InstallAlways`; then it's used, and the plan and the result say why it's a poor fit.
+
+`ExcludeSources` removes a source unless `InstallVia` or `InstallAlways` names it. `-Via` picks the source for one call: `Install-DFTool -Name glow -Via scoop`.
 
 ## Command-line editing keys
 

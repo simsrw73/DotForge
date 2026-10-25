@@ -6,6 +6,7 @@
   "roles": { "js-package-manager": { "priority": 20 } },
   "requires": ["role:js-runtime"],
   "packages": { "scoop": "pnpm", "winget": "pnpm.pnpm", "npm": "pnpm" },
+  "install": { "avoid": { "scoop": "scoop's post-install saves its own store, cache and state folders in pnpm's config, so PNPM_HOME alone doesn't move them." } },
   "installs": { "from": "npm", "install": ["pnpm", "add", "-g", "{id}"], "batch": true, "update": ["pnpm", "add", "-g", "{id}@latest"], "remove": ["pnpm", "remove", "-g", "{id}"], "list": "Get-DFPnpmInstalled", "outdated": "Get-DFPnpmOutdated" },
   "xdg": {
     "compliance": "full",

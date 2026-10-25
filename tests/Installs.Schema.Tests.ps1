@@ -17,6 +17,29 @@ Describe 'installs and install (schema)' {
         Get-Errs @{ installs = [pscustomobject]@{ install = @('x') } } | Should -Match 'installs.from'
         Get-Errs @{ installs = [pscustomobject]@{ from = 'x' } } | Should -Match 'install or function'
     }
+    It 'accepts install.avoid naming a source the tool has, with a reason' {
+        Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g'; winget = 'w' }; install = [pscustomobject]@{ avoid = [pscustomobject]@{ scoop = 'why' } } } | Should -BeNullOrEmpty
+    }
+    It 'requires install.avoid to be an object of reasons' {
+        Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ avoid = 'scoop' } } | Should -Match 'install.avoid must be an object'
+        Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ avoid = [pscustomobject]@{ scoop = 1 } } } | Should -Match 'install.avoid.scoop must be a reason \(text\)'
+    }
+    It 'requires install.avoid to name the tool''s own sources' {
+        Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ avoid = [pscustomobject]@{ choco = 'why' } } } |
+            Should -Match 'install.avoid names sources the tool has no package for: choco'
+    }
+    It 'rejects a source both preferred and avoided' {
+        Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ prefer = @('scoop'); avoid = [pscustomobject]@{ scoop = 'why' } } } |
+            Should -Match 'install.prefer and install.avoid both name: scoop'
+    }
+    It 'normalizes install.avoid to an object, empty when the record has no install block' {
+        Set-StrictMode -Version Latest
+        $bare = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'b'; executable = 'b.exe' })
+        @($bare.install.avoid.PSObject.Properties).Count | Should -Be 0
+        $avoids = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'a'; executable = 'a.exe'; packages = [pscustomobject]@{ scoop = 'a' }; install = [pscustomobject]@{ avoid = [pscustomobject]@{ scoop = 'why' } } })
+        $avoids.install.avoid.scoop | Should -Be 'why'
+        @($avoids.install.prefer).Count | Should -Be 0
+    }
     It 'requires install.prefer to name the tool''s own sources' {
         Get-Errs @{ packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ prefer = @('winget') } } | Should -Match 'install.prefer'
     }
@@ -37,7 +60,8 @@ Describe 'installs and install (schema)' {
         $r.installs.batch | Should -BeFalse
         $r.installs.elevate | Should -BeFalse
         $r.installs.feeds | Should -BeNullOrEmpty
-        $r.install | Should -BeNullOrEmpty
+        @($r.install.prefer).Count | Should -Be 0
+        @($r.install.avoid.PSObject.Properties).Count | Should -Be 0
     }
 }
 

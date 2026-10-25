@@ -3,7 +3,7 @@
 function Write-DFInstallPlan {
     <#
     .SYNOPSIS
-        Prints an install plan: stages, manager batches, feeds to add, elevation, and gaps.
+        Prints an install plan: stages, manager batches, feeds to add, elevation, sources a record avoids, and gaps.
     .PARAMETER Plan
         From New-DFInstallPlan.
     .OUTPUTS
@@ -19,6 +19,10 @@ function Write-DFInstallPlan {
         })
         $parts += @($s.Provided | ForEach-Object { "$($_.Tool) (comes with $($_.ProvidedBy))" })
         Write-Host ("  stage {0}  {1}" -f $s.Number, ($parts -join "`n           "))
+    }
+    # A source the tool's record avoids, used because the user named it or nothing else has the tool.
+    foreach ($item in @($Plan.Stages | ForEach-Object { $_.Batches } | ForEach-Object { $_.Items } | Where-Object { $_.AvoidReason })) {
+        Write-Host "  note: $($item.Tool) from $($item.Source): $($item.AvoidReason)" -ForegroundColor Yellow
     }
     foreach ($g in $Plan.Gaps) {
         Write-Host "  not installed: $($g.Tool) — $($g.Reason)$(if ($g.Dependents) { "; also waiting: $($g.Dependents -join ', ')" })" -ForegroundColor Yellow

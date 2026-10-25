@@ -39,6 +39,7 @@ Describe 'Invoke-DFInstallPlan' {
             (Rec '{ "name": "gsudo", "executable": "gsudo.exe", "roles": { "elevator": {} } }'),
             (Rec '{ "name": "fnm", "executable": "fnm.exe", "xdg": { "method": "env", "vars": { "FNM_DIR": "${XDG_DATA_HOME}/fnm" } }, "packages": { "scoop": "fnm" }, "installs": { "from": "fnm", "install": ["fnm","install","{id}"], "reactivate": true } }'),
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts" } }'),
+            (Rec '{ "name": "rup", "executable": "rup.exe", "packages": { "scoop": "rup" }, "install": { "avoid": { "scoop": "scoop puts it in its own folder" } } }'),
             (Rec '{ "name": "glow", "executable": "glow.exe", "xdg": { "method": "env", "vars": { "GLOW_X": "${XDG_CONFIG_HOME}/glow" } }, "packages": { "scoop": "glow", "choco": "glow" } }'),
             (Rec '{ "name": "dotenv", "executable": "Dotenv", "type": "module", "xdg": { "method": "env", "vars": { "DOTENV_X": "${XDG_CONFIG_HOME}/dotenv" } }, "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://u" } } } }')
         )) { $script:Db[$r.name] = $r }
@@ -77,6 +78,12 @@ Describe 'Invoke-DFInstallPlan' {
         $script:Envs['scoop bucket list'] | Should -Be @('SCOOP_X')
         $script:Envs['scoop bucket add insomnia https://u'] | Should -Be @('SCOOP_X')
         $script:Envs['scoop install insomnia/ps-dotenv'] | Should -Contain 'DOTENV_X'
+    }
+    It 'names why the record avoids the source in the result, only when it does' {
+        $plan = New-DFInstallPlan -Name rup, glow -ToolDb $script:Db -IsAvailable $script:Avail
+        $r = Invoke-DFInstallPlan -Plan $plan -ToolDb $script:Db -IsAvailable $script:Avail
+        ($r | Where-Object Tool -eq rup).Detail | Should -Be 'via scoop (scoop puts it in its own folder)'
+        ($r | Where-Object Tool -eq glow).Detail | Should -Be 'via scoop'
     }
     It 're-activates a manager that asks for it, and merges PATH, after its stage' {
         $plan = New-DFInstallPlan -Name fnm, node -ToolDb $script:Db -IsAvailable $script:Avail

@@ -10,7 +10,8 @@ BeforeAll {
             (Rec '{ "name": "node", "executable": "node.exe", "packages": { "fnm": "lts", "scoop": "nodejs-lts" }, "install": { "prefer": ["fnm"] }, "roles": { "js-runtime": {} } }'),
             (Rec '{ "name": "npm", "executable": "npm.cmd", "requires": ["node"], "roles": { "js-package-manager": { "priority": 30 } }, "installs": { "from": "npm", "install": ["npm","i","-g","{id}"], "batch": true } }'),
             (Rec '{ "name": "ish", "executable": "is.cmd", "packages": { "npm": "@microsoft/inshellisense" } }'),
-            (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" } }')
+            (Rec '{ "name": "glow", "executable": "glow.exe", "packages": { "scoop": "glow" } }'),
+            (Rec '{ "name": "rup", "executable": "rup.exe", "packages": { "scoop": "rup" }, "install": { "avoid": { "scoop": "scoop puts it in its own folder" } } }')
         )) { $db[$r.name] = $r }
         $db
     }
@@ -31,6 +32,16 @@ Describe 'New-DFInstallPlan' {
         ($p.Items | Where-Object Tool -eq npm).Stage | Should -Be 3
         ($p.Items | Where-Object Tool -eq ish).Stage | Should -Be 4
         $p.Gaps | Should -BeNullOrEmpty
+    }
+    It 'carries the reason a record avoids the chosen source, and prints it' {
+        $p = New-DFInstallPlan -Name rup, glow -ToolDb $script:Db -IsAvailable $script:OnlyScoop
+        ($p.Items | Where-Object Tool -eq rup).AvoidReason | Should -Be 'scoop puts it in its own folder'
+        ($p.Items | Where-Object Tool -eq glow).AvoidReason | Should -BeNullOrEmpty
+        $script:Printed = [System.Collections.Generic.List[string]]::new()
+        Mock Write-Host { $script:Printed.Add([string]$Object) }
+        Write-DFInstallPlan -Plan $p
+        @($script:Printed | Where-Object { $_ -like '*rup from scoop: scoop puts it in its own folder*' }).Count | Should -Be 1
+        @($script:Printed | Where-Object { $_ -like '*glow from*' }).Count | Should -Be 0
     }
     It 'groups one stage''s tools into one batch per manager' {
         $p = New-DFInstallPlan -Name fnm, glow -ToolDb $script:Db -IsAvailable $script:OnlyScoop

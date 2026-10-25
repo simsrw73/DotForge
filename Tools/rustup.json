@@ -12,6 +12,7 @@
     "scoop": "rustup",
     "winget": "Rustlang.Rustup"
   },
+  "install": { "avoid": { "scoop": "scoop's installer sets CARGO_HOME and RUSTUP_HOME to its own folder before rustup-init runs, so toolchains never land in the XDG folders." } },
   "xdg": {
     "compliance": "partial",
     "method": "env",

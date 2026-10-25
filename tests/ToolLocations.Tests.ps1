@@ -26,6 +26,11 @@ Describe 'Tool locations' {
         $chezmoi.xdg.method | Should -Be 'default'
         @($chezmoi.xdg.vars?.PSObject.Properties | Where-Object { $_ }).Count | Should -Be 0
     }
+    It 'avoids scoop for rustup and pnpm, saying why' {
+        foreach ($name in 'rustup', 'pnpm') {
+            (Record $name).install.avoid.scoop | Should -Not -BeNullOrEmpty
+        }
+    }
     It 'leaves VCPKG_ROOT to whoever installed vcpkg' {
         $vcpkg = Record vcpkg
         $vcpkg.xdg.vars.PSObject.Properties['VCPKG_ROOT'] | Should -BeNullOrEmpty
