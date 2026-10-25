@@ -58,6 +58,7 @@ function Reset-DFTestSession {
     $script:DFSessionThemes = @{}
     $global:DFEnvState = $null
     $script:DFToolNotes = @{}
+    $script:DFToolLinks = $null
     # A Nerd Font is "installed", so icons are on whatever this machine has; tests of
     # the icon gate set NerdFont or mock Get-DFNerdFontFace after Reset-DFIconsOn.
     $script:DFNerdFontPresent = $true

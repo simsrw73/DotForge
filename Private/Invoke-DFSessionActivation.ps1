@@ -537,17 +537,24 @@ function Test-DFToolOwnership {
         return $false
     }
     $toLink = @($check.Conflicts | Where-Object Action -eq 'Link')
-    if ($toLink) {
-        $links = @(foreach ($item in $toLink) {
-            $made = New-DFToolLinkFor -Path $item.Target -Target $item.Existing -Notes $notes
-            [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $made }
-        })
-        if ($State.Readable) {
-            $table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $links }
+    # Every planned link keeps its variable unset and its folder seed-free this session, made or not:
+    # the tool then uses its existing data where it is.
+    $planned = @(foreach ($item in $toLink) { [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $false } })
+    if ($toLink -and -not $State.Readable) {
+        # Links can't be recorded, so none are made: an unrecorded link would never be cleaned up.
+        $notes.Add("$(Get-DFToolOwnershipPath) can't be read right now, so DotForge uses your existing data where it is and links it on a later load")
+    } elseif ($toLink) {
+        foreach ($link in $planned) { $link.made = New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $notes }
+        # A link that failed outright (not one waiting on Developer Mode) is retried next load, unrecorded.
+        # ($true -ne 'failed' is false in PowerShell: the string converts to a boolean, so test the type.)
+        $recorded = @($planned | Where-Object { $_.made -isnot [string] })
+        if ($recorded) {
+            $table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $recorded }
             $null = $State.Changed.Add($name)
         }
     }
-    Set-DFToolLinkState -Name $name -Links @(if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') { $table[$name].links })
+    $owned = @(if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') { $table[$name].links })
+    Set-DFToolLinkState -Name $name -Links @(if ($toLink) { $planned } else { $owned })
     if ($notes.Count -and $State.PSObject.Properties['Notes']) { $State.Notes[$name] = [string[]]$notes }
     if (-not $State.Readable) { return $true }
     if ($check.Complete -and -not $toLink -and -not $table.ContainsKey($name) -and @(Get-DFToolRelocation -Tool $Record)) {
@@ -559,7 +566,11 @@ function Test-DFToolOwnership {
 function New-DFToolLinkFor {
     <#
     .SYNOPSIS
-        Links one XDG location to a tool's existing data and notes it in the tool's status; returns whether the link exists.
+        Links one XDG location to a tool's existing data and notes it in the tool's status: $true (linked), $false (waits on Developer Mode) or 'failed'.
+    .DESCRIPTION
+        A link that can't be made (a network-share target, a folder in use, a
+        race with another shell) never fails the load: it is noted, and the
+        tool keeps using its existing data.
     .PARAMETER Path
         The XDG location.
     .PARAMETER Target
@@ -570,9 +581,12 @@ function New-DFToolLinkFor {
         System.Boolean.
     #>
     [CmdletBinding()]
-    [OutputType([bool])]
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Target, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
-    $result = New-DFToolLink -Path $Path -Target $Target
+    try { $result = New-DFToolLink -Path $Path -Target $Target }
+    catch {
+        $Notes.Add("couldn't link $Path to your existing $Target ($($_.Exception.Message)); the tool uses it where it is, and DotForge tries again next load")
+        return 'failed'
+    }
     if ($result.Made) { $Notes.Add("linked $Path to your existing $Target") } else { $Notes.Add("your existing data is at $Target; $($result.Note)") }
     $result.Made
 }
@@ -595,7 +609,8 @@ function Confirm-DFToolLinks {
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($link in @($Entry.links)) {
         if (-not (Test-Path -LiteralPath $link.target)) {
-            Remove-DFToolLink -Path $link.path
+            try { Remove-DFToolLink -Path $link.path }
+            catch { $Notes.Add("couldn't remove the link at $($link.path) ($($_.Exception.Message))") }
             $Notes.Add("$($link.target) is gone (was $Name uninstalled?), so DotForge removed its link at $($link.path) and uses the XDG location again")
             continue
         }
@@ -603,7 +618,7 @@ function Confirm-DFToolLinks {
             $Notes.Add("linked $($link.path) to your existing $($link.target)")
             $true
         } elseif (-not (Test-Path -LiteralPath $link.path)) {
-            New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $Notes
+            (New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $Notes) -eq $true
         } else {
             $Notes.Add("$($link.path) is no longer DotForge's link to $($link.target); DotForge leaves it alone")
             $true

@@ -242,6 +242,47 @@ Describe 'Activation and config ownership' {
             $Env:OWN_A | Should -BeNullOrEmpty
             (Get-DFToolStatus owna).Detail | Should -Match 'Developer Mode'
         }
+        It 'keeps a tool working from its existing data when a link can''t be made, without recording it' {
+            New-OldConfig owna
+            Mock New-DFToolLink { throw 'junctions cannot point to a network share' }
+            Register-DFTool -Name owna 3>$null
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+            $Env:OWN_A | Should -BeNullOrEmpty
+            (Get-DFToolStatus owna).Detail | Should -Match 'network share'
+            (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
+        }
+        It 'treats a link of yours at the XDG location, pointing elsewhere, as a conflict' {
+            New-OldConfig owna
+            $elsewhere = Join-Path $TestDrive 'elsewhere-owna'
+            New-Item -ItemType Directory -Force $elsewhere | Out-Null
+            $null = New-Item -ItemType Junction -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') -Target $elsewhere -Force
+            try {
+                Register-DFTool -Name owna 3>$null
+                (Get-DFToolStatus owna).State | Should -Be 'Conflict'
+            } finally { Remove-DFToolLink -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') }
+        }
+        It 'makes no link, sets no variable and seeds nothing when ownership.json can''t be read' {
+            $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
+                xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna') } }
+                setup = @{ seed = @{ '${XDG_CONFIG_HOME}/owna/seeded.conf' = 'owna/seeded.conf' } } }
+            $rec | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+            New-Item -ItemType File -Force (Join-Path $script:UserTools 'owna' 'seeded.conf') | Out-Null
+            New-OldConfig owna
+            $path = Get-DFToolOwnershipPath
+            New-DFDirectory (Split-Path $path) | Out-Null
+            Set-Content $path '{ bad'
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
+            $Env:OWN_A | Should -BeNullOrEmpty
+            Test-Path (Join-Path $script:FakeHome '.owna' 'seeded.conf') | Should -BeFalse
+        }
+        It 'never links an XDG location to a folder that contains it' {
+            $parent = Join-Path $TestDrive 'xdg'
+            [Environment]::SetEnvironmentVariable('OWN_A', $parent, 'Process')
+            New-Item -ItemType File -Force (Join-Path $parent 'other' 'x') | Out-Null
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
+        }
         It 'never writes a seed into a linked folder' {
             $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
                 xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna') } }

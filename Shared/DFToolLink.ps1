@@ -60,9 +60,33 @@ function Remove-DFToolLink {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
-    # Non-recursive deletes of the link entry: a junction is deleted as an empty directory.
-    if (([IO.DirectoryInfo]::new($Path)).LinkTarget) { [IO.Directory]::Delete($Path) }
-    elseif (([IO.FileInfo]::new($Path)).LinkTarget) { [IO.File]::Delete($Path) }
+    $info = [IO.FileInfo]::new($Path)
+    if (-not $info.LinkTarget) { return }
+    # Non-recursive deletes of the link entry itself. A junction is a directory entry; a file
+    # symlink is not, though DirectoryInfo reports a LinkTarget for it too.
+    if ($info.Attributes -band [IO.FileAttributes]::Directory) { [IO.Directory]::Delete($Path) } else { [IO.File]::Delete($Path) }
+}
+
+function Remove-DFEmptyFolder {
+    <#
+    .SYNOPSIS
+        Deletes a folder that holds only empty folders, deepest first, one non-recursive delete at a time.
+    .DESCRIPTION
+        Each delete fails at the OS level when its folder isn't empty, so a file
+        (even one written meanwhile, or one this process can't list) is never
+        deleted: the call throws instead. A link inside is never removed or
+        followed: its presence throws too.
+    .PARAMETER Path
+        The folder.
+    .OUTPUTS
+        None. Throws when the folder holds anything but empty folders.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+    $folders = @(Get-ChildItem -LiteralPath $Path -Directory -Recurse -Force -ErrorAction Stop)
+    if (@($folders | Where-Object LinkTarget).Count) { throw "$Path holds a link" }
+    foreach ($folder in $folders | Sort-Object { $_.FullName.Length } -Descending) { [IO.Directory]::Delete($folder.FullName) }
+    [IO.Directory]::Delete($Path)
 }
 
 function New-DFToolLink {
@@ -72,9 +96,9 @@ function New-DFToolLink {
     .DESCRIPTION
         A junction needs no admin rights or Developer Mode. A file symlink needs
         Developer Mode; without it nothing is made and Note says so. A link
-        already pointing at the target is left as it is. An empty folder at
-        Path (no files and no links anywhere below it, such as one an earlier
-        load created through xdg.dirs) is replaced. Anything else at Path
+        already pointing at the target is left as it is. A folder at Path that
+        holds only empty folders (one an earlier load created through
+        xdg.dirs) is replaced (Remove-DFEmptyFolder). Anything else at Path
         throws: callers check that the XDG location is empty first.
     .PARAMETER Path
         The XDG location.
@@ -91,11 +115,12 @@ function New-DFToolLink {
     $result = [pscustomobject]@{ Path = $Path; Target = $Target; Made = $false; Note = $null }
     $existing = Get-DFToolLinkTarget -Path $Path
     if ($existing -eq $Target) { $result.Made = $true; return $result }
-    if (-not $existing -and (Test-Path -LiteralPath $Path -PathType Container) -and
-        -not (Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction Ignore | Where-Object { -not $_.PSIsContainer -or $_.LinkTarget })) {
-        [IO.Directory]::Delete($Path, $true)
+    if ($existing) { throw "DotForge: $Path is already a link to $existing, so it can't be linked to $Target." }
+    if (Test-Path -LiteralPath $Path -PathType Container) {
+        try { Remove-DFEmptyFolder -Path $Path }
+        catch { throw "DotForge: $Path holds content, so it can't be linked to $Target ($($_.Exception.Message))." }
     }
-    if ($existing -or (Test-Path -LiteralPath $Path)) { throw "DotForge: $Path already exists, so it can't be linked to $Target." }
+    if (Test-Path -LiteralPath $Path) { throw "DotForge: $Path already exists, so it can't be linked to $Target." }
     New-DFDirectory (Split-Path $Path -Parent)
     if (Test-Path -LiteralPath $Target -PathType Leaf) {
         if (-not (Test-DFDeveloperMode)) {
@@ -108,59 +133,4 @@ function New-DFToolLink {
     }
     $result.Made = $true
     $result
-}
-
-function Set-DFToolLinkState {
-    <#
-    .SYNOPSIS
-        Records, for this session, the links a tool's ownership check made or kept (registration reads them).
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Links
-        Its ownership entry's links (key, path, target, made); empty when it has none.
-    .OUTPUTS
-        None.
-    #>
-    [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Name, [AllowEmptyCollection()][object[]]$Links = @())
-    if ($script:DFToolLinks -isnot [hashtable]) { $script:DFToolLinks = @{} }
-    $script:DFToolLinks[$Name] = @($Links)
-}
-
-function Get-DFToolLinkedVar {
-    <#
-    .SYNOPSIS
-        The variables of a tool that point at linked existing data, which registration must not set.
-    .PARAMETER Name
-        The tool.
-    .OUTPUTS
-        System.String[].
-    #>
-    [CmdletBinding()]
-    [OutputType([string[]])]
-    param([Parameter(Mandatory)][string]$Name)
-    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return [string[]]@() }
-    [string[]]@($script:DFToolLinks[$Name] | ForEach-Object key | Where-Object { $_ -cnotmatch '^\$\{' })
-}
-
-function Test-DFInLinkedPath {
-    <#
-    .SYNOPSIS
-        Whether a path is a tool's linked XDG location or inside it (DotForge never writes there: it's the user's existing data).
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Path
-        A canonical path.
-    .OUTPUTS
-        System.Boolean.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Path)
-    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return $false }
-    $sep = [IO.Path]::DirectorySeparatorChar
-    foreach ($link in $script:DFToolLinks[$Name]) {
-        if ($Path -eq $link.path -or $Path.StartsWith($link.path + $sep, [StringComparison]::OrdinalIgnoreCase)) { return $true }
-    }
-    $false
 }

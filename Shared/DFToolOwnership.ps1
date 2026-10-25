@@ -224,7 +224,8 @@ function Find-DFToolConflict {
             if ($value -and $written.ContainsKey($reloc.Key) -and $written[$reloc.Key] -ceq $value) { $complete = $false; continue }
             if ($value) {
                 $outside = ConvertTo-DFPath $value
-                if (-not (& $inside $outside $reloc.Target) -and (Test-Path -LiteralPath $outside)) { $found = @($outside) }
+                # Never a folder that contains the target (a junction into its own parent).
+                if (-not (& $inside $outside $reloc.Target) -and -not (& $inside $reloc.Target $outside) -and (Test-Path -LiteralPath $outside)) { $found = @($outside) }
                 else {
                     # The user's own choice, not checked against the native paths: not a complete check.
                     $complete = $false
@@ -235,13 +236,15 @@ function Find-DFToolConflict {
         if (-not $found -and $reloc.Native) {
             $found = @(foreach ($template in $reloc.Native.paths) {
                 $old = Expand-DFNativePath $template
-                if (-not $old -or (& $inside $old $reloc.Target)) { continue }
+                if (-not $old -or (& $inside $old $reloc.Target) -or (& $inside $reloc.Target $old)) { continue }
                 if (Test-DFPathHasContent -Path $old) { $old }
             })
         }
         if (-not $found) { continue }
-        # A link DotForge made earlier (and lost track of) already points there: link again, idempotently.
-        $hasContent = (Test-DFPathHasContent -Path $reloc.Target) -and -not (Get-DFToolLinkTarget -Path $reloc.Target)
+        # A link already at the XDG location: to the existing data, DotForge's own (link again,
+        # idempotently); anywhere else, the user's, which DotForge never replaces.
+        $current = Get-DFToolLinkTarget -Path $reloc.Target
+        $hasContent = if ($current) { $current -ne $found[0] } else { Test-DFPathHasContent -Path $reloc.Target }
         [pscustomobject]@{
             Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Existing = $found[0]; Target = $reloc.Target
             TargetHasContent = $hasContent; Guide = $reloc.Native?.guide

@@ -62,6 +62,29 @@ Describe 'DotForge links' {
         [IO.Directory]::Exists($script:Link) -or [IO.File]::Exists($script:Link) | Should -BeFalse
         Get-DFToolLinkTarget -Path $script:Link | Should -BeNullOrEmpty
     }
+    It 'removes a real file symlink, keeping the file it points to' {
+        if (-not (Test-DFDeveloperMode)) { Set-ItResult -Skipped -Because 'file symlinks need Developer Mode'; return }
+        $file = Join-Path $script:Target 'sub' 'data.txt'
+        $fileLink = Join-Path $script:Root 'xdg' 'tool.conf'
+        (New-DFToolLink -Path $fileLink -Target $file).Made | Should -BeTrue
+        Remove-DFToolLink -Path $fileLink
+        [IO.File]::Exists($fileLink) | Should -BeFalse
+        Get-Content $file | Should -Be 'keep me'
+    }
+    It 'refuses a folder whose only content is an empty subfolder it can''t delete, without throwing past it' {
+        New-Item -ItemType Directory -Force (Join-Path $script:Link 'a' 'b') | Out-Null
+        Mock Remove-DFEmptyFolder { throw 'Access to the path is denied.' }
+        { New-DFToolLink -Path $script:Link -Target $script:Target } | Should -Throw '*denied*'
+        Test-Path (Join-Path $script:Link 'a' 'b') | Should -BeTrue
+    }
+    It 'deletes empty folders one by one, never a folder with a file in it' {
+        New-Item -ItemType Directory -Force (Join-Path $script:Root 'e' 'x' 'y') | Out-Null
+        Remove-DFEmptyFolder -Path (Join-Path $script:Root 'e')
+        Test-Path (Join-Path $script:Root 'e') | Should -BeFalse
+        New-Item -ItemType File -Force (Join-Path $script:Root 'f' 'x' 'keep.txt') | Out-Null
+        { Remove-DFEmptyFolder -Path (Join-Path $script:Root 'f') } | Should -Throw
+        Test-Path (Join-Path $script:Root 'f' 'x' 'keep.txt') | Should -BeTrue
+    }
     It 'leaves a real folder alone' {
         New-Item -ItemType Directory -Force $script:Link | Out-Null
         Set-Content (Join-Path $script:Link 'mine.txt') 'x'

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: a995d10ca008021b2a5a48c909e8c2d7a034ba42251e8549f9de1428ca3a1aa0
+# sources-sha256: bccfaa5663f7014becd5c858b92d3c92c122ee1fe0eb8498fca0cab4d5c21187
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -478,9 +478,33 @@ function Remove-DFToolLink {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
-    # Non-recursive deletes of the link entry: a junction is deleted as an empty directory.
-    if (([IO.DirectoryInfo]::new($Path)).LinkTarget) { [IO.Directory]::Delete($Path) }
-    elseif (([IO.FileInfo]::new($Path)).LinkTarget) { [IO.File]::Delete($Path) }
+    $info = [IO.FileInfo]::new($Path)
+    if (-not $info.LinkTarget) { return }
+    # Non-recursive deletes of the link entry itself. A junction is a directory entry; a file
+    # symlink is not, though DirectoryInfo reports a LinkTarget for it too.
+    if ($info.Attributes -band [IO.FileAttributes]::Directory) { [IO.Directory]::Delete($Path) } else { [IO.File]::Delete($Path) }
+}
+
+function Remove-DFEmptyFolder {
+    <#
+    .SYNOPSIS
+        Deletes a folder that holds only empty folders, deepest first, one non-recursive delete at a time.
+    .DESCRIPTION
+        Each delete fails at the OS level when its folder isn't empty, so a file
+        (even one written meanwhile, or one this process can't list) is never
+        deleted: the call throws instead. A link inside is never removed or
+        followed: its presence throws too.
+    .PARAMETER Path
+        The folder.
+    .OUTPUTS
+        None. Throws when the folder holds anything but empty folders.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+    $folders = @(Get-ChildItem -LiteralPath $Path -Directory -Recurse -Force -ErrorAction Stop)
+    if (@($folders | Where-Object LinkTarget).Count) { throw "$Path holds a link" }
+    foreach ($folder in $folders | Sort-Object { $_.FullName.Length } -Descending) { [IO.Directory]::Delete($folder.FullName) }
+    [IO.Directory]::Delete($Path)
 }
 
 function New-DFToolLink {
@@ -490,9 +514,9 @@ function New-DFToolLink {
     .DESCRIPTION
         A junction needs no admin rights or Developer Mode. A file symlink needs
         Developer Mode; without it nothing is made and Note says so. A link
-        already pointing at the target is left as it is. An empty folder at
-        Path (no files and no links anywhere below it, such as one an earlier
-        load created through xdg.dirs) is replaced. Anything else at Path
+        already pointing at the target is left as it is. A folder at Path that
+        holds only empty folders (one an earlier load created through
+        xdg.dirs) is replaced (Remove-DFEmptyFolder). Anything else at Path
         throws: callers check that the XDG location is empty first.
     .PARAMETER Path
         The XDG location.
@@ -509,11 +533,12 @@ function New-DFToolLink {
     $result = [pscustomobject]@{ Path = $Path; Target = $Target; Made = $false; Note = $null }
     $existing = Get-DFToolLinkTarget -Path $Path
     if ($existing -eq $Target) { $result.Made = $true; return $result }
-    if (-not $existing -and (Test-Path -LiteralPath $Path -PathType Container) -and
-        -not (Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction Ignore | Where-Object { -not $_.PSIsContainer -or $_.LinkTarget })) {
-        [IO.Directory]::Delete($Path, $true)
+    if ($existing) { throw "DotForge: $Path is already a link to $existing, so it can't be linked to $Target." }
+    if (Test-Path -LiteralPath $Path -PathType Container) {
+        try { Remove-DFEmptyFolder -Path $Path }
+        catch { throw "DotForge: $Path holds content, so it can't be linked to $Target ($($_.Exception.Message))." }
     }
-    if ($existing -or (Test-Path -LiteralPath $Path)) { throw "DotForge: $Path already exists, so it can't be linked to $Target." }
+    if (Test-Path -LiteralPath $Path) { throw "DotForge: $Path already exists, so it can't be linked to $Target." }
     New-DFDirectory (Split-Path $Path -Parent)
     if (Test-Path -LiteralPath $Target -PathType Leaf) {
         if (-not (Test-DFDeveloperMode)) {
@@ -526,61 +551,6 @@ function New-DFToolLink {
     }
     $result.Made = $true
     $result
-}
-
-function Set-DFToolLinkState {
-    <#
-    .SYNOPSIS
-        Records, for this session, the links a tool's ownership check made or kept (registration reads them).
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Links
-        Its ownership entry's links (key, path, target, made); empty when it has none.
-    .OUTPUTS
-        None.
-    #>
-    [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Name, [AllowEmptyCollection()][object[]]$Links = @())
-    if ($script:DFToolLinks -isnot [hashtable]) { $script:DFToolLinks = @{} }
-    $script:DFToolLinks[$Name] = @($Links)
-}
-
-function Get-DFToolLinkedVar {
-    <#
-    .SYNOPSIS
-        The variables of a tool that point at linked existing data, which registration must not set.
-    .PARAMETER Name
-        The tool.
-    .OUTPUTS
-        System.String[].
-    #>
-    [CmdletBinding()]
-    [OutputType([string[]])]
-    param([Parameter(Mandatory)][string]$Name)
-    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return [string[]]@() }
-    [string[]]@($script:DFToolLinks[$Name] | ForEach-Object key | Where-Object { $_ -cnotmatch '^\$\{' })
-}
-
-function Test-DFInLinkedPath {
-    <#
-    .SYNOPSIS
-        Whether a path is a tool's linked XDG location or inside it (DotForge never writes there: it's the user's existing data).
-    .PARAMETER Name
-        The tool.
-    .PARAMETER Path
-        A canonical path.
-    .OUTPUTS
-        System.Boolean.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Path)
-    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return $false }
-    $sep = [IO.Path]::DirectorySeparatorChar
-    foreach ($link in $script:DFToolLinks[$Name]) {
-        if ($Path -eq $link.path -or $Path.StartsWith($link.path + $sep, [StringComparison]::OrdinalIgnoreCase)) { return $true }
-    }
-    $false
 }
 
 # ---- Shared/DFToolOwnership.ps1
@@ -810,7 +780,8 @@ function Find-DFToolConflict {
             if ($value -and $written.ContainsKey($reloc.Key) -and $written[$reloc.Key] -ceq $value) { $complete = $false; continue }
             if ($value) {
                 $outside = ConvertTo-DFPath $value
-                if (-not (& $inside $outside $reloc.Target) -and (Test-Path -LiteralPath $outside)) { $found = @($outside) }
+                # Never a folder that contains the target (a junction into its own parent).
+                if (-not (& $inside $outside $reloc.Target) -and -not (& $inside $reloc.Target $outside) -and (Test-Path -LiteralPath $outside)) { $found = @($outside) }
                 else {
                     # The user's own choice, not checked against the native paths: not a complete check.
                     $complete = $false
@@ -821,13 +792,15 @@ function Find-DFToolConflict {
         if (-not $found -and $reloc.Native) {
             $found = @(foreach ($template in $reloc.Native.paths) {
                 $old = Expand-DFNativePath $template
-                if (-not $old -or (& $inside $old $reloc.Target)) { continue }
+                if (-not $old -or (& $inside $old $reloc.Target) -or (& $inside $reloc.Target $old)) { continue }
                 if (Test-DFPathHasContent -Path $old) { $old }
             })
         }
         if (-not $found) { continue }
-        # A link DotForge made earlier (and lost track of) already points there: link again, idempotently.
-        $hasContent = (Test-DFPathHasContent -Path $reloc.Target) -and -not (Get-DFToolLinkTarget -Path $reloc.Target)
+        # A link already at the XDG location: to the existing data, DotForge's own (link again,
+        # idempotently); anywhere else, the user's, which DotForge never replaces.
+        $current = Get-DFToolLinkTarget -Path $reloc.Target
+        $hasContent = if ($current) { $current -ne $found[0] } else { Test-DFPathHasContent -Path $reloc.Target }
         [pscustomobject]@{
             Tool = $Tool.name; Key = $reloc.Key; OldPaths = [string[]]$found; Existing = $found[0]; Target = $reloc.Target
             TargetHasContent = $hasContent; Guide = $reloc.Native?.guide
@@ -4201,6 +4174,67 @@ function Add-DFSetupNoteDetail {
     }
 }
 
+# ---- Private/DFToolLinkState.ps1
+#Requires -Version 7.2
+
+# This session's links per tool (Test-DFToolOwnership sets them; registration reads them).
+# Session state, so it lives in the core, not Shared/.
+
+function Set-DFToolLinkState {
+    <#
+    .SYNOPSIS
+        Records, for this session, the links a tool's ownership check made or kept (registration reads them).
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Links
+        Its ownership entry's links (key, path, target, made); empty when it has none.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Name, [AllowEmptyCollection()][object[]]$Links = @())
+    if ($script:DFToolLinks -isnot [hashtable]) { $script:DFToolLinks = @{} }
+    $script:DFToolLinks[$Name] = @($Links)
+}
+
+function Get-DFToolLinkedVar {
+    <#
+    .SYNOPSIS
+        The variables of a tool that point at linked existing data, which registration must not set.
+    .PARAMETER Name
+        The tool.
+    .OUTPUTS
+        System.String[].
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][string]$Name)
+    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return [string[]]@() }
+    [string[]]@($script:DFToolLinks[$Name] | ForEach-Object key | Where-Object { $_ -cnotmatch '^\$\{' })
+}
+
+function Test-DFInLinkedPath {
+    <#
+    .SYNOPSIS
+        Whether a path is a tool's linked XDG location or inside it (DotForge never writes there: it's the user's existing data).
+    .PARAMETER Name
+        The tool.
+    .PARAMETER Path
+        A canonical path.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Path)
+    if ($script:DFToolLinks -isnot [hashtable] -or -not $script:DFToolLinks.ContainsKey($Name)) { return $false }
+    $sep = [IO.Path]::DirectorySeparatorChar
+    foreach ($link in $script:DFToolLinks[$Name]) {
+        if ($Path -eq $link.path -or $Path.StartsWith($link.path + $sep, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    }
+    $false
+}
+
 # ---- Private/DFToolNote.ps1
 #Requires -Version 7.2
 
@@ -6943,17 +6977,24 @@ function Test-DFToolOwnership {
         return $false
     }
     $toLink = @($check.Conflicts | Where-Object Action -eq 'Link')
-    if ($toLink) {
-        $links = @(foreach ($item in $toLink) {
-            $made = New-DFToolLinkFor -Path $item.Target -Target $item.Existing -Notes $notes
-            [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $made }
-        })
-        if ($State.Readable) {
-            $table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $links }
+    # Every planned link keeps its variable unset and its folder seed-free this session, made or not:
+    # the tool then uses its existing data where it is.
+    $planned = @(foreach ($item in $toLink) { [pscustomobject]@{ key = $item.Key; path = $item.Target; target = $item.Existing; made = $false } })
+    if ($toLink -and -not $State.Readable) {
+        # Links can't be recorded, so none are made: an unrecorded link would never be cleaned up.
+        $notes.Add("$(Get-DFToolOwnershipPath) can't be read right now, so DotForge uses your existing data where it is and links it on a later load")
+    } elseif ($toLink) {
+        foreach ($link in $planned) { $link.made = New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $notes }
+        # A link that failed outright (not one waiting on Developer Mode) is retried next load, unrecorded.
+        # ($true -ne 'failed' is false in PowerShell: the string converts to a boolean, so test the type.)
+        $recorded = @($planned | Where-Object { $_.made -isnot [string] })
+        if ($recorded) {
+            $table[$name] = [pscustomobject]@{ since = [DateTime]::UtcNow.ToString('o'); how = 'linked'; links = $recorded }
             $null = $State.Changed.Add($name)
         }
     }
-    Set-DFToolLinkState -Name $name -Links @(if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') { $table[$name].links })
+    $owned = @(if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') { $table[$name].links })
+    Set-DFToolLinkState -Name $name -Links @(if ($toLink) { $planned } else { $owned })
     if ($notes.Count -and $State.PSObject.Properties['Notes']) { $State.Notes[$name] = [string[]]$notes }
     if (-not $State.Readable) { return $true }
     if ($check.Complete -and -not $toLink -and -not $table.ContainsKey($name) -and @(Get-DFToolRelocation -Tool $Record)) {
@@ -6965,7 +7006,11 @@ function Test-DFToolOwnership {
 function New-DFToolLinkFor {
     <#
     .SYNOPSIS
-        Links one XDG location to a tool's existing data and notes it in the tool's status; returns whether the link exists.
+        Links one XDG location to a tool's existing data and notes it in the tool's status: $true (linked), $false (waits on Developer Mode) or 'failed'.
+    .DESCRIPTION
+        A link that can't be made (a network-share target, a folder in use, a
+        race with another shell) never fails the load: it is noted, and the
+        tool keeps using its existing data.
     .PARAMETER Path
         The XDG location.
     .PARAMETER Target
@@ -6976,9 +7021,12 @@ function New-DFToolLinkFor {
         System.Boolean.
     #>
     [CmdletBinding()]
-    [OutputType([bool])]
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Target, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
-    $result = New-DFToolLink -Path $Path -Target $Target
+    try { $result = New-DFToolLink -Path $Path -Target $Target }
+    catch {
+        $Notes.Add("couldn't link $Path to your existing $Target ($($_.Exception.Message)); the tool uses it where it is, and DotForge tries again next load")
+        return 'failed'
+    }
     if ($result.Made) { $Notes.Add("linked $Path to your existing $Target") } else { $Notes.Add("your existing data is at $Target; $($result.Note)") }
     $result.Made
 }
@@ -7001,7 +7049,8 @@ function Confirm-DFToolLinks {
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($link in @($Entry.links)) {
         if (-not (Test-Path -LiteralPath $link.target)) {
-            Remove-DFToolLink -Path $link.path
+            try { Remove-DFToolLink -Path $link.path }
+            catch { $Notes.Add("couldn't remove the link at $($link.path) ($($_.Exception.Message))") }
             $Notes.Add("$($link.target) is gone (was $Name uninstalled?), so DotForge removed its link at $($link.path) and uses the XDG location again")
             continue
         }
@@ -7009,7 +7058,7 @@ function Confirm-DFToolLinks {
             $Notes.Add("linked $($link.path) to your existing $($link.target)")
             $true
         } elseif (-not (Test-Path -LiteralPath $link.path)) {
-            New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $Notes
+            (New-DFToolLinkFor -Path $link.path -Target $link.target -Notes $Notes) -eq $true
         } else {
             $Notes.Add("$($link.path) is no longer DotForge's link to $($link.target); DotForge leaves it alone")
             $true
