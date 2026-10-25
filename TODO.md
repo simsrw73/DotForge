@@ -2,11 +2,14 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-77**.
+git history, not here. IDs are never reused; the next free one is **T-80**.
 
 ## Priority 1 — Release Readiness
 
 - [ ] **T-1 Promote to stable 1.0.0** — fix the open Problems below, then follow CLAUDE.md's Releasing steps with `Prerelease` removed. `trifle` stays experimental and outside 1.0 (see After 1.0 at the end).
+- [ ] T-77 DotForge needs to know how to set environment for its tools so that they install to correct XDG locations.
+- [ ] T-78 Tools can suggest certain variables be defined in the Desktop so that desktop apps can access them. Users must opt in for these to be defined in the Desktop. This is a run once feature. Should only be run once during setup.
+- [ ] **T-79 Config files over environment variables** — project policy (2026-10-25): when a setting can be made in a tool's config file or by a variable, put it in the config file (seeded through `setup.seed`) unless something prevents it, and use variables only to point at config files and folders. Audit the records' `env` and `xdg.vars` against it. The environment of a DotForge session is ~30k characters, 17.9k of it `LS_COLORS` from vivid: trim vivid's output too. Notes: `docs/superpowers/specs/2026-10-24-restore-install-locations-notes.md` (Environment size).
 
 ## Priority 2 — Open Problems
 
