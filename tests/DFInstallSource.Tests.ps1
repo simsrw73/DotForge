@@ -92,6 +92,23 @@ Describe 'Get-DFInstallSourceOrder' {
         "$w1" | Should -Match "InstallAlways.*nope"
         @($w2).Count | Should -Be 0
     }
+    It 'keeps InstallAlways strict when InstallVia or -Via names a source the tool has no package for' {
+        Set-DFTestConfig @{ InstallAlways = 'scoop'; InstallVia = @{ wgonly = 'npm' } }
+        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db 3>$null).Count | Should -Be 0
+        (Resolve-DFInstallSource -Tool $script:Db.wgonly -ToolDb $script:Db -IsAvailable $script:All 3>$null).Gap |
+            Should -Be 'InstallAlways is scoop, which has no package for it'
+        Set-DFTestConfig @{ InstallAlways = 'scoop' }
+        @(Get-DFInstallSourceOrder -Tool $script:Db.wgonly -ToolDb $script:Db -Via @{ wgonly = 'npm' } 3>$null).Count | Should -Be 0
+    }
+    It 'reads install.avoid under StrictMode Latest, empty or not' {
+        Set-StrictMode -Version Latest
+        try {
+            Get-DFInstallSourceOrder -Tool $script:Db.glow -ToolDb $script:Db | Should -Be @('winget', 'scoop', 'choco')
+            Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')
+            (Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; packages = [pscustomobject]@{ scoop = 'g' }; install = [pscustomobject]@{ avoid = [pscustomobject]@{} } })).Errors |
+                Should -BeNullOrEmpty
+        } finally { Set-StrictMode -Off }
+    }
     It 'ranks an avoided source last' {
         Set-DFTestConfig @{ InstallOrder = @('choco', 'scoop') }
         Get-DFInstallSourceOrder -Tool $script:Db.fd -ToolDb $script:Db | Should -Be @('scoop', 'winget', 'choco')

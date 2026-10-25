@@ -57,8 +57,9 @@ function Get-DFInstallAlways {
         system manager's source (a member of the package-manager role: scoop,
         winget, choco); a tool only a registry or version manager provides
         (PowerShell Gallery, npm, fnm) installs as usual. -Via or InstallVia
-        naming a source for the tool beats it. A source DotForge doesn't know
-        warns and is ignored.
+        naming a source the tool has a package in beats it; one naming a
+        source it hasn't doesn't count, so a typo never loosens InstallAlways.
+        A source DotForge doesn't know warns and is ignored.
     .PARAMETER Tool
         The tool record.
     .PARAMETER ToolDb
@@ -77,11 +78,32 @@ function Get-DFInstallAlways {
         Write-DFInstallWarning "DotForge: InstallAlways names '$always', which no package manager installs from; ignoring it."
         return
     }
-    if ($Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]) { return }
+    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
+    $pinned = $Via[$Tool.name] ?? (Get-DFConfig InstallVia -Default @{})[$Tool.name]
+    if ($pinned -and $pinned -in $have) { return }
     $managers = @($ToolDb.Values | Where-Object installs)
     $system = @(Get-DFRoleMember -Role 'package-manager' -Tools $managers | ForEach-Object { $_.installs.from })
-    $have = @(if ($Tool.packages) { $Tool.packages.PSObject.Properties | Where-Object { Get-DFPackageRef $_.Value } | ForEach-Object { $_.Name } })
     if (@($have | Where-Object { $_ -in $system }).Count) { $always }
+}
+
+function Get-DFToolInstallPreference {
+    <#
+    .SYNOPSIS
+        Reads a tool record's install.prefer and install.avoid, StrictMode-safe even for a hand-built record without them.
+    .PARAMETER Tool
+        The tool record.
+    .OUTPUTS
+        PSCustomObject: Prefer (string[]), Avoid (hashtable source -> reason).
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    $install = $Tool.PSObject.Properties['install']?.Value
+    $prefer = if ($install) { $install.PSObject.Properties['prefer']?.Value }
+    $avoidObject = if ($install) { $install.PSObject.Properties['avoid']?.Value }
+    $avoid = @{}
+    if ($avoidObject) { foreach ($entry in $avoidObject.PSObject.Properties) { $avoid[$entry.Name] = $entry.Value } }
+    [pscustomobject]@{ Prefer = [string[]]@($prefer | Where-Object { $_ }); Avoid = $avoid }
 }
 
 function Get-DFInstallSourceOrder {
@@ -121,11 +143,12 @@ function Get-DFInstallSourceOrder {
         if ($always -in $excluded) { Write-DFInstallWarning "DotForge: InstallAlways names '$always', which ExcludeSources also lists; using it." }
         return [string[]]@($always | Where-Object { $_ -in $have })
     }
-    $ordered = @(@($pinned) + @($Tool.install?.prefer) + @(Get-DFConfig InstallOrder) + (Get-DFBuiltInSourceOrder -ToolDb $ToolDb) + $have |
+    $preference = Get-DFToolInstallPreference -Tool $Tool
+    $ordered = @(@($pinned) + $preference.Prefer + @(Get-DFConfig InstallOrder) + (Get-DFBuiltInSourceOrder -ToolDb $ToolDb) + $have |
         Where-Object { $_ -and $_ -in $have } | Select-Object -Unique)
     $ordered = @($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $excluded })
     # Sources the record avoids go last, unless the user named one for this tool.
-    $avoided = @($Tool.install?.avoid?.PSObject.Properties.Name)
+    $avoided = @($preference.Avoid.Keys)
     [string[]]@(@($ordered | Where-Object { $_ -eq $pinned -or $_ -notin $avoided }) + @($ordered | Where-Object { $_ -ne $pinned -and $_ -in $avoided }))
 }
 
@@ -198,7 +221,7 @@ function Resolve-DFInstallSource {
             $result.Manager = $pick
             $result.Block = Get-DFInstallBlock -Manager $pick -Source $s
             $result.Ref = Get-DFPackageRef $Tool.packages.$s
-            $result.AvoidReason = $Tool.install?.avoid?.PSObject.Properties[$s]?.Value
+            $result.AvoidReason = (Get-DFToolInstallPreference -Tool $Tool).Avoid[$s]
             return $result
         }
     }

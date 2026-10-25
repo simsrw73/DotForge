@@ -331,7 +331,7 @@ function Get-DFInstallsSchemaError ([PSCustomObject]$Tool) {
             foreach ($entry in $avoid.PSObject.Properties) {
                 if ($entry.Value -isnot [string] -or -not $entry.Value) { "install.avoid.$($entry.Name) must be a reason (text)" }
             }
-            $avoided = @($avoid.PSObject.Properties.Name)
+            $avoided = @($avoid.PSObject.Properties | ForEach-Object Name)
             $bad = @($avoided | Where-Object { $_ -notin $have })
             if ($bad) { "install.avoid names sources the tool has no package for: $($bad -join ', ')" }
             $both = @($avoided | Where-Object { $_ -in $prefer })
