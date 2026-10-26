@@ -3108,8 +3108,7 @@ General-purpose command-line fuzzy finder
 | Detected by | `fzf.exe` |
 | Tags | `fuzzy`, `picker`, `search` |
 | Install ids | scoop: `fzf`<br>winget: `junegunn.fzf`<br>choco: `fzf` |
-| XDG method | `env` |
-| XDG variables | `FZF_DEFAULT_OPTS_FILE` = `${XDG_CONFIG_HOME}/fzf/fzfrc` |
+| XDG method | `default` |
 | Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
 | Theme | key `FzfTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyFzfTheme` |
 | Seeds once | `${XDG_CONFIG_HOME}/fzf/fzfrc` |

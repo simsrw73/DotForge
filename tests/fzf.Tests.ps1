@@ -35,11 +35,31 @@ Describe 'fzf tool sidecar' {
     }
     It 'points FZF_DEFAULT_OPTS_FILE at the seeded fzfrc' {
         $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
-        $j.xdg.method | Should -Be 'env'
-        $j.xdg.vars.FZF_DEFAULT_OPTS_FILE | Should -Be '${XDG_CONFIG_HOME}/fzf/fzfrc'
-        @($j.xdg.native.FZF_DEFAULT_OPTS_FILE).Count | Should -Be 0
         $j.setup.seed.'${XDG_CONFIG_HOME}/fzf/fzfrc' | Should -Be 'fzf/fzfrc'
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS_FILE | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'fzfrc'))
         $j.env.PSObject.Properties.Name | Should -Not -Contain 'FZF_DEFAULT_OPTS'
+    }
+    It 'leaves FZF_DEFAULT_OPTS_FILE unset, and says how to restore the file, when the fzfrc is missing' {
+        # fzf refuses to start when FZF_DEFAULT_OPTS_FILE names a missing file.
+        Remove-Item (Get-DFToolSetupStatePath), (Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'fzfrc') -Force -ErrorAction Ignore
+        Set-DFTestConfig @{ SkipSetup = @('fzf') }
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS_FILE | Should -BeNullOrEmpty
+        (Get-DFToolStatus fzf).Detail | Should -Match 'Invoke-DFToolSetup fzf'
+    }
+    It 'does not duplicate colors a parent shell already applied' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $inherited = $Env:FZF_DEFAULT_OPTS
+        # A child shell: same variable, fresh session and module memory.
+        Reset-DFTestSession
+        $script:DFFzfColorLine = @{ Line = $null }
+        $global:DFEnvState = $null
+        $Env:FZF_DEFAULT_OPTS = $inherited
+        Set-DFTestConfig @{ FzfTheme = 'catppuccin-mocha' }
+        $warnings = @(Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+        ([regex]::Matches($Env:FZF_DEFAULT_OPTS, '--color=')).Count | Should -Be 1
+        $warnings | Where-Object { "$_" -match 'FZF_DEFAULT_OPTS' } | Should -BeNullOrEmpty
     }
     It 'the seeded fzfrc holds the base options' {
         $lines = @(Get-Content (Join-Path $script:RealTools 'fzf' 'fzfrc'))

@@ -31,7 +31,13 @@
     ]
   },
   "setup": {
-    "seed": { "${XDG_CONFIG_HOME}/less/lesskey": "less/lesskey" }
+    "seed": { "${XDG_CONFIG_HOME}/less/lesskey": "less/lesskey" },
+    "notes": [
+      {
+        "text": "Your lesskey (LESSKEYIN) was kept. DotForge no longer sets LESS; to keep its options, add two lines to it: #env and LESS = --RAW-CONTROL-CHARS --quit-if-one-screen --no-init",
+        "ifFile": "${XDG_CONFIG_HOME}/less/lesskey"
+      }
+    ]
   },
   "aliases": {},
   "picker": null

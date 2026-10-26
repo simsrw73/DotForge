@@ -15,9 +15,8 @@
   },
   "xdg": {
     "compliance": "partial",
-    "method": "env",
-    "vars": { "FZF_DEFAULT_OPTS_FILE": "${XDG_CONFIG_HOME}/fzf/fzfrc" },
-    "native": { "FZF_DEFAULT_OPTS_FILE": [], "${XDG_CONFIG_HOME}/fzf/fzfrc": [] }
+    "method": "default",
+    "native": { "${XDG_CONFIG_HOME}/fzf/fzfrc": [] }
   },
   "setup": {
     "seed": { "${XDG_CONFIG_HOME}/fzf/fzfrc": "fzf/fzfrc" }

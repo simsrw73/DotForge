@@ -1,7 +1,8 @@
 # Companion for fzf — resolve and apply the configured color theme.
 # fzf's own --color flag natively takes key:hex pairs, so no format conversion
 # is needed here (unlike psreadline, which converts hex to ANSI escapes).
-# The base options live in the seeded fzfrc (FZF_DEFAULT_OPTS_FILE, read first);
+# The base options live in the seeded fzfrc (FZF_DEFAULT_OPTS_FILE, read first),
+# set only while the file exists: fzf refuses to start when it names a missing file;
 # FZF_DEFAULT_OPTS holds only the --color option applied here. A later theme
 # replaces the option DotForge wrote last (remembered across registrations in
 # $script:DFFzfColorLine), removed by exact text so the user's own options and
@@ -9,7 +10,7 @@
 #
 # Theme: the theme block in Tools/fzf.json (Get-DFToolTheme).
 # Theme files: $XDG_CONFIG_HOME\fzf\themes\<name>.json, else bundled Tools\fzf\.
-# Sets: FZF_DEFAULT_OPTS. Writes no files (the fzfrc is a setup.seed).
+# Sets: FZF_DEFAULT_OPTS, FZF_DEFAULT_OPTS_FILE. Writes no files (the fzfrc is a setup.seed).
 # Binds Ctrl+R / Ctrl+T through the shared handler when fzf wins history-search /
 # path-insert (PSFzf outranks it).
 
@@ -76,13 +77,24 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     $colorArg = & $_colorOption -Path $path -Tool 'fzf'
     if (-not $colorArg) { return }
     $existing = [string]$Env:FZF_DEFAULT_OPTS
+    # Exact text, not lines: PSFzf appends ' --ansi' to the last line, which may be this one.
     if ($_colorLine.Line) { $existing = $existing.Replace($_colorLine.Line, '') }
-    $existing = @($existing -split '\r?\n' | ForEach-Object Trim | Where-Object { $_ }) -join "`n"
+    # The same option inherited from a parent shell (or kept across Import-Module -Force) isn't repeated.
+    $existing = @($existing -split '\r?\n' | ForEach-Object Trim | Where-Object { $_ -and $_ -cne $colorArg }) -join "`n"
     $value = if ($existing) { "$existing`n$colorArg" } else { $colorArg }
     $explicit = if (-not $Implicit) { "fzf theme '$Name' was applied" }
     & $_setEnv -Name 'FZF_DEFAULT_OPTS' -Value $value -Tool 'fzf' -ExplicitReason $explicit
     $_colorLine.Line = $colorArg
 }.GetNewClosure())
+
+# The options file, only while it exists (deleted, or setup skipped: fzf would refuse to start).
+$_optsFile = ConvertTo-DFPath (Join-Path (Get-DFXdgPath Config) 'fzf' 'fzfrc')
+if (Test-Path -LiteralPath $_optsFile -PathType Leaf) {
+    Set-DFEnv -Name 'FZF_DEFAULT_OPTS_FILE' -Value $_optsFile -Tool 'fzf'
+} else {
+    if ($Env:FZF_DEFAULT_OPTS_FILE -eq $_optsFile) { Remove-Item Env:FZF_DEFAULT_OPTS_FILE }
+    Add-DFToolNote -Tool 'fzf' -Note "$_optsFile is missing, so fzf uses its default layout; restore it with: Invoke-DFToolSetup fzf"
+}
 
 # Apply the session theme (Tools/fzf.json theme block: FzfTheme -> Theme -> default).
 $_theme = Get-DFToolTheme -Tool $DFCurrentTool

@@ -182,7 +182,7 @@ Ctrl+R (search history) and Ctrl+T (insert a path) are two roles, `history-searc
 - **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets the same layout as fzf through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
 - **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME\television\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
 - **fzf** and **skim** bind Ctrl+R and Ctrl+T through DotForge's own handler when they win: history is newest first without repeats, and picked paths are quoted when they hold a space.
-- **fzf**'s layout (`--layout=reverse`, `--height=40%`, …) is in `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`), seeded once: edit it to change fzf everywhere. `FZF_DEFAULT_OPTS` holds only the theme colors, which a theme switch replaces.
+- **fzf**'s layout (`--layout=reverse`, `--height=40%`, …) is in `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`), seeded once: edit it to change fzf everywhere. If you delete it, fzf uses its own defaults until `Invoke-DFToolSetup fzf` restores it. `FZF_DEFAULT_OPTS` holds only the theme colors, which a theme switch replaces.
 
 ### Alt+C: change folder (fzf, skim, broot)
 

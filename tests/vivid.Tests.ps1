@@ -108,6 +108,26 @@ Describe 'vivid tool sidecar' -Skip:(-not (Get-Command vivid.exe -ErrorAction Ig
         $Env:LS_COLORS | Should -Not -Be 'SENTINEL-CACHED-VALUE'
     }
 
+    It 'regenerates after a linked database''s target changes' {
+        if (-not (Test-DFDeveloperMode)) { Set-ItResult -Skipped -Because 'file symlinks need Developer Mode'; return }
+        Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
+        $seeded = Join-Path $Env:XDG_CONFIG_HOME 'vivid' 'filetypes.yml'
+        $target = Join-Path $TestDrive 'appdata-vivid' 'filetypes.yml'
+        New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+        Move-Item $seeded $target
+        $null = New-Item -ItemType SymbolicLink -Path $seeded -Target $target
+        try {
+            Invoke-DFApplyLSColorsTheme -Name 'catppuccin-mocha' -Force
+            $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.txt'
+            Set-Content -Path $cacheFile -Value 'SENTINEL-CACHED-VALUE' -Encoding UTF8
+            (Get-Item $target).LastWriteTimeUtc = (Get-Item $target).LastWriteTimeUtc.AddMinutes(1)
+
+            Invoke-DFApplyLSColorsTheme -Name 'catppuccin-mocha'
+
+            $Env:LS_COLORS | Should -Not -Be 'SENTINEL-CACHED-VALUE'
+        } finally { Remove-DFToolLink -Path $seeded }
+    }
+
     It 'caches the generated value and reuses it for a matching theme name' {
         Register-DFTool -Name 'vivid' -ToolsPath $script:RealTools
         $cacheFile = Join-Path $Env:XDG_CACHE_HOME 'dotforge' 'ls-colors.txt'

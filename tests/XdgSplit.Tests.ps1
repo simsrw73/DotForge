@@ -70,7 +70,7 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $script:SavedLessHist = $Env:LESSHISTFILE
         # tool xdg.vars never overwrite a variable that is already set, so start
         # from none (the developer's own profile may have set it)
-        Remove-Item Env:\LESSHISTFILE, Env:\LESS -ErrorAction Ignore
+        Remove-Item Env:\LESSHISTFILE, Env:\LESS, Env:\FZF_DEFAULT_OPTS, Env:\FZF_DEFAULT_OPTS_FILE -ErrorAction Ignore
         Set-DFTestXdg
 
         $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
@@ -97,9 +97,10 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         Restore-DFTestXdg
     }
 
-    It 'sets FZF_DEFAULT_OPTS from fzf.json env' {
+    It 'points fzf at its seeded options file; FZF_DEFAULT_OPTS holds no layout' {
         Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
-        $Env:FZF_DEFAULT_OPTS | Should -Match '--layout=reverse'
+        $Env:FZF_DEFAULT_OPTS_FILE | Should -Be (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'fzfrc'))
+        $Env:FZF_DEFAULT_OPTS | Should -Not -Match '--layout'
     }
     It 'sets GIT_PAGER from delta.json env' {
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools

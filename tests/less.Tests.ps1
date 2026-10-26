@@ -18,4 +18,10 @@ Describe 'Tools/less.json' {
         $text | Should -Match '(?m)^#env\r?$'
         $text | Should -Match '(?m)^LESS = --RAW-CONTROL-CHARS --quit-if-one-screen --no-init\r?$'
     }
+    It 'tells a user whose own lesskey is kept how to keep the options' {
+        $note = @($script:LessJson.setup.notes) | Where-Object { $_.ifFile -eq '${XDG_CONFIG_HOME}/less/lesskey' }
+        $note | Should -Not -BeNullOrEmpty
+        $note.text | Should -Match '#env'
+        $note.text | Should -Match 'LESS = --RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
+    }
 }

@@ -1881,7 +1881,7 @@
       }
     },
     "fzf": {
-      "sha256": "736c0f208bc270a5d33c8518516f33e1a88d06336630468105d2163d69a8e6f4",
+      "sha256": "df2ab1641b9982f79900d486bd6c6a09babf258fdd21544258d998323adeead9",
       "record": {
         "name": "fzf",
         "executable": "fzf.exe",
@@ -1898,19 +1898,12 @@
           "choco": "fzf"
         },
         "xdg": {
-          "method": "env",
-          "vars": {
-            "FZF_DEFAULT_OPTS_FILE": "${XDG_CONFIG_HOME}/fzf/fzfrc"
-          },
+          "method": "default",
+          "vars": null,
           "dirs": [],
           "instructions": null,
           "compliance": "partial",
           "native": {
-            "FZF_DEFAULT_OPTS_FILE": {
-              "paths": [],
-              "guide": null,
-              "setting": null
-            },
             "${XDG_CONFIG_HOME}/fzf/fzfrc": {
               "paths": [],
               "guide": null,
@@ -2944,7 +2937,7 @@
       }
     },
     "less": {
-      "sha256": "8af30ea9dbb6cd476bd71355c45f133d1f00ecf27f93170e0543788108f6a5fa",
+      "sha256": "1d978b84acea58ecc08d4f01744b3425fcc5200c7c0998ca641d516648f6a35b",
       "record": {
         "name": "less",
         "executable": "less.exe",
@@ -3046,7 +3039,12 @@
           "seed": {
             "${XDG_CONFIG_HOME}/less/lesskey": "less/lesskey"
           },
-          "notes": []
+          "notes": [
+            {
+              "text": "Your lesskey (LESSKEYIN) was kept. DotForge no longer sets LESS; to keep its options, add two lines to it: #env and LESS = --RAW-CONTROL-CHARS --quit-if-one-screen --no-init",
+              "ifFile": "${XDG_CONFIG_HOME}/less/lesskey"
+            }
+          ]
         },
         "banner": null,
         "installs": null,

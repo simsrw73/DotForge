@@ -70,7 +70,10 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     $stamp = 'builtin'
     if (Test-Path -LiteralPath $database -PathType Leaf) {
         $databaseArgs = @('-d', $database)
-        $stamp = (Get-Item -LiteralPath $database).LastWriteTimeUtc.Ticks
+        # A link's own time never changes: stamp the file it points to.
+        $file = Get-Item -LiteralPath $database
+        if ($file.LinkTarget) { $file = $file.ResolveLinkTarget($true) }
+        $stamp = $file.LastWriteTimeUtc.Ticks
     }
     $value = & $_fingerprintCache -Name 'ls-colors' -Fingerprint "$Name|$stamp" -Force:$Force -Generate {
         $raw = & vivid @databaseArgs generate $Name 2>&1 | Out-String
