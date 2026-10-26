@@ -24,7 +24,10 @@ function Get-DFDesktopEnvKey {
     .DESCRIPTION
         The test suite's loader sets the script variable DFTestDesktopEnvKey
         (tests/TestSupport.ps1) to a scratch key, so no test reads or writes the
-        developer's real environment.
+        developer's real environment. A test that imports the module can't see
+        that variable, so build/Test-DFFull.ps1 also sets
+        DF_TEST_DESKTOP_ENV_KEY for its run; only a key under
+        HKCU:\Software\DotForge-Tests is accepted from it.
     .OUTPUTS
         System.String.
     #>
@@ -32,7 +35,9 @@ function Get-DFDesktopEnvKey {
     [OutputType([string])]
     param()
     $testKey = Get-Variable -Name DFTestDesktopEnvKey -Scope Script -ValueOnly -ErrorAction Ignore
-    if ($testKey) { $testKey } else { 'HKCU:\Environment' }
+    if ($testKey) { return $testKey }
+    if ($Env:DF_TEST_DESKTOP_ENV_KEY -like 'HKCU:\Software\DotForge-Tests\*') { return $Env:DF_TEST_DESKTOP_ENV_KEY }
+    'HKCU:\Environment'
 }
 
 function Open-DFDesktopEnvKey {
@@ -167,10 +172,39 @@ function Get-DFDesktopEnvExpected {
     }
 }
 
+function Expand-DFDesktopEnvValue {
+    <#
+    .SYNOPSIS
+        Expands %VARIABLES% in a user-environment value the way desktop apps get them.
+    .DESCRIPTION
+        Each name is looked up in the user environment, then the machine's,
+        then this process's (Windows' own, such as USERPROFILE) unless DotForge
+        set it in this shell only: desktop apps never see those. A name found
+        nowhere stays as written.
+    .PARAMETER Value
+        The value, as stored.
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Value)
+    $written = ${global:DFEnvState}?.Written
+    $expanded = $Value
+    foreach ($match in [regex]::Matches($Value, '%([^%]+)%')) {
+        $name = $match.Groups[1].Value
+        $found = Get-DFDesktopEnvValue -Name $name
+        if (-not $found) { $found = [Environment]::GetEnvironmentVariable($name, 'Machine') }
+        if (-not $found -and -not ($written -and $written.ContainsKey($name))) { $found = [Environment]::GetEnvironmentVariable($name, 'Process') }
+        if ($found) { $expanded = $expanded.Replace($match.Value, $found) }
+    }
+    $expanded
+}
+
 function Test-DFDesktopEnvMatch {
     <#
     .SYNOPSIS
-        Whether a value in the user environment is the one DotForge would write (%VARIABLES% expanded, case-insensitive).
+        Whether a value in the user environment is the one DotForge would write: %VARIABLES% expanded as desktop apps see them, full paths compared canonically, other text case-insensitively.
     .PARAMETER Current
         The value in the user environment; may be $null.
     .PARAMETER Value
@@ -182,7 +216,11 @@ function Test-DFDesktopEnvMatch {
     [OutputType([bool])]
     param([AllowNull()][string]$Current, [Parameter(Mandatory)][string]$Value)
     if (-not $Current) { return $false }
-    [string]::Equals([Environment]::ExpandEnvironmentVariables($Current), $Value, [StringComparison]::OrdinalIgnoreCase)
+    $expanded = Expand-DFDesktopEnvValue -Value $Current
+    if ([IO.Path]::IsPathFullyQualified($expanded) -and [IO.Path]::IsPathFullyQualified($Value)) {
+        return (ConvertTo-DFPath $expanded) -eq (ConvertTo-DFPath $Value)
+    }
+    [string]::Equals($expanded, $Value, [StringComparison]::OrdinalIgnoreCase)
 }
 
 function Get-DFDesktopEnvNote {
@@ -223,9 +261,9 @@ function Read-DFDesktopEnvState {
     .SYNOPSIS
         Reads the desktop variables DotForge wrote: variable -> { tool, value, since }.
     .DESCRIPTION
-        A missing file is an empty table. A file that can't be read warns and
-        returns $null: callers then write and remove nothing, since they
-        couldn't record it.
+        A missing file is an empty table. A file that can't be read returns
+        $null (the reason goes to the verbose stream): callers then write and
+        remove nothing, and each says why in its own words.
     .OUTPUTS
         System.Collections.Hashtable, or $null.
     #>
@@ -237,7 +275,7 @@ function Read-DFDesktopEnvState {
         $data = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
         if ($data -isnot [System.Collections.IDictionary]) { throw 'it holds no JSON object' }
     } catch {
-        Write-Warning "DotForge: $path can't be read ($($_.Exception.Message)), so desktop variables can't be recorded. Fix or delete it."
+        Write-Verbose "DotForge: $path can't be read: $($_.Exception.Message)"
         return $null
     }
     $table = @{}

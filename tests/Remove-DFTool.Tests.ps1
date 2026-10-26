@@ -72,6 +72,11 @@ Describe 'Remove-DFTool' {
         $r.Result | Should -Be 'Removed'
         $script:Lines -join "`n" | Should -Match 'Left behind'
     }
+    It 'says the tool''s desktop variables weren''t removed when their record can''t be read' {
+        Mock Read-DFDesktopEnvState { $null }
+        $warnings = @(Remove-DFTool -Name glow -Confirm:$false 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+        "$warnings" | Should -Match "desktop-env.json can't be read, so glow's desktop variables weren't removed"
+    }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Refused'

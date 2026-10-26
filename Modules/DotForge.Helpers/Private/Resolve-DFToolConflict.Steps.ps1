@@ -88,7 +88,7 @@ function Invoke-DFConflictAdopt {
         [Parameter(Mandatory)][pscustomobject]$Result,
         [Parameter(Mandatory)]$Cmdlet
     )
-    $items = @((Find-DFToolConflict -Tool $Tool -Ownership $Ownership -Written ($global:DFEnvState?.Written ?? @{})).Conflicts)
+    $items = @((Find-DFToolConflict -Tool $Tool -Ownership $Ownership -Written (${global:DFEnvState}?.Written ?? @{})).Conflicts)
     if (-not $items) {
         Write-Host "$($Tool.name) has no existing data in the way; DotForge links or uses the XDG locations when it loads it."
         $Result.Action = 'Nothing'
@@ -139,7 +139,7 @@ function Invoke-DFConflictKeepXdg {
         [Parameter(Mandatory)][pscustomobject]$Result,
         [Parameter(Mandatory)]$Cmdlet
     )
-    $found = Find-DFToolConflict -Tool $Tool -Ownership $Ownership -Written ($global:DFEnvState?.Written ?? @{})
+    $found = Find-DFToolConflict -Tool $Tool -Ownership $Ownership -Written (${global:DFEnvState}?.Written ?? @{})
     $items = @($found.Conflicts | Where-Object Action -eq 'Conflict')
     if (-not $items) {
         Write-Host "$($Tool.name) has no existing copy in the way of its XDG locations; nothing to do."

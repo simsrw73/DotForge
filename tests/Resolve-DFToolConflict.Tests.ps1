@@ -99,6 +99,15 @@ Describe 'Resolve-DFToolConflict' {
         $null = Resolve-DFToolConflict owna -KeepXdg -WhatIf
         Test-Path (Join-Path $script:Old 'cfg') | Should -BeTrue
     }
+    It 'tells the conflict check which values DotForge itself wrote' {
+        $saved = $global:DFEnvState
+        try {
+            $global:DFEnvState = @{ Written = @{ OWN_A = 'C:\dotforge-wrote' }; Warned = @{}; Kept = @{} }
+            Mock Find-DFToolConflict { [pscustomobject]@{ Conflicts = @(); Complete = $true } }
+            $null = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false
+            Should -Invoke Find-DFToolConflict -ParameterFilter { $Written.ContainsKey('OWN_A') }
+        } finally { $global:DFEnvState = $saved }
+    }
     It 'has no -Move or -Done any more' {
         $params = (Get-Command Resolve-DFToolConflict).Parameters.Keys
         $params | Should -Not -Contain 'Move'

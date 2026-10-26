@@ -96,6 +96,19 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be $script:Want
         (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
     }
+    It 'writes nothing when the record can''t be saved' {
+        Mock Save-DFDesktopEnvState { throw 'disk full' }
+        { Set-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction Stop } | Should -Throw '*disk full*'
+        Get-DFDesktopEnvValue -Name DESK_A | Should -BeNullOrEmpty
+        Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+    }
+    It 'says once why it writes nothing when the state file can''t be read' {
+        $path = Get-DFDesktopEnvStatePath
+        New-DFDirectory (Split-Path $path) | Out-Null
+        Set-Content -LiteralPath $path '{ bad'
+        $warnings = @(Set-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction SilentlyContinue 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+        $warnings.Count | Should -Be 0
+    }
     It 'writes nothing when the state file can''t be read' {
         $path = Get-DFDesktopEnvStatePath
         New-DFDirectory (Split-Path $path) | Out-Null

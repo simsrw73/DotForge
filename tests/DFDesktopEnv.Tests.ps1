@@ -79,6 +79,44 @@ Describe 'DFDesktopEnv' {
         Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) '{ bad'
         Read-DFDesktopEnvState 3>$null | Should -BeNullOrEmpty
     }
+    It 'the same path written differently matches' {
+        Test-DFDesktopEnvMatch -Current 'C:/Users/me/.config/foo/' -Value 'C:\Users\me\.config\foo' | Should -BeTrue
+        Test-DFDesktopEnvMatch -Current 'C:\other' -Value 'C:\Users\me\.config\foo' | Should -BeFalse
+        Test-DFDesktopEnvMatch -Current 'plain' -Value 'plain' | Should -BeTrue
+    }
+    It '%VAR% expands as desktop apps see it: the user environment, never a value DotForge set only in the shell' -Skip:(-not $IsWindows) {
+        Set-DFDesktopEnvValue -Name DFTEST_U -Value 'C:\u'
+        Test-DFDesktopEnvMatch -Current '%DFTEST_U%\x' -Value 'C:\u\x' | Should -BeTrue
+        $saved = $global:DFEnvState
+        try {
+            [Environment]::SetEnvironmentVariable('DFTEST_SESS', 'C:\s', 'Process')
+            $global:DFEnvState = @{ Written = @{ DFTEST_SESS = 'C:\s' }; Warned = @{}; Kept = @{} }
+            Test-DFDesktopEnvMatch -Current '%DFTEST_SESS%\x' -Value 'C:\s\x' | Should -BeFalse
+            Test-DFDesktopEnvMatch -Current '%USERPROFILE%\x' -Value (Join-Path $Env:USERPROFILE 'x') | Should -BeTrue
+        } finally {
+            $global:DFEnvState = $saved
+            [Environment]::SetEnvironmentVariable('DFTEST_SESS', $null, 'Process')
+        }
+    }
+    It 'an unreadable state file reads as $null without a message: callers say why' {
+        Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) '{ bad' -Force
+        @(Read-DFDesktopEnvState 3>&1).Count | Should -Be 1   # the $null itself
+        Read-DFDesktopEnvState | Should -BeNullOrEmpty
+    }
+    It 'Test-DFFull''s scratch key reaches imported modules too, and only a DotForge-Tests key is accepted' {
+        $saved = $script:DFTestDesktopEnvKey
+        $savedEnv = $Env:DF_TEST_DESKTOP_ENV_KEY
+        try {
+            $script:DFTestDesktopEnvKey = $null
+            $Env:DF_TEST_DESKTOP_ENV_KEY = 'HKCU:\Software\DotForge-Tests\run1'
+            Get-DFDesktopEnvKey | Should -Be 'HKCU:\Software\DotForge-Tests\run1'
+            $Env:DF_TEST_DESKTOP_ENV_KEY = 'HKCU:\Software\Elsewhere'
+            Get-DFDesktopEnvKey | Should -Be 'HKCU:\Environment'
+        } finally {
+            $Env:DF_TEST_DESKTOP_ENV_KEY = $savedEnv
+            $script:DFTestDesktopEnvKey = $saved
+        }
+    }
     It 'broadcasts nothing while tests redirect the key' {
         Mock Invoke-DFSettingChangeBroadcast { }
         Send-DFEnvironmentChange

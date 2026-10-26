@@ -126,9 +126,10 @@ function Get-DFDesktopEnvPlan {
 function Write-DFDesktopEnvPlan {
     <#
     .SYNOPSIS
-        Writes the planned Set and Replaced variables, broadcasts once if any, and records Set, Replaced and AlreadySet ones.
+        Records the planned Set, Replaced and AlreadySet variables, then writes the Set and Replaced ones and broadcasts once if any.
     .DESCRIPTION
-        A variable already recorded for another tool keeps that owner.
+        A variable already recorded for another tool keeps that owner. When
+        the record can't be saved, nothing is written (it throws).
     .PARAMETER Plan
         Get-DFDesktopEnvPlan's results.
     .PARAMETER State
@@ -138,12 +139,13 @@ function Write-DFDesktopEnvPlan {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Plan, [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$State)
-    $writes = @($Plan | Where-Object Action -in 'Set', 'Replaced')
-    foreach ($item in $writes) { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
-    if ($writes) { Send-DFEnvironmentChange }
     foreach ($item in @($Plan | Where-Object Action -in 'Set', 'Replaced', 'AlreadySet')) {
         if ($item.Action -eq 'AlreadySet' -and $State.ContainsKey($item.Name)) { continue }
         $State[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = [DateTime]::UtcNow.ToString('o') }
     }
-    Save-DFDesktopEnvState -State $State
+    # Recorded first: a write that then fails leaves a record removal tolerates, never a write it can't find.
+    Save-DFDesktopEnvState -State $State -ErrorAction Stop
+    $writes = @($Plan | Where-Object Action -in 'Set', 'Replaced')
+    foreach ($item in $writes) { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
+    if ($writes) { Send-DFEnvironmentChange }
 }

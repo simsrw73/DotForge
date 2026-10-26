@@ -93,7 +93,8 @@ function Invoke-DFSessionActivation {
             if ($blocker) {
                 # Installed, but a tool it needs isn't active: Blocked. Not installed: Missing (Install-DFTool -Missing).
                 $state = if (Test-DFToolAvailable -Executable $tool.executable -Type $tool.type) { 'Blocked' } else { 'Missing' }
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State $state -RequestedBy $requestedBy[$tool.name] -Detail $blocker
+                $detail = if ($state -eq 'Missing') { @($blocker) + @(Get-DFDesktopEnvNote -Tool $tool) } else { $blocker }
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State $state -RequestedBy $requestedBy[$tool.name] -Detail $detail
                 continue
             }
             # Installed only now (an earlier companion put it on PATH, as fnm does

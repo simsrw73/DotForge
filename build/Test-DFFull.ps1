@@ -48,6 +48,12 @@ foreach ($kind in 'CONFIG', 'CACHE', 'DATA', 'STATE') {
 $toolsPath = Join-Path $repo 'Tools'
 $foldersBefore = Get-DFUserToolFolder -ToolsPath $toolsPath
 
+# Desktop variables go to a scratch registry key for the run, also from tests that import the
+# module (Shared/DFDesktopEnv.ps1, Get-DFDesktopEnvKey); the key is removed afterwards.
+$desktopKeyRoot = 'HKCU:\Software\DotForge-Tests'
+$savedDesktopKey = $Env:DF_TEST_DESKTOP_ENV_KEY
+$Env:DF_TEST_DESKTOP_ENV_KEY = "$desktopKeyRoot\run-$(Get-Random)"
+
 Push-Location $repo
 try {
     $clock = [System.Diagnostics.Stopwatch]::StartNew()
@@ -68,4 +74,9 @@ try {
 } finally {
     Pop-Location
     Remove-Item $sentinel -Recurse -Force -ErrorAction Ignore
+    if ($IsWindows) {
+        Remove-Item -LiteralPath $Env:DF_TEST_DESKTOP_ENV_KEY -Recurse -Force -ErrorAction Ignore
+        if ((Test-Path $desktopKeyRoot) -and -not (Get-ChildItem $desktopKeyRoot -ErrorAction Ignore)) { Remove-Item $desktopKeyRoot -Force -ErrorAction Ignore }
+    }
+    $Env:DF_TEST_DESKTOP_ENV_KEY = $savedDesktopKey
 }

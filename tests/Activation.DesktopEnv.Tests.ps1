@@ -32,6 +32,14 @@ Describe 'Activation: desktop variables note' -Skip:(-not $IsWindows) {
         (Get-DFToolStatus deska).State | Should -Be 'Active'
         (Get-DFToolStatus deska).Detail | Should -Match "DESK_A isn't set for desktop apps; Set-DFDesktopEnv deska sets it"
     }
+    It 'a requested tool that isn''t installed gets the note too' {
+        @{ name = 'deskm'; executable = 'no-such-deskm.exe'
+           xdg = @{ method = 'env'; vars = @{ DESK_A = '${XDG_CONFIG_HOME}/deska' }; native = @{ DESK_A = @() } }
+           desktop = @('DESK_A') } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'deskm.json')
+        Register-DFTool -Name deskm 3>$null 6>$null
+        (Get-DFToolStatus deskm).State | Should -Be 'Missing'
+        (Get-DFToolStatus deskm).Detail | Should -Match "DESK_A isn't set for desktop apps"
+    }
     It 'no note once the value is set' {
         Set-DFDesktopEnvValue -Name DESK_A -Value (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'deska'))
         Register-DFTool -Name deska 3>$null
