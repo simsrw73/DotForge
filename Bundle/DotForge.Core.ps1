@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 63ecd7bb4fc9c1aa9f34dae126651bd8658cc8c35ecc2afb9620c700e444d9f5
+# sources-sha256: b00f856a2b098edf05a350f7f389c69ffe1476ce73587eeb90d80a584ec0baff
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -9481,7 +9481,9 @@ function Set-DFEnv {
           3. It was set outside DotForge: keep it and note that for -Tool's
              status, unless -ExplicitReason says the user chose this value in
              DotForge's config (or by running a command). Then overwrite it and
-             warn, once per session for each conflict, naming both settings.
+             warn, once per session for each conflict, naming both settings;
+             but an explicit value that begins with the current one only adds
+             to it, so it is written without a warning.
         Writing or matching a variable drops the tool's kept note for it.
     .PARAMETER Name
         The variable.
@@ -9521,7 +9523,8 @@ function Set-DFEnv {
         # Once per session: `. $PROFILE` re-runs the profile's own assignment,
         # and the same contradiction needs reporting only once.
         $conflict = "$Name|$current|$ExplicitReason"
-        if (-not $state.Warned.ContainsKey($conflict)) {
+        $adds = $Value.StartsWith($current, [StringComparison]::Ordinal)
+        if (-not $adds -and -not $state.Warned.ContainsKey($conflict)) {
             $state.Warned[$conflict] = $true
             Write-Warning ("DotForge: $Name was '$(Format-DFEnvValue $current)' but $ExplicitReason.`n" +
                 '  Remove one of the two settings to silence this.')

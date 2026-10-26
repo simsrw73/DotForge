@@ -36,7 +36,9 @@ function Set-DFEnv {
           3. It was set outside DotForge: keep it and note that for -Tool's
              status, unless -ExplicitReason says the user chose this value in
              DotForge's config (or by running a command). Then overwrite it and
-             warn, once per session for each conflict, naming both settings.
+             warn, once per session for each conflict, naming both settings;
+             but an explicit value that begins with the current one only adds
+             to it, so it is written without a warning.
         Writing or matching a variable drops the tool's kept note for it.
     .PARAMETER Name
         The variable.
@@ -76,7 +78,8 @@ function Set-DFEnv {
         # Once per session: `. $PROFILE` re-runs the profile's own assignment,
         # and the same contradiction needs reporting only once.
         $conflict = "$Name|$current|$ExplicitReason"
-        if (-not $state.Warned.ContainsKey($conflict)) {
+        $adds = $Value.StartsWith($current, [StringComparison]::Ordinal)
+        if (-not $adds -and -not $state.Warned.ContainsKey($conflict)) {
             $state.Warned[$conflict] = $true
             Write-Warning ("DotForge: $Name was '$(Format-DFEnvValue $current)' but $ExplicitReason.`n" +
                 '  Remove one of the two settings to silence this.')

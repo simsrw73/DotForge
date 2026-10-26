@@ -77,8 +77,9 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     $colorArg = & $_colorOption -Path $path -Tool 'fzf'
     if (-not $colorArg) { return }
     $existing = [string]$Env:FZF_DEFAULT_OPTS
-    # Exact text, not lines: PSFzf appends ' --ansi' to the last line, which may be this one.
-    if ($_colorLine.Line) { $existing = $existing.Replace($_colorLine.Line, '') }
+    # The whole option at a line's start, followed by a space or the line's end: PSFzf appends
+    # ' --ansi' to the last line, and a longer --color of the user's must stay whole.
+    if ($_colorLine.Line) { $existing = [regex]::Replace($existing, '(?m)^' + [regex]::Escape($_colorLine.Line) + '(?=[ \t]|\r?$)', '') }
     # The same option inherited from a parent shell (or kept across Import-Module -Force) isn't repeated.
     $existing = @($existing -split '\r?\n' | ForEach-Object Trim | Where-Object { $_ -and $_ -cne $colorArg }) -join "`n"
     $value = if ($existing) { "$existing`n$colorArg" } else { $colorArg }

@@ -179,7 +179,7 @@ bat isn't a pager here: when it pages, it uses the `PAGER` above.
 
 Ctrl+R (search history) and Ctrl+T (insert a path) are two roles, `history-search` and `path-insert`, so a different tool can own each key. Only the winner binds the key: your `Defaults` choice, otherwise PSFzf, then television, then fzf, then skim. For example, `Defaults = @{ 'history-search' = 'television'; 'path-insert' = 'skim' }`. A Ctrl+R or Ctrl+T binding you make yourself before DotForge loads is kept (`Get-DFToolStatus` says so) unless `Defaults` names a tool for that key.
 
-- **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets the same layout as fzf through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
+- **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets fzf's default layout through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
 - **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME\television\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
 - **fzf** and **skim** bind Ctrl+R and Ctrl+T through DotForge's own handler when they win: history is newest first without repeats, and picked paths are quoted when they hold a space.
 - **fzf**'s layout (`--layout=reverse`, `--height=40%`, …) is in `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`), seeded once: edit it to change fzf everywhere. If you delete it, fzf uses its own defaults until `Invoke-DFToolSetup fzf` restores it. `FZF_DEFAULT_OPTS` holds only the theme colors, which a theme switch replaces.
@@ -290,7 +290,7 @@ An old home that already holds packages or history (`~\.bun`, pnpm's `%LOCALAPPD
 
 ### vivid
 
-vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. DotForge seeds `$XDG_CONFIG_HOME\vivid\filetypes.yml`, vivid's list of file types trimmed to the common ones, so `LS_COLORS` stays around 6,500 characters instead of 18,000 (cmd and batch files ignore a variable over 8,191). Add a file type there and the next shell picks it up; delete the file to use vivid's full list. The generated value is cached, so vivid runs only when the theme or that file changes. After upgrading vivid, refresh it with `Invoke-DFApplyLSColorsTheme -Name <theme> -Force`.
+vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. DotForge seeds `$XDG_CONFIG_HOME\vivid\filetypes.yml`, vivid's list of file types trimmed to the common ones, so `LS_COLORS` stays around 6,500 characters instead of 18,000 (cmd and batch files ignore a variable over 8,191). Add a file type there and the next shell picks it up; delete the file and vivid looks for its own (`%APPDATA%\vivid\filetypes.yml`), else uses its full built-in list. The generated value is cached, so vivid runs only when the theme or that file changes. After upgrading vivid, refresh it with `Invoke-DFApplyLSColorsTheme -Name <theme> -Force`.
 
 ## Troubleshooting
 

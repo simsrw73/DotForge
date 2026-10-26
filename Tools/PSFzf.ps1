@@ -33,7 +33,9 @@ function Enable-DFFzfAnsiOption {
     param()
     $existing = [string]$Env:FZF_DEFAULT_OPTS
     foreach ($tok in ($existing -split '\s+')) { if ($tok -ceq '--ansi') { return } }
-    $Env:FZF_DEFAULT_OPTS = if ($existing) { "$existing --ansi" } else { '--ansi' }
+    # Through Set-DFEnv, so DotForge's record matches and a later theme switch doesn't warn.
+    $value = if ($existing) { "$existing --ansi" } else { '--ansi' }
+    Set-DFEnv -Name 'FZF_DEFAULT_OPTS' -Value $value -Tool 'PSFzf' -ExplicitReason "Carapace's colored completions need --ansi"
 }
 
 function Initialize-DFRoleTabCompletion {

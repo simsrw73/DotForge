@@ -1,7 +1,7 @@
 # Seeded by DotForge: vivid 0.11.1's own filetypes.yml, trimmed to the file types a developer
 # meets often, so LS_COLORS stays under 8,191 characters (cmd ignores longer variables).
 # Edit it freely; DotForge never overwrites it, and a change regenerates LS_COLORS next load.
-# Delete it to use vivid's full built-in list.
+# Delete it and vivid uses its own lookup (%APPDATA%\vivid\filetypes.yml, else its full list).
 
 core:
   normal_text: [$no]

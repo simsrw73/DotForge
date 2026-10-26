@@ -10,7 +10,7 @@
   "xdg": {
     "compliance": "none",
     "method": "default",
-    "native": { "${XDG_CONFIG_HOME}/vivid/filetypes.yml": ["${APPDATA}/vivid/filetypes.yml", "${HOME}/.config/vivid/filetypes.yml"] }
+    "native": { "${XDG_CONFIG_HOME}/vivid/filetypes.yml": ["${APPDATA}/vivid/filetypes.yml"] }
   },
   "setup": {
     "seed": { "${XDG_CONFIG_HOME}/vivid/filetypes.yml": "vivid/filetypes.yml" }

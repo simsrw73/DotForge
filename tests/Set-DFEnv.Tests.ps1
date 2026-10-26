@@ -25,6 +25,20 @@ Describe 'Set-DFEnv' {
         $w | Should -BeNullOrEmpty
     }
 
+    It 'writes an explicit addition to a value set outside DotForge silently, and owns the result' {
+        $Env:DF_TEST_PAGER = 'less'
+        Set-DFEnv @script:Common -Value "less`n-R" -ExplicitReason 'it needs -R' -WarningVariable w
+        $Env:DF_TEST_PAGER | Should -Be "less`n-R"
+        $w | Should -BeNullOrEmpty
+        (Get-DFEnvState).Written['DF_TEST_PAGER'] | Should -Be "less`n-R"
+    }
+
+    It 'still keeps an outside value when an addition to it is not explicit' {
+        $Env:DF_TEST_PAGER = 'less'
+        Set-DFEnv @script:Common -Value 'less -R'
+        $Env:DF_TEST_PAGER | Should -Be 'less'
+    }
+
     It 'notes the kept value for the tool' {
         $Env:DF_TEST_PAGER = 'less'
         Set-DFEnv @script:Common -Value 'moar'

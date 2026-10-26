@@ -25,7 +25,7 @@ Describe 'Tools/vivid.json' {
 
     It 'seeds a trimmed filetypes database, with vivid''s own location as its native one' {
         $script:VividJson.setup.seed.'${XDG_CONFIG_HOME}/vivid/filetypes.yml' | Should -Be 'vivid/filetypes.yml'
-        @($script:VividJson.xdg.native.'${XDG_CONFIG_HOME}/vivid/filetypes.yml').Count | Should -BeGreaterThan 0
+        @($script:VividJson.xdg.native.'${XDG_CONFIG_HOME}/vivid/filetypes.yml') | Should -Be @('${APPDATA}/vivid/filetypes.yml')
         Test-Path "$PSScriptRoot/../Tools/vivid/filetypes.yml" | Should -BeTrue
     }
 

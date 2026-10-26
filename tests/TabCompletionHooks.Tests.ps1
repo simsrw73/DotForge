@@ -54,6 +54,28 @@ Describe 'tab-completion sidecar hooks' {
             $Env:FZF_DEFAULT_OPTS | Should -Be '--height 40% --ansi --layout reverse'
         }
 
+        It 'records the --ansi it adds as DotForge''s, so a later theme switch doesn''t warn' {
+            $global:DFEnvState = $null
+            Remove-Item Env:FZF_DEFAULT_OPTS -ErrorAction Ignore
+            Set-DFEnv -Name FZF_DEFAULT_OPTS -Value '--color=bg:#000000' -Tool fzf
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'carapace.exe' }
+            . $script:PSFzfCompanion
+            Initialize-DFRoleTabCompletion -Tool ([pscustomobject]@{}) -Role 'tab-completion'
+
+            $Env:FZF_DEFAULT_OPTS | Should -Match '--ansi'
+            (Get-DFEnvState).Written['FZF_DEFAULT_OPTS'] | Should -Be $Env:FZF_DEFAULT_OPTS
+        }
+
+        It 'adds --ansi to an FZF_DEFAULT_OPTS of your own too, without a warning' {
+            $global:DFEnvState = $null
+            $Env:FZF_DEFAULT_OPTS = '--mine'
+            Mock Test-DFToolAvailable { $true } -ParameterFilter { $Executable -eq 'carapace.exe' }
+            . $script:PSFzfCompanion
+            $w = @(Initialize-DFRoleTabCompletion -Tool ([pscustomobject]@{}) -Role 'tab-completion' 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+            $Env:FZF_DEFAULT_OPTS | Should -Be '--mine --ansi'
+            $w | Should -BeNullOrEmpty
+        }
+
         It 'leaves FZF_DEFAULT_OPTS unchanged when carapace is absent' {
             $Env:FZF_DEFAULT_OPTS = '--height 40% --layout reverse'
             Mock Test-DFToolAvailable { $false } -ParameterFilter { $Executable -eq 'carapace.exe' }

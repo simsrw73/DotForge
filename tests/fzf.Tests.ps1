@@ -61,6 +61,14 @@ Describe 'fzf tool sidecar' {
         ([regex]::Matches($Env:FZF_DEFAULT_OPTS, '--color=')).Count | Should -Be 1
         $warnings | Where-Object { "$_" -match 'FZF_DEFAULT_OPTS' } | Should -BeNullOrEmpty
     }
+    It 'never cuts a longer --color of yours that contains DotForge''s option' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $ours = $Env:FZF_DEFAULT_OPTS
+        $mine = "$ours,border:#ffffff"
+        $Env:FZF_DEFAULT_OPTS = "$mine`n$ours"
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha
+        @($Env:FZF_DEFAULT_OPTS -split '\r?\n') | Should -Contain $mine
+    }
     It 'the seeded fzfrc holds the base options' {
         $lines = @(Get-Content (Join-Path $script:RealTools 'fzf' 'fzfrc'))
         foreach ($option in '--layout=reverse', '--inline-info', '--height=40%', '--border') { $lines | Should -Contain $option }

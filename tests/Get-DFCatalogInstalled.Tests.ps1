@@ -128,13 +128,30 @@ function Get-FakeSlowInstalled {
         @($script:r.Source) | Should -Be @('good')
     }
 
-    It 'every registered provider loads and runs in a fresh runspace (its Files list is complete)' {
-        $privateRoot = "$PSScriptRoot/../Modules/DotForge.Catalog/Private"
-        @($script:DFCatalogProviders.Values).Count | Should -Be 7
-        $verboseRecords = Invoke-DFCatalogInstalledFetch -Providers @($script:DFCatalogProviders.Values) `
-            -PrivateRoot $privateRoot -TimeoutSeconds 60 -Verbose 4>&1 |   # room for a cold CI runner
-            Where-Object { $_ -is [System.Management.Automation.VerboseRecord] }
-        $failures = @($verboseRecords | Where-Object Message -match "installed enumeration for '.*' failed")
-        $failures | Should -BeNullOrEmpty -Because (($failures.Message) -join '; ')
+    It 'every registered provider loads in a fresh runspace (its Files list is complete), without running a package manager' {
+        # Running the real installed-list functions would run scoop, winget, pipx, ... (no test may).
+        # A probe stands in for each: in the provider's own fresh runspace, it checks that the real
+        # function loaded and that every DotForge command it calls resolves from the provider's Files.
+        $privateRoot = Join-Path $TestDrive 'catalog-private'
+        Copy-Item "$PSScriptRoot/../Modules/DotForge.Catalog/Private" $privateRoot -Recurse -Force
+        $providers = @($script:DFCatalogProviders.Values)
+        $providers.Count | Should -Be 7
+        $probeFile = Join-Path $privateRoot 'DFCatalog.Probe.ps1'
+        Set-Content $probeFile (@(foreach ($provider in $providers) {
+            $probeName = "Test-DFProbe$($provider.Name -replace '\W', '')"
+            "function $probeName {"
+            "    `$command = Get-Command '$($provider.InstalledFunction)' -ErrorAction Stop"
+            "    `$calls = `$command.ScriptBlock.Ast.FindAll({ param(`$a) `$a -is [System.Management.Automation.Language.CommandAst] }, `$true) | ForEach-Object { `$_.GetCommandName() } | Where-Object { `$_ -like '*-DF*' } | Sort-Object -Unique"
+            "    foreach (`$call in `$calls) { `$null = Get-Command `$call -ErrorAction Stop }"
+            "    [pscustomobject]@{ Source = '$($provider.Name)' }"
+            '}'
+        }) -join "`n")
+        $probeProviders = @(foreach ($provider in $providers) {
+            [pscustomobject]@{ Name = $provider.Name; Files = @($provider.Files) + 'DFCatalog.Probe.ps1'; InstalledFunction = "Test-DFProbe$($provider.Name -replace '\W', '')" }
+        })
+        # A provider whose probe failed returns nothing (the fetch's per-provider catch; its
+        # Write-Verbose runs in a parallel runspace, so it can't be seen here): compare names.
+        $loaded = @(Invoke-DFCatalogInstalledFetch -Providers $probeProviders -PrivateRoot $privateRoot -TimeoutSeconds 60)  # room for a cold CI runner
+        @($loaded.Source | Sort-Object) | Should -Be @($providers.Name | Sort-Object)
     }
 }

@@ -54,6 +54,15 @@ $desktopKeyRoot = 'HKCU:\Software\DotForge-Tests'
 $savedDesktopKey = $Env:DF_TEST_DESKTOP_ENV_KEY
 $Env:DF_TEST_DESKTOP_ENV_KEY = "$desktopKeyRoot\run-$(Get-Random)"
 
+# Variables DotForge's tools set are cleared for the run (restored after): a shell that ran
+# DotForge has them, and a test must not pass only because of an inherited value.
+. (Join-Path $PSScriptRoot 'DFToolVariables.ps1')
+$inherited = @{}
+foreach ($name in Get-DFToolVariableName -ToolsPath (Join-Path $repo 'Tools') -RolesPath (Join-Path $repo 'data' 'roles.json')) {
+    $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+    if ($null -ne $value) { $inherited[$name] = $value; [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+}
+
 Push-Location $repo
 try {
     $clock = [System.Diagnostics.Stopwatch]::StartNew()
@@ -79,4 +88,5 @@ try {
         if ((Test-Path $desktopKeyRoot) -and -not (Get-ChildItem $desktopKeyRoot -ErrorAction Ignore)) { Remove-Item $desktopKeyRoot -Force -ErrorAction Ignore }
     }
     $Env:DF_TEST_DESKTOP_ENV_KEY = $savedDesktopKey
+    foreach ($name in $inherited.Keys) { [Environment]::SetEnvironmentVariable($name, $inherited[$name], 'Process') }
 }

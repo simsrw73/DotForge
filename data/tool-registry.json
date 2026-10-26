@@ -6274,7 +6274,7 @@
       }
     },
     "vivid": {
-      "sha256": "142b09b988a5d9f748a9eff4dc5ff5b08718ee20f29496c547a39446ecc55eeb",
+      "sha256": "1330500b146ed90bfc7bb6f98017df3a791f566ddaf4dc970466d3bfe2300871",
       "record": {
         "name": "vivid",
         "executable": "vivid.exe",
@@ -6298,8 +6298,7 @@
           "native": {
             "${XDG_CONFIG_HOME}/vivid/filetypes.yml": {
               "paths": [
-                "${APPDATA}/vivid/filetypes.yml",
-                "${HOME}/.config/vivid/filetypes.yml"
+                "${APPDATA}/vivid/filetypes.yml"
               ],
               "guide": null,
               "setting": null
