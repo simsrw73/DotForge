@@ -225,7 +225,9 @@ Each `Tools/*.json` must have at minimum:
   the status notes missing ones (`Shared/DFDesktopEnv.ps1`; tests redirect the registry key through
   `DFTestDesktopEnvKey`). Design: `docs/superpowers/specs/2026-10-26-desktop-variables-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
-  settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass
+  settings a tool takes only from a variable (`FZF_DEFAULT_COMMAND`, …); a setting the tool's config
+  file can hold goes in a seeded file instead (policy, T-79: fzf's `fzfrc`, less's `lesskey`,
+  vivid's `filetypes.yml`), and theme and role variables stay variables. Expanded through `Expand-DFXdgPath` (flag strings pass
   through; `${XDG_*}` still expands) and written through `Set-DFEnv` (`Private/Set-DFEnv.ps1`):
   a value set outside DotForge is kept and noted in the tool's status; an explicit config choice
   overrides it with a warning. Keep `xdg.vars` for `${XDG_*}` path templates only.

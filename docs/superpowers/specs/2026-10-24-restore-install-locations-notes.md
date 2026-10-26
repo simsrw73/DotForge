@@ -345,6 +345,10 @@ posh-git, ps-dotenv, PSFzf, Terminal-Icons (Phase 3's OneDrive note applies to t
 
 ## Environment size
 
+**Done (DotForge, 2026-10-26):** fzf's base options → seeded `fzfrc`, less's `LESS` → seeded
+`lesskey` `#env`, vivid → seeded trimmed `filetypes.yml` (`LS_COLORS` 17,889 → 6,499 characters);
+theme and role variables stay, documented. Spec `2026-10-26-config-files-design.md` (closes T-79).
+
 **Decided (yours): config file over variable, project-wide.** When a setting can be made in a tool's
 config file or by a variable, DotForge puts it in the config file unless something prevents it, and
 uses variables only to point at config files and folders. Added as T-79, and to project memory.

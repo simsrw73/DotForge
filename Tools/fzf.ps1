@@ -1,13 +1,15 @@
 # Companion for fzf — resolve and apply the configured color theme.
 # fzf's own --color flag natively takes key:hex pairs, so no format conversion
 # is needed here (unlike psreadline, which converts hex to ANSI escapes).
-# Register-DFTool's env-block step already (re)sets $Env:FZF_DEFAULT_OPTS from
-# fzf.json's non-color flags on every call, before this companion runs, so
-# appending the resolved --color=... string here is always idempotent.
+# The base options live in the seeded fzfrc (FZF_DEFAULT_OPTS_FILE, read first);
+# FZF_DEFAULT_OPTS holds only the --color option applied here. A later theme
+# replaces the option DotForge wrote last (remembered across registrations in
+# $script:DFFzfColorLine), removed by exact text so the user's own options and
+# PSFzf's --ansi stay.
 #
 # Theme: the theme block in Tools/fzf.json (Get-DFToolTheme).
 # Theme files: $XDG_CONFIG_HOME\fzf\themes\<name>.json, else bundled Tools\fzf\.
-# Sets: FZF_DEFAULT_OPTS. Writes no files.
+# Sets: FZF_DEFAULT_OPTS. Writes no files (the fzfrc is a setup.seed).
 # Binds Ctrl+R / Ctrl+T through the shared handler when fzf wins history-search /
 # path-insert (PSFzf outranks it).
 
@@ -17,6 +19,9 @@ $_bundledDir = Join-Path $PSScriptRoot 'fzf'
 $_resolveThemeFile = ${function:Resolve-DFThemeFile}
 $_setEnv = ${function:Set-DFEnv}
 $_colorOption = ${function:ConvertTo-DFColorOption}
+# One table for the module's lifetime: a closure-local variable would reset on every Register-DFTool.
+if (-not (Get-Variable -Name DFFzfColorLine -Scope Script -ErrorAction Ignore)) { $script:DFFzfColorLine = @{ Line = $null } }
+$_colorLine = $script:DFFzfColorLine
 
 Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     <#
@@ -28,8 +33,8 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
         bundled Tools\fzf\<Name>.json. The file's "colors" object of fzf color
         names and values becomes one --color=name:value,... option appended to
         $Env:FZF_DEFAULT_OPTS, so it applies to every later fzf call in the
-        session. Each call appends another --color option; fzf applies them in
-        order, so the last theme applied wins.
+        session. It replaces the --color option it wrote last; any other text
+        in the variable (yours, PSFzf's --ansi) stays.
 
         Every entry is checked against fzf's --color grammar (hex like #1e1e2e,
         -1, 0-255, default, or a color name, each optionally followed by
@@ -71,9 +76,12 @@ Set-Item -Path 'function:global:Invoke-DFApplyFzfTheme' -Value ({
     $colorArg = & $_colorOption -Path $path -Tool 'fzf'
     if (-not $colorArg) { return }
     $existing = [string]$Env:FZF_DEFAULT_OPTS
+    if ($_colorLine.Line) { $existing = $existing.Replace($_colorLine.Line, '') }
+    $existing = @($existing -split '\r?\n' | ForEach-Object Trim | Where-Object { $_ }) -join "`n"
     $value = if ($existing) { "$existing`n$colorArg" } else { $colorArg }
     $explicit = if (-not $Implicit) { "fzf theme '$Name' was applied" }
     & $_setEnv -Name 'FZF_DEFAULT_OPTS' -Value $value -Tool 'fzf' -ExplicitReason $explicit
+    $_colorLine.Line = $colorArg
 }.GetNewClosure())
 
 # Apply the session theme (Tools/fzf.json theme block: FzfTheme -> Theme -> default).

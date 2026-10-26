@@ -23,12 +23,11 @@ Describe 'xdg.vars is path-templates-only after the split' {
 
 Describe 'env-block relocation preserves the migrated values' {
     BeforeEach { Reset-DFTestSession }
-    It 'fzf env carries the fuzzy-finder settings' {
+    It 'fzf env carries the fuzzy-finder settings; its base options are the seeded fzfrc' {
         $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
         $j.env.FZF_DEFAULT_COMMAND | Should -Be 'fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
-        # Exact full-value match so corruption anywhere in the multiline opts is caught
-        # (JSON \n decodes to LF, so compare against a `n-joined string). Color flags
-        # moved to Tools/fzf/catppuccin-mocha.json + Tools/fzf.ps1 -- see fzf.Tests.ps1.
+        # Exact match of the options (comments aside) so corruption anywhere is caught. Color
+        # flags are in Tools/fzf/catppuccin-mocha.json + Tools/fzf.ps1 -- see fzf.Tests.ps1.
         # Matches the user's zsh config exactly (fuzzy match, not --exact/--no-sort/
         # --cycle) -- see the 2026-09-06 zsh-parity investigation.
         $expectedFzfOpts = @(
@@ -36,8 +35,8 @@ Describe 'env-block relocation preserves the migrated values' {
             '--inline-info'
             '--height=40%'
             '--border'
-        ) -join "`n"
-        $j.env.FZF_DEFAULT_OPTS | Should -Be $expectedFzfOpts
+        )
+        @(Get-Content (Join-Path $script:RealTools 'fzf' 'fzfrc') | Where-Object { $_ -notmatch '^\s*#' }) | Should -Be $expectedFzfOpts
         $j.env.FZF_CTRL_T_OPTS  | Should -Be "--preview `"bat -n --color=always {}`" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
     }
     It 'delta carries GIT_PAGER in its diff role block (DELTA_FEATURES moved to the sidecar)' {
@@ -45,12 +44,12 @@ Describe 'env-block relocation preserves the migrated values' {
         $j.roles.diff.env.GIT_PAGER | Should -Be 'delta'
         $j.PSObject.Properties['env'] | Should -BeNullOrEmpty
     }
-    It 'less keeps its XDG paths and moves LESS to env' {
+    It 'less keeps its XDG paths; its flags live in the seeded lesskey, not LESS' {
         $j = Get-Content (Join-Path $script:RealTools 'less.json') -Raw | ConvertFrom-Json
         $j.xdg.vars.LESSHISTFILE | Should -Match '\$\{XDG_STATE_HOME\}'
         $j.xdg.vars.LESSKEYIN    | Should -Match '\$\{XDG_CONFIG_HOME\}'
         $j.xdg.vars.PSObject.Properties['LESS'] | Should -BeNullOrEmpty
-        $j.env.LESS | Should -Be '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
+        $j.PSObject.Properties['env'] | Should -BeNullOrEmpty
     }
     It 'mdcat moves MDCAT_THEME out of xdg.vars to its theme block and is method default' {
         $j = Get-Content (Join-Path $script:RealTools 'mdcat.json') -Raw | ConvertFrom-Json
@@ -71,7 +70,7 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         $script:SavedLessHist = $Env:LESSHISTFILE
         # tool xdg.vars never overwrite a variable that is already set, so start
         # from none (the developer's own profile may have set it)
-        Remove-Item Env:\LESSHISTFILE -ErrorAction Ignore
+        Remove-Item Env:\LESSHISTFILE, Env:\LESS -ErrorAction Ignore
         Set-DFTestXdg
 
         $script:SavedGitConfigGlobal = $Env:GIT_CONFIG_GLOBAL
@@ -106,9 +105,10 @@ Describe 'Register applies the migrated env settings (tools without a sidecar)' 
         Register-DFTool -Name 'delta' -ToolsPath $script:RealTools
         $Env:GIT_PAGER | Should -Be 'delta'
     }
-    It 'sets LESS from less.json env and still sets the XDG history path' {
+    It 'leaves LESS unset (the seeded lesskey holds the flags) and still sets the XDG history path' {
         Register-DFTool -Name 'less' -ToolsPath $script:RealTools
-        $Env:LESS         | Should -Be '--RAW-CONTROL-CHARS --quit-if-one-screen --no-init'
+        $Env:LESS         | Should -BeNullOrEmpty
+        Test-Path (Join-Path $Env:XDG_CONFIG_HOME 'less' 'lesskey') | Should -BeTrue
         $Env:LESSHISTFILE | Should -Be (Join-Path $Env:XDG_STATE_HOME 'less' 'history')
     }
 }

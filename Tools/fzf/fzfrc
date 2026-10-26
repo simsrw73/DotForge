@@ -1,0 +1,6 @@
+# Seeded by DotForge; fzf reads it first (FZF_DEFAULT_OPTS_FILE), then FZF_DEFAULT_OPTS, which
+# holds only the theme colors DotForge applies. Edit it freely: DotForge never overwrites it.
+--layout=reverse
+--inline-info
+--height=40%
+--border

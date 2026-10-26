@@ -1,9 +1,11 @@
 # Companion for vivid — resolve the configured theme, generate (or reuse a
 # cached) LS_COLORS value, and apply it to the session. Caching uses
-# Get-DFFingerprintCache (Private/Get-DFFingerprintCache.ps1): the
-# fingerprint is just the resolved theme name, so a theme change invalidates
-# the cache and a stable theme reuses it without spawning vivid again
-# (~42ms measured locally — worth avoiding on every shell startup).
+# Get-DFFingerprintCache (Shared/Get-DFFingerprintCache.ps1): the fingerprint
+# is the theme name plus the filetypes database's last-write time, so a theme
+# change or an edit to the database invalidates the cache, and otherwise vivid
+# isn't spawned again (~42ms measured locally — worth avoiding on every start).
+# The database is the seeded $XDG_CONFIG_HOME\vivid\filetypes.yml, trimmed so
+# LS_COLORS stays under 8,191 characters; without it, vivid's built-in one.
 #
 # Invoke-DFApplyLSColorsTheme is a function:global: (callable after
 # Register-DFTool returns, and from the fls picker). Private functions can't be
@@ -16,6 +18,7 @@
 # Writes: $XDG_CACHE_HOME\dotforge\ls-colors.txt and ls-colors.key.
 
 $_fingerprintCache = ${function:Get-DFFingerprintCache}
+$_xdgPath = ${function:Get-DFXdgPath}
 $_setEnv = ${function:Set-DFEnv}
 
 Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
@@ -23,9 +26,11 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
     .SYNOPSIS
         Resolves and applies an LS_COLORS value for the named vivid theme.
     .DESCRIPTION
-        Sets $Env:LS_COLORS for the current session from vivid generate <Name>.
+        Sets $Env:LS_COLORS for the current session from vivid generate <Name>,
+        using the file types in $XDG_CONFIG_HOME\vivid\filetypes.yml when it
+        exists (DotForge seeds a trimmed copy), else vivid's built-in list.
         The generated value is cached in $XDG_CACHE_HOME\dotforge\ls-colors.txt,
-        keyed by theme name, so later sessions with the same theme skip
+        keyed by theme name and that file's last write, so later sessions skip
         running vivid. A theme vivid doesn't know warns and changes nothing.
 
         Defined by DotForge's vivid companion, which calls it at startup with
@@ -59,9 +64,16 @@ Set-Item -Path 'function:global:Invoke-DFApplyLSColorsTheme' -Value ({
         [switch]$Implicit
     )
 
-    # Keyed by theme name: a theme change regenerates, the same theme reuses it.
-    $value = & $_fingerprintCache -Name 'ls-colors' -Fingerprint $Name -Force:$Force -Generate {
-        $raw = & vivid generate $Name 2>&1 | Out-String
+    # Keyed by theme name and the database's last write: a change to either regenerates.
+    $database = Join-Path (& $_xdgPath Config) 'vivid' 'filetypes.yml'
+    $databaseArgs = @()
+    $stamp = 'builtin'
+    if (Test-Path -LiteralPath $database -PathType Leaf) {
+        $databaseArgs = @('-d', $database)
+        $stamp = (Get-Item -LiteralPath $database).LastWriteTimeUtc.Ticks
+    }
+    $value = & $_fingerprintCache -Name 'ls-colors' -Fingerprint "$Name|$stamp" -Force:$Force -Generate {
+        $raw = & vivid @databaseArgs generate $Name 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "DotForge: vivid theme '$Name' failed — $($raw.Trim())"
             return

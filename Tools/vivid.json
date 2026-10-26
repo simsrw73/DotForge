@@ -7,7 +7,14 @@
     "scoop": "vivid",
     "winget": "sharkdp.vivid"
   },
-  "xdg": { "compliance": "none", "method": "default" },
+  "xdg": {
+    "compliance": "none",
+    "method": "default",
+    "native": { "${XDG_CONFIG_HOME}/vivid/filetypes.yml": ["${APPDATA}/vivid/filetypes.yml", "${HOME}/.config/vivid/filetypes.yml"] }
+  },
+  "setup": {
+    "seed": { "${XDG_CONFIG_HOME}/vivid/filetypes.yml": "vivid/filetypes.yml" }
+  },
   "theme": { "key": "VividTheme", "default": "catppuccin-mocha", "command": "Select-LSColorsTheme" },
   "aliases": {},
   "picker": "custom"

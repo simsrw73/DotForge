@@ -171,7 +171,7 @@ These fill the `pager` role, so one of them sets `PAGER`: your `Defaults['pager'
 
 - **moor** gets `MOOR=-style <theme>` from your theme (`MoorTheme` or `Theme`), unless you've set `MOOR` yourself.
 - **ov** gets a catppuccin config that follows your theme (`OvTheme` or `Theme`), passed with `--config` unless you have your own `$XDG_CONFIG_HOME\ov\config.yaml`.
-- **less**: DotForge points `PAGER` at the native Windows build (scoop, winget `jftuga.less` or choco), not Git for Windows' copy in `Git\usr\bin`, which needs `TERM` set correctly. With only Git's copy installed, `PAGER` is plain `less`. Key bindings come from `$XDG_CONFIG_HOME\less\lesskey` (`LESSKEYIN`) and search history goes to `$XDG_STATE_HOME\less\history`.
+- **less**: DotForge points `PAGER` at the native Windows build (scoop, winget `jftuga.less` or choco), not Git for Windows' copy in `Git\usr\bin`, which needs `TERM` set correctly. With only Git's copy installed, `PAGER` is plain `less`. Key bindings and less's options (`--RAW-CONTROL-CHARS --quit-if-one-screen --no-init`, in the file's `#env` section) come from `$XDG_CONFIG_HOME\less\lesskey` (`LESSKEYIN`), which DotForge seeds once and never overwrites; search history goes to `$XDG_STATE_HOME\less\history`. If you already had a `lesskey` there, add an `#env` section with a `LESS = ...` line to keep those options.
 
 bat isn't a pager here: when it pages, it uses the `PAGER` above.
 
@@ -182,6 +182,7 @@ Ctrl+R (search history) and Ctrl+T (insert a path) are two roles, `history-searc
 - **skim** (`sk`) takes fzf's options, so it can also run every DotForge picker: `Defaults = @{ picker = 'skim' }`. It gets the same layout as fzf through `SKIM_DEFAULT_OPTIONS`, plus catppuccin colors (`SkimTheme` or `Theme`).
 - **television** (`tv`): its one-time setup downloads its channels (`tv update-channels`) and seeds `config.toml` with a catppuccin theme (`TelevisionTheme` or `Theme`). If you already had a `config.toml`, it's kept and setup tells you to set `ui.theme` yourself. To change the theme later, edit `ui.theme` in `$XDG_CONFIG_HOME\television\config.toml`; `Set-DFToolTheme` can't change it. Its Ctrl+R searches history and its Ctrl+T is a smart autocomplete that picks a channel from what you've typed.
 - **fzf** and **skim** bind Ctrl+R and Ctrl+T through DotForge's own handler when they win: history is newest first without repeats, and picked paths are quoted when they hold a space.
+- **fzf**'s layout (`--layout=reverse`, `--height=40%`, …) is in `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`), seeded once: edit it to change fzf everywhere. `FZF_DEFAULT_OPTS` holds only the theme colors, which a theme switch replaces.
 
 ### Alt+C: change folder (fzf, skim, broot)
 
@@ -289,7 +290,7 @@ An old home that already holds packages or history (`~\.bun`, pnpm's `%LOCALAPPD
 
 ### vivid
 
-vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. The generated value is cached, so vivid runs only when the theme changes. After upgrading vivid, refresh it with `Invoke-DFApplyLSColorsTheme -Name <theme> -Force`.
+vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. DotForge seeds `$XDG_CONFIG_HOME\vivid\filetypes.yml`, vivid's list of file types trimmed to the common ones, so `LS_COLORS` stays around 6,500 characters instead of 18,000 (cmd and batch files ignore a variable over 8,191). Add a file type there and the next shell picks it up; delete the file to use vivid's full list. The generated value is cached, so vivid runs only when the theme or that file changes. After upgrading vivid, refresh it with `Invoke-DFApplyLSColorsTheme -Name <theme> -Force`.
 
 ## Troubleshooting
 

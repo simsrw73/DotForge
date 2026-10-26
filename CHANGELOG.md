@@ -6,6 +6,14 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **Settings move from variables to config files you can edit.** fzf's layout is in a seeded
+  `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`); `FZF_DEFAULT_OPTS` keeps only the theme
+  colors, and a theme switch now replaces them instead of adding another set. less's options are in
+  the seeded `$XDG_CONFIG_HOME\less\lesskey` (`#env` section), and `LESS` is no longer set; if you
+  already had a `lesskey` there, add `#env` and `LESS = --RAW-CONTROL-CHARS --quit-if-one-screen
+  --no-init` to keep them. vivid uses a seeded `$XDG_CONFIG_HOME\vivid\filetypes.yml` trimmed to
+  common file types, so `LS_COLORS` is about 6,500 characters instead of 18,000, short enough for
+  cmd and batch files to see; delete the file for vivid's full list.
 - **uv's tools and Pythons, and npm's cache, move under the XDG folders.** uv gets `UV_TOOL_DIR`
   (`$XDG_DATA_HOME\uv\tools`) and `UV_PYTHON_INSTALL_DIR` (`$XDG_DATA_HOME\uv\python`); npm gets
   `NPM_CONFIG_CACHE` (`$XDG_CACHE_HOME\npm`). Tools or Pythons already in uv's old folders keep working

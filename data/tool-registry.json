@@ -1881,7 +1881,7 @@
       }
     },
     "fzf": {
-      "sha256": "cd32074117429c1213079227f22395edd6860f95b977fd84f4c866d3c0df4d0c",
+      "sha256": "736c0f208bc270a5d33c8518516f33e1a88d06336630468105d2163d69a8e6f4",
       "record": {
         "name": "fzf",
         "executable": "fzf.exe",
@@ -1898,16 +1898,28 @@
           "choco": "fzf"
         },
         "xdg": {
-          "method": "default",
-          "vars": null,
+          "method": "env",
+          "vars": {
+            "FZF_DEFAULT_OPTS_FILE": "${XDG_CONFIG_HOME}/fzf/fzfrc"
+          },
           "dirs": [],
           "instructions": null,
-          "compliance": "none",
-          "native": null
+          "compliance": "partial",
+          "native": {
+            "FZF_DEFAULT_OPTS_FILE": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/fzf/fzfrc": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            }
+          }
         },
         "env": {
           "FZF_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
-          "FZF_DEFAULT_OPTS": "--layout=reverse\n--inline-info\n--height=40%\n--border",
           "FZF_ALT_C_COMMAND": "fd --type d --strip-cwd-prefix --hidden --follow --exclude .git",
           "FZF_ALT_C_OPTS": "--preview \"eza --tree --level=2 --color=always {}\"",
           "FZF_CTRL_T_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
@@ -1999,7 +2011,12 @@
         "executableExclude": [],
         "prewarm": true,
         "nerdFont": null,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/fzf/fzfrc": "fzf/fzfrc"
+          },
+          "notes": []
+        },
         "banner": null,
         "installs": null,
         "install": {
@@ -2927,7 +2944,7 @@
       }
     },
     "less": {
-      "sha256": "c92fbfea723e6b2850c01714797d498a7e0a3afb1408b6073c02c66c80ebb941",
+      "sha256": "8af30ea9dbb6cd476bd71355c45f133d1f00ecf27f93170e0543788108f6a5fa",
       "record": {
         "name": "less",
         "executable": "less.exe",
@@ -2974,12 +2991,15 @@
               ],
               "guide": null,
               "setting": null
+            },
+            "${XDG_CONFIG_HOME}/less/lesskey": {
+              "paths": [],
+              "guide": null,
+              "setting": null
             }
           }
         },
-        "env": {
-          "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
-        },
+        "env": null,
         "desktop": [],
         "aliases": {},
         "picker": null,
@@ -3022,7 +3042,12 @@
         ],
         "prewarm": true,
         "nerdFont": null,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/less/lesskey": "less/lesskey"
+          },
+          "notes": []
+        },
         "banner": null,
         "installs": null,
         "install": {
@@ -6251,7 +6276,7 @@
       }
     },
     "vivid": {
-      "sha256": "00ced0113047c1baed9d393f8be0a27a9a6ce7052406a0e0df01810d1102c427",
+      "sha256": "142b09b988a5d9f748a9eff4dc5ff5b08718ee20f29496c547a39446ecc55eeb",
       "record": {
         "name": "vivid",
         "executable": "vivid.exe",
@@ -6272,7 +6297,16 @@
           "dirs": [],
           "instructions": null,
           "compliance": "none",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/vivid/filetypes.yml": {
+              "paths": [
+                "${APPDATA}/vivid/filetypes.yml",
+                "${HOME}/.config/vivid/filetypes.yml"
+              ],
+              "guide": null,
+              "setting": null
+            }
+          }
         },
         "env": null,
         "desktop": [],
@@ -6298,7 +6332,12 @@
         "executableExclude": [],
         "prewarm": true,
         "nerdFont": null,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/vivid/filetypes.yml": "vivid/filetypes.yml"
+          },
+          "notes": []
+        },
         "banner": null,
         "installs": null,
         "install": {

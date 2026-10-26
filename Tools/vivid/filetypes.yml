@@ -1,0 +1,331 @@
+# Seeded by DotForge: vivid 0.11.1's own filetypes.yml, trimmed to the file types a developer
+# meets often, so LS_COLORS stays under 8,191 characters (cmd ignores longer variables).
+# Edit it freely; DotForge never overwrites it, and a change regenerates LS_COLORS next load.
+# Delete it to use vivid's full built-in list.
+
+core:
+  normal_text: [$no]
+  regular_file: [$fi]
+  reset_to_normal: [$rs]
+  directory: [$di]
+  symlink: [$ln]
+  multi_hard_link: [$mh]
+  fifo: [$pi]
+  socket: [$so]
+  door: [$do]
+  block_device: [$bd]
+  character_device: [$cd]
+  broken_symlink: [$or]
+  missing_symlink_target: [$mi]
+  setuid: [$su]
+  setgid: [$sg]
+  file_with_capability: [$ca]
+  sticky_other_writable: [$tw]
+  other_writable: [$ow]
+  sticky: [$st]
+  executable_file: [$ex]
+
+text:
+  special:
+    - AUTHORS
+    - CHANGELOG
+    - CHANGELOG.md
+    - CONTRIBUTING
+    - CONTRIBUTING.md
+    - README
+    - README.md
+
+  todo:
+    - TODO
+    - TODO.md
+
+  licenses:
+    - COPYING
+    - LICENSE
+    - LICENSE-APACHE
+    - LICENSE-MIT
+
+  configuration:
+    generic:
+      - .cfg
+      - .conf
+      - .config
+      - .ini
+      - .json
+      - .rc
+      - .toml
+      - .yaml
+      - .yml
+
+    dockerfile:
+      - Containerfile
+      - Dockerfile
+
+    nix:
+      - .nix
+
+  other:
+    - .txt
+
+markup:
+  web:
+    - .htm
+    - .html
+    - .xhtml
+
+  other:
+    - .adoc
+    - .markdown
+    - .md
+    - .mdx
+    - .rst
+    - .xml
+
+programming:
+  source:
+    assembly: [.asm]
+    awk: [.awk]
+    clojure: [.clj, .cljs, cljc, .cljw]
+    csharp: [.cs, .csx]
+    css: [.css]
+    cxx:
+      - .c
+      - .cpp
+      - .h
+      - .hpp
+    d: [.d, .di]
+    dart: [.dart]
+    diff: [.diff, .patch]
+    elixir: [.ex, .exs]
+    elm: [.elm]
+    emacs: [.elc, .eln]
+    erlang: [.erl]
+    fortran: [.f, .for]
+    elixir: [.ex, .exs]
+    elm: [.elm]
+    erlang: [.erl]
+    fsharp: [.fs, .fsi, .fsx]
+    go: [.go]
+    graphviz: [.dot, .gv]
+    groovy: [.groovy, .gvy, .gradle]
+    haskell: [.hs, .lhs]
+    ipython: [.ipynb]
+    java: [.java, .bsh]
+    javascript: [.js, .jsx, .htc, .mjs, .cjs]
+    julia: [.jl]
+    kotlin: [.kt, .kts]
+    latex: [.tex, .ltx]
+    less: [.less]
+    lisp: [.lisp, .el]
+    lua: [.lua]
+    perl: [.pl, .pm, .pod, .t, .cgi]
+    php: [.php]
+    powershell: [.ps1, .psm1, .psd1]
+    python: [.py]
+    r: [.r]
+    ruby: [.rb]
+    rust: [.rs]
+    sass: [.sass, .scss]
+    scala: [.scala, .sbt]
+    sed: [.sed]
+    shell:
+      - .bash
+      - .bashrc
+      - .fish
+      - .profile
+      - .sh
+      - .zsh
+    sql: [.sql]
+    swift: [.swift]
+    terraform: [.tf, .terraform, .tfvars]
+    typescript: [.ts, .tsx]
+    viml: [.vim]
+    zig: [.zig]
+
+  tooling:
+    vcs:
+      git:
+        - .gitattributes
+        - .gitconfig
+        - .gitignore
+        - .gitmodules
+        - .mailmap
+
+      other:
+        - .dockerignore
+        - .ignore
+        - CODEOWNERS
+
+    build:
+      cmake:
+        - .cmake
+        - CMakeLists.txt
+        - .cmake.in
+
+      make:
+        - Makefile
+        - .make
+        - .mk
+
+      configure:
+        - configure
+        - configure.ac
+
+      pip:
+        - requirements.txt
+
+      ruby:
+        - .rake
+
+      bazel:
+        - .bzl
+        - .bazel
+
+    packaging:
+      go:
+        - go.mod
+      python:
+        - MANIFEST.in
+        - setup.py
+        - pyproject.toml
+      ruby:
+        - .gemspec
+
+    code-style:
+      python:
+        - .flake8
+
+    editors:
+      editorconfig:
+        - .editorconfig
+
+media:
+  image:
+    application:
+      - .ai # Illustrator
+      - .kra # Krita
+      - .psd # Photoshop
+      - .xcf # GIMP
+
+    bitmap:
+      - .bmp
+      - .gif
+      - .ico
+      - .jpeg
+      - .jpg
+      - .png
+      - .webp
+
+    vector:
+      - .eps
+      - .svg
+
+  audio:
+    - .flac   # lossless
+    - .m4a
+    - .mp3
+    - .ogg
+    - .wav    # lossless
+
+  video:
+    - .avi
+    - .mkv
+    - .mov
+    - .mp4
+    - .webm
+
+  fonts:
+    - .otf
+    - .ttf
+    - .woff
+    - .woff2
+
+office:
+  document:
+    - .doc
+    - .docx
+    - .epub
+    - .pdf
+
+  spreadsheet:
+    - .csv
+    - .tsv
+    - .xls
+    - .xlsx
+
+  presentation:
+    - .odp
+    - .ppt
+    - .pptx
+
+  email:
+    - .eml
+    - .msg
+
+archives:
+  packages:
+    - .apk
+    - .deb
+    - .msi
+    - .rpm
+
+  images:
+    - .img
+    - .iso
+    - .vhdx
+    - .vmdk
+
+  other:
+    - .7z
+    - .bz2
+    - .gz
+    - .jar
+    - .rar
+    - .tar
+    - .tgz
+    - .xz
+    - .zip
+    - .zst
+
+executable:
+  windows:
+    - .bat
+    - .com
+    - .exe
+
+  library:
+    - .a
+    - .dll
+    - .dylib
+    - .so
+
+  linux:
+    - .ko
+
+unimportant:
+  build_artifacts:
+    cxx:
+      - .o
+      - .la
+      - .lo
+    cmake:
+      - CMakeCache.txt
+    rust:
+      - .rlib
+      - .rmeta
+    python:
+      - .pyc
+      - .pyd
+      - .pyo
+    java:
+      - .class
+
+  other:
+    - "~"
+    - .bak
+    - .lock
+    - .log
+    - .orig
+    - .swp
+    - .tmp
+    - package-lock.json

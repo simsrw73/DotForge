@@ -27,12 +27,50 @@ Describe 'fzf tool sidecar' {
         Restore-DFTestXdg
     }
 
-    It 'applies the catppuccin-mocha theme by default, preserving the existing non-color options' {
+    It 'applies the theme colors alone to FZF_DEFAULT_OPTS' {
         Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
         $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
         $Env:FZF_DEFAULT_OPTS | Should -Match 'hl\+:#f38ba8'
-        $Env:FZF_DEFAULT_OPTS | Should -Match '--layout=reverse'
-        $Env:FZF_DEFAULT_OPTS | Should -Match '--inline-info'
+        $Env:FZF_DEFAULT_OPTS | Should -Not -Match '--layout'
+    }
+    It 'points FZF_DEFAULT_OPTS_FILE at the seeded fzfrc' {
+        $j = Get-Content (Join-Path $script:RealTools 'fzf.json') -Raw | ConvertFrom-Json
+        $j.xdg.method | Should -Be 'env'
+        $j.xdg.vars.FZF_DEFAULT_OPTS_FILE | Should -Be '${XDG_CONFIG_HOME}/fzf/fzfrc'
+        @($j.xdg.native.FZF_DEFAULT_OPTS_FILE).Count | Should -Be 0
+        $j.setup.seed.'${XDG_CONFIG_HOME}/fzf/fzfrc' | Should -Be 'fzf/fzfrc'
+        $j.env.PSObject.Properties.Name | Should -Not -Contain 'FZF_DEFAULT_OPTS'
+    }
+    It 'the seeded fzfrc holds the base options' {
+        $lines = @(Get-Content (Join-Path $script:RealTools 'fzf' 'fzfrc'))
+        foreach ($option in '--layout=reverse', '--inline-info', '--height=40%', '--border') { $lines | Should -Contain $option }
+    }
+    It 'a theme switch replaces DotForge''s colors instead of appending' {
+        $userDir = Join-Path $Env:XDG_CONFIG_HOME 'fzf' 'themes'
+        New-Item -ItemType Directory -Force -Path $userDir | Out-Null
+        '{ "name": "other", "colors": { "bg+": "#000000" } }' | Set-Content (Join-Path $userDir 'other.json')
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        Invoke-DFApplyFzfTheme -Name other
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha
+        ([regex]::Matches($Env:FZF_DEFAULT_OPTS, '--color=')).Count | Should -Be 1
+        $Env:FZF_DEFAULT_OPTS | Should -Match 'bg\+:#313244'
+    }
+    It 'keeps --ansi across a theme switch' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS = "$Env:FZF_DEFAULT_OPTS --ansi"
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha
+        $Env:FZF_DEFAULT_OPTS | Should -Match '--ansi'
+        ([regex]::Matches($Env:FZF_DEFAULT_OPTS, '--color=')).Count | Should -Be 1
+    }
+    It 'replaces only its own colors in an outside FZF_DEFAULT_OPTS' {
+        Register-DFTool -Name 'fzf' -ToolsPath $script:RealTools
+        $Env:FZF_DEFAULT_OPTS = "--cycle`n--color=fg:#111111"
+        Reset-DFTestSession
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha -WarningAction SilentlyContinue
+        Invoke-DFApplyFzfTheme -Name catppuccin-mocha -WarningAction SilentlyContinue
+        $Env:FZF_DEFAULT_OPTS | Should -Match '^--cycle'
+        $Env:FZF_DEFAULT_OPTS | Should -Match 'fg:#111111'
+        ([regex]::Matches($Env:FZF_DEFAULT_OPTS, '--color=')).Count | Should -Be 2
     }
 
     It 'follows the shared $DFConfig[Theme] key' {

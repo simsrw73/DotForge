@@ -3108,9 +3108,11 @@ General-purpose command-line fuzzy finder
 | Detected by | `fzf.exe` |
 | Tags | `fuzzy`, `picker`, `search` |
 | Install ids | scoop: `fzf`<br>winget: `junegunn.fzf`<br>choco: `fzf` |
-| XDG method | `default` |
-| Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_DEFAULT_OPTS` = `--layout=reverse --inline-info --height=40% --border`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
+| XDG method | `env` |
+| XDG variables | `FZF_DEFAULT_OPTS_FILE` = `${XDG_CONFIG_HOME}/fzf/fzfrc` |
+| Environment | `FZF_DEFAULT_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_COMMAND` = `fd --type d --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_ALT_C_OPTS` = `--preview "eza --tree --level=2 --color=always {}"`<br>`FZF_CTRL_T_COMMAND` = `fd --type f --strip-cwd-prefix --hidden --follow --exclude .git`<br>`FZF_CTRL_T_OPTS` = `--preview "bat -n --color=always {}" --bind 'ctrl-/:change-preview-window(down|hidden|)'` |
 | Theme | key `FzfTheme`, default `catppuccin-mocha`; switch with `Invoke-DFApplyFzfTheme` |
+| Seeds once | `${XDG_CONFIG_HOME}/fzf/fzfrc` |
 | Roles | [`directory-jump`](#directory-jump-role), [`fuzzy-finder`](#fuzzy-finder-role), [`history-search`](#history-search-role), [`path-insert`](#path-insert-role), [`picker`](#picker-role) |
 | Sets, as the picker tool | `Picker` = `fzf` |
 | Companion | [`Tools/fzf.ps1`](#fzf-companion) |
@@ -3290,7 +3292,7 @@ Opposite of more — terminal pager
 | XDG method | `env` |
 | XDG variables | `LESSHISTFILE` = `${XDG_STATE_HOME}/less/history`<br>`LESSKEYIN` = `${XDG_CONFIG_HOME}/less/lesskey` |
 | Creates | `${XDG_STATE_HOME}/less`<br>`${XDG_CONFIG_HOME}/less` |
-| Environment | `LESS` = `--RAW-CONTROL-CHARS --quit-if-one-screen --no-init` |
+| Seeds once | `${XDG_CONFIG_HOME}/less/lesskey` |
 | Roles | [`pager`](#pager-role) |
 | Sets, as the pager tool | `PAGER` = `less -F -R -X --mouse`<br>`BAT_PAGER` = `less -F -R -X --mouse` |
 
@@ -3815,6 +3817,7 @@ Themeable LS_COLORS generator
 | XDG method | `default` |
 | Theme | key `VividTheme`, default `catppuccin-mocha`; switch with `Select-LSColorsTheme` |
 | Picker | `` (): lists ``; Enter runs `` |
+| Seeds once | `${XDG_CONFIG_HOME}/vivid/filetypes.yml` |
 | Companion | [`Tools/vivid.ps1`](#vivid-companion) |
 
 ### wget tool
@@ -4111,7 +4114,7 @@ Changes directory, then fnm activates the Node version that the project's .nvmrc
 
 Applies an fzf color theme to this session by appending a --color option to FZF_DEFAULT_OPTS.
 
-Resolves -Name to a theme file: an absolute path is used as is, otherwise $XDG_CONFIG_HOME\\fzf\\themes\\&lt;Name&gt;.json, then DotForge's bundled Tools\\fzf\\&lt;Name&gt;.json. The file's "colors" object of fzf color names and values becomes one --color=name:value,... option appended to $Env:FZF_DEFAULT_OPTS, so it applies to every later fzf call in the session. Each call appends another --color option; fzf applies them in order, so the last theme applied wins.
+Resolves -Name to a theme file: an absolute path is used as is, otherwise $XDG_CONFIG_HOME\\fzf\\themes\\&lt;Name&gt;.json, then DotForge's bundled Tools\\fzf\\&lt;Name&gt;.json. The file's "colors" object of fzf color names and values becomes one --color=name:value,... option appended to $Env:FZF_DEFAULT_OPTS, so it applies to every later fzf call in the session. It replaces the --color option it wrote last; any other text in the variable (yours, PSFzf's --ansi) stays.
 
 Every entry is checked against fzf's --color grammar (hex like #1e1e2e, -1, 0-255, default, or a color name, each optionally followed by :bold, :underline and similar), and invalid entries are skipped with a warning. An unknown theme name warns and changes nothing.
 
@@ -4770,7 +4773,7 @@ Searches every venv under your home folder.
 
 Resolves and applies an LS_COLORS value for the named vivid theme.
 
-Sets $Env:LS_COLORS for the current session from vivid generate &lt;Name&gt;. The generated value is cached in $XDG_CACHE_HOME\\dotforge\\ls-colors.txt, keyed by theme name, so later sessions with the same theme skip running vivid. A theme vivid doesn't know warns and changes nothing.
+Sets $Env:LS_COLORS for the current session from vivid generate &lt;Name&gt;, using the file types in $XDG_CONFIG_HOME\\vivid\\filetypes.yml when it exists (DotForge seeds a trimmed copy), else vivid's built-in list. The generated value is cached in $XDG_CACHE_HOME\\dotforge\\ls-colors.txt, keyed by theme name and that file's last write, so later sessions skip running vivid. A theme vivid doesn't know warns and changes nothing.
 
 Defined by DotForge's vivid companion, which calls it at startup with $DFConfig.VividTheme, then $DFConfig.Theme, then catppuccin-mocha.
 
