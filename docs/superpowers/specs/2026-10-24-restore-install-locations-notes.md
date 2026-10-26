@@ -73,6 +73,11 @@ Claude Code have no DotForge records yet; both need one (komorebi runs at sign-i
 | B. DotForge records declare which variables are also desktop variables (e.g. `"desktop": ["CLAUDE_CONFIG_DIR"]`); an explicit command (`Set-DFDesktopEnv`, run by the restore and by the user, never at load) writes them | One home per tool; shows in `Get-DFToolStatus`; reversible (DotForge can remove what it wrote) | New core feature; writing `HKCU\Environment` is a durable, outward change; needs DotForge installed first, so the XDG base set still belongs to bootstrap |
 | C. B, but DotForge only *reports* which desktop variables are missing; the user or chezmoi writes them | DotForge never writes outside the session | Two steps for the user |
 
+**Done (DotForge, 2026-10-26):** records declare `desktop`; running `Set-DFDesktopEnv` is the opt-in
+(no config key); a differing value is asked about in a console, else kept; the status notes missing
+ones; komorebi has a record. Spec `2026-10-26-desktop-variables-design.md` (closes T-78). The Claude
+variables move with piece 9's Claude Code record; chezmoi drops `KOMOREBI_CONFIG_HOME` after a release.
+
 **Decided: B, as opt-in.** A record *suggests* desktop variables; nothing is written until the user
 opts in, either for all tools or tool by tool. Writing the Windows environment reaches outside
 DotForge's normal sphere, so it needs the user's permission. The XDG base set and `SCOOP` stay in

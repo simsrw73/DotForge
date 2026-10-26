@@ -334,6 +334,33 @@ Then load it with `Register-DFTool -Name bat`, or open a new shell.
 
 For everything natively in the XDG folders, without links: uninstall the tool the way it was installed, then install it with `Install-DFTool`, which sets its variables before the installer runs. Copy anything you want to keep first.
 
+## Desktop apps
+
+Why: DotForge sets a tool's variables in each pwsh session. A program started another way, such as komorebi at sign-in, a desktop app or an editor, sees only the Windows user environment, so it never gets them.
+
+A tool record suggests which of its variables those programs need. `Get-DFToolStatus` notes the ones they lack:
+
+<!-- fragment -->
+
+```text
+KOMOREBI_CONFIG_HOME isn't set for desktop apps; Set-DFDesktopEnv komorebi sets it
+```
+
+Nothing is written until you ask. `Set-DFDesktopEnv` writes them to the Windows user environment, for the tools you name or every tool your session requests:
+
+<!-- system -->
+
+```powershell
+Set-DFDesktopEnv -WhatIf     # what it would set
+Set-DFDesktopEnv komorebi    # set komorebi's
+```
+
+1. A variable that's missing is written.
+2. One already set to the same value is left as it is.
+3. One set to something else, by you or by a package manager, is yours. In an interactive console you're asked whether to keep it or replace it. Otherwise, or with `-Confirm:$false`, it's kept, and the output says so.
+
+New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote.
+
 ## Prefer a package manager
 
 ```powershell

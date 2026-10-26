@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-23",
+  "updated": "2026-10-26",
   "tools": {
     "bat": {
       "packages": {
@@ -240,6 +240,14 @@
         "choco": "jq"
       },
       "linkedVia": "curated"
+    },
+    "komorebi": {
+      "packages": {
+        "scoop": "komorebi",
+        "winget": "LGUG2Z.komorebi"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/lgug2z/komorebi"
     },
     "lazygit": {
       "packages": {

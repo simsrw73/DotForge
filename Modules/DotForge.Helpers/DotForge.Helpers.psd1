@@ -43,7 +43,10 @@
         'New-DFTool',
         # Layer 3 — Tool Operations: fonts
         'Install-DFNerdFont',
-        'Resolve-DFToolConflict'
+        'Resolve-DFToolConflict',
+        # Layer 3 — Tool Operations: desktop variables
+        'Set-DFDesktopEnv',
+        'Remove-DFDesktopEnv'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()

@@ -215,6 +215,8 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
     # checkers are only invoked when there is something to check.
     $v = Get-DFSchemaProperty $Tool 'aliases';  if ($null -ne $v -and ($v -isnot [pscustomobject] -or @($v.PSObject.Properties).Count)) { Get-DFAliasesSchemaError $v 'aliases' }
     $v = Get-DFSchemaProperty $Tool 'env';      if ($null -ne $v) { Get-DFMapSchemaError $v 'env' }
+    # Read directly: a function's return would unwrap a one-name list into a string.
+    $v = $Tool.PSObject.Properties['desktop']?.Value; if ($null -ne $v) { Get-DFDesktopSchemaError $Tool $v }
     $v = Get-DFSchemaProperty $Tool 'themeMap'; if ($null -ne $v) { Get-DFMapSchemaError $v 'themeMap' -StringsOnly }
     if ($roles -is [pscustomobject]) {
         foreach ($r in $roles.PSObject.Properties) {
@@ -227,6 +229,21 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
             }
         }
     }
+}
+
+function Get-DFDesktopSchemaError ([PSCustomObject]$Tool, $Desktop) {
+    <#
+    .SYNOPSIS
+        Schema errors in desktop: a list of variables the record defines in xdg.vars or env.
+    #>
+    if ($Desktop -isnot [array] -or @($Desktop | Where-Object { $_ -isnot [string] -or -not $_ }).Count) {
+        return 'desktop must be a list of variable names'
+    }
+    $defined = @(foreach ($block in (Get-DFSchemaProperty (Get-DFSchemaProperty $Tool 'xdg') 'vars'), (Get-DFSchemaProperty $Tool 'env')) {
+        if ($block -is [pscustomobject]) { $block.PSObject.Properties.Name }
+    })
+    $bad = @($Desktop | Where-Object { $_ -cnotin $defined })
+    if ($bad) { "desktop names variables the record doesn't define in xdg.vars or env: $($bad -join ', ')" }
 }
 
 function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
@@ -448,7 +465,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont', 'desktop'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_plain', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'

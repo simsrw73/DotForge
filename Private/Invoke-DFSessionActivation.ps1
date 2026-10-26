@@ -105,7 +105,7 @@ function Invoke-DFSessionActivation {
             try {
                 Invoke-DFToolRegistration -Tool $tool -Context $context
                 $oldLocations = if ($owned.State.Notes.ContainsKey($tool.name)) { $owned.State.Notes[$tool.name] } else { @() }
-                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name) + @($oldLocations))
+                $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Active -RequestedBy $requestedBy[$tool.name] -Detail @(@(Get-DFEnvKeptNote -Tool $tool.name) + @(Get-DFToolNote -Tool $tool.name) + @($oldLocations) + @(Get-DFDesktopEnvNote -Tool $tool))
             } catch {
                 $status[$tool.name] = New-DFToolStatus -Name $tool.name -State Failed -RequestedBy $requestedBy[$tool.name] -Detail $_.Exception.Message
             }

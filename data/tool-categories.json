@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-23",
+  "updated": "2026-10-26",
   "taxonomy": {
     "function": [
       "search",
@@ -39,7 +39,8 @@
       "formatter",
       "uuid-generator",
       "dotfiles-management",
-      "language-runtime"
+      "language-runtime",
+      "window-management"
     ],
     "worksWith": [
       "text",
@@ -1775,6 +1776,17 @@
         "choco": "zoxide"
       },
       "popularity": 2
+    },
+    "komorebi": {
+      "function": [
+        "window-management"
+      ],
+      "interface": "cli",
+      "ids": {
+        "scoop": "komorebi",
+        "winget": "LGUG2Z.komorebi"
+      },
+      "popularity": 1
     }
   }
 }

@@ -59,6 +59,7 @@ To keep the tool for yourself, put the file in your own tools folder instead: se
 | `installs` | | Makes the tool a **package manager**; see [Package managers](#package-managers). |
 | `xdg` | | How the tool's files move to XDG folders; see below. |
 | `env` | | Other environment variables to set every session (flags, themes, `LESS`). Values may use `${XDG_*}`. A role's variables (`PAGER`, `EDITOR`, `GIT_PAGER`, …) go in the role block instead. A value you set outside DotForge is kept (see [Your own environment values win](configuration.md#your-own-environment-values-win)). |
+| `desktop` | | Variables from `xdg.vars` or `env` that programs started outside pwsh need too (a sign-in task, a desktop app): `["KOMOREBI_CONFIG_HOME"]`. DotForge writes them to the Windows user environment only when the user runs `Set-DFDesktopEnv`; until then the tool's status notes them. See [Desktop apps](configuration.md#desktop-apps). |
 | `aliases` | | `{ "<alias>": { "command": "...", "args": [ ... ] } }`; `args` is optional. A role's aliases (`ls`, `ll`, …) go in the role block instead. |
 | `picker` | | A declarative fzf picker, or a list of them; see below. |
 | `after` | | Tools (`"zoxide"`) or roles (`"role:version-manager"`) this one is registered after, when both are requested. Ordering only: it requests nothing. |

@@ -219,6 +219,11 @@ Each `Tools/*.json` must have at minimum:
   removed with the tool, never their targets (`Shared/DFToolLink.ps1`). `[]` when the default is the
   XDG location; `{ paths, guide }` adds what to do before keeping the XDG copy. `tests/ToolNative.Coverage.Tests.ps1`
   enforces it. Design: `docs/superpowers/specs/2026-10-25-link-existing-design.md`.
+- `desktop` (optional): variables from `xdg.vars`/`env` that programs started outside pwsh need
+  (komorebi at sign-in). Written to `HKCU\Environment` only by `Set-DFDesktopEnv` (never at load),
+  recorded in `desktop-env.json`, removed by `Remove-DFDesktopEnv`/`Remove-DFTool` while unchanged;
+  the status notes missing ones (`Shared/DFDesktopEnv.ps1`; tests redirect the registry key through
+  `DFTestDesktopEnvKey`). Design: `docs/superpowers/specs/2026-10-26-desktop-variables-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass
   through; `${XDG_*}` still expands) and written through `Set-DFEnv` (`Private/Set-DFEnv.ps1`):

@@ -217,6 +217,8 @@ function Find-DFToolConflict {
     $sep = [IO.Path]::DirectorySeparatorChar
     $written = $Written
     $inside = { param($path, $target) $path -eq $target -or $path.StartsWith($target + $sep, [StringComparison]::OrdinalIgnoreCase) }
+    # A native root itself ($HOME, %APPDATA%, ...) is never existing data to link to, whatever a record says.
+    $roots = @(foreach ($root in 'HOME', 'APPDATA', 'LOCALAPPDATA', 'SCOOP') { $r = Get-DFNativeRoot -Name $root; if ($r) { ConvertTo-DFPath $r } })
     $conflicts = foreach ($reloc in @(Get-DFToolRelocation -Tool $Tool)) {
         $found = @()
         if ($reloc.Key -cnotmatch '^\$\{') {
@@ -236,7 +238,7 @@ function Find-DFToolConflict {
         if (-not $found -and $reloc.Native) {
             $found = @(foreach ($template in $reloc.Native.paths) {
                 $old = Expand-DFNativePath $template
-                if (-not $old -or (& $inside $old $reloc.Target) -or (& $inside $reloc.Target $old)) { continue }
+                if (-not $old -or $old -in $roots -or (& $inside $old $reloc.Target) -or (& $inside $reloc.Target $old)) { continue }
                 if (Test-DFPathHasContent -Path $old) { $old }
             })
         }

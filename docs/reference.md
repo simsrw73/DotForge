@@ -31,8 +31,10 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [New-DFTool](#new-dftool) |  | Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
+| [Remove-DFDesktopEnv](#remove-dfdesktopenv) |  | Removes the desktop variables DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
 | [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Settles a tool whose existing data and XDG location both hold content: keep the existing copy (-Adopt) or the XDG copy (-KeepXdg). |
+| [Set-DFDesktopEnv](#set-dfdesktopenv) |  | Writes the desktop variables your tools suggest to the Windows user environment, so programs started outside pwsh see them. |
 | [Set-DFToolTheme](#set-dftooltheme) |  | Switches an active tool's theme for the rest of this session. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 | [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
@@ -103,7 +105,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [komorebi](#komorebi-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -982,6 +984,40 @@ Adds every tool in the +git group (delta, gh, lazygit) to this session.
 
 **See also:** [configuration](guide/configuration.md), [safety](guide/safety.md)
 
+### Remove-DFDesktopEnv
+
+Removes the desktop variables DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all.
+
+```text
+Remove-DFDesktopEnv [[-Name] <string[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Only variables DotForge recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json are touched, and each only while its value is still the one DotForge wrote: one you changed since is left as it is, and the output says so. DotForge forgets both. Remove-DFTool does the same for the tool it removes. New programs see the change; running ones keep their environment.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  |  |  | The tools. Leave it out for every variable DotForge wrote. |
+
+**Outputs:** DotForge.DesktopEnvResult per recorded variable: Tool, Name, Value (what DotForge wrote), Current and Action (Removed or Changed).
+
+**Example 1**
+
+```powershell
+Remove-DFDesktopEnv komorebi
+```
+
+Removes KOMOREBI_CONFIG_HOME from the Windows user environment, if DotForge set it and it is unchanged.
+
+**Example 2**
+
+```powershell
+Remove-DFDesktopEnv -WhatIf
+```
+
+Lists every desktop variable DotForge wrote, without removing anything.
+
+**See also:** [configuration](guide/configuration.md)
+
 ### Remove-DFTool
 
 Removes tools through the package manager each one came from, then lists what DotForge left behind.
@@ -1086,6 +1122,44 @@ Resolve-DFToolConflict bat -KeepXdg
 ```
 
 Renames your existing bat config folder to bat.dotforge-moved, so bat uses $XDG_CONFIG_HOME\\bat from its next load.
+
+**See also:** [configuration](guide/configuration.md)
+
+### Set-DFDesktopEnv
+
+Writes the desktop variables your tools suggest to the Windows user environment, so programs started outside pwsh see them.
+
+```text
+Set-DFDesktopEnv [[-Name] <string[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+DotForge sets a tool's variables in each pwsh session only. A program started another way (komorebi at sign-in, a desktop app, an editor) sees only the Windows user environment (HKCU\\Environment). A tool record suggests which of its variables those programs need (desktop); Get-DFToolStatus notes the ones they lack. Nothing is written until you run this command: running it is the opt-in.
+
+A variable that is missing is written. One already set to the same value is left as it is. One set to something else (by you, or by a package manager) is yours: in an interactive console you're asked whether to keep it or replace it; otherwise, or with -Confirm:$false, it is kept, and the output says so.
+
+What DotForge writes is recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json, so Remove-DFDesktopEnv and Remove-DFTool remove only that, and only while it is unchanged. New programs see the change; running ones keep their environment.
+
+| Parameter | Type | Default | Required | Pipeline | Description |
+| --- | --- | --- | --- | --- | --- |
+| `-Name` | string[] |  |  |  | The tools. Leave it out for every tool your session requests. |
+
+**Outputs:** DotForge.DesktopEnvResult per variable: Tool, Name, Value (DotForge's), Current (the value before) and Action (Set, AlreadySet, Kept or Replaced).
+
+**Example 1**
+
+```powershell
+Set-DFDesktopEnv -WhatIf
+```
+
+Shows which desktop variables your requested tools would set, without writing anything.
+
+**Example 2**
+
+```powershell
+Set-DFDesktopEnv komorebi
+```
+
+Sets KOMOREBI_CONFIG_HOME in the Windows user environment, so komorebi finds its config when it starts at sign-in.
 
 **See also:** [configuration](guide/configuration.md)
 
@@ -3177,6 +3251,18 @@ Command-line JSON processor
 | XDG method | `default` |
 | Picker | `` (): lists ``; Enter runs `` |
 | Companion | [`Tools/jq.ps1`](#jq-companion) |
+
+### komorebi tool
+
+Tiling window manager for Windows
+
+| | |
+| --- | --- |
+| Detected by | `komorebic.exe` |
+| Tags | `window-manager`, `desktop` |
+| Install ids | scoop: `komorebi` (feed `extras`)<br>winget: `LGUG2Z.komorebi` |
+| XDG method | `env` |
+| XDG variables | `KOMOREBI_CONFIG_HOME` = `${XDG_CONFIG_HOME}/komorebi` |
 
 ### lazygit tool
 

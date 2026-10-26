@@ -1,0 +1,28 @@
+{
+  "name": "komorebi",
+  "description": "Tiling window manager for Windows",
+  "tags": [
+    "window-manager",
+    "desktop"
+  ],
+  "executable": "komorebic.exe",
+  "packages": {
+    "scoop": { "id": "komorebi", "feed": { "name": "extras", "url": "https://github.com/ScoopInstaller/Extras" } },
+    "winget": "LGUG2Z.komorebi"
+  },
+  "xdg": {
+    "compliance": "full",
+    "method": "env",
+    "vars": {
+      "KOMOREBI_CONFIG_HOME": "${XDG_CONFIG_HOME}/komorebi"
+    },
+    "native": {
+      "KOMOREBI_CONFIG_HOME": [],
+      "${XDG_CONFIG_HOME}/komorebi/komorebi.json": ["${HOME}/komorebi.json"],
+      "${XDG_CONFIG_HOME}/komorebi/applications.json": ["${HOME}/applications.json"],
+      "${XDG_CONFIG_HOME}/komorebi/komorebi.bar.json": ["${HOME}/komorebi.bar.json"]
+    },
+    "instructions": "komorebi reads komorebi.json, applications.json and komorebi.bar.json from KOMOREBI_CONFIG_HOME, else from your home folder. It starts at sign-in, outside pwsh, so the variable is also suggested for desktop apps (Set-DFDesktopEnv komorebi). Its native locations are the files, never the home folder itself."
+  },
+  "desktop": ["KOMOREBI_CONFIG_HOME"]
+}

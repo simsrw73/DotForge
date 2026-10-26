@@ -58,6 +58,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Containers | docker |
 | Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
 | Prompt | oh-my-posh, starship |
+| Window manager | komorebi |
 | Editor | micro, nano |
 | Fuzzy finding and navigation | fzf, skim, television, peco, gum, zoxide |
 | Pager | moor, ov, less (one sets `PAGER`; see below) |
@@ -246,6 +247,10 @@ These tools all do their own thing and live side by side; none of them takes a c
 - **dua** keeps its config in `%APPDATA%\dua-cli` whatever `XDG_CONFIG_HOME` says, and has no flag to change that.
 - **btop** comes in two builds, both installed as `btop.exe`. Plain `btop` (the default) runs as you. `btop-lhm` (`scoop install btop-lhm`) adds hardware sensors through LibreHardwareMonitor and needs admin rights; with gsudo in your `Tools`, DotForge runs it through gsudo in the same console. btop keeps `btop.conf` beside its exe, so it can't move under XDG; setup copies catppuccin themes into its themes folder, and you choose one with `color_theme` in `btop.conf` or in btop's options. scoop keeps each build's folder separately, so after switching builds run `Invoke-DFToolSetup btop` to copy the themes again.
 - **pstop:** winget's install also adds an `htop` link to pstop. htop itself has no Windows build. ncdu has none either; gdu is its port.
+
+### komorebi
+
+komorebi reads its config (`komorebi.json`, `applications.json`, `komorebi.bar.json`) from `KOMOREBI_CONFIG_HOME`, which DotForge points at `$XDG_CONFIG_HOME\komorebi`. komorebi starts at sign-in, outside pwsh, so it needs the variable in the Windows user environment too: run `Set-DFDesktopEnv komorebi` once ([Desktop apps](configuration.md#desktop-apps)). Existing config files in your home folder are linked from the XDG folder, never moved.
 
 ### lsd
 

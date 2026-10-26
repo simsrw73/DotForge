@@ -96,6 +96,8 @@ function Remove-DFTool {
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName
             Remove-DFToolLinkSet -Name $toolName
+            $desktopState = Read-DFDesktopEnvState
+            if ($desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result

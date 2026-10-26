@@ -13,6 +13,11 @@ $script:DFTestSavedXdg = [System.Collections.Generic.Stack[hashtable]]::new()
 # could outlive the run in a live shell); a test that needs other roots mocks it.
 $script:DFTestNativeRoot = Join-Path $TestDrive 'native-roots'
 
+# Desktop variables (HKCU\Environment) go to a scratch key instead, for every test file:
+# Get-DFDesktopEnvKey reads this script variable, and Send-DFEnvironmentChange broadcasts
+# nothing while it is set. Tests that write remove the key afterwards.
+$script:DFTestDesktopEnvKey = "HKCU:\Software\DotForge-Tests\$([guid]::NewGuid())"
+
 function Set-DFTestConfig {
     <#
     .SYNOPSIS

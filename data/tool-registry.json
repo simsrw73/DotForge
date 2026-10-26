@@ -40,6 +40,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {
           "cat": {
             "command": "bat",
@@ -120,6 +121,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -176,6 +178,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -307,6 +310,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -384,6 +388,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -490,6 +495,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -595,6 +601,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -661,6 +668,7 @@
         "packages": {},
         "xdg": null,
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -752,6 +760,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {
           "cz": {
             "command": "chezmoi",
@@ -815,6 +824,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [
@@ -919,6 +929,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -981,6 +992,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1056,6 +1068,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1127,6 +1140,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": [
           {
@@ -1202,6 +1216,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1262,6 +1277,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1362,6 +1378,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1424,6 +1441,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1542,6 +1560,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1630,6 +1649,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": [
           {
@@ -1728,6 +1748,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -1815,6 +1836,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -1891,6 +1913,7 @@
           "FZF_CTRL_T_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
           "FZF_CTRL_T_OPTS": "--preview \"bat -n --color=always {}\" --bind 'ctrl-/:change-preview-window(down|hidden|)'"
         },
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2020,6 +2043,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2093,6 +2117,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2157,6 +2182,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": [
           {
@@ -2239,6 +2265,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2334,6 +2361,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -2434,6 +2462,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2504,6 +2533,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2565,6 +2595,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2635,6 +2666,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -2713,8 +2745,94 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
+        "folder": null,
+        "source": null
+      }
+    },
+    "komorebi": {
+      "sha256": "f84578f75325d8dc571a0a906ba9ce0a505edf79fccb961ef95e5b0ea59b5bd0",
+      "record": {
+        "name": "komorebi",
+        "executable": "komorebic.exe",
+        "type": "exe",
+        "description": "Tiling window manager for Windows",
+        "tags": [
+          "window-manager",
+          "desktop"
+        ],
+        "packages": {
+          "scoop": {
+            "id": "komorebi",
+            "feed": {
+              "name": "extras",
+              "url": "https://github.com/ScoopInstaller/Extras"
+            }
+          },
+          "winget": "LGUG2Z.komorebi"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "KOMOREBI_CONFIG_HOME": "${XDG_CONFIG_HOME}/komorebi"
+          },
+          "dirs": [],
+          "instructions": "komorebi reads komorebi.json, applications.json and komorebi.bar.json from KOMOREBI_CONFIG_HOME, else from your home folder. It starts at sign-in, outside pwsh, so the variable is also suggested for desktop apps (Set-DFDesktopEnv komorebi). Its native locations are the files, never the home folder itself.",
+          "compliance": "full",
+          "native": {
+            "KOMOREBI_CONFIG_HOME": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/komorebi/komorebi.json": {
+              "paths": [
+                "${HOME}/komorebi.json"
+              ],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/komorebi/applications.json": {
+              "paths": [
+                "${HOME}/applications.json"
+              ],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/komorebi/komorebi.bar.json": {
+              "paths": [
+                "${HOME}/komorebi.bar.json"
+              ],
+              "guide": null,
+              "setting": null
+            }
+          }
+        },
+        "env": null,
+        "desktop": [
+          "KOMOREBI_CONFIG_HOME"
+        ],
+        "aliases": null,
+        "picker": null,
         "after": [],
         "requires": [],
         "roles": {},
@@ -2779,6 +2897,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {
           "lg": {
             "command": "lazygit",
@@ -2861,6 +2980,7 @@
         "env": {
           "LESS": "--RAW-CONTROL-CHARS --quit-if-one-screen --no-init"
         },
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -2948,6 +3068,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3075,6 +3196,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3169,6 +3291,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3265,6 +3388,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3330,6 +3454,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -3424,6 +3549,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3508,6 +3634,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3555,6 +3682,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3620,6 +3748,7 @@
         },
         "xdg": null,
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -3712,6 +3841,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {
           "nls": {
             "command": "npm",
@@ -3814,6 +3944,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -3888,6 +4019,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -3968,6 +4100,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4067,6 +4200,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4162,6 +4296,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4269,6 +4404,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4372,6 +4508,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4467,6 +4604,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -4524,6 +4662,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -4636,6 +4775,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4697,6 +4837,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -4808,6 +4949,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -4877,6 +5019,7 @@
         "packages": {},
         "xdg": null,
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -4969,6 +5112,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5022,6 +5166,7 @@
         },
         "xdg": null,
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5117,6 +5262,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [
@@ -5199,6 +5345,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -5286,6 +5433,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": [
           {
@@ -5359,6 +5507,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -5465,6 +5614,7 @@
           "SKIM_DEFAULT_COMMAND": "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git",
           "SKIM_DEFAULT_OPTIONS": "--layout=reverse\n--inline-info\n--height=40%\n--border"
         },
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5578,6 +5728,7 @@
         },
         "xdg": null,
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5645,6 +5796,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5768,6 +5920,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5876,6 +6029,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -5945,6 +6099,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -6071,6 +6226,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -6119,6 +6275,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -6193,6 +6350,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": null,
         "after": [],
@@ -6255,6 +6413,7 @@
           "native": null
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": "custom",
         "after": [],
@@ -6370,6 +6529,7 @@
           }
         },
         "env": null,
+        "desktop": [],
         "aliases": {},
         "picker": [
           {

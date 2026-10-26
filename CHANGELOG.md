@@ -45,6 +45,14 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Desktop variables, on request.** A tool record can suggest variables that programs started
+  outside pwsh need (`desktop`): komorebi at sign-in needs `KOMOREBI_CONFIG_HOME`. `Get-DFToolStatus`
+  notes the ones the Windows user environment lacks; `Set-DFDesktopEnv` writes them, asking before it
+  replaces a value you set (and keeping yours where it can't ask), and `Remove-DFDesktopEnv` or
+  `Remove-DFTool` remove only what DotForge wrote, while it is unchanged. Nothing is written during a
+  shell load.
+- **komorebi**, the tiling window manager: its config moves to `$XDG_CONFIG_HOME\komorebi`, and it
+  suggests `KOMOREBI_CONFIG_HOME` as a desktop variable.
 - **`IncludeSources`: only the package managers you allow.** `IncludeSources = @('scoop', 'psgallery',
   'npm')` makes `Install-DFTool` use those sources and no other, registries included; a tool none of
   them has is not installed (the summary says why). It's the opposite of `ExcludeSources`, and

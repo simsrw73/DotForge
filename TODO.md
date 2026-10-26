@@ -2,12 +2,11 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-87**.
+git history, not here. IDs are never reused; the next free one is **T-88**.
 
 ## Priority 1 — Release Readiness
 
 - [ ] **T-1 Promote to stable 1.0.0** — fix the open Problems below, then follow CLAUDE.md's Releasing steps with `Prerelease` removed. `trifle` stays experimental and outside 1.0 (see After 1.0 at the end).
-- [ ] T-78 Tools can suggest certain variables be defined in the Desktop so that desktop apps can access them. Users must opt in for these to be defined in the Desktop. This is a run once feature. Should only be run once during setup.
 - [ ] **T-79 Config files over environment variables** — project policy (2026-10-25): when a setting can be made in a tool's config file or by a variable, put it in the config file (seeded through `setup.seed`) unless something prevents it, and use variables only to point at config files and folders. Audit the records' `env` and `xdg.vars` against it. The environment of a DotForge session is ~30k characters, 17.9k of it `LS_COLORS` from vivid: trim vivid's output too. Notes: `docs/superpowers/specs/2026-10-24-restore-install-locations-notes.md` (Environment size).
 - [ ] T-80 Should tools be Powershell object types and included functions to list available tools, installed tools and information about the tools managed by DotForge such as config locations, XDG status, functions, aliases, etc.
 - [ ] T-84 Allow for managing installs of tools that do not use a package manager. eg that are installed by downloading a powershell script and executing it (`irm ... | iex`).
@@ -15,6 +14,7 @@ git history, not here. IDs are never reused; the next free one is **T-87**.
 
 ## Priority 2 — Open Problems
 
+- [ ] **T-87 `data/tool-categories.json` has entries its build can't reproduce** — `build/Build-DFCategoryDb.ps1` drops fontget, gfcli, GoogleFonts and NerdFonts (they were added to the data file, not to `build/categories/*.jsonc`), and `build/Build-DFToolIdentities.ps1` without `-Fresh` changes other tools' `linkedVia`. Move the font entries into `dotforge-curated.jsonc` and check that a rebuild matches the shipped files. Found 2026-10-26 adding komorebi (added by hand to both files).
 - [ ] **T-86 Warn about a tool installed from a source its record avoids** — at first run, for a tool installed before or outside DotForge from a source its record's `install.avoid` names (rustup or pnpm from scoop). No manager detection: the location can tell (a link target or kept variable under `$SCOOP`). Small design first. From the manager-choice and link-existing specs (2026-10-25).
 - [ ] **T-82 Python install manager's location** — pymanager installs runtimes into `%LOCALAPPDATA%\Python`. It can move only through a config file (`install_dir`, `download_dir`; user file `%APPDATA%\Python\pymanager.json`, or one named by `PYTHON_MANAGER_CONFIG`), and moving makes installed runtimes unusable until reinstalled. Left as is for now (2026-10-25); take a deeper look: whether to relocate it, how existing runtimes move, and where `global_dir` goes.
 - [ ] **T-6 Refresh the coreutils tripwire fixture on coreutils upgrades** — `tests/data/coreutils-commands.json` is from Coreutils for Windows 2026.6.16. Refresh with `coreutils-manager status`. See [docs/external-dependencies.md](docs/external-dependencies.md).

@@ -283,6 +283,13 @@ Describe 'Activation and config ownership' {
             Register-DFTool -Name owna 3>$null
             Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
         }
+        It 'never links an XDG location to a native root itself' {
+            Write-OwnRecord owna OWN_A -Native @{ OWN_A = @('${HOME}') }
+            New-Item -ItemType File -Force (Join-Path $script:FakeHome 'some-file') | Out-Null
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+        }
         It 'never writes a seed into a linked folder' {
             $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
                 xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna') } }

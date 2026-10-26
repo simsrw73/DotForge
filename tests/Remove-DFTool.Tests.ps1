@@ -53,6 +53,17 @@ Describe 'Remove-DFTool' {
         Get-Content (Join-Path $target 'glow.yml') | Should -Be 'mine'
         (Read-DFToolOwnership).ContainsKey('glow') | Should -BeFalse
     }
+    It 'removes the desktop variables DotForge wrote for the tool' -Skip:(-not $IsWindows) {
+        Mock Send-DFEnvironmentChange { }
+        try {
+            Set-DFDesktopEnvValue -Name GLOW_X -Value 'C:\glow'
+            Save-DFDesktopEnvState -State @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } }
+            $null = Remove-DFTool -Name glow -Confirm:$false
+            Get-DFDesktopEnvValue -Name GLOW_X | Should -BeNullOrEmpty
+            (Read-DFDesktopEnvState).ContainsKey('GLOW_X') | Should -BeFalse
+            Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
+        } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
+    }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Refused'

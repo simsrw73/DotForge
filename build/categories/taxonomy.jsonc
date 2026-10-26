@@ -10,7 +10,7 @@
     "disk-usage", "http-client", "dns-tool", "ssh-tool", "database-client",
     "log-viewer", "markdown-renderer", "syntax-highlighter", "fuzzy-finder",
     "task-runner", "linter", "formatter", "uuid-generator", "dotfiles-management",
-    "language-runtime"
+    "language-runtime", "window-management"
   ],
   "worksWith": [
     "text", "json", "yaml", "git", "http", "images", "pdf", "containers",

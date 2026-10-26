@@ -618,6 +618,7 @@ function ConvertTo-DFToolRecord {
         packages          = Get-DFToolRecordProperty $Tool 'packages' $null
         xdg               = $xdg
         env               = Get-DFToolRecordProperty $Tool 'env' $null
+        desktop           = [string[]]@(Get-DFToolRecordProperty $Tool 'desktop' @())
         aliases           = $aliases
         picker            = $picker
         after             = [object[]]@(Get-DFToolRecordProperty $Tool 'after' @())
