@@ -98,7 +98,7 @@ Where the tool keeps its config, data or state when DotForge doesn't relocate it
 }
 ```
 
-The object form `{ "paths": [...], "guide": "..." }` adds a guide: how to keep the XDG copy instead, shown when both locations hold content (`move` and `block` were retired: DotForge never moves data).
+The object form `{ "paths": [...], "guide": "..." }` adds a guide: what to do before keeping the XDG copy instead (`Resolve-DFToolConflict -KeepXdg`), shown when both locations hold content (`move` and `block` were retired: DotForge never moves data).
 
 1. List the defaults for Windows, Linux and macOS as `${HOME}`, `${APPDATA}`, `${LOCALAPPDATA}`, `${SCOOP}` (where a manager keeps data beside the program, e.g. `${SCOOP}/persist/bitwarden-cli/bw-data`) or `${XDG_*}` templates; a path that doesn't exist on a machine is skipped.
 2. Use `[]` when the tool's own default already is the XDG location.

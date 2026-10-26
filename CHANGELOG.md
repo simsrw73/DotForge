@@ -136,8 +136,9 @@ All notable changes to DotForge are documented here.
   `Get-DFToolStatus`, removed by `Remove-DFTool` (never their targets), and cleaned up when their
   target disappears. Only a tool with content in both places waits, with a warning on each load:
   `Resolve-DFToolConflict <tool> -Adopt` keeps the existing copy (the XDG copy is renamed to
-  `<name>.dotforge-moved`, never deleted) and links to it; the tool's guide says how to keep the XDG
-  copy instead. `Resolve-DFToolConflict` with no tool name goes through them one at a time. Tool
+  `<name>.dotforge-moved`, never deleted) and links to it; `-KeepXdg` keeps the XDG copy, such as
+  config restored from your dotfiles, and sets the existing copy aside the same way.
+  `Resolve-DFToolConflict` with no tool name goes through them one at a time. Tool
   records declare their old locations in `xdg.native` (roots `${HOME}`, `${APPDATA}`,
   `${LOCALAPPDATA}`, `${SCOOP}`); bitwarden now uses `$XDG_DATA_HOME\bitwarden` for a fresh install.
   **If you used a development build:** `-Move` and `-Done` are gone, and `-Adopt` now keeps the

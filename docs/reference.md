@@ -32,7 +32,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFTool](#new-dftool) |  | Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
-| [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Keeps a tool's existing data when its XDG location holds content too: sets the XDG copy aside and links to the existing data. |
+| [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Settles a tool whose existing data and XDG location both hold content: keep the existing copy (-Adopt) or the XDG copy (-KeepXdg). |
 | [Set-DFToolTheme](#set-dftooltheme) |  | Switches an active tool's theme for the rest of this session. |
 | [Start-DFSession](#start-dfsession) |  | Configures the tools you request for this PowerShell session. Call it once, from your profile. |
 | [Update-DFTool](#update-dftool) |  | Shows which of your tools have updates, and updates them through the manager each came from. |
@@ -1027,19 +1027,23 @@ Shows that PSFzf would be removed first, then fzf, without removing anything.
 
 ### Resolve-DFToolConflict
 
-Keeps a tool's existing data when its XDG location holds content too: sets the XDG copy aside and links to the existing data.
+Settles a tool whose existing data and XDG location both hold content: keep the existing copy (-Adopt) or the XDG copy (-KeepXdg).
 
 ```text
 Resolve-DFToolConflict [-WhatIf] [-Confirm] [<CommonParameters>]
+
+Resolve-DFToolConflict [-Name] <string> -KeepXdg [-WhatIf] [-Confirm] [<CommonParameters>]
 
 Resolve-DFToolConflict [-Name] <string> -Adopt [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 DotForge links a requested tool's empty XDG locations to the data it already has (its own default folders, or where a variable set outside DotForge points), and leaves the variables that would hide that data unset. When an XDG location holds content too, DotForge can't choose, so the tool waits, inactive (Get-DFToolStatus -Conflict).
 
--Adopt keeps the existing data: each XDG copy in the way is renamed to &lt;name&gt;.dotforge-moved next to where it was, never deleted, and the XDG location is linked to the existing data. If a copy can't be renamed (a file in use), nothing is changed and Problems says why. To keep the XDG copy instead, follow the tool's guide in its status, or remove the tool from Tools.
+-Adopt keeps the existing data: each XDG copy in the way is renamed to &lt;name&gt;.dotforge-moved next to where it was, never deleted, and the XDG location is linked to the existing data. If a copy can't be renamed (a file in use), nothing is changed and Problems says why.
 
-With no tool name, it goes through every tool waiting on you and offers Adopt (Enter) or Skip. Where it can't ask, it only lists them.
+-KeepXdg keeps the XDG copy, such as config restored from your dotfiles: each existing copy in the way is renamed to &lt;name&gt;.dotforge-moved next to where it was, never deleted, and the tool uses the XDG folders from its next load. Read the tool's guide in its status first: some old folders hold installed packages to reinstall. When a variable you set points at the existing copy, nothing is changed: remove that variable first. Or remove the tool from Tools.
+
+With no tool name, it goes through every tool waiting on you and offers Adopt (Enter), Keep XDG or Skip. Where it can't ask, it only lists them.
 
 Links are recorded in $XDG_STATE_HOME\\dotforge\\ownership.json; DotForge removes them with the tool (Remove-DFTool), never what they point to.
 
@@ -1047,8 +1051,9 @@ Links are recorded in $XDG_STATE_HOME\\dotforge\\ownership.json; DotForge remove
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string |  | yes |  | The tool. Leave it out to go through every tool waiting on you. |
 | `-Adopt` | switch |  | yes |  | Keep the existing data: set the XDG copies aside and link to it. |
+| `-KeepXdg` | switch |  | yes |  | Keep the XDG copies: set the existing copies aside. |
 
-**Outputs:** DotForge.ConflictResult: Tool, Action (Adopt, AlreadyOwned or Nothing), Linked (the XDG locations now linked), Aside (where the XDG copies went) and Problems (why nothing was changed).
+**Outputs:** DotForge.ConflictResult: Tool, Action (Adopt, KeepXdg, AlreadyOwned or Nothing), Linked (the XDG locations now linked), Aside (where the copies set aside went) and Problems (why nothing was changed).
 
 **Example 1**
 
@@ -1056,7 +1061,7 @@ Links are recorded in $XDG_STATE_HOME\\dotforge\\ownership.json; DotForge remove
 Resolve-DFToolConflict
 ```
 
-Goes through every tool waiting on you, one at a time, offering Adopt or Skip.
+Goes through every tool waiting on you, one at a time, offering Adopt, Keep XDG or Skip.
 
 **Example 2**
 
@@ -1073,6 +1078,14 @@ Resolve-DFToolConflict bat -Adopt
 ```
 
 Renames $XDG_CONFIG_HOME\\bat to bat.dotforge-moved and links $XDG_CONFIG_HOME\\bat to your existing bat config.
+
+**Example 4**
+
+```powershell
+Resolve-DFToolConflict bat -KeepXdg
+```
+
+Renames your existing bat config folder to bat.dotforge-moved, so bat uses $XDG_CONFIG_HOME\\bat from its next load.
 
 **See also:** [configuration](guide/configuration.md)
 

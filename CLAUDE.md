@@ -215,9 +215,9 @@ Each `Tools/*.json` must have at minimum:
   `${LOCALAPPDATA}`, `${SCOOP}`), so a user's existing data is never hidden: with the XDG location
   empty, DotForge links it to the existing data (junction; file symlink with Developer Mode) and leaves
   that variable unset; with content in both, the tool is a `Conflict` until `Resolve-DFToolConflict
-  -Adopt`. Never moves data; caches are never linked; links are recorded in `ownership.json` and
+  -Adopt` (keep the existing copy) or `-KeepXdg` (set it aside). Never moves data; caches are never linked; links are recorded in `ownership.json` and
   removed with the tool, never their targets (`Shared/DFToolLink.ps1`). `[]` when the default is the
-  XDG location; `{ paths, guide }` adds how to keep the XDG copy instead. `tests/ToolNative.Coverage.Tests.ps1`
+  XDG location; `{ paths, guide }` adds what to do before keeping the XDG copy. `tests/ToolNative.Coverage.Tests.ps1`
   enforces it. Design: `docs/superpowers/specs/2026-10-25-link-existing-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings (fzf options, `LESS`, …), expanded through `Expand-DFXdgPath` (flag strings pass

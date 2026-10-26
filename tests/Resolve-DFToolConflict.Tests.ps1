@@ -54,6 +54,51 @@ Describe 'Resolve-DFToolConflict' {
         Get-Content (Join-Path $script:Xdg 'cfg') | Should -Be 'xdg copy'
         (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
     }
+    It '-KeepXdg sets the existing copy aside, links nothing and records nothing' {
+        $result = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false
+        $result.Action | Should -Be 'KeepXdg'
+        @($result.Aside) | Should -Be @("$script:Old.dotforge-moved")
+        Test-Path -LiteralPath $script:Old | Should -BeFalse
+        Test-Path -LiteralPath (Join-Path "$script:Old.dotforge-moved" 'cfg') | Should -BeTrue
+        Get-DFToolLinkTarget -Path $script:Xdg | Should -BeNullOrEmpty
+        Get-Content (Join-Path $script:Xdg 'cfg') | Should -Be 'xdg copy'
+        (Read-DFToolOwnership).ContainsKey('owna') | Should -BeFalse
+    }
+    It '-KeepXdg leaves the tool free of conflicts, so the next load uses the XDG copy' {
+        $null = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false
+        $tool = (Import-DFToolDb -Name owna)['owna']
+        @((Find-DFToolConflict -Tool $tool -Ownership @{}).Conflicts) | Should -BeNullOrEmpty
+    }
+    It '-KeepXdg sets aside every old location with content, not just the first' {
+        @{ name = 'owna'; executable = 'Pester'; type = 'module'
+           xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna', '${HOME}/owna-too') } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+        New-Item -ItemType File -Force (Join-Path $script:FakeHome 'owna-too' 'cfg') | Out-Null
+        $result = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false
+        @($result.Aside).Count | Should -Be 2
+        Test-Path (Join-Path $script:FakeHome 'owna-too') | Should -BeFalse
+    }
+    It '-KeepXdg changes nothing, and says why, when the existing copy can''t be set aside' {
+        Mock Rename-DFOldCopy { throw 'The process cannot access the file because it is being used.' }
+        $result = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false 3>$null
+        @($result.Problems) | Should -Match 'being used'
+        Test-Path (Join-Path $script:Old 'cfg') | Should -BeTrue
+    }
+    It '-KeepXdg refuses, changing nothing, when a variable you set points at the existing copy' {
+        $mine = Join-Path $TestDrive 'mine-owna'
+        New-Item -ItemType File -Force (Join-Path $mine 'cfg') | Out-Null
+        [Environment]::SetEnvironmentVariable('OWN_A', $mine, 'Process')
+        try {
+            $result = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false 3>$null
+            @($result.Problems) | Should -Match 'OWN_A'
+            Test-Path (Join-Path $mine 'cfg') | Should -BeTrue
+            Test-Path (Join-Path $script:Old 'cfg') | Should -BeTrue
+        } finally { [Environment]::SetEnvironmentVariable('OWN_A', $null, 'Process') }
+    }
+    It '-KeepXdg -WhatIf changes nothing' {
+        $null = Resolve-DFToolConflict owna -KeepXdg -WhatIf
+        Test-Path (Join-Path $script:Old 'cfg') | Should -BeTrue
+    }
     It 'has no -Move or -Done any more' {
         $params = (Get-Command Resolve-DFToolConflict).Parameters.Keys
         $params | Should -Not -Contain 'Move'
@@ -103,6 +148,13 @@ Describe 'Resolve-DFToolConflict, guided' {
         $null = @(Resolve-DFToolConflict)
         Should -Invoke Read-DFConflictChoice -Times 2 -Exactly -ParameterFilter { $Default -eq 'Adopt' }
         Should -Invoke Invoke-DFConflictAdopt -Times 2 -Exactly
+    }
+    It 'keeps the XDG copy on K' {
+        Mock Read-DFConflictChoice { 'k' }
+        Mock Invoke-DFConflictKeepXdg { $Result }
+        $null = Resolve-DFToolConflict
+        Should -Invoke Invoke-DFConflictKeepXdg -Times 2 -Exactly
+        Should -Invoke Invoke-DFConflictAdopt -Times 0 -Exactly
     }
     It 'skips a tool you skip' {
         Mock Read-DFConflictChoice { 'S' }

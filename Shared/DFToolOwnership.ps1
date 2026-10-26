@@ -260,9 +260,9 @@ function Get-DFConflictAdvice {
         What to do about a tool whose old and XDG locations both hold content: one rule, used by the status detail and Resolve-DFToolConflict.
     .DESCRIPTION
         -Adopt keeps the existing data: the XDG copy is set aside and the XDG
-        location linked to the existing one. A record's guide says how to keep
-        the XDG copy instead. Each guide is given once, even when several
-        paths share it.
+        location linked to the existing one. -KeepXdg keeps the XDG copy: the
+        existing one is set aside. A record's guide says what to do before
+        that. Each guide is given once, even when several paths share it.
     .PARAMETER Name
         The tool.
     .PARAMETER Conflicts
@@ -274,7 +274,7 @@ function Get-DFConflictAdvice {
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Conflicts)
     $guides = @($Conflicts | ForEach-Object Guide | Where-Object { $_ } | Select-Object -Unique)
     $inUse = @($Conflicts | ForEach-Object Target | Select-Object -Unique)
-    $text = "$($inUse -join ', ') has content too. Run Resolve-DFToolConflict $Name -Adopt to keep the existing copy and link to it (the XDG copy is set aside, never deleted), or remove $Name from Tools."
-    if ($guides) { $text += " To keep the XDG copy instead: $($guides -join ' ')" }
+    $text = "$($inUse -join ', ') has content too. Run Resolve-DFToolConflict $Name -Adopt to keep the existing copy and link to it, or -KeepXdg to keep the XDG copy (the other copy is set aside, never deleted); or remove $Name from Tools."
+    if ($guides) { $text += " Before -KeepXdg: $($guides -join ' ')" }
     [pscustomobject]@{ Action = 'Adopt'; Text = $text }
 }

@@ -320,12 +320,12 @@ DotForge never moves or hides it:
 WARNING: DotForge: 2 tools are waiting on your existing config: bat, zoxide. See Get-DFToolStatus -Conflict, or run Resolve-DFToolConflict to go through them.
 ```
 
-`Resolve-DFToolConflict` with no tool name goes through them one at a time: Enter or `A` adopts, `S` skips. Or decide for each tool yourself:
+`Resolve-DFToolConflict` with no tool name goes through them one at a time: Enter or `A` adopts, `K` keeps the XDG copy, `S` skips. Or decide for each tool yourself:
 
 | You want | Run |
 | --- | --- |
 | To keep your existing copy | `Resolve-DFToolConflict bat -Adopt`: the XDG copy is renamed to `<name>.dotforge-moved` (never deleted) and the XDG location linked to your existing copy |
-| To keep the XDG copy | Follow the tool's guide in `Get-DFToolStatus bat`, usually: copy what you need into the XDG copy, then delete or rename the old one |
+| To keep the XDG copy (say, config restored from your dotfiles) | `Resolve-DFToolConflict bat -KeepXdg`: your existing copy is renamed to `<name>.dotforge-moved` (never deleted), and bat uses the XDG copy from its next load. Read the tool's guide in `Get-DFToolStatus bat` first: some old folders hold installed packages to reinstall. If a variable you set points at the existing copy, remove it first |
 | DotForge to leave the tool alone | Remove it from `Tools` |
 
 Then load it with `Register-DFTool -Name bat`, or open a new shell.
