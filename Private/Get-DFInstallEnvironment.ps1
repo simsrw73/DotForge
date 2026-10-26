@@ -66,8 +66,10 @@ function Get-DFInstallEnvironment {
     foreach ($source in $sources) {
         if ($source.xdg.method -ne 'env') { continue }
         if (-not ($status -and $status.Contains($source.name) -and $status[$source.name].State -in 'Active', 'Missing')) { continue }
+        # A variable whose location is linked to existing data stays unset, as in the session.
+        $linked = Get-DFToolLinkedVar -Name $source.name
         foreach ($var in @($source.xdg.vars?.PSObject.Properties)) {
-            if (-not $var) { continue }
+            if (-not $var -or $var.Name -in $linked) { continue }
             $value = Expand-DFXdgPath $var.Value
             if ($environment.Contains($var.Name) -and $environment[$var.Name] -ne $value) {
                 Write-Verbose "DotForge: $($var.Name) from $($source.name) ($value) replaces the one from $($from[$var.Name]) ($($environment[$var.Name])) for this command."

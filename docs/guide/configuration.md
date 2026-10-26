@@ -330,7 +330,7 @@ WARNING: DotForge: 2 tools are waiting on your existing config: bat, zoxide. See
 
 Then load it with `Register-DFTool -Name bat`, or open a new shell.
 
-`Remove-DFTool` removes the links DotForge made, never what they point to. When a link's target disappears (you uninstalled the tool another way), DotForge removes the link on the next load and says so.
+`Remove-DFTool` removes the links DotForge made, never what they point to. When a link's target disappears (you uninstalled the tool another way), DotForge removes the link on the next load and says so. A target on a drive or network share that isn't connected right now is left alone, and checked again on later loads.
 
 For everything natively in the XDG folders, without links: uninstall the tool the way it was installed, then install it with `Install-DFTool`, which sets its variables before the installer runs. Copy anything you want to keep first.
 

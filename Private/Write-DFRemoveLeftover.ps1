@@ -89,7 +89,8 @@ function Remove-DFToolLinkSet {
     $ownership = Read-DFToolOwnership
     if ($null -eq $ownership -or -not $ownership.ContainsKey($Name)) { return }
     foreach ($link in @($ownership[$Name].PSObject.Properties['links']?.Value)) {
-        if ($link) { Remove-DFToolLink -Path $link.path }
+        # Only DotForge's own link: one you put there since, pointing elsewhere, stays.
+        if ($link -and (Get-DFToolLinkTarget -Path $link.path) -eq (ConvertTo-DFPath $link.target)) { Remove-DFToolLink -Path $link.path }
     }
     $ownership.Remove($Name)
     Save-DFToolOwnership -Ownership $ownership -Name $Name

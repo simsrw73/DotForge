@@ -28,7 +28,7 @@ function New-DFConflictResult {
 function Invoke-DFConflictSetAside {
     <#
     .SYNOPSIS
-        Renames each path aside (Rename-DFOldCopy), all or none: if one fails, those already renamed are renamed back.
+        Renames each path aside (Rename-DFOldCopy), all or none: if one fails, those already renamed are renamed back (Problems names any that can't be).
     .PARAMETER Paths
         The copies to set aside.
     .PARAMETER Result
@@ -52,8 +52,16 @@ function Invoke-DFConflictSetAside {
             $renamed.Add([pscustomobject]@{ From = $path; To = $aside })
         } catch {
             $Result.Problems = [string[]](@($Result.Problems) + "couldn't set $path aside: $($_.Exception.Message)")
-            foreach ($done in $renamed) { Rename-Item -LiteralPath $done.To -NewName (Split-Path $done.From -Leaf) -ErrorAction Ignore }
-            Write-Warning "DotForge: nothing changed for ${Tool}: $($Result.Problems -join '; ')"
+            $stuck = @(foreach ($done in $renamed) {
+                try { Rename-Item -LiteralPath $done.To -NewName (Split-Path $done.From -Leaf) -ErrorAction Stop }
+                catch { "$($done.To) (was $($done.From))" }
+            })
+            if ($stuck) {
+                $Result.Problems = [string[]](@($Result.Problems) + "couldn't rename $($stuck -join ', ') back: rename it to its old name yourself")
+                Write-Warning "DotForge: $Tool is only partly set aside: $($Result.Problems -join '; ')"
+            } else {
+                Write-Warning "DotForge: nothing changed for ${Tool}: $($Result.Problems -join '; ')"
+            }
             return $false
         }
     }

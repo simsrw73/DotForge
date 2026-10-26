@@ -50,6 +50,12 @@ Describe 'Get-DFInstallEnvironment' {
     It 'stops on a requires cycle' {
         @((& $script:Env @() 'a').Keys) | Should -Be @('A_HOME', 'B_HOME')
     }
+    It 'leaves out a variable whose location is linked to existing data' {
+        try {
+            Set-DFToolLinkState -Name bat -Links @([pscustomobject]@{ key = 'BAT_CONFIG_DIR'; path = 'C:\x'; target = 'C:\y'; made = $true })
+            (& $script:Env 'bat' 'scoop').Count | Should -Be 0
+        } finally { Set-DFToolLinkState -Name bat }
+    }
     It 'ignores the env map and non-env methods' {
         @((& $script:Env @('bat', 'wrapped') 'scoop').Keys) | Should -Be @('BAT_CONFIG_DIR')
     }

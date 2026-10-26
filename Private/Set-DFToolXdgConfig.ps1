@@ -35,8 +35,11 @@ function Set-DFToolXdgConfig {
             foreach ($var in @($xdg.vars?.PSObject.Properties)) {
                 if ($var -and $var.Name -notin $Skip) { Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name }
             }
-            $xdg.dirs | Where-Object { $_ } |
-                ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
+            # Never inside a linked folder: that is the user's existing data.
+            foreach ($dir in @($xdg.dirs | Where-Object { $_ })) {
+                $path = ConvertTo-DFPath (Expand-DFXdgPath $dir)
+                if (-not (Test-DFInLinkedPath -Name $Tool.name -Path $path)) { New-DFDirectory $path }
+            }
         }
         'manual' {
             Write-Warning "DotForge: $($Tool.name) requires manual XDG configuration.$(if ($xdg.instructions) { " $($xdg.instructions)" })"

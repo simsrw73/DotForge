@@ -516,7 +516,11 @@ function Test-DFToolOwnership {
     $notes = [System.Collections.Generic.List[string]]::new()
     if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') {
         $kept = Confirm-DFToolLinks -Name $name -Entry $table[$name] -Notes $notes
-        if ($kept.Count -ne @($table[$name].links).Count) {
+        $before = @($table[$name].links)
+        # Saved when a link went away, or one that waited (Developer Mode, a failed retry) is made now.
+        $changed = $kept.Count -ne $before.Count -or
+            @(for ($i = 0; $i -lt $kept.Count; $i++) { if ([bool]$kept[$i].made -ne [bool]$before[$i].made) { $i } }).Count
+        if ($changed) {
             if ($kept.Count) { $table[$name].links = @($kept) } else { $table.Remove($name) }
             $null = $State.Changed.Add($name)
         }
@@ -595,7 +599,7 @@ function New-DFToolLinkFor {
 function Confirm-DFToolLinks {
     <#
     .SYNOPSIS
-        Checks an owned linked tool's links: removes one whose target is gone (with a note), retries one that couldn't be made, and returns the links still in use.
+        Checks an owned linked tool's links: removes one whose target is gone (with a note), keeps one whose drive or share can't be reached, retries one that couldn't be made, and returns the links still in use.
     .PARAMETER Name
         The tool.
     .PARAMETER Entry
@@ -609,6 +613,13 @@ function Confirm-DFToolLinks {
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][PSCustomObject]$Entry, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($link in @($Entry.links)) {
+        $root = [IO.Path]::GetPathRoot([string]$link.target)
+        if ($root -and -not (Test-Path -LiteralPath $root)) {
+            # Its drive or share isn't there (unplugged, offline): not gone. Checked again next load.
+            $Notes.Add("$($link.target) can't be reached right now, so DotForge keeps its link at $($link.path) and checks again next load")
+            $kept.Add($link)
+            continue
+        }
         if (-not (Test-Path -LiteralPath $link.target)) {
             try { Remove-DFToolLink -Path $link.path }
             catch { $Notes.Add("couldn't remove the link at $($link.path) ($($_.Exception.Message))") }

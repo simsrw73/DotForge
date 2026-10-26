@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: a73ab0eb4d83d8bd4170f1c5d6c6cb924c8dcda078326be3d37d30a649de7855
+# sources-sha256: 63ecd7bb4fc9c1aa9f34dae126651bd8658cc8c35ecc2afb9620c700e444d9f5
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -5209,8 +5209,10 @@ function Get-DFInstallEnvironment {
     foreach ($source in $sources) {
         if ($source.xdg.method -ne 'env') { continue }
         if (-not ($status -and $status.Contains($source.name) -and $status[$source.name].State -in 'Active', 'Missing')) { continue }
+        # A variable whose location is linked to existing data stays unset, as in the session.
+        $linked = Get-DFToolLinkedVar -Name $source.name
         foreach ($var in @($source.xdg.vars?.PSObject.Properties)) {
-            if (-not $var) { continue }
+            if (-not $var -or $var.Name -in $linked) { continue }
             $value = Expand-DFXdgPath $var.Value
             if ($environment.Contains($var.Name) -and $environment[$var.Name] -ne $value) {
                 Write-Verbose "DotForge: $($var.Name) from $($source.name) ($value) replaces the one from $($from[$var.Name]) ($($environment[$var.Name])) for this command."
@@ -7312,7 +7314,11 @@ function Test-DFToolOwnership {
     $notes = [System.Collections.Generic.List[string]]::new()
     if ($table.ContainsKey($name) -and $table[$name].how -eq 'linked') {
         $kept = Confirm-DFToolLinks -Name $name -Entry $table[$name] -Notes $notes
-        if ($kept.Count -ne @($table[$name].links).Count) {
+        $before = @($table[$name].links)
+        # Saved when a link went away, or one that waited (Developer Mode, a failed retry) is made now.
+        $changed = $kept.Count -ne $before.Count -or
+            @(for ($i = 0; $i -lt $kept.Count; $i++) { if ([bool]$kept[$i].made -ne [bool]$before[$i].made) { $i } }).Count
+        if ($changed) {
             if ($kept.Count) { $table[$name].links = @($kept) } else { $table.Remove($name) }
             $null = $State.Changed.Add($name)
         }
@@ -7391,7 +7397,7 @@ function New-DFToolLinkFor {
 function Confirm-DFToolLinks {
     <#
     .SYNOPSIS
-        Checks an owned linked tool's links: removes one whose target is gone (with a note), retries one that couldn't be made, and returns the links still in use.
+        Checks an owned linked tool's links: removes one whose target is gone (with a note), keeps one whose drive or share can't be reached, retries one that couldn't be made, and returns the links still in use.
     .PARAMETER Name
         The tool.
     .PARAMETER Entry
@@ -7405,6 +7411,13 @@ function Confirm-DFToolLinks {
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][PSCustomObject]$Entry, [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Notes)
     $kept = [System.Collections.Generic.List[object]]::new()
     foreach ($link in @($Entry.links)) {
+        $root = [IO.Path]::GetPathRoot([string]$link.target)
+        if ($root -and -not (Test-Path -LiteralPath $root)) {
+            # Its drive or share isn't there (unplugged, offline): not gone. Checked again next load.
+            $Notes.Add("$($link.target) can't be reached right now, so DotForge keeps its link at $($link.path) and checks again next load")
+            $kept.Add($link)
+            continue
+        }
         if (-not (Test-Path -LiteralPath $link.target)) {
             try { Remove-DFToolLink -Path $link.path }
             catch { $Notes.Add("couldn't remove the link at $($link.path) ($($_.Exception.Message))") }
@@ -9710,8 +9723,11 @@ function Set-DFToolXdgConfig {
             foreach ($var in @($xdg.vars?.PSObject.Properties)) {
                 if ($var -and $var.Name -notin $Skip) { Set-DFEnv -Name $var.Name -Value (Expand-DFXdgPath $var.Value) -Tool $Tool.name }
             }
-            $xdg.dirs | Where-Object { $_ } |
-                ForEach-Object { New-DFDirectory (Expand-DFXdgPath $_) }
+            # Never inside a linked folder: that is the user's existing data.
+            foreach ($dir in @($xdg.dirs | Where-Object { $_ })) {
+                $path = ConvertTo-DFPath (Expand-DFXdgPath $dir)
+                if (-not (Test-DFInLinkedPath -Name $Tool.name -Path $path)) { New-DFDirectory $path }
+            }
         }
         'manual' {
             Write-Warning "DotForge: $($Tool.name) requires manual XDG configuration.$(if ($xdg.instructions) { " $($xdg.instructions)" })"
@@ -10171,7 +10187,8 @@ function Remove-DFToolLinkSet {
     $ownership = Read-DFToolOwnership
     if ($null -eq $ownership -or -not $ownership.ContainsKey($Name)) { return }
     foreach ($link in @($ownership[$Name].PSObject.Properties['links']?.Value)) {
-        if ($link) { Remove-DFToolLink -Path $link.path }
+        # Only DotForge's own link: one you put there since, pointing elsewhere, stays.
+        if ($link -and (Get-DFToolLinkTarget -Path $link.path) -eq (ConvertTo-DFPath $link.target)) { Remove-DFToolLink -Path $link.path }
     }
     $ownership.Remove($Name)
     Save-DFToolOwnership -Ownership $ownership -Name $Name

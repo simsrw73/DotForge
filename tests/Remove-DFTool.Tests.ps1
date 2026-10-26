@@ -77,6 +77,18 @@ Describe 'Remove-DFTool' {
         $warnings = @(Remove-DFTool -Name glow -Confirm:$false 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
         "$warnings" | Should -Match "desktop-env.json can't be read, so glow's desktop variables weren't removed"
     }
+    It 'leaves a link you replaced at a recorded path' {
+        $target = Join-Path $TestDrive 'glow-existing2'
+        $yours = Join-Path $TestDrive 'glow-yours'
+        New-Item -ItemType Directory -Force $target, $yours | Out-Null
+        $link = Join-Path $Env:XDG_CONFIG_HOME 'glow'
+        $null = New-Item -ItemType Junction -Path $link -Target $yours -Force
+        try {
+            Save-DFToolOwnership -Ownership @{ glow = [pscustomobject]@{ since = 'x'; how = 'linked'; links = @([pscustomobject]@{ key = 'K'; path = (ConvertTo-DFPath $link); target = (ConvertTo-DFPath $target); made = $true }) } }
+            $null = Remove-DFTool -Name glow -Confirm:$false
+            Get-DFToolLinkTarget -Path $link | Should -Be (ConvertTo-DFPath $yours)
+        } finally { Remove-DFToolLink -Path $link }
+    }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Refused'

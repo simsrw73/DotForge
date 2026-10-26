@@ -108,6 +108,18 @@ Describe 'Resolve-DFToolConflict' {
             Should -Invoke Find-DFToolConflict -ParameterFilter { $Written.ContainsKey('OWN_A') }
         } finally { $global:DFEnvState = $saved }
     }
+    It 'says which copy is still aside when renaming it back fails' {
+        @{ name = 'owna'; executable = 'Pester'; type = 'module'
+           xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; native = @{ OWN_A = @('${HOME}/.owna', '${HOME}/owna-too') } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+        New-Item -ItemType File -Force (Join-Path $script:FakeHome 'owna-too' 'cfg') | Out-Null
+        $script:renames = 0
+        Mock Rename-DFOldCopy { if ($script:renames++ -eq 0) { 'C:\fake\first.dotforge-moved' } else { throw 'in use' } }
+        Mock Rename-Item { throw 'denied' }
+        $result = Resolve-DFToolConflict owna -KeepXdg -Confirm:$false 3>$null
+        "$($result.Problems)" | Should -Match 'C:\\fake\\first.dotforge-moved'
+        "$($result.Problems)" | Should -Match 'back'
+    }
     It 'has no -Move or -Done any more' {
         $params = (Get-Command Resolve-DFToolConflict).Parameters.Keys
         $params | Should -Not -Contain 'Move'

@@ -187,6 +187,32 @@ Describe 'Activation and config ownership' {
             @($entry.links).Count | Should -Be 1
             (Get-DFToolStatus owna).Detail | Should -Match 'linked'
         }
+        It 'records a retried link once it is made' {
+            New-OldConfig owna
+            $xdg = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
+            $old = ConvertTo-DFPath (Join-Path $script:FakeHome '.owna')
+            Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'linked'; links = @([pscustomobject]@{ key = 'OWN_A'; path = $xdg; target = $old; made = $false }) } }
+            Register-DFTool -Name owna 3>$null
+            Get-DFToolLinkTarget -Path $xdg | Should -Be $old
+            @((Read-DFToolOwnership)['owna'].links)[0].made | Should -BeTrue
+        }
+        It 'keeps a link whose target''s drive isn''t there right now' {
+            $free = [char[]](90..68) | Where-Object { -not (Test-Path "$($_):\") } | Select-Object -First 1
+            $xdg = ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')
+            $away = "$($free):\gone-for-now\owna"
+            Save-DFToolOwnership -Ownership @{ owna = [pscustomobject]@{ since = 'x'; how = 'linked'; links = @([pscustomobject]@{ key = 'OWN_A'; path = $xdg; target = $away; made = $true }) } }
+            Register-DFTool -Name owna 3>$null
+            @((Read-DFToolOwnership)['owna'].links).Count | Should -Be 1
+            (Get-DFToolStatus owna).Detail | Should -Match "can't be reached right now"
+        }
+        It 'creates no xdg.dirs folder inside a linked folder' {
+            $rec = [ordered]@{ name = 'owna'; executable = 'Pester'; type = 'module'
+                xdg = @{ method = 'env'; vars = @{ OWN_A = '${XDG_CONFIG_HOME}/owna' }; dirs = @('${XDG_CONFIG_HOME}/owna/sub'); native = @{ OWN_A = @('${HOME}/.owna') } } }
+            $rec | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'owna.json')
+            New-OldConfig owna
+            Register-DFTool -Name owna 3>$null
+            Test-Path (Join-Path $script:FakeHome '.owna' 'sub') | Should -BeFalse
+        }
         It 'changes nothing on a second registration' {
             New-OldConfig owna
             Register-DFTool -Name owna 3>$null
