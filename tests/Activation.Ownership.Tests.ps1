@@ -283,6 +283,13 @@ Describe 'Activation and config ownership' {
             Register-DFTool -Name owna 3>$null
             Get-DFToolLinkTarget -Path (Join-Path $Env:XDG_CONFIG_HOME 'owna') | Should -BeNullOrEmpty
         }
+        It 'records a tool as owned when an inherited variable already points at its XDG location' {
+            # A desktop variable (Set-DFDesktopEnv) reaches every new shell with DotForge's own value.
+            [Environment]::SetEnvironmentVariable('OWN_A', (ConvertTo-DFPath (Join-Path $Env:XDG_CONFIG_HOME 'owna')), 'Process')
+            Register-DFTool -Name owna 3>$null
+            (Get-DFToolStatus owna).State | Should -Be 'Active'
+            (Read-DFToolOwnership).ContainsKey('owna') | Should -BeTrue
+        }
         It 'never links an XDG location to a native root itself' {
             Write-OwnRecord owna OWN_A -Native @{ OWN_A = @('${HOME}') }
             New-Item -ItemType File -Force (Join-Path $script:FakeHome 'some-file') | Out-Null

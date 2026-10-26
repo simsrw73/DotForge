@@ -102,13 +102,22 @@ function Get-DFDesktopEnvPlan {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Tools, [bool]$Ask)
+    # A variable two tools declare is planned once: the first tool's value stands for the rest.
+    $planned = @{}
     foreach ($tool in $Tools) {
         foreach ($want in @(Get-DFDesktopEnvExpected -Tool $tool)) {
+            if ($planned.ContainsKey($want.Name)) {
+                $first = $planned[$want.Name]
+                $action = if (Test-DFDesktopEnvMatch -Current $first -Value $want.Value) { 'AlreadySet' } else { 'Kept' }
+                New-DFDesktopEnvResult -Tool $tool.name -Name $want.Name -Value $want.Value -Current $first -Action $action
+                continue
+            }
             $current = Get-DFDesktopEnvValue -Name $want.Name
             $action = if (-not $current) { 'Set' }
                       elseif (Test-DFDesktopEnvMatch -Current $current -Value $want.Value) { 'AlreadySet' }
                       elseif ($Ask -and (Read-DFDesktopEnvChoice -Name $want.Name -Current $current -Value $want.Value) -eq 'R') { 'Replaced' }
                       else { 'Kept' }
+            $planned[$want.Name] = if ($action -in 'Set', 'Replaced') { $want.Value } else { $current }
             New-DFDesktopEnvResult -Tool $tool.name -Name $want.Name -Value $want.Value -Current $current -Action $action
         }
     }

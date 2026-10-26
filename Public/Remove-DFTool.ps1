@@ -96,8 +96,11 @@ function Remove-DFTool {
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName
             Remove-DFToolLinkSet -Name $toolName
-            $desktopState = Read-DFDesktopEnvState
-            if ($desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
+            # Like its links, its desktop variables never stop a removal that already happened.
+            try {
+                $desktopState = Read-DFDesktopEnvState
+                if ($desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
+            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result

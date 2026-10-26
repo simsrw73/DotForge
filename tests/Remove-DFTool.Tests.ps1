@@ -64,6 +64,14 @@ Describe 'Remove-DFTool' {
             Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
         } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
     }
+    It 'finishes the removal when removing its desktop variables fails, even under Stop' {
+        Mock Read-DFDesktopEnvState { @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } } }
+        Mock Remove-DFDesktopEnvSet { throw 'registry says no' }
+        $ErrorActionPreference = 'Stop'
+        $r = Remove-DFTool -Name glow -Confirm:$false 3>$null
+        $r.Result | Should -Be 'Removed'
+        $script:Lines -join "`n" | Should -Match 'Left behind'
+    }
     It 'refuses a tool an active tool requires, naming it' {
         $r = Remove-DFTool -Name fzf -Confirm:$false
         $r.Result | Should -Be 'Refused'

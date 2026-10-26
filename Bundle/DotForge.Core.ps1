@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 0bb28f122d49b501ee061cd234fb60045641809117d2e70d7678adb4d7e44870
+# sources-sha256: 20e60d55d2ca97e4ea740e946e761bf2ec1fa5ad4552909f505fbbff5f3a4698
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1075,6 +1075,8 @@ function Find-DFToolConflict {
         $found = @()
         if ($reloc.Key -cnotmatch '^\$\{') {
             $value = [Environment]::GetEnvironmentVariable($reloc.Key, 'Process')
+            # DotForge's own value, inherited (a desktop variable reaches every new shell): no outside choice.
+            if ($value -and (ConvertTo-DFPath $value) -eq $reloc.Target) { $value = $null }
             if ($value -and $written.ContainsKey($reloc.Key) -and $written[$reloc.Key] -ceq $value) { $complete = $false; continue }
             if ($value) {
                 $outside = ConvertTo-DFPath $value
@@ -11726,8 +11728,11 @@ function Remove-DFTool {
         if ($result.Result -eq 'Removed') {
             Set-DFRemovedToolStatus -Name $toolName
             Remove-DFToolLinkSet -Name $toolName
-            $desktopState = Read-DFDesktopEnvState
-            if ($desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
+            # Like its links, its desktop variables never stop a removal that already happened.
+            try {
+                $desktopState = Read-DFDesktopEnvState
+                if ($desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
+            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result

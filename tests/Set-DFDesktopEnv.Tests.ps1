@@ -82,6 +82,20 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         (Set-DFDesktopEnv -Name deskb -Confirm:$false).Action | Should -Be 'AlreadySet'
         (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
     }
+    It 'two tools in one run declaring the same variable: written once, the first one owns it' {
+        $result = @(Set-DFDesktopEnv -Name deska, deskb -Confirm:$false)
+        ($result | Where-Object Tool -eq deska).Action | Should -Be 'Set'
+        ($result | Where-Object Tool -eq deskb).Action | Should -Be 'AlreadySet'
+        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+    }
+    It 'two tools in one run wanting different values: the second keeps the first one''s' {
+        @{ name = 'deskc'; executable = 'deskc.exe'
+           env = @{ DESK_A = 'C:\other' }; desktop = @('DESK_A') } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'deskc.json')
+        $result = @(Set-DFDesktopEnv -Name deska, deskc -Confirm:$false)
+        ($result | Where-Object Tool -eq deskc).Action | Should -Be 'Kept'
+        Get-DFDesktopEnvValue -Name DESK_A | Should -Be $script:Want
+        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+    }
     It 'writes nothing when the state file can''t be read' {
         $path = Get-DFDesktopEnvStatePath
         New-DFDirectory (Split-Path $path) | Out-Null

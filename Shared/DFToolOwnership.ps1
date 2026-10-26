@@ -223,6 +223,8 @@ function Find-DFToolConflict {
         $found = @()
         if ($reloc.Key -cnotmatch '^\$\{') {
             $value = [Environment]::GetEnvironmentVariable($reloc.Key, 'Process')
+            # DotForge's own value, inherited (a desktop variable reaches every new shell): no outside choice.
+            if ($value -and (ConvertTo-DFPath $value) -eq $reloc.Target) { $value = $null }
             if ($value -and $written.ContainsKey($reloc.Key) -and $written[$reloc.Key] -ceq $value) { $complete = $false; continue }
             if ($value) {
                 $outside = ConvertTo-DFPath $value
