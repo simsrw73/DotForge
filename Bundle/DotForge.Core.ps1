@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 57c204a62fdd8e6a2f31ecc174cb4435d14ee245f76282d653c792501b199e87
+# sources-sha256: d662de2bbc3781a0de7a26bff278cb1fa4557754bccafd5b00abd32aa2fb6319
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -7204,10 +7204,13 @@ function Test-DFToolActive {
 function Set-DFXdgEnvironment {
     <#
     .SYNOPSIS
-        Exports the five XDG folders to the session and creates them.
+        Exports the five XDG folders to the session, creates them, and puts the Bin folder on PATH.
     .DESCRIPTION
         A value you set is kept (canonicalized); an unset one gets its XDG
         default from Get-DFXdgPath. Exported so other programs see them too.
+        The Bin folder (~\.local\bin) is where XDG-following installers put
+        programs (Claude Code's native installer), so it goes on PATH, at the
+        end: it adds commands, never shadows one that already resolves.
     .OUTPUTS
         None.
     #>
@@ -7218,6 +7221,7 @@ function Set-DFXdgEnvironment {
         Set-Item -Path "Env:XDG_$($kind.ToUpperInvariant())_HOME" -Value $path
         New-DFDirectory $path
     }
+    Add-DFToPath (Get-DFXdgPath Bin)
 }
 
 function Write-DFSessionNotice {
@@ -11177,6 +11181,8 @@ function Install-DFTool {
 
         Afterwards, new tools are activated in this session. A tool you named
         that isn't in your Tools setting is active only until the shell closes.
+        It ends with a summary, one line per result; -PassThru also returns
+        the results as objects, for a script.
     .PARAMETER Missing
         Install the tools Get-DFToolStatus -Missing lists.
     .PARAMETER Name
@@ -11185,6 +11191,9 @@ function Install-DFTool {
         Install the named tools from this source, for this call only.
     .PARAMETER UseDefaults
         Don't ask: take the default for every open choice.
+    .PARAMETER PassThru
+        Also return one result object per tool (otherwise only the summary
+        is printed).
     .PARAMETER ToolsPath
         Tools folder. Default: the module's Tools/.
     .EXAMPLE
@@ -11200,7 +11209,7 @@ function Install-DFTool {
 
         Shows what would be installed, in which stage, and from where.
     .OUTPUTS
-        PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
+        None, or with -PassThru PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail.
         A Failed Detail has the manager's last lines; -Verbose shows all of its output.
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/getting-started.md
@@ -11209,9 +11218,10 @@ function Install-DFTool {
     [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory, ParameterSetName = 'Missing')][switch]$Missing,
-        [Parameter(Mandatory, ParameterSetName = 'Name')][string[]]$Name,
+        [Parameter(Mandatory, ParameterSetName = 'Name', Position = 0)][string[]]$Name,
         [Parameter(ParameterSetName = 'Name')][string]$Via,
         [switch]$UseDefaults,
+        [switch]$PassThru,
         [string]$ToolsPath
     )
     $pathArgs = if ($ToolsPath) { @{ ToolsPath = $ToolsPath } } else { @{} }
@@ -11259,9 +11269,9 @@ function Install-DFTool {
     $gapRows = @(Get-DFInstallGapResult -Plan $plan)
     # -WhatIf: the plan only. Interactive: confirm once. -UseDefaults, or no one
     # to ask: no prompt (without -UseDefaults, only decision-free tools are planned).
-    if (-not $plan.Items -or $WhatIfPreference) { return $gapRows }
+    if (-not $plan.Items -or $WhatIfPreference) { if ($PassThru) { $gapRows }; return }
     $skipConfirm = $PSBoundParameters.ContainsKey('Confirm') -and -not $PSBoundParameters['Confirm']
-    if ($interactive -and -not $skipConfirm -and (Read-DFInstallChoice -Prompt "Install $(@($plan.Items).Count) tool(s) as planned above?" -Options 'y', 'n' -Default 'y') -ne 'y') { return $gapRows }
+    if ($interactive -and -not $skipConfirm -and (Read-DFInstallChoice -Prompt "Install $(@($plan.Items).Count) tool(s) as planned above?" -Options 'y', 'n' -Default 'y') -ne 'y') { if ($PassThru) { $gapRows }; return }
 
     # Installing changes what's available: the runner gets uncached checks.
     $fresh = { param($r) $r -and (Test-DFToolAvailable -Executable $r.executable -Type $r.type -Force) }
@@ -11276,7 +11286,7 @@ function Install-DFTool {
     }
     $all = @($results) + $gapRows
     Write-DFInstallSummary -Result $all
-    $all
+    if ($PassThru) { $all }
 }
 
 # ---- Public/Invoke-DFPicker.ps1

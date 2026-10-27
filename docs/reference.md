@@ -601,9 +601,9 @@ Asks which font to install.
 Installs missing tools: everything the session reported missing (-Missing), or the named tools.
 
 ```text
-Install-DFTool -Missing [-UseDefaults] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Install-DFTool -Missing [-UseDefaults] [-PassThru] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
-Install-DFTool -Name <string[]> [-Via <string>] [-UseDefaults] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Install-DFTool [-Name] <string[]> [-Via <string>] [-UseDefaults] [-PassThru] [-ToolsPath <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 Builds one plan for all targets: a source and manager per tool (InstallVia, the tool's install.prefer, InstallOrder, DotForge's order; ExcludeSources never used unless InstallVia names it), in stages so that a manager or runtime installs before the tools that need it. Nothing you didn't ask for is installed, unless you choose it or pass -UseDefaults.
@@ -621,7 +621,7 @@ Modes:
   - -Confirm:$false: interactive, but without the final confirmation.
 ```
 
-Afterwards, new tools are activated in this session. A tool you named that isn't in your Tools setting is active only until the shell closes.
+Afterwards, new tools are activated in this session. A tool you named that isn't in your Tools setting is active only until the shell closes. It ends with a summary, one line per result; -PassThru also returns the results as objects, for a script.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -629,9 +629,10 @@ Afterwards, new tools are activated in this session. A tool you named that isn't
 | `-Name` | string[] |  | yes |  | Tools (and +groups) to install. |
 | `-Via` | string |  |  |  | Install the named tools from this source, for this call only. |
 | `-UseDefaults` | switch |  |  |  | Don't ask: take the default for every open choice. |
+| `-PassThru` | switch |  |  |  | Also return one result object per tool (otherwise only the summary is printed). |
 | `-ToolsPath` | string |  |  |  | Tools folder. Default: the module's Tools/. |
 
-**Outputs:** PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail. A Failed Detail has the manager's last lines; -Verbose shows all of its output.
+**Outputs:** None, or with -PassThru PSCustomObject. One per tool: Tool, Result (Installed, Failed, Skipped, NotFound, Gap), Detail. A Failed Detail has the manager's last lines; -Verbose shows all of its output.
 
 **Example 1**
 

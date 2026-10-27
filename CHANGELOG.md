@@ -204,6 +204,12 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
+- **`~\.local\bin` (`$XDG_BIN_HOME`) is on PATH.** `Start-DFSession` created it but never added it, so
+  a program installed there, such as Claude Code from its own installer, wasn't found. It is added at
+  the end of PATH, so it never hides a command that already resolves.
+- **`Install-DFTool` printed its results twice**, as the summary and again as a table. It now prints the
+  summary only; `-PassThru` returns the result objects for a script. It also takes tool names by
+  position (`Install-DFTool claude-code`), like `Update-DFTool` and `Remove-DFTool`.
 - **Picking a folder from Alt+C failed** with "The term 'z' is not recognized": DotForge sets zoxide
   up as `cd`, but PSFzf's Alt+C called `z`. PSFzf no longer binds Alt+C; the `directory-jump` role does.
 - **television's one-time channel download could hang the shell start** on a stalled network, and again on

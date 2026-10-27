@@ -39,10 +39,21 @@ Describe 'Install-DFTool' {
 
     It '-Missing installs the session''s missing tools and activates them' {
         Start-DFSession -Config @{ Tools = @('glow') } -ToolsPath $script:Tools 3>$null
-        $r = Install-DFTool -Missing -UseDefaults -ToolsPath $script:Tools 6>$null
+        $r = Install-DFTool -Missing -UseDefaults -PassThru -ToolsPath $script:Tools 6>$null
         $script:Calls | Should -Be @('scoop install glow')
         ($r | Where-Object Tool -eq glow).Result | Should -Be 'Installed'
         (Get-DFToolStatus -Name glow).State | Should -Be 'Active'
+    }
+    It 'takes the tool names by position' {
+        $r = Install-DFTool glow -UseDefaults -PassThru -ToolsPath $script:Tools 6>$null
+        ($r | Where-Object Tool -eq glow).Result | Should -Be 'Installed'
+    }
+    It 'prints its summary once and returns the rows only with -PassThru' {
+        # The rows printed as a table after the summary said the same thing again.
+        $out = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools 6>$null
+        $out | Should -BeNullOrEmpty
+        $summary = Install-DFTool -Name glow -UseDefaults -ToolsPath $script:Tools 6>&1 | Out-String
+        $summary | Should -Not -Match 'Tool\s+Result'
     }
     It '-WhatIf prints the plan without PowerShell''s per-property What-if noise' {
         $out = Install-DFTool -Name glow -WhatIf -ToolsPath $script:Tools *>&1 | Out-String
@@ -55,7 +66,7 @@ Describe 'Install-DFTool' {
         $script:Calls | Should -BeNullOrEmpty
     }
     It 'a non-interactive host without -UseDefaults reports a gap and its dependents, and asks nothing' {
-        $r = Install-DFTool -Name ish -ToolsPath $script:Tools 3>$null 6>$null
+        $r = Install-DFTool -Name ish -PassThru -ToolsPath $script:Tools 3>$null 6>$null
         Should -Invoke Read-DFInstallChoice -Times 0
         $script:Calls | Should -BeNullOrEmpty
         ($r | Where-Object Tool -eq ish).Result | Should -Be 'Gap'

@@ -362,10 +362,13 @@ function Test-DFToolActive {
 function Set-DFXdgEnvironment {
     <#
     .SYNOPSIS
-        Exports the five XDG folders to the session and creates them.
+        Exports the five XDG folders to the session, creates them, and puts the Bin folder on PATH.
     .DESCRIPTION
         A value you set is kept (canonicalized); an unset one gets its XDG
         default from Get-DFXdgPath. Exported so other programs see them too.
+        The Bin folder (~\.local\bin) is where XDG-following installers put
+        programs (Claude Code's native installer), so it goes on PATH, at the
+        end: it adds commands, never shadows one that already resolves.
     .OUTPUTS
         None.
     #>
@@ -376,6 +379,7 @@ function Set-DFXdgEnvironment {
         Set-Item -Path "Env:XDG_$($kind.ToUpperInvariant())_HOME" -Value $path
         New-DFDirectory $path
     }
+    Add-DFToPath (Get-DFXdgPath Bin)
 }
 
 function Write-DFSessionNotice {

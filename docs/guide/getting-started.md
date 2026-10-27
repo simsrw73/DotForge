@@ -111,7 +111,7 @@ XDG_DATA_HOME=...\.local\share
 XDG_STATE_HOME=...\.local\state
 ```
 
-The paths are under your home folder unless you set the variables yourself first; DotForge never overrides a value that is already set.
+The paths are under your home folder unless you set the variables yourself first; DotForge never overrides a value that is already set. `XDG_BIN_HOME` is also added to the end of `PATH`, so programs installed there (Claude Code's own installer puts `claude.exe` there) are found.
 
 ## Step 4: make it permanent
 

@@ -40,6 +40,16 @@ Describe 'Set-DFXdgEnvironment' {
         Set-DFXdgEnvironment
         $Env:XDG_CACHE_HOME | Should -Be (Join-Path $HOME 'df-xdg-test-cache')
     }
+    It 'puts the Bin folder on PATH, after what is already there, once' {
+        # Installers that follow XDG (Claude Code's) put their programs there.
+        $savedPath = $Env:Path
+        try {
+            $Env:Path = 'C:\first'
+            Set-DFXdgEnvironment
+            Set-DFXdgEnvironment
+            $Env:Path | Should -Be ('C:\first' + [IO.Path]::PathSeparator + $Env:XDG_BIN_HOME)
+        } finally { $Env:Path = $savedPath }
+    }
     It 'is idempotent' {
         Set-DFXdgEnvironment
         { Set-DFXdgEnvironment } | Should -Not -Throw

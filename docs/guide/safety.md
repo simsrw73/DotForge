@@ -61,7 +61,7 @@ Before registering a tool you already use, either move its old folder to the new
 
 | Path | Written by | When |
 | --- | --- | --- |
-| `$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME`, `$XDG_BIN_HOME` | `Start-DFSession` | exports the folders for the session |
+| `$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME`, `$XDG_BIN_HOME` | `Start-DFSession` | exports the folders for the session, and adds `$XDG_BIN_HOME` to the end of `PATH` |
 | Tool folders listed in each record's `xdg.dirs` | `Register-DFTool` | creates them if missing |
 | `$XDG_CONFIG_HOME\carapace\specs\scoop.yaml`, `mdv.yaml` | carapace companion | rewritten when DotForge's copy changes |
 | `$XDG_CONFIG_HOME\delta\catppuccin.gitconfig` | delta companion | rewritten when DotForge's copy changes |
