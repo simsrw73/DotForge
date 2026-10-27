@@ -200,7 +200,9 @@ Each `Tools/*.json` must have at minimum:
 - `executable` (string, required)
 - `packages` (optional): install ids keyed by **source** — a system manager (`scoop`, `winget`,
   `choco`), a registry (`npm`, `crates`, `psgallery`) or a version manager (`fnm`, `mise`). A value is
-  an id or `{ id, feed: { name, url } }` (a third-party scoop bucket). Read values only through
+  an id or `{ id, feed: { name, url } }` (a third-party scoop bucket), or for the `script` source
+  (a vendor's installer script, T-84: `Tools/script.manage.ps1`) `{ id: <https url>, installed, update,
+  remove }`; DotForge runs only that URL and deletes only `remove` paths inside `$HOME`. Read values only through
   `Get-DFPackageRef`. `install.prefer` (optional) is the tool's own source preference; `install.avoid`
   (optional) maps a source that installs it badly to the reason, ranked last unless the user names it.
 - `installs` (optional): makes the tool a package manager — `from` (its source), `install` (argv,

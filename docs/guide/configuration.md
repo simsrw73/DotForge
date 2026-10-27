@@ -61,7 +61,7 @@ each one is self-contained; the same keys go in your file.
 | `NerdFont` | bool | detected | `$true` turns Nerd Font icons on, `$false` off. Unset, icons follow whether a Nerd Font is installed (Windows). See [Fonts and icons](fonts.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `ClaudeTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -133,6 +133,7 @@ mdcat: dracula
 | duf | `DufTheme` | `dark`, `light`, `ansi` (catppuccin-latte maps to `light`) | warning; `dark` |
 | procs | `ProcsTheme` | `auto`, `dark`, `light` (catppuccin-latte maps to `light`) | warning; `dark` |
 | oh-my-posh | `OhMyPoshTheme` | the four catppuccin flavors; used when you have no config of your own (`POSH_THEME` or `$XDG_CONFIG_HOME\oh-my-posh\*.omp.*`) | warning; `catppuccin-mocha` |
+| claude-code | `ClaudeTheme` | the four catppuccin flavors (through the claude-themes plugin, which DotForge adds first), any `custom:<plugin>:<theme>`, or one of Claude Code's own (`dark`, `light`, …) | status note; Claude's theme unchanged |
 | starship | `StarshipTheme` | the four catppuccin flavors; swaps the `palette` line in a copy of your `starship.toml` | warning; `catppuccin-mocha` |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim\themes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
@@ -379,7 +380,7 @@ For each tool, `Install-DFTool` takes the first source that has a package for it
 1. `InstallVia` for that tool;
 2. the tool record's own preference (`install.prefer`), used where the curator knows one package is official or better maintained;
 3. `InstallOrder`;
-4. DotForge's order: scoop, winget, choco, then the registries.
+4. DotForge's order: scoop, winget, choco, then the registries and other sources (such as `script`, a vendor's own installer).
 
 Which sources may be used at all: `IncludeSources` (only these) and `ExcludeSources` (never these), unless `InstallVia` names one for a tool. With `IncludeSources = @('scoop')`, nothing comes from anywhere else, PowerShell modules and npm tools included, so list every source you want.
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "taxonomy": {
     "function": [
       "search",
@@ -40,7 +40,8 @@
       "uuid-generator",
       "dotfiles-management",
       "language-runtime",
-      "window-management"
+      "window-management",
+      "coding-agent"
     ],
     "worksWith": [
       "text",
@@ -1786,6 +1787,28 @@
         "scoop": "komorebi",
         "winget": "LGUG2Z.komorebi"
       },
+      "popularity": 1
+    },
+    "claude-code": {
+      "function": [
+        "coding-agent"
+      ],
+      "worksWith": [
+        "code"
+      ],
+      "interface": "tui",
+      "ids": {
+        "winget": "Anthropic.ClaudeCode",
+        "npm": "@anthropic-ai/claude-code"
+      },
+      "popularity": 3
+    },
+    "script": {
+      "function": [
+        "package-manager"
+      ],
+      "interface": "cli",
+      "ids": {},
       "popularity": 1
     }
   }

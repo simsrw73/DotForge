@@ -8,7 +8,6 @@ git history, not here. IDs are never reused; the next free one is **T-89**.
 
 - [ ] **T-1 Promote to stable 1.0.0** — fix the open Problems below, then follow CLAUDE.md's Releasing steps with `Prerelease` removed. `trifle` stays experimental and outside 1.0 (see After 1.0 at the end).
 - [ ] T-80 Should tools be Powershell object types and included functions to list available tools, installed tools and information about the tools managed by DotForge such as config locations, XDG status, functions, aliases, etc.
-- [ ] T-84 Allow for managing installs of tools that do not use a package manager. eg that are installed by downloading a powershell script and executing it (`irm ... | iex`).
 - [ ] T-85 We need to resolve our Github CI script. It always fails.
 - [ ] T-88 Make DotForge strict safe.
 

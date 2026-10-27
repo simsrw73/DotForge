@@ -77,6 +77,8 @@ function Invoke-DFManagerCommand {
     $changes = @(if ($Environment) { Set-DFCommandEnvironment -Environment $Environment -Manager $Manager.name })
     try {
         if ($Function) {
+            # A manager's own functions live in its Tools/<name>.manage.ps1, loaded when first needed.
+            if (-not (Get-Command $Function -ErrorAction Ignore)) { Import-DFManagerOps -Manager $Manager }
             try {
                 $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
                 return [pscustomobject]@{ ExitCode = 0; Output = $out }

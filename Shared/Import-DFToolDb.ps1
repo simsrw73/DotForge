@@ -283,7 +283,7 @@ function ConvertTo-DFNativeMap {
 function ConvertTo-DFAliasMap {
     <#
     .SYNOPSIS
-        Normalizes an aliases map (top level or a role block's): command and args per alias.
+        Normalizes an aliases map (top level or a role block's): command, args and ifFree per alias.
     .PARAMETER RawAliases
         See the synopsis.
     #>
@@ -299,6 +299,8 @@ function ConvertTo-DFAliasMap {
             # @() around the whole if: a one-element array assigned from an
             # if-expression would otherwise unwrap to a bare string.
             args    = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
+            # Defined only when no program of that name exists (Register-DFToolAliases).
+            ifFree  = [bool](Get-DFToolRecordProperty $alias.Value 'ifFree' $false)
         }
     }
     [pscustomobject]$normalized

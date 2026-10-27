@@ -117,7 +117,7 @@ function Get-DFAliasesSchemaError ($aliases, [string]$path) {
     .SYNOPSIS
         Schema errors in an aliases block; -path names it in the messages.
     #>
-    # aliases (top level and in role blocks): name -> { command: string; args: [string] }
+    # aliases (top level and in role blocks): name -> { command: string; args: [string]; ifFree: bool }
     if ($null -eq $aliases) { return }
     if ($aliases -isnot [pscustomobject]) { "$path must be an object keyed by alias name"; return }
     foreach ($a in $aliases.PSObject.Properties) {
@@ -128,6 +128,8 @@ function Get-DFAliasesSchemaError ($aliases, [string]$path) {
         if ($null -ne $args_ -and @($args_ | Where-Object { $_ -isnot [string] }).Count) {
             "$path.$($a.Name).args must be strings"
         }
+        $ifFree = $a.Value.PSObject.Properties['ifFree']?.Value
+        if ($null -ne $ifFree -and $ifFree -isnot [bool]) { "$path.$($a.Name).ifFree must be true or false" }
     }
 }
 

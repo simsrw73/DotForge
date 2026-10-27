@@ -5,6 +5,16 @@ BeforeAll {
 }
 
 Describe 'Invoke-DFManagerCommand' {
+    It 'loads the manager''s manage file for a function it doesn''t define yet' {
+        $dir = Join-Path $TestDrive "mgrfn-$([guid]::NewGuid().ToString('N').Substring(0,6))"
+        New-Item -ItemType Directory $dir | Out-Null
+        'function Invoke-DFTestManagerFn { param($Id) "ran $Id" }' | Set-Content (Join-Path $dir 'dffn.manage.ps1')
+        try {
+            $result = Invoke-DFManagerCommand -Operation install -Manager ([pscustomobject]@{ name = 'dffn'; folder = $dir }) -Function 'Invoke-DFTestManagerFn' -Arguments @{ Id = 'x' }
+            $result.ExitCode | Should -Be 0
+            $result.Output | Should -Match 'ran x'
+        } finally { Remove-Item function:Invoke-DFTestManagerFn -ErrorAction Ignore }
+    }
     It 'reports success for an in-process .ps1 shim even when an earlier command left a failure code' {
         $bin = Join-Path $TestDrive "shim-$([guid]::NewGuid().ToString('N').Substring(0,6))"
         New-Item -ItemType Directory $bin | Out-Null

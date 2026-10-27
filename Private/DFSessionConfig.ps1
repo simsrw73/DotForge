@@ -43,6 +43,7 @@ $script:DFConfigKeys = [ordered]@{
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     StarshipTheme      = 'starship palette (a catppuccin flavor; applied to a copy of your starship.toml)'
+    ClaudeTheme        = 'Claude Code theme (a catppuccin flavor through the claude-themes plugin, custom:<plugin>:<theme>, or one of Claude''s own)'
     OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
     ProcsTheme         = 'procs color theme (dark or light, from Theme)'
     BtopTheme          = 'btop catppuccin flavor named in the setup note (btop.conf is yours)'

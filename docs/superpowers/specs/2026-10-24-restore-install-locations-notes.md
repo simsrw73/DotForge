@@ -119,6 +119,11 @@ of those bites.
 
 ### Phase 4: DotForge installs its tools
 
+**Done (DotForge, 2026-10-27, piece 9):** `claude-code` installs with Claude Code's own script
+through the new `script` source (T-84), config in `$XDG_CONFIG_HOME\claude`, PowerShell preferred,
+theme via claude-themes. Spec `2026-10-27-claude-code-design.md`. chezmoi drops `CLAUDE_CONFIG_DIR`
+and `CLAUDE_CODE_GIT_BASH_PATH` after a release (the Git Bash path now lives in `settings.json`).
+
 `Install-DFTool -Missing -UseDefaults`, unattended. This is where install variables matter.
 
 **Decision 4: how DotForge sets install variables.**

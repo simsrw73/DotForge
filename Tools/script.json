@@ -1,0 +1,20 @@
+{
+  "name": "script",
+  "description": "Installs tools with their vendor's own installer script (irm <url> | iex), from the URL a tool record names",
+  "tags": ["package-manager"],
+  "executable": "pwsh.exe",
+  "prewarm": false,
+  "packages": {},
+  "installs": {
+    "from": "script",
+    "function": "Install-DFScriptPackage",
+    "args": { "Id": "{id}" },
+    "update": { "function": "Update-DFScriptPackage", "args": { "Id": "{id}" } },
+    "remove": { "function": "Remove-DFScriptPackage", "args": { "Id": "{id}" } },
+    "list": "Get-DFScriptInstalled",
+    "batch": false
+  },
+  "xdg": { "compliance": "full", "method": "default" },
+  "aliases": {},
+  "picker": null
+}

@@ -59,3 +59,42 @@ Describe 'Register-DFToolAliases' {
         (Get-Alias testalias -ErrorAction Ignore) | Should -BeNullOrEmpty
     }
 }
+
+# ifFree: an alias that must not hide a program of the same name (cc over a C compiler).
+Describe 'Register-DFToolAliases ifFree' {
+    BeforeEach { Reset-DFTestSession }
+    AfterEach {
+        Remove-Alias dfxfree -Force -Scope Global -ErrorAction Ignore
+        Remove-DFTestGlobal -Function 'dfxfree'
+    }
+
+    It 'skips an ifFree alias when a program of that name exists, with a status note' {
+        Mock Test-DFCommandExists { $true }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date", "ifFree": true } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        Get-Alias dfxfree -Scope Global -ErrorAction Ignore | Should -BeNullOrEmpty
+        Test-Path 'function:global:dfxfree' | Should -BeFalse
+        Get-DFToolNote -Tool t | Should -Match 'dfxfree'
+    }
+    It 'creates an ifFree alias when the name is free' {
+        Mock Test-DFCommandExists { $false }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date", "args": ["-Format", "yyyy"], "ifFree": true } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        Test-Path 'function:global:dfxfree' | Should -BeTrue
+    }
+    It 'creates an alias without ifFree even when a program has that name' {
+        Mock Test-DFCommandExists { $true }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date" } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        (Get-Alias dfxfree -Scope Global).Definition | Should -Be 'Get-Date'
+    }
+    It 'normalizes ifFree, false when absent' {
+        $record = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe", "aliases": { "a": { "command": "x", "ifFree": true }, "b": { "command": "y" } } }' | ConvertFrom-Json)
+        $record.aliases.a.ifFree | Should -BeTrue
+        $record.aliases.b.ifFree | Should -BeFalse
+    }
+    It 'ifFree must be a boolean' {
+        $errors = (Test-DFToolSchema -Tool ('{ "name": "t", "executable": "t.exe", "aliases": { "a": { "command": "x", "ifFree": "yes" } } }' | ConvertFrom-Json)).Errors
+        $errors | Should -Match 'ifFree'
+    }
+}

@@ -53,6 +53,18 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **Claude Code** (`claude-code`): installed with Claude Code's own installer into `~\.local\bin`
+  and `~\.local\share\claude` (winget and npm too), config in `$XDG_CONFIG_HOME\claude`
+  (`CLAUDE_CONFIG_DIR`, also offered as a desktop variable), an existing `~\.claude` linked. Its
+  one-time setup prefers PowerShell (`defaultShell`, the PowerShell tool) and finds Git Bash, adding
+  only settings you haven't set. Its theme follows yours through the claude-themes plugin, which
+  DotForge adds and enables first. Aliases `cc`, `ccc` (`--continue`), `ccr` (`--resume`).
+- **Script installers** (`script` source): a tool record can name its vendor's install script
+  (`irm <url> | iex`). DotForge runs only that https URL, asks before running it (not with
+  `-Confirm:$false`), runs it in a separate `pwsh`, and updates or removes the tool exactly as the
+  record says.
+- **`ifFree` aliases**: an alias a record marks `ifFree` isn't defined when a program of that name is
+  on PATH.
 - **Desktop variables, on request.** A tool record can suggest variables that programs started
   outside pwsh need (`desktop`): komorebi at sign-in needs `KOMOREBI_CONFIG_HOME`. `Get-DFToolStatus`
   notes the ones the Windows user environment lacks; `Set-DFDesktopEnv` writes them, asking before it

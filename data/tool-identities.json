@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "tools": {
     "bat": {
       "packages": {
@@ -515,6 +515,13 @@
       },
       "linkedVia": "repo",
       "repo": "https://github.com/ajeetdsouza/zoxide"
+    },
+    "claude-code": {
+      "packages": {
+        "winget": "Anthropic.ClaudeCode",
+        "npm": "@anthropic-ai/claude-code"
+      },
+      "linkedVia": "curated"
     }
   }
 }

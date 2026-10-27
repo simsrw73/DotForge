@@ -46,7 +46,8 @@
             "command": "bat",
             "args": [
               "-pp"
-            ]
+            ],
+            "ifFree": false
           }
         },
         "picker": null,
@@ -764,7 +765,8 @@
         "aliases": {
           "cz": {
             "command": "chezmoi",
-            "args": []
+            "args": [],
+            "ifFree": false
           }
         },
         "picker": [
@@ -887,6 +889,123 @@
         ],
         "install": {
           "prefer": [],
+          "avoid": {}
+        },
+        "folder": null,
+        "source": null
+      }
+    },
+    "claude-code": {
+      "sha256": "d6019f5bc7a0de0a3a6a45207c15442a24796c424bdffa89664392b7fd9f3020",
+      "record": {
+        "name": "claude-code",
+        "executable": "claude.exe",
+        "type": "exe",
+        "description": "Claude Code, Anthropic's agentic coding tool for the terminal",
+        "tags": [
+          "ai",
+          "coding-agent",
+          "dev"
+        ],
+        "packages": {
+          "script": {
+            "id": "https://claude.ai/install.ps1",
+            "installed": "${HOME}/.local/bin/claude.exe",
+            "update": [
+              "claude",
+              "update"
+            ],
+            "remove": [
+              "${HOME}/.local/bin/claude.exe",
+              "${XDG_DATA_HOME}/claude"
+            ]
+          },
+          "winget": "Anthropic.ClaudeCode",
+          "npm": "@anthropic-ai/claude-code"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "CLAUDE_CONFIG_DIR": "${XDG_CONFIG_HOME}/claude"
+          },
+          "dirs": [],
+          "instructions": "Claude Code keeps settings, history and plugins in CLAUDE_CONFIG_DIR, and ~/.claude.json there too. Its native installer always installs to ~/.local/bin and ~/.local/share/claude (the XDG defaults) and reads no variables; the desktop app needs CLAUDE_CONFIG_DIR in the Windows environment (Set-DFDesktopEnv claude-code).",
+          "compliance": "partial",
+          "native": {
+            "CLAUDE_CONFIG_DIR": {
+              "paths": [
+                "${HOME}/.claude"
+              ],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/claude/.claude.json": {
+              "paths": [
+                "${HOME}/.claude.json"
+              ],
+              "guide": null,
+              "setting": null
+            }
+          }
+        },
+        "env": null,
+        "desktop": [
+          "CLAUDE_CONFIG_DIR"
+        ],
+        "aliases": {
+          "cc": {
+            "command": "claude",
+            "args": [],
+            "ifFree": true
+          },
+          "ccc": {
+            "command": "claude",
+            "args": [
+              "--continue"
+            ],
+            "ifFree": true
+          },
+          "ccr": {
+            "command": "claude",
+            "args": [
+              "--resume"
+            ],
+            "ifFree": true
+          }
+        },
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "theme": {
+          "key": "ClaudeTheme",
+          "default": "catppuccin-mocha",
+          "map": {
+            "catppuccin-mocha": "custom:catppuccin:catppuccin-mocha",
+            "catppuccin-macchiato": "custom:catppuccin:catppuccin-macchiato",
+            "catppuccin-frappe": "custom:catppuccin:catppuccin-frappe",
+            "catppuccin-latte": "custom:catppuccin:catppuccin-latte"
+          },
+          "files": null,
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null,
+          "apply": "Set-DFClaudeTheme"
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
+        "setup": null,
+        "banner": null,
+        "installs": null,
+        "install": {
+          "prefer": [
+            "script"
+          ],
           "avoid": {}
         },
         "folder": null,
@@ -2911,7 +3030,8 @@
         "aliases": {
           "lg": {
             "command": "lazygit",
-            "args": []
+            "args": [],
+            "ifFree": false
           }
         },
         "picker": null,
@@ -3872,7 +3992,8 @@
               "list",
               "-g",
               "--depth=0"
-            ]
+            ],
+            "ifFree": false
           }
         },
         "picker": "custom",
@@ -5598,6 +5719,77 @@
               ],
               "id": "{feed}/{id}"
             }
+          }
+        ],
+        "install": {
+          "prefer": [],
+          "avoid": {}
+        },
+        "folder": null,
+        "source": null
+      }
+    },
+    "script": {
+      "sha256": "602534963f54e0ab65255ba15f810e5cd4796625a92e8cbfe73c6abe91fb1b90",
+      "record": {
+        "name": "script",
+        "executable": "pwsh.exe",
+        "type": "exe",
+        "description": "Installs tools with their vendor's own installer script (irm <url> | iex), from the URL a tool record names",
+        "tags": [
+          "package-manager"
+        ],
+        "packages": {},
+        "xdg": {
+          "method": "default",
+          "vars": null,
+          "dirs": [],
+          "instructions": null,
+          "compliance": "full",
+          "native": null
+        },
+        "env": null,
+        "desktop": [],
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {},
+        "themeMap": null,
+        "theme": null,
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": false,
+        "nerdFont": null,
+        "setup": null,
+        "banner": null,
+        "installs": [
+          {
+            "from": "script",
+            "install": null,
+            "update": {
+              "function": "Update-DFScriptPackage",
+              "args": {
+                "Id": "{id}"
+              }
+            },
+            "remove": {
+              "function": "Remove-DFScriptPackage",
+              "args": {
+                "Id": "{id}"
+              }
+            },
+            "list": "Get-DFScriptInstalled",
+            "outdated": null,
+            "function": "Install-DFScriptPackage",
+            "args": {
+              "Id": "{id}"
+            },
+            "batch": false,
+            "elevate": false,
+            "reactivate": false,
+            "feeds": null
           }
         ],
         "install": {

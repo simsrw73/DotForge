@@ -1,0 +1,45 @@
+{
+  "name": "claude-code",
+  "description": "Claude Code, Anthropic's agentic coding tool for the terminal",
+  "tags": ["ai", "coding-agent", "dev"],
+  "executable": "claude.exe",
+  "packages": {
+    "script": {
+      "id": "https://claude.ai/install.ps1",
+      "installed": "${HOME}/.local/bin/claude.exe",
+      "update": ["claude", "update"],
+      "remove": ["${HOME}/.local/bin/claude.exe", "${XDG_DATA_HOME}/claude"]
+    },
+    "winget": "Anthropic.ClaudeCode",
+    "npm": "@anthropic-ai/claude-code"
+  },
+  "install": { "prefer": ["script"] },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": { "CLAUDE_CONFIG_DIR": "${XDG_CONFIG_HOME}/claude" },
+    "native": {
+      "CLAUDE_CONFIG_DIR": ["${HOME}/.claude"],
+      "${XDG_CONFIG_HOME}/claude/.claude.json": ["${HOME}/.claude.json"]
+    },
+    "instructions": "Claude Code keeps settings, history and plugins in CLAUDE_CONFIG_DIR, and ~/.claude.json there too. Its native installer always installs to ~/.local/bin and ~/.local/share/claude (the XDG defaults) and reads no variables; the desktop app needs CLAUDE_CONFIG_DIR in the Windows environment (Set-DFDesktopEnv claude-code)."
+  },
+  "desktop": ["CLAUDE_CONFIG_DIR"],
+  "theme": {
+    "key": "ClaudeTheme",
+    "default": "catppuccin-mocha",
+    "map": {
+      "catppuccin-mocha": "custom:catppuccin:catppuccin-mocha",
+      "catppuccin-macchiato": "custom:catppuccin:catppuccin-macchiato",
+      "catppuccin-frappe": "custom:catppuccin:catppuccin-frappe",
+      "catppuccin-latte": "custom:catppuccin:catppuccin-latte"
+    },
+    "apply": "Set-DFClaudeTheme"
+  },
+  "aliases": {
+    "cc": { "command": "claude", "ifFree": true },
+    "ccc": { "command": "claude", "args": ["--continue"], "ifFree": true },
+    "ccr": { "command": "claude", "args": ["--resume"], "ifFree": true }
+  },
+  "picker": null
+}

@@ -105,7 +105,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [komorebi](#komorebi-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [claude-code](#claude-code-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [komorebi](#komorebi-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [script](#script-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
@@ -2932,6 +2932,21 @@ Chocolatey — Windows package manager
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/choco.ps1`](#choco-companion) |
 
+### claude-code tool
+
+Claude Code, Anthropic's agentic coding tool for the terminal
+
+| | |
+| --- | --- |
+| Detected by | `claude.exe` |
+| Tags | `ai`, `coding-agent`, `dev` |
+| Install ids | script: `https://claude.ai/install.ps1`<br>winget: `Anthropic.ClaudeCode`<br>npm: `@anthropic-ai/claude-code` |
+| XDG method | `env` |
+| XDG variables | `CLAUDE_CONFIG_DIR` = `${XDG_CONFIG_HOME}/claude` |
+| Theme | key `ClaudeTheme`, default `catppuccin-mocha` |
+| Aliases | `cc` → `claude`<br>`ccc` → `claude --continue`<br>`ccr` → `claude --resume` |
+| Companion | `Tools/claude-code.ps1`, one-time `Tools/claude-code.setup.ps1` |
+
 ### curl tool
 
 Transfer data with URLs
@@ -3703,6 +3718,16 @@ Windows command-line installer
 | Picker | `` (): lists ``; Enter runs `` |
 | Roles | [`package-manager`](#package-manager-role) |
 | Companion | [`Tools/scoop.ps1`](#scoop-companion) |
+
+### script tool
+
+Installs tools with their vendor's own installer script (irm &lt;url&gt; \| iex), from the URL a tool record names
+
+| | |
+| --- | --- |
+| Detected by | `pwsh.exe` |
+| Tags | `package-manager` |
+| XDG method | `default` |
 
 ### skim tool
 

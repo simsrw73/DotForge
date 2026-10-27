@@ -1,5 +1,20 @@
 #Requires -Version 7.2
 
+function Test-DFCommandExists {
+    <#
+    .SYNOPSIS
+        Whether a program or script of that name is on PATH (a seam tests mock).
+    .PARAMETER Name
+        The command name.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Name)
+    [bool](Get-Command -Name $Name -CommandType Application, ExternalScript -ErrorAction Ignore)
+}
+
 function Register-DFToolAliases {
     <#
     .SYNOPSIS
@@ -10,7 +25,9 @@ function Register-DFToolAliases {
         aliases): a zero-argument alias becomes a plain Set-Alias; an alias
         with args becomes a global wrapper function, removing any colliding
         built-in alias first (Alias outranks Function in command resolution,
-        so a built-in like `cd` would otherwise shadow the wrapper).
+        so a built-in like `cd` would otherwise shadow the wrapper). An alias
+        declared ifFree is skipped, with a status note, when a program of that
+        name is on PATH (a cc alias must not hide a C compiler).
     .PARAMETER Tool
         The tool record declaring the aliases.
     .PARAMETER Aliases
@@ -38,6 +55,10 @@ function Register-DFToolAliases {
         $aliasArgs = $_.Value.args
 
         if (-not $aliasCmd) { return }
+        if ($_.Value.PSObject.Properties['ifFree']?.Value -and (Test-DFCommandExists -Name $aliasName)) {
+            Add-DFToolNote -Tool $Tool.name -Note "$aliasName isn't defined: a $aliasName program already exists"
+            return
+        }
 
         if ($aliasArgs.Count -eq 0) {
             Set-Alias -Name $aliasName -Value $aliasCmd -Scope Global -Force

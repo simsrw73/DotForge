@@ -63,7 +63,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Fuzzy finding and navigation | fzf, skim, television, peco, gum, zoxide |
 | Pager | moor, ov, less (one sets `PAGER`; see below) |
 | Package managers | choco, npm, scoop, winget |
-| Development | bitwarden, chezmoi, delta, fnm, gh, lazygit, rustup, uv, vcpkg |
+| Development | bitwarden, chezmoi, claude-code, delta, fnm, gh, lazygit, rustup, uv, vcpkg |
 | PowerShell modules | posh-git, PSFzf, psreadline, Terminal-Icons |
 
 ## Commands each tool adds
@@ -131,6 +131,18 @@ Requirements:
 - Chocolatey changes need an elevated shell. With gsudo registered, they run through it and show a UAC prompt.
 
 ## Notes on individual tools
+
+### Claude Code (claude-code)
+
+`Install-DFTool claude-code` uses Claude Code's own installer (`irm https://claude.ai/install.ps1 | iex`), which puts `claude.exe` in `~\.local\bin` and its versions in `~\.local\share\claude`, and updates itself. winget and npm are the other sources. Its config lives in `$XDG_CONFIG_HOME\claude` (`CLAUDE_CONFIG_DIR`); an existing `~\.claude` or `~\.claude.json` is linked, not moved. Desktop apps and editors need `CLAUDE_CONFIG_DIR` too: run `Set-DFDesktopEnv claude-code` once ([Desktop apps](configuration.md#desktop-apps)).
+
+Its one-time setup adds to `settings.json`, only where you haven't set them: `defaultShell: "powershell"`, the PowerShell tool (`CLAUDE_CODE_USE_POWERSHELL_TOOL`), and Git Bash's path for the Bash and Monitor tools (`CLAUDE_CODE_GIT_BASH_PATH`, from your git; scoop's `current` folder when git came from scoop). Its theme follows yours through the [claude-themes](https://github.com/matcra587/claude-themes) plugin: DotForge adds that marketplace and installs and enables the theme's plugin with Claude Code's own `claude plugin` commands, then sets `theme` (catppuccin themes; `ClaudeTheme` to pick another, such as `light` or `custom:dracula:dracula`). Nothing runs when the theme is already set. Aliases: `cc` (claude), `ccc` (`claude --continue`), `ccr` (`claude --resume`), each skipped if a program of that name exists.
+
+To move a winget or npm install to the native one: uninstall it the way it was installed, then `Install-DFTool claude-code`.
+
+### Script installers
+
+Some tools are installed with their vendor's own script (`irm <url> | iex`). DotForge runs only the https URL written in the tool's record, shows it in the install plan, and asks once more before running it (not with `-Confirm:$false`). The script runs in a separate `pwsh`, with the tool's install variables set. The record also says how the tool updates (a command, or "updates itself") and which files `Remove-DFTool` deletes; those must be inside your home folder.
 
 ### bat
 

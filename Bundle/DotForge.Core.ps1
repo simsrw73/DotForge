@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: b00f856a2b098edf05a350f7f389c69ffe1476ce73587eeb90d80a584ec0baff
+# sources-sha256: 4e1d49f67efd612f014877aa3803009c7337611214cb07de9b5eebbab75764bf
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -1756,7 +1756,7 @@ function ConvertTo-DFNativeMap {
 function ConvertTo-DFAliasMap {
     <#
     .SYNOPSIS
-        Normalizes an aliases map (top level or a role block's): command and args per alias.
+        Normalizes an aliases map (top level or a role block's): command, args and ifFree per alias.
     .PARAMETER RawAliases
         See the synopsis.
     #>
@@ -1772,6 +1772,8 @@ function ConvertTo-DFAliasMap {
             # @() around the whole if: a one-element array assigned from an
             # if-expression would otherwise unwrap to a bare string.
             args    = [object[]]@(if ($null -ne $rawArgs) { $rawArgs })
+            # Defined only when no program of that name exists (Register-DFToolAliases).
+            ifFree  = [bool](Get-DFToolRecordProperty $alias.Value 'ifFree' $false)
         }
     }
     [pscustomobject]$normalized
@@ -2510,7 +2512,7 @@ function Get-DFAliasesSchemaError ($aliases, [string]$path) {
     .SYNOPSIS
         Schema errors in an aliases block; -path names it in the messages.
     #>
-    # aliases (top level and in role blocks): name -> { command: string; args: [string] }
+    # aliases (top level and in role blocks): name -> { command: string; args: [string]; ifFree: bool }
     if ($null -eq $aliases) { return }
     if ($aliases -isnot [pscustomobject]) { "$path must be an object keyed by alias name"; return }
     foreach ($a in $aliases.PSObject.Properties) {
@@ -2521,6 +2523,8 @@ function Get-DFAliasesSchemaError ($aliases, [string]$path) {
         if ($null -ne $args_ -and @($args_ | Where-Object { $_ -isnot [string] }).Count) {
             "$path.$($a.Name).args must be strings"
         }
+        $ifFree = $a.Value.PSObject.Properties['ifFree']?.Value
+        if ($null -ne $ifFree -and $ifFree -isnot [bool]) { "$path.$($a.Name).ifFree must be true or false" }
     }
 }
 
@@ -4237,6 +4241,7 @@ $script:DFConfigKeys = [ordered]@{
     DirectoryJumpDepth = 'how deep Alt+C scans below the current folder (default 6)'
     BrootTheme         = 'broot skin (a catppuccin flavor, or a skin file of your own)'
     StarshipTheme      = 'starship palette (a catppuccin flavor; applied to a copy of your starship.toml)'
+    ClaudeTheme        = 'Claude Code theme (a catppuccin flavor through the claude-themes plugin, custom:<plugin>:<theme>, or one of Claude''s own)'
     OhMyPoshTheme      = 'oh-my-posh theme (a catppuccin flavor; used when you have no config of your own)'
     ProcsTheme         = 'procs color theme (dark or light, from Theme)'
     BtopTheme          = 'btop catppuccin flavor named in the setup note (btop.conf is yours)'
@@ -6481,6 +6486,8 @@ function Invoke-DFManagerCommand {
     $changes = @(if ($Environment) { Set-DFCommandEnvironment -Environment $Environment -Manager $Manager.name })
     try {
         if ($Function) {
+            # A manager's own functions live in its Tools/<name>.manage.ps1, loaded when first needed.
+            if (-not (Get-Command $Function -ErrorAction Ignore)) { Import-DFManagerOps -Manager $Manager }
             try {
                 $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
                 return [pscustomobject]@{ ExitCode = 0; Output = $out }
@@ -8785,6 +8792,21 @@ function Register-DFLazyCompleter {
 # ---- Private/Register-DFToolAliases.ps1
 #Requires -Version 7.2
 
+function Test-DFCommandExists {
+    <#
+    .SYNOPSIS
+        Whether a program or script of that name is on PATH (a seam tests mock).
+    .PARAMETER Name
+        The command name.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][string]$Name)
+    [bool](Get-Command -Name $Name -CommandType Application, ExternalScript -ErrorAction Ignore)
+}
+
 function Register-DFToolAliases {
     <#
     .SYNOPSIS
@@ -8795,7 +8817,9 @@ function Register-DFToolAliases {
         aliases): a zero-argument alias becomes a plain Set-Alias; an alias
         with args becomes a global wrapper function, removing any colliding
         built-in alias first (Alias outranks Function in command resolution,
-        so a built-in like `cd` would otherwise shadow the wrapper).
+        so a built-in like `cd` would otherwise shadow the wrapper). An alias
+        declared ifFree is skipped, with a status note, when a program of that
+        name is on PATH (a cc alias must not hide a C compiler).
     .PARAMETER Tool
         The tool record declaring the aliases.
     .PARAMETER Aliases
@@ -8823,6 +8847,10 @@ function Register-DFToolAliases {
         $aliasArgs = $_.Value.args
 
         if (-not $aliasCmd) { return }
+        if ($_.Value.PSObject.Properties['ifFree']?.Value -and (Test-DFCommandExists -Name $aliasName)) {
+            Add-DFToolNote -Tool $Tool.name -Note "$aliasName isn't defined: a $aliasName program already exists"
+            return
+        }
 
         if ($aliasArgs.Count -eq 0) {
             Set-Alias -Name $aliasName -Value $aliasCmd -Scope Global -Force
