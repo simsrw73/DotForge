@@ -212,6 +212,8 @@ Import-Module (Join-Path $repo 'DotForge.psd1') -Force 3>$null
 # The core and its on-demand modules, loaded from this checkout.
 $moduleDirs = @($repo, (Join-Path $repo 'Modules' 'DotForge.Catalog'), (Join-Path $repo 'Modules' 'DotForge.Helpers'))
 foreach ($d in $moduleDirs | Select-Object -Skip 1) { Import-Module (Join-Path $d "$(Split-Path $d -Leaf).psd1") -Force 3>$null }
+# Describe the icon flags whether or not this machine has a Nerd Font, so the page is the same everywhere.
+& (Get-Module DotForge) { Set-DFSessionConfig -Config @{ NerdFont = $true } }
 $publicFiles = @(foreach ($d in $moduleDirs) { Get-ChildItem (Join-Path $d 'Public') -Filter '*.ps1' | ForEach-Object FullName })
 $publicAliases = Get-AliasMap $publicFiles
 

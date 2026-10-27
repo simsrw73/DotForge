@@ -61,6 +61,7 @@ Describe 'smartmontools banner part' {
         @((& $script:Part.Complete @{} ([pscustomobject]@{})).Fills.drives).Count | Should -Be 0
     }
     It 'asks for one background job' {
+        Mock Get-Command { [pscustomobject]@{ Source = 'C:\tools\smartctl.exe' } } -ParameterFilter { $Name -eq 'smartctl.exe' }
         @((& $script:Part.Work ([pscustomobject]@{})).Name) | Should -Be @('drives')
     }
 }

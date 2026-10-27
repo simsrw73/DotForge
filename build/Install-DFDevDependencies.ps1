@@ -24,6 +24,16 @@ foreach ($name in $requirements.Keys | Sort-Object) {
         "$name $version is installed"
         continue
     }
-    Install-PSResource -Name $name -Version $version -Repository PSGallery -TrustRepository -Scope CurrentUser -ErrorAction Stop
+    # The Gallery sometimes answers 404 for a package that exists; try again before failing.
+    foreach ($attempt in 1..3) {
+        try {
+            Install-PSResource -Name $name -Version $version -Repository PSGallery -TrustRepository -Scope CurrentUser -ErrorAction Stop
+            break
+        } catch {
+            if ($attempt -eq 3) { throw }
+            Write-Warning "$name $version`: $($_.Exception.Message) — retrying"
+            Start-Sleep -Seconds (5 * $attempt)
+        }
+    }
     "$name $version installed"
 }

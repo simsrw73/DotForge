@@ -12,6 +12,8 @@ Describe 'Resolve-DFOhMyPoshConfig' {
         $script:SavedTheme = $Env:POSH_THEME; $script:SavedThemes = $Env:POSH_THEMES_PATH
         Remove-Item Env:POSH_THEME, Env:POSH_THEMES_PATH -ErrorAction Ignore
         Remove-Item (Join-Path $Env:XDG_CONFIG_HOME 'oh-my-posh') -Recurse -Force -ErrorAction Ignore
+        # Icons on unless a test says otherwise, so the result doesn't depend on this machine's fonts.
+        Mock Test-DFIconsOn { $true }
     }
     AfterEach {
         if ($null -ne $script:SavedTheme) { $Env:POSH_THEME = $script:SavedTheme } else { Remove-Item Env:POSH_THEME -ErrorAction Ignore }
