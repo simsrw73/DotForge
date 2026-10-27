@@ -8,4 +8,6 @@
     # The package-universe build pipeline (build/Private/DFPackageUniverse.*) and its tests.
     'PSSQLite'        = '1.1.0'
     'powershell-yaml' = '0.4.12'
+    # Static analysis of every script (build/Invoke-DFLint.ps1).
+    'PSScriptAnalyzer' = '1.25.0'
 }

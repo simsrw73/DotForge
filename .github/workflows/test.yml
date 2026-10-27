@@ -33,3 +33,22 @@ jobs:
       - name: Run the suite (sentinel XDG folders)
         shell: pwsh
         run: ./build/Test-DFFull.ps1
+
+  # Informational: the findings go to the run's summary page and never fail the
+  # run. Order of work: docs/STATIC-ANALYSIS-PLAN.md.
+  lint:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the development modules (build/requirements.psd1)
+        shell: pwsh
+        run: ./build/Install-DFDevDependencies.ps1
+
+      - name: Analyze the scripts (PSScriptAnalyzer)
+        shell: pwsh
+        run: ./build/Invoke-DFLint.ps1 -MarkdownPath $Env:GITHUB_STEP_SUMMARY | Format-Table -AutoSize

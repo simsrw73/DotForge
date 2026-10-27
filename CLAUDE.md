@@ -98,6 +98,9 @@ DotForge/
 - **The gate is `build/Test-DFFull.ps1`** (sentinel XDG folders, failed containers, exit 1 on any
   failure). During a change, run it with `-Path` on the test files that cover the code you touched; run
   it on the whole suite before merging.
+- **Static analysis is informational for now**: `build/Invoke-DFLint.ps1` runs PSScriptAnalyzer
+  (`PSScriptAnalyzerSettings.psd1`; `tests/` has its own). Don't add findings to code you write; fix a
+  finding with the idiom `docs/STATIC-ANALYSIS-PLAN.md` names, suppress only with a justification.
 - **The backlog is `TODO.md`**, open items only, each with an ID (`T-12`). Name the ID in the commit that
   resolves it (`Closes T-12`) and delete the item in that commit; new items take the next free ID noted
   at the top of the file. Don't leave `TODO`/`FIXME` comments in code: fix a small hack on the spot,

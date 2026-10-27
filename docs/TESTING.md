@@ -36,3 +36,5 @@ Starting module (Phase 1, 2026-10-10): tool registration and session activation,
 ## CI Gates
 
 `.github/workflows/test.yml` runs `build/Test-DFFull.ps1` on `windows-latest` for every push and pull request. Locally, the same script is the gate before a merge.
+
+The same workflow's `lint` job runs PSScriptAnalyzer through `build/Invoke-DFLint.ps1` and writes a summary by rule to the run's page. It is informational and never fails the run; [STATIC-ANALYSIS-PLAN.md](STATIC-ANALYSIS-PLAN.md) orders the work of bringing the findings down.
