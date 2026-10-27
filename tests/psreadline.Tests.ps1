@@ -201,12 +201,3 @@ Describe 'psreadline tool sidecar' {
         $colors | Should -Match '0;0;255'
     }
 }
-
-Describe 'psreadline catppuccin-mocha theme' {
-    It 'draws suggestions and comments in overlay0, readable over a transparent background' {
-        # surface2 (#585b70) is about 2.5:1 on mocha's base, and less once a lighter background shows through.
-        $theme = Get-Content (Join-Path $PSScriptRoot '..' 'Tools' 'psreadline' 'catppuccin-mocha.json') -Raw | ConvertFrom-Json
-        $theme.colors.InlinePrediction | Should -Be '#6c7086'
-        $theme.colors.Comment | Should -Be '#6c7086'
-    }
-}

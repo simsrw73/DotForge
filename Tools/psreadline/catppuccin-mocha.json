@@ -6,10 +6,10 @@
     "String":           "#a6e3a1",
     "Operator":         "#cdd6f4",
     "Variable":         "#cdd6f4",
-    "Comment":          "#6c7086",
+    "Comment":          "#585b70",
     "Keyword":          "#f38ba8",
     "Error":            "#f38ba8",
-    "InlinePrediction": "#6c7086",
+    "InlinePrediction": "#585b70",
     "ListPrediction":   "#89b4fa"
   }
 }

@@ -204,8 +204,6 @@ All notable changes to DotForge are documented here.
 
 ### Fixed
 
-- **PSReadLine's suggestions and comments were hard to read** with catppuccin-mocha over a transparent
-  background. They now use overlay0 (`#6c7086`, about 3.4:1 contrast) instead of surface2 (`#585b70`, about 2.5:1).
 - **`~\.local\bin` (`$XDG_BIN_HOME`) is on PATH.** `Start-DFSession` created it but never added it, so
   a program installed there, such as Claude Code from its own installer, wasn't found. It is added at
   the end of PATH, so it never hides a command that already resolves.
