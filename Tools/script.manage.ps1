@@ -42,6 +42,64 @@ function Expand-DFScriptPath {
     ConvertTo-DFPath (Expand-DFXdgPath ($Template.Replace('${HOME}', $HOME)))
 }
 
+function Get-DFScriptHome {
+    <#
+    .SYNOPSIS
+        The folder removals must stay inside: the home folder, with links resolved (a seam tests mock).
+    .OUTPUTS
+        System.String.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    Resolve-DFScriptRealPath -Path $HOME
+}
+
+function Resolve-DFScriptRealPath {
+    <#
+    .SYNOPSIS
+        A path with every link along it (junctions, symbolic links) replaced by what it points to, so a check sees where a delete would really land.
+    .PARAMETER Path
+        A canonical path; its tail may not exist.
+    .OUTPUTS
+        System.String: a canonical path.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][string]$Path)
+    $full = ConvertTo-DFPath $Path
+    $root = [IO.Path]::GetPathRoot($full)
+    $current = $root
+    foreach ($part in $full.Substring($root.Length).Split([IO.Path]::DirectorySeparatorChar, [StringSplitOptions]::RemoveEmptyEntries)) {
+        $current = Join-Path $current $part
+        $item = Get-Item -LiteralPath $current -Force -ErrorAction Ignore
+        if ($item -and $item.LinkTarget) {
+            $target = $item.ResolveLinkTarget($true)
+            if ($target) { $current = $target.FullName }
+        }
+    }
+    ConvertTo-DFPath $current
+}
+
+function Test-DFScriptConsent {
+    <#
+    .SYNOPSIS
+        The one ShouldProcess question before running an installer (a seam tests mock).
+    .PARAMETER Cmdlet
+        Install-DFScriptPackage's $PSCmdlet.
+    .PARAMETER Target
+        The tool.
+    .PARAMETER Action
+        What will run.
+    .OUTPUTS
+        System.Boolean.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)]$Cmdlet, [Parameter(Mandatory)][string]$Target, [Parameter(Mandatory)][string]$Action)
+    $Cmdlet.ShouldProcess($Target, $Action)
+}
+
 function Invoke-DFScriptDownload {
     <#
     .SYNOPSIS
@@ -94,7 +152,10 @@ function Install-DFScriptPackage {
     foreach ($url in $Id) {
         if ($url -notmatch '^https://') { throw "DotForge: an installer must be an https URL; refusing $url." }
         $package = Find-DFScriptPackage -Url $url
-        if (-not $PSCmdlet.ShouldProcess($package.Tool.name, "Download and run the installer $url")) { continue }
+        if (-not (Test-DFScriptConsent -Cmdlet $PSCmdlet -Target $package.Tool.name -Action "Download and run the installer $url")) {
+            if ($WhatIfPreference) { continue }
+            throw "DotForge: you declined to run the installer for $($package.Tool.name); nothing was installed."
+        }
         $file = Join-Path ([IO.Path]::GetTempPath()) ("dotforge-install-" + [guid]::NewGuid().ToString('N') + '.ps1')
         try {
             Set-Content -LiteralPath $file -Value (Invoke-DFScriptDownload -Url $url) -Encoding utf8
@@ -119,7 +180,8 @@ function Update-DFScriptPackage {
     foreach ($url in $Id) {
         $package = Find-DFScriptPackage -Url $url
         $update = @($package.Entry.PSObject.Properties['update']?.Value)
-        if (-not $update -or ($update.Count -eq 1 -and $update[0] -eq 'self')) { "$($package.Tool.name) updates itself"; continue }
+        # A manager function's "skipped, because" answer (Invoke-DFManagerCommand reports it as Skipped).
+        if (-not $update -or ($update.Count -eq 1 -and $update[0] -eq 'self')) { [pscustomobject]@{ DFSkipped = "$($package.Tool.name) updates itself" }; continue }
         $result = Invoke-DFManagerCommand -Operation update -Manager ([pscustomobject]@{ name = 'script' }) -Argv ([string[]]$update)
         if ($result.ExitCode -ne 0) { throw "DotForge: updating $($package.Tool.name) failed: $($result.Output)" }
         "updated $($package.Tool.name)"
@@ -131,8 +193,9 @@ function Remove-DFScriptPackage {
     .SYNOPSIS
         Removes script-installed tools by deleting exactly the paths their record declares, all inside the home folder.
     .DESCRIPTION
-        Every path is checked before anything is deleted: one that resolves
-        outside $HOME refuses the whole removal. Remove-DFTool has already
+        Every path is checked before anything is deleted, with links along it
+        resolved: one that lands outside the home folder refuses the whole
+        removal. Remove-DFTool has already
         asked, so this doesn't ask again (ConfirmImpact Medium); -WhatIf
         still shows each path.
     .PARAMETER Id
@@ -142,11 +205,11 @@ function Remove-DFScriptPackage {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param([Parameter(Mandatory)][string[]]$Id)
-    $root = (ConvertTo-DFPath $HOME) + [IO.Path]::DirectorySeparatorChar
+    $root = (Get-DFScriptHome) + [IO.Path]::DirectorySeparatorChar
     foreach ($url in $Id) {
         $package = Find-DFScriptPackage -Url $url
         $paths = @(foreach ($template in @($package.Entry.PSObject.Properties['remove']?.Value)) { if ($template) { Expand-DFScriptPath $template } })
-        $outside = @($paths | Where-Object { -not $_.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) })
+        $outside = @($paths | Where-Object { -not (Resolve-DFScriptRealPath -Path $_).StartsWith($root, [StringComparison]::OrdinalIgnoreCase) })
         if ($outside) { throw "DotForge: $($package.Tool.name)'s record names paths outside your home folder ($($outside -join ', ')); nothing was removed." }
         foreach ($path in $paths) {
             if ((Test-Path -LiteralPath $path) -and $PSCmdlet.ShouldProcess($path, "Remove $($package.Tool.name)'s files")) {

@@ -61,6 +61,7 @@ function Get-DFPackagesSchemaError ([PSCustomObject]$Tool) {
             $ok = ($v -is [string]) -or ($v -is [pscustomobject] -and (Get-DFSchemaProperty $v 'id') -is [string] -and (Get-DFSchemaProperty $v 'id') -and
                   ($null -eq $feed -or ((Get-DFSchemaProperty $feed 'name') -and (Get-DFSchemaProperty $feed 'url'))))
             if (-not $ok) { "packages.$($p.Name) must be an id, or { id, feed: { name, url } }" }
+            if ($v -is [pscustomobject]) { Get-DFPackageInstallFieldError -Package $v -Path "packages.$($p.Name)" }
         }
     }
     if ($Tool.PSObject.Properties['scoopBucket']) {
@@ -109,6 +110,22 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                 }
             }
         }
+    }
+}
+
+function Get-DFPackageInstallFieldError ([pscustomobject]$Package, [string]$Path) {
+    <#
+    .SYNOPSIS
+        Schema errors in a package object's install fields (the script source's): installed and remove are path templates rooted at ${HOME} or an XDG folder, never climbing out with '..'; update is an argv or "self".
+    #>
+    $rooted = { param($t) $t -is [string] -and $t -match '^\$\{(HOME|XDG_[A-Z]+_HOME)\}/' -and $t -notmatch '(^|[\\/])\.\.([\\/]|$)' }
+    $installed = $Package.PSObject.Properties['installed']?.Value
+    if ($null -ne $installed -and -not (& $rooted $installed)) { "$Path.installed must be a path under `${HOME} or an `${XDG_*} folder" }
+    $remove = $Package.PSObject.Properties['remove']?.Value
+    if ($null -ne $remove -and @($remove | Where-Object { -not (& $rooted $_) }).Count) { "$Path.remove must list paths under `${HOME} or an `${XDG_*} folder, without .." }
+    $update = $Package.PSObject.Properties['update']?.Value
+    if ($null -ne $update -and $update -ne 'self' -and ($update -isnot [array] -or @($update | Where-Object { $_ -isnot [string] }).Count)) {
+        "$Path.update must be a command (a list of strings) or `"self`""
     }
 }
 

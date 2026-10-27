@@ -14,13 +14,13 @@ if ($null -eq $_settings) {
 }
 if ($null -ne $_settings) {
     $_changed = $false
-    if (-not $_settings.Contains('defaultShell')) { $_settings['defaultShell'] = 'powershell'; $_changed = $true }
-    if (-not $_settings.Contains('env')) { $_settings['env'] = [ordered]@{}; $_changed = $true }
+    if (-not $_settings.ContainsKey('defaultShell')) { Set-DFClaudeSetting -Object $_settings -Key 'defaultShell' -Value 'powershell'; $_changed = $true }
+    if (-not $_settings.ContainsKey('env')) { $_settings['env'] = [System.Text.Json.Nodes.JsonObject]::new(); $_changed = $true }
     $_env = $_settings['env']
-    if ($_env -is [System.Collections.IDictionary]) {
-        if (-not $_env.Contains('CLAUDE_CODE_USE_POWERSHELL_TOOL')) { $_env['CLAUDE_CODE_USE_POWERSHELL_TOOL'] = '1'; $_changed = $true }
+    if ($_env -is [System.Text.Json.Nodes.JsonObject]) {
+        if (-not $_env.ContainsKey('CLAUDE_CODE_USE_POWERSHELL_TOOL')) { Set-DFClaudeSetting -Object $_env -Key 'CLAUDE_CODE_USE_POWERSHELL_TOOL' -Value '1'; $_changed = $true }
         $_bash = Find-DFGitBash
-        if ($_bash -and -not $_env.Contains('CLAUDE_CODE_GIT_BASH_PATH')) { $_env['CLAUDE_CODE_GIT_BASH_PATH'] = $_bash; $_changed = $true }
+        if ($_bash -and -not $_env.ContainsKey('CLAUDE_CODE_GIT_BASH_PATH')) { Set-DFClaudeSetting -Object $_env -Key 'CLAUDE_CODE_GIT_BASH_PATH' -Value $_bash; $_changed = $true }
     }
     if ($_changed) { Save-DFClaudeSettings -Settings $_settings }
 }

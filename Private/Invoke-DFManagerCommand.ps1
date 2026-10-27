@@ -45,7 +45,8 @@ function Invoke-DFManagerCommand {
     .PARAMETER Argv
         The command line, already expanded.
     .PARAMETER Function
-        A PowerShell command to call instead of an argv.
+        A PowerShell command to call instead of an argv. One that outputs
+        { DFSkipped = <why> } is reported as skipped (ExitCode -1), not done.
     .PARAMETER Arguments
         Parameters for -Function.
     .PARAMETER Elevation
@@ -80,8 +81,11 @@ function Invoke-DFManagerCommand {
             # A manager's own functions live in its Tools/<name>.manage.ps1, loaded when first needed.
             if (-not (Get-Command $Function -ErrorAction Ignore)) { Import-DFManagerOps -Manager $Manager }
             try {
-                $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
-                return [pscustomobject]@{ ExitCode = 0; Output = $out }
+                $raw = @(& $Function @Arguments -ErrorAction Stop 2>&1)
+                # A function that can't do it (a tool that updates itself) answers { DFSkipped = <why> }: Skipped, not done.
+                $skip = $raw | Where-Object { $_ -is [pscustomobject] -and $_.PSObject.Properties['DFSkipped'] } | Select-Object -First 1
+                if ($skip) { return [pscustomobject]@{ ExitCode = -1; Output = [string]$skip.DFSkipped } }
+                return [pscustomobject]@{ ExitCode = 0; Output = ($raw | Out-String) }
             } catch {
                 return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
             }

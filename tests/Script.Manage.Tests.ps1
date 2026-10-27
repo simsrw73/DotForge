@@ -75,6 +75,28 @@ Describe 'script manager operations' {
         Test-Path $script:Home2 | Should -BeFalse
         Test-Path $keep | Should -BeTrue
     }
+    It 'refuses a declared path that a link inside the home folder sends outside it, deleting nothing' {
+        # M1: the check follows links, not just the text of the path.
+        $fakeHome = Join-Path $TestDrive 'fakehome'
+        $outside = Join-Path $TestDrive 'outside'
+        New-Item -ItemType Directory -Force $fakeHome, (Join-Path $outside 'scripty') | Out-Null
+        New-Item -ItemType File -Force (Join-Path $outside 'scripty' 'keep.txt') | Out-Null
+        $null = New-Item -ItemType Junction -Path (Join-Path $fakeHome 'data') -Target $outside
+        try {
+            Mock Get-DFScriptHome { ConvertTo-DFPath $fakeHome }
+            @{ name = 'scripty'; executable = 'scripty.exe'
+               packages = @{ script = @{ id = $script:Url; installed = '${HOME}/data/scripty/scripty.exe'; remove = @('${HOME}/data/scripty') } } } |
+                ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'scripty.json')
+            { Remove-DFScriptPackage -Id $script:Url -Confirm:$false } | Should -Throw '*outside*'
+            Test-Path (Join-Path $outside 'scripty' 'keep.txt') | Should -BeTrue
+        } finally { [IO.Directory]::Delete((Join-Path $fakeHome 'data')) }
+    }
+    It 'says you declined, instead of reporting an install, when you answer no' {
+        # M3
+        Mock Test-DFScriptConsent { $false }
+        { Install-DFScriptPackage -Id $script:Url } | Should -Throw '*declined*'
+        Should -Invoke Invoke-DFScriptDownload -Times 0 -Exactly
+    }
     It 'removes without asking again for each path (Remove-DFTool already asked)' {
         New-Item -ItemType File -Force $script:Program | Out-Null
         $ConfirmPreference = 'High'
@@ -82,11 +104,11 @@ Describe 'script manager operations' {
         Test-Path $script:Home2 | Should -BeFalse
     }
     It 'refuses a path outside the home folder, deleting nothing' {
+        # The schema already rejects a record whose remove path climbs out with '..'; this checks the
+        # removal's own guard, should such an entry reach it.
         New-Item -ItemType File -Force $script:Program | Out-Null
         $deep = '${XDG_DATA_HOME}' + ('/..' * 12) + '/dfx-outside'
-        @{ name = 'scripty'; executable = 'scripty.exe'
-           packages = @{ script = @{ id = $script:Url; installed = '${XDG_DATA_HOME}/scripty/scripty.exe'; remove = @('${XDG_DATA_HOME}/scripty', $deep) } } } |
-            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'scripty.json')
+        Mock Find-DFScriptPackage { [pscustomobject]@{ Tool = [pscustomobject]@{ name = 'scripty' }; Entry = [pscustomobject]@{ id = $script:Url; remove = @('${XDG_DATA_HOME}/scripty', $deep) } } }
         { Remove-DFScriptPackage -Id $script:Url -Confirm:$false } | Should -Throw '*outside*'
         Test-Path $script:Program | Should -BeTrue
     }
@@ -99,7 +121,8 @@ Describe 'script manager operations' {
         @{ name = 'scripty'; executable = 'scripty.exe'; packages = @{ script = @{ id = $script:Url; installed = '${XDG_DATA_HOME}/scripty/scripty.exe'; update = 'self' } } } |
             ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'scripty.json')
         Mock Invoke-DFManagerCommand { }
-        (Update-DFScriptPackage -Id $script:Url) | Should -Match 'updates itself'
+        $result = Update-DFScriptPackage -Id $script:Url
+        $result.DFSkipped | Should -Match 'updates itself'
         Should -Invoke Invoke-DFManagerCommand -Times 0 -Exactly
     }
 }

@@ -83,19 +83,26 @@ function script:Get-DFClaudeSettingsPath {
 function script:Read-DFClaudeSettings {
     <#
     .SYNOPSIS
-        Reads Claude Code's settings.json as an ordered table: empty when there is none, $null when it isn't valid JSON (a note says so).
+        Reads Claude Code's settings.json as a JSON object: empty when there is none, $null when it isn't plain JSON (a note says so).
+    .DESCRIPTION
+        Parsed strictly with System.Text.Json (no comments, no trailing commas,
+        which a rewrite would drop), keeping key order and strings as written
+        (PowerShell's JSON cmdlets turn date-like strings into dates and, on
+        7.2, reorder keys).
     .OUTPUTS
-        System.Collections.IDictionary, or $null.
+        System.Text.Json.Nodes.JsonObject, or $null.
     #>
     [CmdletBinding()]
     param()
     $path = Get-DFClaudeSettingsPath
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return [ordered]@{} }
+    # The comma keeps PowerShell from unrolling the (enumerable) object into nothing.
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return , [System.Text.Json.Nodes.JsonObject]::new() }
     try {
-        $settings = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
-        if ($null -eq $settings) { return [ordered]@{} }
-        if ($settings -isnot [System.Collections.IDictionary]) { throw 'it holds no JSON object' }
-        $settings
+        $text = Get-Content -LiteralPath $path -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($text)) { return , [System.Text.Json.Nodes.JsonObject]::new() }
+        $settings = [System.Text.Json.Nodes.JsonNode]::Parse($text)
+        if ($settings -isnot [System.Text.Json.Nodes.JsonObject]) { throw 'it holds no JSON object' }
+        , $settings
     } catch {
         Add-DFToolNote -Tool 'claude-code' -Note "$path isn't valid JSON, so DotForge left it alone ($($_.Exception.Message))"
         $null
@@ -105,15 +112,39 @@ function script:Read-DFClaudeSettings {
 function script:Save-DFClaudeSettings {
     <#
     .SYNOPSIS
-        Writes Claude Code's settings.json (two-space JSON, as Claude Code writes it).
+        Writes Claude Code's settings.json (two-space JSON, as Claude Code writes it), through a link to its target.
     .PARAMETER Settings
-        The table to write.
+        The JSON object to write.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][System.Collections.IDictionary]$Settings)
-    Write-DFFileAtomic -Path (Get-DFClaudeSettingsPath) -Value ($Settings | ConvertTo-Json -Depth 20)
+    param([Parameter(Mandatory)][System.Text.Json.Nodes.JsonObject]$Settings)
+    $path = Get-DFClaudeSettingsPath
+    $link = (Get-Item -LiteralPath $path -Force -ErrorAction Ignore)
+    if ($link -and $link.LinkTarget) { $path = $link.ResolveLinkTarget($true).FullName }
+    $options = [System.Text.Json.JsonSerializerOptions]::new()
+    $options.WriteIndented = $true
+    $options.Encoder = [System.Text.Encodings.Web.JavaScriptEncoder]::UnsafeRelaxedJsonEscaping
+    Write-DFFileAtomic -Path $path -Value $Settings.ToJsonString($options)
+}
+
+function script:Set-DFClaudeSetting {
+    <#
+    .SYNOPSIS
+        Sets one string value in a settings JSON object.
+    .PARAMETER Object
+        The JSON object.
+    .PARAMETER Key
+        The key.
+    .PARAMETER Value
+        The string.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][System.Text.Json.Nodes.JsonObject]$Object, [Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][string]$Value)
+    $Object[$Key] = [System.Text.Json.Nodes.JsonValue]::Create($Value)
 }
 
 function script:Set-DFClaudeTheme {
@@ -151,7 +182,7 @@ function script:Set-DFClaudeTheme {
     }
     $settings = Read-DFClaudeSettings
     if ($null -eq $settings) { return }
-    if ($settings['theme'] -ceq $Name) { return }
+    if ($settings.ContainsKey('theme') -and [string]$settings['theme'] -ceq $Name) { return }
     if ($plugin) {
         $retry = Join-Path (Get-DFXdgPath State) 'dotforge' 'claude-theme-failed.txt'
         if ($Background -and (Test-Path -LiteralPath $retry) -and (Get-Item -LiteralPath $retry).LastWriteTimeUtc -gt [DateTime]::UtcNow.AddDays(-1)) {
@@ -169,8 +200,9 @@ function script:Set-DFClaudeTheme {
         $settings = Read-DFClaudeSettings
         if ($null -eq $settings) { return }
     }
-    $settings['theme'] = $Name
+    Set-DFClaudeSetting -Object $settings -Key 'theme' -Value $Name
     Save-DFClaudeSettings -Settings $settings
+    Remove-DFToolNote -Tool 'claude-code' -Like "Claude Code's theme isn't set*"
 }
 
 function script:Install-DFClaudeThemePlugin {

@@ -896,7 +896,7 @@
       }
     },
     "claude-code": {
-      "sha256": "a00a3fcf9d06dde42a37022eec376053e9ddcdc523283c919eab9c42a8e6e5cf",
+      "sha256": "3bc8e61dffdf81b409d758c5051b00334cb1b1ef1fc2a1e367d8115235d07608",
       "record": {
         "name": "claude-code",
         "executable": "claude.exe",
@@ -985,7 +985,27 @@
             "catppuccin-mocha": "custom:catppuccin:catppuccin-mocha",
             "catppuccin-macchiato": "custom:catppuccin:catppuccin-macchiato",
             "catppuccin-frappe": "custom:catppuccin:catppuccin-frappe",
-            "catppuccin-latte": "custom:catppuccin:catppuccin-latte"
+            "catppuccin-latte": "custom:catppuccin:catppuccin-latte",
+            "dracula": "custom:dracula:dracula",
+            "nord": "custom:nord:nord",
+            "tokyo-night": "custom:tokyo-night:tokyo-night",
+            "gruvbox-dark": "custom:gruvbox:gruvbox-dark",
+            "gruvbox-light": "custom:gruvbox:gruvbox-light",
+            "everforest-dark": "custom:everforest:everforest-dark",
+            "everforest-light": "custom:everforest:everforest-light",
+            "rose-pine": "custom:rose-pine:rose-pine",
+            "rose-pine-moon": "custom:rose-pine:rose-pine-moon",
+            "rose-pine-dawn": "custom:rose-pine:rose-pine-dawn",
+            "solarized-dark": "custom:solarized:solarized",
+            "solarized-light": "custom:solarized:solarized-light",
+            "one-dark": "custom:one-dark:one-dark",
+            "onehalf-dark": "custom:one-dark:onehalf-dark",
+            "onehalf-light": "custom:one-dark:onehalf-light",
+            "monokai": "custom:monokai:monokai",
+            "monokai-pro": "custom:monokai-pro:monokai-pro",
+            "github-dark": "custom:github:github-dark-default",
+            "github-light": "custom:github:github-light-default",
+            "github-dark-dimmed": "custom:github:github-dark-dimmed"
           },
           "files": null,
           "valid": [],

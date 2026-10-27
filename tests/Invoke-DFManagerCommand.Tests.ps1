@@ -5,6 +5,15 @@ BeforeAll {
 }
 
 Describe 'Invoke-DFManagerCommand' {
+    It 'reports a function''s "skipped, because" answer as Skipped (exit code -1) with the reason' {
+        # M5: a script tool that updates itself isn't reported as updated.
+        function script:Invoke-DFTestSkipFn { [pscustomobject]@{ DFSkipped = 'scripty updates itself' } }
+        try {
+            $result = Invoke-DFManagerCommand -Operation update -Manager ([pscustomobject]@{ name = 'm' }) -Function 'Invoke-DFTestSkipFn'
+            $result.ExitCode | Should -Be -1
+            $result.Output | Should -Be 'scripty updates itself'
+        } finally { Remove-Item function:Invoke-DFTestSkipFn -ErrorAction Ignore }
+    }
     It 'loads the manager''s manage file for a function it doesn''t define yet' {
         $dir = Join-Path $TestDrive "mgrfn-$([guid]::NewGuid().ToString('N').Substring(0,6))"
         New-Item -ItemType Directory $dir | Out-Null

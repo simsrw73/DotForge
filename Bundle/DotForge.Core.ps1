@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 276b45f57442aef3e6e7f3872c6ff2c1076a7afa5e178feeccf4b3da968feecd
+# sources-sha256: 57c204a62fdd8e6a2f31ecc174cb4435d14ee245f76282d653c792501b199e87
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2456,6 +2456,7 @@ function Get-DFPackagesSchemaError ([PSCustomObject]$Tool) {
             $ok = ($v -is [string]) -or ($v -is [pscustomobject] -and (Get-DFSchemaProperty $v 'id') -is [string] -and (Get-DFSchemaProperty $v 'id') -and
                   ($null -eq $feed -or ((Get-DFSchemaProperty $feed 'name') -and (Get-DFSchemaProperty $feed 'url'))))
             if (-not $ok) { "packages.$($p.Name) must be an id, or { id, feed: { name, url } }" }
+            if ($v -is [pscustomobject]) { Get-DFPackageInstallFieldError -Package $v -Path "packages.$($p.Name)" }
         }
     }
     if ($Tool.PSObject.Properties['scoopBucket']) {
@@ -2504,6 +2505,22 @@ function Get-DFRolesSchemaError ([PSCustomObject]$Tool) {
                 }
             }
         }
+    }
+}
+
+function Get-DFPackageInstallFieldError ([pscustomobject]$Package, [string]$Path) {
+    <#
+    .SYNOPSIS
+        Schema errors in a package object's install fields (the script source's): installed and remove are path templates rooted at ${HOME} or an XDG folder, never climbing out with '..'; update is an argv or "self".
+    #>
+    $rooted = { param($t) $t -is [string] -and $t -match '^\$\{(HOME|XDG_[A-Z]+_HOME)\}/' -and $t -notmatch '(^|[\\/])\.\.([\\/]|$)' }
+    $installed = $Package.PSObject.Properties['installed']?.Value
+    if ($null -ne $installed -and -not (& $rooted $installed)) { "$Path.installed must be a path under `${HOME} or an `${XDG_*} folder" }
+    $remove = $Package.PSObject.Properties['remove']?.Value
+    if ($null -ne $remove -and @($remove | Where-Object { -not (& $rooted $_) }).Count) { "$Path.remove must list paths under `${HOME} or an `${XDG_*} folder, without .." }
+    $update = $Package.PSObject.Properties['update']?.Value
+    if ($null -ne $update -and $update -ne 'self' -and ($update -isnot [array] -or @($update | Where-Object { $_ -isnot [string] }).Count)) {
+        "$Path.update must be a command (a list of strings) or `"self`""
     }
 }
 
@@ -4618,6 +4635,22 @@ function Add-DFToolNote {
     if (-not $script:DFToolNotes[$Tool].Contains($Note)) { $script:DFToolNotes[$Tool].Add($Note) }
 }
 
+function Remove-DFToolNote {
+    <#
+    .SYNOPSIS
+        Forgets a tool's status notes that match a wildcard pattern (a problem that's since been fixed).
+    .PARAMETER Tool
+        The tool name.
+    .PARAMETER Like
+        A -like pattern.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Tool, [Parameter(Mandatory)][string]$Like)
+    if ($script:DFToolNotes.ContainsKey($Tool)) { $null = $script:DFToolNotes[$Tool].RemoveAll({ param($note) $note -like $Like }) }
+}
+
 function Get-DFToolNote {
     <#
     .SYNOPSIS
@@ -6454,7 +6487,8 @@ function Invoke-DFManagerCommand {
     .PARAMETER Argv
         The command line, already expanded.
     .PARAMETER Function
-        A PowerShell command to call instead of an argv.
+        A PowerShell command to call instead of an argv. One that outputs
+        { DFSkipped = <why> } is reported as skipped (ExitCode -1), not done.
     .PARAMETER Arguments
         Parameters for -Function.
     .PARAMETER Elevation
@@ -6489,8 +6523,11 @@ function Invoke-DFManagerCommand {
             # A manager's own functions live in its Tools/<name>.manage.ps1, loaded when first needed.
             if (-not (Get-Command $Function -ErrorAction Ignore)) { Import-DFManagerOps -Manager $Manager }
             try {
-                $out = & $Function @Arguments -ErrorAction Stop 2>&1 | Out-String
-                return [pscustomobject]@{ ExitCode = 0; Output = $out }
+                $raw = @(& $Function @Arguments -ErrorAction Stop 2>&1)
+                # A function that can't do it (a tool that updates itself) answers { DFSkipped = <why> }: Skipped, not done.
+                $skip = $raw | Where-Object { $_ -is [pscustomobject] -and $_.PSObject.Properties['DFSkipped'] } | Select-Object -First 1
+                if ($skip) { return [pscustomobject]@{ ExitCode = -1; Output = [string]$skip.DFSkipped } }
+                return [pscustomobject]@{ ExitCode = 0; Output = ($raw | Out-String) }
             } catch {
                 return [pscustomobject]@{ ExitCode = 1; Output = $_.Exception.Message }
             }
@@ -8819,7 +8856,9 @@ function Register-DFToolAliases {
         built-in alias first (Alias outranks Function in command resolution,
         so a built-in like `cd` would otherwise shadow the wrapper). An alias
         declared ifFree is skipped, with a status note, when a program of that
-        name is on PATH (a cc alias must not hide a C compiler). Which names
+        name is on PATH (a cc alias must not hide a C compiler), or when you
+        defined a function or alias of that name yourself (one DotForge
+        defined earlier doesn't count). Which names
         are taken is cached until PATH changes, so a shell start doesn't
         search PATH for them.
     .PARAMETER Tool
@@ -8840,6 +8879,10 @@ function Register-DFToolAliases {
     )
 
     if (-not $Aliases) { return }
+    # The names DotForge defined this session, so re-registering never mistakes them for yours.
+    if ($script:DFToolAliasesMade -isnot [System.Collections.Generic.HashSet[string]]) {
+        $script:DFToolAliasesMade = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
 
     $ifFree = @($Aliases.PSObject.Properties | Where-Object { $_.Value.PSObject.Properties['ifFree']?.Value } | ForEach-Object Name)
     $taken = @()
@@ -8858,11 +8901,18 @@ function Register-DFToolAliases {
         $aliasArgs = $_.Value.args
 
         if (-not $aliasCmd) { return }
+        $yours = -not $script:DFToolAliasesMade.Contains($aliasName) -and
+            ((Get-Alias -Name $aliasName -Scope Global -ErrorAction Ignore) -or (Test-Path "function:global:$aliasName"))
+        if ($_.Value.PSObject.Properties['ifFree']?.Value -and $yours) {
+            Add-DFToolNote -Tool $Tool.name -Note "$aliasName isn't defined: you already have a $aliasName"
+            return
+        }
         if ($aliasName -in $taken) {
             Add-DFToolNote -Tool $Tool.name -Note "$aliasName isn't defined: a $aliasName program already exists"
             return
         }
 
+        $null = $script:DFToolAliasesMade.Add($aliasName)
         if ($aliasArgs.Count -eq 0) {
             Set-Alias -Name $aliasName -Value $aliasCmd -Scope Global -Force
         } else {

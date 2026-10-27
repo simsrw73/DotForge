@@ -26,6 +26,15 @@ Describe 'Tools/claude-code.json' {
         @($script:Json.xdg.native.'${XDG_CONFIG_HOME}/claude/.claude.json') | Should -Be @('${HOME}/.claude.json')
         @($script:Json.desktop) | Should -Be @('CLAUDE_CONFIG_DIR')
     }
+    It 'maps the theme families the claude-themes marketplace has' {
+        # M8
+        $script:Json.theme.map.dracula | Should -Be 'custom:dracula:dracula'
+        $script:Json.theme.map.nord | Should -Be 'custom:nord:nord'
+        $script:Json.theme.map.'gruvbox-dark' | Should -Be 'custom:gruvbox:gruvbox-dark'
+        $script:Json.theme.map.'tokyo-night' | Should -Be 'custom:tokyo-night:tokyo-night'
+        $script:Json.theme.map.'solarized-dark' | Should -Be 'custom:solarized:solarized'
+        $script:Json.theme.map.'onehalf-dark' | Should -Be 'custom:one-dark:onehalf-dark'
+    }
     It 'adds cc, ccc and ccr, each only where the name is free' {
         $script:Json.aliases.cc.command | Should -Be 'claude'
         @($script:Json.aliases.ccc.args) | Should -Be @('--continue')
@@ -142,6 +151,37 @@ Describe 'Set-DFClaudeTheme' {
         Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
         Get-Content $script:Settings -Raw | Should -Match '// mine'
         (Get-DFToolNote -Tool 'claude-code') -join "`n" | Should -Match 'settings.json'
+    }
+    It 'leaves a settings.json with comments or trailing commas alone' {
+        # M2: PowerShell's JSON reader accepts them, and a rewrite would drop them.
+        '{ "theme": "dark", // mine' + "`n" + '"x": 1, }' | Set-Content $script:Settings
+        Set-DFClaudeTheme -Name 'light'
+        Get-Content $script:Settings -Raw | Should -Match '// mine'
+    }
+    It 'keeps key order and date-like strings when it rewrites settings.json' {
+        '{ "zeta": 1, "when": "2026-10-26T19:00:39.143Z", "alpha": { "b": 2, "a": 1 } }' | Set-Content $script:Settings
+        Set-DFClaudeTheme -Name 'light'
+        $text = Get-Content $script:Settings -Raw
+        $text | Should -Match '"when": "2026-10-26T19:00:39.143Z"'
+        $text.IndexOf('"zeta"') | Should -BeLessThan $text.IndexOf('"alpha"')
+        $text.IndexOf('"b"') | Should -BeLessThan $text.IndexOf('"a"')
+    }
+    It 'writes through a settings.json that is a link, keeping the link' {
+        $real = Join-Path $TestDrive "real-settings-$([guid]::NewGuid().ToString('N').Substring(0,6)).json"
+        '{ "theme": "dark" }' | Set-Content $real
+        if (-not (Test-DFDeveloperMode)) { Set-ItResult -Skipped -Because 'file symlinks need Developer Mode'; return }
+        $null = New-Item -ItemType SymbolicLink -Path $script:Settings -Target $real
+        Set-DFClaudeTheme -Name 'light'
+        (Get-Item $script:Settings).LinkTarget | Should -Not -BeNullOrEmpty
+        (Get-Content $real -Raw | ConvertFrom-Json).theme | Should -Be 'light'
+    }
+    It 'forgets an earlier failure note once the theme is set' {
+        # M9
+        $script:Fail = 'plugin install'
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
+        $script:Fail = ''
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
+        @(Get-DFToolNote -Tool 'claude-code') | Where-Object { $_ -match "isn't set" } | Should -BeNullOrEmpty
     }
     It 'does nothing, not even run claude, when the theme is already set' {
         '{ "theme": "custom:catppuccin:catppuccin-mocha" }' | Set-Content $script:Settings

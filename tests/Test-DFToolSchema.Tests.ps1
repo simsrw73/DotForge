@@ -423,3 +423,23 @@ Describe 'Test-DFToolSchema role flag groups' {
         (Test-DFToolSchema -Tool $tool).Errors -join ';' | Should -Match 'roles.pager.flags'
     }
 }
+
+# M6: a package object's install fields (the script source's) are checked for every record, user records too.
+Describe 'packages object install fields (schema)' {
+    BeforeAll {
+        function script:Get-PackageErrs($Entry) {
+            (Test-DFToolSchema -Tool ([pscustomobject]@{ name = 't'; executable = 't.exe'; packages = [pscustomobject]@{ script = $Entry } })).Errors
+        }
+    }
+    It 'accepts installed and remove paths rooted at ${HOME} or an XDG folder, and update argv or self' {
+        Get-PackageErrs ([pscustomobject]@{ id = 'https://x.invalid/i.ps1'; installed = '${HOME}/.local/bin/t.exe'; remove = @('${XDG_DATA_HOME}/t'); update = @('t', 'update') }) | Should -BeNullOrEmpty
+        Get-PackageErrs ([pscustomobject]@{ id = 'https://x.invalid/i.ps1'; installed = '${HOME}/t.exe'; update = 'self' }) | Should -BeNullOrEmpty
+    }
+    It 'rejects a path that isn''t rooted there, or climbs out with ..' {
+        Get-PackageErrs ([pscustomobject]@{ id = 'https://x.invalid/i.ps1'; installed = 'C:/t.exe' }) | Should -Match 'installed'
+        Get-PackageErrs ([pscustomobject]@{ id = 'https://x.invalid/i.ps1'; installed = '${HOME}/t.exe'; remove = @('${HOME}/../x') }) | Should -Match 'remove'
+    }
+    It 'rejects an update that is neither an argv nor self' {
+        Get-PackageErrs ([pscustomobject]@{ id = 'https://x.invalid/i.ps1'; installed = '${HOME}/t.exe'; update = 'later' }) | Should -Match 'update'
+    }
+}

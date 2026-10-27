@@ -133,7 +133,7 @@ mdcat: dracula
 | duf | `DufTheme` | `dark`, `light`, `ansi` (catppuccin-latte maps to `light`) | warning; `dark` |
 | procs | `ProcsTheme` | `auto`, `dark`, `light` (catppuccin-latte maps to `light`) | warning; `dark` |
 | oh-my-posh | `OhMyPoshTheme` | the four catppuccin flavors; used when you have no config of your own (`POSH_THEME` or `$XDG_CONFIG_HOME\oh-my-posh\*.omp.*`) | warning; `catppuccin-mocha` |
-| claude-code | `ClaudeTheme` | the four catppuccin flavors (through the claude-themes plugin, which DotForge adds first), any `custom:<plugin>:<theme>`, or one of Claude Code's own (`dark`, `light`, …) | status note; Claude's theme unchanged |
+| claude-code | `ClaudeTheme` | the catppuccin flavors and the other claude-themes families (dracula, nord, gruvbox-dark, tokyo-night, …; DotForge adds the plugin first), any `custom:<plugin>:<theme>`, or one of Claude Code's own (`dark`, `light`, …) | status note; Claude's theme unchanged |
 | starship | `StarshipTheme` | the four catppuccin flavors; swaps the `palette` line in a copy of your `starship.toml` | warning; `catppuccin-mocha` |
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim\themes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |

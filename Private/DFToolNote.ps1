@@ -19,6 +19,22 @@ function Add-DFToolNote {
     if (-not $script:DFToolNotes[$Tool].Contains($Note)) { $script:DFToolNotes[$Tool].Add($Note) }
 }
 
+function Remove-DFToolNote {
+    <#
+    .SYNOPSIS
+        Forgets a tool's status notes that match a wildcard pattern (a problem that's since been fixed).
+    .PARAMETER Tool
+        The tool name.
+    .PARAMETER Like
+        A -like pattern.
+    .OUTPUTS
+        None.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Tool, [Parameter(Mandatory)][string]$Like)
+    if ($script:DFToolNotes.ContainsKey($Tool)) { $null = $script:DFToolNotes[$Tool].RemoveAll({ param($note) $note -like $Like }) }
+}
+
 function Get-DFToolNote {
     <#
     .SYNOPSIS

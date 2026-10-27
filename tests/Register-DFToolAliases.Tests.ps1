@@ -106,6 +106,23 @@ Describe 'Register-DFToolAliases ifFree' {
             Should -Invoke Test-DFCommandExists -Times 2 -Exactly
         } finally { $Env:Path = $saved }
     }
+    It 'skips an ifFree alias when you defined a function or alias of that name yourself' {
+        # M7
+        Mock Test-DFCommandExists { $false }
+        function global:dfxfree { 'mine' }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date", "ifFree": true } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        dfxfree | Should -Be 'mine'
+        Get-DFToolNote -Tool t | Should -Match 'dfxfree'
+    }
+    It 're-registering doesn''t skip an ifFree alias DotForge itself defined' {
+        Mock Test-DFCommandExists { $false }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date", "ifFree": true } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        Register-DFToolAliases -Tool $tool
+        (Get-Alias dfxfree -Scope Global).Definition | Should -Be 'Get-Date'
+        @(Get-DFToolNote -Tool t) | Where-Object { $_ -match 'dfxfree' } | Should -BeNullOrEmpty
+    }
     It 'normalizes ifFree, false when absent' {
         $record = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe", "aliases": { "a": { "command": "x", "ifFree": true }, "b": { "command": "y" } } }' | ConvertFrom-Json)
         $record.aliases.a.ifFree | Should -BeTrue
