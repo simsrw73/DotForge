@@ -44,7 +44,9 @@ function script:Find-DFGitBash {
     .DESCRIPTION
         git's exec path is <git>\<mingw64|ucrt64>\libexec\git-core, so bash is
         <git>\bin\bash.exe. A scoop install's versioned <git> folder changes on
-        every update, so its stable sibling current\ is used when it has bash.
+        every update, so its stable sibling current\ is used, but only when it
+        is a link to that same folder (what scoop makes): a plain folder named
+        current is never trusted.
     .OUTPUTS
         System.String.
     #>
@@ -54,8 +56,12 @@ function script:Find-DFGitBash {
     $execPath = Invoke-DFGitExecPath
     if (-not $execPath) { return $null }
     $git = Split-Path (Split-Path (Split-Path $execPath))
-    $current = Join-Path (Split-Path $git) 'current' 'bin' 'bash.exe'
-    if (Test-Path -LiteralPath $current -PathType Leaf) { return ConvertTo-DFPath $current }
+    $currentDir = Join-Path (Split-Path $git) 'current'
+    $link = (Get-Item -LiteralPath $currentDir -Force -ErrorAction Ignore)?.LinkTarget
+    $current = Join-Path $currentDir 'bin' 'bash.exe'
+    if ($link -and (ConvertTo-DFPath $link) -eq (ConvertTo-DFPath $git) -and (Test-Path -LiteralPath $current -PathType Leaf)) {
+        return ConvertTo-DFPath $current
+    }
     $bash = Join-Path $git 'bin' 'bash.exe'
     if (Test-Path -LiteralPath $bash -PathType Leaf) { ConvertTo-DFPath $bash }
 }
@@ -125,6 +131,9 @@ function script:Set-DFClaudeTheme {
         to these ids; Set-DFToolTheme calls this.
     .PARAMETER Name
         custom:<plugin>:<theme> (a claude-themes theme), or one of Claude Code's own themes.
+    .PARAMETER Background
+        A shell load (the companion): after a failed step, try again at most once
+        a day, so an offline machine doesn't pay for claude on every start.
     .EXAMPLE
         Set-DFClaudeTheme -Name custom:catppuccin:catppuccin-mocha
 
@@ -133,7 +142,7 @@ function script:Set-DFClaudeTheme {
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Name)
+    param([Parameter(Mandatory)][string]$Name, [switch]$Background)
     $builtin = 'dark', 'light', 'dark-daltonized', 'light-daltonized', 'dark-ansi', 'light-ansi'
     $plugin = if ($Name -match '^custom:([\w.-]+):[\w.-]+$') { $Matches[1] }
     if (-not $plugin -and $Name -notin $builtin) {
@@ -144,8 +153,21 @@ function script:Set-DFClaudeTheme {
     if ($null -eq $settings) { return }
     if ($settings['theme'] -ceq $Name) { return }
     if ($plugin) {
+        $retry = Join-Path (Get-DFXdgPath State) 'dotforge' 'claude-theme-failed.txt'
+        if ($Background -and (Test-Path -LiteralPath $retry) -and (Get-Item -LiteralPath $retry).LastWriteTimeUtc -gt [DateTime]::UtcNow.AddDays(-1)) {
+            Add-DFToolNote -Tool 'claude-code' -Note "Claude Code's theme isn't set to $Name yet: the last try failed; DotForge tries again tomorrow, or now with Set-DFToolTheme"
+            return
+        }
         $why = Install-DFClaudeThemePlugin -Plugin $plugin
-        if ($why) { Add-DFToolNote -Tool 'claude-code' -Note "Claude Code's theme isn't set to $Name yet: $why"; return }
+        if ($why) {
+            Write-DFFileAtomic -Path $retry -Value $why
+            Add-DFToolNote -Tool 'claude-code' -Note "Claude Code's theme isn't set to $Name yet: $why"
+            return
+        }
+        Remove-Item -LiteralPath $retry -ErrorAction Ignore
+        # Read again: claude plugin just wrote extraKnownMarketplaces and enabledPlugins to this file.
+        $settings = Read-DFClaudeSettings
+        if ($null -eq $settings) { return }
     }
     $settings['theme'] = $Name
     Save-DFClaudeSettings -Settings $settings
@@ -169,10 +191,16 @@ function script:Install-DFClaudeThemePlugin {
     }
     try {
         $known = @((& $run 'plugin', 'marketplace', 'list', '--json') | ConvertFrom-Json) | ForEach-Object { $_.name }
-        if ('claude-themes' -notin $known) { $null = & $run 'plugin', 'marketplace', 'add', 'matcra587/claude-themes', '--scope', 'user' }
+        if ('claude-themes' -notin $known) {
+            $null = & $run 'plugin', 'marketplace', 'add', 'matcra587/claude-themes', '--scope', 'user'
+            Add-DFToolNote -Tool 'claude-code' -Note 'added the claude-themes plugin marketplace (github.com/matcra587/claude-themes) to Claude Code'
+        }
         $id = "$Plugin@claude-themes"
         $installed = @((& $run 'plugin', 'list', '--json') | ConvertFrom-Json) | Where-Object { $_.id -eq $id } | Select-Object -First 1
-        if (-not $installed) { $null = & $run 'plugin', 'install', $id, '--scope', 'user' }
+        if (-not $installed) {
+            $null = & $run 'plugin', 'install', $id, '--scope', 'user'
+            Add-DFToolNote -Tool 'claude-code' -Note "installed the $id theme plugin (from github.com/matcra587/claude-themes) in Claude Code"
+        }
         elseif (-not $installed.enabled) { $null = & $run 'plugin', 'enable', $id, '--scope', 'user' }
     } catch {
         return $_.Exception.Message

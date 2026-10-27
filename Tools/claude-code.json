@@ -8,7 +8,7 @@
       "id": "https://claude.ai/install.ps1",
       "installed": "${HOME}/.local/bin/claude.exe",
       "update": ["claude", "update"],
-      "remove": ["${HOME}/.local/bin/claude.exe", "${XDG_DATA_HOME}/claude"]
+      "remove": ["${HOME}/.local/bin/claude.exe", "${HOME}/.local/share/claude"]
     },
     "winget": "Anthropic.ClaudeCode",
     "npm": "@anthropic-ai/claude-code"

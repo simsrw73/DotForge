@@ -62,8 +62,13 @@ Describe 'Register-DFToolAliases' {
 
 # ifFree: an alias that must not hide a program of the same name (cc over a C compiler).
 Describe 'Register-DFToolAliases ifFree' {
-    BeforeEach { Reset-DFTestSession }
+    BeforeEach {
+        Reset-DFTestSession; Set-DFTestXdg
+        # TestDrive lasts for the whole Describe: start each test with no cached lookups.
+        Remove-Item (Join-Path $Env:XDG_CACHE_HOME 'dotforge') -Recurse -Force -ErrorAction Ignore
+    }
     AfterEach {
+        Restore-DFTestXdg
         Remove-Alias dfxfree -Force -Scope Global -ErrorAction Ignore
         Remove-DFTestGlobal -Function 'dfxfree'
     }
@@ -87,6 +92,19 @@ Describe 'Register-DFToolAliases ifFree' {
         $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date" } } }' | ConvertFrom-Json
         Register-DFToolAliases -Tool $tool
         (Get-Alias dfxfree -Scope Global).Definition | Should -Be 'Get-Date'
+    }
+    It 'looks the names up once until PATH changes (a shell start doesn''t pay for it)' {
+        Mock Test-DFCommandExists { $false }
+        $tool = '{ "name": "t", "aliases": { "dfxfree": { "command": "Get-Date", "ifFree": true } } }' | ConvertFrom-Json
+        Register-DFToolAliases -Tool $tool
+        Register-DFToolAliases -Tool $tool
+        Should -Invoke Test-DFCommandExists -Times 1 -Exactly
+        $saved = $Env:Path
+        try {
+            $Env:Path = "$Env:Path;C:\dfx-new-folder"
+            Register-DFToolAliases -Tool $tool
+            Should -Invoke Test-DFCommandExists -Times 2 -Exactly
+        } finally { $Env:Path = $saved }
     }
     It 'normalizes ifFree, false when absent' {
         $record = ConvertTo-DFToolRecord ('{ "name": "t", "executable": "t.exe", "aliases": { "a": { "command": "x", "ifFree": true }, "b": { "command": "y" } } }' | ConvertFrom-Json)

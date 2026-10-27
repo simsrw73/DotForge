@@ -896,7 +896,7 @@
       }
     },
     "claude-code": {
-      "sha256": "d6019f5bc7a0de0a3a6a45207c15442a24796c424bdffa89664392b7fd9f3020",
+      "sha256": "a00a3fcf9d06dde42a37022eec376053e9ddcdc523283c919eab9c42a8e6e5cf",
       "record": {
         "name": "claude-code",
         "executable": "claude.exe",
@@ -917,7 +917,7 @@
             ],
             "remove": [
               "${HOME}/.local/bin/claude.exe",
-              "${XDG_DATA_HOME}/claude"
+              "${HOME}/.local/share/claude"
             ]
           },
           "winget": "Anthropic.ClaudeCode",

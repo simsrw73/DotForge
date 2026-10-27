@@ -9,11 +9,13 @@ BeforeAll {
 # PowerShell preferred, theme from the claude-themes plugin, cc/ccc/ccr
 # (docs/superpowers/specs/2026-10-27-claude-code-design.md).
 Describe 'Tools/claude-code.json' {
+    BeforeEach { Set-DFTestXdg }
+    AfterEach { Restore-DFTestXdg }
     It 'installs with Claude''s own script first, then winget or npm' {
         $script:Json.packages.script.id | Should -Be 'https://claude.ai/install.ps1'
         $script:Json.packages.script.installed | Should -Be '${HOME}/.local/bin/claude.exe'
         @($script:Json.packages.script.update) | Should -Be @('claude', 'update')
-        @($script:Json.packages.script.remove) | Should -Be @('${HOME}/.local/bin/claude.exe', '${XDG_DATA_HOME}/claude')
+        @($script:Json.packages.script.remove) | Should -Be @('${HOME}/.local/bin/claude.exe', '${HOME}/.local/share/claude')
         $script:Json.packages.winget | Should -Be 'Anthropic.ClaudeCode'
         $script:Json.packages.npm | Should -Be '@anthropic-ai/claude-code'
         @($script:Json.install.prefer) | Should -Be @('script')
@@ -86,6 +88,33 @@ Describe 'Set-DFClaudeTheme' {
         $order[1] | Should -Match '^plugin install catppuccin@claude-themes --scope user'
         (Get-Content $script:Settings -Raw | ConvertFrom-Json).theme | Should -Be 'custom:catppuccin:catppuccin-mocha'
     }
+    It 'keeps what claude plugin wrote to settings.json while it sets the theme' {
+        Mock Invoke-DFClaudeCli {
+            $line = $Arguments -join ' '
+            $script:Calls.Add($line)
+            if ($line -like 'plugin install*') { '{ "enabledPlugins": { "catppuccin@claude-themes": true } }' | Set-Content $script:Settings }
+            $out = switch -Wildcard ($line) { 'plugin marketplace list*' { '[]' } 'plugin list*' { '[]' } default { '{}' } }
+            [pscustomobject]@{ ExitCode = 0; Output = $out }
+        }
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
+        $settings = Get-Content $script:Settings -Raw | ConvertFrom-Json
+        $settings.enabledPlugins.'catppuccin@claude-themes' | Should -BeTrue
+        $settings.theme | Should -Be 'custom:catppuccin:catppuccin-mocha'
+    }
+    It 'says which third-party plugin it installed, and from where' {
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
+        $notes = (Get-DFToolNote -Tool 'claude-code') -join "`n"
+        $notes | Should -Match 'catppuccin@claude-themes'
+        $notes | Should -Match 'github.com/matcra587/claude-themes'
+    }
+    It 'retries a failing step from a shell load at most once a day; an explicit switch always tries' {
+        $script:Fail = 'plugin install'
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha' -Background
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha' -Background
+        @($script:Calls | Where-Object { $_ -like 'plugin install*' }).Count | Should -Be 1
+        Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
+        @($script:Calls | Where-Object { $_ -like 'plugin install*' }).Count | Should -Be 2
+    }
     It 'skips the marketplace and the install when both are there' {
         $script:Marketplaces = '[{ "name": "claude-themes" }]'
         $script:Plugins = '[{ "id": "catppuccin@claude-themes", "enabled": true }]'
@@ -104,7 +133,7 @@ Describe 'Set-DFClaudeTheme' {
         $script:Fail = 'plugin install'
         { Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha' } | Should -Not -Throw
         (Get-Content $script:Settings -Raw | ConvertFrom-Json).theme | Should -Be 'dark'
-        Get-DFToolNote -Tool 'claude-code' | Should -Match 'network unreachable'
+        (Get-DFToolNote -Tool 'claude-code') -join "`n" | Should -Match 'network unreachable'
     }
     It 'leaves a settings.json that isn''t valid JSON alone' {
         '{ "theme": "dark", // mine' | Set-Content $script:Settings
@@ -112,7 +141,7 @@ Describe 'Set-DFClaudeTheme' {
         $script:Plugins = '[{ "id": "catppuccin@claude-themes", "enabled": true }]'
         Set-DFClaudeTheme -Name 'custom:catppuccin:catppuccin-mocha'
         Get-Content $script:Settings -Raw | Should -Match '// mine'
-        Get-DFToolNote -Tool 'claude-code' | Should -Match 'settings.json'
+        (Get-DFToolNote -Tool 'claude-code') -join "`n" | Should -Match 'settings.json'
     }
     It 'does nothing, not even run claude, when the theme is already set' {
         '{ "theme": "custom:catppuccin:catppuccin-mocha" }' | Set-Content $script:Settings
@@ -124,17 +153,26 @@ Describe 'Set-DFClaudeTheme' {
         (Get-Content $script:Settings -Raw | ConvertFrom-Json).theme | Should -Be 'light'
         Set-DFClaudeTheme -Name 'nord-ish'
         (Get-Content $script:Settings -Raw | ConvertFrom-Json).theme | Should -Be 'light'
-        Get-DFToolNote -Tool 'claude-code' | Should -Match 'nord-ish'
+        (Get-DFToolNote -Tool 'claude-code') -join "`n" | Should -Match 'nord-ish'
     }
 }
 
 Describe 'Find-DFGitBash' {
     BeforeAll { . "$PSScriptRoot/../Tools/claude-code/common.ps1" }
-    It 'prefers scoop''s current folder over the versioned one' {
+    It 'prefers scoop''s current link to the same git over the versioned folder' {
         $apps = Join-Path $TestDrive 'apps' 'git'
-        New-Item -ItemType File -Force (Join-Path $apps '2.56.0.2' 'bin' 'bash.exe'), (Join-Path $apps 'current' 'bin' 'bash.exe') | Out-Null
-        Mock Invoke-DFGitExecPath { Join-Path $apps '2.56.0.2' 'ucrt64' 'libexec' 'git-core' }
-        Find-DFGitBash | Should -Be (ConvertTo-DFPath (Join-Path $apps 'current' 'bin' 'bash.exe'))
+        New-Item -ItemType File -Force (Join-Path $apps '2.56.0.2' 'bin' 'bash.exe') | Out-Null
+        $null = New-Item -ItemType Junction -Path (Join-Path $apps 'current') -Target (Join-Path $apps '2.56.0.2')
+        try {
+            Mock Invoke-DFGitExecPath { Join-Path $apps '2.56.0.2' 'ucrt64' 'libexec' 'git-core' }
+            Find-DFGitBash | Should -Be (ConvertTo-DFPath (Join-Path $apps 'current' 'bin' 'bash.exe'))
+        } finally { [IO.Directory]::Delete((Join-Path $apps 'current')) }
+    }
+    It 'never trusts a current folder that isn''t a link to git''s own folder' {
+        $root = Join-Path $TestDrive 'planted'
+        New-Item -ItemType File -Force (Join-Path $root '2.56.0.2' 'bin' 'bash.exe'), (Join-Path $root 'current' 'bin' 'bash.exe') | Out-Null
+        Mock Invoke-DFGitExecPath { Join-Path $root '2.56.0.2' 'ucrt64' 'libexec' 'git-core' }
+        Find-DFGitBash | Should -Be (ConvertTo-DFPath (Join-Path $root '2.56.0.2' 'bin' 'bash.exe'))
     }
     It 'uses the git folder itself without a current link' {
         $git = Join-Path $TestDrive 'Git'
@@ -163,9 +201,9 @@ Describe 'claude-code companion' {
         Restore-DFTestXdg
     }
     It 'applies the session theme when the tool loads' {
-        function script:Set-DFClaudeTheme { param($Name) }
+        function script:Set-DFClaudeTheme { param($Name, [switch]$Background) }
         Register-DFTool -Name 'claude-code' -ToolsPath $script:RealTools 3>$null 6>$null
-        Should -Invoke Set-DFClaudeTheme -Times 1 -Exactly -ParameterFilter { $Name -eq 'custom:catppuccin:catppuccin-mocha' }
+        Should -Invoke Set-DFClaudeTheme -Times 1 -Exactly -ParameterFilter { $Name -eq 'custom:catppuccin:catppuccin-mocha' -and $Background }
     }
 }
 
@@ -210,12 +248,14 @@ Describe 'claude-code setup' {
         & $script:RunSetup
         (Get-Content $script:Settings -Raw | ConvertFrom-Json).env.PSObject.Properties.Name | Should -Not -Contain 'CLAUDE_CODE_GIT_BASH_PATH'
     }
-    It 'leaves a settings.json that isn''t valid JSON alone, and still completes' {
+    It 'leaves a settings.json that isn''t valid JSON alone, says so, and tries again next load' {
         New-Item -ItemType Directory -Force $Env:CLAUDE_CONFIG_DIR | Out-Null
         '{ "defaultShell": "bash", // mine' | Set-Content $script:Settings
+        Mock Add-DFToolSetupNote { }
         & $script:RunSetup
         Get-Content $script:Settings -Raw | Should -Match '// mine'
-        Should -Invoke Complete-DFToolSetup -Times 1 -Exactly
+        Should -Invoke Add-DFToolSetupNote -Times 1 -Exactly -ParameterFilter { $Name -eq 'claude-code' -and $Text -match 'settings.json' }
+        Should -Invoke Complete-DFToolSetup -Times 0 -Exactly
     }
     It 'records nothing when it fails' {
         Mock Save-DFClaudeSettings { throw 'disk full' }

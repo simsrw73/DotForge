@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 4e1d49f67efd612f014877aa3803009c7337611214cb07de9b5eebbab75764bf
+# sources-sha256: 276b45f57442aef3e6e7f3872c6ff2c1076a7afa5e178feeccf4b3da968feecd
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -8819,7 +8819,9 @@ function Register-DFToolAliases {
         built-in alias first (Alias outranks Function in command resolution,
         so a built-in like `cd` would otherwise shadow the wrapper). An alias
         declared ifFree is skipped, with a status note, when a program of that
-        name is on PATH (a cc alias must not hide a C compiler).
+        name is on PATH (a cc alias must not hide a C compiler). Which names
+        are taken is cached until PATH changes, so a shell start doesn't
+        search PATH for them.
     .PARAMETER Tool
         The tool record declaring the aliases.
     .PARAMETER Aliases
@@ -8839,6 +8841,15 @@ function Register-DFToolAliases {
 
     if (-not $Aliases) { return }
 
+    $ifFree = @($Aliases.PSObject.Properties | Where-Object { $_.Value.PSObject.Properties['ifFree']?.Value } | ForEach-Object Name)
+    $taken = @()
+    if ($ifFree) {
+        $found = Get-DFFingerprintCache -Name "aliases-taken-$($Tool.name)" -Fingerprint "$($ifFree -join ',')|$Env:Path" -Generate {
+            'taken:' + (@($ifFree | Where-Object { Test-DFCommandExists -Name $_ }) -join ',')
+        }
+        $taken = @("$found" -replace '^taken:' -split ',' | Where-Object { $_ })
+    }
+
     $Aliases.PSObject.Properties | ForEach-Object {
         $aliasName = $_.Name
 
@@ -8847,7 +8858,7 @@ function Register-DFToolAliases {
         $aliasArgs = $_.Value.args
 
         if (-not $aliasCmd) { return }
-        if ($_.Value.PSObject.Properties['ifFree']?.Value -and (Test-DFCommandExists -Name $aliasName)) {
+        if ($aliasName -in $taken) {
             Add-DFToolNote -Tool $Tool.name -Note "$aliasName isn't defined: a $aliasName program already exists"
             return
         }

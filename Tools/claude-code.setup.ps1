@@ -3,11 +3,15 @@
 #   defaultShell = powershell                 (! commands run in PowerShell)
 #   env.CLAUDE_CODE_USE_POWERSHELL_TOOL = 1   (the PowerShell tool)
 #   env.CLAUDE_CODE_GIT_BASH_PATH             (Git Bash, for the Bash and Monitor tools, when git is installed)
-# A settings.json that isn't valid JSON is left alone (Read-DFClaudeSettings notes it). The theme
-# is the companion's (Tools/claude-code.ps1), which runs right after this.
+# A settings.json that isn't valid JSON is left alone, with a setup note, and setup isn't recorded,
+# so it runs again on the next load. The theme is the companion's (Tools/claude-code.ps1).
 . (Join-Path $PSScriptRoot 'claude-code' 'common.ps1')
 
 $_settings = Read-DFClaudeSettings
+if ($null -eq $_settings) {
+    Add-DFToolSetupNote -Name 'claude-code' -Text "$(Get-DFClaudeSettingsPath) isn't valid JSON, so DotForge didn't add its PowerShell and Git Bash settings; fix the file and open a new shell."
+    return
+}
 if ($null -ne $_settings) {
     $_changed = $false
     if (-not $_settings.Contains('defaultShell')) { $_settings['defaultShell'] = 'powershell'; $_changed = $true }

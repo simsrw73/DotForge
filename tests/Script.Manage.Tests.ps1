@@ -75,6 +75,12 @@ Describe 'script manager operations' {
         Test-Path $script:Home2 | Should -BeFalse
         Test-Path $keep | Should -BeTrue
     }
+    It 'removes without asking again for each path (Remove-DFTool already asked)' {
+        New-Item -ItemType File -Force $script:Program | Out-Null
+        $ConfirmPreference = 'High'
+        Remove-DFScriptPackage -Id $script:Url
+        Test-Path $script:Home2 | Should -BeFalse
+    }
     It 'refuses a path outside the home folder, deleting nothing' {
         New-Item -ItemType File -Force $script:Program | Out-Null
         $deep = '${XDG_DATA_HOME}' + ('/..' * 12) + '/dfx-outside'

@@ -5,4 +5,4 @@
 . (Join-Path $PSScriptRoot 'claude-code' 'common.ps1')
 
 $_theme = Get-DFToolTheme -Tool $DFCurrentTool
-if ($_theme -and $_theme.Native) { Set-DFClaudeTheme -Name $_theme.Native }
+if ($_theme -and $_theme.Native) { Set-DFClaudeTheme -Name $_theme.Native -Background }

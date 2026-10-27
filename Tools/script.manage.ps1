@@ -132,13 +132,15 @@ function Remove-DFScriptPackage {
         Removes script-installed tools by deleting exactly the paths their record declares, all inside the home folder.
     .DESCRIPTION
         Every path is checked before anything is deleted: one that resolves
-        outside $HOME refuses the whole removal.
+        outside $HOME refuses the whole removal. Remove-DFTool has already
+        asked, so this doesn't ask again (ConfirmImpact Medium); -WhatIf
+        still shows each path.
     .PARAMETER Id
         The installer URLs.
     .OUTPUTS
         System.String.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param([Parameter(Mandatory)][string[]]$Id)
     $root = (ConvertTo-DFPath $HOME) + [IO.Path]::DirectorySeparatorChar
     foreach ($url in $Id) {
