@@ -32,6 +32,7 @@
       "${XDG_CONFIG_HOME}/npm"
     ]
   },
+  "desktop": ["NPM_CONFIG_USERCONFIG", "NPM_CONFIG_CACHE"],
   "aliases": {
     "nls": {
       "command": "npm",

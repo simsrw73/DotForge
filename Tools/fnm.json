@@ -29,6 +29,7 @@
       "${XDG_DATA_HOME}/fnm"
     ]
   },
+  "desktop": ["FNM_DIR"],
   "aliases": {},
   "picker": null
 }

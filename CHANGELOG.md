@@ -6,6 +6,11 @@ All notable changes to DotForge are documented here.
 
 ### Changed
 
+- **fnm and npm name their desktop variables.** `Set-DFDesktopEnv fnm, npm` writes `FNM_DIR`,
+  `NPM_CONFIG_USERCONFIG` and `NPM_CONFIG_CACHE` to the Windows user environment, so a desktop app
+  that runs `npx` uses the same npm config and cache as your shell. The tools guide explains the
+  user `PATH` entry such apps also need (`fnm\aliases\default`).
+
 - **Settings move from variables to config files you can edit.** fzf's layout is in a seeded
   `$XDG_CONFIG_HOME\fzf\fzfrc` (`FZF_DEFAULT_OPTS_FILE`); `FZF_DEFAULT_OPTS` keeps only the theme
   colors, and a theme switch now replaces them instead of adding another set. less's options are in

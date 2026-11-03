@@ -1846,7 +1846,7 @@
       }
     },
     "fnm": {
-      "sha256": "3971cd928729286a7c458947e961975f4091c19e5a7c78a53f7e1c4e457739fc",
+      "sha256": "3a23beb18e0cfe146a043138c9c7c95d9c73d78b00a15263cbe3b88a1423f049",
       "record": {
         "name": "fnm",
         "executable": "fnm.exe",
@@ -1887,7 +1887,9 @@
           }
         },
         "env": null,
-        "desktop": [],
+        "desktop": [
+          "FNM_DIR"
+        ],
         "aliases": {},
         "picker": null,
         "after": [
@@ -3954,7 +3956,7 @@
       }
     },
     "npm": {
-      "sha256": "d3133f742c082bf2ba09159bd83222687153ce2e8b322da161415c07b5bc6858",
+      "sha256": "3257eb6a75891273b32643677566ba0c2481e886429216c5de5b3bab5be97235",
       "record": {
         "name": "npm",
         "executable": "npm.cmd",
@@ -4004,7 +4006,10 @@
           }
         },
         "env": null,
-        "desktop": [],
+        "desktop": [
+          "NPM_CONFIG_USERCONFIG",
+          "NPM_CONFIG_CACHE"
+        ],
         "aliases": {
           "nls": {
             "command": "npm",
