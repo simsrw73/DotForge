@@ -37,7 +37,7 @@ function Remove-DFDesktopEnv {
         Write-Error "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so nothing is removed. Fix or delete that file first."
         return
     }
-    $mine = @($state.Keys | Where-Object { -not $Name -or $state[$_].tool -in $Name } | Sort-Object)
+    $mine = @($state.Vars.Keys | Where-Object { -not $Name -or $state.Vars[$_].tool -in $Name } | Sort-Object)
     if (-not $mine) { Write-Host 'DotForge set no desktop variables for these tools.'; return }
     if (-not (Test-DFDesktopEnvShouldProcess -Cmdlet $PSCmdlet -Target 'the Windows user environment' -Action "Remove $($mine -join ', ')")) { return }
     Remove-DFDesktopEnvSet -Tool $Name -State $state

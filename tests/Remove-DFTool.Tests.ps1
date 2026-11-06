@@ -57,15 +57,15 @@ Describe 'Remove-DFTool' {
         Mock Send-DFEnvironmentChange { }
         try {
             Set-DFDesktopEnvValue -Name GLOW_X -Value 'C:\glow'
-            Save-DFDesktopEnvState -State @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } }
+            Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } }; Path = @{} })
             $null = Remove-DFTool -Name glow -Confirm:$false
             Get-DFDesktopEnvValue -Name GLOW_X | Should -BeNullOrEmpty
-            (Read-DFDesktopEnvState).ContainsKey('GLOW_X') | Should -BeFalse
+            (Read-DFDesktopEnvState).Vars.ContainsKey('GLOW_X') | Should -BeFalse
             Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
         } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
     }
     It 'finishes the removal when removing its desktop variables fails, even under Stop' {
-        Mock Read-DFDesktopEnvState { @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } } }
+        Mock Read-DFDesktopEnvState { [pscustomobject]@{ Vars = @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } }; Path = @{} } }
         Mock Remove-DFDesktopEnvSet { throw 'registry says no' }
         $ErrorActionPreference = 'Stop'
         $r = Remove-DFTool -Name glow -Confirm:$false 3>$null

@@ -126,22 +126,22 @@ function Get-DFDesktopEnvPlan {
 function Write-DFDesktopEnvPlan {
     <#
     .SYNOPSIS
-        Records the planned Set, Replaced and AlreadySet variables, then writes the Set and Replaced ones and broadcasts once if any.
+        Records the planned Set and Replaced variables, then writes them and broadcasts once if any.
     .DESCRIPTION
-        A variable already recorded for another tool keeps that owner. When
-        the record can't be saved, nothing is written (it throws).
+        An AlreadySet variable is the user's and is never recorded. A variable
+        already recorded for another tool keeps that owner. When the record
+        can't be saved, nothing is written (it throws).
     .PARAMETER Plan
         Get-DFDesktopEnvPlan's results.
     .PARAMETER State
-        Read-DFDesktopEnvState's table; updated and saved.
+        Read-DFDesktopEnvState's object; its Vars are updated and saved.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][object[]]$Plan, [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$State)
-    foreach ($item in @($Plan | Where-Object Action -in 'Set', 'Replaced', 'AlreadySet')) {
-        if ($item.Action -eq 'AlreadySet' -and $State.ContainsKey($item.Name)) { continue }
-        $State[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = [DateTime]::UtcNow.ToString('o') }
+    param([Parameter(Mandatory)][object[]]$Plan, [Parameter(Mandatory)][pscustomobject]$State)
+    foreach ($item in @($Plan | Where-Object Action -in 'Set', 'Replaced')) {
+        $State.Vars[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = [DateTime]::UtcNow.ToString('o') }
     }
     # Recorded first: a write that then fails leaves a record removal tolerates, never a write it can't find.
     Save-DFDesktopEnvState -State $State -ErrorAction Stop

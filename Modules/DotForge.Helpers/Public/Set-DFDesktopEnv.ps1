@@ -13,7 +13,8 @@ function Set-DFDesktopEnv {
         written until you run this command: running it is the opt-in.
 
         A variable that is missing is written. One already set to the same
-        value is left as it is. One set to something else (by you, or by a
+        value is left as it is, and stays yours: DotForge doesn't record it,
+        so removing the tool never removes it. One set to something else (by you, or by a
         package manager) is yours: in an interactive console you're asked
         whether to keep it or replace it; otherwise, or with -Confirm:$false,
         it is kept, and the output says so.
@@ -56,9 +57,10 @@ function Set-DFDesktopEnv {
         Write-Host "Kept your $($kept.Name) = $($kept.Current) (DotForge's would be $($kept.Value))."
     }
     $writes = @($plan | Where-Object Action -in 'Set', 'Replaced')
-    $what = if ($writes) { @($writes | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', ' } else { 'nothing to write; record what is already set' }
+    if (-not $writes) { return $plan }
+    $what = @($writes | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', '
     if (-not (Test-DFDesktopEnvShouldProcess -Cmdlet $PSCmdlet -Target 'the Windows user environment' -Action "Set $what")) { return }
     Write-DFDesktopEnvPlan -Plan $plan -State $state
-    if ($writes) { Write-Host 'New programs see the change; programs already running keep their environment.' }
+    Write-Host 'New programs see the change; programs already running keep their environment.'
     $plan
 }

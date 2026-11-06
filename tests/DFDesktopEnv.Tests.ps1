@@ -73,11 +73,30 @@ Describe 'DFDesktopEnv' {
         @(Get-DFDesktopEnvNote -Tool (New-DesktopRecord)).Count | Should -Be 0
     }
     It 'state round-trips, and an unreadable file reads as $null' {
-        (Read-DFDesktopEnvState).Count | Should -Be 0
-        Save-DFDesktopEnvState -State @{ FOO = [pscustomobject]@{ tool = 'deska'; value = 'v'; since = 's' } }
-        (Read-DFDesktopEnvState)['FOO'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars.Count | Should -Be 0
+        Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{ FOO = [pscustomobject]@{ tool = 'deska'; value = 'v'; since = 's' } }; Path = @{} })
+        (Read-DFDesktopEnvState).Vars['FOO'].tool | Should -Be 'deska'
         Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) '{ bad'
         Read-DFDesktopEnvState 3>$null | Should -BeNullOrEmpty
+    }
+    It 'reads the old flat state as vars' {
+        New-Item -ItemType Directory -Force (Split-Path (Get-DFDesktopEnvStatePath)) | Out-Null
+        Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) '{ "FOO": { "tool":"deska","value":"x","since":"s" } }'
+        $state = Read-DFDesktopEnvState
+        $state.Vars['FOO'].tool | Should -Be 'deska'
+        $state.Path.Count | Should -Be 0
+    }
+    It 'writes and reads the sectioned state' {
+        $folder = 'C:'
+        Save-DFDesktopEnvState -State ([pscustomobject]@{
+            Vars = @{ FOO = [pscustomobject]@{ tool = 'deska'; value = 'v'; since = 's' } }
+            Path = @{ $folder = [pscustomobject]@{ tool = 'deska'; since = 's' } } })
+        $raw = Get-Content -LiteralPath (Get-DFDesktopEnvStatePath) -Raw | ConvertFrom-Json -AsHashtable
+        @($raw.Keys | Sort-Object) | Should -Be @('path', 'vars')
+        $state = Read-DFDesktopEnvState
+        $state.Vars['FOO'].value | Should -Be 'v'
+        $state.Path[$folder].tool | Should -Be 'deska'
+        $state.Path[$folder].since | Should -Be 's'
     }
     It 'the same path written differently matches' {
         Test-DFDesktopEnvMatch -Current 'C:/Users/me/.config/foo/' -Value 'C:\Users\me\.config\foo' | Should -BeTrue

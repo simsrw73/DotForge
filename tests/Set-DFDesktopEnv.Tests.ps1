@@ -36,14 +36,14 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         $result.Action | Should -Be 'Set'
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be $script:Want
         Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
-        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
-        (Read-DFDesktopEnvState)['DESK_A'].value | Should -Be $script:Want
+        (Read-DFDesktopEnvState).Vars['DESK_A'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars['DESK_A'].value | Should -Be $script:Want
     }
-    It 'an equal value is AlreadySet, recorded, and not broadcast' {
+    It 'an equal value is AlreadySet, not recorded, and not broadcast' {
         Set-DFDesktopEnvValue -Name DESK_A -Value $script:Want
         (Set-DFDesktopEnv -Name deska -Confirm:$false).Action | Should -Be 'AlreadySet'
         Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
-        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars.ContainsKey('DESK_A') | Should -BeFalse
     }
     It 'a different value is kept, and reported, when it can''t ask' {
         Set-DFDesktopEnvValue -Name DESK_A -Value 'C:\theirs'
@@ -51,7 +51,7 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         $result.Action | Should -Be 'Kept'
         $result.Current | Should -Be 'C:\theirs'
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be 'C:\theirs'
-        (Read-DFDesktopEnvState).ContainsKey('DESK_A') | Should -BeFalse
+        (Read-DFDesktopEnvState).Vars.ContainsKey('DESK_A') | Should -BeFalse
         Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'DESK_A' -and "$Object" -match 'theirs' }
     }
     It 'asks per differing variable in a console; R replaces' {
@@ -74,19 +74,19 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
     It '-WhatIf writes and records nothing' {
         $null = Set-DFDesktopEnv -Name deska -WhatIf
         Get-DFDesktopEnvValue -Name DESK_A | Should -BeNullOrEmpty
-        (Read-DFDesktopEnvState).Count | Should -Be 0
+        (Read-DFDesktopEnvState).Vars.Count | Should -Be 0
         Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
     }
     It 'a second tool declaring the same variable doesn''t take over its record' {
         $null = Set-DFDesktopEnv -Name deska -Confirm:$false
         (Set-DFDesktopEnv -Name deskb -Confirm:$false).Action | Should -Be 'AlreadySet'
-        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars['DESK_A'].tool | Should -Be 'deska'
     }
     It 'two tools in one run declaring the same variable: written once, the first one owns it' {
         $result = @(Set-DFDesktopEnv -Name deska, deskb -Confirm:$false)
         ($result | Where-Object Tool -eq deska).Action | Should -Be 'Set'
         ($result | Where-Object Tool -eq deskb).Action | Should -Be 'AlreadySet'
-        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars['DESK_A'].tool | Should -Be 'deska'
     }
     It 'two tools in one run wanting different values: the second keeps the first one''s' {
         @{ name = 'deskc'; executable = 'deskc.exe'
@@ -94,7 +94,7 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         $result = @(Set-DFDesktopEnv -Name deska, deskc -Confirm:$false)
         ($result | Where-Object Tool -eq deskc).Action | Should -Be 'Kept'
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be $script:Want
-        (Read-DFDesktopEnvState)['DESK_A'].tool | Should -Be 'deska'
+        (Read-DFDesktopEnvState).Vars['DESK_A'].tool | Should -Be 'deska'
     }
     It 'writes nothing when the record can''t be saved' {
         Mock Save-DFDesktopEnvState { throw 'disk full' }
@@ -132,7 +132,7 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         Mock Test-DFIsWindows { $false }
         $null = Set-DFDesktopEnv -Name deska -Confirm:$false
         Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'Windows' }
-        (Read-DFDesktopEnvState).Count | Should -Be 0
+        (Read-DFDesktopEnvState).Vars.Count | Should -Be 0
     }
 }
 
@@ -145,10 +145,10 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
         Mock Write-Host { }
         Set-DFDesktopEnvValue -Name DESK_A -Value 'C:\one'
         Set-DFDesktopEnvValue -Name DESK_B -Value 'C:\two'
-        Save-DFDesktopEnvState -State @{
+        Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{
             DESK_A = [pscustomobject]@{ tool = 'deska'; value = 'C:\one'; since = 'x' }
             DESK_B = [pscustomobject]@{ tool = 'deskb'; value = 'C:\two'; since = 'x' }
-        }
+        }; Path = @{} })
     }
     AfterEach {
         Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore
@@ -160,27 +160,27 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
         $result.Action | Should -Be 'Removed'
         Get-DFDesktopEnvValue -Name DESK_A | Should -BeNullOrEmpty
         Get-DFDesktopEnvValue -Name DESK_B | Should -Be 'C:\two'
-        @((Read-DFDesktopEnvState).Keys) | Should -Be @('DESK_B')
+        @((Read-DFDesktopEnvState).Vars.Keys) | Should -Be @('DESK_B')
         Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
     }
     It 'without -Name, removes every variable DotForge wrote' {
         $null = Remove-DFDesktopEnv -Confirm:$false
         Get-DFDesktopEnvValue -Name DESK_B | Should -BeNullOrEmpty
-        (Read-DFDesktopEnvState).Count | Should -Be 0
+        (Read-DFDesktopEnvState).Vars.Count | Should -Be 0
     }
     It 'leaves a variable you changed since, says so, and forgets it' {
         Set-DFDesktopEnvValue -Name DESK_A -Value 'C:\mine'
         $result = Remove-DFDesktopEnv -Name deska -Confirm:$false
         $result.Action | Should -Be 'Changed'
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be 'C:\mine'
-        (Read-DFDesktopEnvState).ContainsKey('DESK_A') | Should -BeFalse
+        (Read-DFDesktopEnvState).Vars.ContainsKey('DESK_A') | Should -BeFalse
         Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'DESK_A' -and "$Object" -match 'mine' }
         Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
     }
     It '-WhatIf removes nothing' {
         $null = Remove-DFDesktopEnv -Name deska -WhatIf
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be 'C:\one'
-        (Read-DFDesktopEnvState).ContainsKey('DESK_A') | Should -BeTrue
+        (Read-DFDesktopEnvState).Vars.ContainsKey('DESK_A') | Should -BeTrue
     }
     It 'does nothing, and says why, when the state can''t be read' {
         Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) '{ bad'

@@ -1136,7 +1136,7 @@ Set-DFDesktopEnv [[-Name] <string[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
 DotForge sets a tool's variables in each pwsh session only. A program started another way (komorebi at sign-in, a desktop app, an editor) sees only the Windows user environment (HKCU\\Environment). A tool record suggests which of its variables those programs need (desktop); Get-DFToolStatus notes the ones they lack. Nothing is written until you run this command: running it is the opt-in.
 
-A variable that is missing is written. One already set to the same value is left as it is. One set to something else (by you, or by a package manager) is yours: in an interactive console you're asked whether to keep it or replace it; otherwise, or with -Confirm:$false, it is kept, and the output says so.
+A variable that is missing is written. One already set to the same value is left as it is, and stays yours: DotForge doesn't record it, so removing the tool never removes it. One set to something else (by you, or by a package manager) is yours: in an interactive console you're asked whether to keep it or replace it; otherwise, or with -Confirm:$false, it is kept, and the output says so.
 
 What DotForge writes is recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json, so Remove-DFDesktopEnv and Remove-DFTool remove only that, and only while it is unchanged. New programs see the change; running ones keep their environment.
 

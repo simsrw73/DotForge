@@ -259,18 +259,20 @@ function Get-DFDesktopEnvStatePath {
 function Read-DFDesktopEnvState {
     <#
     .SYNOPSIS
-        Reads the desktop variables DotForge wrote: variable -> { tool, value, since }.
+        Reads what DotForge wrote to the user environment: Vars (variable -> { tool, value, since }) and Path (folder -> { tool, since }).
     .DESCRIPTION
-        A missing file is an empty table. A file that can't be read returns
+        A missing file is an empty state. A file that can't be read returns
         $null (the reason goes to the verbose stream): callers then write and
-        remove nothing, and each says why in its own words.
+        remove nothing, and each says why in its own words. The file holds
+        "vars" and "path" sections; the older flat file (every key a variable)
+        reads as Vars.
     .OUTPUTS
-        System.Collections.Hashtable, or $null.
+        System.Management.Automation.PSCustomObject with Vars and Path hashtables, or $null.
     #>
     [CmdletBinding()]
     param()
     $path = Get-DFDesktopEnvStatePath
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @{} }
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return [pscustomobject]@{ Vars = @{}; Path = @{} } }
     try {
         $data = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
         if ($data -isnot [System.Collections.IDictionary]) { throw 'it holds no JSON object' }
@@ -278,23 +280,45 @@ function Read-DFDesktopEnvState {
         Write-Verbose "DotForge: $path can't be read: $($_.Exception.Message)"
         return $null
     }
+    $isSectioned = $data.Count -gt 0 -and @($data.Keys | Where-Object { $_ -notin 'vars', 'path' }).Count -eq 0 -and
+        @($data.Values | Where-Object { $_ -isnot [System.Collections.IDictionary] }).Count -eq 0
+    $varsData = if ($isSectioned) { $data['vars'] } else { $data }
+    $pathData = if ($isSectioned) { $data['path'] } else { $null }
+    [pscustomobject]@{ Vars = ConvertTo-DFDesktopEnvRecordTable $varsData; Path = ConvertTo-DFDesktopEnvRecordTable $pathData }
+}
+
+function ConvertTo-DFDesktopEnvRecordTable {
+    <#
+    .SYNOPSIS
+        Turns one parsed state section (key -> object) into a hashtable of key -> pscustomobject.
+    .PARAMETER Section
+        The parsed section; $null for a section the file doesn't hold.
+    .OUTPUTS
+        System.Collections.Hashtable.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param($Section)
     $table = @{}
-    foreach ($name in @($data.Keys)) { $table[$name] = [pscustomobject]$data[$name] }
+    if ($Section -is [System.Collections.IDictionary]) {
+        foreach ($name in @($Section.Keys)) { $table[$name] = [pscustomobject]$Section[$name] }
+    }
     $table
 }
 
 function Save-DFDesktopEnvState {
     <#
     .SYNOPSIS
-        Writes the desktop variables DotForge wrote, atomically.
+        Writes what DotForge wrote to the user environment, atomically, as "vars" and "path" sections.
     .PARAMETER State
-        Variable -> { tool, value, since }.
+        Read-DFDesktopEnvState's object: Vars (variable -> { tool, value, since }) and Path (folder -> { tool, since }).
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$State)
-    Write-DFFileAtomic -Path (Get-DFDesktopEnvStatePath) -Value ($State | ConvertTo-Json -Depth 5)
+    param([Parameter(Mandatory)][pscustomobject]$State)
+    $document = [ordered]@{ vars = $State.Vars; path = $State.Path }
+    Write-DFFileAtomic -Path (Get-DFDesktopEnvStatePath) -Value ($document | ConvertTo-Json -Depth 5)
 }
 
 function Remove-DFDesktopEnvSet {
@@ -308,22 +332,23 @@ function Remove-DFDesktopEnvSet {
     .PARAMETER Tool
         The tools; none means every tool in the state.
     .PARAMETER State
-        Read-DFDesktopEnvState's table (not $null); updated and saved.
+        Read-DFDesktopEnvState's object (not $null); its Vars are updated and saved.
     .OUTPUTS
         pscustomobject per recorded variable: Tool, Name, Value, Current, Action (Removed or Changed).
     #>
     [CmdletBinding()]
-    param([string[]]$Tool, [Parameter(Mandatory)][AllowEmptyCollection()][hashtable]$State)
-    $names = @($State.Keys | Where-Object { -not $Tool -or $State[$_].tool -in $Tool } | Sort-Object)
+    param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
+    $vars = $State.Vars
+    $names = @($vars.Keys | Where-Object { -not $Tool -or $vars[$_].tool -in $Tool } | Sort-Object)
     if (-not $names) { return }
     $removed = 0
     $results = foreach ($name in $names) {
-        $entry = $State[$name]
+        $entry = $vars[$name]
         $current = Get-DFDesktopEnvValue -Name $name
         $action = if (-not $current -or (Test-DFDesktopEnvMatch -Current $current -Value $entry.value)) { 'Removed' } else { 'Changed' }
         if ($action -eq 'Removed' -and $current) { Remove-DFDesktopEnvValue -Name $name; $removed++ }
         if ($action -eq 'Changed') { Write-Host "Left ${name} = ${current}: it changed since DotForge set it to $($entry.value)." }
-        $State.Remove($name)
+        $vars.Remove($name)
         [pscustomobject]@{ PSTypeName = 'DotForge.DesktopEnvResult'; Tool = $entry.tool; Name = $name; Value = $entry.value; Current = $current; Action = $action }
     }
     if ($removed) { Send-DFEnvironmentChange }
