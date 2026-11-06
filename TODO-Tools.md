@@ -95,23 +95,23 @@ otherwise **Still to add** lists the missing tools and the gaps in the current m
 
 ### Planned (no role yet)
 
-| Role                 | Candidates                                                              | Ref  |
-| -------------------- | ----------------------------------------------------------------------- | ---- |
-| file-manager         | yazi, superfile, lf, broot, midnight commander, vifm, ranger            | T-35 |
-| git-tui              | lazygit (tool exists), gitui                                            | T-35 |
-| json                 | jq (tool exists), jaq, gojq, fx, jless, jid; yq, dasel                  | T-35 |
-| dotfiles             | chezmoi (tool exists), yadm, stow                                       | T-35 |
-| quick-help           | tldr, tealdeer (two clients for the tldr pages), cheat.sh (cht)         | T-35 |
-| secrets              | bitwarden (tool exists), 1Password, pass                                | T-35 |
-| replace              | sd                                                                      | T-35 |
-| watch                | watchexec                                                               | T-35 |
-| code-stats           | tokei, scc                                                              | T-35 |
-| cat alternative      | bat (tool exists, no role)                                              |      |
-| terminal multiplexer | zellij, psmux, tmux                                                     |      |
+| Role                 | Candidates                                                   | Ref  |
+| -------------------- | ------------------------------------------------------------ | ---- |
+| file-manager         | yazi, superfile, lf, broot, midnight commander, vifm, ranger | T-35 |
+| git-tui              | lazygit (tool exists), gitui                                 | T-35 |
+| json                 | jq (tool exists), jaq, gojq, fx, jless, jid; yq, dasel       | T-35 |
+| dotfiles             | chezmoi (tool exists), yadm, stow                            | T-35 |
+| quick-help           | tldr, tealdeer (two clients for the tldr pages), cheat.sh (cht) | T-35 |
+| secrets              | bitwarden (tool exists), 1Password, pass                     | T-35 |
+| replace              | sd                                                           | T-35 |
+| watch                | watchexec                                                    | T-35 |
+| code-stats           | tokei, scc                                                   | T-35 |
+| cat alternative      | bat (tool exists, no role)                                   |      |
+| terminal multiplexer | zellij, psmux, tmux                                          |      |
 | terminal emulator    | Windows Terminal, Intelligent Terminal, Warp, Alacritty, Tabby, WezTerm |      |
-| AI harness           | Claude, Codex, Antigravity CLI, Pi, Oh-my-pi, OpenCode                  |      |
-| AI orchestrator      | Herdr                                                                   |      |
-| library managers     | Ruby: gem; C/C++: vcpkg (tool exists), conan; Perl: cpanm, carton       |      |
+| AI harness           | Claude, Codex, Antigravity CLI, Pi, Oh-my-pi, OpenCode, Hermes |      |
+| AI orchestrator      | Herdr                                                        |      |
+| library managers     | Ruby: gem; C/C++: vcpkg (tool exists), conan; Perl: cpanm, carton |      |
 
 NOTE: configure CLAUDE_CODE_GIT_BASH_PATH when setting up Claude Code.
 
