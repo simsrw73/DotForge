@@ -229,3 +229,91 @@ function Find-DFDesktopPathOtherCopy {
         }
     }
 }
+
+function Get-DFDesktopPathExpected {
+    <#
+    .SYNOPSIS
+        The desktop Path entries a record declares, with their folders expanded and the variable each lives under.
+    .DESCRIPTION
+        An entry lives under the xdg.vars variable whose template its path
+        template starts with (whole path components, case-insensitive, the
+        longest template wins).
+    .PARAMETER Tool
+        A normalized tool record.
+    .OUTPUTS
+        pscustomobject per entry: Path (canonical), Commands, Under (variable name or $null), UnderValue (DotForge's canonical value for it or $null).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    $variables = @(if ($Tool.xdg?.vars) { $Tool.xdg.vars.PSObject.Properties | Where-Object { $_.Value } })
+    foreach ($entry in @($Tool.desktopPath)) {
+        $template = $entry.path.Replace([string][char]92, '/').TrimEnd('/')
+        $under = $variables | Where-Object {
+            $prefix = "$($_.Value)".Replace([string][char]92, '/').TrimEnd('/')
+            $template.Equals($prefix, [StringComparison]::OrdinalIgnoreCase) -or $template.StartsWith("$prefix/", [StringComparison]::OrdinalIgnoreCase)
+        } | Sort-Object { "$($_.Value)".Length } -Descending | Select-Object -First 1
+        [pscustomobject]@{
+            Path       = ConvertTo-DFPath (Expand-DFXdgPath $entry.path)
+            Commands   = [string[]]@($entry.commands)
+            Under      = if ($under) { $under.Name }
+            UnderValue = if ($under) { ConvertTo-DFPath (Expand-DFXdgPath "$($under.Value)") }
+        }
+    }
+}
+
+function Test-DFDesktopPathGuard {
+    <#
+    .SYNOPSIS
+        Whether a desktop Path entry's variable has another value in effect, so the entry would name a folder the tool never uses.
+    .DESCRIPTION
+        Checks this shell first, then the desktop value (the one in
+        -DesktopValue when it holds the variable, else the user environment).
+        An unset or empty value never trips it.
+    .PARAMETER Entry
+        One Get-DFDesktopPathExpected result.
+    .PARAMETER DesktopValue
+        Desktop values planned in this run, by variable name.
+    .OUTPUTS
+        $null, or pscustomobject: Name, Current, Where ('in this shell' or 'for desktop apps'), Suggested (the entry's folder under that value).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Entry, [hashtable]$DesktopValue)
+    if (-not $Entry.Under) { return }
+    $name = $Entry.Under
+    $rest = $Entry.Path.Substring($Entry.UnderValue.Length)
+    $inShell = [Environment]::GetEnvironmentVariable($name, 'Process')
+    $inShellDiffers = $inShell -and -not ([IO.Path]::IsPathFullyQualified($inShell) -and (ConvertTo-DFPath $inShell) -eq $Entry.UnderValue)
+    if ($inShellDiffers) {
+        return [pscustomobject]@{ Name = $name; Current = $inShell; Where = 'in this shell'; Suggested = $inShell.TrimEnd('\', '/') + $rest }
+    }
+    $onDesktop = if ($DesktopValue -and $DesktopValue.ContainsKey($name)) { $DesktopValue[$name] } else { Get-DFDesktopEnvValue -Name $name }
+    if ($onDesktop -and -not (Test-DFDesktopEnvMatch -Current $onDesktop -Value $Entry.UnderValue)) {
+        [pscustomobject]@{ Name = $name; Current = $onDesktop; Where = 'for desktop apps'; Suggested = $onDesktop.TrimEnd('\', '/') + $rest }
+    }
+}
+
+function Get-DFDesktopPathNote {
+    <#
+    .SYNOPSIS
+        Status notes for a tool's desktop Path entries: skipped by the guard, or missing from the user Path.
+    .PARAMETER Tool
+        A normalized tool record.
+    .OUTPUTS
+        System.String per note; nothing off Windows or for a record without desktopPath (no registry read then).
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory)][pscustomobject]$Tool)
+    # The other-copy (shadow) check is left to Set-DFDesktopEnv: it probes every folder of the system and user
+    # Path, ~170 ms per load (docs/superpowers/specs/2026-11-03-desktop-path-design.md, Status note).
+    if (-not @($Tool.desktopPath).Count -or -not (Test-DFIsWindows)) { return }
+    $userPath = Get-DFUserPathValue
+    foreach ($entry in @(Get-DFDesktopPathExpected -Tool $Tool)) {
+        $guard = Test-DFDesktopPathGuard -Entry $entry
+        if ($guard) {
+            "$($Tool.name)'s Path entry is skipped: $($guard.Name) is $($guard.Current) $($guard.Where), so its folder isn't under $($entry.UnderValue)"
+        } elseif ((Find-DFDesktopPathSegment -Value $userPath -Folder $entry.Path) -lt 0) {
+            "$($Tool.name)'s folder isn't on the desktop Path; Set-DFDesktopEnv $($Tool.name) adds it"
+        }
+    }
+}

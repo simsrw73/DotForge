@@ -86,3 +86,88 @@ Describe 'DFDesktopPath' {
         @(Find-DFDesktopPathOtherCopy -Command 'node' -Folder $ours).Count | Should -Be 0
     }
 }
+
+# Expected entries, the guard and the status note.
+Describe 'DFDesktopPath expected entries and note' {
+    BeforeEach {
+        Set-DFTestXdg
+        $script:ours = Join-Path $Env:XDG_DATA_HOME 'deskp'
+        $script:deskpTool = ConvertTo-DFToolRecord ([pscustomobject]@{
+            name = 'deskp'; executable = 'deskp.exe'
+            xdg = [pscustomobject]@{ method = 'env'; vars = [pscustomobject]@{ DESKP_DIR = '${XDG_DATA_HOME}/deskp' }; native = [pscustomobject]@{ DESKP_DIR = @() } }
+            desktopPath = @([pscustomobject]@{ path = '${XDG_DATA_HOME}/deskp/current'; commands = @('deskp') })
+        })
+        $script:deskpEntry = @(Get-DFDesktopPathExpected -Tool $script:deskpTool)[0]
+        [Environment]::SetEnvironmentVariable('DESKP_DIR', $null, 'Process')
+    }
+    AfterEach {
+        [Environment]::SetEnvironmentVariable('DESKP_DIR', $null, 'Process')
+        Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore
+        Restore-DFTestXdg
+    }
+
+    It 'the entry lives under its own variable' {
+        $script:deskpEntry.Under | Should -Be 'DESKP_DIR'
+        $script:deskpEntry.UnderValue | Should -Be (ConvertTo-DFPath "$Env:XDG_DATA_HOME\deskp")
+        $script:deskpEntry.Path | Should -Be (ConvertTo-DFPath "$Env:XDG_DATA_HOME\deskp\current")
+        $script:deskpEntry.Commands | Should -Be @('deskp')
+        $other = ConvertTo-DFToolRecord ([pscustomobject]@{
+            name = 'deskp'; executable = 'deskp.exe'
+            xdg = [pscustomobject]@{ method = 'env'; vars = [pscustomobject]@{ DESKP_DIR = '${XDG_DATA_HOME}/deskp' }; native = [pscustomobject]@{ DESKP_DIR = @() } }
+            desktopPath = @([pscustomobject]@{ path = '${XDG_DATA_HOME}/deskpx/bin' })
+        })
+        (@(Get-DFDesktopPathExpected -Tool $other)[0]).Under | Should -BeNullOrEmpty
+    }
+    It 'the guard trips on a different shell value' {
+        $Env:DESKP_DIR = 'C:	heirs'
+        $trip = Test-DFDesktopPathGuard -Entry $script:deskpEntry
+        $trip.Name | Should -Be 'DESKP_DIR'
+        $trip.Where | Should -Be 'in this shell'
+        $trip.Current | Should -Be 'C:	heirs'
+        $trip.Suggested | Should -Be 'C:	heirs\current'
+    }
+    It 'the guard trips on a different desktop value, and on a planned one' -Skip:(-not $IsWindows) {
+        Set-DFDesktopEnvValue -Name DESKP_DIR -Value 'C:	heirs'
+        $trip = Test-DFDesktopPathGuard -Entry $script:deskpEntry
+        $trip.Where | Should -Be 'for desktop apps'
+        $trip.Suggested | Should -Be 'C:	heirs\current'
+        Test-DFDesktopPathGuard -Entry $script:deskpEntry -DesktopValue @{ DESKP_DIR = $script:deskpEntry.UnderValue } | Should -BeNullOrEmpty
+    }
+    It 'no guard when the values match or are unset' {
+        Test-DFDesktopPathGuard -Entry $script:deskpEntry -DesktopValue @{} | Should -BeNullOrEmpty
+        $Env:DESKP_DIR = $script:deskpEntry.UnderValue
+        Test-DFDesktopPathGuard -Entry $script:deskpEntry -DesktopValue @{ DESKP_DIR = $script:deskpEntry.UnderValue } | Should -BeNullOrEmpty
+    }
+    It 'notes a folder missing from the user Path' -Skip:(-not $IsWindows) {
+        Mock Get-DFSystemPathValue { '' }
+        Get-DFDesktopPathNote -Tool $script:deskpTool | Should -Be "deskp's folder isn't on the desktop Path; Set-DFDesktopEnv deskp adds it"
+    }
+    It 'leaves the shadow check to Set-DFDesktopEnv (too slow for every load)' -Skip:(-not $IsWindows) {
+        $sys = Join-Path $TestDrive 'sys'
+        New-Item -ItemType Directory -Path $sys, $script:deskpEntry.Path -Force | Out-Null
+        New-Item -ItemType File -Path (Join-Path $sys 'deskp.exe') | Out-Null
+        Mock Get-DFSystemPathValue { "$sys" }
+        Set-DFUserPathValue -Value $script:deskpEntry.Path
+        Get-DFDesktopPathNote -Tool $script:deskpTool | Should -BeNullOrEmpty
+        Should -Invoke Get-DFSystemPathValue -Times 0 -Exactly
+    }
+    It 'says nothing when present and first' -Skip:(-not $IsWindows) {
+        New-Item -ItemType Directory -Path $script:deskpEntry.Path -Force | Out-Null
+        Mock Get-DFSystemPathValue { '' }
+        Set-DFUserPathValue -Value $script:deskpEntry.Path
+        Get-DFDesktopPathNote -Tool $script:deskpTool | Should -BeNullOrEmpty
+    }
+    It 'says why the entry is skipped when the guard trips' -Skip:(-not $IsWindows) {
+        $Env:DESKP_DIR = 'C:	heirs'
+        Mock Get-DFSystemPathValue { '' }
+        Get-DFDesktopPathNote -Tool $script:deskpTool |
+            Should -Be "deskp's Path entry is skipped: DESKP_DIR is C:	heirs in this shell, so its folder isn't under $($script:deskpEntry.UnderValue)"
+    }
+    It 'no desktopPath reads no registry' {
+        Mock Get-DFUserPathValue { }
+        $plain = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'plain'; executable = 'plain.exe' })
+        Get-DFDesktopPathNote -Tool $plain | Should -BeNullOrEmpty
+        Get-DFDesktopEnvNote -Tool $plain | Should -BeNullOrEmpty
+        Should -Invoke Get-DFUserPathValue -Times 0 -Exactly
+    }
+}

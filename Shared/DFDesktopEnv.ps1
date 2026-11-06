@@ -230,17 +230,18 @@ function Get-DFDesktopEnvNote {
     .PARAMETER Tool
         A normalized tool record.
     .OUTPUTS
-        System.String per note; nothing off Windows, for a record without desktop, or when every value matches.
+        System.String per note (variables, then Path entries); nothing off Windows, for a record without desktop or desktopPath, or when every value matches.
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][pscustomobject]$Tool)
-    if (-not @($Tool.desktop).Count -or -not (Test-DFIsWindows)) { return }
+    if ((-not @($Tool.desktop).Count -and -not @($Tool.desktopPath).Count) -or -not (Test-DFIsWindows)) { return }
     foreach ($want in @(Get-DFDesktopEnvExpected -Tool $Tool)) {
         $current = Get-DFDesktopEnvValue -Name $want.Name
         if (-not $current) { "$($want.Name) isn't set for desktop apps; Set-DFDesktopEnv $($Tool.name) sets it" }
         elseif (-not (Test-DFDesktopEnvMatch -Current $current -Value $want.Value)) { "desktop apps see $($want.Name) = $current" }
     }
+    Get-DFDesktopPathNote -Tool $Tool
 }
 
 function Get-DFDesktopEnvStatePath {

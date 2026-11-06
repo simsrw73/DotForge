@@ -50,4 +50,12 @@ Describe 'Activation: desktop variables note' -Skip:(-not $IsWindows) {
         Register-DFTool -Name plainz 3>$null
         Should -Invoke Get-DFDesktopEnvValue -Times 0 -Exactly
     }
+    It 'an active tool''s status notes a missing desktop Path entry' {
+        Mock Get-DFSystemPathValue { '' }
+        @{ name = 'deskp'; executable = 'Pester'; type = 'module'
+           desktopPath = @(@{ path = '${XDG_DATA_HOME}/deskp/current'; commands = @('deskp') }) } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $script:UserTools 'deskp.json')
+        Register-DFTool -Name deskp 3>$null
+        (Get-DFToolStatus deskp).Detail | Should -Match "deskp's folder isn't on the desktop Path; Set-DFDesktopEnv deskp adds it"
+    }
 }

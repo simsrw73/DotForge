@@ -229,6 +229,11 @@ Cost: one read of the user and system `PATH` per load, only when a requested too
 cost more than a few milliseconds, the builder may limit the load-time check to "missing" and leave
 the shadow check to `Set-DFDesktopEnv` (record that choice here).
 
+**Measured (2026-11-05):** `Get-DFDesktopPathNote` for fnm (missing/present checks) averages 3.3 ms over 20
+runs; the shadow check (`Find-DFDesktopPathOtherCopy`, probing each system and user `PATH` folder for `node`
+and `npm`) averages 167 ms, far over the 5 ms budget. **Choice:** the load-time note covers the guard and
+"missing" only; the shadow check is not run at load. Task 5 may still use it in `Set-DFDesktopEnv`.
+
 ### Changes to T-78 (variables)
 
 - `Write-DFDesktopEnvPlan` stops recording `AlreadySet` variables. `Set` and `Replaced` are still
