@@ -222,7 +222,7 @@ zoxide replaces `cd` with a smart version: `cd proj` jumps to the most-used fold
 
 zoxide hooks the prompt, so it must be set up after your prompt engine; DotForge orders that for you. If you switch oh-my-posh themes with `fpot`, folder tracking stops until you open a new shell.
 
-Desktop apps and editors that run `npx` or a global npm package (an agent launcher, an editor's language server) don't start from pwsh, so they need fnm's folder and npm's config and cache in the Windows user environment: run `Set-DFDesktopEnv fnm, npm` once ([Desktop apps](configuration.md#desktop-apps)). Without it, their npm reads `~\.npmrc` and caches in `%LOCALAPPDATA%\npm-cache`. They also need Node on the user `PATH`; add `$XDG_DATA_HOME\fnm\aliases\default`, which always points at fnm's default version (`fnm default`). Never add a `fnm_multishells` folder: each belongs to one shell and stops working when it closes.
+Desktop apps and editors that run `npx` or a global npm package (an agent launcher, an editor's language server) don't start from pwsh, so they need fnm's folder and npm's config and cache in the Windows user environment: run `Set-DFDesktopEnv fnm, npm` once ([Desktop apps](configuration.md#desktop-apps)). Without it, their npm reads `~\.npmrc` and caches in `%LOCALAPPDATA%\npm-cache`. The same command adds `$XDG_DATA_HOME\fnm\aliases\default` to the user `PATH`, so they find Node; that folder always points at fnm's default version (`fnm default`). Never add a `fnm_multishells` folder: each belongs to one shell and stops working when it closes.
 
 ### glow and fastfetch
 

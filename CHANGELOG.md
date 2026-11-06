@@ -4,7 +4,20 @@ All notable changes to DotForge are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Desktop Path entries.** A tool record can name folders desktop apps need on the Windows user
+  `PATH` (`desktopPath`). `Set-DFDesktopEnv fnm` adds fnm's `aliases\default` folder, which gives
+  desktop apps Node, npm, npx and global npm packages. It adds only when asked, never when your shell
+  loads; it keeps every other `PATH` entry as it was; it asks where to put the folder when another copy
+  of `node`, `npm` or `npx` is already on the `PATH`; and it skips the entry when `FNM_DIR` points
+  elsewhere. `Remove-DFDesktopEnv` and `Remove-DFTool` remove only the folders DotForge added, and
+  `Get-DFToolStatus` notes a missing one.
+
 ### Changed
+
+- **A desktop variable that was already set stays yours.** `Set-DFDesktopEnv` no longer records a
+  variable that already had DotForge's value as one it wrote, so removing the tool leaves it.
 
 - **fnm and npm name their desktop variables.** `Set-DFDesktopEnv fnm, npm` writes `FNM_DIR`,
   `NPM_CONFIG_USERCONFIG` and `NPM_CONFIG_CACHE` to the Windows user environment, so a desktop app

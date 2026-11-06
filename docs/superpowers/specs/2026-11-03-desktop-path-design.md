@@ -26,7 +26,7 @@ add it only when the user asks, the same way `desktop` works for variables.
   same `-WhatIf`/`-Confirm`, same state file, same single broadcast.
 - When another copy of a command the folder provides is already on the `PATH`, the user is told and,
   in an interactive console, chooses where the entry goes.
-- `Get-DFToolStatus` says when the folder is missing, or when another copy wins.
+- `Get-DFToolStatus` says when the folder is missing or skipped. (Another copy winning is reported by `Set-DFDesktopEnv` only; see Status note.)
 - fnm declares its folder.
 
 ## Non-goals
@@ -216,23 +216,22 @@ is saved before the registry write (unchanged ordering).
 
 ### Status note
 
-`Get-DFDesktopEnvNote` adds, per `desktopPath` entry of a requested tool, on Windows:
+`Get-DFDesktopEnvNote` adds, per `desktopPath` entry of a requested tool, on Windows (the second note, "another copy wins", is **`Set-DFDesktopEnv` only**, not load-time; see Measured below):
 
 - missing from the user `PATH`: *"fnm's folder isn't on the desktop Path; Set-DFDesktopEnv fnm adds
   it"*;
-- present, but another copy of a declared command comes first in the desktop `PATH` order:
+- **`Set-DFDesktopEnv` only, not at load:** present, but another copy of a declared command comes first in the desktop `PATH` order:
   *"desktop apps run node from C:\Program Files\nodejs"*;
 - present and first: no note.
 
-Cost: one read of the user and system `PATH` per load, only when a requested tool declares
-`desktopPath`, plus the file probes for its commands. Measure with the startup benchmark; if probes
-cost more than a few milliseconds, the builder may limit the load-time check to "missing" and leave
-the shadow check to `Set-DFDesktopEnv` (record that choice here).
+Cost at load: one read of the user `PATH` per load, only when a requested tool declares `desktopPath`.
+The other-copy check probes files in every `PATH` folder, so it runs in `Set-DFDesktopEnv`, not at
+load (see Measured).
 
 **Measured (2026-11-05):** `Get-DFDesktopPathNote` for fnm (missing/present checks) averages 3.3 ms over 20
 runs; the shadow check (`Find-DFDesktopPathOtherCopy`, probing each system and user `PATH` folder for `node`
 and `npm`) averages 167 ms, far over the 5 ms budget. **Choice:** the load-time note covers the guard and
-"missing" only; the shadow check is not run at load. Task 5 may still use it in `Set-DFDesktopEnv`.
+"missing" only; the shadow check is not run at load. It runs in `Set-DFDesktopEnv` only.
 
 ### Changes to T-78 (variables)
 

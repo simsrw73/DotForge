@@ -229,6 +229,10 @@ Each `Tools/*.json` must have at minimum:
   recorded in `desktop-env.json`, removed by `Remove-DFDesktopEnv`/`Remove-DFTool` while unchanged;
   the status notes missing ones (`Shared/DFDesktopEnv.ps1`; tests redirect the registry key through
   `DFTestDesktopEnvKey`). Design: `docs/superpowers/specs/2026-10-26-desktop-variables-design.md`.
+  `desktopPath` (optional): `[{ path, commands }]`, folders desktop apps need on the user `PATH`
+  (fnm's `aliases\default`); `commands` drive the other-copy check. Added only by `Set-DFDesktopEnv`;
+  whatever is already there (a variable or a `PATH` entry) is the user's and is never recorded or removed.
+  Design: `docs/superpowers/specs/2026-11-03-desktop-path-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings a tool takes only from a variable (`FZF_DEFAULT_COMMAND`, …); a setting the tool's config
   file can hold goes in a seeded file instead (policy, T-79: fzf's `fzfrc`, less's `lesskey`,

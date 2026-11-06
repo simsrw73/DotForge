@@ -357,10 +357,31 @@ Set-DFDesktopEnv komorebi    # set komorebi's
 ```
 
 1. A variable that's missing is written.
-2. One already set to the same value is left as it is.
+2. One already set to the same value is left as it is, and stays yours: DotForge won't remove it.
 3. One set to something else, by you or by a package manager, is yours. In an interactive console you're asked whether to keep it or replace it. Otherwise, or with `-Confirm:$false`, it's kept, and the output says so.
 
-New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote.
+A tool can also name a folder desktop apps need on the user `PATH`. fnm's is `$XDG_DATA_HOME\fnm\aliases\default`, which holds Node, npm, npx and every global npm package, and follows `fnm default`. `Get-DFToolStatus` notes it while it's missing:
+
+<!-- fragment -->
+
+```text
+fnm's folder isn't on the desktop Path; Set-DFDesktopEnv fnm adds it
+```
+
+`Set-DFDesktopEnv fnm` adds the folder to the end of the user `PATH` and leaves every other entry as it was. A folder already there, written any way (other case, a trailing `\`, `%USERPROFILE%\...`, a junction to it), is left alone and stays yours. If another copy of one of the tool's commands (`node`, `npm`, `npx`) is already on the `PATH`, an interactive console asks where the folder goes:
+
+<!-- fragment -->
+
+```text
+  node is also at C:\Users\you\scoop\apps\nodejs-lts\current (user Path).
+  Put fnm's folder [B]efore it, [A]fter it or [S]kip (Enter: After)
+```
+
+A copy on the system `PATH` is found first whatever the user `PATH` order, so then the question is only `[A]dd fnm's folder anyway or [S]kip (Enter: Add)`. Unattended, or with `-Confirm:$false`, the folder goes at the end and the output names the copy that comes first. Nothing is checked or written when your shell loads.
+
+DotForge adds the folder only when the tool lives where its own variable puts it. If `FNM_DIR` is set to something else, in your shell or for desktop apps, the entry is skipped and the output says why, so DotForge never adds a folder the tool doesn't use.
+
+New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, variables and `PATH` entries, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote. A `PATH` folder is removed wherever it now sits in the user `PATH`.
 
 ## Prefer a package manager
 

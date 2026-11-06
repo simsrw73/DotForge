@@ -67,9 +67,8 @@ Regenerate the registry and reference.
   not, so a restore can set them before installing).
 - **Per variable:**
   - absent from `HKCU\Environment` → write it;
-  - equal to DotForge's value → nothing to write; recorded as DotForge's (my call: the value is the
-    same, so DotForge may remove it with the tool later; this is also what happens to the komorebi
-    value chezmoi wrote once chezmoi stops managing it);
+  - equal to DotForge's value → nothing to write; not recorded, so it stays the user's (changed by
+    `2026-11-03-desktop-path-design.md`, Changes to T-78: whatever is already there is the user's);
   - different → decision 2.
 - **Writes** go to `HKCU\Environment` with `Set-ItemProperty` (no per-call broadcast), then one
   `WM_SETTINGCHANGE` broadcast (`SendMessageTimeout`, `SMTO_ABORTIFHUNG`, 2 s), only when something
