@@ -64,6 +64,18 @@ Describe 'Remove-DFTool' {
             Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
         } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
     }
+    It 'removes the Path entry DotForge added for the tool' -Skip:(-not $IsWindows) {
+        Mock Send-DFEnvironmentChange { }
+        try {
+            $folder = ConvertTo-DFPath (Join-Path $TestDrive 'glowbin')
+            Set-DFUserPathValue -Value "C:\x;$folder"
+            Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{}; Path = @{ $folder = [pscustomobject]@{ tool = 'glow'; since = 'x' } } })
+            $null = Remove-DFTool -Name glow -Confirm:$false
+            Get-DFUserPathValue | Should -Be 'C:\x'
+            (Read-DFDesktopEnvState).Path.Count | Should -Be 0
+            Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
+        } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
+    }
     It 'finishes the removal when removing its desktop variables fails, even under Stop' {
         Mock Read-DFDesktopEnvState { [pscustomobject]@{ Vars = @{ GLOW_X = [pscustomobject]@{ tool = 'glow'; value = 'C:\glow'; since = 'x' } }; Path = @{} } }
         Mock Remove-DFDesktopEnvSet { throw 'registry says no' }
@@ -75,7 +87,7 @@ Describe 'Remove-DFTool' {
     It 'says the tool''s desktop variables weren''t removed when their record can''t be read' {
         Mock Read-DFDesktopEnvState { $null }
         $warnings = @(Remove-DFTool -Name glow -Confirm:$false 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
-        "$warnings" | Should -Match "desktop-env.json can't be read, so glow's desktop variables weren't removed"
+        "$warnings" | Should -Match "desktop-env.json can't be read, so glow's desktop variables and Path entries weren't removed"
     }
     It 'leaves a link you replaced at a recorded path' {
         $target = Join-Path $TestDrive 'glow-existing2'

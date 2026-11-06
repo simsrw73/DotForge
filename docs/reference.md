@@ -31,7 +31,7 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 | [New-DFShim](#new-dfshim) |  | Creates a .cmd shim that forwards invocations to a target executable, preserving the caller's working directory and exit code. |
 | [New-DFTool](#new-dftool) |  | Starts your own tool record in $XDG_CONFIG_HOME\\dotforge\\tools, or copies a shipped one there to change it. |
 | [Register-DFTool](#register-dftool) |  | Adds one or more tools to the current session, without restarting the shell. |
-| [Remove-DFDesktopEnv](#remove-dfdesktopenv) |  | Removes the desktop variables DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all. |
+| [Remove-DFDesktopEnv](#remove-dfdesktopenv) |  | Removes the desktop variables and Path entries DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all. |
 | [Remove-DFTool](#remove-dftool) |  | Removes tools through the package manager each one came from, then lists what DotForge left behind. |
 | [Resolve-DFToolConflict](#resolve-dftoolconflict) |  | Settles a tool whose existing data and XDG location both hold content: keep the existing copy (-Adopt) or the XDG copy (-KeepXdg). |
 | [Set-DFDesktopEnv](#set-dfdesktopenv) |  | Writes the desktop variables your tools suggest to the Windows user environment, so programs started outside pwsh see them. |
@@ -987,19 +987,19 @@ Adds every tool in the +git group (delta, gh, lazygit) to this session.
 
 ### Remove-DFDesktopEnv
 
-Removes the desktop variables DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all.
+Removes the desktop variables and Path entries DotForge wrote to the Windows user environment (Set-DFDesktopEnv), for some tools or all.
 
 ```text
 Remove-DFDesktopEnv [[-Name] <string[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
-Only variables DotForge recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json are touched, and each only while its value is still the one DotForge wrote: one you changed since is left as it is, and the output says so. DotForge forgets both. Remove-DFTool does the same for the tool it removes. New programs see the change; running ones keep their environment.
+Only variables and Path entries DotForge recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json are touched. A variable goes only while its value is still the one DotForge wrote: one you changed since is left as it is, and the output says so. A Path entry goes from the user Path wherever it now is (once; an entry already gone counts as removed), and nothing else on the Path changes. DotForge forgets all of them. Remove-DFTool does the same for the tool it removes. New programs see the change; running ones keep their environment.
 
 | Parameter | Type | Default | Required | Pipeline | Description |
 | --- | --- | --- | --- | --- | --- |
-| `-Name` | string[] |  |  |  | The tools. Leave it out for every variable DotForge wrote. |
+| `-Name` | string[] |  |  |  | The tools. Leave it out for every variable and Path entry DotForge wrote. |
 
-**Outputs:** DotForge.DesktopEnvResult per recorded variable: Tool, Name, Value (what DotForge wrote), Current and Action (Removed or Changed).
+**Outputs:** DotForge.DesktopEnvResult per recorded variable or Path entry: Kind (Variable or Path), Tool, Name (Path for an entry), Value (what DotForge wrote; the folder for an entry), Current and Action (Removed or Changed).
 
 **Example 1**
 

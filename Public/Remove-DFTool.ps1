@@ -100,8 +100,8 @@ function Remove-DFTool {
             try {
                 $desktopState = Read-DFDesktopEnvState
                 if ($null -ne $desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
-                else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
-            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
+                else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables and Path entries weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
+            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables and Path entries ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result

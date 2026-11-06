@@ -374,4 +374,51 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
         { Remove-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction Stop 3>$null } | Should -Throw '*desktop-env.json*'
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be 'C:\one'
     }
+
+    Context 'Path entries' {
+        BeforeEach {
+            $script:PFolder = ConvertTo-DFPath (Join-Path $TestDrive 'pathdesk')
+            $record = [pscustomobject]@{ tool = 'pathdesk'; since = 'x' }
+            Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{}; Path = @{ $script:PFolder = $record } })
+        }
+        It 'removes a Path entry DotForge added, wherever it now is' {
+            Set-DFUserPathValue -Value "$($script:PFolder);C:\x"
+            $result = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+            Get-DFUserPathValue | Should -Be 'C:\x'
+            $result.Kind | Should -Be 'Path'
+            $result.Name | Should -Be 'Path'
+            $result.Value | Should -Be $script:PFolder
+            $result.Current | Should -Be $script:PFolder
+            $result.Action | Should -Be 'Removed'
+            (Read-DFDesktopEnvState).Path.Count | Should -Be 0
+            Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
+        }
+        It 'removes only one occurrence' {
+            Set-DFUserPathValue -Value "C:\x;$($script:PFolder);$($script:PFolder)"
+            $null = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+            Get-DFUserPathValue | Should -Be "C:\x;$($script:PFolder)"
+        }
+        It 'an entry already gone is Removed with nothing to write' {
+            Set-DFUserPathValue -Value 'C:\x'
+            $result = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+            $result.Action | Should -Be 'Removed'
+            $result.Current | Should -BeNullOrEmpty
+            Get-DFUserPathValue | Should -Be 'C:\x'
+            (Read-DFDesktopEnvState).Path.Count | Should -Be 0
+            Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+        }
+        It 'never removes an entry it didn''t record' {
+            Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{}; Path = @{} })
+            Set-DFUserPathValue -Value "C:\x;$($script:PFolder)"
+            $null = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+            Get-DFUserPathValue | Should -Be "C:\x;$($script:PFolder)"
+            Should -Invoke Write-Host -ParameterFilter { "$Object" -eq 'DotForge set no desktop variables or Path entries for these tools.' }
+        }
+        It 'lists the Path entry in the -WhatIf action and removes nothing' {
+            Set-DFUserPathValue -Value "C:\x;$($script:PFolder)"
+            $null = Remove-DFDesktopEnv -Name pathdesk -WhatIf
+            Get-DFUserPathValue | Should -Be "C:\x;$($script:PFolder)"
+            (Read-DFDesktopEnvState).Path.Count | Should -Be 1
+        }
+    }
 }

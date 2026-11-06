@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: fa9d2242619c11a8b03d38acb817294556ededc61099423e781c08654dfd0761
+# sources-sha256: 145f4f6a5bb1bf14a49580b8c811eb7b6d82f73e98488362794c2039c7c45fbe
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -417,36 +417,120 @@ function Save-DFDesktopEnvState {
 function Remove-DFDesktopEnvSet {
     <#
     .SYNOPSIS
-        Removes the desktop variables DotForge wrote for some tools: each only while its value is still the one DotForge wrote.
+        Removes the desktop variables and Path entries DotForge wrote for some tools: each only while it is still what DotForge wrote.
     .DESCRIPTION
         A variable whose value changed since is left (Changed), and said so.
-        Either way its record is dropped: DotForge no longer owns it. One
-        broadcast follows when anything was removed; the state is saved.
+        A Path entry is removed wherever it now is (the first matching
+        segment, once); one already gone is Removed with nothing to write.
+        Either way the record is dropped: DotForge no longer owns it. The
+        user Path is written once, one broadcast follows when anything was
+        removed, and the state is saved.
     .PARAMETER Tool
         The tools; none means every tool in the state.
     .PARAMETER State
-        Read-DFDesktopEnvState's object (not $null); its Vars are updated and saved.
+        Read-DFDesktopEnvState's object (not $null); its Vars and Path are updated and saved.
     .OUTPUTS
-        pscustomobject per recorded variable: Tool, Name, Value, Current, Action (Removed or Changed).
+        DotForge.DesktopEnvResult per recorded variable and Path entry: Kind, Tool, Name, Value, Current, Action (Removed or Changed), Shadowed, Before.
+    #>
+    [CmdletBinding()]
+    param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
+    $variableRemoval = Remove-DFDesktopEnvVariable -Tool $Tool -State $State
+    $pathRemoval = Remove-DFDesktopEnvPathEntry -Tool $Tool -State $State
+    if ($variableRemoval.Removed -or $pathRemoval.Removed) { Send-DFEnvironmentChange }
+    if ($variableRemoval.Results -or $pathRemoval.Results) { Save-DFDesktopEnvState -State $State }
+    $variableRemoval.Results
+    $pathRemoval.Results
+}
+
+function New-DFDesktopEnvRemoval {
+    <#
+    .SYNOPSIS
+        One removal result, shaped like Set-DFDesktopEnv's (DotForge.DesktopEnvResult).
+    .PARAMETER Kind
+        Variable or Path.
+    .PARAMETER Tool
+        The recorded tool.
+    .PARAMETER Name
+        The variable; Path for a Path entry.
+    .PARAMETER Value
+        What DotForge wrote; the folder for a Path entry.
+    .PARAMETER Current
+        What is there now; may be $null.
+    .PARAMETER Action
+        Removed or Changed.
+    .OUTPUTS
+        DotForge.DesktopEnvResult.
+    #>
+    [CmdletBinding()]
+    param([string]$Kind, [string]$Tool, [string]$Name, [string]$Value, [AllowNull()][string]$Current, [string]$Action)
+    [pscustomobject]@{
+        PSTypeName = 'DotForge.DesktopEnvResult'; Kind = $Kind; Tool = $Tool; Name = $Name; Value = $Value
+        Current = if ($Current) { $Current } else { $null }; Action = $Action; Shadowed = @(); Before = $null
+    }
+}
+
+function Remove-DFDesktopEnvVariable {
+    <#
+    .SYNOPSIS
+        Removes the recorded desktop variables of some tools while unchanged, and drops their records (state not saved).
+    .PARAMETER Tool
+        The tools; none means all.
+    .PARAMETER State
+        Read-DFDesktopEnvState's object; its Vars are updated.
+    .OUTPUTS
+        pscustomobject: Results (DotForge.DesktopEnvResult per variable) and Removed (how many were deleted).
     #>
     [CmdletBinding()]
     param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
     $vars = $State.Vars
-    $names = @($vars.Keys | Where-Object { -not $Tool -or $vars[$_].tool -in $Tool } | Sort-Object)
-    if (-not $names) { return }
     $removed = 0
-    $results = foreach ($name in $names) {
+    $results = foreach ($name in @($vars.Keys | Where-Object { -not $Tool -or $vars[$_].tool -in $Tool } | Sort-Object)) {
         $entry = $vars[$name]
         $current = Get-DFDesktopEnvValue -Name $name
         $action = if (-not $current -or (Test-DFDesktopEnvMatch -Current $current -Value $entry.value)) { 'Removed' } else { 'Changed' }
         if ($action -eq 'Removed' -and $current) { Remove-DFDesktopEnvValue -Name $name; $removed++ }
         if ($action -eq 'Changed') { Write-Host "Left ${name} = ${current}: it changed since DotForge set it to $($entry.value)." }
         $vars.Remove($name)
-        [pscustomobject]@{ PSTypeName = 'DotForge.DesktopEnvResult'; Tool = $entry.tool; Name = $name; Value = $entry.value; Current = $current; Action = $action }
+        New-DFDesktopEnvRemoval -Kind Variable -Tool $entry.tool -Name $name -Value $entry.value -Current $current -Action $action
     }
-    if ($removed) { Send-DFEnvironmentChange }
-    Save-DFDesktopEnvState -State $State
-    $results
+    [pscustomobject]@{ Results = @($results); Removed = $removed }
+}
+
+function Remove-DFDesktopEnvPathEntry {
+    <#
+    .SYNOPSIS
+        Removes the recorded Path entries of some tools from the user Path, one write for all, and drops their records (state not saved).
+    .DESCRIPTION
+        Each folder's first matching segment goes, wherever it is. A folder
+        no longer on the Path is Removed with nothing to write.
+    .PARAMETER Tool
+        The tools; none means all.
+    .PARAMETER State
+        Read-DFDesktopEnvState's object; its Path is updated.
+    .OUTPUTS
+        pscustomobject: Results (DotForge.DesktopEnvResult per folder) and Removed (how many segments were deleted).
+    #>
+    [CmdletBinding()]
+    param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
+    $recorded = $State.Path
+    $folders = @($recorded.Keys | Where-Object { -not $Tool -or $recorded[$_].tool -in $Tool } | Sort-Object)
+    if (-not $folders) { return [pscustomobject]@{ Results = @(); Removed = 0 } }
+    $userPath = Get-DFUserPathValue
+    $removed = 0
+    $results = foreach ($folder in $folders) {
+        $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder
+        $segment = $null
+        if ($index -ge 0) {
+            $segment = ($userPath -split ';')[$index]
+            $userPath = Remove-DFDesktopPathSegment -Value $userPath -Index $index
+            $removed++
+        }
+        $owner = $recorded[$folder].tool
+        $recorded.Remove($folder)
+        New-DFDesktopEnvRemoval -Kind Path -Tool $owner -Name 'Path' -Value $folder -Current $segment -Action 'Removed'
+    }
+    if ($removed) { Set-DFUserPathValue -Value $userPath }
+    [pscustomobject]@{ Results = @($results); Removed = $removed }
 }
 
 # ---- Shared/DFDesktopPath.ps1
@@ -12281,8 +12365,8 @@ function Remove-DFTool {
             try {
                 $desktopState = Read-DFDesktopEnvState
                 if ($null -ne $desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
-                else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
-            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
+                else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables and Path entries weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
+            } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables and Path entries ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }
         $result
