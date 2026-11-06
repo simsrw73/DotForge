@@ -377,9 +377,15 @@ fnm's folder isn't on the desktop Path; Set-DFDesktopEnv fnm adds it
   Put fnm's folder [B]efore it, [A]fter it or [S]kip (Enter: After)
 ```
 
-A copy on the system `PATH` is found first whatever the user `PATH` order, so then the question is only `[A]dd fnm's folder anyway or [S]kip (Enter: Add)`. Unattended, or with `-Confirm:$false`, the folder goes at the end and the output names the copy that comes first. Nothing is checked or written when your shell loads.
+A copy on the system `PATH` is found first whatever the user `PATH` order, so then the question is only `[A]dd fnm's folder anyway or [S]kip (Enter: Add)`. Unattended, or with `-Confirm:$false`, the folder goes at the end and the output names the copy that comes first. Your shell load only notes a missing or skipped entry; the other-copy check and every write happen in `Set-DFDesktopEnv`. `Get-DFToolStatus` never says which other copy runs first.
 
-DotForge adds the folder only when the tool lives where its own variable puts it. If `FNM_DIR` is set to something else, in your shell or for desktop apps, the entry is skipped and the output says why, so DotForge never adds a folder the tool doesn't use.
+DotForge adds the folder only when the tool lives where its own variable puts it. If `FNM_DIR` is set to something else, in your shell or for desktop apps, the entry is skipped and the output says why, so DotForge never adds a folder the tool doesn't use:
+
+<!-- fragment -->
+
+```text
+Skipped fnm's Path entry: FNM_DIR is C:\Users\you\.fnm for desktop apps, so fnm's folder isn't under C:\Users\you\.local\share\fnm. Add C:\Users\you\.fnm\aliases\default yourself, or let DotForge set FNM_DIR.
+```
 
 New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, variables and `PATH` entries, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote. A `PATH` folder is removed wherever it now sits in the user `PATH`.
 

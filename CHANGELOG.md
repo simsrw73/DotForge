@@ -12,7 +12,8 @@ All notable changes to DotForge are documented here.
   loads; it keeps every other `PATH` entry as it was; it asks where to put the folder when another copy
   of `node`, `npm` or `npx` is already on the `PATH`; and it skips the entry when `FNM_DIR` points
   elsewhere. `Remove-DFDesktopEnv` and `Remove-DFTool` remove only the folders DotForge added, and
-  `Get-DFToolStatus` notes a missing one.
+  `Get-DFToolStatus` notes a missing or skipped one, but never which other copy runs first (only
+  `Set-DFDesktopEnv` checks that).
 
 ### Changed
 

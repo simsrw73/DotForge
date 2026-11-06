@@ -231,7 +231,8 @@ Each `Tools/*.json` must have at minimum:
   `DFTestDesktopEnvKey`). Design: `docs/superpowers/specs/2026-10-26-desktop-variables-design.md`.
   `desktopPath` (optional): `[{ path, commands }]`, folders desktop apps need on the user `PATH`
   (fnm's `aliases\default`); `commands` drive the other-copy check. Added only by `Set-DFDesktopEnv`;
-  whatever is already there (a variable or a `PATH` entry) is the user's and is never recorded or removed.
+  whatever is already there (a variable or a `PATH` entry) is the user's and is never recorded or removed. The load-time status notes only a missing or skipped entry;
+  the other-copy check runs only in `Set-DFDesktopEnv`.
   Design: `docs/superpowers/specs/2026-11-03-desktop-path-design.md`.
 - `env` (optional): a top-level map of environment variable → value for **non-XDG** session
   settings a tool takes only from a variable (`FZF_DEFAULT_COMMAND`, …); a setting the tool's config
