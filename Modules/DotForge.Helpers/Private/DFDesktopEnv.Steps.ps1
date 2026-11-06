@@ -36,18 +36,34 @@ function New-DFDesktopEnvResult {
     .PARAMETER Tool
         The tool.
     .PARAMETER Name
-        The variable.
+        The variable; Path for a Path entry.
     .PARAMETER Value
-        DotForge's value.
+        DotForge's value; the folder for a Path entry.
     .PARAMETER Current
-        The value in the user environment before the command; may be $null.
+        The value in the user environment before the command, or for a Path entry the matching segment as written; may be $null.
     .PARAMETER Action
-        Set, AlreadySet, Kept, Replaced, Removed or Changed.
+        Set, AlreadySet, Kept, Replaced, Removed or Changed; for a Path entry Set, AlreadySet or Skipped.
+    .PARAMETER Kind
+        Variable or Path.
+    .PARAMETER Shadowed
+        A Path entry's other copies (Find-DFDesktopPathOtherCopy's results).
+    .PARAMETER Before
+        A Path entry's folder to insert before (another copy's folder); $null appends.
     .OUTPUTS
         DotForge.DesktopEnvResult.
     #>
-    param([string]$Tool, [string]$Name, [string]$Value, [AllowNull()][string]$Current, [string]$Action)
-    [pscustomobject]@{ PSTypeName = 'DotForge.DesktopEnvResult'; Tool = $Tool; Name = $Name; Value = $Value; Current = $Current; Action = $Action }
+    param(
+        [string]$Tool, [string]$Name, [string]$Value, [AllowNull()][string]$Current, [string]$Action,
+        [ValidateSet('Variable', 'Path')][string]$Kind = 'Variable',
+        [AllowEmptyCollection()][object[]]$Shadowed = @(),
+        [AllowNull()][string]$Before = $null
+    )
+    # A [string] parameter turns $null into ''; the result keeps $null for "none".
+    [pscustomobject]@{
+        PSTypeName = 'DotForge.DesktopEnvResult'; Kind = $Kind; Tool = $Tool; Name = $Name; Value = $Value
+        Current = if ($Current) { $Current } else { $null }; Action = $Action
+        Shadowed = $Shadowed; Before = if ($Before) { $Before } else { $null }
+    }
 }
 
 function Read-DFDesktopEnvChoice {
@@ -126,26 +142,36 @@ function Get-DFDesktopEnvPlan {
 function Write-DFDesktopEnvPlan {
     <#
     .SYNOPSIS
-        Records the planned Set and Replaced variables, then writes them and broadcasts once if any.
+        Records the planned Set and Replaced variables and Set Path entries, then writes them and broadcasts once if any.
     .DESCRIPTION
-        An AlreadySet variable is the user's and is never recorded. A variable
-        already recorded for another tool keeps that owner. When the record
-        can't be saved, nothing is written (it throws).
+        An AlreadySet variable or Path entry is the user's and is never
+        recorded. When the record can't be saved, nothing is written (it
+        throws). The user Path is read and written once, each folder appended
+        or inserted before its Before folder, in plan order.
     .PARAMETER Plan
-        Get-DFDesktopEnvPlan's results.
+        Get-DFDesktopEnvPlan's and Get-DFDesktopPathPlan's results.
     .PARAMETER State
-        Read-DFDesktopEnvState's object; its Vars are updated and saved.
+        Read-DFDesktopEnvState's object; its Vars and Path are updated and saved.
     .OUTPUTS
         None.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Plan, [Parameter(Mandatory)][pscustomobject]$State)
-    foreach ($item in @($Plan | Where-Object Action -in 'Set', 'Replaced')) {
-        $State.Vars[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = [DateTime]::UtcNow.ToString('o') }
-    }
+    $varWrites = @($Plan | Where-Object { $_.Kind -eq 'Variable' -and $_.Action -in 'Set', 'Replaced' })
+    $pathWrites = @($Plan | Where-Object { $_.Kind -eq 'Path' -and $_.Action -eq 'Set' })
+    $since = [DateTime]::UtcNow.ToString('o')
+    foreach ($item in $varWrites) { $State.Vars[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = $since } }
+    foreach ($item in $pathWrites) { $State.Path[$item.Value] = [pscustomobject]@{ tool = $item.Tool; since = $since } }
     # Recorded first: a write that then fails leaves a record removal tolerates, never a write it can't find.
     Save-DFDesktopEnvState -State $State -ErrorAction Stop
-    $writes = @($Plan | Where-Object Action -in 'Set', 'Replaced')
-    foreach ($item in $writes) { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
-    if ($writes) { Send-DFEnvironmentChange }
+    foreach ($item in $varWrites) { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
+    if ($pathWrites) {
+        $userPath = Get-DFUserPathValue
+        foreach ($item in $pathWrites) {
+            $beforeIndex = if ($item.Before) { Find-DFDesktopPathSegment -Value $userPath -Folder $item.Before } else { -1 }
+            $userPath = Add-DFDesktopPathSegment -Value $userPath -Segment $item.Value -BeforeIndex $beforeIndex
+        }
+        Set-DFUserPathValue -Value $userPath
+    }
+    if ($varWrites -or $pathWrites) { Send-DFEnvironmentChange }
 }
