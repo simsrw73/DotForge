@@ -464,6 +464,21 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
                 $result.Current | Should -Be $script:PFolder
             } finally { [IO.Directory]::Delete($script:PFolder) }
         }
+        It 'leaves a segment of yours that only reaches the folder through the junction' {
+            $target = Join-Path $TestDrive 'installation'
+            New-Item -ItemType Directory -Force $target | Out-Null
+            New-Item -ItemType Junction -Path $script:PFolder -Target $target | Out-Null
+            try {
+                Set-DFUserPathValue -Value "$target;C:\x"
+                # DotForge's own segment is gone: only the junction target remains, and that is the user's.
+                $result = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+                Get-DFUserPathValue | Should -Be "$target;C:\x"
+                $result.Action | Should -Be 'Removed'
+                $result.Current | Should -BeNullOrEmpty
+                (Read-DFDesktopEnvState).Path.Count | Should -Be 0
+                Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+            } finally { [IO.Directory]::Delete($script:PFolder) }
+        }
         It 'a Path that can''t be written: Failed, the entry stays recorded, nothing broadcast' {
             Set-DFUserPathValue -Value "$($script:PFolder);C:\x"
             Mock Set-DFUserPathValue { throw 'access denied' }

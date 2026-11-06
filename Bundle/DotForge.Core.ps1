@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: a7ffee57ae6cee8ad286c1631c63d55d5ee34cb18bea1979a4484b65c2ecdfd9
+# sources-sha256: ef2f377b7d2dbb9e0306b6f225b835b9b87bf31907ae0ac5e77e3f255d101a24
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -531,10 +531,12 @@ function Remove-DFDesktopEnvPathEntry {
     .SYNOPSIS
         Removes the recorded Path entries of some tools from the user Path, one write for all, and drops their records (state not saved).
     .DESCRIPTION
-        Each folder's first matching segment goes, wherever it is: one
-        written as the folder first (what DotForge wrote), else one that
-        links to it (Find-DFDesktopPathSegment). A folder no longer on the
-        Path is Removed with nothing to write. When the Path can't be
+        Each folder's first matching segment goes, wherever it is, but only
+        one written as the folder (any spelling: case, trailing separator,
+        %VARIABLES%), which is what DotForge wrote
+        (Find-DFDesktopPathSegment -AsWritten). A segment that only leads
+        to the folder through a link is the user's and stays. A folder no
+        longer on the Path as written is Removed with nothing to write. When the Path can't be
         written, each folder that needed the write is Failed and stays
         recorded.
     .PARAMETER Tool
@@ -551,7 +553,7 @@ function Remove-DFDesktopEnvPathEntry {
     if (-not $folders) { return [pscustomobject]@{ Results = @(); Removed = 0; Errors = @() } }
     $userPath = Get-DFUserPathValue
     $results = @(foreach ($folder in $folders) {
-        $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder
+        $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder -AsWritten
         $segment = if ($index -ge 0) { ($userPath -split ';')[$index] }
         if ($index -ge 0) { $userPath = Remove-DFDesktopPathSegment -Value $userPath -Index $index }
         New-DFDesktopEnvRemoval -Kind Path -Tool $recorded[$folder].tool -Name 'Path' -Value $folder -Current $segment -Action 'Removed'
@@ -693,19 +695,24 @@ function Find-DFDesktopPathSegment {
         First the folder as written: the first segment whose text names it
         (%VARIABLES% expanded, compared canonically and case-insensitively),
         with no file-system call, so an unreachable segment never stalls a
-        load. That is also the segment DotForge wrote, so removal takes it
-        rather than an earlier one that only links to the same folder. Only
-        when no segment names it as written are links followed on both sides.
+        load. That is also the segment DotForge wrote. Only when no segment
+        names it as written are links followed on both sides (planning and
+        the load-time note), unless -AsWritten stops at the first stage:
+        removal uses it, so a segment that merely leads to the folder
+        through a link stays the user's.
     .PARAMETER Value
         A Path value, as stored.
     .PARAMETER Folder
         The folder to look for.
+    .PARAMETER AsWritten
+        Match only the folder as written (any spelling: case, trailing
+        separator, %VARIABLES%); never follow a link.
     .OUTPUTS
         System.Int32.
     #>
     [CmdletBinding()]
     [OutputType([int])]
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Value, [Parameter(Mandatory)][string]$Folder)
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Value, [Parameter(Mandatory)][string]$Folder, [switch]$AsWritten)
     $segments = $Value -split ';'
     $written = ConvertTo-DFDesktopPathText -Segment $Folder
     if (-not $written) { return -1 }
@@ -713,6 +720,7 @@ function Find-DFDesktopPathSegment {
         $text = ConvertTo-DFDesktopPathText -Segment $segments[$index]
         if ($text -and [string]::Equals($text, $written, [StringComparison]::OrdinalIgnoreCase)) { return $index }
     }
+    if ($AsWritten) { return -1 }
     $wanted = Resolve-DFDesktopPathFolder -Segment $Folder
     for ($index = 0; $index -lt $segments.Count; $index++) {
         $resolved = Resolve-DFDesktopPathFolder -Segment $segments[$index]

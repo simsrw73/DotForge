@@ -439,10 +439,12 @@ function Remove-DFDesktopEnvPathEntry {
     .SYNOPSIS
         Removes the recorded Path entries of some tools from the user Path, one write for all, and drops their records (state not saved).
     .DESCRIPTION
-        Each folder's first matching segment goes, wherever it is: one
-        written as the folder first (what DotForge wrote), else one that
-        links to it (Find-DFDesktopPathSegment). A folder no longer on the
-        Path is Removed with nothing to write. When the Path can't be
+        Each folder's first matching segment goes, wherever it is, but only
+        one written as the folder (any spelling: case, trailing separator,
+        %VARIABLES%), which is what DotForge wrote
+        (Find-DFDesktopPathSegment -AsWritten). A segment that only leads
+        to the folder through a link is the user's and stays. A folder no
+        longer on the Path as written is Removed with nothing to write. When the Path can't be
         written, each folder that needed the write is Failed and stays
         recorded.
     .PARAMETER Tool
@@ -459,7 +461,7 @@ function Remove-DFDesktopEnvPathEntry {
     if (-not $folders) { return [pscustomobject]@{ Results = @(); Removed = 0; Errors = @() } }
     $userPath = Get-DFUserPathValue
     $results = @(foreach ($folder in $folders) {
-        $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder
+        $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder -AsWritten
         $segment = if ($index -ge 0) { ($userPath -split ';')[$index] }
         if ($index -ge 0) { $userPath = Remove-DFDesktopPathSegment -Value $userPath -Index $index }
         New-DFDesktopEnvRemoval -Kind Path -Tool $recorded[$folder].tool -Name 'Path' -Value $folder -Current $segment -Action 'Removed'

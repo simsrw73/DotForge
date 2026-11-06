@@ -121,19 +121,24 @@ function Find-DFDesktopPathSegment {
         First the folder as written: the first segment whose text names it
         (%VARIABLES% expanded, compared canonically and case-insensitively),
         with no file-system call, so an unreachable segment never stalls a
-        load. That is also the segment DotForge wrote, so removal takes it
-        rather than an earlier one that only links to the same folder. Only
-        when no segment names it as written are links followed on both sides.
+        load. That is also the segment DotForge wrote. Only when no segment
+        names it as written are links followed on both sides (planning and
+        the load-time note), unless -AsWritten stops at the first stage:
+        removal uses it, so a segment that merely leads to the folder
+        through a link stays the user's.
     .PARAMETER Value
         A Path value, as stored.
     .PARAMETER Folder
         The folder to look for.
+    .PARAMETER AsWritten
+        Match only the folder as written (any spelling: case, trailing
+        separator, %VARIABLES%); never follow a link.
     .OUTPUTS
         System.Int32.
     #>
     [CmdletBinding()]
     [OutputType([int])]
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Value, [Parameter(Mandatory)][string]$Folder)
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Value, [Parameter(Mandatory)][string]$Folder, [switch]$AsWritten)
     $segments = $Value -split ';'
     $written = ConvertTo-DFDesktopPathText -Segment $Folder
     if (-not $written) { return -1 }
@@ -141,6 +146,7 @@ function Find-DFDesktopPathSegment {
         $text = ConvertTo-DFDesktopPathText -Segment $segments[$index]
         if ($text -and [string]::Equals($text, $written, [StringComparison]::OrdinalIgnoreCase)) { return $index }
     }
+    if ($AsWritten) { return -1 }
     $wanted = Resolve-DFDesktopPathFolder -Segment $Folder
     for ($index = 0; $index -lt $segments.Count; $index++) {
         $resolved = Resolve-DFDesktopPathFolder -Segment $segments[$index]

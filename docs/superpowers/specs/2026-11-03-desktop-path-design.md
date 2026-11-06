@@ -210,6 +210,8 @@ is saved before the registry write (unchanged ordering).
 - The recorded folder is removed **wherever it now is** in the user `PATH` (the user may have moved
   it; the folder is what DotForge owns, not its position). If it appears more than once, only one
   occurrence is removed (my call: the others were added by someone else).
+- Removal matches the folder as DotForge wrote it (any spelling: case, trailing separator, `%VARS%`),
+  never a segment that only leads to it through a link: that one is the user's.
 - Already gone: nothing to do (`Removed`, as variables report today).
 - The record is dropped either way; one broadcast if anything changed.
 - Output: `DotForge.DesktopEnvResult` with `Name` = `Path`, `Action` `Removed`.

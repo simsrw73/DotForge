@@ -54,6 +54,11 @@ Describe 'DFDesktopPath' {
         Find-DFDesktopPathSegment -Value "$($script:real);C:\x;$($script:link)" -Folder $script:link | Should -Be 2
         Find-DFDesktopPathSegment -Value "$($script:real);C:\x" -Folder $script:link | Should -Be 0
     }
+    It '-AsWritten never follows a link, and still takes a differently spelled literal' -Skip:(-not $IsWindows) {
+        New-Item -ItemType Junction -Path $script:link -Target $script:real | Out-Null
+        Find-DFDesktopPathSegment -Value "$($script:real);C:\x" -Folder $script:link -AsWritten | Should -Be -1
+        Find-DFDesktopPathSegment -Value "X;$($script:real.ToUpper())\" -Folder $script:real -AsWritten | Should -Be 1
+    }
     It 'a match as written needs no file-system call' -Skip:(-not $IsWindows) {
         Mock Resolve-DFDesktopPathFolder { throw 'no file-system call expected' }
         Find-DFDesktopPathSegment -Value '\\unreachable\share;C:\x;C:/Tools/Bin/' -Folder 'c:\tools\bin' | Should -Be 2
