@@ -271,6 +271,11 @@ function Get-DFDesktopPathSchemaError ([PSCustomObject]$Tool, $Entries) {
     <#
     .SYNOPSIS
         Schema errors in desktopPath: a list of { path, commands } objects.
+    .DESCRIPTION
+        A path starts with a token Expand-DFXdgPath expands (${XDG_CONFIG_HOME},
+        ${XDG_DATA_HOME}, ${XDG_STATE_HOME} or ${XDG_CACHE_HOME}) or is a full
+        path: a relative folder could be added to the user Path but never
+        found there again to remove.
     .PARAMETER Tool
         The parsed tool record.
     .PARAMETER Entries
@@ -285,6 +290,10 @@ function Get-DFDesktopPathSchemaError ([PSCustomObject]$Tool, $Entries) {
         if ($path -isnot [string] -or -not $path) { return $message }
         $commands = $entry.PSObject.Properties['commands']?.Value
         if ($null -ne $commands -and ($commands -isnot [array] -or @($commands | Where-Object { $_ -isnot [string] -or -not $_ }).Count)) { return $message }
+    }
+    $relative = @($Entries.path | Where-Object { $_ -cnotmatch '^\$\{XDG_(CONFIG|DATA|STATE|CACHE)_HOME\}([\\/]|$)' -and -not [IO.Path]::IsPathFullyQualified($_) })
+    if ($relative) {
+        'desktopPath path must start with ${XDG_CONFIG_HOME}, ${XDG_DATA_HOME}, ${XDG_STATE_HOME} or ${XDG_CACHE_HOME}, or be a full path: ' + ($relative -join ', ')
     }
 }
 

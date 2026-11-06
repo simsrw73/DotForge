@@ -30,7 +30,11 @@ function Set-DFDesktopEnv {
         A folder under one of the tool's variables is skipped while that
         variable has another value, in this shell or for desktop apps: the
         folder would be one the tool never uses, and the output says what to
-        add instead.
+        add instead. A folder that isn't a full path is skipped too.
+
+        A write that fails (the registry refuses it) is Failed in the
+        output, isn't recorded, and an error says why; the other writes
+        still happen.
 
         What DotForge writes is recorded in
         $XDG_STATE_HOME\dotforge\desktop-env.json, so Remove-DFDesktopEnv and
@@ -55,9 +59,10 @@ function Set-DFDesktopEnv {
         (Variable or Path), Tool, Name (the variable, or Path), Value
         (DotForge's value, or the folder), Current (the value before; for a
         Path entry the matching segment as written, or $null), Action (Set,
-        AlreadySet, Kept or Replaced; for a Path entry Set, AlreadySet or
-        Skipped) and Shadowed (a Path entry's other copies of its commands:
-        Command, Path, Scope).
+        AlreadySet, Kept, Replaced or Failed; for a Path entry Set,
+        AlreadySet, Skipped or Failed), Shadowed (a Path entry's other copies
+        of its commands: Command, Path, Scope) and Before (the folder a Path
+        entry was put before, or $null when it was added at the end).
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>
@@ -86,6 +91,6 @@ function Set-DFDesktopEnv {
     if (-not (Test-DFDesktopEnvShouldProcess -Cmdlet $PSCmdlet -Target 'the Windows user environment' -Action "Set $what")) { return }
     Write-DFDesktopEnvPlan -Plan $plan -State $state
     if (-not $ask) { Write-DFDesktopPathShadowNote -Plan $plan }
-    Write-Host 'New programs see the change; programs already running keep their environment.'
+    if (@($writes | Where-Object Action -ne 'Failed')) { Write-Host 'New programs see the change; programs already running keep their environment.' }
     $plan
 }

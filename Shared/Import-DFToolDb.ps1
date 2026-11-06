@@ -580,6 +580,7 @@ function ConvertTo-DFToolRecord {
             nerdFont $null ('required': the tool only draws icons, so it isn't loaded while icons are off),
             packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
+            desktop @() (variable names), desktopPath @() (each { path; commands }),
             folder / source $null (the loader sets them: where the JSON was
             read from, and 'builtin' or 'user')
 

@@ -26,7 +26,9 @@ function Remove-DFDesktopEnv {
     .OUTPUTS
         DotForge.DesktopEnvResult per recorded variable or Path entry: Kind
         (Variable or Path), Tool, Name (Path for an entry), Value (what DotForge
-        wrote; the folder for an entry), Current and Action (Removed or Changed).
+        wrote; the folder for an entry), Current and Action (Removed, Changed,
+        or Failed when the registry refused the removal: it stays recorded,
+        and an error says why).
     .LINK
         https://github.com/simsrw73/DotForge/blob/main/docs/guide/configuration.md
     #>

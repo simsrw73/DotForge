@@ -48,6 +48,17 @@ Describe 'DFDesktopPath' {
         New-ItemProperty -Path $key -Name DFTESTHOME -Value "$TestDrive" -PropertyType String | Out-Null
         Find-DFDesktopPathSegment -Value 'X;%DFTESTHOME%\real' -Folder $script:real | Should -Be 1
     }
+    It 'prefers the segment written as the folder over an earlier one that only resolves to it' -Skip:(-not $IsWindows) {
+        # fnm's aliases\default is a junction to an installation folder the user may also have on the Path.
+        New-Item -ItemType Junction -Path $script:link -Target $script:real | Out-Null
+        Find-DFDesktopPathSegment -Value "$($script:real);C:\x;$($script:link)" -Folder $script:link | Should -Be 2
+        Find-DFDesktopPathSegment -Value "$($script:real);C:\x" -Folder $script:link | Should -Be 0
+    }
+    It 'a match as written needs no file-system call' -Skip:(-not $IsWindows) {
+        Mock Resolve-DFDesktopPathFolder { throw 'no file-system call expected' }
+        Find-DFDesktopPathSegment -Value '\\unreachable\share;C:\x;C:/Tools/Bin/' -Folder 'c:\tools\bin' | Should -Be 2
+        Should -Invoke Resolve-DFDesktopPathFolder -Times 0 -Exactly
+    }
     It 'skips relative, missing and empty segments without warnings' -Skip:(-not $IsWindows) {
         $value = '.;;C:\nope-df-task3;relative\x'
         Find-DFDesktopPathSegment -Value $value -Folder $script:real -WarningVariable w | Should -Be -1

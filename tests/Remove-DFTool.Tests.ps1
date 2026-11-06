@@ -84,6 +84,20 @@ Describe 'Remove-DFTool' {
         $r.Result | Should -Be 'Removed'
         $script:Lines -join "`n" | Should -Match 'Left behind'
     }
+    It 'warns, and keeps the record, when the user Path can''t be written, even under Stop' -Skip:(-not $IsWindows) {
+        Mock Send-DFEnvironmentChange { }
+        try {
+            $folder = ConvertTo-DFPath (Join-Path $TestDrive 'glowbin')
+            Set-DFUserPathValue -Value "C:\x;$folder"
+            Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{}; Path = @{ $folder = [pscustomobject]@{ tool = 'glow'; since = 'x' } } })
+            Mock Set-DFUserPathValue { throw 'registry says no' }
+            $ErrorActionPreference = 'Stop'
+            $output = @(Remove-DFTool -Name glow -Confirm:$false 3>&1)
+            ($output | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] }).Result | Should -Be 'Removed'
+            "$($output | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })" | Should -Match "couldn't write the user Path \(registry says no\)"
+            (Read-DFDesktopEnvState).Path[$folder].tool | Should -Be 'glow'
+        } finally { Remove-Item -LiteralPath (Get-DFDesktopEnvKey) -Recurse -Force -ErrorAction Ignore }
+    }
     It 'says the tool''s desktop variables weren''t removed when their record can''t be read' {
         Mock Read-DFDesktopEnvState { $null }
         $warnings = @(Remove-DFTool -Name glow -Confirm:$false 3>&1 | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })

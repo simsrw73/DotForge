@@ -10,8 +10,8 @@ function Get-DFDesktopPathPlan {
         Classifies each desktop Path entry against the user Path: Set, AlreadySet or Skipped (asking when it may).
     .DESCRIPTION
         An entry already on the user Path, however written, is AlreadySet and
-        stays the user's. One whose variable has another value in effect is
-        Skipped, and said so. A missing one is Set (appended), unless another
+        stays the user's. One that isn't a full path once expanded, or whose
+        variable has another value in effect, is Skipped, and said so. A missing one is Set (appended), unless another
         copy of its commands is found and the user, asked, chooses before or
         skip. A folder an earlier tool in the run planned is AlreadySet for
         later ones.
@@ -70,7 +70,7 @@ function Get-DFDesktopPathPlannedValue {
 function Get-DFDesktopPathEntryPlan {
     <#
     .SYNOPSIS
-        Plans one desktop Path entry: AlreadySet, Skipped by the guard or the user, or Set (with the folder to go before, if any).
+        Plans one desktop Path entry: AlreadySet, Skipped (not a full path, by the guard or by the user), or Set (with the folder to go before, if any).
     .PARAMETER ToolName
         The tool.
     .PARAMETER Entry
@@ -94,6 +94,11 @@ function Get-DFDesktopPathEntryPlan {
         [bool]$Ask
     )
     $result = @{ Kind = 'Path'; Tool = $ToolName; Name = 'Path'; Value = $Entry.Path }
+    if (-not [IO.Path]::IsPathFullyQualified($Entry.Path)) {
+        # The schema rejects such a record; one written anyway would be appended and never found again.
+        Write-Host "Skipped ${ToolName}'s Path entry $($Entry.Path): it isn't a full path."
+        return New-DFDesktopEnvResult @result -Action Skipped
+    }
     $index = Find-DFDesktopPathSegment -Value $UserPath -Folder $Entry.Path
     if ($index -ge 0) { return New-DFDesktopEnvResult @result -Current ($UserPath -split ';')[$index] -Action AlreadySet }
     $guard = Test-DFDesktopPathGuard -Entry $Entry -DesktopValue $DesktopValue

@@ -86,6 +86,19 @@ Describe 'DFDesktopEnv' {
         $state.Vars['FOO'].tool | Should -Be 'deska'
         $state.Path.Count | Should -Be 0
     }
+    It 'a file with a vars or path section that isn''t a valid sectioned file is unreadable, never read as flat' {
+        New-Item -ItemType Directory -Force (Split-Path (Get-DFDesktopEnvStatePath)) | Out-Null
+        $record = '{ "tool":"deska","value":"x","since":"s" }'
+        foreach ($text in "{ ""vars"": null, ""path"": {} }",
+                          "{ ""vars"": {}, ""path"": {}, ""extra"": $record }",
+                          "{ ""Path"": { ""C:\\x"": 1 } }",
+                          "{ ""VARS"": $record }") {
+            Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) $text
+            Read-DFDesktopEnvState | Should -BeNullOrEmpty -Because $text
+        }
+        Set-Content -LiteralPath (Get-DFDesktopEnvStatePath) "{ ""Vars"": { ""FOO"": $record }, ""PATH"": {} }"
+        (Read-DFDesktopEnvState).Vars['FOO'].tool | Should -Be 'deska'
+    }
     It 'writes and reads the sectioned state' {
         $folder = 'C:'
         Save-DFDesktopEnvState -State ([pscustomobject]@{

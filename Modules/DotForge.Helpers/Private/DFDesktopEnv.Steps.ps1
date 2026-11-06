@@ -42,7 +42,7 @@ function New-DFDesktopEnvResult {
     .PARAMETER Current
         The value in the user environment before the command, or for a Path entry the matching segment as written; may be $null.
     .PARAMETER Action
-        Set, AlreadySet, Kept, Replaced, Removed or Changed; for a Path entry Set, AlreadySet or Skipped.
+        Set, AlreadySet, Kept, Replaced, Removed, Changed or Failed; for a Path entry Set, AlreadySet, Skipped, Removed or Failed.
     .PARAMETER Kind
         Variable or Path.
     .PARAMETER Shadowed
@@ -147,9 +147,12 @@ function Write-DFDesktopEnvPlan {
         An AlreadySet variable or Path entry is the user's and is never
         recorded. When the record can't be saved, nothing is written (it
         throws). The user Path is read and written once, each folder appended
-        or inserted before its Before folder, in plan order.
+        or inserted before its Before folder, in plan order. A write that
+        fails turns its plan items to Failed, puts back the record DotForge
+        had before (or none), and writes a non-terminating error; the other
+        writes still happen.
     .PARAMETER Plan
-        Get-DFDesktopEnvPlan's and Get-DFDesktopPathPlan's results.
+        Get-DFDesktopEnvPlan's and Get-DFDesktopPathPlan's results; a failed item's Action becomes Failed.
     .PARAMETER State
         Read-DFDesktopEnvState's object; its Vars and Path are updated and saved.
     .OUTPUTS
@@ -157,21 +160,80 @@ function Write-DFDesktopEnvPlan {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][object[]]$Plan, [Parameter(Mandatory)][pscustomobject]$State)
-    $varWrites = @($Plan | Where-Object { $_.Kind -eq 'Variable' -and $_.Action -in 'Set', 'Replaced' })
-    $pathWrites = @($Plan | Where-Object { $_.Kind -eq 'Path' -and $_.Action -eq 'Set' })
-    $since = [DateTime]::UtcNow.ToString('o')
-    foreach ($item in $varWrites) { $State.Vars[$item.Name] = [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = $since } }
-    foreach ($item in $pathWrites) { $State.Path[$item.Value] = [pscustomobject]@{ tool = $item.Tool; since = $since } }
-    # Recorded first: a write that then fails leaves a record removal tolerates, never a write it can't find.
+    $writes = @($Plan | Where-Object { ($_.Kind -eq 'Variable' -and $_.Action -in 'Set', 'Replaced') -or ($_.Kind -eq 'Path' -and $_.Action -eq 'Set') })
+    if (-not $writes) { return }
+    $previous = Add-DFDesktopEnvPlanRecord -Writes $writes -State $State
+    # Recorded first: a write never happens unrecorded, so removal can always find it.
     Save-DFDesktopEnvState -State $State -ErrorAction Stop
-    foreach ($item in $varWrites) { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
-    if ($pathWrites) {
+    $failures = @(Invoke-DFDesktopEnvPlanWrite -Writes $writes)
+    $failedItems = @($failures | ForEach-Object Items)
+    if ($failedItems.Count -lt $writes.Count) { Send-DFEnvironmentChange }
+    if (-not $failures) { return }
+    foreach ($item in $failedItems) {
+        $section = if ($item.Kind -eq 'Path') { $State.Path } else { $State.Vars }
+        $key = if ($item.Kind -eq 'Path') { $item.Value } else { $item.Name }
+        $old = $previous["$($item.Kind)|$key"]
+        if ($old) { $section[$key] = $old } else { $section.Remove($key) }
+        $item.Action = 'Failed'
+    }
+    try { Save-DFDesktopEnvState -State $State -ErrorAction Stop }
+    catch { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) still records what couldn't be written ($($_.Exception.Message)); Remove-DFDesktopEnv drops it." }
+    foreach ($failure in $failures) { Write-Error "DotForge: $($failure.Message)" }
+}
+
+function Add-DFDesktopEnvPlanRecord {
+    <#
+    .SYNOPSIS
+        Records each planned write in the state (not saved) and returns the records they replaced.
+    .PARAMETER Writes
+        The plan items to write: Set or Replaced variables, Set Path entries.
+    .PARAMETER State
+        Read-DFDesktopEnvState's object; its Vars and Path are updated.
+    .OUTPUTS
+        System.Collections.Hashtable: '<Kind>|<variable or folder>' -> the record it replaced, for each that had one.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param([Parameter(Mandatory)][object[]]$Writes, [Parameter(Mandatory)][pscustomobject]$State)
+    $since = [DateTime]::UtcNow.ToString('o')
+    $previous = @{}
+    foreach ($item in $Writes) {
+        $isPath = $item.Kind -eq 'Path'
+        $section = if ($isPath) { $State.Path } else { $State.Vars }
+        $key = if ($isPath) { $item.Value } else { $item.Name }
+        if ($section.ContainsKey($key)) { $previous["$($item.Kind)|$key"] = $section[$key] }
+        $section[$key] = if ($isPath) { [pscustomobject]@{ tool = $item.Tool; since = $since } }
+                         else { [pscustomobject]@{ tool = $item.Tool; value = $item.Value; since = $since } }
+    }
+    $previous
+}
+
+function Invoke-DFDesktopEnvPlanWrite {
+    <#
+    .SYNOPSIS
+        Writes the planned variables, then the user Path once; returns what failed instead of stopping.
+    .PARAMETER Writes
+        The plan items to write: Set or Replaced variables, Set Path entries.
+    .OUTPUTS
+        pscustomobject per failed write: Items (the plan items it covered) and Message.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][object[]]$Writes)
+    foreach ($item in @($Writes | Where-Object Kind -eq 'Variable')) {
+        try { Set-DFDesktopEnvValue -Name $item.Name -Value $item.Value }
+        catch { [pscustomobject]@{ Items = @($item); Message = "couldn't set $($item.Name) ($($_.Exception.Message)), so it isn't recorded." } }
+    }
+    $pathWrites = @($Writes | Where-Object Kind -eq 'Path')
+    if (-not $pathWrites) { return }
+    try {
         $userPath = Get-DFUserPathValue
         foreach ($item in $pathWrites) {
             $beforeIndex = if ($item.Before) { Find-DFDesktopPathSegment -Value $userPath -Folder $item.Before } else { -1 }
             $userPath = Add-DFDesktopPathSegment -Value $userPath -Segment $item.Value -BeforeIndex $beforeIndex
         }
         Set-DFUserPathValue -Value $userPath
+    } catch {
+        $folders = @($pathWrites.Value) -join ', '
+        [pscustomobject]@{ Items = $pathWrites; Message = "couldn't write the user Path ($($_.Exception.Message)), so $folders isn't on it or recorded." }
     }
-    if ($varWrites -or $pathWrites) { Send-DFEnvironmentChange }
 }

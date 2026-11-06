@@ -999,7 +999,7 @@ Only variables and Path entries DotForge recorded in $XDG_STATE_HOME\\dotforge\\
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string[] |  |  |  | The tools. Leave it out for every variable and Path entry DotForge wrote. |
 
-**Outputs:** DotForge.DesktopEnvResult per recorded variable or Path entry: Kind (Variable or Path), Tool, Name (Path for an entry), Value (what DotForge wrote; the folder for an entry), Current and Action (Removed or Changed).
+**Outputs:** DotForge.DesktopEnvResult per recorded variable or Path entry: Kind (Variable or Path), Tool, Name (Path for an entry), Value (what DotForge wrote; the folder for an entry), Current and Action (Removed, Changed, or Failed when the registry refused the removal: it stays recorded, and an error says why).
 
 **Example 1**
 
@@ -1138,7 +1138,9 @@ DotForge sets a tool's variables in each pwsh session only. A program started an
 
 A variable that is missing is written. One already set to the same value is left as it is, and stays yours: DotForge won't remove it (it isn't recorded, so removing the tool never removes it). One set to something else (by you, or by a package manager) is yours: in an interactive console you're asked whether to keep it or replace it; otherwise, or with -Confirm:$false, it is kept, and the output says so.
 
-A record may also name folders desktop apps need on the Windows user Path (desktopPath; fnm's default Node). A folder already on it, however written, is left as it is and stays yours. A missing one is added at the end. When another copy of one of its commands is on the Path, an interactive console asks whether to put the folder before that copy, after it, or skip it (a copy on the system Path comes first whatever the order, so then you're asked only whether to add it); otherwise it is added at the end and the output names the copy that comes first. A folder under one of the tool's variables is skipped while that variable has another value, in this shell or for desktop apps: the folder would be one the tool never uses, and the output says what to add instead.
+A record may also name folders desktop apps need on the Windows user Path (desktopPath; fnm's default Node). A folder already on it, however written, is left as it is and stays yours. A missing one is added at the end. When another copy of one of its commands is on the Path, an interactive console asks whether to put the folder before that copy, after it, or skip it (a copy on the system Path comes first whatever the order, so then you're asked only whether to add it); otherwise it is added at the end and the output names the copy that comes first. A folder under one of the tool's variables is skipped while that variable has another value, in this shell or for desktop apps: the folder would be one the tool never uses, and the output says what to add instead. A folder that isn't a full path is skipped too.
+
+A write that fails (the registry refuses it) is Failed in the output, isn't recorded, and an error says why; the other writes still happen.
 
 What DotForge writes is recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json, so Remove-DFDesktopEnv and Remove-DFTool remove only that, and only while it is unchanged. New programs see the change; running ones keep their environment.
 
@@ -1146,7 +1148,7 @@ What DotForge writes is recorded in $XDG_STATE_HOME\\dotforge\\desktop-env.json,
 | --- | --- | --- | --- | --- | --- |
 | `-Name` | string[] |  |  |  | The tools. Leave it out for every tool your session requests. |
 
-**Outputs:** DotForge.DesktopEnvResult per variable and per Path entry: Kind (Variable or Path), Tool, Name (the variable, or Path), Value (DotForge's value, or the folder), Current (the value before; for a Path entry the matching segment as written, or $null), Action (Set, AlreadySet, Kept or Replaced; for a Path entry Set, AlreadySet or Skipped) and Shadowed (a Path entry's other copies of its commands: Command, Path, Scope).
+**Outputs:** DotForge.DesktopEnvResult per variable and per Path entry: Kind (Variable or Path), Tool, Name (the variable, or Path), Value (DotForge's value, or the folder), Current (the value before; for a Path entry the matching segment as written, or $null), Action (Set, AlreadySet, Kept, Replaced or Failed; for a Path entry Set, AlreadySet, Skipped or Failed), Shadowed (a Path entry's other copies of its commands: Command, Path, Scope) and Before (the folder a Path entry was put before, or $null when it was added at the end).
 
 **Example 1**
 

@@ -13,7 +13,10 @@ All notable changes to DotForge are documented here.
   of `node`, `npm` or `npx` is already on the `PATH`; and it skips the entry when `FNM_DIR` points
   elsewhere. `Remove-DFDesktopEnv` and `Remove-DFTool` remove only the folders DotForge added, and
   `Get-DFToolStatus` notes a missing or skipped one, but never which other copy runs first (only
-  `Set-DFDesktopEnv` checks that).
+  `Set-DFDesktopEnv` checks that). Removal takes the entry written the way DotForge wrote it, never an
+  earlier one of yours that points at the same folder. A registry write that fails is `Failed` in the
+  output with an error, and DotForge's record stays true to what was written. A `desktopPath` path
+  must start with an `${XDG_*_HOME}` token or be a full path.
 
 ### Changed
 

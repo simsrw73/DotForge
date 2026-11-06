@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 145f4f6a5bb1bf14a49580b8c811eb7b6d82f73e98488362794c2039c7c45fbe
+# sources-sha256: a7ffee57ae6cee8ad286c1631c63d55d5ee34cb18bea1979a4484b65c2ecdfd9
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -185,12 +185,14 @@ function Set-DFDesktopEnvValue {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][string]$Value)
-    $key = Open-DFDesktopEnvKey -Create
+    # A failed write throws (a terminating error): callers must never go on as if it were written.
+    $key = $null
     try {
+        $key = Open-DFDesktopEnvKey -Create
         $kind = if ($key.GetValueNames() -contains $Name) { $key.GetValueKind($Name) } else { [Microsoft.Win32.RegistryValueKind]::String }
         if ($kind -ne [Microsoft.Win32.RegistryValueKind]::ExpandString) { $kind = [Microsoft.Win32.RegistryValueKind]::String }
         $key.SetValue($Name, $Value, $kind)
-    } finally { $key.Dispose() }
+    } catch { throw } finally { if ($key) { $key.Dispose() } }
 }
 
 function Remove-DFDesktopEnvValue {
@@ -204,9 +206,12 @@ function Remove-DFDesktopEnvValue {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
-    $key = Open-DFDesktopEnvKey -Writable
-    if (-not $key) { return }
-    try { $key.DeleteValue($Name, $false) } finally { $key.Dispose() }
+    # A failed removal throws (a terminating error), like Set-DFDesktopEnvValue.
+    $key = $null
+    try {
+        $key = Open-DFDesktopEnvKey -Writable
+        if ($key) { $key.DeleteValue($Name, $false) }
+    } catch { throw } finally { if ($key) { $key.Dispose() } }
 }
 
 function Invoke-DFSettingChangeBroadcast {
@@ -358,7 +363,9 @@ function Read-DFDesktopEnvState {
         $null (the reason goes to the verbose stream): callers then write and
         remove nothing, and each says why in its own words. The file holds
         "vars" and "path" sections; the older flat file (every key a variable)
-        reads as Vars.
+        reads as Vars. A file naming "vars" or "path" (any case) that isn't a
+        valid sectioned file is unreadable, never read as flat: its sections
+        would turn into variables.
     .OUTPUTS
         System.Management.Automation.PSCustomObject with Vars and Path hashtables, or $null.
     #>
@@ -373,11 +380,21 @@ function Read-DFDesktopEnvState {
         Write-Verbose "DotForge: $path can't be read: $($_.Exception.Message)"
         return $null
     }
-    $isSectioned = $data.Count -gt 0 -and @($data.Keys | Where-Object { $_ -notin 'vars', 'path' }).Count -eq 0 -and
-        @($data.Values | Where-Object { $_ -isnot [System.Collections.IDictionary] }).Count -eq 0
-    $varsData = if ($isSectioned) { $data['vars'] } else { $data }
-    $pathData = if ($isSectioned) { $data['path'] } else { $null }
-    [pscustomobject]@{ Vars = ConvertTo-DFDesktopEnvRecordTable $varsData; Path = ConvertTo-DFDesktopEnvRecordTable $pathData }
+    if (-not @($data.Keys | Where-Object { $_ -in 'vars', 'path' })) {
+        return [pscustomobject]@{ Vars = ConvertTo-DFDesktopEnvRecordTable $data; Path = @{} }
+    }
+    $sections = @{}
+    foreach ($name in $data.Keys) {
+        $section = $data[$name]
+        $isRecordTable = $section -is [System.Collections.IDictionary] -and
+            -not @($section.Values | Where-Object { $_ -isnot [System.Collections.IDictionary] })
+        if ($name -notin 'vars', 'path' -or $sections.ContainsKey($name) -or -not $isRecordTable) {
+            Write-Verbose "DotForge: $path can't be read: it isn't a valid file of vars and path sections"
+            return $null
+        }
+        $sections[$name] = $section
+    }
+    [pscustomobject]@{ Vars = ConvertTo-DFDesktopEnvRecordTable $sections['vars']; Path = ConvertTo-DFDesktopEnvRecordTable $sections['path'] }
 }
 
 function ConvertTo-DFDesktopEnvRecordTable {
@@ -422,15 +439,17 @@ function Remove-DFDesktopEnvSet {
         A variable whose value changed since is left (Changed), and said so.
         A Path entry is removed wherever it now is (the first matching
         segment, once); one already gone is Removed with nothing to write.
-        Either way the record is dropped: DotForge no longer owns it. The
-        user Path is written once, one broadcast follows when anything was
-        removed, and the state is saved.
+        Either way the record is dropped: DotForge no longer owns it. One
+        that can't be removed (the registry write fails) is Failed and stays
+        recorded, and a non-terminating error says why. The user Path is
+        written once, one broadcast follows when anything was removed, and
+        the state is saved.
     .PARAMETER Tool
         The tools; none means every tool in the state.
     .PARAMETER State
         Read-DFDesktopEnvState's object (not $null); its Vars and Path are updated and saved.
     .OUTPUTS
-        DotForge.DesktopEnvResult per recorded variable and Path entry: Kind, Tool, Name, Value, Current, Action (Removed or Changed), Shadowed, Before.
+        DotForge.DesktopEnvResult per recorded variable and Path entry: Kind, Tool, Name, Value, Current, Action (Removed, Changed or Failed), Shadowed, Before.
     #>
     [CmdletBinding()]
     param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
@@ -440,6 +459,9 @@ function Remove-DFDesktopEnvSet {
     if ($variableRemoval.Results -or $pathRemoval.Results) { Save-DFDesktopEnvState -State $State }
     $variableRemoval.Results
     $pathRemoval.Results
+    foreach ($failure in @($variableRemoval.Errors) + @($pathRemoval.Errors)) {
+        Write-Error "DotForge: $failure It stays recorded; run Remove-DFDesktopEnv again once it can be written."
+    }
 }
 
 function New-DFDesktopEnvRemoval {
@@ -457,7 +479,7 @@ function New-DFDesktopEnvRemoval {
     .PARAMETER Current
         What is there now; may be $null.
     .PARAMETER Action
-        Removed or Changed.
+        Removed, Changed or Failed.
     .OUTPUTS
         DotForge.DesktopEnvResult.
     #>
@@ -478,22 +500,30 @@ function Remove-DFDesktopEnvVariable {
     .PARAMETER State
         Read-DFDesktopEnvState's object; its Vars are updated.
     .OUTPUTS
-        pscustomobject: Results (DotForge.DesktopEnvResult per variable) and Removed (how many were deleted).
+        pscustomobject: Results (DotForge.DesktopEnvResult per variable), Removed (how many were deleted) and Errors (why each Failed one failed).
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Console lines that are the point of the command, as in Set-DFDesktopEnv.')]
     [CmdletBinding()]
     param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
     $vars = $State.Vars
     $removed = 0
+    $errors = [System.Collections.Generic.List[string]]::new()
     $results = foreach ($name in @($vars.Keys | Where-Object { -not $Tool -or $vars[$_].tool -in $Tool } | Sort-Object)) {
         $entry = $vars[$name]
         $current = Get-DFDesktopEnvValue -Name $name
-        $action = if (-not $current -or (Test-DFDesktopEnvMatch -Current $current -Value $entry.value)) { 'Removed' } else { 'Changed' }
-        if ($action -eq 'Removed' -and $current) { Remove-DFDesktopEnvValue -Name $name; $removed++ }
-        if ($action -eq 'Changed') { Write-Host "Left ${name} = ${current}: it changed since DotForge set it to $($entry.value)." }
-        $vars.Remove($name)
+        # DotForge never sets the variable Path (desktopPath entries are segments): a record naming it isn't one it wrote.
+        $action = if ($name -eq 'Path') { 'Changed' }
+                  elseif (-not $current -or (Test-DFDesktopEnvMatch -Current $current -Value $entry.value)) { 'Removed' } else { 'Changed' }
+        if ($action -eq 'Removed' -and $current) {
+            try { Remove-DFDesktopEnvValue -Name $name; $removed++ }
+            catch { $action = 'Failed'; $errors.Add("couldn't remove ${name} ($($_.Exception.Message)).") }
+        }
+        if ($name -eq 'Path') { Write-Host "Left ${name}: DotForge never sets it as a variable, so that record isn't one it wrote." }
+        elseif ($action -eq 'Changed') { Write-Host "Left ${name} = ${current}: it changed since DotForge set it to $($entry.value)." }
+        if ($action -ne 'Failed') { $vars.Remove($name) }
         New-DFDesktopEnvRemoval -Kind Variable -Tool $entry.tool -Name $name -Value $entry.value -Current $current -Action $action
     }
-    [pscustomobject]@{ Results = @($results); Removed = $removed }
+    [pscustomobject]@{ Results = @($results); Removed = $removed; Errors = @($errors) }
 }
 
 function Remove-DFDesktopEnvPathEntry {
@@ -501,36 +531,42 @@ function Remove-DFDesktopEnvPathEntry {
     .SYNOPSIS
         Removes the recorded Path entries of some tools from the user Path, one write for all, and drops their records (state not saved).
     .DESCRIPTION
-        Each folder's first matching segment goes, wherever it is. A folder
-        no longer on the Path is Removed with nothing to write.
+        Each folder's first matching segment goes, wherever it is: one
+        written as the folder first (what DotForge wrote), else one that
+        links to it (Find-DFDesktopPathSegment). A folder no longer on the
+        Path is Removed with nothing to write. When the Path can't be
+        written, each folder that needed the write is Failed and stays
+        recorded.
     .PARAMETER Tool
         The tools; none means all.
     .PARAMETER State
         Read-DFDesktopEnvState's object; its Path is updated.
     .OUTPUTS
-        pscustomobject: Results (DotForge.DesktopEnvResult per folder) and Removed (how many segments were deleted).
+        pscustomobject: Results (DotForge.DesktopEnvResult per folder), Removed (how many segments were deleted) and Errors (why the Failed ones failed).
     #>
     [CmdletBinding()]
     param([string[]]$Tool, [Parameter(Mandatory)][pscustomobject]$State)
     $recorded = $State.Path
     $folders = @($recorded.Keys | Where-Object { -not $Tool -or $recorded[$_].tool -in $Tool } | Sort-Object)
-    if (-not $folders) { return [pscustomobject]@{ Results = @(); Removed = 0 } }
+    if (-not $folders) { return [pscustomobject]@{ Results = @(); Removed = 0; Errors = @() } }
     $userPath = Get-DFUserPathValue
-    $removed = 0
-    $results = foreach ($folder in $folders) {
+    $results = @(foreach ($folder in $folders) {
         $index = Find-DFDesktopPathSegment -Value $userPath -Folder $folder
-        $segment = $null
-        if ($index -ge 0) {
-            $segment = ($userPath -split ';')[$index]
-            $userPath = Remove-DFDesktopPathSegment -Value $userPath -Index $index
-            $removed++
+        $segment = if ($index -ge 0) { ($userPath -split ';')[$index] }
+        if ($index -ge 0) { $userPath = Remove-DFDesktopPathSegment -Value $userPath -Index $index }
+        New-DFDesktopEnvRemoval -Kind Path -Tool $recorded[$folder].tool -Name 'Path' -Value $folder -Current $segment -Action 'Removed'
+    })
+    $written = @($results | Where-Object Current)
+    $errors = @()
+    if ($written) {
+        try { Set-DFUserPathValue -Value $userPath }
+        catch {
+            $errors = @("couldn't write the user Path ($($_.Exception.Message)), so $(@($written.Value) -join ', ') stayed on it.")
+            foreach ($item in $written) { $item.Action = 'Failed' }
         }
-        $owner = $recorded[$folder].tool
-        $recorded.Remove($folder)
-        New-DFDesktopEnvRemoval -Kind Path -Tool $owner -Name 'Path' -Value $folder -Current $segment -Action 'Removed'
     }
-    if ($removed) { Set-DFUserPathValue -Value $userPath }
-    [pscustomobject]@{ Results = @($results); Removed = $removed }
+    foreach ($item in @($results | Where-Object Action -eq 'Removed')) { $recorded.Remove($item.Value) }
+    [pscustomobject]@{ Results = $results; Removed = if ($errors) { 0 } else { $written.Count }; Errors = $errors }
 }
 
 # ---- Shared/DFDesktopPath.ps1
@@ -567,15 +603,17 @@ function Set-DFUserPathValue {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Value)
-    $key = Open-DFDesktopEnvKey -Create
+    # A failed write throws (a terminating error): callers must never go on as if it were written.
+    $key = $null
     try {
+        $key = Open-DFDesktopEnvKey -Create
         $kind = [Microsoft.Win32.RegistryValueKind]::ExpandString
         if ($key.GetValueNames() -contains 'Path') {
             $existing = $key.GetValueKind('Path')
             if ($existing -eq [Microsoft.Win32.RegistryValueKind]::String) { $kind = $existing }
         }
         $key.SetValue('Path', $Value, $kind)
-    } finally { $key.Dispose() }
+    } catch { throw } finally { if ($key) { $key.Dispose() } }
 }
 
 function Get-DFSystemPathValue {
@@ -595,6 +633,30 @@ function Get-DFSystemPathValue {
     finally { $key.Dispose() }
 }
 
+function ConvertTo-DFDesktopPathText {
+    <#
+    .SYNOPSIS
+        The canonical folder a Path segment names as written, without touching the file system; $null when it names none.
+    .DESCRIPTION
+        %VARIABLES% expand as desktop apps get them. An empty segment, a
+        relative one (after expansion) or one that can't be parsed gives $null,
+        silently. Links aren't followed: Resolve-DFDesktopPathFolder does that.
+    .PARAMETER Segment
+        One Path segment, as stored.
+    .OUTPUTS
+        System.String, or $null.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([AllowNull()][AllowEmptyString()][string]$Segment)
+    if ([string]::IsNullOrWhiteSpace($Segment)) { return $null }
+    try {
+        $expanded = (Expand-DFDesktopEnvValue -Value $Segment.Trim()).Trim('"')
+        if (-not [IO.Path]::IsPathFullyQualified($expanded)) { return $null }
+        ConvertTo-DFPath $expanded
+    } catch { $null }
+}
+
 function Resolve-DFDesktopPathFolder {
     <#
     .SYNOPSIS
@@ -612,11 +674,9 @@ function Resolve-DFDesktopPathFolder {
     [CmdletBinding()]
     [OutputType([string])]
     param([AllowNull()][AllowEmptyString()][string]$Segment)
-    if ([string]::IsNullOrWhiteSpace($Segment)) { return $null }
+    $folder = ConvertTo-DFDesktopPathText -Segment $Segment
+    if (-not $folder) { return $null }
     try {
-        $expanded = (Expand-DFDesktopEnvValue -Value $Segment.Trim()).Trim('"')
-        if (-not [IO.Path]::IsPathFullyQualified($expanded)) { return $null }
-        $folder = ConvertTo-DFPath $expanded
         if (Test-Path -LiteralPath $folder -PathType Container) {
             $target = [IO.Directory]::ResolveLinkTarget($folder, $true)
             if ($target) { $folder = ConvertTo-DFPath $target.FullName }
@@ -629,6 +689,13 @@ function Find-DFDesktopPathSegment {
     <#
     .SYNOPSIS
         The index of the first Path segment that names a folder, however it is written; -1 when none does.
+    .DESCRIPTION
+        First the folder as written: the first segment whose text names it
+        (%VARIABLES% expanded, compared canonically and case-insensitively),
+        with no file-system call, so an unreachable segment never stalls a
+        load. That is also the segment DotForge wrote, so removal takes it
+        rather than an earlier one that only links to the same folder. Only
+        when no segment names it as written are links followed on both sides.
     .PARAMETER Value
         A Path value, as stored.
     .PARAMETER Folder
@@ -639,9 +706,14 @@ function Find-DFDesktopPathSegment {
     [CmdletBinding()]
     [OutputType([int])]
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Value, [Parameter(Mandatory)][string]$Folder)
-    $wanted = Resolve-DFDesktopPathFolder -Segment $Folder
-    if (-not $wanted) { return -1 }
     $segments = $Value -split ';'
+    $written = ConvertTo-DFDesktopPathText -Segment $Folder
+    if (-not $written) { return -1 }
+    for ($index = 0; $index -lt $segments.Count; $index++) {
+        $text = ConvertTo-DFDesktopPathText -Segment $segments[$index]
+        if ($text -and [string]::Equals($text, $written, [StringComparison]::OrdinalIgnoreCase)) { return $index }
+    }
+    $wanted = Resolve-DFDesktopPathFolder -Segment $Folder
     for ($index = 0; $index -lt $segments.Count; $index++) {
         $resolved = Resolve-DFDesktopPathFolder -Segment $segments[$index]
         if ($resolved -and [string]::Equals($resolved, $wanted, [StringComparison]::OrdinalIgnoreCase)) { return $index }
@@ -732,6 +804,7 @@ function Find-DFDesktopPathOtherCopy {
         pscustomobject per command with a copy: Command, Path (the resolved folder), Scope (System or User), Index (the user segment, -1 for System).
     #>
     [CmdletBinding()]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory)][string[]]$Command,
         [Parameter(Mandatory)][string]$Folder,
@@ -788,8 +861,10 @@ function Get-DFDesktopPathExpected {
             $prefix = "$($_.Value)".Replace([string][char]92, '/').TrimEnd('/')
             $template.Equals($prefix, [StringComparison]::OrdinalIgnoreCase) -or $template.StartsWith("$prefix/", [StringComparison]::OrdinalIgnoreCase)
         } | Sort-Object { "$($_.Value)".Length } -Descending | Select-Object -First 1
+        # A folder that isn't a full path stays as written (no warning): planning skips it.
+        $folder = Expand-DFXdgPath $entry.path
         [pscustomobject]@{
-            Path       = ConvertTo-DFPath (Expand-DFXdgPath $entry.path)
+            Path       = if ([IO.Path]::IsPathFullyQualified($folder)) { ConvertTo-DFPath $folder } else { $folder }
             Commands   = [string[]]@($entry.commands)
             Under      = if ($under) { $under.Name }
             UnderValue = if ($under) { ConvertTo-DFPath (Expand-DFXdgPath "$($under.Value)") }
@@ -2484,6 +2559,7 @@ function ConvertTo-DFToolRecord {
             nerdFont $null ('required': the tool only draws icons, so it isn't loaded while icons are off),
             packages / xdg / env / aliases / picker / themeMap / theme / wrapper /
             settings / setup $null, roles an empty object, executableExclude @(),
+            desktop @() (variable names), desktopPath @() (each { path; commands }),
             folder / source $null (the loader sets them: where the JSON was
             read from, and 'builtin' or 'user')
 
@@ -3118,6 +3194,11 @@ function Get-DFDesktopPathSchemaError ([PSCustomObject]$Tool, $Entries) {
     <#
     .SYNOPSIS
         Schema errors in desktopPath: a list of { path, commands } objects.
+    .DESCRIPTION
+        A path starts with a token Expand-DFXdgPath expands (${XDG_CONFIG_HOME},
+        ${XDG_DATA_HOME}, ${XDG_STATE_HOME} or ${XDG_CACHE_HOME}) or is a full
+        path: a relative folder could be added to the user Path but never
+        found there again to remove.
     .PARAMETER Tool
         The parsed tool record.
     .PARAMETER Entries
@@ -3132,6 +3213,10 @@ function Get-DFDesktopPathSchemaError ([PSCustomObject]$Tool, $Entries) {
         if ($path -isnot [string] -or -not $path) { return $message }
         $commands = $entry.PSObject.Properties['commands']?.Value
         if ($null -ne $commands -and ($commands -isnot [array] -or @($commands | Where-Object { $_ -isnot [string] -or -not $_ }).Count)) { return $message }
+    }
+    $relative = @($Entries.path | Where-Object { $_ -cnotmatch '^\$\{XDG_(CONFIG|DATA|STATE|CACHE)_HOME\}([\\/]|$)' -and -not [IO.Path]::IsPathFullyQualified($_) })
+    if ($relative) {
+        'desktopPath path must start with ${XDG_CONFIG_HOME}, ${XDG_DATA_HOME}, ${XDG_STATE_HOME} or ${XDG_CACHE_HOME}, or be a full path: ' + ($relative -join ', ')
     }
 }
 
@@ -12364,8 +12449,10 @@ function Remove-DFTool {
             # Like its links, its desktop variables never stop a removal that already happened.
             try {
                 $desktopState = Read-DFDesktopEnvState
-                if ($null -ne $desktopState) { $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState }
-                else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables and Path entries weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
+                if ($null -ne $desktopState) {
+                    $null = Remove-DFDesktopEnvSet -Tool $toolName -State $desktopState -ErrorAction SilentlyContinue -ErrorVariable desktopErrors
+                    foreach ($desktopError in $desktopErrors) { Write-Warning "$desktopError" }
+                } else { Write-Warning "DotForge: $(Get-DFDesktopEnvStatePath) can't be read, so $toolName's desktop variables and Path entries weren't removed. Fix or delete it, then run Remove-DFDesktopEnv $toolName." }
             } catch { Write-Warning "DotForge: couldn't remove $toolName's desktop variables and Path entries ($($_.Exception.Message)); see Remove-DFDesktopEnv." }
             Write-DFRemoveLeftover -Tool $db[$toolName]
         }

@@ -102,6 +102,14 @@ Describe 'Set-DFDesktopEnv' -Skip:(-not $IsWindows) {
         Get-DFDesktopEnvValue -Name DESK_A | Should -BeNullOrEmpty
         Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
     }
+    It 'a variable that can''t be written is Failed, not recorded, and the error says so' {
+        Mock Set-DFDesktopEnvValue { throw 'access denied' }
+        $result = @(Set-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction SilentlyContinue -ErrorVariable failure)
+        $result.Action | Should -Be 'Failed'
+        "$failure" | Should -Match 'DESK_A.*access denied'
+        (Read-DFDesktopEnvState).Vars.ContainsKey('DESK_A') | Should -BeFalse
+        Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+    }
     It 'says once why it writes nothing when the state file can''t be read' {
         $path = Get-DFDesktopEnvStatePath
         New-DFDirectory (Split-Path $path) | Out-Null
@@ -309,6 +317,36 @@ Describe 'Set-DFDesktopEnv Path entries' -Skip:(-not $IsWindows) {
         (Set-DFDesktopEnv -Name deska -Confirm:$false).Action | Should -Be 'Set'
         Get-DFUserPathValue | Should -Be ('C:\x;' + $script:Folder)
     }
+    It 'a Path that can''t be written: Failed, no record, the variable still set and recorded' {
+        & $script:WriteDesk -Desktop 'DESK_A'
+        Set-DFUserPathValue -Value 'C:\x'
+        Mock Set-DFUserPathValue { throw 'access denied' }
+        $result = @(Set-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction SilentlyContinue -ErrorVariable failure)
+        ($result | Where-Object Kind -eq 'Path').Action | Should -Be 'Failed'
+        ($result | Where-Object Kind -eq 'Variable').Action | Should -Be 'Set'
+        "$failure" | Should -Match 'user Path.*access denied'
+        $state = Read-DFDesktopEnvState
+        $state.Path.Count | Should -Be 0
+        $state.Vars['DESK_A'].tool | Should -Be 'deska'
+        Should -Invoke Send-DFEnvironmentChange -Times 1 -Exactly
+    }
+    It 'a failed write keeps the record DotForge already had for that folder' {
+        $old = [pscustomobject]@{ tool = 'deska'; since = 'earlier' }
+        Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{}; Path = @{ $script:Folder = $old } })
+        Set-DFUserPathValue -Value 'C:\x'
+        Mock Set-DFUserPathValue { throw 'access denied' }
+        $null = Set-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction SilentlyContinue
+        (Read-DFDesktopEnvState).Path[$script:Folder].since | Should -Be 'earlier'
+    }
+    It 'a folder that isn''t a full path is Skipped, said so, and never written' {
+        $relative = ConvertTo-DFToolRecord ([pscustomobject]@{
+            name = 'deskr'; executable = 'deskr.exe'; desktopPath = @([pscustomobject]@{ path = 'relative/bin' }) })
+        Set-DFUserPathValue -Value 'C:\x'
+        $result = @(Get-DFDesktopPathPlan -Tools @($relative) -Ask $false 3>$null)
+        $result.Action | Should -Be 'Skipped'
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -match "Skipped deskr's Path entry relative.bin: it isn't a full path" }
+        Get-DFUserPathValue | Should -Be 'C:\x'
+    }
     It '-WhatIf asks nothing and writes nothing' {
         New-Item -ItemType Directory -Force $script:Other | Out-Null
         Set-Content (Join-Path $script:Other 'deska.cmd') '@echo off'
@@ -364,6 +402,23 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
         Should -Invoke Write-Host -ParameterFilter { "$Object" -match 'DESK_A' -and "$Object" -match 'mine' }
         Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
     }
+    It 'a variable that can''t be removed is Failed and stays recorded' {
+        Mock Remove-DFDesktopEnvValue { throw 'access denied' }
+        $result = @(Remove-DFDesktopEnv -Name deska -Confirm:$false -ErrorAction SilentlyContinue -ErrorVariable failure)
+        $result.Action | Should -Be 'Failed'
+        "$failure" | Should -Match 'DESK_A.*access denied'
+        (Read-DFDesktopEnvState).Vars['DESK_A'].tool | Should -Be 'deska'
+        Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+    }
+    It 'never removes the variable Path, even when a record names it' {
+        Set-DFUserPathValue -Value 'C:\x'
+        Save-DFDesktopEnvState -State ([pscustomobject]@{ Vars = @{ path = [pscustomobject]@{ tool = 'deska'; value = 'C:\x'; since = 'x' } }; Path = @{} })
+        $result = @(Remove-DFDesktopEnv -Name deska -Confirm:$false)
+        Get-DFUserPathValue | Should -Be 'C:\x'
+        $result.Action | Should -Be 'Changed'
+        (Read-DFDesktopEnvState).Vars.Count | Should -Be 0
+        Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
+    }
     It '-WhatIf removes nothing' {
         $null = Remove-DFDesktopEnv -Name deska -WhatIf
         Get-DFDesktopEnvValue -Name DESK_A | Should -Be 'C:\one'
@@ -397,6 +452,26 @@ Describe 'Remove-DFDesktopEnv' -Skip:(-not $IsWindows) {
             Set-DFUserPathValue -Value "C:\x;$($script:PFolder);$($script:PFolder)"
             $null = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
             Get-DFUserPathValue | Should -Be "C:\x;$($script:PFolder)"
+        }
+        It 'removes the segment DotForge wrote, not an earlier one of yours the junction points at' {
+            $target = Join-Path $TestDrive 'installation'
+            New-Item -ItemType Directory -Force $target | Out-Null
+            New-Item -ItemType Junction -Path $script:PFolder -Target $target | Out-Null
+            try {
+                Set-DFUserPathValue -Value "$target;C:\x;$($script:PFolder)"
+                $result = Remove-DFDesktopEnv -Name pathdesk -Confirm:$false
+                Get-DFUserPathValue | Should -Be "$target;C:\x"
+                $result.Current | Should -Be $script:PFolder
+            } finally { [IO.Directory]::Delete($script:PFolder) }
+        }
+        It 'a Path that can''t be written: Failed, the entry stays recorded, nothing broadcast' {
+            Set-DFUserPathValue -Value "$($script:PFolder);C:\x"
+            Mock Set-DFUserPathValue { throw 'access denied' }
+            $result = @(Remove-DFDesktopEnv -Name pathdesk -Confirm:$false -ErrorAction SilentlyContinue -ErrorVariable failure)
+            $result.Action | Should -Be 'Failed'
+            "$failure" | Should -Match 'user Path.*access denied'
+            (Read-DFDesktopEnvState).Path[$script:PFolder].tool | Should -Be 'pathdesk'
+            Should -Invoke Send-DFEnvironmentChange -Times 0 -Exactly
         }
         It 'an entry already gone is Removed with nothing to write' {
             Set-DFUserPathValue -Value 'C:\x'

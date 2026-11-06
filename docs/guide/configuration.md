@@ -387,7 +387,7 @@ DotForge adds the folder only when the tool lives where its own variable puts it
 Skipped fnm's Path entry: FNM_DIR is C:\Users\you\.fnm for desktop apps, so fnm's folder isn't under C:\Users\you\.local\share\fnm. Add C:\Users\you\.fnm\aliases\default yourself, or let DotForge set FNM_DIR.
 ```
 
-New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, variables and `PATH` entries, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote. A `PATH` folder is removed wherever it now sits in the user `PATH`.
+New programs see the change; programs already running keep their environment. DotForge records what it wrote in `$XDG_STATE_HOME\dotforge\desktop-env.json`. `Remove-DFDesktopEnv` removes it, variables and `PATH` entries, and `Remove-DFTool` removes a tool's, each only while the value is still the one DotForge wrote. A `PATH` folder is removed wherever it now sits in the user `PATH`: the entry written the way DotForge wrote it goes, never an earlier one of yours that only points at the same folder (such as fnm's Node installation folder). A write Windows refuses is `Failed` in the output, and an error says why. A failed `Set-DFDesktopEnv` write isn't recorded; a failed removal stays recorded, so `Remove-DFDesktopEnv` can try again.
 
 ## Prefer a package manager
 

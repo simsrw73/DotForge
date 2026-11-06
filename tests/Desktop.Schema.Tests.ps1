@@ -45,6 +45,14 @@ Describe 'desktopPath (schema)' {
         Get-Errs @{ desktopPath = @([pscustomobject]@{ commands = @('t') }) } | Should -Match 'desktopPath must be a list of \{ path, commands \} objects'
         Get-Errs @{ desktopPath = @([pscustomobject]@{ path = 'p'; commands = @(1) }) } | Should -Match 'desktopPath must be a list of \{ path, commands \} objects'
     }
+    It 'path starts with an XDG folder token or is a full path, so the folder is never relative' {
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ path = (Join-Path $TestDrive 't' 'bin') }) } | Should -BeNullOrEmpty
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ path = '${XDG_DATA_HOME}' }) } | Should -BeNullOrEmpty
+        foreach ($path in 'bin', 't/bin', '${HOME}/t/bin', '${xdg_data_home}/t', 'x/${XDG_DATA_HOME}/t') {
+            Get-Errs @{ desktopPath = @([pscustomobject]@{ path = $path }) } |
+                Should -Match 'desktopPath path must start with \$\{XDG_CONFIG_HOME\}, \$\{XDG_DATA_HOME\}, \$\{XDG_STATE_HOME\} or \$\{XDG_CACHE_HOME\}, or be a full path' -Because $path
+        }
+    }
     It 'desktop can''t name Path' {
         Get-Errs @{ env = [pscustomobject]@{ Path = 'x' }; desktop = @('PATH') } | Should -Match "desktop can't name Path; use desktopPath"
     }
