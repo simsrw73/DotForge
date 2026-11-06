@@ -119,18 +119,18 @@ Describe 'DFDesktopPath expected entries and note' {
         (@(Get-DFDesktopPathExpected -Tool $other)[0]).Under | Should -BeNullOrEmpty
     }
     It 'the guard trips on a different shell value' {
-        $Env:DESKP_DIR = 'C:	heirs'
+        $Env:DESKP_DIR = 'C:\theirs'
         $trip = Test-DFDesktopPathGuard -Entry $script:deskpEntry
         $trip.Name | Should -Be 'DESKP_DIR'
         $trip.Where | Should -Be 'in this shell'
-        $trip.Current | Should -Be 'C:	heirs'
-        $trip.Suggested | Should -Be 'C:	heirs\current'
+        $trip.Current | Should -Be 'C:\theirs'
+        $trip.Suggested | Should -Be 'C:\theirs\current'
     }
     It 'the guard trips on a different desktop value, and on a planned one' -Skip:(-not $IsWindows) {
-        Set-DFDesktopEnvValue -Name DESKP_DIR -Value 'C:	heirs'
+        Set-DFDesktopEnvValue -Name DESKP_DIR -Value 'C:\theirs'
         $trip = Test-DFDesktopPathGuard -Entry $script:deskpEntry
         $trip.Where | Should -Be 'for desktop apps'
-        $trip.Suggested | Should -Be 'C:	heirs\current'
+        $trip.Suggested | Should -Be 'C:\theirs\current'
         Test-DFDesktopPathGuard -Entry $script:deskpEntry -DesktopValue @{ DESKP_DIR = $script:deskpEntry.UnderValue } | Should -BeNullOrEmpty
     }
     It 'no guard when the values match or are unset' {
@@ -158,10 +158,10 @@ Describe 'DFDesktopPath expected entries and note' {
         Get-DFDesktopPathNote -Tool $script:deskpTool | Should -BeNullOrEmpty
     }
     It 'says why the entry is skipped when the guard trips' -Skip:(-not $IsWindows) {
-        $Env:DESKP_DIR = 'C:	heirs'
+        $Env:DESKP_DIR = 'C:\theirs'
         Mock Get-DFSystemPathValue { '' }
         Get-DFDesktopPathNote -Tool $script:deskpTool |
-            Should -Be "deskp's Path entry is skipped: DESKP_DIR is C:	heirs in this shell, so its folder isn't under $($script:deskpEntry.UnderValue)"
+            Should -Be "deskp's Path entry is skipped: DESKP_DIR is C:\theirs in this shell, so its folder isn't under $($script:deskpEntry.UnderValue)"
     }
     It 'no desktopPath reads no registry' {
         Mock Get-DFUserPathValue { }
