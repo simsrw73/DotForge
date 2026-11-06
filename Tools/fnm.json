@@ -30,6 +30,7 @@
     ]
   },
   "desktop": ["FNM_DIR"],
+  "desktopPath": [{ "path": "${XDG_DATA_HOME}/fnm/aliases/default", "commands": ["node", "npm", "npx"] }],
   "aliases": {},
   "picker": null
 }

@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: d662de2bbc3781a0de7a26bff278cb1fa4557754bccafd5b00abd32aa2fb6319
+# sources-sha256: ae8489ebab0fdfda3a10e20c23d45d1506896a83f7a5c5f7fe20ccd31dff2b66
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -2019,6 +2019,26 @@ function ConvertTo-DFWrapperBlock {
     [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
 }
 
+function ConvertTo-DFDesktopPathBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's desktopPath list into { path; commands } entries, commands a string[] (empty when omitted).
+    .PARAMETER RawEntries
+        The parsed desktopPath list, or $null.
+    .OUTPUTS
+        PSCustomObject[]. Empty when there are no entries.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$RawEntries)
+    foreach ($entry in @($RawEntries)) {
+        if ($null -eq $entry) { continue }
+        [pscustomobject]@{
+            path     = [string]$entry.PSObject.Properties['path']?.Value
+            commands = [string[]]@($entry.PSObject.Properties['commands']?.Value | Where-Object { $_ })
+        }
+    }
+}
+
 function ConvertTo-DFToolRecord {
     <#
     .SYNOPSIS
@@ -2094,6 +2114,7 @@ function ConvertTo-DFToolRecord {
         xdg               = $xdg
         env               = Get-DFToolRecordProperty $Tool 'env' $null
         desktop           = [string[]]@(Get-DFToolRecordProperty $Tool 'desktop' @())
+        desktopPath       = [object[]]@(ConvertTo-DFDesktopPathBlock (Get-DFToolRecordProperty $Tool 'desktopPath' $null))
         aliases           = $aliases
         picker            = $picker
         after             = [object[]]@(Get-DFToolRecordProperty $Tool 'after' @())
@@ -2631,6 +2652,7 @@ function Get-DFAliasAndMapSchemaError ([PSCustomObject]$Tool) {
     $v = Get-DFSchemaProperty $Tool 'env';      if ($null -ne $v) { Get-DFMapSchemaError $v 'env' }
     # Read directly: a function's return would unwrap a one-name list into a string.
     $v = $Tool.PSObject.Properties['desktop']?.Value; if ($null -ne $v) { Get-DFDesktopSchemaError $Tool $v }
+    $v = $Tool.PSObject.Properties['desktopPath']?.Value; if ($null -ne $v) { Get-DFDesktopPathSchemaError $Tool $v }
     $v = Get-DFSchemaProperty $Tool 'themeMap'; if ($null -ne $v) { Get-DFMapSchemaError $v 'themeMap' -StringsOnly }
     if ($roles -is [pscustomobject]) {
         foreach ($r in $roles.PSObject.Properties) {
@@ -2656,8 +2678,30 @@ function Get-DFDesktopSchemaError ([PSCustomObject]$Tool, $Desktop) {
     $defined = @(foreach ($block in (Get-DFSchemaProperty (Get-DFSchemaProperty $Tool 'xdg') 'vars'), (Get-DFSchemaProperty $Tool 'env')) {
         if ($block -is [pscustomobject]) { $block.PSObject.Properties.Name }
     })
+    if (@($Desktop | Where-Object { $_ -ieq 'Path' })) { return "desktop can't name Path; use desktopPath" }
     $bad = @($Desktop | Where-Object { $_ -cnotin $defined })
     if ($bad) { "desktop names variables the record doesn't define in xdg.vars or env: $($bad -join ', ')" }
+}
+
+function Get-DFDesktopPathSchemaError ([PSCustomObject]$Tool, $Entries) {
+    <#
+    .SYNOPSIS
+        Schema errors in desktopPath: a list of { path, commands } objects.
+    .PARAMETER Tool
+        The parsed tool record.
+    .PARAMETER Entries
+        The desktopPath value.
+    .OUTPUTS
+        String. The error message, or nothing.
+    #>
+    $message = 'desktopPath must be a list of { path, commands } objects (path a string; commands an optional list of names)'
+    if ($Entries -isnot [array]) { return $message }
+    foreach ($entry in $Entries) {
+        $path = $entry -is [pscustomobject] ? $entry.PSObject.Properties['path']?.Value : $null
+        if ($path -isnot [string] -or -not $path) { return $message }
+        $commands = $entry.PSObject.Properties['commands']?.Value
+        if ($null -ne $commands -and ($commands -isnot [array] -or @($commands | Where-Object { $_ -isnot [string] -or -not $_ }).Count)) { return $message }
+    }
 }
 
 function Get-DFOrderingSchemaError ([PSCustomObject]$Tool) {
@@ -2879,7 +2923,7 @@ function Get-DFFieldTypoWarning ([PSCustomObject]$Tool) {
     $known = @{
         ''     = 'name', 'executable', 'type', 'description', 'tags', 'packages', 'xdg', 'env', 'aliases',
                  'picker', 'after', 'roles', 'themeMap', 'settings', 'executableExclude',
-                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont', 'desktop'
+                 'prewarm', 'role', 'requires', 'setup', 'installs', 'install', 'banner', 'theme', 'wrapper', 'nerdFont', 'desktop', 'desktopPath'
         picker = 'function', 'alias', 'list', 'list_accepts_path', 'preview', 'preview_plain', 'preview_window', 'ansi',
                  'header', 'action', 'parse'
         xdg    = 'method', 'vars', 'dirs', 'instructions', 'compliance', 'native'

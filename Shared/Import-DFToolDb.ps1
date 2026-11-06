@@ -546,6 +546,26 @@ function ConvertTo-DFWrapperBlock {
     [pscustomobject]@{ args = [object[]]@($groups); custom = [bool](Get-DFToolRecordProperty $RawWrapper 'custom' $false) }
 }
 
+function ConvertTo-DFDesktopPathBlock {
+    <#
+    .SYNOPSIS
+        Normalizes a tool's desktopPath list into { path; commands } entries, commands a string[] (empty when omitted).
+    .PARAMETER RawEntries
+        The parsed desktopPath list, or $null.
+    .OUTPUTS
+        PSCustomObject[]. Empty when there are no entries.
+    #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$RawEntries)
+    foreach ($entry in @($RawEntries)) {
+        if ($null -eq $entry) { continue }
+        [pscustomobject]@{
+            path     = [string]$entry.PSObject.Properties['path']?.Value
+            commands = [string[]]@($entry.PSObject.Properties['commands']?.Value | Where-Object { $_ })
+        }
+    }
+}
+
 function ConvertTo-DFToolRecord {
     <#
     .SYNOPSIS
@@ -621,6 +641,7 @@ function ConvertTo-DFToolRecord {
         xdg               = $xdg
         env               = Get-DFToolRecordProperty $Tool 'env' $null
         desktop           = [string[]]@(Get-DFToolRecordProperty $Tool 'desktop' @())
+        desktopPath       = [object[]]@(ConvertTo-DFDesktopPathBlock (Get-DFToolRecordProperty $Tool 'desktopPath' $null))
         aliases           = $aliases
         picker            = $picker
         after             = [object[]]@(Get-DFToolRecordProperty $Tool 'after' @())

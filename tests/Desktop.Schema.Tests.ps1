@@ -32,3 +32,33 @@ Describe 'desktop (schema)' {
         @($with.desktop) | Should -Be @('BAR')
     }
 }
+
+# desktopPath: folders desktop apps need on the Windows user PATH
+# (docs/superpowers/specs/2026-11-03-desktop-path-design.md).
+Describe 'desktopPath (schema)' {
+    It 'accepts a list of { path, commands }' {
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ path = '${XDG_DATA_HOME}/t/bin'; commands = @('t') }) } | Should -BeNullOrEmpty
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ path = '${XDG_DATA_HOME}/t/bin' }) } | Should -BeNullOrEmpty
+    }
+    It 'rejects a non-list, a missing path or non-string commands' {
+        Get-Errs @{ desktopPath = 'x' } | Should -Match 'desktopPath must be a list of \{ path, commands \} objects'
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ commands = @('t') }) } | Should -Match 'desktopPath must be a list of \{ path, commands \} objects'
+        Get-Errs @{ desktopPath = @([pscustomobject]@{ path = 'p'; commands = @(1) }) } | Should -Match 'desktopPath must be a list of \{ path, commands \} objects'
+    }
+    It 'desktop can''t name Path' {
+        Get-Errs @{ env = [pscustomobject]@{ Path = 'x' }; desktop = @('PATH') } | Should -Match "desktop can't name Path; use desktopPath"
+    }
+    It 'normalizes to an empty list, and commands to an empty list' {
+        Set-StrictMode -Version Latest
+        $bare = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'b'; executable = 'b.exe' })
+        @($bare.desktopPath).Count | Should -Be 0
+        $rec = ConvertTo-DFToolRecord ([pscustomobject]@{ name = 'w'; executable = 'w.exe'; desktopPath = @([pscustomobject]@{ path = 'p' }) })
+        $rec.desktopPath[0].commands.Count | Should -Be 0
+        $rec.desktopPath[0].path | Should -Be 'p'
+    }
+    It 'gives no typo warning for desktopPath' {
+        $tool = [pscustomobject]@{ name = 't'; executable = 't.exe'; desktopPath = @([pscustomobject]@{ path = 'p' }) }
+        $warnings = @(Test-DFToolSchema -Tool $tool).Warnings
+        ($warnings -join "`n") | Should -Not -Match 'desktopPath'
+    }
+}
