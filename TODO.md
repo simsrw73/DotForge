@@ -2,7 +2,13 @@
 
 Open work only. Each item has an ID (`T-12`): name it in the commit that resolves the item
 (`Closes T-12`), and delete the item in that same commit. Finished work lives in `CHANGELOG.md` and
-git history, not here. IDs are never reused; the next free one is **T-89**.
+git history, not here. IDs are never reused; the next free one is **T-92**.
+
+## Unclassified
+
+- [ ] T-89 Similar to the function we wrote in `C:\Users\simsrw73\.config\powershell\ProfileModules\Functions.ps1`, Add a function to DotForge to update PowerShell modules. With flags pruning old versions, updating help and anything else that might be meaningful.
+- [ ] T-90 **Desktop `PATH` entries** — desktop apps (Orca, editors) that run `npx` or a global npm package need Node on the Windows user `PATH`: `$XDG_DATA_HOME\fnm\aliases\default`, a junction that follows `fnm default` (never a per-shell `fnm_multishells\<pid>` folder, which dies with its shell). `desktop` (`Shared/DFDesktopEnv.ps1`) writes only variables today, so this is a new declarative extension point (e.g. a record's `desktop.path`), written by `Set-DFDesktopEnv`, recorded in `desktop-env.json`, removed with the tool while unchanged, and noted in the status until set. Designed: `docs/superpowers/specs/2026-11-03-desktop-path-design.md` (approved 2026-11-03, fresh-PC case only); next is the plan.
+- [ ] T-91 **Every starting point ends like a fresh PC** — the ideal: on a fresh PC, installing a tool is one atomic step (set up the install environment, install, configure, add desktop config where it applies). Every other starting point should converge on that same end state unless the user backs out: the tool already installed (the user asks DotForge to take ownership and apply XDG), uninstalled but with config or variables left behind, or a restore (chezmoi or similar). When a tool is already installed (e.g. `FNM_DIR` set), the user chooses: (1) leave it where it is and point DotForge's config at it, (2) skip it, or (3) relocate it to the XDG folders and take full ownership. Today pieces exist without one picture: `xdg.native` linking and `Resolve-DFToolConflict -Adopt`/`-KeepXdg` for data, `Set-DFEnv` silently keeping a user's variable (choice 1, never asked), the desktop-Path guard (T-90 skips). Open doubts to check first: does the fnm setup leave a working Node (a default version installed and set)? What does each shell load do that should happen only once at install or setup? Brainstorm the design before any code.
 
 ## Priority 1 — Release Readiness
 
@@ -52,6 +58,7 @@ From the audits consolidated on 2026-10-10 (read them at commit `c1d172a`) and t
 - [ ] **T-46 Idle activation for slow, non-urgent tools** — `"activate": "idle"`, set up from `OnIdle` after the first prompt. Candidate: carapace (~0.3 s). Must stay eager: psreadline, PSFzf, starship, fnm, zoxide.
 - [ ] **T-47 More tool configs** — XDG, completions and pickers for `ssh`, `choco`, `winget` (search picker), `dotnet`; document or automate `scoop config use_sqlite_cache true`.
 - [ ] **T-48 `Invoke-DFMaintenance` and a scheduled-maintenance guide** — a manual, opt-in command to purge the completion cache, refresh the help-topic index and run `scoop cleanup *`. DotForge never creates scheduled tasks or updates packages itself; document user-owned Task Scheduler recipes.
+
 ## Priority 4 — Improvements
 
 - [ ] **T-53 Dynamic fzf preview sizing** — replace the hardcoded `right:60%` with sizing from content length or terminal width.
@@ -68,7 +75,7 @@ change catalog code beyond a bug that breaks something else, until then. The pip
 winget-pkgs clone, `universe.db`) lives in `$XDG_CACHE_HOME/dotforge/package-universe/`, outside the checkout.
 
 - [ ] **T-55 Make trifle fast first** — before any feature below: measure a cold and a warm `trifle <query>`, set a
-  time budget, and meet it. Speed is the reason this is frozen.
+      time budget, and meet it. Speed is the reason this is frozen.
 - [ ] **T-17 trifle `-Readme`: gate the npm tier on a repo match** — a name collision shows the wrong readme (`trifle ripgrep -Readme` shows the npm `ripgrep` wrapper's). Use the npm readme only when no GitHub repo resolves, or when its `RepositoryUrl` matches.
 - [ ] **T-18 trifle qualified winget ids: better sibling search** — `trifle winget:BurntSushi.ripgrep.MSVC` searches other catalogs with the full dotted id. Use the matched index row's `Name` instead.
 - [ ] **T-22 Finish one package-identity vocabulary** — `build/categories/dotforge-curated.jsonc` copies 47 package ids and `data/tool-identities.json` copies the ids in `Tools/*.json`. The identity guide should ship only what tool records can't say; categories should reference tools by name. `ConvertTo-DFCatalogSource` only lowercases and can be deleted.
