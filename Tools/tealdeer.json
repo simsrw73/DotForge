@@ -1,0 +1,31 @@
+{
+  "name": "tealdeer",
+  "description": "Fast tldr client: short, example-first help pages for commands",
+  "tags": ["help", "docs", "tldr"],
+  "executable": "tldr.exe",
+  "roles": { "tldr-client": { "priority": 20, "flags": { "list-all": ["--list"] } } },
+  "packages": {
+    "winget": "dbrgn.tealdeer",
+    "scoop": "tealdeer",
+    "crates": "tealdeer"
+  },
+  "install": {
+    "prefer": ["winget"],
+    "avoid": { "scoop": "scoop's manifest sets TEALDEER_CONFIG_DIR in your user environment to its own app folder, which competes with the one DotForge sets." }
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": { "TEALDEER_CONFIG_DIR": "${XDG_CONFIG_HOME}/tealdeer" },
+    "dirs": ["${XDG_CONFIG_HOME}/tealdeer"],
+    "native": {
+      "TEALDEER_CONFIG_DIR": [],
+      "${XDG_CONFIG_HOME}/tealdeer/config.toml": ["${APPDATA}/tealdeer/config/config.toml", "${HOME}/Library/Application Support/tealdeer/config.toml"]
+    },
+    "instructions": "TEALDEER_CONFIG_DIR is the folder holding config.toml (verified tealdeer 1.9.1, tldr --show-paths). The page cache stays in tealdeer's OS folder (%LOCALAPPDATA%\\tealdeer\\cache): TEALDEER_CACHE_DIR is deprecated and warns on every run, and the config's directories.cache_dir takes no variables."
+  },
+  "theme": { "key": "TealdeerTheme", "default": "catppuccin-mocha", "files": "tealdeer" },
+  "setup": { "seed": { "${XDG_CONFIG_HOME}/tealdeer/config.toml": "{theme}/config.toml" } },
+  "aliases": {},
+  "picker": null
+}

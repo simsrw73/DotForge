@@ -6,6 +6,12 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **tldr pages: tealdeer and tlrc, and the `tldr-client` role.** Both clients join the new role;
+  its winner (your `Defaults['tldr-client']` choice, otherwise tealdeer) gets `ftldr`, a picker over
+  every page on every platform, with a preview. Each client's config moves to `$XDG_CONFIG_HOME`
+  (`TEALDEER_CONFIG_DIR`, `TLRC_CONFIG`) and is seeded once with catppuccin colors and weekly page
+  updates. Both install from winget first: scoop's packages set the same variable in the user
+  environment.
 - **Desktop Path entries.** A tool record can name folders desktop apps need on the Windows user
   `PATH` (`desktopPath`). `Set-DFDesktopEnv fnm` adds fnm's `aliases\default` folder, which gives
   desktop apps Node, npm, npx and global npm packages. It adds only when asked, never when your shell

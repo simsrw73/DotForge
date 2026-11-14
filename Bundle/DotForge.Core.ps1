@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: ef2f377b7d2dbb9e0306b6f225b835b9b87bf31907ae0ac5e77e3f255d101a24
+# sources-sha256: 3ba6d911b3551726bd3f386a3c8aa57375695b5f3849c8b48f3579ed27157bf2
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -4834,6 +4834,8 @@ $script:DFConfigKeys = [ordered]@{
     BottomTheme        = 'bottom built-in theme (default, default-light, gruvbox, nord, ...; from Theme)'
     PecoTheme          = 'peco theme (seeded into its config.json once)'
     TelevisionTheme    = 'television theme (seeded into its config.toml once; edit ui.theme there to change it)'
+    TealdeerTheme      = 'tealdeer colors (seeded into its config.toml once)'
+    TlrcTheme          = 'tlrc colors (seeded into its config.toml once)'
     VividTheme         = 'vivid (LS_COLORS) theme'
     PSReadLineTheme    = 'PSReadLine theme'
     PSReadLineEditMode = 'PSReadLine edit mode'

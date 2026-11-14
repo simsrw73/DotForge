@@ -6188,6 +6188,111 @@
         "source": null
       }
     },
+    "tealdeer": {
+      "sha256": "acaedec5d7252793907c2940a8eba7ef72dd3f65a6fe35e30a09652707a08456",
+      "record": {
+        "name": "tealdeer",
+        "executable": "tldr.exe",
+        "type": "exe",
+        "description": "Fast tldr client: short, example-first help pages for commands",
+        "tags": [
+          "help",
+          "docs",
+          "tldr"
+        ],
+        "packages": {
+          "winget": "dbrgn.tealdeer",
+          "scoop": "tealdeer",
+          "crates": "tealdeer"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "TEALDEER_CONFIG_DIR": "${XDG_CONFIG_HOME}/tealdeer"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/tealdeer"
+          ],
+          "instructions": "TEALDEER_CONFIG_DIR is the folder holding config.toml (verified tealdeer 1.9.1, tldr --show-paths). The page cache stays in tealdeer's OS folder (%LOCALAPPDATA%\\tealdeer\\cache): TEALDEER_CACHE_DIR is deprecated and warns on every run, and the config's directories.cache_dir takes no variables.",
+          "compliance": "partial",
+          "native": {
+            "TEALDEER_CONFIG_DIR": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/tealdeer/config.toml": {
+              "paths": [
+                "${APPDATA}/tealdeer/config/config.toml",
+                "${HOME}/Library/Application Support/tealdeer/config.toml"
+              ],
+              "guide": null,
+              "setting": null
+            }
+          }
+        },
+        "env": null,
+        "desktop": [],
+        "desktopPath": [],
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "tldr-client": {
+            "priority": 20,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": {
+              "list-all": [
+                "--list"
+              ]
+            },
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "TealdeerTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "tealdeer",
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/tealdeer/config.toml": "{theme}/config.toml"
+          },
+          "notes": []
+        },
+        "banner": null,
+        "installs": null,
+        "install": {
+          "prefer": [
+            "winget"
+          ],
+          "avoid": {
+            "scoop": "scoop's manifest sets TEALDEER_CONFIG_DIR in your user environment to its own app folder, which competes with the one DotForge sets."
+          }
+        },
+        "folder": null,
+        "source": null
+      }
+    },
     "television": {
       "sha256": "0dad6099e64827b26c4680cb2e98d2400595f9795dbff8152c66665c2c6b9ae0",
       "record": {
@@ -6385,6 +6490,111 @@
         "install": {
           "prefer": [],
           "avoid": {}
+        },
+        "folder": null,
+        "source": null
+      }
+    },
+    "tlrc": {
+      "sha256": "b4f0da4f81b5b05d27618bdc68b24048b67b361c6cddf0e22b92412acc8fb827",
+      "record": {
+        "name": "tlrc",
+        "executable": "tldr.exe",
+        "type": "exe",
+        "description": "Official tldr client from the tldr-pages project, written in Rust",
+        "tags": [
+          "help",
+          "docs",
+          "tldr"
+        ],
+        "packages": {
+          "winget": "tldr-pages.tlrc",
+          "scoop": "tlrc",
+          "crates": "tlrc"
+        },
+        "xdg": {
+          "method": "env",
+          "vars": {
+            "TLRC_CONFIG": "${XDG_CONFIG_HOME}/tlrc/config.toml"
+          },
+          "dirs": [
+            "${XDG_CONFIG_HOME}/tlrc"
+          ],
+          "instructions": "TLRC_CONFIG is the config file itself, not its folder (tlrc 1.13.1). The page cache stays in tlrc's OS folder (%LOCALAPPDATA%\\tlrc); the config's cache.dir expands only ~, not variables.",
+          "compliance": "partial",
+          "native": {
+            "TLRC_CONFIG": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            },
+            "${XDG_CONFIG_HOME}/tlrc/config.toml": {
+              "paths": [
+                "${APPDATA}/tlrc/config.toml",
+                "${HOME}/Library/Application Support/tlrc/config.toml"
+              ],
+              "guide": null,
+              "setting": null
+            }
+          }
+        },
+        "env": null,
+        "desktop": [],
+        "desktopPath": [],
+        "aliases": {},
+        "picker": null,
+        "after": [],
+        "requires": [],
+        "roles": {
+          "tldr-client": {
+            "priority": 10,
+            "optIn": false,
+            "aliases": null,
+            "env": null,
+            "flags": {
+              "list-all": [
+                "--list-all"
+              ]
+            },
+            "directories": null,
+            "directoriesScored": false,
+            "enter": null,
+            "directoryScan": null,
+            "legacy": false
+          }
+        },
+        "themeMap": null,
+        "theme": {
+          "key": "TlrcTheme",
+          "default": "catppuccin-mocha",
+          "map": null,
+          "files": "tlrc",
+          "valid": [],
+          "fallback": null,
+          "env": null,
+          "command": null,
+          "apply": null
+        },
+        "wrapper": null,
+        "settings": null,
+        "executableExclude": [],
+        "prewarm": true,
+        "nerdFont": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/tlrc/config.toml": "{theme}/config.toml"
+          },
+          "notes": []
+        },
+        "banner": null,
+        "installs": null,
+        "install": {
+          "prefer": [
+            "winget"
+          ],
+          "avoid": {
+            "scoop": "scoop's manifest sets TLRC_CONFIG in your user environment to its persist folder and deletes %APPDATA%\\tlrc, which competes with the TLRC_CONFIG DotForge sets."
+          }
         },
         "folder": null,
         "source": null

@@ -115,6 +115,18 @@
     "ids": { "scoop": "peco", "winget": "peco.peco" },
     "popularity": 1
   },
+  "tealdeer": {
+    "function": ["documentation"], "worksWith": ["text"], "interface": "cli",
+    "aliases": ["tldr"], "alternativeTo": ["man"],
+    "ids": { "winget": "dbrgn.tealdeer", "scoop": "tealdeer", "crates": "tealdeer" },
+    "relatedTo": ["tlrc", "navi"], "popularity": 2
+  },
+  "tlrc": {
+    "function": ["documentation"], "worksWith": ["text"], "interface": "cli",
+    "aliases": ["tldr"], "alternativeTo": ["man", "tealdeer"],
+    "ids": { "winget": "tldr-pages.tlrc", "scoop": "tlrc", "crates": "tlrc" },
+    "popularity": 1
+  },
   "gum": {
     "function": ["fuzzy-finder", "shell-enhancement"], "worksWith": ["text"], "interface": "tui",
     "ids": { "scoop": "gum", "winget": "charmbracelet.gum" },

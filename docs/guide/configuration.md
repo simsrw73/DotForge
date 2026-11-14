@@ -61,7 +61,7 @@ each one is self-contained; the same keys go in your file.
 | `NerdFont` | bool | detected | `$true` turns Nerd Font icons on, `$false` off. Unset, icons follow whether a Nerd Font is installed (Windows). See [Fonts and icons](fonts.md). |
 | `PSReadLineEditMode` | string | `Emacs` | `Emacs` or `Windows` key bindings for the command line. |
 | `Theme` | string | `catppuccin-mocha` | Shared theme for every themed tool. Must be a family name, see [Themes](#themes). |
-| `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `ClaudeTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TelevisionTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
+| `BatTheme`, `BottomTheme`, `BrootTheme`, `BtopTheme`, `ClaudeTheme`, `DeltaTheme`, `DufTheme`, `EzaTheme`, `FzfTheme`, `GlowTheme`, `GumTheme`, `LsdTheme`, `MdcatTheme`, `MdvTheme`, `MoorTheme`, `OhMyPoshTheme`, `OvTheme`, `PecoTheme`, `ProcsTheme`, `PSReadLineTheme`, `SkimTheme`, `StarshipTheme`, `TealdeerTheme`, `TelevisionTheme`, `TlrcTheme`, `VividTheme` | string | `Theme` | Theme for one tool, overriding `Theme`. |
 | `ShimsPath` | string | `$HOME\.local\bin` | Folder `New-DFShim` writes shims to. |
 | `DotenvSafeMode` | bool | `$true` | ps-dotenv loads only `.env` files in approved folders. `$false` loads every one. |
 | `DotenvApprovedDirs` | string[] | none | Folders whose `.env` files (recursively) ps-dotenv may load. `~` works. |
@@ -138,6 +138,8 @@ mdcat: dracula
 | PSReadLine | `PSReadLineTheme` | `catppuccin-mocha`, `dark`, `light`, or `$XDG_CONFIG_HOME\psreadline\themes\<name>.json` | warning; colors unchanged |
 | skim | `SkimTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\skim\themes\<name>.json`; appended to `SKIM_DEFAULT_OPTIONS` as `--color` | warning; skim's own colors |
 | television | `TelevisionTheme` | the four catppuccin flavors; seeded once into its `config.toml` (`ui.theme`), so change it there later | warning; nothing seeded |
+| tealdeer | `TealdeerTheme` | the four catppuccin flavors; seeded once into `$XDG_CONFIG_HOME\tealdeer\config.toml` | warning; nothing seeded |
+| tlrc | `TlrcTheme` | the four catppuccin flavors; seeded once into `$XDG_CONFIG_HOME\tlrc\config.toml` | warning; nothing seeded |
 | gum | `GumTheme` | the four catppuccin flavors, or `$XDG_CONFIG_HOME\gum\themes\<name>.json`; sets `GUM_*` colors | warning; gum's own colors |
 | vivid (`LS_COLORS`) | `VividTheme` | any `vivid themes` name | warning; `LS_COLORS` unchanged |
 
@@ -179,7 +181,7 @@ Register-DFTool -Name psreadline
 
 A role is a job several tools can do: drawing the prompt, paging output, listing files. DotForge has two kinds:
 
-- A **single** role has one winner. Only the winner sets the role's variables and aliases and installs its shell hooks. The others are still configured and you can run them by name. Examples: `prompt` (oh-my-posh, starship), `pager` (less, bat), `listing` (eza, lsd), `editor`, `picker`, `diff`, `project-env`, `navigation`, `package-manager`.
+- A **single** role has one winner. Only the winner sets the role's variables and aliases and installs its shell hooks. The others are still configured and you can run them by name. Examples: `prompt` (oh-my-posh, starship), `pager` (less, bat), `listing` (eza, lsd), `tldr-client` (tealdeer, tlrc), `editor`, `picker`, `diff`, `project-env`, `navigation`, `package-manager`.
 - A **category** only groups tools, such as `grep` or `markdown-viewer`. Every member works as usual.
 
 `Get-DFRole` lists the roles, which of your tools can fill each one, and which tool won:

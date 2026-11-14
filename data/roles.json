@@ -141,6 +141,30 @@
     "reserved": { "env": [], "aliases": [], "code": ["Set-PSReadLineKeyHandler -Key Tab"] },
     "description": "Owns the Tab key. The winner binds Tab; the others still register their completers."
   },
+  "tldr-client": {
+    "kind": "single",
+    "exclusive": false,
+    "hook": "Initialize-DFRoleTldrClient",
+    "reserved": { "env": [], "aliases": [], "code": [] },
+    "description": "Shows tldr pages: short, example-first help for commands. The winner defines ftldr, a picker over every page.",
+    "behaviors": {
+      "words": {
+        "list-all": "every page name on every platform, one per line"
+      },
+      "aliases": {},
+      "pickers": [
+        {
+          "alias": "ftldr",
+          "function": "Select-TldrPage",
+          "list": ["list-all"],
+          "preview": "tldr --color always {}",
+          "preview_window": "right:65%:wrap",
+          "header": "Select tldr page  [Enter to show it]",
+          "action": "tldr {}"
+        }
+      ]
+    }
+  },
   "fuzzy-finder":    { "kind": "category", "description": "Filters a list interactively as you type." },
   "markdown-viewer": { "kind": "category", "description": "Renders Markdown in the terminal." },
   "completion":      { "kind": "category", "description": "Adds or improves Tab completion." },

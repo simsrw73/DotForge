@@ -464,6 +464,15 @@
       },
       "linkedVia": "curated"
     },
+    "tealdeer": {
+      "packages": {
+        "winget": "dbrgn.tealdeer",
+        "scoop": "tealdeer",
+        "crates": "tealdeer"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/tealdeer-rs/tealdeer"
+    },
     "television": {
       "packages": {
         "scoop": "television",
@@ -478,6 +487,15 @@
         "psgallery": "Terminal-Icons"
       },
       "linkedVia": "curated"
+    },
+    "tlrc": {
+      "packages": {
+        "winget": "tldr-pages.tlrc",
+        "scoop": "tlrc",
+        "crates": "tlrc"
+      },
+      "linkedVia": "repo",
+      "repo": "https://github.com/tldr-pages/tlrc"
     },
     "uv": {
       "packages": {

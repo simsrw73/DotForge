@@ -51,6 +51,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Completion | carapace, inshellisense |
 | Files and folders | bat, broot, eza, fd, lsd, ripgrep, vivid |
 | Text and data | glow, jq, mdcat, mdv |
+| Help pages | tealdeer, tlrc (one is active; see below) |
 | System | fastfetch, gsudo, smartmontools |
 | Processes | procs, btop, bottom, glances, ntop, pstop (the `process-viewer` category) |
 | Disk usage | dust, dua, gdu, duf (the `disk-usage` category) |
@@ -94,6 +95,8 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | ripgrep | `frg` search-and-open picker |
 | rustup | `frtc` picks the default toolchain |
 | scoop | `sins`, `srm`, `sup` pickers; `Ctrl+G` `S` |
+| tealdeer | `ftldr` picks a tldr page from every platform's list, previews it, and shows it, when it wins the `tldr-client` role (see tlrc) |
+| tlrc | `ftldr`, the same picker, when it wins the `tldr-client` role |
 | uv | `fvenv` activates a Python venv below the current folder |
 | vivid | `fls` directory-color theme picker |
 | winget | `wins`, `wrm`, `wup` pickers; `Ctrl+G` `W` |
@@ -229,6 +232,17 @@ broot browses folders as a tree. `br` runs it in the current folder: leave it on
 
 - **peco** gets a catppuccin `$XDG_CONFIG_HOME\peco\config.json` once (`PecoTheme` or `Theme`); after that the file is yours.
 - **gum** gets catppuccin colors through its `GUM_*` variables (`GumTheme` or `Theme`); a `GUM_*` color you set yourself is kept. Nothing else changes, since scripts expect gum's stock behavior.
+
+### tldr pages: tealdeer and tlrc
+
+Both show [tldr pages](https://tldr.sh): short help for a command, made of examples. Both install a program called `tldr`, and they fill the `tldr-client` role, so one of them gets the `ftldr` picker: your `Defaults['tldr-client']` choice, otherwise tealdeer. `ftldr` lists every page for every platform, previews the highlighted one, and shows it when you press Enter.
+
+- **tealdeer** reads `$XDG_CONFIG_HOME\tealdeer\config.toml` (DotForge sets `TEALDEER_CONFIG_DIR`).
+- **tlrc** reads `$XDG_CONFIG_HOME\tlrc\config.toml` (DotForge sets `TLRC_CONFIG`, which names the file itself).
+
+On first load DotForge creates that file with catppuccin colors (`TealdeerTheme`/`TlrcTheme`, or `Theme`), titles on, and pages downloaded on first use and refreshed weekly. After that the file is yours. The page cache stays in each tool's own folder under `%LOCALAPPDATA%`, since neither tool reads its cache location from a variable it supports.
+
+Install them with winget, DotForge's first choice for both. Scoop's packages set `TEALDEER_CONFIG_DIR` or `TLRC_CONFIG` in your Windows user environment to scoop's own folder, which competes with the one DotForge sets. Keep only one of the two installed: both are `tldr.exe`, so the one first on `PATH` runs whichever client wins the role.
 
 ### fnm and zoxide
 

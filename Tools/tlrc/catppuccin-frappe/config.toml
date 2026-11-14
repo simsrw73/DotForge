@@ -1,0 +1,42 @@
+# tlrc config, seeded by DotForge (Catppuccin Frappé).
+# DotForge never overwrites this file: edit it freely, or delete it to get the
+# seed back on a fresh setup. Every key: `tldr --gen-config`, or
+# https://github.com/tldr-pages/tlrc#configuration.
+
+[cache]
+# Download the pages on first use and refresh them weekly.
+auto_update = true
+max_age = 168
+
+[output]
+show_title = true
+platform_title = false
+# Placeholders in their long form (--recursive rather than -r).
+option_style = "long"
+# Wrap at the terminal width.
+line_length = 0
+
+[style.title]
+color = { hex = "#ca9ee6" }
+bold = true
+
+[style.description]
+color = { hex = "#a5adce" }
+
+[style.bullet]
+color = { hex = "#a6d189" }
+
+[style.example]
+color = { hex = "#8caaee" }
+
+[style.url]
+color = { hex = "#85c1dc" }
+italic = true
+
+[style.inline_code]
+color = { hex = "#81c8be" }
+italic = true
+
+[style.placeholder]
+color = { hex = "#ef9f76" }
+italic = true

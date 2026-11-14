@@ -61,10 +61,6 @@
     "function": ["terminal-multiplexer"], "worksWith": ["terminal-sessions"], "interface": "tui",
     "relatedTo": ["zellij"], "popularity": 2
   },
-  "tealdeer": {
-    "function": ["documentation"], "worksWith": ["text"], "interface": "cli",
-    "aliases": ["tldr"], "alternativeTo": ["man"], "relatedTo": ["navi"], "popularity": 2
-  },
   "choose": {
     "function": ["text-processing"], "worksWith": ["text", "csv"], "interface": "cli",
     "alternativeTo": ["cut"], "popularity": 1

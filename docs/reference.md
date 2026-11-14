@@ -105,11 +105,11 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 **Tool records**
 
-[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [claude-code](#claude-code-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [komorebi](#komorebi-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [script](#script-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
+[bat](#bat-tool) · [bitwarden](#bitwarden-tool) · [bottom](#bottom-tool) · [broot](#broot-tool) · [btop](#btop-tool) · [bun](#bun-tool) · [carapace](#carapace-tool) · [cargo](#cargo-tool) · [chezmoi](#chezmoi-tool) · [choco](#choco-tool) · [claude-code](#claude-code-tool) · [curl](#curl-tool) · [delta](#delta-tool) · [direnv](#direnv-tool) · [docker](#docker-tool) · [dua](#dua-tool) · [duf](#duf-tool) · [dust](#dust-tool) · [eza](#eza-tool) · [fastfetch](#fastfetch-tool) · [fd](#fd-tool) · [fnm](#fnm-tool) · [fontget](#fontget-tool) · [fzf](#fzf-tool) · [gdu](#gdu-tool) · [gfcli](#gfcli-tool) · [gh](#gh-tool) · [glances](#glances-tool) · [glow](#glow-tool) · [GoogleFonts](#googlefonts-tool) · [gsudo](#gsudo-tool) · [gum](#gum-tool) · [inshellisense](#inshellisense-tool) · [jq](#jq-tool) · [komorebi](#komorebi-tool) · [lazygit](#lazygit-tool) · [less](#less-tool) · [lsd](#lsd-tool) · [mdcat](#mdcat-tool) · [mdv](#mdv-tool) · [micro](#micro-tool) · [mise](#mise-tool) · [moor](#moor-tool) · [nano](#nano-tool) · [NerdFonts](#nerdfonts-tool) · [node](#node-tool) · [npm](#npm-tool) · [ntop](#ntop-tool) · [oh-my-posh](#oh-my-posh-tool) · [ov](#ov-tool) · [peco](#peco-tool) · [pip](#pip-tool) · [pipx](#pipx-tool) · [pnpm](#pnpm-tool) · [posh-git](#posh-git-tool) · [procs](#procs-tool) · [ps-dotenv](#ps-dotenv-tool) · [PSFzf](#psfzf-tool) · [psreadline](#psreadline-tool) · [psresource](#psresource-tool) · [pstop](#pstop-tool) · [pymanager](#pymanager-tool) · [python](#python-tool) · [ripgrep](#ripgrep-tool) · [rustup](#rustup-tool) · [scoop](#scoop-tool) · [script](#script-tool) · [skim](#skim-tool) · [smartmontools](#smartmontools-tool) · [starship](#starship-tool) · [tealdeer](#tealdeer-tool) · [television](#television-tool) · [Terminal-Icons](#terminal-icons-tool) · [tlrc](#tlrc-tool) · [uv](#uv-tool) · [vcpkg](#vcpkg-tool) · [vivid](#vivid-tool) · [wget](#wget-tool) · [winget](#winget-tool) · [zoxide](#zoxide-tool)
 
 **Roles**
 
-[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [disk-usage](#disk-usage-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [font-installer](#font-installer-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [process-viewer](#process-viewer-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
+[completion](#completion-role) · [diff](#diff-role) · [directory-jump](#directory-jump-role) · [disk-usage](#disk-usage-role) · [editor](#editor-role) · [elevator](#elevator-role) · [file-search](#file-search-role) · [font-installer](#font-installer-role) · [fuzzy-finder](#fuzzy-finder-role) · [grep](#grep-role) · [history-search](#history-search-role) · [js-package-manager](#js-package-manager-role) · [js-runtime](#js-runtime-role) · [listing](#listing-role) · [markdown-viewer](#markdown-viewer-role) · [navigation](#navigation-role) · [package-manager](#package-manager-role) · [pager](#pager-role) · [path-insert](#path-insert-role) · [picker](#picker-role) · [powershell-package-manager](#powershell-package-manager-role) · [process-viewer](#process-viewer-role) · [project-env](#project-env-role) · [prompt](#prompt-role) · [python-package-manager](#python-package-manager-role) · [python-runtime](#python-runtime-role) · [rust-package-manager](#rust-package-manager-role) · [system-info](#system-info-role) · [tab-completion](#tab-completion-role) · [tldr-client](#tldr-client-role) · [url-fetch](#url-fetch-role) · [version-manager](#version-manager-role)
 
 **Tool companion functions**
 
@@ -2782,6 +2782,16 @@ Owns the Tab key. The winner binds Tab; the others still register their complete
 | Kind | single |
 | Members | [carapace](#carapace-tool), [inshellisense](#inshellisense-tool), [PSFzf](#psfzf-tool) |
 
+### tldr-client role
+
+Shows tldr pages: short, example-first help for commands. The winner defines ftldr, a picker over every page.
+
+| | |
+| --- | --- |
+| Kind | single |
+| Members | [tealdeer](#tealdeer-tool), [tlrc](#tlrc-tool) |
+| Only the winner sets | `ftldr` |
+
 ### url-fetch role
 
 Downloads files and calls HTTP APIs.
@@ -3785,6 +3795,23 @@ Fast, minimal, cross-shell prompt configured with a single TOML file
 | Roles | [`prompt`](#prompt-role) |
 | Companion | [`Tools/starship.ps1`](#starship-companion), one-time `Tools/starship.setup.ps1` |
 
+### tealdeer tool
+
+Fast tldr client: short, example-first help pages for commands
+
+| | |
+| --- | --- |
+| Detected by | `tldr.exe` |
+| Tags | `help`, `docs`, `tldr` |
+| Install ids | winget: `dbrgn.tealdeer`<br>scoop: `tealdeer`<br>crates: `tealdeer` |
+| XDG method | `env` |
+| XDG variables | `TEALDEER_CONFIG_DIR` = `${XDG_CONFIG_HOME}/tealdeer` |
+| Creates | `${XDG_CONFIG_HOME}/tealdeer` |
+| Theme | key `TealdeerTheme`, default `catppuccin-mocha` |
+| Seeds once | `${XDG_CONFIG_HOME}/tealdeer/config.toml` |
+| Roles | [`tldr-client`](#tldr-client-role) |
+| Picker, as the tldr-client tool | `ftldr` (Select-TldrPage): lists `tldr --list` |
+
 ### television tool
 
 Fast, hackable fuzzy finder with channels for files, git, env and more
@@ -3812,6 +3839,23 @@ Adds Nerd Font file and folder icons to terminal output (ls, eza, etc.)
 | Install ids | psgallery: `Terminal-Icons` |
 | XDG method | `default` |
 | Companion | `Tools/Terminal-Icons.ps1` |
+
+### tlrc tool
+
+Official tldr client from the tldr-pages project, written in Rust
+
+| | |
+| --- | --- |
+| Detected by | `tldr.exe` |
+| Tags | `help`, `docs`, `tldr` |
+| Install ids | winget: `tldr-pages.tlrc`<br>scoop: `tlrc`<br>crates: `tlrc` |
+| XDG method | `env` |
+| XDG variables | `TLRC_CONFIG` = `${XDG_CONFIG_HOME}/tlrc/config.toml` |
+| Creates | `${XDG_CONFIG_HOME}/tlrc` |
+| Theme | key `TlrcTheme`, default `catppuccin-mocha` |
+| Seeds once | `${XDG_CONFIG_HOME}/tlrc/config.toml` |
+| Roles | [`tldr-client`](#tldr-client-role) |
+| Picker, as the tldr-client tool | `ftldr` (Select-TldrPage): lists `tldr --list-all` |
 
 ### uv tool
 

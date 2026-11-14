@@ -1,0 +1,31 @@
+{
+  "name": "tlrc",
+  "description": "Official tldr client from the tldr-pages project, written in Rust",
+  "tags": ["help", "docs", "tldr"],
+  "executable": "tldr.exe",
+  "roles": { "tldr-client": { "priority": 10, "flags": { "list-all": ["--list-all"] } } },
+  "packages": {
+    "winget": "tldr-pages.tlrc",
+    "scoop": "tlrc",
+    "crates": "tlrc"
+  },
+  "install": {
+    "prefer": ["winget"],
+    "avoid": { "scoop": "scoop's manifest sets TLRC_CONFIG in your user environment to its persist folder and deletes %APPDATA%\\tlrc, which competes with the TLRC_CONFIG DotForge sets." }
+  },
+  "xdg": {
+    "compliance": "partial",
+    "method": "env",
+    "vars": { "TLRC_CONFIG": "${XDG_CONFIG_HOME}/tlrc/config.toml" },
+    "dirs": ["${XDG_CONFIG_HOME}/tlrc"],
+    "native": {
+      "TLRC_CONFIG": [],
+      "${XDG_CONFIG_HOME}/tlrc/config.toml": ["${APPDATA}/tlrc/config.toml", "${HOME}/Library/Application Support/tlrc/config.toml"]
+    },
+    "instructions": "TLRC_CONFIG is the config file itself, not its folder (tlrc 1.13.1). The page cache stays in tlrc's OS folder (%LOCALAPPDATA%\\tlrc); the config's cache.dir expands only ~, not variables."
+  },
+  "theme": { "key": "TlrcTheme", "default": "catppuccin-mocha", "files": "tlrc" },
+  "setup": { "seed": { "${XDG_CONFIG_HOME}/tlrc/config.toml": "{theme}/config.toml" } },
+  "aliases": {},
+  "picker": null
+}
