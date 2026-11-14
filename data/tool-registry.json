@@ -3644,7 +3644,7 @@
       }
     },
     "mise": {
-      "sha256": "dfbc9a96bbdd167e285c0e4acc92233da301290dd04fa7b3878651b8ccb269f1",
+      "sha256": "9d467ae56b5afd098f59e724a4d6e6dda1c1adb5fdd9f096e73b8070e62290c6",
       "record": {
         "name": "mise",
         "executable": "mise.exe",
@@ -3666,7 +3666,13 @@
           "dirs": [],
           "instructions": null,
           "compliance": "full",
-          "native": null
+          "native": {
+            "${XDG_CONFIG_HOME}/mise/conf.d/dotenv.toml": {
+              "paths": [],
+              "guide": null,
+              "setting": null
+            }
+          }
         },
         "env": null,
         "desktop": [],
@@ -3680,7 +3686,7 @@
         "requires": [],
         "roles": {
           "project-env": {
-            "priority": 20,
+            "priority": 30,
             "optIn": false,
             "aliases": null,
             "env": null,
@@ -3711,7 +3717,17 @@
         "executableExclude": [],
         "prewarm": true,
         "nerdFont": null,
-        "setup": null,
+        "setup": {
+          "seed": {
+            "${XDG_CONFIG_HOME}/mise/conf.d/dotenv.toml": "mise/dotenv.toml"
+          },
+          "notes": [
+            {
+              "text": "mise now loads .env files from each folder and its parents, after you approve each one. You have a .env in your home folder, a parent of almost every folder: until you run 'mise trust $HOME\\.env' (it then loads in every shell under your home) or move it, the shell warns that it isn't trusted and mise's own commands stop with an error.",
+              "ifFile": "~/.env"
+            }
+          ]
+        },
         "banner": null,
         "installs": [
           {
@@ -4980,7 +4996,7 @@
       }
     },
     "ps-dotenv": {
-      "sha256": "3682b67d57d4514a8b84e9988c199fafd44adec7069b14f33f5a91fa1153711f",
+      "sha256": "cc9a859247a9f17b873444c97858b217556bcfe9a4ba583c0d53e4340970acdb",
       "record": {
         "name": "ps-dotenv",
         "executable": "Dotenv",
@@ -5017,7 +5033,7 @@
         "requires": [],
         "roles": {
           "project-env": {
-            "priority": 30,
+            "priority": 20,
             "optIn": false,
             "aliases": null,
             "env": null,

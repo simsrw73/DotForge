@@ -7,7 +7,7 @@
   "packages": { "scoop": { "id": "ps-dotenv", "feed": { "name": "insomnia", "url": "https://github.com/insomnimus/scoop-bucket" } } },
   "xdg": { "compliance": "full", "method": "default" },
   "prewarm": false,
-  "roles": { "project-env": { "priority": 30 } },
+  "roles": { "project-env": { "priority": 20 } },
   "aliases": {},
   "picker": null
 }

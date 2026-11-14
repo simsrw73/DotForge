@@ -3395,6 +3395,7 @@ Dev tool versions, environment variables and tasks per project
 | Install ids | scoop: `mise`<br>winget: `jdx.mise`<br>choco: `mise` |
 | XDG method | `default` |
 | Registers after | `oh-my-posh`, `starship` |
+| Seeds once | `${XDG_CONFIG_HOME}/mise/conf.d/dotenv.toml` |
 | Roles | [`project-env`](#project-env-role), [`version-manager`](#version-manager-role) |
 | Companion | `Tools/mise.ps1` |
 

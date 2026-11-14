@@ -56,7 +56,7 @@ mdv   Terminal markdown viewer with themes and syntax highlighting
 | Disk usage | dust, dua, gdu, duf (the `disk-usage` category) |
 | Network | curl, wget |
 | Containers | docker |
-| Per-folder environments | ps-dotenv, mise, direnv (one is active; see below) |
+| Per-folder environments | mise, ps-dotenv, direnv (one is active; see below) |
 | Prompt | oh-my-posh, starship |
 | Window manager | komorebi |
 | Editor | micro, nano |
@@ -161,20 +161,34 @@ The first time delta is registered on a machine, DotForge adds one line to your 
 
 It prints the command to remove the line, and never adds it again after you remove it. To skip this step, set `$DFConfig.SkipSetup = @('delta')` before delta is first registered.
 
-### Per-folder environments: ps-dotenv, mise, direnv
+### Per-folder environments: mise, ps-dotenv, direnv
 
-These fill the `project-env` role, so only one is active: your `Defaults['project-env']` choice, otherwise ps-dotenv, then mise, then direnv.
+These fill the `project-env` role, so only one is active: your `Defaults['project-env']` choice, otherwise mise, then ps-dotenv, then direnv.
 
-- **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load. Add the folders to your `$DFConfig` block:
+- **mise** activates (`mise activate pwsh`) only when it's the `project-env` tool. Its shims folder is on PATH either way, so tools mise installed keep working under another `project-env` tool. On its first load DotForge adds `$XDG_CONFIG_HOME\mise\conf.d\dotenv.toml`, which makes mise load `.env` files as you change folders: the one in the current folder and each parent's, the nearest winning. A `.env` loads only after you approve its contents:
+
+  <!-- system -->
+  ```powershell
+  mise trust .env
+  ```
+
+  Editing the file revokes the approval. Until you approve it, the shell warns that it isn't trusted and skips it, and mise's own commands (`mise ls`, `mise exec`, the shims) stop with an error. A `.env` in a parent folder counts too, so a stray `~\.env` blocks every folder under your home; DotForge notes it when that file exists. To approve whole folders, uncomment `trusted_config_paths` in that file:
+
+  ```toml
+  trusted_config_paths = ["~/projects"]
+  ```
+
+  Delete the `paranoid` line to load every `.env` without approval, or delete the file to stop loading `.env` files. DotForge never overwrites it, and your `config.toml` overrides it. A project can also name its own files in `mise.toml` (`[env] _.file = ".env.local"`).
+- **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load. Pick it and add the folders to your `$DFConfig` block:
 
   ```powershell
   $DFConfig = @{
+      Defaults           = @{ 'project-env' = 'ps-dotenv' }
       DotenvApprovedDirs = @('~\projects')
   }
   ```
 
   Set `DotenvSafeMode = $false` to load every `.env` without approval. Install it with `Install-DFTool -Name ps-dotenv`, which adds its scoop bucket (shown in the plan) first.
-- **mise** activates (`mise activate pwsh`) only when it's the `project-env` tool. Its shims folder is on PATH either way, so tools mise installed keep working under ps-dotenv.
 - **direnv** gets Git for Windows' bash through `DIRENV_BASH` unless your `direnv.toml` sets `bash_path`. Up to version 2.37.1 it unloads unrelated variables on Windows ([direnv#1488](https://github.com/direnv/direnv/issues/1488)), so DotForge warns while it's active.
 
 ### Pagers: moor, ov, less
@@ -314,8 +328,9 @@ vivid generates `LS_COLORS`, which eza, lsd and many other listing tools read. D
 | `the 'Scoop' module is required` | scoop pickers without their module | `Install-Module Scoop -Scope CurrentUser`. |
 | `no oh-my-posh config found` | no theme file where DotForge looks | Set `$Env:POSH_THEME`, or put one `*.omp.json` in `$XDG_CONFIG_HOME\oh-my-posh\`. |
 | `direnv requires PowerShell 7.2+` | older PowerShell | Upgrade PowerShell. |
-| `direnv <v> on Windows unloads environment variables it didn't set` | direnv 2.37.1 or older is your `project-env` tool | Switch with `$DFConfig.Defaults = @{ 'project-env' = 'ps-dotenv' }`, or update direnv once a fixed release ships. |
+| `direnv <v> on Windows unloads environment variables it didn't set` | direnv 2.37.1 or older is your `project-env` tool | Switch with `$DFConfig.Defaults = @{ 'project-env' = 'mise' }`, or update direnv once a fixed release ships. |
 | `direnv needs Git for Windows' bash` | no `bin\bash.exe` above `git.exe` | Install Git for Windows, or set `bash_path` in `direnv.toml`. |
+| `mise WARN <file> is not trusted` (or `mise ERROR The environment file ... is not trusted`) | mise found a `.env` you haven't approved, in this folder or a parent | Review it, then `mise trust <file>`; add the folder to `trusted_config_paths`; or move a stray one (often `~\.env`). |
 | `dotenv info: <file> is not authorized` | ps-dotenv's safe mode found a `.env` outside your approved folders | Add the folder to `DotenvApprovedDirs`, or set `DotenvSafeMode = $false`. |
 | rustup can't find your toolchain | `RUSTUP_HOME` now points under `$XDG_DATA_HOME` | Move `~\.rustup` and `~\.cargo` there, or run `rustup toolchain install stable`. |
 | `zoxide` stops learning folders after `fpot` | the theme switch replaced the prompt hook | Open a new shell. |

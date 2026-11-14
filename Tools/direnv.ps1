@@ -70,7 +70,7 @@ function Initialize-DFRoleProjectEnv {
     $direnvVersion = Get-DFCachedCommandOutput -Name 'direnv-version' -Executable 'direnv' -Generate { direnv version | Out-String }
     if (Test-DFDirenvBuggyVersion -VersionText $direnvVersion) {
         Write-Warning ("DotForge: direnv $($direnvVersion.Trim()) on Windows unloads environment variables it didn't set (direnv#1488). " +
-            "Consider ps-dotenv: `$DFConfig.Defaults = @{ 'project-env' = 'ps-dotenv' }")
+            "Consider mise: `$DFConfig.Defaults = @{ 'project-env' = 'mise' }")
     }
     if ($PSVersionTable.PSVersion -ge [version]'7.2') {
         Invoke-Expression (Get-DFCachedCommandOutput -Name 'direnv-hook' -Executable 'direnv' -Generate {

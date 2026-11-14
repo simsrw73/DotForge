@@ -176,19 +176,20 @@ Export-ModuleMember -Function * -Variable Dotenv
         Remove-DFTestGlobal -Function mise
     }
 
-    It 'activates only ps-dotenv by priority, warns once, and keeps mise''s shims on PATH' {
+    It 'activates only mise by priority, warns once, and seeds its .env loader' {
         Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningVariable w -WarningAction SilentlyContinue
-        $global:ProjectEnvInits | Should -Be @('ps-dotenv')
+        $global:ProjectEnvInits | Should -Be @('mise')
         @($w | Where-Object { "$_" -match 'can each fill the project-env role' }).Count | Should -Be 1
-        "$w" | Should -Match 'project-env role; using ps-dotenv'
-        "$w" | Should -Match "'project-env' = 'mise'" -Because 'the notice suggests the runner-up by priority'
-        ($Env:Path -split ';') | Should -Contain (Join-Path $Env:XDG_DATA_HOME 'mise\shims')
+        "$w" | Should -Match 'project-env role; using mise'
+        "$w" | Should -Match "'project-env' = 'ps-dotenv'" -Because 'the notice suggests the runner-up by priority'
+        Join-Path $Env:XDG_CONFIG_HOME 'mise\conf.d\dotenv.toml' | Should -Exist
     }
 
-    It 'activates only mise when Defaults.project-env = mise' {
-        Set-DFTestConfig @{ Defaults = @{ 'project-env' = 'mise' } }
+    It 'activates only ps-dotenv when Defaults.project-env = ps-dotenv, keeping mise''s shims on PATH' {
+        Set-DFTestConfig @{ Defaults = @{ 'project-env' = 'ps-dotenv' } }
         Register-DFTool -Name 'ps-dotenv', 'mise', 'direnv' -ToolsPath $script:RealTools -WarningAction SilentlyContinue
-        $global:ProjectEnvInits | Should -Be @('mise')
+        $global:ProjectEnvInits | Should -Be @('ps-dotenv')
+        ($Env:Path -split ';') | Should -Contain (Join-Path $Env:XDG_DATA_HOME 'mise\shims')
     }
 }
 

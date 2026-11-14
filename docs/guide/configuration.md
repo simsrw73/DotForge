@@ -205,7 +205,7 @@ eza - A modern, maintained replacement for ls
 
 Without a `Defaults` entry, the installed tool with the highest priority wins (eza over lsd, oh-my-posh over starship, less over bat). For `prompt`, `project-env` and `navigation`, where two active tools would break each other, DotForge also warns once, naming its pick and the line that changes it. A tool name that isn't in that role writes a warning, and priority decides.
 
-For per-folder environment variables, `project-env` holds ps-dotenv (the default), mise or direnv; see [Tools](tools.md#per-folder-environments-ps-dotenv-mise-direnv). In your configuration hashtable, name your pick and the folders ps-dotenv may load `.env` files from:
+For per-folder environment variables, `project-env` holds mise (the default), ps-dotenv or direnv; see [Tools](tools.md#per-folder-environments-mise-ps-dotenv-direnv). mise's `.env` settings live in its own config file. To use ps-dotenv instead, name it and the folders it may load `.env` files from:
 
 ```powershell
 $DFConfig = @{

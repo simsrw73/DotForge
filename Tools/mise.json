@@ -6,8 +6,21 @@
   "after": ["oh-my-posh",  "starship"],
   "packages": { "scoop": "mise", "winget": "jdx.mise", "choco": "mise" },
   "installs": { "from": "mise", "install": ["mise", "use", "--global", "{id}"], "reactivate": true },
-  "xdg": { "compliance": "full", "method": "default" },
-  "roles": { "project-env": { "priority": 20 }, "version-manager": {} },
+  "xdg": {
+    "compliance": "full",
+    "method": "default",
+    "native": { "${XDG_CONFIG_HOME}/mise/conf.d/dotenv.toml": [] }
+  },
+  "setup": {
+    "seed": { "${XDG_CONFIG_HOME}/mise/conf.d/dotenv.toml": "mise/dotenv.toml" },
+    "notes": [
+      {
+        "text": "mise now loads .env files from each folder and its parents, after you approve each one. You have a .env in your home folder, a parent of almost every folder: until you run 'mise trust $HOME\\.env' (it then loads in every shell under your home) or move it, the shell warns that it isn't trusted and mise's own commands stop with an error.",
+        "ifFile": "~/.env"
+      }
+    ]
+  },
+  "roles": { "project-env": { "priority": 30 }, "version-manager": {} },
   "aliases": {},
   "picker": null
 }
