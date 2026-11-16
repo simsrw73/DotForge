@@ -1,5 +1,5 @@
 # DotForge startup core, bundled by build/Build-DFCoreBundle.ps1. Do not edit: edit the sources.
-# sources-sha256: 3ba6d911b3551726bd3f386a3c8aa57375695b5f3849c8b48f3579ed27157bf2
+# sources-sha256: c02852193cb59fa797d902f58fde55719974a841d2d4d2bf497951a1ff9f7b5d
 
 # ---- Shared/ConvertTo-DFPath.ps1
 #Requires -Version 7.2
@@ -11086,6 +11086,8 @@ Set-Alias -Name fh -Value Select-DFHelpTopic
 Set-Alias -Name clh -Value Show-DFCliHelp
 Set-Alias -Name clhp -Value Show-DFCliHelpPaged
 Set-Alias -Name up -Value Set-DFLocationUp
+Set-Alias -Name cdr -Value Set-DFLocationRoot
+Set-Alias -Name pwr -Value Get-DFLocationRoot
 Set-Alias -Name mkcd -Value New-DFDirectoryAndSet
 Set-Alias -Name fcd -Value Select-DFLocation
 Set-Alias -Name fps -Value Select-DFProcess

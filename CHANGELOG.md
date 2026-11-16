@@ -6,6 +6,11 @@ All notable changes to DotForge are documented here.
 
 ### Added
 
+- **`cdr` and `pwr`: the repository root.** `cdr` (`Set-DFLocationRoot`) moves to the root of the
+  repository you're in, the way a plain `cd` moves home; `pwr` (`Get-DFLocationRoot`) prints that root
+  as `pwd` would. The root is the nearest folder above with a `.git`, `.jj` or `.hg` entry, so a git
+  worktree or submodule gets its own root, and no external program runs. Outside a repository both
+  warn and do nothing; `cdr -WhatIf` names the root without moving.
 - **tldr pages: tealdeer and tlrc, and the `tldr-client` role.** Both clients join the new role;
   its winner (your `Defaults['tldr-client']` choice, otherwise tealdeer) gets `ftldr`, a picker over
   every page on every platform, with a preview. Each client's config moves to `$XDG_CONFIG_HOME`

@@ -55,8 +55,10 @@ Everything here is also available in the shell: `Get-Help <name> -Full`.
 
 | Command | Alias | Summary |
 | --- | --- | --- |
+| [Get-DFLocationRoot](#get-dflocationroot) | `pwr` | Gets the root folder of the repository that holds the current location. |
 | [New-DFDirectoryAndSet](#new-dfdirectoryandset) | `mkcd` | Creates a directory and immediately changes into it. |
 | [Select-DFLocation](#select-dflocation) | `fcd` | Fuzzy-searches subdirectories and changes to the selected one. |
+| [Set-DFLocationRoot](#set-dflocationroot) | `cdr` | Moves to the root folder of the repository that holds the current location. |
 | [Set-DFLocationUp](#set-dflocationup) | `up` | Navigates up one or more directory levels from the current location. |
 
 **Files**
@@ -1621,6 +1623,40 @@ Same as above using the clhp alias.
 
 ## Navigation
 
+### Get-DFLocationRoot
+
+Alias: `pwr`
+
+Gets the root folder of the repository that holds the current location.
+
+```text
+Get-DFLocationRoot [<CommonParameters>]
+```
+
+Walks up from the current folder to the nearest one that holds a .git, .jj or .hg entry and returns that folder the way Get-Location (pwd) does. A .git file counts as well as a .git folder, so inside a git worktree or a submodule the result is that worktree's or submodule's own root. It runs no external program.
+
+Outside a repository, or in a location that is not a file-system folder (HKCU:, Env:), it writes a warning and returns nothing.
+
+**Outputs:** System.Management.Automation.PathInfo
+
+**Example 1**
+
+```powershell
+pwr
+```
+
+Prints the root of the current repository, as pwd would print it from there.
+
+**Example 2**
+
+```powershell
+Get-ChildItem (Get-DFLocationRoot) -Filter *.md
+```
+
+Lists the Markdown files at the root of the current repository.
+
+**See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
+
 ### New-DFDirectoryAndSet
 
 Alias: `mkcd`
@@ -1686,6 +1722,40 @@ fcd
 ```
 
 Same as above using the fcd alias.
+
+**See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
+
+### Set-DFLocationRoot
+
+Alias: `cdr`
+
+Moves to the root folder of the repository that holds the current location.
+
+```text
+Set-DFLocationRoot [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+Finds the root with Get-DFLocationRoot (the nearest folder above that holds a .git, .jj or .hg entry) and moves there, the way a plain cd moves to your home folder. Outside a repository it writes a warning and stays where it is. cd - returns to the folder you left.
+
+-WhatIf names the root without moving there; pwr (Get-DFLocationRoot) prints it as pwd does.
+
+**Outputs:** None
+
+**Example 1**
+
+```powershell
+cdr
+```
+
+Moves to the root of the current repository.
+
+**Example 2**
+
+```powershell
+cdr -WhatIf
+```
+
+Names the folder cdr would move to, and stays where it is.
 
 **See also:** [pickers-and-helpers](guide/pickers-and-helpers.md)
 

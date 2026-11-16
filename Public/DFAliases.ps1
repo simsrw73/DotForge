@@ -27,6 +27,8 @@ Set-Alias -Name fh -Value Select-DFHelpTopic
 Set-Alias -Name clh -Value Show-DFCliHelp
 Set-Alias -Name clhp -Value Show-DFCliHelpPaged
 Set-Alias -Name up -Value Set-DFLocationUp
+Set-Alias -Name cdr -Value Set-DFLocationRoot
+Set-Alias -Name pwr -Value Get-DFLocationRoot
 Set-Alias -Name mkcd -Value New-DFDirectoryAndSet
 Set-Alias -Name fcd -Value Select-DFLocation
 Set-Alias -Name fps -Value Select-DFProcess

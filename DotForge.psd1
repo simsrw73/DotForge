@@ -40,7 +40,7 @@
     AliasesToExport   = @(
         'pg',
         'hm', 'clh', 'clhp', 'fcmd', 'fverb', 'fmod', 'fh',
-        'up', 'mkcd', 'fcd',
+        'up', 'cdr', 'pwr', 'mkcd', 'fcd',
         'touch', 'which', 'open',
         'fps', 'top',
         'env', 'path', 'fenv', 'ep', 'reload',

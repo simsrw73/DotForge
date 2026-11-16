@@ -62,6 +62,8 @@ To use [skim](https://github.com/skim-rs/skim) or another fzf-compatible program
 | Command | Alias | What it does |
 | --- | --- | --- |
 | `Set-DFLocationUp` | `up` | Moves up 1–99 folders (`up 3`). |
+| `Set-DFLocationRoot` | `cdr` | Moves to the root of the repository you're in (the nearest folder above with `.git`, `.jj` or `.hg`); `cdr -WhatIf` names it and stays put. Outside a repository it warns and does nothing. |
+| `Get-DFLocationRoot` | `pwr` | Prints that root the way `pwd` would print it from there. |
 | `New-DFDirectoryAndSet` | `mkcd` | Creates a folder and moves into it. |
 | `New-DFFile` | `touch` | Creates empty files, or updates their time stamps. |
 | `Get-DFWhich` | `which` | Prints the first matching program on `PATH`; `-All` lists every match in `PATH` order. |

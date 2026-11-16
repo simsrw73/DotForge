@@ -19,6 +19,8 @@
         'Select-DFHelpTopic',
         # General Helpers — Navigation
         'Set-DFLocationUp',
+        'Get-DFLocationRoot',
+        'Set-DFLocationRoot',
         'New-DFDirectoryAndSet',
         'Select-DFLocation',
         # General Helpers — File System

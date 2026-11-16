@@ -32,6 +32,86 @@ function Set-DFLocationUp {
     $path = ('../' * $Levels).TrimEnd('/')
     Set-Location $path
 }
+function Get-DFLocationRoot {
+    <#
+    .SYNOPSIS
+        Gets the root folder of the repository that holds the current location.
+    .DESCRIPTION
+        Walks up from the current folder to the nearest one that holds a .git, .jj
+        or .hg entry and returns that folder the way Get-Location (pwd) does.
+        A .git file counts as well as a .git folder, so inside a git worktree or
+        a submodule the result is that worktree's or submodule's own root. It
+        runs no external program.
+
+        Outside a repository, or in a location that is not a file-system folder
+        (HKCU:, Env:), it writes a warning and returns nothing.
+    .EXAMPLE
+        pwr
+
+        Prints the root of the current repository, as pwd would print it from
+        there.
+    .EXAMPLE
+        Get-ChildItem (Get-DFLocationRoot) -Filter *.md
+
+        Lists the Markdown files at the root of the current repository.
+    .OUTPUTS
+        System.Management.Automation.PathInfo
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Management.Automation.PathInfo])]
+    param()
+    $here = Get-Location
+    if ($here.Provider.Name -ne 'FileSystem') {
+        Write-Warning "'$here' is not a file-system folder."
+        return
+    }
+    $markers = '.git', '.jj', '.hg'
+    $folder = [IO.DirectoryInfo]::new((ConvertTo-DFPath $here.ProviderPath))
+    while ($folder) {
+        foreach ($marker in $markers) {
+            if (Test-Path -LiteralPath (Join-Path $folder.FullName $marker)) {
+                return Resolve-Path -LiteralPath $folder.FullName
+            }
+        }
+        $folder = $folder.Parent
+    }
+    Write-Warning "'$($here.ProviderPath)' is not inside a repository (no .git, .jj or .hg found)."
+}
+function Set-DFLocationRoot {
+    <#
+    .SYNOPSIS
+        Moves to the root folder of the repository that holds the current location.
+    .DESCRIPTION
+        Finds the root with Get-DFLocationRoot (the nearest folder above that
+        holds a .git, .jj or .hg entry) and moves there, the way a plain cd moves
+        to your home folder. Outside a repository it writes a warning and stays
+        where it is. cd - returns to the folder you left.
+
+        -WhatIf names the root without moving there; pwr (Get-DFLocationRoot)
+        prints it as pwd does.
+    .EXAMPLE
+        cdr
+
+        Moves to the root of the current repository.
+    .EXAMPLE
+        cdr -WhatIf
+
+        Names the folder cdr would move to, and stays where it is.
+    .OUTPUTS
+        None
+    .LINK
+        https://github.com/simsrw73/DotForge/blob/main/docs/guide/pickers-and-helpers.md
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+    $root = Get-DFLocationRoot
+    if (-not $root) { return }
+    if ($PSCmdlet.ShouldProcess($root.Path, 'Move to the repository root')) {
+        Set-Location -LiteralPath $root.Path
+    }
+}
 function New-DFDirectoryAndSet {
     <#
     .SYNOPSIS
