@@ -178,8 +178,10 @@ These fill the `project-env` role, so only one is active: your `Defaults['projec
   Editing the file revokes the approval. Until you approve it, the shell warns that it isn't trusted and skips it, and mise's own commands (`mise ls`, `mise exec`, the shims) stop with an error. A `.env` in a parent folder counts too, so a stray `~\.env` blocks every folder under your home; DotForge notes it when that file exists. To approve whole folders, uncomment `trusted_config_paths` in that file:
 
   ```toml
-  trusted_config_paths = ["~/projects"]
+  trusted_config_paths = ["~/projects/my-repo"]
   ```
+
+  A trusted folder skips approval for every mise config file in it, not only `.env` files. A `mise.toml` can run commands (hooks, `exec()` templates), so list only folders whose files you write yourself, never a folder you clone other people's repos into.
 
   Delete the `paranoid` line to load every `.env` without approval, or delete the file to stop loading `.env` files. DotForge never overwrites it, and your `config.toml` overrides it. A project can also name its own files in `mise.toml` (`[env] _.file = ".env.local"`).
 - **ps-dotenv** loads `.env` files from the current folder and its parents as you change folders. DotForge turns its safe mode on, so only folders you approve load. Pick it and add the folders to your `$DFConfig` block:

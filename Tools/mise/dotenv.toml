@@ -10,5 +10,7 @@ env_file = ".env"
 # and mise's own commands stop with an error. Remove this line to load every .env.
 paranoid = ["env_files"]
 
-# Folders whose .env files load without asking (each folder and everything under it).
-# trusted_config_paths = ["~/projects"]
+# Folders whose config loads without asking (each folder and everything under it).
+# This trusts every mise.toml there too, not only .env files, and a mise.toml can
+# run commands, so list only folders you write yourself, never one you clone into.
+# trusted_config_paths = ["~/projects/my-repo"]

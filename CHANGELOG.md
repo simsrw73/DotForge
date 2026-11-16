@@ -30,7 +30,8 @@ All notable changes to DotForge are documented here.
   mise now wins over ps-dotenv and direnv. On its first load DotForge adds
   `$XDG_CONFIG_HOME\mise\conf.d\dotenv.toml`, which loads the `.env` in the current folder and each
   parent's, the nearest winning, once you approve it with `mise trust` (editing revokes the approval).
-  The file never replaces one you have, and `trusted_config_paths` in it approves whole folders. A
+  The file never replaces one you have. Its commented-out `trusted_config_paths` approves whole
+  folders, every `mise.toml` in them included, so it warns to list only folders you write yourself. A
   `.env` in your home folder gets a one-time note, because it would block every folder under it. To
   keep ps-dotenv, set `Defaults = @{ 'project-env' = 'ps-dotenv' }`.
 - **A desktop variable that was already set stays yours.** `Set-DFDesktopEnv` no longer records a
